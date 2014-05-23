@@ -472,28 +472,6 @@ ALGselect1(int *result, int *bid, ptr value)
 }
 
 str
-ALGselect1Head(int *result, int *bid, ptr value)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, value);
-	bn = BATselect(b, value, 0);
-	bn = BATmirror(bn);
-	BBPreleaseref(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGuselect1(int *result, int *bid, ptr value)
 {
 	BAT *b, *bn = NULL;
@@ -629,30 +607,6 @@ ALGselectNotNil(int *result, int *bid)
 }
 
 str
-ALGselectHead(int *result, int *bid, ptr low, ptr high)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	bn = BATselect(b, low, high);
-	bn = BATmirror(bn);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGuselect(int *result, int *bid, ptr low, ptr high)
 {
 	BAT *b, *bn = NULL;
@@ -729,30 +683,6 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	derefStr(b, t, low);
 	derefStr(b, t, high);
 	CMDselect_(&bn, b, low, high, lin, rin);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
-ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	CMDselect_(&bn, b, low, high, lin, rin);
-	bn = BATmirror(bn);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;

@@ -267,8 +267,16 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public int findColumn(String columnName) throws SQLException {
-		for (int i = 0; i < columns.length; i++) {
-			if (columns[i].equalsIgnoreCase(columnName)) return i + 1;
+		if (columnName != null) {
+			for (int i = 0; i < columns.length; i++) {
+				if (columns[i].equals(columnName))
+					return i + 1;
+			}
+			/* if an exact match did not succeed try a case insensitive match */
+			for (int i = 0; i < columns.length; i++) {
+				if (columns[i].equalsIgnoreCase(columnName))
+					return i + 1;
+			}
 		}
 		throw new SQLException("No such column name: " + columnName, "M1M05");
 	}
@@ -285,15 +293,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		return absolute(1);
 	}
 
-	public Array getArray(int i) throws SQLException { throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000"); }
-	public Array getArray(String colName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000"); }
+	public Array getArray(int i) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+	}
+	public Array getArray(String colName) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+	}
 
-	/* Mapi doesn't allow something for streams at the moment, thus all
-	   not implemented for now */
-	public InputStream getAsciiStream(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000"); }
-	public InputStream getAsciiStream(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000"); }
-	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000"); }
-	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000"); }
+	/* Mapi doesn't allow something for streams at the moment, thus all not implemented for now */
+	public InputStream getAsciiStream(int columnIndex) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+	}
+	public InputStream getAsciiStream(String columnName) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+	}
+	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+	}
+	public InputStream getUnicodeStream(String columnName) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row
@@ -482,6 +501,21 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 
 	/**
 	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a Clob object in the
+	 * Java programming language.
+	 *
+	 * @param colName the name of the column from which to retrieve
+	 *        the value
+	 * @return a Clob object representing the SQL CLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Clob getClob(String colName) throws SQLException {
+		return getClob(findColumn(colName));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
 	 * of this ResultSet object as a NClob object in the
 	 * Java programming language.
 	 *
@@ -494,21 +528,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public NClob getNClob(int i) throws SQLException {
 		throw new SQLFeatureNotSupportedException("getNClob() not supported", "0A000");
-	}
-
-	/**
-	 * Retrieves the value of the designated column in the current row
-	 * of this ResultSet object as a Clob object in the
-	 * Java programming language.
-	 *
-	 * @param colName the name of the column from which to retrieve
-	 *        the value
-	 * @return a Clob object representing the SQL CLOB value in the
-	 *         specified column
-	 * @throws SQLException if a database access error occurs
-	 */
-	public Clob getClob(String colName) throws SQLException {
-		return getClob(findColumn(colName));
 	}
 
 	/**
@@ -680,12 +699,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public byte getByte(int columnIndex) throws SQLException {
-		String bytes = getString(columnIndex);
-		if (bytes == null || bytes.length() == 0) {
-			return (byte)0;
-		} else {
-			return bytes.getBytes()[0];
+		byte ret = 0;
+		String val = getString(columnIndex);
+		if (val != null) {
+			ret = Byte.parseByte(val);
 		}
+		return ret;
 	}
 
 	/**
@@ -1702,6 +1721,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return Boolean.class;
 			case Types.TINYINT:
 			case Types.SMALLINT:
+				return Short.class;
 			case Types.INTEGER:
 				return Integer.class;
 			case Types.BIGINT:
@@ -1915,7 +1935,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public String getNString(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNString not supported", "0A000");
+		throw new SQLFeatureNotSupportedException("getNString() not supported", "0A000");
 	}
 
 	/**
@@ -2686,8 +2706,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	private int getJavaType(String sqltype) throws SQLException {
 		int type = MonetDriver.getJavaType(sqltype);
-		if (statement != null && ((MonetConnection)statement.getConnection()).getBlobAsBinary()) {
-			if (type == Types.BLOB)
+		if (type == Types.BLOB) {
+			if (statement != null && ((MonetConnection)statement.getConnection()).getBlobAsBinary())
 				type = Types.BINARY;
 		}
 		return type;

@@ -1230,6 +1230,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef MLOCK_TST
 	mlock(task->b->buf, task->b->size);
 #endif
+	if (b->pos == b->len && b->eof && maxrow > 0) {
+		/* special case:
+		 * mclient -s 'COPY INTO table FROM STDIN' - < file
+		 * Initially we've seen the complete input, but we need to read more.
+		 */
+#ifdef SQLLOADTHREAD
+		MT_sema_up(&task->producer, "SQLload_file");
+		MT_sema_down(&task->consumer, "SQLload_file");
+#else
+		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
+#endif
+	}
 	while ((task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
 		if (task->errbuf && task->errbuf[0]) {

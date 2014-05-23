@@ -3344,7 +3344,7 @@ else:
         HTMLTITLE = " for "+COMPBITSOIDSLINK
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
 
-URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB-farms/file/'
+URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}
@@ -3776,321 +3776,322 @@ def main(argv) :
         URLPREFIX = None
 
     global SOCK, HOST
-    if SOCK:
-        # we cannot put the UNIX socket in the mtest root, because that
-        # makes the UNIX socket too long on most platforms, so use
-        # /var/tmp/mtest and try not to forget to clean that up
-        sockdir = "/var/tmp/mtest-%d" % os.getpid()
-        try:
-            os.mkdir(sockdir);
-            SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
-                    (sockdir, env['MAPIPORT'])
-            HOST = sockdir
-            os.environ['MAPIHOST'] = HOST
-        except:
-            SOCK = ""
-    else:
-        SOCK = ""
+    try:                        # try/finally to clean up sockdir
+        # check for executables, set their standard options and export them
+        if THISFILE == "Mtest.py":
+            if SOCK:
+                # we cannot put the UNIX socket in the mtest root, because that
+                # makes the UNIX socket too long on most platforms, so use
+                # /var/tmp/mtest and try not to forget to clean that up
+                sockdir = "/var/tmp/mtest-%d" % os.getpid()
+                try:
+                    os.mkdir(sockdir);
+                    SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                            (sockdir, env['MAPIPORT'])
+                    HOST = sockdir
+                    os.environ['MAPIHOST'] = HOST
+                except:
+                    SOCK = ""
+            else:
+                SOCK = ""
 
-    # check for executables, set their standard options and export them
-    if THISFILE == "Mtest.py":
-        exe = {}
-        exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
-        exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
-        exe['JAQL_Client']   = CheckExec(env['JAQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['JAQLCLIENT'], HOST, env['MAPIPORT'])
-        if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
-            exe['Mtimeout'] = '', ''
-        env['exe'] = exe
-        if not quiet:
-            SetExecEnv(exe,1)
-        else:
-            SetExecEnv(exe,0)
+            exe = {}
+            exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
+                                                                   (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
+            exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
+            exe['python']        = CheckExec(sys.executable) , sys.executable
+            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+            exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
+            exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
+            exe['JAQL_Client']   = CheckExec(env['JAQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['JAQLCLIENT'], HOST, env['MAPIPORT'])
+            if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
+                exe['Mtimeout'] = '', ''
+            env['exe'] = exe
+            if not quiet:
+                SetExecEnv(exe,1)
+            else:
+                SetExecEnv(exe,0)
 
-        #TODO:
-        #exe['JAVA']       = 'java'
-        #exe['JAVAC']      = 'javac'
+            #TODO:
+            #exe['JAVA']       = 'java'
+            #exe['JAVAC']      = 'javac'
 
-    # parse commandline arguments
-    testdirs = []
-    testlist = []
-    dirlist = []
-    if   len(args) == 1:
-        if   os.path.isdir(args[0]):
-            d = os.path.realpath(args[0])
-            if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
-                dirlist.append(d)
-            #TODO:
-            #else:
-                # WARNING/ERROR
-        elif args[0].find(os.sep) != -1:
-            ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
-        elif args[0] != "All":
-            #TODO:
-            # check, whether args[0] in All
-            testlist.append(args[0])
-    elif len(args) > 1:
-        i = 0
-        while i < len(args)  and  os.path.isdir(args[i]):
-            d = os.path.realpath(args[i])
-            if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
-                dirlist.append(os.path.realpath(args[i]))
-            #TODO:
-            #else:
-                # WARNING/ERROR
-            i = i + 1
-        if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-            while i < len(args):
-                if args[i].find(os.sep) == -1:
-                    #TODO:
-                    # check, whether args[i] in All
-                    testlist.append(args[i])
-                #TODO
+        # parse commandline arguments
+        testdirs = []
+        testlist = []
+        dirlist = []
+        if   len(args) == 1:
+            if   os.path.isdir(args[0]):
+                d = os.path.realpath(args[0])
+                if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
+                    dirlist.append(d)
+                #TODO:
                 #else:
-                    # ERROR/WARNING
-                i = i + 1
-        else:
-            if i < len(args)  and  args[i] == "All":
-                i = i + 1
-            #TODO:
-            #if i < len(args):
-                #if len(dirlist) > 1:
-                    # Warn: dirlist => ignore testlist, assume All
+                    # WARNING/ERROR
+            elif args[0].find(os.sep) != -1:
+                ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
+            elif args[0] != "All":
+                #TODO:
+                # check, whether args[0] in All
+                testlist.append(args[0])
+        elif len(args) > 1:
+            i = 0
+            while i < len(args)  and  os.path.isdir(args[i]):
+                d = os.path.realpath(args[i])
+                if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
+                    dirlist.append(os.path.realpath(args[i]))
+                #TODO:
                 #else:
-                    # Warn: All => ignore testlist
-    else:
-        # len(args) == 0: no explicit tests specified so do all
-        recursive = True
+                    # WARNING/ERROR
+                i = i + 1
+            if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
+                while i < len(args):
+                    if args[i].find(os.sep) == -1:
+                        #TODO:
+                        # check, whether args[i] in All
+                        testlist.append(args[i])
+                    #TODO
+                    #else:
+                        # ERROR/WARNING
+                    i = i + 1
+            else:
+                if i < len(args)  and  args[i] == "All":
+                    i = i + 1
+                #TODO:
+                #if i < len(args):
+                    #if len(dirlist) > 1:
+                        # Warn: dirlist => ignore testlist, assume All
+                    #else:
+                        # Warn: All => ignore testlist
+        else:
+            # len(args) == 0: no explicit tests specified so do all
+            recursive = True
 
-    if not dirlist:
-        dirlist.append(os.getcwd())
-    if recursive:
-        #TODO
-        #if testlist:
+        if not dirlist:
+            dirlist.append(os.getcwd())
+        if recursive:
+            #TODO
+            #if testlist:
+                # WARNING
+            testlist = []
+            for d in dirlist:
+                test_dirs = find_test_dirs(d)
+                test_dirs.sort()
+                for t in test_dirs:
+                    if t not in testdirs:
+                        testdirs.append(t)
+        else:
+            for d in dirlist:
+                if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
+                    testdirs.append(os.path.dirname(os.path.realpath(d)))
+                elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
+                    testdirs.append(os.path.realpath(d))
+                else:
+                    Warn("No tests found in '%s`; skipping directory!" % d)
+
+        if len(testdirs) > 1  and  testlist:
+            testlist = []
+            #TODO
             # WARNING
-        testlist = []
-        for d in dirlist:
-            test_dirs = find_test_dirs(d)
-            test_dirs.sort()
-            for t in test_dirs:
-                if t not in testdirs:
-                    testdirs.append(t)
-    else:
-        for d in dirlist:
-            if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
-                testdirs.append(os.path.dirname(os.path.realpath(d)))
-            elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
-                testdirs.append(os.path.realpath(d))
-            else:
-                Warn("No tests found in '%s`; skipping directory!" % d)
-
-    if len(testdirs) > 1  and  testlist:
-        testlist = []
-        #TODO
-        # WARNING
-    if not testdirs:
-        Warn("No tests found in %s!" % ', '.join(dirlist))
-        sys.exit(1)
-
-    BusyPorts = []
-
-    if THISFILE == "Mtest.py":
-        if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
-            try:
-                shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
-            except:
-                ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
-        if not os.path.exists(env['GDK_DBFARM']):
-            #TODO: set mode to umask
-            os.makedirs(env['GDK_DBFARM'])
-
-        if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
-            try:
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF))
-            except:
-                ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
-        try:
-            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF))
-        except os.error:
-            if not env.get('NOCLEAN'):
-                ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
-
-        try:
-            os.makedirs(os.path.join(TSTTRGBASE, TSTPREF))
-        except os.error:
-            if not env.get('NOCLEAN'):
-                ErrXit("Failed to create %s" % os.path.join(TSTTRGBASE, TSTPREF))
-
-        # write .monetdb file for mclient to do authentication with
-        dotmonetdbfile = os.path.join(TSTTRGBASE, ".monetdb")
-        dotmonetdb = open(dotmonetdbfile, 'w')
-        dotmonetdb.write('user=monetdb\n')
-        dotmonetdb.write('password=monetdb\n')
-        dotmonetdb.close()
-        # and make mclient find it
-        os.environ['DOTMONETDBFILE'] = dotmonetdbfile
-
-        env['TST_MODS'] = []
-        env['TST_BITS'] = ""
-        env['TST_OIDS'] = ""
-        env['TST_SINGLE'] = ""
-        env['TST_STATIC'] = ""
-        cmd = splitcommand(env['exe']['Mserver'][1])
-        cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
-        if env.get('MULTIFARM'):
-            cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-            shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                          ignore_errors = True)
-            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-        if Check(cmd, 'clients.quit();\n'):
+        if not testdirs:
+            Warn("No tests found in %s!" % ', '.join(dirlist))
             sys.exit(1)
-        if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
-            sys.exit(1)
+
+        BusyPorts = []
+
+        if THISFILE == "Mtest.py":
+            if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
+                try:
+                    shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
+                except:
+                    ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
+            if not os.path.exists(env['GDK_DBFARM']):
+                #TODO: set mode to umask
+                os.makedirs(env['GDK_DBFARM'])
+
+            if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
+                try:
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF))
+                except:
+                    ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
+            try:
+                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF))
+            except os.error:
+                if not env.get('NOCLEAN'):
+                    ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
+
+            try:
+                os.makedirs(os.path.join(TSTTRGBASE, TSTPREF))
+            except os.error:
+                if not env.get('NOCLEAN'):
+                    ErrXit("Failed to create %s" % os.path.join(TSTTRGBASE, TSTPREF))
+
+            # write .monetdb file for mclient to do authentication with
+            dotmonetdbfile = os.path.join(TSTTRGBASE, ".monetdb")
+            dotmonetdb = open(dotmonetdbfile, 'w')
+            dotmonetdb.write('user=monetdb\n')
+            dotmonetdb.write('password=monetdb\n')
+            dotmonetdb.close()
+            # and make mclient find it
+            os.environ['DOTMONETDBFILE'] = dotmonetdbfile
+
+            env['TST_MODS'] = []
+            env['TST_BITS'] = ""
+            env['TST_OIDS'] = ""
+            env['TST_SINGLE'] = ""
+            env['TST_STATIC'] = ""
+            cmd = splitcommand(env['exe']['Mserver'][1])
+            cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+            if env.get('MULTIFARM'):
+                cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                              ignore_errors = True)
+                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+            if Check(cmd, 'clients.quit();\n'):
+                sys.exit(1)
+            if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
+                sys.exit(1)
+            STDERR.flush()
+            if not quiet:
+                print "Bits: ", env['TST_BITS']
+                print "OIDs: ", env['TST_OIDS']
+                print "Modules: ", env['TST_MODS']
+            STDOUT.flush()
+
+            port = int(env['MAPIPORT'])
+            busy, host, Serrno, Serrstr, S = CheckPort(port)
+            S[0].close()
+            S[1].close()
+            if busy:
+                Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
+                BusyPorts.append('MAPI')
+
+            # create '.Mapprove.rc'
+            env['SYST'] = os.environ['SYST']
+            env['RELEASE'] = os.environ['RELEASE']
+            env['DIST'] = os.environ['DIST']
+            env['VERSION'] = os.environ['VERSION']
+            n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
+            f = open(n, 'w')
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_SINGLE', 'TST_STATIC':
+                w = v.replace('TST_','')
+                f.write('%s = "%s"\n' % (w, env[v]))
+            f.close()
+
         STDERR.flush()
-        if not quiet:
-            print "Bits: ", env['TST_BITS']
-            print "OIDs: ", env['TST_OIDS']
-            print "Modules: ", env['TST_MODS']
-        STDOUT.flush()
-
-        port = int(env['MAPIPORT'])
-        busy, host, Serrno, Serrstr, S = CheckPort(port)
-        S[0].close()
-        S[1].close()
-        if busy:
-            Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
-            BusyPorts.append('MAPI')
-
-        # create '.Mapprove.rc'
-        env['SYST'] = os.environ['SYST']
-        env['RELEASE'] = os.environ['RELEASE']
-        env['DIST'] = os.environ['DIST']
-        env['VERSION'] = os.environ['VERSION']
-        n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
-        f = open(n, 'w')
-        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_SINGLE', 'TST_STATIC':
-            w = v.replace('TST_','')
-            f.write('%s = "%s"\n' % (w, env[v]))
-        f.close()
-
-    STDERR.flush()
-    t_ = 0
-    body_good = []
-    body_bad = []
-    if len(testdirs) == 1:
-        if testlist:
-            tsts = "tests "+str(testlist)
-        else:
-            tsts = "all tests"
-        if not quiet:
-            print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
-        t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts)
-        if elem is not None:
-            if diff <= F_OK:
-                body_good.append(elem)
+        t_ = 0
+        body_good = []
+        body_bad = []
+        if len(testdirs) == 1:
+            if testlist:
+                tsts = "tests "+str(testlist)
             else:
-                body_bad.append(elem)
-    else:
-        if not quiet:
-            print "\nRunning all tests in directories %s.\n" % str(testdirs)
-        for d in testdirs:
-            t, elem, diff = PerformDir(env, d, [], BusyPorts)
-            t_ = t_ + t
+                tsts = "all tests"
+            if not quiet:
+                print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
+            t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts)
             if elem is not None:
                 if diff <= F_OK:
                     body_good.append(elem)
                 else:
                     body_bad.append(elem)
-    body = body_bad + body_good
-
-    if THISFILE == "Mtest.py":
-        if testweb:
-            # some more cleanup
-            # note that we create the file so that os.removedirs in PerformDir
-            # doesn't remove os.path.join(TSTTRGBASE, TSTPREF)
-            remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
-        fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
-        fl = open(fn+"lst","w")
-        Failure = [[] for i in range(len(FAILURES))]
-        for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-            fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
-                                                tt,
-                                                FAILURES[FtOut][0],
-                                                FAILURES[FtErr][0],
-                                                reason or ''))
-            if TST != '':
-                Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
-        fl.write(":\t%7.3f\t\n" % t_)
-        fl.close()
-
-        fl = open(fn+"sql","w")
-        host = socket.gethostname()
-        product = os.path.split(TSTSRCBASE)[-1]
-
-        compiler = ''
-        # TODO:
-        # use @compilercall@ for this
-        # (and then also allow compiler-specific output)
-        #if os.name == 'nt':
-        #    compiler = 'Mic' # Microsoft Visual Studio C
-        #    #compiler = 'Int' # Intel icc
-        #else:
-        #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
-        #    if os.path.isfile(f):
-        #        r = re.compile("^CC = (.*)$", re.MULTILINE)
-        #        for l in open(f):
-        #            mt = r.match(l)
-        #            if mt:
-        #                compiler = mt.group(1)
-
-        # start of times.sql output preparation
-        try:
-            from mx import DateTime
-            now = "timestamp '" + str(DateTime.now()) + "'"
-        except ImportError:
-            now = 'now()'
-
-        if env['TST_SINGLE'] != '':
-            isSingle = 'true'
         else:
-            isSingle = 'false'
+            if not quiet:
+                print "\nRunning all tests in directories %s.\n" % str(testdirs)
+            for d in testdirs:
+                t, elem, diff = PerformDir(env, d, [], BusyPorts)
+                t_ = t_ + t
+                if elem is not None:
+                    if diff <= F_OK:
+                        body_good.append(elem)
+                    else:
+                        body_bad.append(elem)
+        body = body_bad + body_good
 
-        if env['TST_STATIC'] != '':
-            isStatic = 'true'
-        else:
-            isStatic = 'false'
+        if THISFILE == "Mtest.py":
+            if testweb:
+                # some more cleanup
+                # note that we create the file so that os.removedirs in PerformDir
+                # doesn't remove os.path.join(TSTTRGBASE, TSTPREF)
+                remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
+            fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
+            fl = open(fn+"lst","w")
+            Failure = [[] for i in range(len(FAILURES))]
+            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
+                fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
+                                                    tt,
+                                                    FAILURES[FtOut][0],
+                                                    FAILURES[FtErr][0],
+                                                    reason or ''))
+                if TST != '':
+                    Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
+            fl.write(":\t%7.3f\t\n" % t_)
+            fl.close()
 
-        # ok, we're not prepared for the 128 bits world yet
-        bits = env['TST_BITS'][:2]
-        oids = env['TST_OIDS'][-2:]
+            fl = open(fn+"sql","w")
+            host = socket.gethostname()
+            product = os.path.split(TSTSRCBASE)[-1]
 
-        # we write in SQL the same codes as testweb uses in the HTML
-        # pages, for readability
+            compiler = ''
+            # TODO:
+            # use @compilercall@ for this
+            # (and then also allow compiler-specific output)
+            #if os.name == 'nt':
+            #    compiler = 'Mic' # Microsoft Visual Studio C
+            #    #compiler = 'Int' # Intel icc
+            #else:
+            #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
+            #    if os.path.isfile(f):
+            #        r = re.compile("^CC = (.*)$", re.MULTILINE)
+            #        for l in open(f):
+            #            mt = r.match(l)
+            #            if mt:
+            #                compiler = mt.group(1)
 
-        # we are not interested in the compiler, nor its path, nor its
-        # options.  We do store the options separately, though
-        hasSpace = compiler.find(' ')
-        if hasSpace != -1:
-            ccname = os.path.split(compiler[:hasSpace])[-1]
-            ccopts = compiler[hasSpace + 1:]
-        else:
-            ccname = os.path.split(compiler)[-1]
-            ccopts = ''
+            # start of times.sql output preparation
+            try:
+                from mx import DateTime
+                now = "timestamp '" + str(DateTime.now()) + "'"
+            except ImportError:
+                now = 'now()'
 
-        for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-            if FtOut == F_SKIP and FtErr == F_SKIP:
-                tms = 'NULL'
+            if env['TST_SINGLE'] != '':
+                isSingle = 'true'
             else:
-                tms = '%d' % ms
+                isSingle = 'false'
 
-            if TST != '':
-                # target is a platform and compilation options etc
-                fl.write("""
+            if env['TST_STATIC'] != '':
+                isStatic = 'true'
+            else:
+                isStatic = 'false'
+
+            # ok, we're not prepared for the 128 bits world yet
+            bits = env['TST_BITS'][:2]
+            oids = env['TST_OIDS'][-2:]
+
+            # we write in SQL the same codes as testweb uses in the HTML
+            # pages, for readability
+
+            # we are not interested in the compiler, nor its path, nor its
+            # options.  We do store the options separately, though
+            hasSpace = compiler.find(' ')
+            if hasSpace != -1:
+                ccname = os.path.split(compiler[:hasSpace])[-1]
+                ccopts = compiler[hasSpace + 1:]
+            else:
+                ccname = os.path.split(compiler)[-1]
+                ccopts = ''
+
+            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
+                if FtOut == F_SKIP and FtErr == F_SKIP:
+                    tms = 'NULL'
+                else:
+                    tms = '%d' % ms
+
+                if TST != '':
+                    # target is a platform and compilation options etc
+                    fl.write("""
 INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
     \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"single\", \"static\",
     \"product\", \"dir\", \"test\",
@@ -4100,58 +4101,51 @@ VALUES (%s, '%s', '%s', '%s',
     '%s', '%s', '%s',
     %s, '%s', '%s');
 """ % (now, host, env['SYST'], env['RELEASE'],
-       ccname, ccopts, bits, oids, isSingle, isStatic,
-       product, TSTDIR, TST,
-       tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
-        fl.close()
+           ccname, ccopts, bits, oids, isSingle, isStatic,
+           product, TSTDIR, TST,
+           tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
+            fl.close()
 
-    if THISFILE == "Mtest.py":
-        env['TSTDIR'] = ""
-        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-        if not testweb:
-            CreateHtmlIndex(env, *body)
+        if THISFILE == "Mtest.py":
+            env['TSTDIR'] = ""
+            env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+            if not testweb:
+                CreateHtmlIndex(env, *body)
 
-        # cleanup the place where we put our UNIX sockets
-        if SOCK:
-            try:
-                shutil.rmtree(sockdir);
-            except:
-                pass
-
-        Failed = 0
-        for f in Failure[1:-1]:
-            Failed += len(f)
-        num_tests = 0
-        for f in Failure:
-            num_tests += len(f)
-        how = ""
-        what = ""
-        for x, y, z in [(F_SKIP, "could not be executed", ""),
-                        (F_WARN, "produced slightly different output", "slightly"),
-                        (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
-                        (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
-                        (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
-                        (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
-                        (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
-                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
-            if Failure[x]:
-                how = z
-                what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
-                # only report failed tests if there aren't too many
-                if Failed < 30 and \
-                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
-                    for f in Failure[x]:
-                        what += "        %s\n" % f
-        STDERR.flush()
-        if Failed:
-            print """\
+            Failed = 0
+            for f in Failure[1:-1]:
+                Failed += len(f)
+            num_tests = 0
+            for f in Failure:
+                num_tests += len(f)
+            how = ""
+            what = ""
+            for x, y, z in [(F_SKIP, "could not be executed", ""),
+                            (F_WARN, "produced slightly different output", "slightly"),
+                            (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
+                            (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
+                            (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
+                            (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
+                            (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
+                            (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+                if Failure[x]:
+                    how = z
+                    what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
+                    # only report failed tests if there aren't too many
+                    if Failed < 30 and \
+                           (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
+                        for f in Failure[x]:
+                            what += "        %s\n" % f
+            STDERR.flush()
+            if Failed:
+                print """\
 
  !ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
 """ % (how, Failed, num_tests, what)
-            if not testweb:
-                print """\
+                if not testweb:
+                    print """\
  First, check the testing results in  %s  !
 
  Then, fix the problems by:
@@ -4161,37 +4155,45 @@ VALUES (%s, '%s', '%s', '%s',
 
  After that, re-run Mtest.
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html")
-            sys.exit(1)
-        else:
-            if not quiet:
-                print """\
+                sys.exit(1)
+            else:
+                if not quiet:
+                    print """\
 
  No differences encountered during testing.
 
  If necessary, you can checkin your modifications, now.
 """
-            else:
-                print ""
-            sys.exit(0)
+                else:
+                    print ""
+                sys.exit(0)
 
-    if THISFILE == "Mapprove.py":
-        print """\
+        if THISFILE == "Mapprove.py":
+            print """\
 
  First, run 'hg diff` to check what you have changed.
 
  Then, re-run Mtest.py.
 """
-        if t_:
-            if par['FORCE']:
-                print """\
+            if t_:
+                if par['FORCE']:
+                    print """\
  In case (some of) the approved error messages are not correct/expected,
  re-run Mapprove.py without -f to skip their approval.
 """
-            else:
-                print """\
+                else:
+                    print """\
  In case (some of) the skipped error messages are correct/expected,
  re-run Mapprove.py with -f to force their approval.
 """
+    finally:
+        # cleanup the place where we put our UNIX sockets
+        if THISFILE == "Mtest.py" and SOCK:
+            try:
+                shutil.rmtree(sockdir);
+            except:
+                pass
+
 ### main(argv) #
 
 if __name__ == "__main__":

@@ -1,3 +1,16 @@
+monetdb (11.17.17-20140514) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 May 2014 09:55:30 +0200
+
+monetdb (11.17.17-20140514) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3482: Crossproduct error
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 May 2014 09:55:28 +0200
+
 monetdb (11.17.15-20140508) unstable; urgency=low
 
   * Rebuilt.
