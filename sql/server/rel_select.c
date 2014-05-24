@@ -3308,6 +3308,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql->errstr[0] = '\0';
 		return rel_aggr(sql, rel, se, fs);
 	}
+
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	if (!s)
@@ -3408,8 +3409,8 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		} else if (f->func->fix_scale == SCALE_MUL) {
 			l = exp_sum_scales(sql, f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
-			sql_arg *res = f->res->h->data;
-			res->type.digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+			sql_subtype *res = f->res->h->data;
+			res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
 		}
 		if (card == card_relation && l->card > CARD_ATOM) {
 			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
@@ -3470,8 +3471,8 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				} else if (f->func->fix_scale == SCALE_MUL) {
 					l = exp_sum_scales(sql, f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
-					sql_arg *res = f->res->h->data;
-					res->type.digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+					sql_subtype *res = f->res->h->data;
+					res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
 				}
 				return exp_binop(sql->sa, l, r, f);
 			}
