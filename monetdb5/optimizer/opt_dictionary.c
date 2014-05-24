@@ -172,7 +172,11 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					 getFunctionId(q) == thetaselectRef ) &&
 					isDiction(getArg(q,1))  ){
 #ifdef DEBUG_OPT_DICTIONARY 
-						mnstr_printf(GDKout,"#select dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+						str tpe1 = getTypeName(getVarType(mb, idx[getArg(q,1)]));
+						str tpe2 = getTypeName(getVarType(mb, val[getArg(q,1)]));
+						mnstr_printf(GDKout,"#select dictionary %d %s %s\n", getArg(q,1), tpe1, tpe2);
+						GDKfree(tpe1);
+						GDKfree(tpe2);
 #endif
 						j = getArg(q,0);
 						idx[j] = idx[getArg(q,1)];
@@ -184,7 +188,11 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						pushInstruction(mb,q);
 #ifdef DEBUG_OPT_DICTIONARY 
 						mnstr_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						tpe1 = getTypeName(getVarType(mb, idx[j]));
+						tpe2 = getTypeName(getVarType(mb, val[j]));
 						mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+						GDKfree(tpe1);
+						GDKfree(tpe2);
 #endif
 						actions++;
 						continue;
@@ -195,8 +203,12 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						/* case : r:bat[:oid,:void] := algebra.uselect(dict,arg) */
 						/* become: k:= algebra.select(val,arg) ; v:= join(idx,k); r:= algebra.project(v);  */
 						OPTDEBUGdictionary{
+							str tpe1 = getTypeName(getVarType(mb, idx[getArg(q,1)]));
+							str tpe2 = getTypeName(getVarType(mb, val[getArg(q,1)]));
 							mnstr_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), 
 								getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+							GDKfree(tpe1);
+							GDKfree(tpe2);
 						}
 						setFunctionId(q, (getFunctionId(q)== uselectRef?selectRef:putName("thetaselect",11)));
 						j = getArg(q,0);
@@ -215,8 +227,12 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						q= pushArgument(mb,q, getArg(qq,0));
 						getArg(q,0) = j;
 						OPTDEBUGdictionary{
+							str tpe1 = getTypeName(getVarType(mb, idx[j]));
+							str tpe2 = getTypeName(getVarType(mb, val[j]));
 							mnstr_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-							mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+							mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, tpe1, tpe2);
+							GDKfree(tpe1);
+							GDKfree(tpe2);
 						}
 						actions++;
 						continue;
@@ -652,7 +668,12 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		BBPreleaseref(bo->batCacheid);
 		return MAL_SUCCEED;
 	}
-	mnstr_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
+	{	str tpe1 = getTypeName(b->ttype);
+		str tpe2 = getTypeName(typ);
+		mnstr_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, tpe1,tpe2, cnt);
+		GDKfree(tpe1);
+		GDKfree(tpe2);
+	}
 	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
 

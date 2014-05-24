@@ -67,7 +67,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	int i, j = 0, k, se= FALSE;
 	InstrPtr p;
 	int bk, ik, blk, blkbegin, blkexit, actions = 0;
-	InstrPtr *before, *within, *old = mb->stmt;
+	InstrPtr *before, *within, *newstmt;
 	Lifespan span;
 
 	(void) cntxt;
@@ -188,14 +188,15 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	for (k = 0; k < ik; k++)
 		before[bk++] = within[k];
 	before[bk++] = getInstrPtr(mb, i);
-	GDKfree(mb->stmt);
-	mb->stmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
-	if ( mb->stmt == NULL){
+	newstmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
+	if ( newstmt == NULL){
 		GDKfree(span);
 		GDKfree(before);
 		GDKfree(within);
-		mb->stmt = old;
 		return 0;
+	} else {
+		GDKfree(mb->stmt);
+		mb->stmt = newstmt;
 	}
 	mb->stop = 0;
 
