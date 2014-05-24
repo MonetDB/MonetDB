@@ -74,7 +74,6 @@ stderr of test 'text` in directory 'sql/test/pg_regress` itself:
 # 17:11:41 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/text.sql
 # 17:11:41 >  
 
-/ufs/dinther/INSTALL/bin/Mlog: line 31: /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/text.sql: No such file or directory
 
 # 17:11:41 >  
 # 17:11:41 >  "Done."

@@ -2691,31 +2691,19 @@ command algebra.slice(b:bat[:any_1,:any_2],x:oid,y:oid):bat[:any_1,:any_2]
 address ALGslice_oid;
 comment Return the slice based on head oid x till y (exclusive).
 
-command algebra.select(b:bat[:any_2,:void],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_2,:void] 
-address ALGselectInclusiveHead;
-command algebra.select(b:bat[:any_2,:void],low:any_2,high:any_2):bat[:any_2,:void] 
-address ALGselectHead;
-command algebra.select(b:bat[:any_2,:void],low:any_2):bat[:any_2,:void] 
-address ALGselect1Head;
-command algebra.selectH(b:bat[:any_1,:any_2],value:any_1):bat[:any_1,:any_2] 
-address ALGselect1Head;
-command algebra.selectH(b:bat[:any_1,:any_2],low:any_1,high:any_1,li:bit,hi:bit):bat[:any_1,:any_2] 
-address ALGselectInclusiveHead;
-command algebra.selectH(b:bat[:any_1,:any_2],low:any_1,high:any_1):bat[:any_1,:any_2] 
-address ALGselectHead;
-command algebra.selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command algebra.selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
 address ALGselectNotNil;
 comment Select all not-nil values
 
-command algebra.select(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:any_2] 
+command algebra.select(b:bat[:oid,:any_2],value:any_2):bat[:oid,:any_2] 
 address ALGselect1;
 comment Select all BUNs of a BAT with a certain 	tail value. Selection on NIL is also 	possible (it should be properly casted, 	e.g.:int(nil)).
 
-command algebra.select(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:any_2] 
+command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:oid,:any_2] 
 address ALGselectInclusive;
 comment Select all BUNs that have tail values: {v| low <{=} v <{=} high}.	Boundary inclusion is indicated separately.	NIL boundary values have a special meaning.	+ low  == nil means: no lower bound	+ high == nil means: no upper bound.
 
-command algebra.select(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:any_2] 
+command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2):bat[:oid,:any_2] 
 address ALGselect;
 comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type, 				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the 				ordered domain of values, tuples with 'nil' values 				are NEVER returned by the range select.
 
@@ -2758,10 +2746,6 @@ comment The theta (<=,<,=,>,>=) select() limited to head values
 command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
 address ALGtopN;
 comment Trim all but the top N tuples.
-
-command algebra.thetaselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:any_2] 
-address ALGthetaselect;
-comment The theta (<=,<,=,>,>=) select()
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
@@ -39460,6 +39444,10 @@ command iterator.new(b:bat[:oid,:any_2],size:lng) (X_3:lng,X_4:bat[:oid,:any_2])
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
+command json.aggr(val:bat[:oid,:dbl]):str 
+address JSONgroupStr;
+comment Aggregate the double values to array.
+
 command json.aggr(val:bat[:oid,:str]):str 
 address JSONgroupStr;
 comment Aggregate the string values to array.
@@ -39566,9 +39554,17 @@ pattern json.renderarray(val:any...):json
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
 address JSONrenderobject;
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
 command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjsoncand;
 comment Grouped aggregation of values with candidates list.
+
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjson;
