@@ -386,11 +386,11 @@ icc_ver=""
 CC_ver=""
 CC_version="`$CC --version 2>&1`"
 case "$CC_version" in
-*gcc*GCC*)
+*\(GCC\)*)
 	gcc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="gcc-$gcc_ver"
 	;;
-*icc*ICC*)
+*\(ICC\)*)
 	icc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="icc-$icc_ver"
 	;;
