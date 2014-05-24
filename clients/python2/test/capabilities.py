@@ -361,7 +361,7 @@ class DatabaseTest(unittest.TestCase):
         r = self.cursor.fetchone()
         n = r[0]
         self.cursor.arraysize=100000
-        self.cursor.execute('select * from tables, tables')
+        self.cursor.execute('select * from tables, tables t')
         r = self.cursor.fetchall()
         self.assertEqual(len(r), n**2)
 

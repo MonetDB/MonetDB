@@ -257,8 +257,8 @@ SEXP mapiRead(SEXP conn) {
 		while (response_buf_offset + block_length > response_buf_len) {
 			response_buf_len += ALLOCSIZE;
 			if (DEBUG) {
-				printf("II: Reallocating memory, new size %lu\n",
-						(unsigned long) response_buf_len);
+				printf("II: Reallocating memory, new size "SZFMT"\n",
+						response_buf_len);
 			}
 			response_buf = realloc(response_buf, response_buf_len);
 			if (response_buf == NULL) {
@@ -278,7 +278,7 @@ SEXP mapiRead(SEXP conn) {
 	size_t i;
 	for (i = 0; i < response_buf_offset; i++) {
 		if (response_buf[i] == '\0') {
-			warning("Removed a NULL character from response at offset %lu of %lu",(unsigned long) i,(unsigned long) response_buf_offset);
+			warning("Removed a NULL character from response at offset "SZFMT" of "SZFMT"",i,response_buf_offset);
 			response_buf[i] = '\t';
 		}
 	}

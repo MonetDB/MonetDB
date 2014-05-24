@@ -290,7 +290,7 @@ static struct scalars {
 } scalars[] = {
 	{"ascii", 1, "\"ascii\"(\1)", },
 	{"bit_length", 1, NULL, },
-	{"char", 1, NULL, },
+	{"char", 1, "\"code\"(\1)", },
 	{"char_length", 1, "\"char_length\"(\1)", },
 	{"character_length", 1, "\"character_length\"(\1)", },
 	{"concat", 2, "\"concat\"(\1,\2)", },
@@ -356,6 +356,7 @@ static struct scalars {
 	{"now", 0, "\"now\"()", },
 	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
 	{"second", 1, "\"second\"(\1)", },
+	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
 	{"week", 1, "\"week\"(\1)", },
 	{"year", 1, "\"year\"(\1)", },
@@ -378,7 +379,7 @@ static struct convert {
 	{ "SQL_DECIMAL", "decimal(18,7)", },
 	{ "SQL_DOUBLE", "double", },
 	{ "SQL_FLOAT", "float", },
-	/* { "SQL_GUID", "SQL_GUID", }, */
+	/* { "SQL_GUID", "uuid", }, */
 	{ "SQL_INTEGER", "integer", },
 	{ "SQL_INTERVAL_DAY", "interval day", },
 	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },
@@ -402,7 +403,7 @@ static struct convert {
 	{ "SQL_TIMESTAMP", "timestamp", },
 	{ "SQL_TINYINT", "tinyint", },
 	{ "SQL_VARBINARY", "binary large object", },
-	{ "SQL_VARCHAR", "character large object", },
+	{ "SQL_VARCHAR", "character varying", },
 	{ "SQL_WCHAR", "character", },
 	{ "SQL_WLONGVARCHAR", "character large object", },
 	{ "SQL_WVARCHAR", "character large object", },
@@ -565,7 +566,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			proc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == proc ||
 			    (isascii(*proc) && !isalpha(*proc)))
@@ -619,7 +620,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			scalarfunc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == scalarfunc ||
 			    (isascii(*scalarfunc) && !isalpha(*scalarfunc)))
