@@ -1245,7 +1245,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 				list_append(l, s);
 			}
 		}
-		if (sub && sub->nrcols) { /* add sub */
+		if (!rel->flag && sub && sub->nrcols) { /* add sub, table func with table input, we expect alignment */
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
 		}
