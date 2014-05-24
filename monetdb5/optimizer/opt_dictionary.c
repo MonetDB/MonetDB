@@ -190,7 +190,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						mnstr_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 						tpe1 = getTypeName(getVarType(mb, idx[j]));
 						tpe2 = getTypeName(getVarType(mb, val[j]));
-						mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+						mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, tpe1, tpe2);
 						GDKfree(tpe1);
 						GDKfree(tpe2);
 #endif
@@ -205,8 +205,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						OPTDEBUGdictionary{
 							str tpe1 = getTypeName(getVarType(mb, idx[getArg(q,1)]));
 							str tpe2 = getTypeName(getVarType(mb, val[getArg(q,1)]));
-							mnstr_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), 
-								getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+							mnstr_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), tpe1, tpe2);
 							GDKfree(tpe1);
 							GDKfree(tpe2);
 						}
