@@ -137,8 +137,7 @@ QEPbuild(MalBlkPtr mb){
 			q= QEPnewNode(mb,p);
 		} else
 		for( j=0; j< p->retc; j++)
-		if( status[getArg(p,j)] == TOPNODE)
-		if( vq[getArg(p,j)] == 0 ){
+		if( status[getArg(p,j)] == TOPNODE){
 			q= vq[getArg(p,j)];
 			k++;
 			break;
