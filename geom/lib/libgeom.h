@@ -124,6 +124,7 @@ typedef struct {
 libgeom_export void libgeom_init(void);
 libgeom_export void libgeom_exit(void);
 
+
 /* Macro wkb2geos
  * Returns a GEOSGeom, created from a geom_geometry.
  * On failure, returns NULL.

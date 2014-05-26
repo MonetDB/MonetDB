@@ -47,6 +47,7 @@
 
 #define GEOMETRY_HAS_Z(info)(info & 0x02)
 #define GEOMETRY_HAS_M(info)(info & 0x01)
+#define COORDINATES_NUM 3
 
 /* the first argument in the functions is the return variable */
 
@@ -87,7 +88,7 @@ geom_export str wkbGetCoordZ(double*, wkb**);
 geom_export str wkbStartPoint(wkb **out, wkb **geom);
 geom_export str wkbEndPoint(wkb **out, wkb **geom);
 geom_export str wkbNumPoints(int *out, wkb **geom);
-geom_export str wkbPointN(wkb **out, wkb **geom, short *n);
+geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
@@ -227,45 +228,53 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 /* FROMSTR: parse string to @1. */
 /* return number of parsed characters. */
 int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
-	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-	unsigned char *wkbSer = NULL;	/* The "well known binary" serialization of the geometry object. */
+	GEOSGeom geometry_FROM_wkt = NULL;	/* The geometry object that is parsed from the src string. */
+	unsigned char *geometry_TO_wkb = NULL;	/* The "well known binary" serialization of the geometry object. */
 	size_t wkbLen = 0;		/* The length of the wkbSer string. */
 	int nil = 0;
+	//int coordinateDimensions = 0;
 
 	if (strcmp(src, str_nil) == 0)
 		nil = 1;
 
-	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL) {
+	if (!nil && (geometry_FROM_wkt = GEOSGeomFromWKT(src)) == NULL) {
 		goto return_nil;
 	}
 
-	if (!nil && GEOSGeomTypeId(geosGeometry) == -1) {
-		GEOSGeom_destroy(geosGeometry);
+	////it returns 2 or 3. How can I get 4??
+	//coordinateDimensions =  GEOSGeom_getCoordinateDimension(geosGeometry);
+
+	if (!nil && GEOSGeomTypeId(geometry_FROM_wkt) == -1) {
+		GEOSGeom_destroy(geometry_FROM_wkt);
 		goto return_nil;
 	}
 
 	if (!nil) {
 		//add the srid
 		if(srid == 0 )
-			GEOSSetSRID(geosGeometry, 4326);
+			GEOSSetSRID(geometry_FROM_wkt, 4326);
 		else //should we check whether the srid exists in spatial_ref_sys?
-			GEOSSetSRID(geosGeometry, srid);
+			GEOSSetSRID(geometry_FROM_wkt, srid);
 		//the srid is lost with the transformation of the GEOSGeom to wkb
-		wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-		GEOSGeom_destroy(geosGeometry);
+		
+		//set the number of dimensions
+		GEOS_setWKBOutputDims(COORDINATES_NUM);
+
+		geometry_TO_wkb = GEOSGeomToWKB_buf(geometry_FROM_wkt, &wkbLen);
+		GEOSGeom_destroy(geometry_FROM_wkt);
 	}
 	if (*atom == NULL || *len < (int) wkb_size(wkbLen)) {
 		if (*atom)
 			GDKfree(*atom);
 		*atom = GDKmalloc(*len = (int) wkb_size(wkbLen));
 	}
-	if (!wkbSer) {
+	if (!geometry_TO_wkb) {
 		**atom = *wkbNULL();
 	} else {
 		assert(wkbLen <= GDK_int_max);
 		(*atom)->len = (int) wkbLen;
-		memcpy(&(*atom)->data, wkbSer, wkbLen);
-		GEOSFree(wkbSer);
+		memcpy(&(*atom)->data, geometry_TO_wkb, wkbLen);
+		GEOSFree(geometry_TO_wkb);
 	}
 	wkbLen = strlen(src);
 	assert(wkbLen <= GDK_int_max);
@@ -633,8 +642,8 @@ str wkbNumPoints(int *out, wkb **geom) {
 }
 
 /* Returns the n-th point of the geometry */
-str wkbPointN(wkb **out, wkb **geom, short *n) {
-	short rN = -1;
+str wkbPointN(wkb **out, wkb **geom, int *n) {
+	int rN = -1;
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
@@ -717,29 +726,51 @@ str wkbExteriorRing(wkb **out, wkb **geom) {
 }
 
 /* function to handle static geometry returned by GEOSGetInteriorRingN */
-static const GEOSGeometry* handleConstInteriorRing(GEOSGeom* geosGeometry, wkb** geom, short ringNum) {
+static const GEOSGeometry* handleConstInteriorRing(GEOSGeom* geosGeometry, wkb** geom, int ringIdx, int* reason) {
+	int rN = -1;
 	*geosGeometry = wkb2geos(*geom);
 
-	if (!*geosGeometry) 
+	if (!*geosGeometry) {
+		*reason=1;
 		return NULL;
+	}
+	
+	//check number of internal
+	rN = GEOSGetNumInteriorRings(*geosGeometry);
+	if (rN == -1 ) {
+		*reason=2;
+		return NULL;
+	}
+	if(rN <= ringIdx || ringIdx<0) {
+		*reason=3; 
+		return NULL;
+	}
 
-	return GEOSGetInteriorRingN(*geosGeometry, ringNum);
+	return GEOSGetInteriorRingN(*geosGeometry, ringIdx);
 }
 
 
 /* Returns the n-th interior ring of a polygon */
 str wkbInteriorRingN(wkb **out, wkb **geom, short* ringNum) {
 	GEOSGeom geosGeometry = NULL;
-	const GEOSGeometry* interiorRingGeometry = handleConstInteriorRing(&geosGeometry, geom, *ringNum);
+	int reason =0;
+	const GEOSGeometry* interiorRingGeometry = handleConstInteriorRing(&geosGeometry, geom, *ringNum-1, &reason);
 	size_t wkbLen = 0;
 	unsigned char *w = NULL;
 
-	if (interiorRingGeometry == NULL) 
+	if (interiorRingGeometry == NULL) { 
 		*out = wkb_nil;
 
-	if(!geosGeometry) {
-		throw(MAL, "geom.interiorRingN", "wkb2geos failed");
-	} 
+		if(!geosGeometry) {
+			throw(MAL, "geom.interiorRingN", "wkb2geos failed");
+		} else {
+			GEOSGeom_destroy(geosGeometry);
+			if(reason == 3)
+			throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
+			else if(reason == 2)
+				throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed.");
+		}
+	}
 
 	w = GEOSGeomToWKB_buf(interiorRingGeometry, &wkbLen);
 	GEOSGeom_destroy(geosGeometry);
