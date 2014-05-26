@@ -1938,8 +1938,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	return rc;
 
   bailout:
-	if( curschema )
-		free(curschema);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -1950,6 +1948,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		mapi_explain(mid, stderr);
 
   bailout2:
+	if (curschema)
+		free(curschema);
 	hdl = mapi_query(mid, end);
 	if (hdl)
 		mapi_close_handle(hdl);
