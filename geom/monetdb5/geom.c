@@ -296,6 +296,9 @@ int wkbTOSTR(char **dst, int *len, wkb *atom) {
 	int dstStrLen = 3;			/* "nil" */
 	GEOSGeom geosGeometry = wkb2geos(atom);
 
+	
+dstStrLen = -1;
+dstStrLen = GEOSGeom_getCoordinateDimension(geosGeometry); 
 	if (geosGeometry) {
 		size_t l;
 		wkt = GEOSGeomToWKT(geosGeometry);
@@ -1188,8 +1191,10 @@ geos2wkb(GEOSGeom geosGeometry)
 	unsigned char *w = NULL;
 	wkb *atom;
 
-	if (geosGeometry != NULL)
+	if (geosGeometry != NULL){
+		GEOS_setWKBOutputDims(COORDINATES_NUM);
 		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	}
 
 	atom = GDKmalloc(wkb_size(wkbLen));
 	if (atom == NULL)
