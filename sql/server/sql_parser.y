@@ -461,6 +461,7 @@ int yydebug=1;
 	tz
 
 %right <sval> STRING
+%right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
@@ -559,6 +560,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
 
+%token X_BODY 
 %%
 
 sqlstmt:
@@ -1778,6 +1780,7 @@ func_def:
 				append_list(f, $11);
 				append_list(f, NULL);
 				append_int(f, F_FUNC);
+				append_int(f, FUNC_LANG_MAL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1787,10 +1790,36 @@ func_def:
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, $8);
-				append_string(f, NULL);
+				append_list(f, NULL);
 				append_list(f, $9);
 				append_int(f, F_FUNC);
+				append_int(f, FUNC_LANG_SQL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+  | create FUNCTION qname
+	'(' opt_paramlist ')'
+    RETURNS func_data_type
+    LANGUAGE IDENT X_BODY { 
+			int lang = 0;
+			dlist *f = L();
+			char l = *$10;
+
+			if (l == 'R' || l == 'r')
+				lang = FUNC_LANG_R;
+			else if (l == 'C' || l == 'c')
+				lang = FUNC_LANG_C;
+			else if (l == 'J' || l == 'j')
+				lang = FUNC_LANG_J;
+			else
+				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+
+			append_list(f, $3);
+			append_list(f, $5);
+			append_symbol(f, $8);
+			append_list(f, NULL); 
+			append_list(f, append_string(L(), $11));
+			append_int(f, F_FUNC);
+			append_int(f, lang);
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create FILTER FUNCTION qname
 	'(' opt_paramlist ')'
     EXTERNAL sqlNAME external_function_name 	
@@ -1802,6 +1831,7 @@ func_def:
 				append_list(f, $10);
 				append_list(f, NULL);
 				append_int(f, F_FILT);
+				append_int(f, FUNC_LANG_MAL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
@@ -1814,7 +1844,33 @@ func_def:
 				append_list(f, $11);
 				append_list(f, NULL);
 				append_int(f, F_AGGR);
+				append_int(f, FUNC_LANG_MAL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+  | create AGGREGATE qname
+	'(' opt_paramlist ')'
+    RETURNS func_data_type
+    LANGUAGE IDENT X_BODY { 
+			int lang = 0;
+			dlist *f = L();
+			char l = *$10;
+
+			if (l == 'R' || l == 'r')
+				lang = FUNC_LANG_R;
+			else if (l == 'C' || l == 'c')
+				lang = FUNC_LANG_C;
+			else if (l == 'J' || l == 'j')
+				lang = FUNC_LANG_J;
+			else
+				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+
+			append_list(f, $3);
+			append_list(f, $5);
+			append_symbol(f, $8);
+			append_list(f, NULL);
+			append_list(f, append_string(L(), $11));
+			append_int(f, F_AGGR);
+			append_int(f, lang);
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
     create PROCEDURE qname
 	'(' opt_paramlist ')'
@@ -1826,6 +1882,7 @@ func_def:
 				append_list(f, $9);
 				append_list(f, NULL);
 				append_int(f, F_PROC);
+				append_int(f, FUNC_LANG_MAL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create PROCEDURE qname
 	'(' opt_paramlist ')'
@@ -1834,9 +1891,10 @@ func_def:
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, NULL); /* no result */
-				append_string(f, NULL); /* no mil-impl */
+				append_list(f, NULL); 
 				append_list(f, $7);
 				append_int(f, F_PROC);
+				append_int(f, FUNC_LANG_SQL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 

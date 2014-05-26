@@ -3377,20 +3377,20 @@ done
 echo
 echo "* Enabled/disabled components:"
 for comp in \
-	'gdk      ' \
-	'monetdb5 ' \
-	'sql      ' \
-	'jsonstore' \
-	'geom     ' \
-	'gsl      ' \
-	'fits     ' \
-	'rdf      ' \
+	'gdk         ' \
+	'monetdb5    ' \
+	'sql         ' \
+	'jaql        ' \
+	'geom        ' \
+	'gsl         ' \
+	'fits        ' \
+	'rdf         ' \
 	'rintegration' \
-	'datacell ' \
-	'odbc     ' \
-	'jdbc     ' \
-	'control  ' \
-	'testing  ' \
+	'datacell    ' \
+	'odbc        ' \
+	'jdbc        ' \
+	'control     ' \
+	'testing     ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"

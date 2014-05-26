@@ -319,6 +319,7 @@ CONDITIONALS = {
     'HAVE_JAQL'            : "@HAVE_JAQL_FALSE@",
     'HAVE_JSONSTORE'       : "@HAVE_JSONSTORE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
+    'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
@@ -2737,6 +2738,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(['--set', 'mal_listing=0'])
                 Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
+
+            # enable r integration in server
+            if CONDITIONALS['HAVE_LIBR'] == '#':
+                Srvr.extend(['--set', 'embedded_r=yes'])
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"

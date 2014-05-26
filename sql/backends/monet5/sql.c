@@ -892,7 +892,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
-	} else {
+	} else if (nf->lang == FUNC_LANG_MAL) {
 		if (!backend_resolve_function(sql, nf))
 			return sql_message("3F000!CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 	}

@@ -627,6 +627,53 @@ scanner_string(mvc *c, int quote)
 	return LEX_ERROR;
 }
 
+/* scan a structure {blah} into a string. We only count the matching {}
+ * unless escaped. We do not consider embeddings in string literals yet
+ */
+
+static int
+scanner_body(mvc *c)
+{
+	struct scanner *lc = &c->scanner;
+	bstream *rs = lc->rs;
+	int cur = (int) 'x';
+	int blk = 1;
+	int escape = 0;
+
+	lc->started = 1;
+	assert(rs->buf[(int)rs->pos + lc->yycur-1] == '{');
+	while (cur != EOF) {
+		unsigned int pos = (int)rs->pos + lc->yycur;
+
+		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (blk || escape)) {
+			if (cur != '\\')
+				escape = 0;
+			else
+				escape = !escape;
+			blk += cur =='{';
+			blk -= cur =='}';
+		}
+		lc->yycur = pos - (int)rs->pos;
+		assert(pos <= rs->len + 1);
+		if (blk == 0 && !escape){
+			lc->yycur--;	/* go back to current (possibly invalid) char */
+			return scanner_token(lc, X_BODY);
+		}
+		lc->yycur--;	/* go back to current (possibly invalid) char */
+		if (!cur) {
+			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
+				(void) sql_error(c, 2, "NULL byte in string");
+				return LEX_ERROR;
+			}
+			cur = scanner_read_more(lc, 1);
+		} else {
+			cur = scanner_getc(lc);
+		}
+	}
+	(void) sql_error(c, 2, "unexpected end of input");
+	return LEX_ERROR;
+}
+
 static int 
 keyword_or_ident(mvc * c, int cur)
 {
@@ -805,6 +852,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '\'':
 	case '"':
 		return scanner_string(c, cur);
+	case '{':
+		return scanner_body(c);
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);

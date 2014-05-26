@@ -2648,7 +2648,7 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
  	if (THRhighwater())
 		return sql_error(m, 10, "SELECT: too many nested operators");
 
-	o = NEW(mvc);
+	o = MNEW(mvc);
 	if (!o)
 		return NULL;
 	*o = *m;

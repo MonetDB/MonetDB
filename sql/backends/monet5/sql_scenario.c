@@ -1214,7 +1214,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	initSQLreferences();
 	m = sql->mvc;
 	ac = m->session->auto_commit;
-	o = NEW(mvc);
+	o = MNEW(mvc);
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;

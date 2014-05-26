@@ -677,7 +677,7 @@ rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type)
+rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -1176,8 +1176,9 @@ rel_psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->next->data.i_val;
+		int lang = l->h->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type);
+		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:
