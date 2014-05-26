@@ -234,6 +234,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	return rc;
 
   nomem:
+	/* note that query must be NULL when we get here */
 	if (cat)
 		free(cat);
 	if (sch)
@@ -242,8 +243,6 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 		free(tab);
 	if (col)
 		free(col);
-	if (query)
-		free(query);
 	/* Memory allocation error */
 	addStmtError(stmt, "HY001", NULL, 0);
 	return SQL_ERROR;
