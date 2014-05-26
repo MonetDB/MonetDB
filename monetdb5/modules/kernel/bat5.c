@@ -1942,27 +1942,6 @@ BKCmmap2(bit *res, int *bid, int *mode)
 	return BKCmmap(res, bid, mode, mode, mode, mode);
 }
 
-str
-BKCmadvise(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.madvice", RUNTIME_OBJECT_MISSING);
-	}
-	*res = BATmadvise(b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp);
-	BBPreleaseref(b->batCacheid);
-	if (*res)
-		throw(MAL, "bat.madvise", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-str
-BKCmadvise2(bit *res, int *bid, int *mode)
-{
-	return BKCmadvise(res, bid, mode, mode, mode, mode);
-}
-
 /*
  * Accelerator Control
  */

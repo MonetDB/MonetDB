@@ -438,7 +438,12 @@ TKNZRdepositFile(int *r, str *fnme)
 			/* found a string to be processed */
 			*t = 0;
 			msg = TKNZRappend(&pos, &s);
-			if (msg ) break;
+			if (msg ) {
+				bstream_destroy(bs);
+				mnstr_close(fs);
+				mnstr_destroy(fs);
+				return msg;
+			}
 			*t = '\n';
 			s = t + 1;
 			t = s;
@@ -448,7 +453,7 @@ TKNZRdepositFile(int *r, str *fnme)
 	bstream_destroy(bs);
 	mnstr_close(fs);
 	mnstr_destroy(fs);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str

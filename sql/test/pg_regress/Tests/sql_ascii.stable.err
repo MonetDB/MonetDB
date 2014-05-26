@@ -1,0 +1,60 @@
+stderr of test 'sql_ascii` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:26 >  
+# 17:11:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:26 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:28 >  
+# 17:11:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:28 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = drop table computer_terms;
+ERROR = !DROP TABLE: no such table 'computer_terms'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create table computer_terms(term text, category text, 
+        create index computer_terms_index1 on computer_terms using btree(term);
+ERROR = !syntax error, unexpected CREATE, expecting FOREIGN or PRIMARY or UNIQUE in: "create table computer_terms(term text, category text, 
+        !create"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create index computer_terms_index2 on computer_terms using btree(category);
+ERROR = !syntax error, unexpected USING, expecting '(' in: "create index computer_terms_index2 on computer_terms using"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into computer_terms values('computer display', 'X-A01-Y', 'a 
+        insert into computer_terms values('computer graphics', 'T-B01-Y', 'a 
+        insert into computer_terms values('computer programmer', 'S-Z01-Y', 'a 
+        vacuum computer_terms;
+        select * from computer_terms;
+        select * from computer_terms where category = 'X-A01-Y';
+        select * from computer_terms where category ~* 'x-a01-y';
+        select * from computer_terms where category like '_-A01-_';
+        select * from computer_terms where category like '_-A%';
+        select * from computer_terms where term ~ 'computer [dg]';
+ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "insert into computer_terms values('computer display', 'X-A01-Y', 'a 
+        !insert into computer_terms values('computer"
+
+# 17:11:28 >  
+# 17:11:28 >  "Done."
+# 17:11:28 >  
+

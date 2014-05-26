@@ -1,0 +1,446 @@
+stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:33 >  
+# 17:11:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:33 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:11:33 >  
+# 17:11:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:33 >  
+
+#SELECT 'first line'
+#' - next line'
+#	' - third line'
+#	AS "Three lines to one";
+% .L # table_name
+% Three lines to one # name
+% char # type
+% 35 # length
+[ "first line - next line - third line"	]
+#SELECT POSITION('4' IN '1234567890') = '4' AS "4";
+% .L # table_name
+% 4 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT POSITION(5 IN '1234567890') = '5' AS "5";
+% .L # table_name
+% 5 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' LIKE 'h%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT LIKE 'h%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'hawkeye' LIKE 'H%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'hawkeye' NOT LIKE 'H%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' LIKE 'indio%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'hawkeye' NOT LIKE 'indio%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' LIKE 'h%eye' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT LIKE 'h%eye' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' LIKE '_ndio' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'indio' NOT LIKE '_ndio' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' LIKE 'in__o' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'indio' NOT LIKE 'in__o' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' LIKE 'in_o' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' NOT LIKE 'in_o' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' LIKE 'h%' ESCAPE '#' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT LIKE 'h%' ESCAPE '#' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' LIKE 'ind_o' ESCAPE '$' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'indio' NOT LIKE 'ind_o' ESCAPE '$' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'h%' LIKE 'h#%' ESCAPE '#' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'h%' NOT LIKE 'h#%' ESCAPE '#' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'h%wkeye' LIKE 'h#%' ESCAPE '#' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'h%wkeye' NOT LIKE 'h#%' ESCAPE '#' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'h%wkeye' LIKE 'h#%%' ESCAPE '#' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'h%wkeye' NOT LIKE 'h#%%' ESCAPE '#' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'h%awkeye' LIKE 'h#%a%k%e' ESCAPE '#' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'h%awkeye' NOT LIKE 'h#%a%k%e' ESCAPE '#' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'indio' LIKE '_ndio' ESCAPE '$' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'indio' NOT LIKE '_ndio' ESCAPE '$' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'i_dio' LIKE 'i$_d_o' ESCAPE '$' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'i_dio' NOT LIKE 'i$_d_o' ESCAPE '$' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'i_dio' LIKE 'i$_nd_o' ESCAPE '$' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'i_dio' NOT LIKE 'i$_nd_o' ESCAPE '$' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'i_dio' LIKE 'i$_d%o' ESCAPE '$' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'i_dio' NOT LIKE 'i$_d%o' ESCAPE '$' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'maca' LIKE 'm%aca' ESCAPE '%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'ma%a' LIKE 'm%a%%a' ESCAPE '%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'bear' LIKE 'b_ear' ESCAPE '_' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'be_r' LIKE 'b_e__r' ESCAPE '_' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'be_r' LIKE '__e__r' ESCAPE '_' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'be_r' NOT LIKE '__e__r' ESCAPE '_' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' ILIKE 'h%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT ILIKE 'h%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'hawkeye' ILIKE 'H%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT ILIKE 'H%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'hawkeye' ILIKE 'H%Eye' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'hawkeye' NOT ILIKE 'H%Eye' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'Hawkeye' ILIKE 'h%' AS "true";
+% .L # table_name
+% true # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
+% .L # table_name
+% Concat unknown types # name
+% char # type
+% 0 # length
+[ "unknown and unknown"	]
+#CREATE TABLE toasttest(f1 text);
+#insert into toasttest values(repeat('1234567890',10000));
+[ 1	]
+#insert into toasttest values(repeat('1234567890',10000));
+[ 1	]
+#insert into toasttest values(repeat('1234567890',10000));
+[ 1	]
+#insert into toasttest values(repeat('1234567890',10000));
+[ 1	]
+#DROP TABLE toasttest;
+#SELECT length('abcdef') AS "length_6";
+% .L # table_name
+% length_6 # name
+% int # type
+% 1 # length
+[ 6	]
+#SELECT replace('abcdef', 'de', '45') AS "abc45f";
+% .L # table_name
+% abc45f # name
+% char # type
+% 0 # length
+[ "abc45f"	]
+#SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
+% .L # table_name
+% ya123da123doo # name
+% char # type
+% 0 # length
+[ "ya123da123doo"	]
+#SELECT replace('yabadoo', 'bad', '') AS "yaoo";
+% .L # table_name
+% yaoo # name
+% char # type
+% 0 # length
+[ "yaoo"	]
+#select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('a') = '0cc175b9c0f1b6a831c399e269772661' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('abc') = '900150983cd24fb0d6963f7d28e17f72' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('message digest') = 'f96b697d7cb7938d525a2f31aaf161d0' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('abcdefghijklmnopqrstuvwxyz') = 'c3fcd3d76192e4007dfb496cca67e13b' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = 'd174ab98d277d9f5a5611c2c9f419d9f' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+#select md5('12345678901234567890123456789012345678901234567890123456789012345678901234567890') = '57edf4a22be3c955ac49da2e2107b67a' AS "TRUE";
+% .L # table_name
+% TRUE # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 17:11:34 >  
+# 17:11:34 >  "Done."
+# 17:11:34 >  
+

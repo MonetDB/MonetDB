@@ -1,0 +1,213 @@
+stderr of test 'type_sanity` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:56 >  
+# 17:11:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:56 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:57 >  
+# 17:11:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:57 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE p1.typnamespace = 0 OR
+            (p1.typlen <= 0 AND p1.typlen != -1 AND p1.typlen != -2) OR
+            (p1.typtype not in ('b', 'c', 'd', 'p')) OR
+            NOT p1.typisdefined OR
+            (p1.typalign not in ('c', 's', 'i', 'd')) OR
+            (p1.typstorage not in ('p', 'x', 'e', 'm'));
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE p1.typbyval AND
+            (p1.typlen != 1 OR p1.typalign != 'c') AND
+            (p1.typlen != 2 OR p1.typalign != 's') AND
+            (p1.typlen != 4 OR p1.typalign != 'i');
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE p1.typstorage != 'p' AND
+            (p1.typbyval OR p1.typlen != -1);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE (p1.typtype = 'c' AND p1.typrelid = 0) OR
+            (p1.typtype != 'c' AND p1.typrelid != 0);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE p1.typtype in ('b') AND p1.typname NOT LIKE '\\_%' AND NOT EXISTS
+            (SELECT 1 FROM pg_type as p2
+             WHERE p2.typname = ('_' || p1.typname)::name AND
+                   p2.typelem = p1.oid);
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname
+        FROM pg_type as p1
+        WHERE p1.typtype != 'c' AND
+            (p1.typinput = 0 OR p1.typoutput = 0);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typinput = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            ((p2.pronargs = 1 AND p2.proargtypes[0] = 'cstring'::regtype) OR
+             (p2.pronargs = 2 AND p2.proargtypes[0] = 'cstring'::regtype AND
+              p2.proargtypes[1] = 'oid'::regtype) OR
+             (p2.pronargs = 3 AND p2.proargtypes[0] = 'cstring'::regtype AND
+              p2.proargtypes[1] = 'oid'::regtype AND
+              p2.proargtypes[2] = 'integer'::regtype));
+ERROR = !syntax error, unexpected '[', expecting ')' in: "select p1.oid, p1.typname, p2.oid, p2.proname
+        !from pg_type as p1, pg_proc as p2
+        !where p1.typinput = p2.oid and p1.typtype in ('b', 'p') and not
+        !    ((p2.pronargs = 1 and p2.proargtypes["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typinput = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            (p1.typelem != 0 AND p1.typlen < 0) AND NOT
+            (p2.prorettype = p1.oid AND NOT p2.proretset)
+        ORDER BY 1;
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typinput = p2.oid AND p1.typtype in ('b', 'p') AND
+            (p1.typelem != 0 AND p1.typlen < 0) AND NOT
+            (p2.oid = 'array_in'::regproc);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typoutput = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            ((p2.pronargs = 1 AND p2.proargtypes[0] = p1.oid) OR
+             (p2.pronargs = 2 AND p2.proargtypes[0] = p1.oid AND
+              p2.proargtypes[1] = 'oid'::regtype) OR
+             (p2.oid = 'array_out'::regproc AND
+              p1.typelem != 0 AND p1.typlen = -1))
+        ORDER BY 1;
+ERROR = !syntax error, unexpected '[', expecting ')' in: "select p1.oid, p1.typname, p2.oid, p2.proname
+        !from pg_type as p1, pg_proc as p2
+        !where p1.typoutput = p2.oid and p1.typtype in ('b', 'p') and not
+        !    ((p2.pronargs = 1 and p2.proargtypes["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typoutput = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            (p2.prorettype = 'cstring'::regtype AND NOT p2.proretset);
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typreceive = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            ((p2.pronargs = 1 AND p2.proargtypes[0] = 'internal'::regtype) OR
+             (p2.pronargs = 2 AND p2.proargtypes[0] = 'internal'::regtype AND
+              p2.proargtypes[1] = 'oid'::regtype));
+ERROR = !syntax error, unexpected '[', expecting ')' in: "select p1.oid, p1.typname, p2.oid, p2.proname
+        !from pg_type as p1, pg_proc as p2
+        !where p1.typreceive = p2.oid and p1.typtype in ('b', 'p') and not
+        !    ((p2.pronargs = 1 and p2.proargtypes["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typreceive = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            (p1.typelem != 0 AND p1.typlen < 0) AND NOT
+            (p2.prorettype = p1.oid AND NOT p2.proretset)
+        ORDER BY 1;
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typreceive = p2.oid AND p1.typtype in ('b', 'p') AND
+            (p1.typelem != 0 AND p1.typlen < 0) AND NOT
+            (p2.oid = 'array_recv'::regproc);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typsend = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            ((p2.pronargs = 1 AND p2.proargtypes[0] = p1.oid) OR
+             (p2.pronargs = 2 AND p2.proargtypes[0] = p1.oid AND
+              p2.proargtypes[1] = 'oid'::regtype) OR
+             (p2.oid = 'array_send'::regproc AND
+              p1.typelem != 0 AND p1.typlen = -1))
+        ORDER BY 1;
+ERROR = !syntax error, unexpected '[', expecting ')' in: "select p1.oid, p1.typname, p2.oid, p2.proname
+        !from pg_type as p1, pg_proc as p2
+        !where p1.typsend = p2.oid and p1.typtype in ('b', 'p') and not
+        !    ((p2.pronargs = 1 and p2.proargtypes["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.typname, p2.oid, p2.proname
+        FROM pg_type AS p1, pg_proc AS p2
+        WHERE p1.typsend = p2.oid AND p1.typtype in ('b', 'p') AND NOT
+            (p2.prorettype = 'bytea'::regtype AND NOT p2.proretset);
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.relname
+        FROM pg_class as p1
+        WHERE p1.relkind NOT IN ('r', 'i', 's', 'S', 't', 'v');
+ERROR = !SELECT: no such table 'pg_class'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.relname
+        FROM pg_class as p1
+        WHERE (p1.relkind = 'i' AND p1.relam = 0) OR
+            (p1.relkind != 'i' AND p1.relam != 0);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.attrelid, p1.attname
+        FROM pg_attribute as p1
+        WHERE p1.attrelid = 0 OR p1.atttypid = 0 OR p1.attnum = 0 OR
+            p1.attcacheoff != -1 OR p1.attinhcount < 0 OR
+            (p1.attinhcount = 0 AND NOT p1.attislocal);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.attrelid, p1.attname, p2.oid, p2.relname
+        FROM pg_attribute AS p1, pg_class AS p2
+        WHERE p1.attrelid = p2.oid AND p1.attnum > p2.relnatts;
+ERROR = !SELECT: no such table 'pg_attribute'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.oid, p1.relname
+        FROM pg_class AS p1
+        WHERE p1.relnatts != (SELECT count(*) FROM pg_attribute AS p2
+                              WHERE p2.attrelid = p1.oid AND p2.attnum > 0);
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT p1.attrelid, p1.attname, p2.oid, p2.typname
+        FROM pg_attribute AS p1, pg_type AS p2
+        WHERE p1.atttypid = p2.oid AND
+            (p1.attlen != p2.typlen OR
+             p1.attalign != p2.typalign OR
+             p1.attbyval != p2.typbyval OR
+             (p1.attstorage != p2.typstorage AND p1.attstorage != 'p'));
+ERROR = !unexpected symbol (!)
+
+# 17:11:58 >  
+# 17:11:58 >  "Done."
+# 17:11:58 >  
+

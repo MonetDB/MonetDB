@@ -46,8 +46,7 @@ extern void rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_basetable(mvc *sql, sql_table *t, char *tname);
-extern sql_rel *rel_recursive_func(sql_allocator *sa, list *exps);
-extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps);
+extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f );

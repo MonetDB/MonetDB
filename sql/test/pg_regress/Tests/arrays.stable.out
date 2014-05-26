@@ -1,0 +1,69 @@
+stdout of test 'arrays` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:09:51 >  
+# 17:09:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:09:51 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:09:52 >  
+# 17:09:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:09:52 >  
+
+#CREATE TEMP TABLE arrtest_f (f0 int, f1 text, f2 double);
+#insert into arrtest_f values(1,'cat1',1.21);
+[ 1	]
+#insert into arrtest_f values(2,'cat1',1.24);
+[ 1	]
+#insert into arrtest_f values(3,'cat1',1.18);
+[ 1	]
+#insert into arrtest_f values(4,'cat1',1.26);
+[ 1	]
+#insert into arrtest_f values(5,'cat1',1.15);
+[ 1	]
+#insert into arrtest_f values(6,'cat2',1.15);
+[ 1	]
+#insert into arrtest_f values(7,'cat2',1.26);
+[ 1	]
+#insert into arrtest_f values(8,'cat2',1.32);
+[ 1	]
+#insert into arrtest_f values(9,'cat2',1.30);
+[ 1	]
+#CREATE TEMP TABLE arrtest_i (f0 int, f1 text, f2 int);
+#insert into arrtest_i values(1,'cat1',21);
+[ 1	]
+#insert into arrtest_i values(2,'cat1',24);
+[ 1	]
+#insert into arrtest_i values(3,'cat1',18);
+[ 1	]
+#insert into arrtest_i values(4,'cat1',26);
+[ 1	]
+#insert into arrtest_i values(5,'cat1',15);
+[ 1	]
+#insert into arrtest_i values(6,'cat2',15);
+[ 1	]
+#insert into arrtest_i values(7,'cat2',26);
+[ 1	]
+#insert into arrtest_i values(8,'cat2',32);
+[ 1	]
+#insert into arrtest_i values(9,'cat2',30);
+[ 1	]
+
+# 17:09:52 >  
+# 17:09:52 >  "Done."
+# 17:09:52 >  
+

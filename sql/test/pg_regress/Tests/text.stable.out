@@ -15,37 +15,18 @@ stdout of test 'text` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module v2.31.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+
+# 17:11:41 >  
+# 17:11:41 >  "./text.SQL.sh" "text"
+# 17:11:41 >  
 
 
-# 22:26:27 >  
-# 22:26:27 >  ./text.SQL.sh text 
-# 22:26:27 >  
+# 17:11:41 >  
+# 17:11:41 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/text.sql
+# 17:11:41 >  
 
 
-# 22:26:27 >  
-# 22:26:27 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=35864  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/text.sql
-# 22:26:27 >  
-
-#--
-#-- TEXT
-#--
-#SELECT text 'this is a text string' = text 'this is a text string' AS true;
-#SELECT text 'this is a text string' = text 'this is a text strin' AS false;
-#CREATE TABLE TEXT_TBL (f1 text);
-[ 1	]
-[ 1	]
-#SELECT '' AS two, * FROM TEXT_TBL;
-% .L,	sys.text_tbl # table_name
-% two,	f1 # name
-% char,	clob # type
-% 0,	17 # length
-[ "",	"doh!"	]
-[ "",	"hi de ho neighbor"	]
-
-# 21:59:24 >  
-# 21:59:24 >  Done.
-# 21:59:24 >  
+# 17:11:41 >  
+# 17:11:41 >  "Done."
+# 17:11:41 >  
 

@@ -1,0 +1,361 @@
+stderr of test 'portals` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:01 >  
+# 17:11:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:01 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:02 >  
+# 17:11:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:02 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo1 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !type (scroll) unknown in: "declare foo1 scroll cursor"
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo2 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo3 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo4 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo5 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo6 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo7 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo8 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo9 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo10 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo11 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo12 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo13 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo14 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo15 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo16 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo17 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo18 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo19 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo20 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo21 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo22 SCROLL CURSOR FOR SELECT * FROM tenk2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo23 SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 1 in foo1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 2 in foo2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 3 in foo3;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 4 in foo4;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 5 in foo5;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 6 in foo6;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 7 in foo7;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 8 in foo8;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 9 in foo9;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 10 in foo10;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 11 in foo11;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 12 in foo12;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 13 in foo13;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 14 in foo14;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 15 in foo15;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 16 in foo16;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 17 in foo17;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 18 in foo18;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 19 in foo19;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 20 in foo20;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 21 in foo21;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 22 in foo22;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 23 in foo23;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 1 in foo23;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 2 in foo22;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 3 in foo21;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 4 in foo20;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 5 in foo19;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 6 in foo18;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 7 in foo17;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 8 in foo16;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 9 in foo15;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 10 in foo14;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 11 in foo13;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 12 in foo12;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 13 in foo11;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 14 in foo10;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 15 in foo9;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 16 in foo8;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 17 in foo7;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 18 in foo6;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 19 in foo5;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 20 in foo4;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 21 in foo3;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 22 in foo2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH backward 23 in foo1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo1;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo2;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo3;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo4;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo5;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo6;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo7;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo8;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo9;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo10;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo11;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo12;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COMMIT;
+ERROR = !COMMIT: failed
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo24 NO SCROLL CURSOR FOR SELECT * FROM tenk1;
+ERROR = !syntax error, unexpected NO in: "declare foo24 no scroll"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH 1 FROM foo24;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH BACKWARD 1 FROM foo24; -- should fail
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COMMIT;
+ERROR = !COMMIT: failed
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo25 SCROLL CURSOR WITH HOLD FOR SELECT * FROM tenk2;
+ERROR = !type (scroll) unknown in: "declare foo25 scroll cursor"
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH FROM foo25;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH FROM foo25;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COMMIT;
+ERROR = !COMMIT: failed
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH FROM foo25;
+ERROR = !syntax error, unexpected IDENT in: "fetch"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH BACKWARD FROM foo25;
+ERROR = !syntax error, unexpected IDENT in: "fetch"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH ABSOLUTE -1 FROM foo25;
+ERROR = !syntax error, unexpected IDENT in: "fetch"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CLOSE foo25;
+ERROR = !syntax error, unexpected IDENT in: "close"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DECLARE foo26 CURSOR WITH HOLD FOR SELECT * FROM tenk1;
+ERROR = !type (cursor) unknown in: "declare foo26 cursor with"
+        !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH FROM foo26;
+ERROR = !syntax error, unexpected IDENT in: "fetch"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION declares_cursor(text)
+           RETURNS void
+           AS 'DECLARE c CURSOR FOR SELECT stringu1 FROM tenk1 WHERE stringu1 LIKE $1;'
+           LANGUAGE 'sql';
+ERROR = !syntax error, unexpected ')' in: "create function declares_cursor(text)"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT declares_cursor('AB%');
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = FETCH ALL FROM c;
+ERROR = !current transaction is aborted (please ROLLBACK)
+
+# 17:11:02 >  
+# 17:11:02 >  "Done."
+# 17:11:02 >  
+
