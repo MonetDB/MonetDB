@@ -20,6 +20,7 @@ INCLUDES = \
 	../../../common/stream \
 	../../../gdk \
 	../../mal \
+	../../../sql/include \
 	$(libr_CFLAGS)
 
 MTSAFE

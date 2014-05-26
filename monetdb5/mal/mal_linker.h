@@ -42,4 +42,5 @@ mal_export void unloadLibraries(void);
 mal_export void initLibraries(void);
 mal_export int isPreloaded(str nme);
 mal_export int isLoaded(str modulename);
+mal_export char *locate_file(const char *basename, const char *ext, bit recurse);
 #endif /* _MAL_LINKER_H */

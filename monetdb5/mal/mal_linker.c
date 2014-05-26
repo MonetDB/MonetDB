@@ -325,7 +325,7 @@ cmpstr(const void *_p1, const void *_p2)
 
 
 #define MAXMULTISCRIPT 48
-static char *
+char *
 locate_file(const char *basename, const char *ext, bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
