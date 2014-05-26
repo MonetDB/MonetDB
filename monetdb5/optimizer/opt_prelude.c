@@ -197,6 +197,7 @@ str querylogRef;
 str queryRef;
 str rankRef;
 str rank_grpRef;
+str rapiRef;
 str reconnectRef;
 str recycleRef;
 str refineRef;
@@ -462,6 +463,7 @@ void optimizerInit(void)
 	queryRef = putName("query",5);
 	rankRef = putName("rank", 4);
 	rank_grpRef = putName("rank_grp", 8);
+	rapiRef = putName("batrapi", 7);
 	reconnectRef = putName("reconnect",9);
 	recycleRef = putName("recycle",7);
 	refineRef = putName("refine",6);

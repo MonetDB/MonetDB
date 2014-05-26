@@ -226,6 +226,13 @@ AC_ARG_ENABLE(gsl,
 	enable_gsl=$enableval,
 	enable_gsl=$dft_gsl)
 
+dft_rintegration=auto
+AC_ARG_ENABLE(rintegration,
+	AS_HELP_STRING([--enable-rintegration],
+		[enable support for R integration into MonetDB (default=auto)]),
+	enable_rintegration=$enableval,
+	enable_rintegration=$dft_rintegration)
+
 dft_odbc=auto
 AC_ARG_ENABLE(odbc,
 	AS_HELP_STRING([--enable-odbc],
@@ -2210,6 +2217,41 @@ AC_SUBST(SPHINXCLIENT_CFLAGS, $SPHINXCLIENT_CFLAGS)
 AC_SUBST(SPHINXCLIENT_LIBS, $SPHINXCLIENT_LIBS)
 AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
 
+have_libr=no
+if test "x$enable_rintegration" != xno; then
+	case "$enable_rintegration" in
+	yes|auto)
+		XPATH="$PATH"
+		;;
+	/*)
+		XPATH="$enable_rintegragtion"
+		enable_rintegration=yes
+		;;
+	*)
+		AC_MSG_ERROR([--enable-rintegration value must be yes|no|auto|absolute path of R cmd])
+		;;
+	esac
+   	AC_PATH_PROG(RCMD,R,,$XPATH)
+   	if test "x$RCMD" = x; then
+      		if test "x$enable_rintegration" = xyes; then
+			AC_MSG_ERROR([libR library required for R integration support])
+		else
+			have_libr="no"
+		 	why_have_libr="(libR library not found)"
+			enable_rintegration=no
+			disable_rintegration="(libR library not found)"
+		fi
+	elif RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags`; then
+		have_libr=yes
+		AC_DEFINE(HAVE_LIBR, 1, [Define if you have libR installed])
+		AC_SUBST(libr_CFLAGS, $libr_CFLAGS)
+		AC_SUBST(libr_LIBS, $libr_LIBS)
+		AC_SUBST(RHOME, $RHOME)
+		AC_DEFINE_UNQUOTED(RHOME, "$RHOME", [The home of R])
+	fi
+fi
+AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
+
 # ODBC, only used by ODBC driver
 if test "x$enable_odbc" != xno; then
 	have_unixodbc=auto
@@ -3343,6 +3385,7 @@ for comp in \
 	'gsl      ' \
 	'fits     ' \
 	'rdf      ' \
+	'rintegration' \
 	'datacell ' \
 	'odbc     ' \
 	'jdbc     ' \
