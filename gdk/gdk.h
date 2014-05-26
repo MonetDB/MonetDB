@@ -1617,8 +1617,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @item int
  * @tab BATmmap (BAT *b, int hb, int tb, int hh, int th, int force )
  * @item int
- * @tab BATmadvise (BAT *b, int hb, int tb, int hh, int th )
- * @item int
  * @tab BATdelete (BAT *b)
  * @end multitable
  *
@@ -1637,29 +1635,10 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * of each heap associated to a BAT.  As can be seen in the bat
  * record, each BAT has one BUN-heap (@emph{bn}), and possibly two
  * heaps (@emph{hh} and @emph{th}) for variable-sized atoms.
- *
- * The BATmadvise call works in the same way. Using the madvise()
- * system call it issues buffer management advice to the OS kernel, as
- * for the expected usage pattern of the memory in a heap.
  */
-
-/* Buffer management advice for heaps */
-#define BUF_NORMAL	0	/* No further special treatment */
-#define BUF_RANDOM	1	/* Expect random page references */
-#define BUF_SEQUENTIAL	2	/* Expect sequential page references */
-#define BUF_WILLNEED	3	/* Will need these pages */
-#define BUF_DONTNEED	4	/* Don't need these pages */
-
-/* Heaps that are use and hence should to be loaded by BATaccess */
-#define USE_HEAD	1	/* BUNs & string heap */
-#define USE_TAIL	2	/* BUNs & string heap */
-#define USE_HHASH	4	/* hash index */
-#define USE_THASH	8	/* hash index */
-#define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
-gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 

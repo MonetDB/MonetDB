@@ -2310,23 +2310,6 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 }
 
 /*
- * @- BATmadvise
- * deprecated
- */
-int
-BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
-{
-	(void) b;
-	(void) hb;
-	(void) tb;
-	(void) hhp;
-	(void) thp;
-	BATcheck(b, "BATmadvise");
-
-	return 0;
-}
-
-/*
  * @- Change the BAT access permissions (read, append, write)
  * Regrettably, BAT access-permissions, persistent status and memory
  * map modes, interact in ways that makes one's brain sizzle. This

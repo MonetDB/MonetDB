@@ -147,7 +147,6 @@ BAT *BATkunion(BAT *b, BAT *c);
 BAT *BATkunique(BAT *b);
 BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
-int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 BAT *BATmark(BAT *b, oid base);
 BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
 BAT *BATmaterialize(BAT *b);
