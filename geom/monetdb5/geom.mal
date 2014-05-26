@@ -170,9 +170,10 @@ command Envelope(w:wkb) :wkb address wkbEnvelope
 comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
 command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
 comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
-commad InteriorRingN(w:wkb) :wkb address wkbInteriorRingN
+command InteriorRingN(w:wkb, n:sht) :wkb address wkbInteriorRingN
 comment "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.";
-
+command NumInteriorRings(w:wkb) :int address wkbNumInteriorRings
+comment "Return the number of interior rings of the first polygon in the geometry. This will work with both POLYGON and MULTIPOLYGON types but only looks at the first polygon.";
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);

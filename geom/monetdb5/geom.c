@@ -89,6 +89,9 @@ geom_export str wkbEndPoint(wkb **out, wkb **geom);
 geom_export str wkbNumPoints(int *out, wkb **geom);
 geom_export str wkbPointN(wkb **out, wkb **geom, short *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
+geom_export str wkbExteriorRing(wkb**, wkb**);
+geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
+geom_export str wkbNumInteriorRings(int*, wkb**);
 
 geom_export str wkbIsEmpty(bit *out, wkb **geom);
 geom_export str wkbIsSimple(bit *out, wkb **geom);
@@ -362,7 +365,7 @@ static str geomMakePoint(wkb **out, GEOSGeom geosGeometry) {
 	GEOSGeom_destroy(geosGeometry);
 
 	if(!wkbSer) {
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to create wkb from GEOSGeometry");
 	}
 
@@ -370,7 +373,7 @@ static str geomMakePoint(wkb **out, GEOSGeom geosGeometry) {
 	*out = GDKmalloc((int) wkb_size(wkbLen));
 
 	if(*out == NULL) {
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to reserve memory for *wkb");
 	}
 
@@ -392,7 +395,7 @@ str geomMakePoint2D(wkb** out, double* x, double* y) {
 	geosGeometry = GEOSGeom_createPoint(seq);
 
 	if(geosGeometry == NULL){
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
@@ -411,7 +414,7 @@ str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
 	geosGeometry = GEOSGeom_createPoint(seq);
 
 	if(geosGeometry == NULL){
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
@@ -431,7 +434,7 @@ str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
 	geosGeometry = GEOSGeom_createPoint(seq);
 
 	if(geosGeometry == NULL){
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
@@ -450,7 +453,7 @@ str geomMakePointM(wkb** out, double* x, double* y, double* m) {
 	geosGeometry = GEOSGeom_createPoint(seq);
 
 	if(geosGeometry == NULL){
-		**out = *wkbNULL();
+		*out = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
@@ -556,7 +559,7 @@ static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeome
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		throw(MAL, name, "wkb2geos failed");
 	}
 
@@ -580,12 +583,12 @@ static str wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEO
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		throw(MAL, name, "wkb2geos failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		throw(MAL, name, "GEOSGeomGet%s failed. Geometry not a LineString", name + 5);
 	}
 
@@ -612,7 +615,7 @@ str wkbNumPoints(int *out, wkb **geom) {
 
 	if (!geosGeometry) {
 		*out = int_nil;
-		return MAL_SUCCEED;
+		throw(MAL, "geolib/libgeom.hm.NumPoints", "wkb2geos failed");	
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
@@ -635,24 +638,24 @@ str wkbPointN(wkb **out, wkb **geom, short *n) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
-		return MAL_SUCCEED;
+		*out = wkb_nil;
+		throw(MAL, "geom.PointN", "wkb2geos failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
-		*out = geos2wkb(NULL);
-		throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed. Geometry not a LineString");
+		*out = wkb_nil;
+		throw(MAL, "geom.PointN", "Geometry not a LineString");
 	}
 
 	//check number of points
 	rN = GEOSGeomGetNumPoints(geosGeometry);
 	if (rN == -1)
-		throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed becasue GEOSGeomGetNumPoints ");	
+		throw(MAL, "geom.PointN", "GEOSGeomGetNumPoints failed");	
 
 	if(rN <= *n || *n<0) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.PointN", "GEOSGeomGetPointN unable to retrieve point %d (not enough points)", *n);
+		throw(MAL, "geom.PointN", "Unable to retrieve point %d (not enough points)", *n);
 	}
 
 	*out = geos2wkb(GEOSGeomGetPointN(geosGeometry, *n));
@@ -662,6 +665,103 @@ str wkbPointN(wkb **out, wkb **geom, short *n) {
 		return MAL_SUCCEED;
 
 	throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed");
+}
+
+/* function to handle static geometry returned by GEOSGetExteriorRing */
+static const GEOSGeometry* handleConstExteriorRing(GEOSGeom* geosGeometry, wkb** geom) {
+	*geosGeometry = wkb2geos(*geom);
+
+	if (!*geosGeometry) 
+		return NULL;
+
+	if (GEOSGeomTypeId(*geosGeometry) != GEOS_POLYGON) 
+		return NULL;
+
+	return GEOSGetExteriorRing(*geosGeometry);
+
+}
+
+/* Returns the exterior ring of the polygon*/
+str wkbExteriorRing(wkb **out, wkb **geom) {
+	GEOSGeom geosGeometry = NULL;
+	const GEOSGeometry* exteriorRingGeometry = handleConstExteriorRing(&geosGeometry, geom);
+	size_t wkbLen = 0;
+	unsigned char *w = NULL;
+
+	if (!exteriorRingGeometry) {
+		*out = wkb_nil;
+
+		if(!geosGeometry) {
+			throw(MAL, "geom.exteriorRing", "wkb2geos failed");
+		} else {
+			GEOSGeom_destroy(geosGeometry);
+			throw(MAL, "geom.exteriorRing", "Geometry not a Polygon");
+		}
+	}
+	w = GEOSGeomToWKB_buf(exteriorRingGeometry, &wkbLen);
+	GEOSGeom_destroy(geosGeometry);
+
+	*out = GDKmalloc(wkb_size(wkbLen));
+	if (!(*out)) {
+		*out = wkb_nil;
+		GEOSFree(w);
+		throw(MAL, "geom.exteriorRing", "GDKmalloc failed");
+	}
+		
+	assert(wkbLen <= GDK_int_max);
+	(*out)->len = (int) wkbLen;
+	memcpy(&(*out)->data, w, wkbLen);
+	GEOSFree(w);
+	
+	return MAL_SUCCEED;
+}
+
+/* function to handle static geometry returned by GEOSGetInteriorRingN */
+static const GEOSGeometry* handleConstInteriorRing(GEOSGeom* geosGeometry, wkb** geom, short ringNum) {
+	*geosGeometry = wkb2geos(*geom);
+
+	if (!*geosGeometry) 
+		return NULL;
+
+	return GEOSGetInteriorRingN(*geosGeometry, ringNum);
+}
+
+
+/* Returns the n-th interior ring of a polygon */
+str wkbInteriorRingN(wkb **out, wkb **geom, short* ringNum) {
+	GEOSGeom geosGeometry = NULL;
+	const GEOSGeometry* interiorRingGeometry = handleConstInteriorRing(&geosGeometry, geom, *ringNum);
+	size_t wkbLen = 0;
+	unsigned char *w = NULL;
+
+	if (interiorRingGeometry == NULL) 
+		*out = wkb_nil;
+
+	if(!geosGeometry) {
+		throw(MAL, "geom.interiorRingN", "wkb2geos failed");
+	} 
+
+	w = GEOSGeomToWKB_buf(interiorRingGeometry, &wkbLen);
+	GEOSGeom_destroy(geosGeometry);
+
+	*out = GDKmalloc(wkb_size(wkbLen));
+	if (!(*out)) {
+		*out = wkb_nil;
+		GEOSFree(w);
+		throw(MAL, "geom.interiorRing", "GDKmalloc failed");
+	}
+		
+	assert(wkbLen <= GDK_int_max);
+	(*out)->len = (int) wkbLen;
+	memcpy(&(*out)->data, w, wkbLen);
+	GEOSFree(w);
+	
+	return MAL_SUCCEED;
+}
+
+/* Returns the number of interior rings in the first polygon of the provided geometry */
+str wkbNumInteriorRings(int* out, wkb** geom) {
+	return wkbBasicInt(out, geom, GEOSGetNumInteriorRings, "geom.NumInteriorRings");
 }
 
 
@@ -1174,7 +1274,7 @@ wkbConvexHull(wkb **out, wkb **geom)
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -1378,16 +1478,16 @@ static str
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 	if (!ga && !gb) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -1432,7 +1532,7 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -1454,7 +1554,7 @@ wkbCentroid(wkb **out, wkb **geom)
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = geos2wkb(NULL);
+		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 

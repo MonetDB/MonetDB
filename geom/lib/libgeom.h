@@ -131,6 +131,7 @@ libgeom_export void libgeom_exit(void);
 #define wkb2geos( geom ) \
 	wkb_isnil((geom))? NULL: \
 	GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+#define wkb_nil geos2wkb(NULL);
 
 libgeom_export int wkb_isnil(wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
