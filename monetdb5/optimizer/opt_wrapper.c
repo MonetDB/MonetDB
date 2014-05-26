@@ -172,6 +172,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;	
 	}
 	if ( codes[i].nme == 0){
+		freeInstruction(q);
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 	}
 
