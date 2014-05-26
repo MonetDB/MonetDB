@@ -768,8 +768,25 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return sql_error(sql, 01,
 							"CREATE %s%s: failed to get restype", KF, F);
 			}
-
-		 	if (body) {		/* sql func */
+			if (body && lang > FUNC_LANG_SQL) {
+				char *lang_body = body->h->data.sval;
+				char *mod = 	(lang == FUNC_LANG_R)?"rapi":
+											(lang == FUNC_LANG_C)?"capi":
+											(lang == FUNC_LANG_J)?"japi":"unknown";
+				sql->params = NULL;
+					if (create) {
+						f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, FALSE);
+				} else if (!sf) {
+					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
+				} else {
+						sql_func *f = sf->func;
+					f->mod = _STRDUP("rapi");
+					f->imp = _STRDUP("eval");
+					if (res && restype)
+						f->res = *restype;
+					f->sql = 0; /* native */
+				}
+			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 				list *b = NULL;
 				sql_schema *old_schema = cur_schema(sql);
@@ -795,7 +812,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				if (instantiate || deps) {
 					return rel_psm_block(sql->sa, b);
 				} else if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, "user", q, q, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
@@ -805,7 +822,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return NULL;
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, fmod, fnme, q, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {

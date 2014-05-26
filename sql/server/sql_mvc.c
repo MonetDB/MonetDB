@@ -782,17 +782,17 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, char *name, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, char *name, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_func %s\n", name);
 	if (sa) {
-		f = create_sql_func(sa, name, args, res, type, mod, impl, query, varres, vararg);
+		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg);
 		f->s = s;
 	} else 
-		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, mod, impl, query, varres, vararg);
+		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg);
 	return f;
 }
 
