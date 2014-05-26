@@ -1106,7 +1106,10 @@ showcolormap(char *filename, int all)
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
 		f = fopen(buf, "w");
-		assert(f);
+		if (f == NULL) {
+			fprintf(stderr, "Creating file %s.gpl failed\n", filename);
+			exit(1);
+		}
 		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
 		fprintf(f, "set size 1,1\n");
@@ -1237,6 +1240,10 @@ showcolormap(char *filename, int all)
 	fprintf(f, "\" at %d,%d\n",
 		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
+	if (all) {
+		assert(f != gnudata);
+		fclose(f);
+	}
 }
 
 static void
@@ -1296,7 +1303,10 @@ keepdata(char *filename)
 		return;
 	snprintf(buf, BUFSIZ, "%s.trace", filename);
 	f = fopen(buf, "w");
-	assert(f);
+	if (f == NULL) {
+		fprintf(stderr, "Creating file %s.trace failed\n", filename);
+		exit(1);
+	}
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -1855,8 +1865,10 @@ parser(char *row)
 		/* find genuine function calls */
 		while (isspace((int) *fcn) && *fcn)
 			fcn++;
-		if (strchr(fcn, '.') == 0)
+		if (strchr(fcn, '.') == 0) {
+			free(stmt);
 			return -10;
+		}
 	} else {
 		fcn = strchr(fcn, '"');
 		if (fcn) {
@@ -2149,6 +2161,10 @@ stop_cleanup:
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
 stop_disconnect:
+	if (dbhsql) {
+		mapi_disconnect(dbhsql);
+		mapi_destroy(dbhsql);
+	}
 	if (wthr->dbh) {
 		mapi_disconnect(wthr->dbh);
 		mapi_destroy(wthr->dbh);
