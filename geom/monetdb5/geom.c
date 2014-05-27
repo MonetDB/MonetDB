@@ -47,7 +47,6 @@
 
 #define GEOMETRY_HAS_Z(info)(info & 0x02)
 #define GEOMETRY_HAS_M(info)(info & 0x01)
-#define COORDINATES_NUM 3
 
 /* the first argument in the functions is the return variable */
 
@@ -63,6 +62,7 @@ geom_export void geom_epilogue(void);
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
 
+/* gets a GEOSGeometry and creates a WKB */
 geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
 
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
@@ -71,6 +71,7 @@ geom_export int wkbFROMSTR(char *src, int srid, int *len, wkb **atom);
 geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
 geom_export str wkbFromText(wkb **w, str *wkt, int srid, int *tpe);
 geom_export str wkbAsText(str *r, wkb **w);
+//geom_export str wkbFromString(wkb**, str*); 
 
 geom_export str geomMakePoint2D(wkb**, double*, double*);
 geom_export str geomMakePoint3D(wkb**, double*, double*, double*);
@@ -166,6 +167,30 @@ wkb *wkbNULL(void) {
 	return (&nullval);
 }
 
+/*str wkbFromString(wkb **w, str *wkt) {
+	int len = 0;
+	char *errbuf;
+	str ex;
+
+	if (wkbFROMSTR(*wkt, 0, &len, w))
+		return MAL_SUCCEED;
+	errbuf = GDKerrbuf;
+	if (errbuf) {
+		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
+			errbuf += 8;
+	} else {
+		errbuf = "cannot parse string";
+	}
+
+	ex = createException(MAL, "wkb.FromString", "%s", errbuf);
+
+	if (GDKerrbuf)
+		GDKerrbuf[0] = '\0';
+
+	return ex;
+}*/
+
+
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
 int mbrFROMSTR(char *src, int *len, mbr **atom) {
@@ -232,17 +257,22 @@ int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
 	unsigned char *geometry_TO_wkb = NULL;	/* The "well known binary" serialization of the geometry object. */
 	size_t wkbLen = 0;		/* The length of the wkbSer string. */
 	int nil = 0;
-	//int coordinateDimensions = 0;
+	int coordinateDimensions = 0;
 
 	if (strcmp(src, str_nil) == 0)
 		nil = 1;
 
-	if (!nil && (geometry_FROM_wkt = GEOSGeomFromWKT(src)) == NULL) {
-		goto return_nil;
+	if (!nil) {
+		GEOSWKTReader *WKT_reader = GEOSWKTReader_create();
+		geometry_FROM_wkt = GEOSWKTReader_read(WKT_reader, src); // GEOSGeomFromWKT(src)) == NULL) {
+		GEOSWKTReader_destroy(WKT_reader);
+
+		if(geometry_FROM_wkt == NULL)
+			goto return_nil;
 	}
 
 	////it returns 2 or 3. How can I get 4??
-	//coordinateDimensions =  GEOSGeom_getCoordinateDimension(geosGeometry);
+	coordinateDimensions =  GEOSGeom_getCoordinateDimension(geometry_FROM_wkt);
 
 	if (!nil && GEOSGeomTypeId(geometry_FROM_wkt) == -1) {
 		GEOSGeom_destroy(geometry_FROM_wkt);
@@ -258,7 +288,7 @@ int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
 		//the srid is lost with the transformation of the GEOSGeom to wkb
 		
 		//set the number of dimensions
-		GEOS_setWKBOutputDims(COORDINATES_NUM);
+		GEOS_setWKBOutputDims(coordinateDimensions); 
 
 		geometry_TO_wkb = GEOSGeomToWKB_buf(geometry_FROM_wkt, &wkbLen);
 		GEOSGeom_destroy(geometry_FROM_wkt);
@@ -297,14 +327,17 @@ int wkbTOSTR(char **dst, int *len, wkb *atom) {
 	GEOSGeom geosGeometry = wkb2geos(atom);
 
 	
-dstStrLen = -1;
-dstStrLen = GEOSGeom_getCoordinateDimension(geosGeometry); 
 	if (geosGeometry) {
 		size_t l;
-		wkt = GEOSGeomToWKT(geosGeometry);
+		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
+		//set the number of dimensions in the writer so that it can 
+		//read correctly the geometry coordinates
+		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
+		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
 		dstStrLen = (int) l + 2;	/* add quotes */
+		GEOSWKTWriter_destroy(WKT_wr);
 		GEOSGeom_destroy(geosGeometry);
 	}
 
@@ -849,7 +882,6 @@ geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
 geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
 geom_export str mbrFromString(mbr **w, str *src);
 geom_export str mbrFromMBR(mbr **w, mbr **src);
-//geom_export str wkbFromString(wkb **w, str *wkt);
 geom_export str wkbFromWKB(wkb **w, wkb **src);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
@@ -1001,30 +1033,6 @@ mbrFromMBR(mbr **w, mbr **src)
 
 
 
-/*str
-wkbFromString(wkb **w, str *wkt)
-{
-	int len = 0;
-	char *errbuf;
-	str ex;
-
-	if (wkbFROMSTR(*wkt, &len, w))
-		return MAL_SUCCEED;
-	errbuf = GDKerrbuf;
-	if (errbuf) {
-		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
-			errbuf += 8;
-	} else {
-		errbuf = "cannot parse string";
-	}
-
-	ex = createException(MAL, "wkb.FromString", "%s", errbuf);
-
-	if (GDKerrbuf)
-		GDKerrbuf[0] = '\0';
-
-	return ex;
-}*/
 
 str
 wkbFromWKB(wkb **w, wkb **src)
@@ -1184,15 +1192,13 @@ wkbMBR(mbr **res, wkb **geom)
 	throw(MAL, "geom.mbr", "Failed to create mbr");
 }
 
-wkb *
-geos2wkb(GEOSGeom geosGeometry)
-{
+wkb* geos2wkb(GEOSGeom geosGeometry) {
 	size_t wkbLen = 0;
 	unsigned char *w = NULL;
 	wkb *atom;
 
 	if (geosGeometry != NULL){
-		GEOS_setWKBOutputDims(COORDINATES_NUM);
+		GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
 		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 	}
 
