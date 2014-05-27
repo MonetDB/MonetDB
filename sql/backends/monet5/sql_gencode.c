@@ -1879,11 +1879,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
-				if (LANG_EXT(f->func->lang))
-					q = pushPtr(mb, q, f->func);
-				if (f->func->lang == FUNC_LANG_R)
-					q = pushStr(mb, q, f->func->query);
+
 			}
+			if (LANG_EXT(f->func->lang))
+				q = pushPtr(mb, q, f->func);
+			if (f->func->lang == FUNC_LANG_R)
+				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */
 			if (f->func->type == F_UNION) 
 				q = table_func_create_result(mb, q, f->func, f->res);
@@ -1999,6 +2000,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			}
+
+			if (LANG_EXT(s->op4.aggrval->aggr->lang))
+				q = pushPtr(mb, q, s->op4.aggrval->aggr);
+			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R){
+				if (!g) {
+					setVarType(mb, getArg(q, 0), restype);
+					setVarUDFtype(mb, getArg(q, 0));
+				}
+				q = pushStr(mb, q, s->op4.aggrval->aggr->query);
+			}
+
 			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
 			} else {
