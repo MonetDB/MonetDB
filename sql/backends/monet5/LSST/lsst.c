@@ -409,7 +409,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 3; i <pci->argc; ++i) 
 		nv[i-3] =  *(dbl*) getArgReference(stk,pci,i);
 	_qserv_computeEdges(edges,nv, nedges);
-	
+	GDKfree(nv);
 
 	/* Transform input position from spherical coordinates
 	   to a unit cartesian vector. */

@@ -202,8 +202,10 @@ malInclude(Client c, str name, int listing)
 			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
 				parseMAL(c, c->curprg);
 				bstream_destroy(c->fdin);
-			} else
+			} else {
 				GDKfree(s); // not interested in error here
+				s = MAL_SUCCEED;
+			}
 			if (p)
 				filename = p + 1;
 		} while (p);
