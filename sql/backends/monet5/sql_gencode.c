@@ -90,21 +90,6 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	return idx;
 }
 
-static InstrPtr
-pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
-{
-	int _t;
-	ValRecord cst;
-
-	if (q == NULL)
-		return NULL;
-	cst.vtype= TYPE_ptr;
-	cst.val.pval = val;
-	cst.len = 0;
-	_t = defConstant(mb, TYPE_ptr, &cst);
-	return pushArgument(mb, q, _t);
-}
-
 static int
 argumentZero(MalBlkPtr mb, int tpe)
 {
@@ -709,10 +694,6 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	/* filter qualifying tuples, return oids of h and tail */
 	q = newStmt(mb, mod, fimp);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	if (LANG_EXT(f->lang)) 
-		q = pushPtr(mb, q, f);
-	if (f->lang == FUNC_LANG_R)
-		q = pushStr(mb, q, f->query);
 	q = pushArgument(mb, q, op1);
 	q = pushArgument(mb, q, op2);
 	if (s->op3)
@@ -1843,7 +1824,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_subtype *tpe = NULL;
 			int special = 0;
 			sql_subfunc *f = s->op4.funcval;
-			int rtype = (f->res.type)?f->res.type->localtype:0;
 			node *n;
 			/* dump operands */
 			if (_dumpstmt(sql, mb, s->op1) < 0)
@@ -1885,10 +1865,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC)
 				special = 1;
 
-			if (LANG_EXT(f->func->lang)) 
-				q = pushPtr(mb, q, f->func);
-			if (f->func->lang == FUNC_LANG_R)
-				q = pushStr(mb, q, f->func->query);
 			for (n = s->op1->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
@@ -1995,15 +1971,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
 				}
-			}
-			if (LANG_EXT(a->aggr->lang)) 
-				q = pushPtr(mb, q, a->aggr);
-			if (a->aggr->lang == FUNC_LANG_R){
-				if (!g) {
-					setVarType(mb, getArg(q, 0), restype);
-					setVarUDFtype(mb, getArg(q, 0));
-				}
-				q = pushStr(mb, q, a->aggr->query);
 			}
 			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
@@ -2945,22 +2912,4 @@ static int
 backend_create_subaggr(backend *be, sql_subaggr *f)
 {
 	return backend_create_func(be, f->aggr, f->res, NULL);
-}
-
-/* TODO handle aggr */
-int
-backend_create_func(backend *be, sql_func *f)
-{
-	switch(f->lang) {
-	case FUNC_LANG_INT:
-	case FUNC_LANG_MAL:
-	case FUNC_LANG_SQL:
-		return backend_create_sql_func(be, f);
-	case FUNC_LANG_R:
-		return backend_create_r_func(be, f);
-	case FUNC_LANG_C:
-	case FUNC_LANG_J:
-	default:
-		return -1;	
-	}
 }

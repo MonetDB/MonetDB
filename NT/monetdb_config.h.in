@@ -299,9 +299,6 @@
 /* Define if you have the pthread library */
 /* #undef HAVE_LIBPTHREAD */
 
-/* Define if you have libR installed */
-/* #undef HAVE_LIBR */
-
 /* Define if you have the readline library */
 /* #undef HAVE_LIBREADLINE */
 

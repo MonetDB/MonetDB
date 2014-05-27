@@ -747,7 +747,6 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 		 	if (params) {
 				for (n = params->h; n; n = n->next) {
 					dnode *an = n->data.lval->h;
-		
 					sql_add_param(sql, an->data.sval, &an->next->data.typeval);
 				}
 				l = sql->params;
@@ -775,6 +774,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 											(lang == FUNC_LANG_J)?"japi":"unknown";
 				sql->params = NULL;
 					if (create) {
+// TODO: what to set for varargs argument in create_func?
 						f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, FALSE);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
@@ -783,7 +783,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP("rapi");
 					f->imp = _STRDUP("eval");
 					if (res && restype)
-						f->res = *restype;
+						f->res = restype;
 					f->sql = 0; /* native */
 				}
 			} else if (body) {
