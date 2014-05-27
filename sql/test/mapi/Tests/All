@@ -12,3 +12,6 @@ HAVE_PHP?php_monetdb
 utf8test
 HAVE_PYTHON2?python2_test_monetdb_sql
 HAVE_PYTHON3?python3_test_monetdb_sql
+HAVE_PHP?php_int64_dec18
+HAVE_PHP&HAVE_HGE?php_int128
+HAVE_PHP&HAVE_HGE?php_dec38
