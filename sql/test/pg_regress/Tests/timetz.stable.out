@@ -1,0 +1,122 @@
+stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:44 >  
+# 17:11:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:44 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:11:45 >  
+# 17:11:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:45 >  
+
+#CREATE TABLE TIMETZ_TBL (f1 time(2) with time zone);
+#INSERT INTO TIMETZ_TBL VALUES ('00:01 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('01:00 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('02:03 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('07:07 PST');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('08:08 EDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('11:59 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('12:00 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('12:01 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('23:59 PDT');
+[ 1	]
+#INSERT INTO TIMETZ_TBL VALUES ('11:59:59.99 PM PDT');
+[ 1	]
+#SELECT f1 AS "Time TZ" FROM TIMETZ_TBL;
+% sys.L # table_name
+% Time TZ # name
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
+#SELECT f1 AS "Three" FROM TIMETZ_TBL WHERE f1 < '05:06:07-07';
+% sys.L # table_name
+% Three # name
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
+#SELECT f1 AS "Seven" FROM TIMETZ_TBL WHERE f1 > '05:06:07-07';
+% sys.L # table_name
+% Seven # name
+% timetz # type
+% 17 # length
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
+#SELECT f1 AS "None" FROM TIMETZ_TBL WHERE f1 < '00:00-07';
+% sys.L # table_name
+% None # name
+% timetz # type
+% 17 # length
+#SELECT f1 AS "Ten" FROM TIMETZ_TBL WHERE f1 >= '00:00-07';
+% sys.L # table_name
+% Ten # name
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
+#SELECT f1 + time with time zone '00:01' AS "Illegal" FROM TIMETZ_TBL;
+% sys.L # table_name
+% Illegal # name
+% time # type
+% 15 # length
+[ 00:02:00.000000	]
+[ 01:01:00.000000	]
+[ 02:04:00.000000	]
+[ 07:08:00.000000	]
+[ 08:09:00.000000	]
+[ 12:00:00.000000	]
+[ 12:01:00.000000	]
+[ 12:02:00.000000	]
+[ nil	]
+[ 12:00:59.990000	]
+
+# 17:11:45 >  
+# 17:11:45 >  "Done."
+# 17:11:45 >  
+

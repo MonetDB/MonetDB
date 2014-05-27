@@ -22,7 +22,7 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 
 /*
- * @+ Strength reduction implementation
+ * Strength reduction implementation
  * Strength reduction of the code is defensive.
  * This first shot assumes a single loop, so we do not have to
  * maintain a complex administration. We simply split the code
@@ -67,7 +67,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	int i, j = 0, k, se= FALSE;
 	InstrPtr p;
 	int bk, ik, blk, blkbegin, blkexit, actions = 0;
-	InstrPtr *before, *within, *old = mb->stmt;
+	InstrPtr *before, *within, *newstmt;
 	Lifespan span;
 
 	(void) cntxt;
@@ -90,8 +90,11 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	before[bk++] = getInstrPtr(mb, 0);
 
 	span =setLifespan(mb);
-	if( span == NULL)
+	if( span == NULL){
+		GDKfree(before);
+		GDKfree(within);
 		return 0;
+	}
 
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
@@ -122,7 +125,6 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			continue;
 		}
 		/*
-		 * @-
 		 * Strength reduction is only relevant inside a block;
 		 */
 		if( blkexit == 0) {
@@ -130,7 +132,6 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			continue;
 		}
 		/*
-		 * @-
 		 * Flow control statements may not be moved around
 		 */
 		if ( p->barrier != 0){
@@ -138,7 +139,6 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			continue;
 		}
 		/*
-		 * @-
 		 * Limit strength reduction to the type modules and the batcalc, batstr, batcolor
 		 * and sql.bind.
 		 */
@@ -147,7 +147,6 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			continue;
 		}
 		/*
-		 * @-
 		 * Search the prospective new block and make sure that
 		 * none of the arguments is assigned a value.
 		 */
@@ -162,7 +161,6 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 				}
 		}
 		/*
-		 * @-
 		 * Make sure the variables are not declared before the loop and used
 		 * after the loop, because then you may not simple move an expression.
 		 */
@@ -190,14 +188,15 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	for (k = 0; k < ik; k++)
 		before[bk++] = within[k];
 	before[bk++] = getInstrPtr(mb, i);
-	GDKfree(mb->stmt);
-	mb->stmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
-	if ( mb->stmt == NULL){
+	newstmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
+	if ( newstmt == NULL){
 		GDKfree(span);
 		GDKfree(before);
 		GDKfree(within);
-		mb->stmt = old;
 		return 0;
+	} else {
+		GDKfree(mb->stmt);
+		mb->stmt = newstmt;
 	}
 	mb->stop = 0;
 

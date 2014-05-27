@@ -1,0 +1,148 @@
+stderr of test 'hash_index` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:33 >  
+# 17:10:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:33 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:35 >  
+# 17:10:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_i4_heap.* 
+           WHERE hash_i4_heap.random = 843938989;
+ERROR = !SELECT: no such column 'hash_i4_heap.random'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_i4_heap.*
+           WHERE hash_i4_heap.random = 66766766;
+ERROR = !SELECT: no such column 'hash_i4_heap.random'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_name_heap.*
+           WHERE hash_name_heap.random = '1505703298'::name;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_name_heap.*
+           WHERE hash_name_heap.random = '7777777'::name;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_txt_heap.*
+           WHERE hash_txt_heap.random = '1351610853'::text;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_txt_heap.*
+           WHERE hash_txt_heap.random = '111111112222222233333333'::text;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_f8_heap.*
+           WHERE hash_f8_heap.random = '444705537'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT hash_f8_heap.*
+           WHERE hash_f8_heap.random = '88888888'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_i4_heap
+           SET random = 1
+           WHERE hash_i4_heap.seqno = 1492;
+ERROR = !UPDATE: no such table 'hash_i4_heap'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS i1492, h.random AS i1
+           FROM hash_i4_heap h
+           WHERE h.random = 1;
+ERROR = !SELECT: no such table 'hash_i4_heap'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_i4_heap 
+           SET seqno = 20000 
+           WHERE hash_i4_heap.random = 1492795354;
+ERROR = !UPDATE: no such table 'hash_i4_heap'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS i20000 
+           FROM hash_i4_heap h
+           WHERE h.random = 1492795354;
+ERROR = !SELECT: no such table 'hash_i4_heap'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_name_heap 
+           SET random = '0123456789abcdef'::string
+           WHERE hash_name_heap.seqno = 6543;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS i6543, h.random AS c0_to_f
+           FROM hash_name_heap h
+           WHERE h.random = '0123456789abcdef'::name;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_name_heap
+           SET seqno = 20000
+           WHERE hash_name_heap.random = '76652222'::name;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS emptyset
+           FROM hash_name_heap h
+           WHERE h.random = '76652222'::name;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_txt_heap 
+           SET random = '0123456789abcdefghijklmnop'::text
+           WHERE hash_txt_heap.seqno = 4002;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS i4002, h.random AS c0_to_p
+           FROM hash_txt_heap h
+           WHERE h.random = '0123456789abcdefghijklmnop'::text;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_txt_heap
+           SET seqno = 20000
+           WHERE hash_txt_heap.random = '959363399'::text;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS t20000
+           FROM hash_txt_heap h
+           WHERE h.random = '959363399'::text;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_f8_heap
+           SET random = '-1234.1234'::double
+           WHERE hash_f8_heap.seqno = 8906;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS i8096, h.random AS f1234_1234 
+           FROM hash_f8_heap h
+           WHERE h.random = '-1234.1234'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = UPDATE hash_f8_heap 
+           SET seqno = 20000
+           WHERE hash_f8_heap.random = '488912369'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT h.seqno AS f20000
+           FROM hash_f8_heap h
+           WHERE h.random = '488912369'::double;
+ERROR = !unexpected symbol (:)
+
+# 17:10:35 >  
+# 17:10:35 >  "Done."
+# 17:10:35 >  
+

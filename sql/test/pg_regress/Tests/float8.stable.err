@@ -1,0 +1,178 @@
+stderr of test 'float8` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:25 >  
+# 17:10:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:25 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:26 >  
+# 17:10:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:26 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('    0.0   ');
+ERROR = !conversion of string '    0.0   ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('1004.30  ');
+ERROR = !conversion of string '1004.30  ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '10e400'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '-10e400'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '10e-400'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '-10e-400'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('     ');
+ERROR = !conversion of string '     ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('xyz');
+ERROR = !conversion of string 'xyz' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('5.0.0');
+ERROR = !conversion of string '5.0.0' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('5 . 0');
+ERROR = !conversion of string '5 . 0' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('5.   0');
+ERROR = !conversion of string '5.   0' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('    - 3');
+ERROR = !conversion of string '    - 3' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('123           5');
+ERROR = !conversion of string '123           5' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'NaN'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'nan'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '   NAN  '::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'infinity'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '          -INFINiTY   '::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'N A N'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'NaN x'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT ' INFINITY    x'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'Infinity'::double + 100.0;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'Infinity'::double / 'Infinity'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'nan'::double / 'nan'::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, FLOAT8_TBL.*;
+ERROR = !Column expression Table 'float8_tbl' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, f.f1, @f.f1 AS abs_f1 
+           FROM FLOAT8_TBL f;
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select '' as five, f.f1, @f."
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, f.f1, %f.f1 AS trunc_f1
+           FROM FLOAT8_TBL f;
+ERROR = !syntax error, unexpected '%' in: "select '' as five, f.f1, %"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, f.f1, f.f1 % AS round_f1
+           FROM FLOAT8_TBL f;
+ERROR = !syntax error, unexpected AS in: "select '' as five, f.f1, f.f1 % as"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT sqrt(double '64') AS eight;
+ERROR = !syntax error, unexpected sqlDOUBLE in: "select sqrt(double"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT |/ double '64' AS eight;
+ERROR = !syntax error, unexpected '|' in: "select |"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS three, f.f1, |/f.f1 AS sqrt_f1
+           FROM FLOAT8_TBL f
+           WHERE f.f1 > '0.0';
+ERROR = !syntax error, unexpected '|' in: "select '' as three, f.f1, |"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT power(double '144', double '0.5');
+ERROR = !syntax error, unexpected sqlDOUBLE in: "select power(double"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
+           FROM FLOAT8_TBL f
+           WHERE f.f1 > '0.0';
+ERROR = !cannot use non GROUP BY column 'f1' in query results without an aggregate function
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT ||/ double '27' AS three;
+ERROR = !syntax error, unexpected CONCATSTRING in: "select ||"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, f.f1, ||/f.f1 AS cbrt_f1 FROM FLOAT8_TBL f;
+ERROR = !syntax error, unexpected CONCATSTRING in: "select '' as five, f.f1, ||"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, FLOAT8_TBL.*;
+ERROR = !Column expression Table 'float8_tbl' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS bad, f.f1 * '1e200' from FLOAT8_TBL f;
+ERROR = !overflow in calculation -1.2345678901234e+200*9.9999999999999997e+199.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
+ERROR = !"1e2" is no decimal value (doesn't contain a '.')
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
+ERROR = !SELECT: no such unary operator 'ln(double)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
+ERROR = !SELECT: no such unary operator 'ln(double)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
+ERROR = !division by zero.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, FLOAT8_TBL.*;
+ERROR = !Column expression Table 'float8_tbl' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('10e400');
+ERROR = !conversion of string '10e400' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO FLOAT8_TBL(f1) VALUES ('-10e400');
+ERROR = !conversion of string '-10e400' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS five, FLOAT8_TBL.*;
+ERROR = !Column expression Table 'float8_tbl' unknown
+
+# 17:10:26 >  
+# 17:10:26 >  "Done."
+# 17:10:26 >  
+
