@@ -261,8 +261,11 @@ addQueryToCache(Client c)
 
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
-		if (m->debug)
-			runMALDebugger(c, c->curprg);
+		if (m->debug) {
+			msg = runMALDebugger(c, c->curprg);
+			if (msg != MAL_SUCCEED)
+				GDKfree(msg); /* ignore error */
+		}
 		return;
 	}
 	addOptimizers(c, mb, pipe);
