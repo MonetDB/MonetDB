@@ -226,7 +226,7 @@ handleClient(int sock, char isusock)
 		}
 	}
 
-	if (*database == '\0') {
+	if (database == NULL || *database == '\0') {
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
 		mnstr_printf(fout, "!monetdbd: please specify a database\n");

@@ -65,7 +65,7 @@ getDefaultProps(void)
  * Returns 0 when the properties could be written to the file.
  */
 inline int
-writeProps(confkeyval *ckv, char *path)
+writeProps(confkeyval *ckv, const char *path)
 {
 	char file[1024];
 	FILE *cnf;
@@ -122,7 +122,7 @@ writePropsBuf(confkeyval *ckv, char **buf)
  * when reading the property file succeeded.
  */
 inline int
-readProps(confkeyval *ckv, char *path)
+readProps(confkeyval *ckv, const char *path)
 {
 	char file[1024];
 	FILE *cnf;
