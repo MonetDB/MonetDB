@@ -888,7 +888,12 @@ JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int
 
 	bufstr = buffer_create(8096);
 	f = buffer_wastream(bufstr, "bufstr_write");
-	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, start, &pretty);
+	line = JSONprint(ret, &f, kind, string, integer, doble, array, object, name, start, &pretty);
+	if (line != MAL_SUCCEED) {
+		mnstr_close(f);
+		mnstr_destroy(f);
+		return line;
+	}
 
 	/* calculate width of column, and the number of tuples */
 	buf = buffer_get_buf(bufstr);

@@ -392,6 +392,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 			freetree(inputs);
 			freetree(tmpl);
 			GDKfree(vars);
+			GDKfree(res);
 			return w;
 		}
 		GDKfree(vars);
