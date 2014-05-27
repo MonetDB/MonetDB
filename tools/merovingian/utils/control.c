@@ -63,6 +63,7 @@ char* control_send(
 	stream *fdin = NULL;
 	stream *fdout = NULL;
 
+	*ret = NULL;		/* gets overwritten in case of success */
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
