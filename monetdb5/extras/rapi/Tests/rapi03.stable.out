@@ -1,0 +1,75 @@
+stdout of test 'rapi03` in directory 'monetdb5/extras/rapi` itself:
+
+
+# 20:25:27 >  
+# 20:25:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39906" "--set" "mapi_usock=/var/tmp/mtest-27475/.s.monetdb.39906" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/rapi//Linux/var/MonetDB/mTests_monetdb5_extras_rapi" "rapi03.mal"
+# 20:25:27 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_rapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39906/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27475/.s.monetdb.39906
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# Hannes Muehleisen example 
+    b := bat.new(:oid,:int);
+    bat.append(b,1804289383);
+    bat.append(b,846930886);
+    bat.append(b,1681692777);
+    bat.append(b,1714636915);
+    bat.append(b,1957747793);
+    bat.append(b,424238335);
+    bat.append(b,719885386);
+    bat.append(b,1649760492);
+    bat.append(b,596516649);
+    bat.append(b,1189641421);
+    io.print(b);
+    (t:bat[:oid,:dbl] ,s:bat[:oid,:dbl] ) := rapi.eval("someval2 <- Re(fft(arg1)); print(someval2); return(data.frame(someval2,someval2));",b);
+    io.print(t,s);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1804289383  ]
+[ 1@0,	846930886  ]
+[ 2@0,	1681692777  ]
+[ 3@0,	1714636915  ]
+[ 4@0,	1957747793  ]
+[ 5@0,	424238335  ]
+[ 6@0,	719885386  ]
+[ 7@0,	1649760492  ]
+[ 8@0,	596516649  ]
+[ 9@0,	1189641421  ]
+# User R expression: someval2 <- Re(fft(arg2)); print(someval2); return(data.frame(someval2,someval2));
+# Executed R expression ret <- as.data.frame((function(arg2){someval2 <- Re(fft(arg2)); print(someval2); return(data.frame(someval2,someval2));})(arg2),nm=NA,stringsAsFactors=F)
+
+# [1]# 12585340037#   525771363#  -879667492#  2456894288#   158316769#   934923939#
+# [7]#   158316769#  2456894288#  -879667492#   525771363#
+#--------------------------#
+# h	t	t  # name
+# void	dbl	dbl  # type
+#--------------------------#
+[ 0@0,	12585340037,	12585340037  ]
+[ 1@0,	525771362.90836447,	525771362.90836447  ]
+[ 2@0,	-879667492.32359219,	-879667492.32359219  ]
+[ 3@0,	2456894287.5916357,	2456894287.5916357  ]
+[ 4@0,	158316768.82359338,	158316768.82359338  ]
+[ 5@0,	934923939,	934923939  ]
+[ 6@0,	158316768.82359338,	158316768.82359338  ]
+[ 7@0,	2456894287.5916352,	2456894287.5916352  ]
+[ 8@0,	-879667492.32359219,	-879667492.32359219  ]
+[ 9@0,	525771362.90836453,	525771362.90836453  ]
+
+# 20:25:27 >  
+# 20:25:27 >  "Done."
+# 20:25:27 >  
+

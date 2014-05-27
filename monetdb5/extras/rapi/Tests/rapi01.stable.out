@@ -1,0 +1,71 @@
+stdout of test 'rapi01` in directory 'monetdb5/extras/rapi` itself:
+
+
+# 15:45:24 >  
+# 15:45:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32234" "--set" "mapi_usock=/var/tmp/mtest-13776/.s.monetdb.32234" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/hannes/monetdb-rint-install/var/MonetDB/mTests_monetdb5_extras_rapi" "rapi01.mal"
+# 15:45:24 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_rapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.592 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bristol.ins.cwi.nl:32234/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13776/.s.monetdb.32234
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# Error handling tests 
+    b := bat.new(:oid,:int);
+    bat.append(b,1804289383);
+    bat.append(b,846930886);
+    bat.append(b,1681692777);
+    bat.append(b,1714636915);
+    bat.append(b,1957747793);
+    bat.append(b,424238335);
+    bat.append(b,719885386);
+    bat.append(b,1649760492);
+    bat.append(b,596516649);
+    bat.append(b,1189641421);
+    io.print(b);
+# illegal variables being used 
+    r:bat[:oid,:dbl]  := rapi.eval("someresult <- Re(fft(somevalue));",b);
+    r:bat[:oid,:dbl]  := rapi.eval("someresult <- Re(fft(arg2));",b);
+    r:bat[:oid,:dbl]  := rapi.eval("ret0 <- Re(fft(somevalue));",b);
+    r:bat[:oid,:dbl]  := rapi.eval("ret1 <- Re(fft(arg2));",b);
+    r:bat[:oid,:dbl]  := rapi.eval("ret0 <- Re(fft(arg5));",b);
+# illegal R expressions 
+    r:bat[:oid,:dbl]  := rapi.eval("ret0 <- Re(fft(arg2)  )  );",b);
+    io.print(r);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1804289383  ]
+[ 1@0,	846930886  ]
+[ 2@0,	1681692777  ]
+[ 3@0,	1714636915  ]
+[ 4@0,	1957747793  ]
+[ 5@0,	424238335  ]
+[ 6@0,	719885386  ]
+[ 7@0,	1649760492  ]
+[ 8@0,	596516649  ]
+[ 9@0,	1189641421  ]
+# Error in fft(somevalue) : object 'somevalue' not found
+Calls: as.data.frame -> <Anonymous> -> fft
+!MALException:rapi.eval:Error running R expression 'someresult <- Re(fft(somevalue));'. Error message: Error in fft(somevalue) : object 'somevalue' not found
+!Calls: as.data.frame -> <Anonymous> -> fft
+
+
+
+
+
+# 15:22:47 >  
+# 15:22:47 >  "Done."
+# 15:22:47 >  
+
