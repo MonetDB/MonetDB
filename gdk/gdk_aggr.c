@@ -400,7 +400,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 			AGGR_SUM(int, hge);
 			break;
 		case TYPE_lng:
-			AGGR_SUM(lng, lng);
+			AGGR_SUM(lng, hge);
 			break;
 		case TYPE_hge:
 			AGGR_SUM(hge, hge);
