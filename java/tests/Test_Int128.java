@@ -31,8 +31,10 @@ public class Test_Int128 {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
-		BigInteger bd = new BigInteger(
+		BigInteger bi = new BigInteger(
 				"123000000001037407179000000000695893739");
+		BigDecimal bd = new BigDecimal(
+				"123000000001037407179000000000695893.73");
 		try {
 			con.setAutoCommit(false);
 			Statement s = con.createStatement();
@@ -41,18 +43,30 @@ public class Test_Int128 {
 
 			PreparedStatement insertStatement = con
 					.prepareStatement("INSERT INTO HUGEINTT VALUES (?)");
-			insertStatement.setBigDecimal(1, new BigDecimal(bd));
+			insertStatement.setBigDecimal(1, new BigDecimal(bi));
 			insertStatement.executeUpdate();
 			insertStatement.close();
+			
+			s.executeUpdate("INSERT INTO HUGEDECT VALUES ("+bd+");");
 
 			ResultSet rs = s.executeQuery("SELECT I FROM HUGEINTT");
 			rs.next();
-			BigInteger bdRes = rs.getBigDecimal(1).toBigInteger();
+			BigInteger biRes = rs.getBigDecimal(1).toBigInteger();
+			rs.close();
+			rs = s.executeQuery("SELECT I FROM HUGEDECT");
+			rs.next();
+			BigDecimal bdRes = rs.getBigDecimal(1);
 			rs.close();
 			s.close();
 			
+			System.out.println("Expecting " + bi + ", got " + biRes);
+			if (!bi.equals(biRes)) {
+				throw new RuntimeException();
+			}
+			
+			System.out.println("Expecting " + bd + ", got " + bdRes);
 			if (!bd.equals(bdRes)) {
-				throw new RuntimeException("Expecting " + bd + ", got " + bdRes);
+				throw new RuntimeException();
 			}
 			System.out.println("SUCCESS");
 
