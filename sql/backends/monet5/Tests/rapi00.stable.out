@@ -1,0 +1,47 @@
+stdout of test 'rapi00` in directory 'sql/backends/monet5` itself:
+
+
+# 17:37:08 >  
+# 17:37:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35474" "--set" "mapi_usock=/var/tmp/mtest-20729/.s.monetdb.35474" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/hannes/fakefs/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0"
+# 17:37:08 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.592 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bristol.ins.cwi.nl:35474/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20729/.s.monetdb.35474
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:37:08 >  
+# 17:37:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20729" "--port=35474"
+# 17:37:08 >  
+
+#create function rapi00() returns table (d integer)
+#language R {
+#	return(seq(1,10));
+#};
+#select d from rapi00() as R where d > 5;
+% .r # table_name
+% d # name
+% int # type
+% 2 # length
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+#drop function rapi00;
+
+# 17:37:09 >  
+# 17:37:09 >  "Done."
+# 17:37:09 >  
+

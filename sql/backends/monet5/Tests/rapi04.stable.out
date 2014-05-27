@@ -1,0 +1,60 @@
+stdout of test 'rapi04` in directory 'sql/backends/monet5` itself:
+
+
+# 17:37:11 >  
+# 17:37:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35474" "--set" "mapi_usock=/var/tmp/mtest-20729/.s.monetdb.35474" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/hannes/fakefs/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0"
+# 17:37:11 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.592 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bristol.ins.cwi.nl:35474/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20729/.s.monetdb.35474
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# trying URL 'http://cran.rstudio.com/src/contrib/moonsun_0.1.3.tar.gz'
+# Content type 'application/x-gzip'#  length 153796 bytes (150 Kb)
+# opened URL
+# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# =# 
+# downloaded 150 Kb
+
+# 15:05:30 >  
+# 15:05:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8747" "--port=32948"
+# 15:05:30 >  
+
+#CREATE TABLE ts (ts INTEGER);
+#insert into ts values (1387360138),(451665720),(514382400),(1000209600),(1326272400);
+[ 5	]
+#create function moon(arg1 integer,arg2 float, arg3 float) returns integer language R {
+#	library(moonsun)
+#	options(latitude=arg2,longitude=arg3)
+#	angles <- sapply(arg1,FUN=function(x){
+#		ts <- as.POSIXlt(x,origin = "1970-01-01",tz="UTC")
+#		moon(jd(epoch=ts)+ts$hour/24)$angle
+#	})
+#	return(as.integer(arg1[angles > 0]))
+#};
+#select * from ts where moon(ts,52.3,4.8) > 0;
+% sys.ts # table_name
+% ts # name
+% int # type
+% 10 # length
+[ 1387360138	]
+[ 451665720	]
+[ 514382400	]
+[ 1000209600	]
+#drop function moon;
+#drop table ts;
+
+# 17:37:14 >  
+# 17:37:14 >  "Done."
+# 17:37:14 >  
+
