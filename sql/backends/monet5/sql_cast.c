@@ -460,12 +460,17 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);
+		if (r == NULL)
+			throw(SQL, "str_cast", MAL_MALLOC_FAIL);
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str) p;
 		strLength(&sz, v);
-		if (len == 0 || (sz >= 0 && sz <= len))
+		if (len == 0 || (sz >= 0 && sz <= len)) {
 			r = GDKstrdup(v);
+			if (r == NULL)
+				throw(SQL, "str_cast", MAL_MALLOC_FAIL);
+		}
 	}
 	if ((len > 0 && sz > len) || sz < 0) {
 		if (r)
@@ -474,6 +479,8 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 			throw(SQL, "str_cast", "22001!value too long for type (var)char(%d)", len);
 		} else {
 			r = GDKstrdup(str_nil);
+			if (r == NULL)
+				throw(SQL, "str_cast", MAL_MALLOC_FAIL);
 		}
 	}
 	*res = r;
@@ -542,6 +549,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		BUNins(dst, BUNhead(bi, p), r, FALSE);
 		GDKfree(r);
+		r = NULL;
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
