@@ -748,7 +748,7 @@ atom_io(lng, Lng, lng)
 #define HGE_LL018FMT "%018lld"
 #endif
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
-
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 int
 hgeToStr(char **dst, int *len, const hge *src)
 {
@@ -763,7 +763,7 @@ hgeToStr(char **dst, int *len, const hge *src)
 	} else {
 		hge s = *src / HGE_LL18DIGITS;
 		int l = hgeToStr(dst, len, &s);
-		snprintf(*dst + l, *len - l, HGE_LL018FMT, (lng) ABS(*src % HGE_LL18DIGITS));
+		snprintf(*dst + l, *len - l, HGE_LL018FMT, (lng) HGE_ABS(*src % HGE_LL18DIGITS));
 		return (int) strlen(*dst);
 	}
 }
