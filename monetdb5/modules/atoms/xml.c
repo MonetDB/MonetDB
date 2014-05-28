@@ -578,7 +578,7 @@ XMLconcat(xml *ret, xml *left, xml *right)
 			throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
 		snprintf(buf, len, "A%s %s", *left + 1, *right + 1);
 	} else if (**left == 'C') {
-		len = strlen(*left) + strlen(*right);
+		len = strlen(*left) + strlen(*right) +2;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
 			throw(MAL, "xml.concat", MAL_MALLOC_FAIL);

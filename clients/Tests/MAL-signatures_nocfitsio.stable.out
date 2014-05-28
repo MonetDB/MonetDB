@@ -32052,14 +32052,6 @@ command bat.setHash(b:bat[:oid,:any_2],prop:bit):bit
 address BKCsetHash;
 comment Create a hash structure on the column
 
-command bat.setMemoryAdvise(b:bat[:oid,:any_2],mode:int):bit 
-address BKCmadvise2;
-comment alias for madvise(b, mode, mode, mode, mode)
-
-command bat.setMemoryAdvise(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
-address BKCmadvise;
-comment Modern Operating Systems allow users to influence the buffer         management policy of virtual memory. This is a crucial feature         for database systems, and eliminates the need to reimplement 	the OS in a database buffer manager.  The supported flags are         BUF_NORMAL (the normal adaptive kernel algorithm),	BUF_RANDOM (no page prefetching), 	BUF_SEQUENTIAL (prefetch and swapout),	BUF_WILLNEED (load everything with prefetch), 	BUF_DONTNEED (swapout).	These buffer management modes are not persistent. 	Returns the BAT operated upon.
-
 command bat.setMemoryMap(b:bat[:oid,:any_2],mode:int):bit 
 address BKCmmap2;
 comment Alias for mmap(b, mode, mode, mode, mode)

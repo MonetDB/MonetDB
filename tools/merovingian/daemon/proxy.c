@@ -185,7 +185,10 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 		/* block until the server acknowledges that it has psock
 		 * connected with itself */
-		recv(ssock, buf, 1, 0);
+		if (recv(ssock, buf, 1, 0) < 0) {
+			close(ssock);
+			return(newErr("could not receive initial byte: %s", strerror(errno)));
+		}
 		close(ssock);
 		close(psock);
 		close_stream(cfdin);

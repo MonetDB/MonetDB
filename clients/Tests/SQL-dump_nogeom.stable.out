@@ -1586,60 +1586,60 @@ COPY 286 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 5714	"status"	"clob"	0	0	5717	NULL	true	5	NULL
 5715	"tag"	"oid"	63	0	5717	NULL	true	6	NULL
 5716	"query"	"clob"	0	0	5717	NULL	true	7	NULL
-6152	"schema"	"clob"	0	0	6164	NULL	true	0	NULL
-6153	"table"	"clob"	0	0	6164	NULL	true	1	NULL
-6154	"column"	"clob"	0	0	6164	NULL	true	2	NULL
-6155	"type"	"clob"	0	0	6164	NULL	true	3	NULL
-6156	"location"	"clob"	0	0	6164	NULL	true	4	NULL
-6157	"count"	"bigint"	64	0	6164	NULL	true	5	NULL
-6158	"typewidth"	"int"	32	0	6164	NULL	true	6	NULL
-6159	"columnsize"	"bigint"	64	0	6164	NULL	true	7	NULL
-6160	"heapsize"	"bigint"	64	0	6164	NULL	true	8	NULL
-6161	"hashes"	"bigint"	64	0	6164	NULL	true	9	NULL
-6162	"imprints"	"bigint"	64	0	6164	NULL	true	10	NULL
-6163	"sorted"	"boolean"	1	0	6164	NULL	true	11	NULL
-6166	"schema"	"clob"	0	0	6176	NULL	true	0	NULL
-6167	"table"	"clob"	0	0	6176	NULL	true	1	NULL
-6168	"column"	"clob"	0	0	6176	NULL	true	2	NULL
-6169	"type"	"clob"	0	0	6176	NULL	true	3	NULL
-6170	"typewidth"	"int"	32	0	6176	NULL	true	4	NULL
-6171	"count"	"bigint"	64	0	6176	NULL	true	5	NULL
-6172	"distinct"	"bigint"	64	0	6176	NULL	true	6	NULL
-6173	"atomwidth"	"int"	32	0	6176	NULL	true	7	NULL
-6174	"reference"	"boolean"	1	0	6176	NULL	true	8	NULL
-6175	"sorted"	"boolean"	1	0	6176	NULL	true	9	NULL
-6214	"schema"	"clob"	0	0	6224	NULL	true	0	NULL
-6215	"table"	"clob"	0	0	6224	NULL	true	1	NULL
-6216	"column"	"clob"	0	0	6224	NULL	true	2	NULL
-6217	"type"	"clob"	0	0	6224	NULL	true	3	NULL
-6218	"count"	"bigint"	64	0	6224	NULL	true	4	NULL
-6219	"columnsize"	"bigint"	64	0	6224	NULL	true	5	NULL
-6220	"heapsize"	"bigint"	64	0	6224	NULL	true	6	NULL
-6221	"hashes"	"bigint"	64	0	6224	NULL	true	7	NULL
-6222	"imprints"	"bigint"	64	0	6224	NULL	true	8	NULL
-6223	"sorted"	"boolean"	1	0	6224	NULL	true	9	NULL
-6226	"schema"	"clob"	0	0	6234	NULL	true	0	NULL
-6227	"table"	"clob"	0	0	6234	NULL	true	1	NULL
-6228	"count"	"bigint"	64	0	6234	NULL	true	2	NULL
-6229	"columnsize"	"bigint"	64	0	6234	NULL	true	3	NULL
-6230	"heapsize"	"bigint"	64	0	6234	NULL	true	4	NULL
-6231	"hashes"	"bigint"	64	0	6234	NULL	true	5	NULL
-6232	"imprints"	"bigint"	64	0	6234	NULL	true	6	NULL
-6233	"auxillary"	"bigint"	53	0	6234	NULL	true	7	NULL
-6236	"schema"	"clob"	0	0	6249	NULL	true	0	NULL
-6237	"table"	"clob"	0	0	6249	NULL	true	1	NULL
-6238	"column"	"clob"	0	0	6249	NULL	true	2	NULL
-6239	"type"	"clob"	0	0	6249	NULL	true	3	NULL
-6240	"width"	"int"	32	0	6249	NULL	true	4	NULL
-6241	"stamp"	"timestamp"	7	0	6249	NULL	true	5	NULL
-6242	"sample"	"bigint"	64	0	6249	NULL	true	6	NULL
-6243	"count"	"bigint"	64	0	6249	NULL	true	7	NULL
-6244	"unique"	"bigint"	64	0	6249	NULL	true	8	NULL
-6245	"nils"	"bigint"	64	0	6249	NULL	true	9	NULL
-6246	"minval"	"clob"	0	0	6249	NULL	true	10	NULL
-6247	"maxval"	"clob"	0	0	6249	NULL	true	11	NULL
-6248	"sorted"	"boolean"	1	0	6249	NULL	true	12	NULL
-6302	"function_id"	"int"	32	0	6303	NULL	true	0	NULL
+6156	"schema"	"clob"	0	0	6168	NULL	true	0	NULL
+6157	"table"	"clob"	0	0	6168	NULL	true	1	NULL
+6158	"column"	"clob"	0	0	6168	NULL	true	2	NULL
+6159	"type"	"clob"	0	0	6168	NULL	true	3	NULL
+6160	"location"	"clob"	0	0	6168	NULL	true	4	NULL
+6161	"count"	"bigint"	64	0	6168	NULL	true	5	NULL
+6162	"typewidth"	"int"	32	0	6168	NULL	true	6	NULL
+6163	"columnsize"	"bigint"	64	0	6168	NULL	true	7	NULL
+6164	"heapsize"	"bigint"	64	0	6168	NULL	true	8	NULL
+6165	"hashes"	"bigint"	64	0	6168	NULL	true	9	NULL
+6166	"imprints"	"bigint"	64	0	6168	NULL	true	10	NULL
+6167	"sorted"	"boolean"	1	0	6168	NULL	true	11	NULL
+6170	"schema"	"clob"	0	0	6180	NULL	true	0	NULL
+6171	"table"	"clob"	0	0	6180	NULL	true	1	NULL
+6172	"column"	"clob"	0	0	6180	NULL	true	2	NULL
+6173	"type"	"clob"	0	0	6180	NULL	true	3	NULL
+6174	"typewidth"	"int"	32	0	6180	NULL	true	4	NULL
+6175	"count"	"bigint"	64	0	6180	NULL	true	5	NULL
+6176	"distinct"	"bigint"	64	0	6180	NULL	true	6	NULL
+6177	"atomwidth"	"int"	32	0	6180	NULL	true	7	NULL
+6178	"reference"	"boolean"	1	0	6180	NULL	true	8	NULL
+6179	"sorted"	"boolean"	1	0	6180	NULL	true	9	NULL
+6218	"schema"	"clob"	0	0	6228	NULL	true	0	NULL
+6219	"table"	"clob"	0	0	6228	NULL	true	1	NULL
+6220	"column"	"clob"	0	0	6228	NULL	true	2	NULL
+6221	"type"	"clob"	0	0	6228	NULL	true	3	NULL
+6222	"count"	"bigint"	64	0	6228	NULL	true	4	NULL
+6223	"columnsize"	"bigint"	64	0	6228	NULL	true	5	NULL
+6224	"heapsize"	"bigint"	64	0	6228	NULL	true	6	NULL
+6225	"hashes"	"bigint"	64	0	6228	NULL	true	7	NULL
+6226	"imprints"	"bigint"	64	0	6228	NULL	true	8	NULL
+6227	"sorted"	"boolean"	1	0	6228	NULL	true	9	NULL
+6230	"schema"	"clob"	0	0	6238	NULL	true	0	NULL
+6231	"table"	"clob"	0	0	6238	NULL	true	1	NULL
+6232	"count"	"bigint"	64	0	6238	NULL	true	2	NULL
+6233	"columnsize"	"bigint"	64	0	6238	NULL	true	3	NULL
+6234	"heapsize"	"bigint"	64	0	6238	NULL	true	4	NULL
+6235	"hashes"	"bigint"	64	0	6238	NULL	true	5	NULL
+6236	"imprints"	"bigint"	64	0	6238	NULL	true	6	NULL
+6237	"auxillary"	"bigint"	53	0	6238	NULL	true	7	NULL
+6240	"schema"	"clob"	0	0	6253	NULL	true	0	NULL
+6241	"table"	"clob"	0	0	6253	NULL	true	1	NULL
+6242	"column"	"clob"	0	0	6253	NULL	true	2	NULL
+6243	"type"	"clob"	0	0	6253	NULL	true	3	NULL
+6244	"width"	"int"	32	0	6253	NULL	true	4	NULL
+6245	"stamp"	"timestamp"	7	0	6253	NULL	true	5	NULL
+6246	"sample"	"bigint"	64	0	6253	NULL	true	6	NULL
+6247	"count"	"bigint"	64	0	6253	NULL	true	7	NULL
+6248	"unique"	"bigint"	64	0	6253	NULL	true	8	NULL
+6249	"nils"	"bigint"	64	0	6253	NULL	true	9	NULL
+6250	"minval"	"clob"	0	0	6253	NULL	true	10	NULL
+6251	"maxval"	"clob"	0	0	6253	NULL	true	11	NULL
+6252	"sorted"	"boolean"	1	0	6253	NULL	true	12	NULL
+6306	"function_id"	"int"	32	0	6307	NULL	true	0	NULL
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."_tables" (
@@ -1687,12 +1687,12 @@ COPY 40 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 5671	"optimizers"	2000	"create view sys.optimizers as select * from sys.optimizers();"	1	true	0	false
 5679	"environment"	2000	"create view sys.environment as select * from sys.environment();"	1	true	0	false
 5717	"queue"	2000	"create view sys.queue as select * from sys.queue();"	1	true	0	false
-6164	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
-6176	"storagemodelinput"	2000	NULL	0	true	0	false
-6224	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
-6234	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
-6249	"statistics"	2000	NULL	0	true	0	false
-6303	"systemfunctions"	2000	NULL	0	true	0	false
+6168	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
+6180	"storagemodelinput"	2000	NULL	0	true	0	false
+6228	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
+6238	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
+6253	"statistics"	2000	NULL	0	true	0	false
+6307	"systemfunctions"	2000	NULL	0	true	0	false
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."args" (
@@ -1705,7 +1705,7 @@ CREATE TABLE "sys"."args" (
 	"inout"       TINYINT,
 	"number"      INTEGER
 );
-COPY 3547 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 3549 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2155	28	"res_0"	"oid"	63	0	0	0
 2156	28	"arg_1"	"wrd"	64	0	1	1
 2157	29	"res_0"	"oid"	63	0	0	0
@@ -5184,75 +5184,77 @@ COPY 3547 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 6119	6118	"result"	"clob"	0	0	0	0
 6120	6118	"x"	"clob"	0	0	1	1
 6123	6122	"result"	"clob"	0	0	0	0
-6124	6122	"v"	"clob"	0	0	1	1
-6128	6127	"result"	"uuid"	0	0	0	0
-6131	6130	"result"	"uuid"	0	0	0	0
-6132	6130	"u"	"uuid"	0	0	1	1
+6124	6122	"x"	"double"	53	0	1	1
+6127	6126	"result"	"clob"	0	0	0	0
+6128	6126	"v"	"clob"	0	0	1	1
+6132	6131	"result"	"uuid"	0	0	0	0
 6135	6134	"result"	"uuid"	0	0	0	0
-6136	6134	"u"	"clob"	0	0	1	1
-6139	6138	"schema"	"clob"	0	0	0	0
-6140	6138	"table"	"clob"	0	0	0	1
-6141	6138	"column"	"clob"	0	0	0	2
-6142	6138	"type"	"clob"	0	0	0	3
-6143	6138	"location"	"clob"	0	0	0	4
-6144	6138	"count"	"bigint"	64	0	0	5
-6145	6138	"typewidth"	"int"	32	0	0	6
-6146	6138	"columnsize"	"bigint"	64	0	0	7
-6147	6138	"heapsize"	"bigint"	64	0	0	8
-6148	6138	"hashes"	"bigint"	64	0	0	9
-6149	6138	"imprints"	"bigint"	64	0	0	10
-6150	6138	"sorted"	"boolean"	1	0	0	11
-6181	6180	"result"	"bigint"	64	0	0	0
-6182	6180	"nme"	"clob"	0	0	1	1
-6183	6180	"i"	"bigint"	64	0	1	2
-6184	6180	"d"	"bigint"	64	0	1	3
-6187	6186	"result"	"bigint"	64	0	0	0
-6188	6186	"tpe"	"clob"	0	0	1	1
-6189	6186	"i"	"bigint"	64	0	1	2
-6190	6186	"w"	"int"	32	0	1	3
-6193	6192	"result"	"bigint"	64	0	0	0
-6194	6192	"b"	"boolean"	1	0	1	1
-6195	6192	"i"	"bigint"	64	0	1	2
-6198	6197	"result"	"bigint"	64	0	0	0
-6199	6197	"i"	"bigint"	64	0	1	1
-6200	6197	"nme"	"clob"	0	0	1	2
-6203	6202	"schema"	"clob"	0	0	0	0
-6204	6202	"table"	"clob"	0	0	0	1
-6205	6202	"column"	"clob"	0	0	0	2
-6206	6202	"type"	"clob"	0	0	0	3
-6207	6202	"count"	"bigint"	64	0	0	4
-6208	6202	"columnsize"	"bigint"	64	0	0	5
-6209	6202	"heapsize"	"bigint"	64	0	0	6
-6210	6202	"hashes"	"bigint"	64	0	0	7
-6211	6202	"imprints"	"bigint"	64	0	0	8
-6212	6202	"sorted"	"boolean"	1	0	0	9
-6254	6253	"tbl"	"clob"	0	0	1	0
-6257	6256	"sch"	"clob"	0	0	1	0
-6258	6256	"tbl"	"clob"	0	0	1	1
+6136	6134	"u"	"uuid"	0	0	1	1
+6139	6138	"result"	"uuid"	0	0	0	0
+6140	6138	"u"	"clob"	0	0	1	1
+6143	6142	"schema"	"clob"	0	0	0	0
+6144	6142	"table"	"clob"	0	0	0	1
+6145	6142	"column"	"clob"	0	0	0	2
+6146	6142	"type"	"clob"	0	0	0	3
+6147	6142	"location"	"clob"	0	0	0	4
+6148	6142	"count"	"bigint"	64	0	0	5
+6149	6142	"typewidth"	"int"	32	0	0	6
+6150	6142	"columnsize"	"bigint"	64	0	0	7
+6151	6142	"heapsize"	"bigint"	64	0	0	8
+6152	6142	"hashes"	"bigint"	64	0	0	9
+6153	6142	"imprints"	"bigint"	64	0	0	10
+6154	6142	"sorted"	"boolean"	1	0	0	11
+6185	6184	"result"	"bigint"	64	0	0	0
+6186	6184	"nme"	"clob"	0	0	1	1
+6187	6184	"i"	"bigint"	64	0	1	2
+6188	6184	"d"	"bigint"	64	0	1	3
+6191	6190	"result"	"bigint"	64	0	0	0
+6192	6190	"tpe"	"clob"	0	0	1	1
+6193	6190	"i"	"bigint"	64	0	1	2
+6194	6190	"w"	"int"	32	0	1	3
+6197	6196	"result"	"bigint"	64	0	0	0
+6198	6196	"b"	"boolean"	1	0	1	1
+6199	6196	"i"	"bigint"	64	0	1	2
+6202	6201	"result"	"bigint"	64	0	0	0
+6203	6201	"i"	"bigint"	64	0	1	1
+6204	6201	"nme"	"clob"	0	0	1	2
+6207	6206	"schema"	"clob"	0	0	0	0
+6208	6206	"table"	"clob"	0	0	0	1
+6209	6206	"column"	"clob"	0	0	0	2
+6210	6206	"type"	"clob"	0	0	0	3
+6211	6206	"count"	"bigint"	64	0	0	4
+6212	6206	"columnsize"	"bigint"	64	0	0	5
+6213	6206	"heapsize"	"bigint"	64	0	0	6
+6214	6206	"hashes"	"bigint"	64	0	0	7
+6215	6206	"imprints"	"bigint"	64	0	0	8
+6216	6206	"sorted"	"boolean"	1	0	0	9
+6258	6257	"tbl"	"clob"	0	0	1	0
 6261	6260	"sch"	"clob"	0	0	1	0
 6262	6260	"tbl"	"clob"	0	0	1	1
-6263	6260	"col"	"clob"	0	0	1	2
-6266	6265	"sample"	"bigint"	64	0	1	0
-6269	6268	"tbl"	"clob"	0	0	1	0
-6270	6268	"sample"	"bigint"	64	0	1	1
-6273	6272	"sch"	"clob"	0	0	1	0
-6274	6272	"tbl"	"clob"	0	0	1	1
-6275	6272	"sample"	"bigint"	64	0	1	2
-6278	6277	"sch"	"clob"	0	0	1	0
-6279	6277	"tbl"	"clob"	0	0	1	1
-6280	6277	"col"	"clob"	0	0	1	2
-6281	6277	"sample"	"bigint"	64	0	1	3
-6284	6283	"result"	"clob"	0	0	0	0
-6285	6283	"src"	"clob"	0	0	1	1
-6288	6287	"result"	"smallint"	16	0	0	0
-6289	6287	"one"	"tinyint"	8	0	1	1
-6290	6287	"two"	"tinyint"	8	0	1	2
-6293	6292	"result"	"int"	32	0	0	0
-6294	6292	"one"	"smallint"	16	0	1	1
-6295	6292	"two"	"smallint"	16	0	1	2
-6298	6297	"result"	"bigint"	64	0	0	0
-6299	6297	"one"	"int"	32	0	1	1
-6300	6297	"two"	"int"	32	0	1	2
+6265	6264	"sch"	"clob"	0	0	1	0
+6266	6264	"tbl"	"clob"	0	0	1	1
+6267	6264	"col"	"clob"	0	0	1	2
+6270	6269	"sample"	"bigint"	64	0	1	0
+6273	6272	"tbl"	"clob"	0	0	1	0
+6274	6272	"sample"	"bigint"	64	0	1	1
+6277	6276	"sch"	"clob"	0	0	1	0
+6278	6276	"tbl"	"clob"	0	0	1	1
+6279	6276	"sample"	"bigint"	64	0	1	2
+6282	6281	"sch"	"clob"	0	0	1	0
+6283	6281	"tbl"	"clob"	0	0	1	1
+6284	6281	"col"	"clob"	0	0	1	2
+6285	6281	"sample"	"bigint"	64	0	1	3
+6288	6287	"result"	"clob"	0	0	0	0
+6289	6287	"src"	"clob"	0	0	1	1
+6292	6291	"result"	"smallint"	16	0	0	0
+6293	6291	"one"	"tinyint"	8	0	1	1
+6294	6291	"two"	"tinyint"	8	0	1	2
+6297	6296	"result"	"int"	32	0	0	0
+6298	6296	"one"	"smallint"	16	0	1	1
+6299	6296	"two"	"smallint"	16	0	1	2
+6302	6301	"result"	"bigint"	64	0	0	0
+6303	6301	"one"	"int"	32	0	1	1
+6304	6301	"two"	"int"	32	0	1	2
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."auths" (
@@ -5451,52 +5453,52 @@ COPY 204 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 5663	5671	5
 5673	5679	5
 5699	5717	5
-6138	6164	5
-6166	6178	13
-6176	6178	13
-6167	6178	13
-6168	6178	13
-6169	6178	13
-6170	6178	13
-6171	6178	13
-6172	6178	13
-6173	6178	13
-6174	6178	13
-6175	6178	13
-32	6180	7
-185	6180	7
-191	6180	7
-110	6186	7
-33	6186	7
-184	6186	7
-185	6186	7
-32	6192	7
-185	6192	7
-111	6197	7
-32	6197	7
-323	6197	7
-6166	6202	7
-6176	6202	7
-6167	6202	7
-6168	6202	7
-6169	6202	7
-6171	6202	7
-6172	6202	7
-6173	6202	7
-6174	6202	7
-6175	6202	7
-6180	6202	7
-6186	6202	7
-6192	6202	7
-6197	6202	7
-6202	6224	5
-6202	6234	5
-47	6234	5
-54	6234	5
-50	6234	5
-34	6234	5
-32	6234	5
-185	6234	5
+6142	6168	5
+6170	6182	13
+6180	6182	13
+6171	6182	13
+6172	6182	13
+6173	6182	13
+6174	6182	13
+6175	6182	13
+6176	6182	13
+6177	6182	13
+6178	6182	13
+6179	6182	13
+32	6184	7
+185	6184	7
+191	6184	7
+110	6190	7
+33	6190	7
+184	6190	7
+185	6190	7
+32	6196	7
+185	6196	7
+111	6201	7
+32	6201	7
+323	6201	7
+6170	6206	7
+6180	6206	7
+6171	6206	7
+6172	6206	7
+6173	6206	7
+6175	6206	7
+6176	6206	7
+6177	6206	7
+6178	6206	7
+6179	6206	7
+6184	6206	7
+6190	6206	7
+6196	6206	7
+6201	6206	7
+6206	6228	5
+6206	6238	5
+47	6238	5
+54	6238	5
+50	6238	5
+34	6238	5
+32	6238	5
+185	6238	5
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."functions" (
@@ -5511,7 +5513,7 @@ CREATE TABLE "sys"."functions" (
 	"vararg"      BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1268 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 28	"not_uniques"	"not_uniques"	"sql"	false	1	false	false	false	0
 29	"not_uniques"	"not_uniques"	"sql"	false	1	false	false	false	0
 30	"hash"	"hash"	"mkey"	false	1	false	false	false	0
@@ -6756,29 +6758,30 @@ COPY 1267 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6110	"text"	"create function json.text(js int)\nreturns string external name json.text;"	"json"	true	1	false	false	false	6030
 6114	"output"	"-- The remainder awaits the implementation \n\ncreate aggregate json.output(js json)\nreturns string external name json.output;"	"json"	true	3	false	false	false	6030
 6118	"tojsonarray"	"-- create function json.object(*) returns json external name json.objectrender;\n\n-- create function json.array(*) returns json external name json.arrayrender;\n\n-- unnesting the JSON structure\n\n-- create function json.unnest(js json)\n-- returns table( id integer, k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( v string) external name json.unnest;\n\n-- create function json.nest table( id integer, k string, v string)\n-- returns json external name json.nest;\n\ncreate aggregate json.tojsonarray( x string ) returns string external name json.aggr;"	"json"	true	3	false	false	false	6030
-6122	"md5"	"\n-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- (co) Arjen de Rijke\n-- Functions supporting jsonstore\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	true	1	false	false	false	2000
-6127	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	true	1	false	false	false	2000
-6130	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	true	1	false	false	false	2000
-6134	"isauuid"	"create function sys.isauuid(u string)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	true	1	false	false	false	2000
-6138	"storage"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.storage()\nreturns table (""schema"" string, ""table"" string, ""column"" string, ""type"" string, location string, ""count"" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\nexternal name sql.storage;"	"sql"	true	5	false	false	false	2000
-6178	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.storage() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	true	2	true	false	false	2000
-6180	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int'\t then return 4 * i;\n\twhen nme = 'bigint'\t then return 8 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	true	1	false	false	false	2000
-6186	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	true	1	false	false	false	2000
-6192	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	true	1	false	false	false	2000
-6197	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n\tif nme = 'boolean'\n\t\tor nme = 'tinyint'\n\t\tor nme = 'smallint'\n\t\tor nme = 'int'\t\n\t\tor nme = 'bigint'\t\n\t\tor nme = 'decimal'\t\n\t\tor nme = 'date'\n\t\tor nme = 'timestamp'\n\t\tor nme = 'real'\n\t\tor nme = 'double'\n\tthen\n\t\treturn cast( i * 0.12 as bigint);\n\tend if ;\n\treturn 0;\nend;"	"user"	true	1	false	false	false	2000
-6202	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""count""\tbigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n\tcolumnsize(i.""type"", i.count, i.""distinct""),\n\theapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n\thashsize(i.""reference"", i.""count""),\n\timprintsize(i.""count"",i.""type""),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	true	5	false	false	false	2000
-6251	"analyze"	"create procedure analyze()\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6253	"analyze"	"create procedure analyze(tbl string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6256	"analyze"	"create procedure analyze(sch string, tbl string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6260	"analyze"	"create procedure analyze(sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6265	"analyze"	"-- control the sample size\ncreate procedure analyze(""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6268	"analyze"	"create procedure analyze(tbl string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6272	"analyze"	"create procedure analyze(sch string, tbl string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6277	"analyze"	"create procedure analyze(sch string, tbl string, col string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
-6283	"reverse"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	true	1	false	false	false	2000
-6287	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	true	1	false	false	false	2000
-6292	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	true	1	false	false	false	2000
-6297	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	true	1	false	false	false	2000
+6122	"tojsonarray"	"create aggregate json.tojsonarray( x double ) returns string external name json.aggr;"	"json"	true	3	false	false	false	6030
+6126	"md5"	"\n-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- (co) Arjen de Rijke\n-- Functions supporting jsonstore\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	true	1	false	false	false	2000
+6131	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	true	1	false	false	false	2000
+6134	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	true	1	false	false	false	2000
+6138	"isauuid"	"create function sys.isauuid(u string)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	true	1	false	false	false	2000
+6142	"storage"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.storage()\nreturns table (""schema"" string, ""table"" string, ""column"" string, ""type"" string, location string, ""count"" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\nexternal name sql.storage;"	"sql"	true	5	false	false	false	2000
+6182	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.storage() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	true	2	true	false	false	2000
+6184	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int'\t then return 4 * i;\n\twhen nme = 'bigint'\t then return 8 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	true	1	false	false	false	2000
+6190	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	true	1	false	false	false	2000
+6196	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	true	1	false	false	false	2000
+6201	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n\tif nme = 'boolean'\n\t\tor nme = 'tinyint'\n\t\tor nme = 'smallint'\n\t\tor nme = 'int'\t\n\t\tor nme = 'bigint'\t\n\t\tor nme = 'decimal'\t\n\t\tor nme = 'date'\n\t\tor nme = 'timestamp'\n\t\tor nme = 'real'\n\t\tor nme = 'double'\n\tthen\n\t\treturn cast( i * 0.12 as bigint);\n\tend if ;\n\treturn 0;\nend;"	"user"	true	1	false	false	false	2000
+6206	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""count""\tbigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n\tcolumnsize(i.""type"", i.count, i.""distinct""),\n\theapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n\thashsize(i.""reference"", i.""count""),\n\timprintsize(i.""count"",i.""type""),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	true	5	false	false	false	2000
+6255	"analyze"	"create procedure analyze()\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6257	"analyze"	"create procedure analyze(tbl string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6260	"analyze"	"create procedure analyze(sch string, tbl string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6264	"analyze"	"create procedure analyze(sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6269	"analyze"	"-- control the sample size\ncreate procedure analyze(""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6272	"analyze"	"create procedure analyze(tbl string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6276	"analyze"	"create procedure analyze(sch string, tbl string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6281	"analyze"	"create procedure analyze(sch string, tbl string, col string, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	true	2	true	false	false	2000
+6287	"reverse"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	true	1	false	false	false	2000
+6291	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	true	1	false	false	false	2000
+6296	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	true	1	false	false	false	2000
+6301	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	true	1	false	false	false	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."idxs" (
@@ -6832,7 +6835,7 @@ COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 5219	1	1	0	0
 5222	1	1	0	0
 5226	1	1	0	0
-6303	1	1	3	0
+6307	1	1	3	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."schemas" (
@@ -6895,7 +6898,7 @@ START TRANSACTION;
 CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
-COPY 1267 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1268 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
 28
 29
 30
@@ -8141,28 +8144,29 @@ COPY 1267 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 6114
 6118
 6122
-6127
-6130
+6126
+6131
 6134
 6138
-6178
-6180
-6186
-6192
-6197
-6202
-6251
-6253
-6256
+6142
+6182
+6184
+6190
+6196
+6201
+6206
+6255
+6257
 6260
-6265
-6268
+6264
+6269
 6272
-6277
-6283
+6276
+6281
 6287
-6292
-6297
+6291
+6296
+6301
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."triggers" (
@@ -8220,7 +8224,7 @@ COPY 31 RECORDS INTO "sys"."types" FROM stdin USING DELIMITERS '\t','\n','"';
 5252	"url"	"url"	0	0	0	13	2000
 5332	"inet"	"inet"	0	0	0	13	2000
 6031	"json"	"json"	0	0	0	13	2000
-6125	"uuid"	"uuid"	0	0	0	13	2000
+6129	"uuid"	"uuid"	0	0	0	13	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."user_role" (

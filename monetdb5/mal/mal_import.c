@@ -202,8 +202,10 @@ malInclude(Client c, str name, int listing)
 			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
 				parseMAL(c, c->curprg);
 				bstream_destroy(c->fdin);
-			} else
+			} else {
 				GDKfree(s); // not interested in error here
+				s = MAL_SUCCEED;
+			}
 			if (p)
 				filename = p + 1;
 		} while (p);
@@ -391,8 +393,10 @@ callString(Client c, str s, int listing)
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if (b == NULL)
+	if (b == NULL){
+		GDKfree(qry);
 		return -1;
+	}
 	buffer_init(b, qry, len);
 	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0) {
 		GDKfree(b);

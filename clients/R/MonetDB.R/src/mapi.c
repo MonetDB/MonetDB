@@ -257,8 +257,8 @@ SEXP mapiRead(SEXP conn) {
 		while (response_buf_offset + block_length > response_buf_len) {
 			response_buf_len += ALLOCSIZE;
 			if (DEBUG) {
-				printf("II: Reallocating memory, new size %lu\n",
-						(unsigned long) response_buf_len);
+				printf("II: Reallocating memory, new size "SZFMT"\n",
+						response_buf_len);
 			}
 			response_buf = realloc(response_buf, response_buf_len);
 			if (response_buf == NULL) {
