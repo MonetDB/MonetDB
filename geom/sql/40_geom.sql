@@ -17,12 +17,10 @@
 
 -- make sure you load the geom module before loading this sql module
 
---CREATE TYPE Point EXTERNAL NAME wkb;
---CREATE TYPE Curve EXTERNAL NAME wkb;
---CREATE TYPE LineString EXTERNAL NAME wkb;
---CREATE TYPE Surface EXTERNAL NAME wkb;
---CREATE TYPE Polygon EXTERNAL NAME wkb;
 
+--CREATE TYPE Curve EXTERNAL NAME wkb;
+----CREATE TYPE Surface EXTERNAL NAME wkb;
+--CREATE TYPE Polygon EXTERNAL NAME wkb;
 --CREATE TYPE MultiPoint EXTERNAL NAME wkb;
 --CREATE TYPE MultiCurve EXTERNAL NAME wkb;
 --CREATE TYPE MultiLineString EXTERNAL NAME wkb;
@@ -31,6 +29,9 @@
 
 CREATE TYPE Geometry EXTERNAL NAME wkb;
 CREATE TYPE GeometrySubtype EXTERNAL NAME wkb;
+
+--CREATE TYPE Point EXTERNAL NAME wkb;
+--CREATE TYPE LineString EXTERNAL NAME wkb;
 
 --CREATE TYPE GeomCollection EXTERNAL NAME wkb;
 
@@ -49,14 +50,16 @@ CREATE FUNCTION get_type(info integer) RETURNS string EXTERNAL NAME geom."getTyp
 
 --//CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
-CREATE FUNCTION ST_AsText(g Geometry) RETURNS string external name geom."AsText";
 
----------------------------------------------- Geometry Constructors -----------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+------------------------- Geometry Constructors -------------------------
+-------------------------------------------------------------------------
 -- Create Geometry from text (wkt)
 CREATE FUNCTION ST_GeomFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
 CREATE FUNCTION ST_GeometryFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
 CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromText"; 
-CREATE FUNCTION ST_LineFromText(wkt string, srid integer) RETURNS GeometrySubtype EXTERNAL NAME geom."LineFromText";
+CREATE FUNCTION ST_LineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."LineFromText";
 CREATE FUNCTION ST_PolygonFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PolygonFromText";
 CREATE FUNCTION ST_MPointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPointFromText";
 CREATE FUNCTION ST_MLineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MLineFromText";
@@ -120,8 +123,10 @@ CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXT
 --CREATE FUNCTION ST_GMLToSQL
 --CREATE FUNCTION ST_PointFromGeoHash
 
-------------------------------------------- Geometry Accessors -----------------------------------------------------------------------------
-CREATE FUNCTION GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType";
+-------------------------------------------------------------------------
+-------------------------- Geometry Accessors ---------------------------
+-------------------------------------------------------------------------
+CREATE FUNCTION GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType1";
 CREATE FUNCTION ST_Boundary(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Boundary";
 CREATE FUNCTION ST_CoordDim(geom Geometry) RETURNS integer EXTERNAL NAME geom."CoordDim";
 CREATE FUNCTION ST_Dimension(geom Geometry) RETURNS integer EXTERNAL NAME geom."Dimension";
@@ -129,18 +134,18 @@ CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."
 CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Envelope";
 CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ExteriorRing"; --gets polygon
 --CREATE FUNCTION ST_GeometryN(gem Geometry, geomNum integer) RETURNS Geometry EXTERNAL NAME
---CREATE FUNCTION ST_GeometryType(geom Geometry) RETURNS string EXTERNAL NAME
+CREATE FUNCTION ST_GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType2";
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, ringNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
---CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME
+CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsClosed";
 --CREATE FUNCTION ST_IsCollection(geom Geometry) RETURNS boolean EXTERNAL NAME
---CREATE FUNCTION ST_IsEmpty(geom Geometry) RETURNS boolean EXTERNAL NAME
---CREATE FUNCTION ST_IsRing(geom Geometry) RETURNS boolean EXTERNAL NAME --is meaningfull only for linestrings
---CREATE FUNCTION ST_IsSimple(geom Geometry) RETURNS boolean EXTERNAL NAME
---CREATE FUNCTION ST_IsValid(geom Geometry) RETURNS boolean EXTERNAL NAME
+CREATE FUNCTION ST_IsEmpty(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsEmpty";
+CREATE FUNCTION ST_IsRing(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsRing"; --is meaningfull only for linestrings
+CREATE FUNCTION ST_IsSimple(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsSimple";
+CREATE FUNCTION ST_IsValid(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsValid";
 --CREATE FUNCTION ST_IsValid(geom Geometry, flags integer) RETURNS boolean EXTERNAL NAME
---CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME
+CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidReason"; 
 --CREATE FUNCTION ST_IsValidReason(geom Geometry, flags integer) RETURNS string EXTERNAL NAME
---CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS A_CUSTOM_ROW EXTERNAL NAME
+--CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail"; 
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry, flags integer) RETURNS A_CUSTOM_ROW EXTERNAL NAME
 --CREATE FUNCTION ST_M(geom Geometry) RETURNS double EXTERNAL NAME
 --CREATE FUNCTION ST_NDims(geom Geometry) RETURNS integer EXTERNAL NAME
@@ -167,18 +172,166 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 --CREATE FUNCTION ST_Zmflag(geom Geometry) RETURNS smallint EXTERNAL NAME --0=2d, 1=3dm, 2=3dz, 4=4d
 --CREATE FUNCTION ST_ZMin(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
 
+-------------------------------------------------------------------------
+--------------------------- Geometry Editors ----------------------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION ST_AddPoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Affine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Force2D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Force3D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Force3DZ RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Force3DM RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Force4D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ForceCollection RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ForceRHR RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LineMerge RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_CollectionExtract RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_CollectionHomogenize RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Multi RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RemovePoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Reverse RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Rotate RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RotateX RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RotateY RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RotateZ RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Scale RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Segmentize RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SetPoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SetSRID RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SnapToGrid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Snap RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Transform RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Translate RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_TransScale RETURNS EXTERNAL NAME
 
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
---CREATE FUNCTION RETURNS EXTERNAL NAME
+-------------------------------------------------------------------------
+--------------------------- Geometry Outputs ----------------------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION ST_AsBinary RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsEWKB RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsEWKT RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsGeoJSON RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsGML RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsHEXEWKB RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsKML RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsSVG RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AsX3D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_GeoHash RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_AsText(g Geometry) RETURNS string EXTERNAL NAME geom."AsText";
+--CREATE FUNCTION ST_AsLatLonText RETURNS EXTERNAL NAME
 
+-------------------------------------------------------------------------
+------------------------------ Operators --------------------------------
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+---------------- Spatial Relationships and Measurements -----------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION ST_3DClosestPoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DDistance RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DDWithin RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DDFullyWithin RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DIntersects RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DLongestLine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DMaxDistance RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DShortestLine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Area RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Azimuth RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Centroid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ClosestPoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Contains RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ContainsProperly RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Covers RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_CoveredBy RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Crosses RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Disjoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Distance RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Distance_Spheroid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DFullyWithin RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DWithin RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Equals RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_HasArc RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Intersects RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Length RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Length2D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DLength RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Length_Spheroid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Length2D_Spheroid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DLength_Spheroid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LongestLine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_OrderingEquals RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Overlaps RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Perimeter RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Perimeter2D RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_3DPerimeter RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_PointOnSurface RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Project RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Relate RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RelateMatch RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ShortestLine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Touches RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Within RETURNS EXTERNAL NAME
+
+-------------------------------------------------------------------------
+------------------------- Geometry Processing ---------------------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION ST_Buffer RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_BuildArea RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Collect RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_ConvexHull RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_CurveToLine RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DelaunayTriangles RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DifferenceRETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Dump RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DumpPoints RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Intersection RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LineToCurve RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_MakeValid RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_MemUnion RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_MinimumBoundingCircle RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Polygonize RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Node RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_OffsetCurve RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_RemoveRepeatedPoints RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SharedPaths RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Shift_Longitude RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Simplify RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SimplifyPreserveTopology RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Split RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_SymDifference RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Union RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_UnaryUnion RETURNS EXTERNAL NAME
+
+-------------------------------------------------------------------------
+-------------------------- Linear Referencing ---------------------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION ST_LineInterpolatePoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LineLocatePoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LineSubstring RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LocateAlong RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LocateBetween RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_LocateBetweenElevations RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_InterpolatePoint RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_AddMeasure RETURNS EXTERNAL NAME
+
+-------------------------------------------------------------------------
+---------------------- Long Transactions Support ------------------------
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+----------------------- Miscellaneous Functions -------------------------
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+------------------------ Exceptional Functions --------------------------
+-------------------------------------------------------------------------
 
 
 -- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
@@ -186,10 +339,6 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 -- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
--- ogc basic methods
---//CREATE FUNCTION IsEmpty(g Geometry) RETURNS BOOLEAN external name geom."IsEmpty";
---//CREATE FUNCTION IsSimple(g Geometry) RETURNS BOOLEAN external name geom."IsSimple";
 
 -- ogc spatial relation methods
 --//CREATE FUNCTION Equals(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Equals";

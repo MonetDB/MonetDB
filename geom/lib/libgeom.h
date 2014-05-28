@@ -107,7 +107,7 @@ typedef enum wkb_type {
 	wkbGeometryCollection = 7
 } wkb_type;
 
-libgeom_export const char *geom_type2str(int t);
+libgeom_export const char *geom_type2str(int t, int flag);
 
 typedef struct wkb {
 	int len;

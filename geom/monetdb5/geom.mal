@@ -46,6 +46,7 @@ command heap() :int		address wkbHEAP;
 
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
+command GeometryType{unsafe}(w:wkb, flag:int) :str address wkbGeometryType;
 
 module geom;
 
@@ -142,8 +143,15 @@ command MakePointM{unsafe}(x:dbl, y:dbl, m:dbl) :wkb address geomMakePointM
 comment "creates a point using the coordinates";
 
 #Geometry Accessors
-command GeometryType(w:wkb) :str address wkbGeometryType
-comment "Returns the type of the geometry as a string";
+function GeometryType1{unsafe}(w:wkb) :str;
+	x := wkb.GeometryType(w, 0);
+	return x;
+end GeometryType1;
+function GeometryType2{unsafe}(w:wkb) :str;
+	x := wkb.GeometryType(w, 1);
+	return x;
+end GeometryType2;
+
 command Boundary(w:wkb) :wkb address wkbBoundary
 comment "Returns the closure of the combinatorial boundary of the Geometry.";
 command CoordDim(w:wkb) :int address wkbCoordDim
@@ -174,6 +182,20 @@ command InteriorRingN(w:wkb, n:int) :wkb address wkbInteriorRingN
 comment "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.";
 command NumInteriorRings(w:wkb) :int address wkbNumInteriorRings
 comment "Return the number of interior rings of the first polygon in the geometry. This will work with both POLYGON and MULTIPOLYGON types but only looks at the first polygon.";
+command IsClosed(w:wkb) :bit address wkbIsClosed
+comment "Returns TRUE if the LINESTRING's start and end points are coincident.";
+command IsEmpty(w:wkb) :bit address wkbIsEmpty
+comment "Returns true if this Geometry is an empty geometry.";
+command IsRing(w:wkb) :bit address wkbIsRing
+comment "Returns TRUE if this LINESTRING is both closed and simple.";
+command IsSimple(w:wkb) :bit address wkbIsSimple
+comment "Returns (TRUE) if this Geometry has no anomalous geometric points, such as self intersection or self tangency.";
+command IsValid(w:wkb) :bit address wkbIsValid
+comment "Returns true if the ST_Geometry is well formed.";
+command IsValidReason(w:wkb) :str address wkbIsValidReason
+comment "Returns text stating if a geometry is valid or not and if not valid, a reason why.";
+command IsValidDetail(w:wkb) :str address wkbIsValidDetail
+comment "Returns a valid_detail (valid,reason,location) row stating if a geometry is valid or not and if not valid, a reason why and a location where.";
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);
@@ -209,24 +231,6 @@ comment "Return the number of interior rings of the first polygon in the geometr
 #command mbr(:wkb) :mbr
 #address wkbMBR
 #comment "Creates the mbr for the given wkb.";
-
-# @+ ogc basic methods
-
-
-
-
-
-#command IsEmpty(w:wkb) :bit
-#address wkbIsEmpty
-#comment "Returns true if this Geometry is the empty geometry. If true, then this Geometry represents the empty point set, for the coordinate space.";
-
-#command IsSimple(w:wkb) :bit
-#address wkbIsSimple
-#comment "Returns true if this Geometry has no anomalous geometric points, such as self intersection or self tangency. The description of each instantiable geometric class will include the specific conditions that cause an instance of that class to be classified as not simple.";
-
-
-
-
 
 
 # @+ ogc spatial relation methods

@@ -54,7 +54,7 @@ int TYPE_mbr;
 
 geom_export void geoHasZ(int* res, int* info);
 geom_export void geoHasM(int* res, int* info);
-geom_export void geoGetType(char** res, int* info);
+geom_export void geoGetType(char** res, int* info, int flag);
 
 geom_export bat *geom_prelude(void);
 geom_export void geom_epilogue(void);
@@ -78,7 +78,7 @@ geom_export str geomMakePoint3D(wkb**, double*, double*, double*);
 geom_export str geomMakePoint4D(wkb**, double*, double*, double*, double*);
 geom_export str geomMakePointM(wkb**, double*, double*, double*);
 
-geom_export str wkbGeometryType(char**, wkb**);
+geom_export str wkbGeometryType(char**, wkb**, int* flag);
 geom_export str wkbBoundary(wkb**, wkb**);
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbDimension(int*, wkb**);
@@ -94,9 +94,13 @@ geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumInteriorRings(int*, wkb**);
-
+geom_export str wkbIsClosed(bit *out, wkb **geom);
 geom_export str wkbIsEmpty(bit *out, wkb **geom);
+geom_export str wkbIsRing(bit *out, wkb **geom);
 geom_export str wkbIsSimple(bit *out, wkb **geom);
+geom_export str wkbIsValid(bit *out, wkb **geom);
+geom_export str wkbIsValidReason(char** out, wkb **geom);
+geom_export str wkbIsValidDetail(char** out, wkb **geom);
 
 
 /*check if the geometry has z coordinate*/
@@ -112,9 +116,9 @@ void geoHasM(int* res, int* info) {
 }
 /*check the geometry subtype*/
 /*returns the length of the resulting string*/
-void geoGetType(char** res, int* info) {
+void geoGetType(char** res, int* info, int flag) {
 	int type = (*info >> 2);
-	const char* typeStr=geom_type2str(type) ;
+	const char* typeStr=geom_type2str(type, flag) ;
 	
 	*res=GDKmalloc(strlen(typeStr));
 	strcpy(*res, typeStr);
@@ -374,7 +378,7 @@ str wkbFromText(wkb **w, str *wkt, int srid, int *tpe) {
 		*w = (wkb *) GDKmalloc(sizeof(wkb));
 	**w = *wkbNULL();
 	if (*tpe > 0 && te != *tpe)
-		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te), geom_type2str(*tpe));
+		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te,0), geom_type2str(*tpe,0));
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -526,13 +530,13 @@ static str wkbBasicInt(int *out, wkb **geom, int (*func)(const GEOSGeometry *), 
 
 
 /* returns the type of the geometry as a string*/
-str wkbGeometryType(char** out, wkb** geom) {
+str wkbGeometryType(char** out, wkb** geom, int* flag) {
 	int typeId = 0;
 	str ret = MAL_SUCCEED;
 
 	ret = wkbBasicInt(&typeId, geom, GEOSGeomTypeId, "geom.GeometryType");
 	typeId = ((typeId+1) << 2);
-	geoGetType(out, &typeId);
+	geoGetType(out, &typeId, *flag);
 	
 	return ret;
 }
@@ -831,33 +835,83 @@ str wkbNumInteriorRings(int* out, wkb** geom) {
 	return wkbBasicInt(out, geom, GEOSGetNumInteriorRings, "geom.NumInteriorRings");
 }
 
-
-
-
-
-str wkbIsEmpty(bit *out, wkb **geom)
-{
+/* it handles functions that return boolean */
+static int wkbBasicBoolean(wkb **geom, char (*func)(const GEOSGeometry*)) {
+	int res = -1;
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
-	}
+	if (!geosGeometry)
+		return 3;
 
-	*out = GEOSisEmpty(geosGeometry);
+	res = (*func)(geosGeometry);
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.IsEmpty", "GEOSisEmpty failed");
-	return MAL_SUCCEED;
-
+	return res;
 }
 
-str
-wkbIsSimple(bit *out, wkb **geom)
-{
+/* the function checks whether the geometry is closed. GEOS works only with
+ * linestring geometries but PostGIS returns true in any geometry that is not
+ * a linestring. I made it to be like PostGIS */
+str wkbIsClosed(bit *out, wkb **geom) {
+	int res = -1;
 	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	*out = bit_nil;
+
+	if (!geosGeometry)
+		throw(MAL, "geom.IsClosed", "wkb2geos failed");
+
+	if(GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+		*out = 1;
+		GEOSGeom_destroy(geosGeometry);
+		return MAL_SUCCEED;	
+	}
+
+	
+	res = GEOSisClosed(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	if(res == 2)
+		throw(MAL, "geom.IsClosed", "GEOSisClosed failed");
+	*out = res;
+	return MAL_SUCCEED;
+}
+
+str wkbIsEmpty(bit *out, wkb **geom) {
+	int res = wkbBasicBoolean(geom, GEOSisEmpty);
+	
+	if(res == 3)
+		throw(MAL, "geom.IsEmpty", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.IsEmpty", "GEOSisEmpty failed");
+	*out = res;
+	return MAL_SUCCEED;
+}
+
+str wkbIsRing(bit *out, wkb **geom) {
+	int res = wkbBasicBoolean(geom, GEOSisRing);
+	
+	if(res == 3)
+		throw(MAL, "geom.IsRing", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.IsRing", "GEOSisRing failed");
+	*out = res;
+	return MAL_SUCCEED;
+}
+
+
+str wkbIsSimple(bit *out, wkb **geom) {
+	int res = wkbBasicBoolean(geom, GEOSisSimple);
+	
+	if(res == 3)
+		throw(MAL, "geom.IsSimple", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.IsSimple", "GEOSisSimple failed");
+	*out = res;
+
+	return MAL_SUCCEED;
+/*	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
 		*out = bit_nil;
@@ -871,10 +925,77 @@ wkbIsSimple(bit *out, wkb **geom)
 	if (GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "geom.IsSimple", "GEOSisSimple failed");
 	return MAL_SUCCEED;
-
+*/
 }
 
+/*geom prints a message sayig the reasom why the geometry is not valid but
+ * since there is also isValidReason I skip this here */
+str wkbIsValid(bit *out, wkb **geom) {
+	int res = wkbBasicBoolean(geom, GEOSisValid);
+	
+	if(res == 3)
+		throw(MAL, "geom.IsValid", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.IsValid", "GEOSisValid failed");
+	*out = res;
 
+	if (GDKerrbuf)
+		GDKerrbuf[0] = '\0';
+
+	return MAL_SUCCEED;
+}
+
+str wkbIsValidReason(char** out, wkb **geom) {
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = NULL;
+		throw(MAL, "geom.IsValidReason", "wkb2geos failed");
+	}
+
+	*out = GEOSisValidReason(geosGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if(*out == NULL)
+		throw(MAL, "geom.IsValidReason", "GEOSisValidReason failed");
+	
+	return MAL_SUCCEED;
+}
+
+/* I should check it since it does not work */
+str wkbIsValidDetail(char** out, wkb **geom) {
+	int res = -1;
+	void* GEOSreason = NULL;
+	GEOSGeom GEOSlocation = NULL;
+	
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = NULL;
+		throw(MAL, "geom.IsValidDetail", "wkb2geos failed");
+	}
+
+	res = GEOSisValidDetail(geosGeometry, 1, (char**)&GEOSreason, &GEOSlocation);
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if(res == 2) {
+		if(GEOSreason)
+			GEOSFree(GEOSreason);
+		if(GEOSlocation)
+			GEOSGeom_destroy(GEOSlocation);
+		throw(MAL, "geom.IsValidDetail", "GEOSisValidDetail failed");
+	}
+
+	*out = GDKmalloc(sizeof(GEOSreason));
+	memcpy(*out, GEOSreason, sizeof(out));
+
+	GEOSFree(GEOSreason);
+	GEOSGeom_destroy(GEOSlocation);
+	
+	return MAL_SUCCEED;
+}
 
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);
