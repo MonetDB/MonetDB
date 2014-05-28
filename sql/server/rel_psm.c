@@ -774,8 +774,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 											(lang == FUNC_LANG_J)?"japi":"unknown";
 				sql->params = NULL;
 					if (create) {
-// TODO: what to set for varargs argument in create_func?
-						f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, FALSE);
+						f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
 				} else {
