@@ -2032,7 +2032,11 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 			f->res.digits = 19;
 #endif
 		if (f->res.type->radix == 2 && f->res.digits > 53)
+#ifdef HAVE_HGE
+			f->res.digits = 128;
+#else
 			f->res.digits = 53;
+#endif
 
 		/* sum of digits may mean we need a bigger result type
 		 * as the function don't support this we need to
