@@ -403,7 +403,6 @@ int
 cstToken(Client cntxt, ValPtr cst)
 {
 	int i = 0;
-	lng l;
 	int hex = 0;
 	str s = CURRENT(cntxt);
 
@@ -500,7 +499,7 @@ cstToken(Client cntxt, ValPtr cst)
 		}
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
-			lng *pval = &l;
+			lng l, *pval = &l;
 			lngFromStr(CURRENT(cntxt), &len, &pval);
 			if (l == lng_nil || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
@@ -520,9 +519,6 @@ cstToken(Client cntxt, ValPtr cst)
 			return i;
 		}
 		if (*s == 'L') {
-#ifdef HAVE_HGE
-			assert(cst->vtype != TYPE_hge);
-#endif
 			if (cst->vtype == TYPE_int)
 				cst->vtype = TYPE_lng;
 			if (cst->vtype == TYPE_flt)
@@ -554,17 +550,58 @@ cstToken(Client cntxt, ValPtr cst)
 			}
 			return i;
 		}
+#ifdef HAVE_HGE
+		if (*s == 'H' && cst->vtype == TYPE_int) {
+			int len = i;
+			hge *pval = 0;
+			cst->vtype = TYPE_hge;
+			i++;
+			s++;
+			if (*s == 'H') {
+				i++;
+				s++;
+			}
+			hgeFromStr(CURRENT(cntxt), &len, &pval);
+			if (pval) {
+				cst->val.hval = *pval;
+				GDKfree(pval);
+			} else
+				cst->val.hval = 0;
+			return i;
+		}
+#endif
 handleInts:
+		assert(cst->vtype != TYPE_lng);
 #ifdef HAVE_HGE
 		assert(cst->vtype != TYPE_hge);
 #endif
-		if (cst->vtype == TYPE_int || cst->vtype == TYPE_lng) {
+		if (cst->vtype == TYPE_int) {
+#ifdef HAVE_HGE
+			int len = (int) sizeof(hge);
+			hge l, *pval = &l;
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == hge_nil)
+				l = hge_nil;
+
+			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
+				cst->vtype = TYPE_int;
+				cst->val.ival = (int) l;
+			} else
+			if ((hge) GDK_lng_min <= l && l <= (hge) GDK_lng_max) {
+				cst->vtype = TYPE_lng;
+				cst->val.lval = (lng) l;
+			} else {
+				cst->vtype = TYPE_hge;
+				cst->val.hval = l;
+				if (l == hge_nil)
+					showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
+			}
+#else
 			int len = (int) sizeof(lng);
-			lng *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil) 
+			lng l, *pval = &l;
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil)
 				l = lng_nil;
-			
-			if (INT_MIN < l && l <= INT_MAX) {
+
+			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else {
@@ -573,6 +610,7 @@ handleInts:
 				if (l == lng_nil)
 					showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
 			}
+#endif
 		}
 		return i;
 
