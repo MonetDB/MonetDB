@@ -1509,8 +1509,19 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					/* do we need to handle TYPE_hge, here? */
-					assert(0);
+					if (!nil_matches && *(const hge*)v == hge_nil) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
+					HASHloop_hge(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
+					}
 					break;
 #endif
 				default:
