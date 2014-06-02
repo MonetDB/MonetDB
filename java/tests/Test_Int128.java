@@ -32,14 +32,14 @@ public class Test_Int128 {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
 		BigInteger bi = new BigInteger(
-				"123000000001037407179000000000695893739");
+				"123456789012345678909876543210987654321");
 		BigDecimal bd = new BigDecimal(
-				"123000000001037407179000000000695893.73");
+				"1234567890123456789.9876543210987654321");
 		try {
 			con.setAutoCommit(false);
 			Statement s = con.createStatement();
 			s.executeUpdate("CREATE TABLE HUGEINTT (I HUGEINT)");
-			s.executeUpdate("CREATE TABLE HUGEDECT (I DECIMAL(38,2))");
+			s.executeUpdate("CREATE TABLE HUGEDECT (I DECIMAL(38,19))");
 
 			PreparedStatement insertStatement = con
 					.prepareStatement("INSERT INTO HUGEINTT VALUES (?)");
