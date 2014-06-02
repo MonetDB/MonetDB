@@ -1799,6 +1799,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
         #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
+        os.chdir(TSTTRGDIR)
         i = TST.rfind('.')
         if i > 0:
             return RunTest(env, TST[:i], BusyPorts, COND, oktests, length)

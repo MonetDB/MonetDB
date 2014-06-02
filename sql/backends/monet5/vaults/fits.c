@@ -920,7 +920,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(nm, FLEN_VALUE, "column_%d", j);
 			status = 0;
 		}
-		cname[j - 1] = GDKstrdup(toLower(nm));
+		cname[j - 1] = toLower(nm);
 		fits_get_coltype(fptr, j, &tpcode[j - 1], &rep[j - 1], &wid[j - 1], &status);
 		fits2subtype(&tpe, tpcode[j - 1], rep[j - 1], wid[j - 1]);
 
@@ -936,7 +936,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *tmp = NULL;
 		int time0 = GDKms();
 		mtype = fits2mtype(tpcode[j - 1]);
-		nilptr = ATOMnil(mtype);
+		nilptr = ATOMnilptr(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
 		tmp = BATnew(TYPE_void, mtype, rows, TRANSIENT);
