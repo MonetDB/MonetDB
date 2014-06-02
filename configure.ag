@@ -3311,7 +3311,7 @@ echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
 echo "    Host:     " ${ac_cv_host}
-echo "    Compiler: " ${CC}
+echo "    Compiler: " ${CC} "("${CC_ver}"; "${CC_version}")"
 echo "    CFLAGS:   " ${CFLAGS}
 echo "    X_CFLAGS: " ${X_CFLAGS}
 echo "    LDFLAGS:  " ${LDFLAGS}
