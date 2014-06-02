@@ -27,7 +27,7 @@ Ready.
 #SELECT 2 * q1 AS q FROM A;
 % .L # table_name
 % q # name
-% bigint # type
+% hugeint # type
 % 16 # length
 [ 9135780246913578	]
 [ 1	]

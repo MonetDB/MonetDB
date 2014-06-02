@@ -80,13 +80,13 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):v
     X_63 := sql.bind(X_8,"sys","lineorder","lo_extendedprice",1);
     X_64 := sql.projectdelta(X_27,X_57,X_60,r1_76,X_63);
     X_65 := algebra.leftfetchjoin(X_55,X_64);
-    X_66 := batcalc.lng(X_65);
+    X_66 := batcalc.hge(X_65);
     X_67 := sql.projectdelta(X_27,X_12,X_15,r1_15,X_18);
     X_68 := algebra.leftfetchjoin(X_55,X_67);
-    X_69:bat[:oid,:lng]  := batcalc.*(X_66,X_68);
+    X_69:bat[:oid,:hge]  := batcalc.*(X_66,X_68);
     X_70 := algebra.selectNotNil(X_69);
     X_71:hge  := aggr.sum(X_70);
-    sql.exportValue(1,"sys.L1","revenue","hugeint",53,0,6,X_71,"");
+    sql.exportValue(1,"sys.L1","revenue","hugeint",128,0,6,X_71,"");
 end s2_1;
 # querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe")
 

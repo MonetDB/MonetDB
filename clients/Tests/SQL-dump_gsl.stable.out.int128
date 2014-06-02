@@ -1931,7 +1931,7 @@ COPY 418 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6785	"columnsize"	"hugeint"	64	0	6789	NULL	true	3	NULL
 6786	"heapsize"	"hugeint"	64	0	6789	NULL	true	4	NULL
 6787	"indices"	"hugeint"	64	0	6789	NULL	true	5	NULL
-6788	"auxillary"	"hugeint"	53	0	6789	NULL	true	6	NULL
+6788	"auxillary"	"hugeint"	128	0	6789	NULL	true	6	NULL
 6791	"schema"	"clob"	0	0	6804	NULL	true	0	NULL
 6792	"table"	"clob"	0	0	6804	NULL	true	1	NULL
 6793	"column"	"clob"	0	0	6804	NULL	true	2	NULL
@@ -5955,7 +5955,7 @@ CREATE TABLE "sys"."dependencies" (
 	"depend_id"   INTEGER,
 	"depend_type" SMALLINT
 );
-COPY 201 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 202 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
 417	5596	7
 418	5596	7
 1023	5596	7
@@ -6132,7 +6132,7 @@ COPY 201 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 199	6741	7
 118	6747	7
 35	6747	7
-192	6747	7
+261	6747	7
 193	6747	7
 34	6753	7
 193	6753	7
@@ -6153,6 +6153,7 @@ COPY 201 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 6768	6789	5
 49	6789	5
 56	6789	5
+57	6789	5
 52	6789	5
 36	6789	5
 34	6789	5
