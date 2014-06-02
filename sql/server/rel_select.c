@@ -2091,7 +2091,11 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 			digits = 19;
 #endif
 		if (f->res.type->radix == 2 && digits > 53)
+#ifdef HAVE_HGE
+			digits = 128;
+#else
 			digits = 53;
+#endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = rel_check_type( sql, &nlt, l, type_equal );
