@@ -289,7 +289,7 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
-	str vaultRef = putName("vault",5);
+	str vaultRef = putName("generator",9);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
@@ -764,12 +764,12 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
-	for( ; cnt >0; cnt--,os++,o++){\
-		v = (TPE*) Tloc(bl,BUNfirst(bl));\
+	v = (TPE*) Tloc(bl,BUNfirst(bl));\
+	for( ; cnt >0; cnt--,os++,o++,v++){\
 		w = (BUN) floor((*v -f)/s);\
 		if ( *v >= f && *v < l && f + (TPE)(w * s) == *v ){\
 			*or++ = w;\
-			*ol++ = *o;\
+			*ol++ = os;\
 			c++;\
 		}\
 	} }\
@@ -807,14 +807,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// switch roles to have a single target bat[:oid,:any] designated 
 	// by b and reference instruction p for the generator
-	b = q? br : bl;
+	b = q? bl : br;
 	p = q? q : p;
 	cnt = BATcount(b);
 	tpe = b->ttype;
-	if( b->ttype == TYPE_void)
-		os = b->tseqbase;
-	else
-		o = (oid*) Tloc(b,BUNfirst(b));
+	os = b->tseqbase;
 	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt);
@@ -835,12 +832,12 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	f = *(bte*) getArgReference(stk,p, 1);
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
-	for( ; cnt >0; cnt--,os++,o++){
-		v = (bte*) Tloc(b,BUNfirst(b));
-		w = (BUN) ((*v -f)/s);
+	v = (bte*) Tloc(b,BUNfirst(b));
+	for( ; cnt >0; cnt--,os++,o++,v++){
+		w = (BUN) floor((*v -f)/s);
 		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
 			*or++ = (oid) w;
-			*ol++ = *o;
+			*ol++ = os;
 			c++;
 		}
 	} }

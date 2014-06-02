@@ -23,7 +23,9 @@ select * from generate_series(0,10,2) X, tmp2 Y where X.value = Y.i;
 select * from generate_series(0,10,2) X, tmp2 Y where Y.i = X.value;
 
 select * from generate_series(0,10,2) X, tmp2 Y where X.value = Y.i and value >5;
+select * from generate_series(0,10,2) X, tmp2 Y where Y.i = X.value and value >5;
 
 select * from generate_series(0,10,2) as  X, tmp2 Y where X.value = Y.i and value <12 and value >3;
+select * from generate_series(0,10,2) as  X, tmp2 Y where Y.i = X.value  and value <12 and value >3;
 
 drop table tmp2;
