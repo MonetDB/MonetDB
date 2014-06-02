@@ -582,11 +582,11 @@ handleInts:
 			if (hgeFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == hge_nil)
 				l = hge_nil;
 
-			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
+			if ((hge) GDK_int_min < l && l <= (hge) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else
-			if ((hge) GDK_lng_min <= l && l <= (hge) GDK_lng_max) {
+			if ((hge) GDK_lng_min < l && l <= (hge) GDK_lng_max) {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = (lng) l;
 			} else {
@@ -601,7 +601,7 @@ handleInts:
 			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil)
 				l = lng_nil;
 
-			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
+			if ((lng) GDK_int_min < l && l <= (lng) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else {
