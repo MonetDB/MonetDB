@@ -2406,8 +2406,7 @@ AC_ARG_WITH(geos,
 	have_geos="$withval")
 case "$enable_geom" in
 yes|auto)
-	GEOS_VERSION_REQUIRED_MIN=2.2.0
-	dnl GEOS_VERSION_REQUIRED_MAX=3.0.0
+	GEOS_VERSION_REQUIRED_MIN=3.0.0
 	GEOS_CONFIG=''
 	if test "x$have_geos" != xno; then
 		case "$have_geos" in
