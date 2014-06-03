@@ -219,17 +219,17 @@ gdk_export ATOMIC_FLAG volatile GDKlocklistlock;
 gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
-#define _DBG_LOCK_COUNT_0(l, n)		ATOMIC_INC(GDKlockcnt, dummy, n)
+#define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy, n)
 #define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
-		ATOMIC_INC(GDKlockcontentioncnt, dummy, n);		\
+		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);		\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l, n)					\
 	do {							\
 		if (_spincnt == 1024)				\
-			ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
+			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
 	} while (0)
 #define _DBG_LOCK_COUNT_1(l)			\
 	do {					\
