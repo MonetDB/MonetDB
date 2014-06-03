@@ -1233,24 +1233,21 @@ case "$have_python3" in
 		;;
 esac
 
+dnl Figure out a default for PYTHON2 or PYTHON3
 AC_PATH_PROG(PYTHON,python,no,$PATH)
-PYTHON_MAJ=
+PYTHON_MAJ=unknown
 if test "x$PYTHON" != xno; then
 	AC_MSG_CHECKING([major version of $PYTHON])
 	case "`"$PYTHON" -V 2>&1`" in
-		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
+		"Python 2."[[67]]*)
 			PYTHON_MAJ=2
 			;;
 		"Python 3."*)
 			PYTHON_MAJ=3
 			;;
-		*)
-			AC_MSG_ERROR([unknown or unsupported Python version])
-			;;
 	esac
 	AC_MSG_RESULT($PYTHON_MAJ)
 fi
-
 
 if test "x$have_python2" != xno; then
 	if test x$cross_compiling != xyes; then
@@ -1265,6 +1262,19 @@ if test "x$have_python2" != xno; then
 				have_python2=no
 				why_have_python2="(Python 2 executable not found)"
 			fi
+		else
+			case "`"$PYTHON2" -V 2>&1`" in
+			"Python 2."[[67]]*)
+				;;
+			*)
+				if test "x$have_python2" = xauto; then
+					have_python2=no
+					why_have_python2="(Python 2 executable too old)"
+				else
+					AC_MSG_ERROR([Python 2 executable too old])
+				fi
+				;;
+			esac
 		fi
 	fi
 fi
