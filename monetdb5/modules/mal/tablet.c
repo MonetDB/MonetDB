@@ -247,6 +247,7 @@ TABLETcollect(Tablet *as)
 			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
 				as->error = M5OutOfMemory;
 			MT_lock_unset(&errorlock, "TABLETcollect");
+			GDKfree(bats);
 			return NULL;
 		}
 	}
@@ -294,6 +295,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
 				as->error = M5OutOfMemory;
 			MT_lock_unset(&errorlock, "TABLETcollect_parts");
+			GDKfree(bats);
 			return NULL;
 		}
 	}
@@ -537,8 +539,11 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
-	if (buf == NULL)
+	if (buf == NULL || localbuf == NULL){
+		if( buf) GDKfree(buf);
+		if( localbuf) GDKfree(localbuf);
 		return -1;
+	}
 	for (q = offset + as->nr, p = offset; p < q; p++) {
 		ptr h = BUNhead(orderi, p);
 
@@ -566,8 +571,11 @@ output_file_dense(Tablet *as, stream *fd)
 	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
 
-	if (buf == NULL)
+	if (buf == NULL || localbuf == NULL){
+		if( buf) GDKfree(buf);
+		if( localbuf) GDKfree(localbuf);
 		return -1;
+	}
 	for (i = 0; i < as->nr; i++) {
 		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			GDKfree(buf);

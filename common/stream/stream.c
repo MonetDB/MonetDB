@@ -749,8 +749,12 @@ open_stream(const char *filename, const char *flags)
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
 			s->isutf8 = 1;
-		else
-			file_fsetpos(s, pos);
+		else if (file_fsetpos(s, pos) < 0) {
+			/* unlikely: we couldn't seek the file back */
+			fclose(fp);
+			destroy(s);
+			return NULL;
+		}
 	}
 	return s;
 }
@@ -1035,6 +1039,11 @@ open_bzstream(const char *filename, const char *flags)
 		free(bzp);
 		return NULL;
 	}
+	s->read = stream_bzread;
+	s->write = stream_bzwrite;
+	s->close = stream_bzclose;
+	s->flush = NULL;
+	s->stream_data.p = (void *) bzp;
 	if (strchr(flags, 'r') != NULL) {
 		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		s->access = ST_READ;
@@ -1051,11 +1060,6 @@ open_bzstream(const char *filename, const char *flags)
 		destroy(s);
 		return NULL;
 	}
-	s->read = stream_bzread;
-	s->write = stream_bzwrite;
-	s->close = stream_bzclose;
-	s->flush = NULL;
-	s->stream_data.p = (void *) bzp;
 	return s;
 }
 
@@ -1681,9 +1685,9 @@ socket_update_timeout(stream *s)
 	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
 	if (s->access == ST_READ)
-		setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+		(void) setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 	if (s->access == ST_WRITE)
-		setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
 static stream *
@@ -1706,27 +1710,28 @@ socket_open(SOCKET sock, const char *name)
 #if defined(SO_DOMAIN)
 	{
 		socklen_t len = (socklen_t) sizeof(domain);
-		getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len);
+		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) < 0)
+			domain = AF_INET; /* give it a value if call fails */
 	}
 #endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	if (domain != PF_UNIX) {	/* not on UNIX sockets */
 		int opt = 1;
-		setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt));
+		(void) setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt));
 	}
 #endif
 #if defined(IPTOS_THROUGHPUT) && !defined(WIN32)
 	if (domain != PF_UNIX) {	/* not on UNIX sockets */
 		int tos = IPTOS_THROUGHPUT;
 
-		setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos));
+		(void) setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos));
 	}
 #endif
 #ifdef TCP_NODELAY
 	if (domain != PF_UNIX) {	/* not on UNIX sockets */
 		int nodelay = 1;
 
-		setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay));
+		(void) setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay));
 	}
 #endif
 #ifdef HAVE_FCNTL
@@ -2089,8 +2094,6 @@ file_wastream(FILE *fp, const char *name)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
-	if (fp == NULL)
-		s->errnr = MNSTR_OPEN_ERROR;
 	s->stream_data.p = (void *) fp;
 	return s;
 }

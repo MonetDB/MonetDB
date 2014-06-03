@@ -29,11 +29,13 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
 # 16:07:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15406/.s.monetdb.34903
+MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s2_1[115]:'sql.x' undefined in: _214:any := sql.x(_210:int, _212:int)
-        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _217:any := bat.insert(_205:bat[:oid,:int], _215:oid, _214:any)
-        !program contains errors
+ERROR = !SELECT: 'x' requires a single sub query
+
+# 09:35:12 >  
+# 09:35:12 >  "Done."
+# 09:35:12 >  
 
 # 16:07:20 >  
 # 16:07:20 >  "Done."

@@ -281,6 +281,10 @@ case $enable_control in
 	*) enable_control=no;;
 esac
 
+AC_ARG_ENABLE(static-analysis,
+	AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)]),
+	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
+
 dnl RIPEMD160 is patent free, academic and European, but unfortunately
 dnl can't use it by default, as that would exclude JDBC usage (Java
 dnl doesn't natively support RIPEMD160).
@@ -377,11 +381,11 @@ icc_ver=""
 CC_ver=""
 CC_version="`$CC --version 2>&1`"
 case "$CC_version" in
-*gcc*GCC*)
+*\(GCC\)*)
 	gcc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="gcc-$gcc_ver"
 	;;
-*icc*ICC*)
+*\(ICC\)*)
 	icc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="icc-$icc_ver"
 	;;
@@ -3307,7 +3311,7 @@ echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
 echo "    Host:     " ${ac_cv_host}
-echo "    Compiler: " ${CC}
+echo "    Compiler: " ${CC} "("${CC_ver}"; "${CC_version}")"
 echo "    CFLAGS:   " ${CFLAGS}
 echo "    X_CFLAGS: " ${X_CFLAGS}
 echo "    LDFLAGS:  " ${LDFLAGS}

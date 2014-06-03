@@ -62,7 +62,7 @@ oidjoins
 oid
 opr_sanity
 path
-plp.sql
+plpgsql
 point
 polygon
 polymorphism

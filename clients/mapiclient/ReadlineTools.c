@@ -92,8 +92,9 @@ sql_tablename_generator(const char *text, int state)
 	while (seekpos < rowcount) {
 		const char *name;
 
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (strncmp(name, text, len) == 0) {
 			char *s;

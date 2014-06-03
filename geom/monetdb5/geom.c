@@ -777,10 +777,13 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	for (i = 0; i < BATcount(bx); i++) {
 		str err = NULL;
 		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
+			str msg;
 			BBPreleaseref(bx->batCacheid);
 			BBPreleaseref(by->batCacheid);
 			BBPreleaseref(bo->batCacheid);
-			throw(MAL, "geom.point", "%s", err);
+			msg = createException(MAL, "geom.point", "%s", err);
+			GDKfree(err);
+			return msg;
 		}
 		BUNappend(bo,p,TRUE);
 		GDKfree(p);

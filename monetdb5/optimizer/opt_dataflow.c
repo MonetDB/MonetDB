@@ -86,8 +86,12 @@ void removeDataflow(MalBlkPtr mb)
 	}
 	old = mb->stmt;
 	limit = mb->stop;
-	if ( newMalBlkStmt(mb, mb->ssize) <0 )
+	if ( newMalBlkStmt(mb, mb->ssize) <0 ){
+		GDKfree(delete);
+		GDKfree(used);
+		GDKfree(init);
 		return;
+	}
 	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
