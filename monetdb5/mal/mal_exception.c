@@ -182,8 +182,14 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	len += vsnprintf(message + len, GDKMAXERRLEN - len, format, ap);
 	/* realloc to reduce amount of allocated memory (GDKMAXERRLEN is
 	 * way more than what is normally needed) */
-	if (len < GDKMAXERRLEN)
-		message = GDKrealloc(message, len + 1);
+	if (len < GDKMAXERRLEN) {
+		/* in the extremely unlikely case that GDKrealloc fails, the
+		 * original pointer is still valid, so use that and don't
+		 * overwrite */
+		char *newmsg = GDKrealloc(message, len + 1);
+		if (newmsg != NULL)
+			message = newmsg;
+	}
 	return message;
 }
 
