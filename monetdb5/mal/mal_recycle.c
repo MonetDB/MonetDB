@@ -869,7 +869,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 {
 	int i=0;
 
-	ATOMIC_INC(statements, statementsLock, "RECYCLEentry");
+	(void) ATOMIC_INC(statements, statementsLock, "RECYCLEentry");
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
 	if ( recycleBlk == NULL ){

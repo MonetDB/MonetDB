@@ -781,10 +781,13 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	for (i = 0, o = BUNlast(bo); i < BATcount(bx); i++, o++) {
 		str err = NULL;
 		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
+			str msg;
 			BBPreleaseref(bx->batCacheid);
 			BBPreleaseref(by->batCacheid);
 			BBPreleaseref(bo->batCacheid);
-			throw(MAL, "geom.point", "%s", err);
+			msg = createException(MAL, "geom.point", "%s", err);
+			GDKfree(err);
+			return msg;
 		}
 		tfastins_nocheck(bo, o, p, Tsize(bo));
 		GDKfree(p);

@@ -137,7 +137,11 @@ oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 __declspec(noreturn) void MT_global_exit(int status)
 	__attribute__((__noreturn__))
-	__attribute__((__visibility__("hidden")));
+#if defined(__GNUC__) && __GNUC__ >= 4 && (__GNUC__ > 4 || __GNUC_MINOR__ > 1)
+	/* buggy old GCC can't use pointers to hidden functions (CentOS 5.10) */
+	__attribute__((__visibility__("hidden")))
+#endif
+	;
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)

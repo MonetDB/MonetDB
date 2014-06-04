@@ -1428,6 +1428,7 @@ strFromStr(const char *src, int *len, char **dst)
 	if (p != NULL && (char *) p != str_nil && *len < l) {
 		GDKfree(p);
 		p = NULL;
+		*dst = NULL;
 	}
 	if (p == NULL || (char *) p == str_nil)
 		if ((p = GDKmalloc(*len = l)) == NULL)

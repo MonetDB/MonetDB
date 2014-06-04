@@ -34,49 +34,61 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
-#define DEC_TOSTR(X) \
-	char buf[64]; \
-	X v = *(const X*)a; \
-	int scale = (int)(ptrdiff_t)extra, cur = 63, neg = (v<0)?1:0, i, done = 0; \
-	int l; \
-	if (v == X##_nil) { \
-		if (*len < 5){ \
-			if (*Buf) \
-				GDKfree(*Buf); \
-			*len = 5; \
-			*Buf = GDKmalloc(*len); \
-		} \
-		strcpy(*Buf, "NULL"); \
-		return 4; \
-	} \
-	if (v<0) \
-		v = -v; \
-	buf[cur--] = 0; \
-	if (scale){ \
-		for (i=0; i<scale; i++) { \
-			buf[cur--] = (char) (v%10 + '0'); \
-			v /= 10; \
-		} \
-		buf[cur--] = '.'; \
-	} \
-	while (v) { \
-		buf[cur--] = (char ) (v%10 + '0'); \
-		v /= 10; \
-		done = 1; \
-	} \
-	if (!done) \
-		buf[cur--] = '0'; \
-	if (neg) \
-		buf[cur--] = '-'; \
-	l = (64-cur-1); \
-	if (*len < l){ \
-		if (*Buf) \
-			GDKfree(*Buf); \
-		*len = l+1; \
-		*Buf = GDKmalloc(*len); \
-	} \
-	strcpy(*Buf, buf+cur+1); \
-	return l-1;
+#define DEC_TOSTR(TYPE)							\
+	do {								\
+		char buf[64];						\
+		TYPE v = *(const TYPE *) a;				\
+		int scale = (int) (ptrdiff_t) extra;			\
+		int cur = 63, i, done = 0;				\
+		int neg = v < 0;					\
+		int l;							\
+		if (v == TYPE##_nil) {					\
+			if (*len < 5){					\
+				if (*Buf)				\
+					GDKfree(*Buf);			\
+				*len = 5;				\
+				*Buf = GDKmalloc(*len);			\
+				if (*Buf == NULL) {			\
+					GDKerror("Allocation failed\n"); \
+					return 0;			\
+				}					\
+			}						\
+			strcpy(*Buf, "NULL");				\
+			return 4;					\
+		}							\
+		if (v<0)						\
+			v = -v;						\
+		buf[cur--] = 0;						\
+		if (scale){						\
+			for (i=0; i<scale; i++) {			\
+				buf[cur--] = (char) (v%10 + '0');	\
+				v /= 10;				\
+			}						\
+			buf[cur--] = '.';				\
+		}							\
+		while (v) {						\
+			buf[cur--] = (char ) (v%10 + '0');		\
+			v /= 10;					\
+			done = 1;					\
+		}							\
+		if (!done)						\
+			buf[cur--] = '0';				\
+		if (neg)						\
+			buf[cur--] = '-';				\
+		l = (64-cur-1);						\
+		if (*len < l){						\
+			if (*Buf)					\
+				GDKfree(*Buf);				\
+			*len = l+1;					\
+			*Buf = GDKmalloc(*len);				\
+			if (*Buf == NULL) {				\
+				GDKerror("Allocation failed\n");	\
+				return 0;				\
+			}						\
+		}							\
+		strcpy(*Buf, buf+cur+1);				\
+		return l-1;						\
+	} while (0)
 
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
@@ -134,6 +146,10 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			if (*buf)
 				GDKfree(*buf);
 			*buf = (str) GDKmalloc(*len = 4);
+			if (*buf == NULL) {
+				GDKerror("Allocation failed\n");
+				return 0;
+			}
 		}
 		strcpy(*buf, s1);
 		return len1;
@@ -148,6 +164,10 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = len1 + 8);
+		if (*buf == NULL) {
+			GDKerror("Allocation failed\n");
+			return 0;
+		}
 	}
 	s = *buf;
 	strcpy(s, buf1);
@@ -195,6 +215,10 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = len1 + len2 + 8);
+		if (*buf == NULL) {
+			GDKerror("Allocation failed\n");
+			return 0;
+		}
 	}
 	s = *buf;
 	strcpy(s, buf1);
@@ -391,58 +415,61 @@ bat_max_hgelength(BAT *b)
 }
 #endif
 
-#define DEC_FRSTR(X) \
-	sql_column *col = c->extra; \
-	sql_subtype *t = &col->type; \
- \
-	unsigned int i, neg = 0; \
-	X *r; \
-	X res = 0; \
-	if (*s == '-'){ \
-		neg = 1; \
-		s++; \
-	} else if (*s == '+'){ \
-		neg = 0; \
-		s++; \
-	} \
-	for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-		if (!*s || *s < '0' || *s > '9')  \
-			return NULL; \
-		res *= 10; \
-		res += (*s-'0'); \
-		if (res) \
-			i++; \
-	} \
-	if (!*s && t->scale) { \
-		for( i = 0; i < t->scale; i++) { \
-			res *= 10; \
-		} \
-	} \
-	if (*s) { \
-		if (*s != '.')  \
-			return NULL; \
-		s++; \
-		for( i = 0; *s && i < t->scale; i++, s++) { \
-			if (*s < '0' || *s > '9')  \
-				return NULL; \
-			res *= 10; \
-			res += (*s-'0'); \
-		} \
-		for( ; i < t->scale; i++) { \
-			res *= 10; \
-		} \
-	} \
-	if (*s)  \
-		return NULL; \
-	r = c->data; \
-	if (!r) \
-		r = (X*)GDKmalloc(sizeof(X)); \
-	c->data = r; \
-	if (neg) \
-		*r = -res; \
-	else \
-		*r = res; \
-	return (void *) r;
+#define DEC_FRSTR(X)							\
+	do {								\
+		sql_column *col = c->extra;				\
+		sql_subtype *t = &col->type;				\
+									\
+		unsigned int i, neg = 0;				\
+		X *r;							\
+		X res = 0;						\
+		if (*s == '-'){						\
+			neg = 1;					\
+			s++;						\
+		} else if (*s == '+'){					\
+			neg = 0;					\
+			s++;						\
+		}							\
+		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (!*s || *s < '0' || *s > '9')		\
+				return NULL;				\
+			res *= 10;					\
+			res += (*s-'0');				\
+			if (res)					\
+				i++;					\
+		}							\
+		if (!*s && t->scale) {					\
+			for( i = 0; i < t->scale; i++) {		\
+				res *= 10;				\
+			}						\
+		}							\
+		if (*s) {						\
+			if (*s != '.')					\
+				return NULL;				\
+			s++;						\
+			for (i = 0; *s && i < t->scale; i++, s++) {	\
+				if (*s < '0' || *s > '9')		\
+					return NULL;			\
+				res *= 10;				\
+				res += *s - '0';			\
+			}						\
+			for (; i < t->scale; i++) {			\
+				res *= 10;				\
+			}						\
+		}							\
+		if (*s)							\
+			return NULL;					\
+		r = c->data;						\
+		if (r == NULL &&					\
+		    (r = GDKmalloc(sizeof(X))) == NULL)			\
+			return NULL;					\
+		c->data = r;						\
+		if (neg)						\
+			*r = -res;					\
+		else							\
+			*r = res;					\
+		return (void *) r;					\
+	} while (0)
 
 static void *
 dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
@@ -520,8 +547,8 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	if (*s)
 		return NULL;
 	r = c->data;
-	if (r == NULL)
-		r = (lng *) GDKmalloc(sizeof(lng));
+	if (r == NULL && (r = (lng *) GDKmalloc(sizeof(lng))) == NULL)
+		return NULL;
 	c->data = r;
 	if (neg)
 		*r = -res;
@@ -541,8 +568,15 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 		/* or shouldn't len rather be ssize_t, here? */
 
 		if (c->len < len) {
+			void *p;
 			c->len = len;
-			c->data = GDKrealloc(c->data, len);
+			if ((p = GDKrealloc(c->data, len)) == NULL) {
+				GDKfree(c->data);
+				c->data = NULL;
+				c->len = 0;
+				return NULL;
+			}
+			c->data = p;
 		}
 
 		if (s == e) {
@@ -603,6 +637,10 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 			GDKfree(*buf);
 			*len = 2 * l + 3;
 			*buf = GDKmalloc(*len);
+			if (*buf == NULL) {
+				GDKerror("Allocation failed\n");
+				return 0;
+			}
 		}
 		dst = *buf;
 		if (c->quote) {
@@ -690,6 +728,10 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		as.tryall = 0;
 		as.complaints = NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+		if (fmt == NULL) {
+			sql_error(m, 500, "failed to allocate memory ");
+			return NULL;
+		}
 		if (!isa_block_stream(bs->s))
 			 out = NULL;
 

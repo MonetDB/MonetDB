@@ -392,6 +392,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 			freetree(inputs);
 			freetree(tmpl);
 			GDKfree(vars);
+			GDKfree(res);
 			return w;
 		}
 		GDKfree(vars);
@@ -734,13 +735,14 @@ make_pred(tree *l, tree *comp, tree *r)
 				break;
 			}
 
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_bool;
+			res->nval = comp->cval == j_nequal ? !eval : eval;
+
 			freetree(l);
 			freetree(comp);
 			freetree(r);
 
-			res = GDKzalloc(sizeof(tree));
-			res->type = j_bool;
-			res->nval = comp->cval == j_nequal ? !eval : eval;
 			return res;
 		case j_num:
 		case j_dbl:

@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.17.17
+%define version 11.17.18
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -52,7 +52,7 @@ BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
 %if %{?with_geos:1}%{!?with_geos:0}
-BuildRequires: geos-devel >= 2.2.0
+BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
 BuildRequires: libcurl-devel

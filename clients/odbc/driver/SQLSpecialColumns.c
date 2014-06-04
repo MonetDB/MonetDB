@@ -519,6 +519,8 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 			       "cast(0 as smallint) as decimal_digits, "
 			       "cast(0 as smallint) as pseudo_column "
 			       "where 0 = 1");
+		if (query == NULL)
+			goto nomem;
 		query_end = query + strlen(query);
 	}
 
@@ -532,14 +534,13 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 	return rc;
 
   nomem:
+	/* note that query must be NULL when we get here */
 	if (cat)
 		free(cat);
 	if (sch)
 		free(sch);
 	if (tab)
 		free(tab);
-	if (query)
-		free(query);
 	/* Memory allocation error */
 	addStmtError(stmt, "HY001", NULL, 0);
 	return SQL_ERROR;

@@ -243,8 +243,8 @@ JAQLparser(Client c)
 		j->timing.optimise = GDKusec();
 		chkTypes(out, c->nspace, prg->def, FALSE);
 		/* TODO: use a configured pipe */
-		addOptimizerPipe(c, prg->def, "minimal_pipe");
-		if ((errmsg = optimizeMALBlock(c, prg->def)) != MAL_SUCCEED) {
+		if ((errmsg = addOptimizerPipe(c, prg->def, "minimal_pipe")) != MAL_SUCCEED ||
+			(errmsg = optimizeMALBlock(c, prg->def)) != MAL_SUCCEED) {
 			MSresetInstructions(prg->def, oldstop);
 			freeVariables(c, prg->def, c->glb, oldvtop);
 			prg->def->errors = 0;
