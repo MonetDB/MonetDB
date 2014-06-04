@@ -161,10 +161,9 @@ char* db_create(char* dbname) {
 }
 
 /* recursive helper function to delete a directory */
-static char* deletedir(char *dir) {
+static char* deletedir(const char *dir) {
 	DIR *d;
 	struct dirent *e;
-	struct stat s;
 	char buf[8192];
 	char path[4096];
 
@@ -174,45 +173,33 @@ static char* deletedir(char *dir) {
 		 * probably already deleted */
 		if (errno == ENOENT)
 			return(NULL);
+		if (errno == ENOTDIR) {
+			if (unlink(dir) == -1 && errno != ENOENT) {
+				snprintf(buf, sizeof(buf),
+					 "unable to unlink file %s: %s",
+					 dir, strerror(errno));
+				return(strdup(buf));
+			}
+			return NULL;
+		}
 		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
 				dir, strerror(errno));
 		return(strdup(buf));
 	}
 	while ((e = readdir(d)) != NULL) {
-		snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
-		if (stat(path, &s) == -1) {
-			snprintf(buf, sizeof(buf), "unable to stat file %s: %s",
-					path, strerror(errno));
-			closedir(d);
-			return(strdup(buf));
-		}
-
-		if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode) || S_ISSOCK(s.st_mode)) {
-			if (unlink(path) == -1) {
-				snprintf(buf, sizeof(buf), "unable to unlink file %s: %s",
-						path, strerror(errno));
-				closedir(d);
-				return(strdup(buf));
-			}
-		} else if (S_ISDIR(s.st_mode)) {
+		/* ignore . and .. */
+		if (strcmp(e->d_name, ".") != 0 &&
+		    strcmp(e->d_name, "..") != 0) {
 			char* er;
-			/* recurse, ignore . and .. */
-			if (strcmp(e->d_name, ".") != 0 &&
-					strcmp(e->d_name, "..") != 0 &&
-					(er = deletedir(path)) != NULL)
-			{
+			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+			if ((er = deletedir(path)) != NULL) {
 				closedir(d);
 				return(er);
 			}
-		} else {
-			/* fifos, block, char devices etc, we don't do */
-			snprintf(buf, sizeof(buf), "not a regular file: %s", path);
-			closedir(d);
-			return(strdup(buf));
 		}
 	}
 	closedir(d);
-	if (rmdir(dir) == -1) {
+	if (rmdir(dir) == -1 && errno != ENOENT) {
 		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
 				dir, strerror(errno));
 		return(strdup(buf));

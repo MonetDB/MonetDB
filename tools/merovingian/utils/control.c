@@ -63,6 +63,7 @@ char* control_send(
 	stream *fdin = NULL;
 	stream *fdout = NULL;
 
+	*ret = NULL;		/* gets overwritten in case of success */
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
@@ -111,13 +112,14 @@ char* control_send(
 		/* try reading length */
 		len = recv(sock, rbuf, 2, 0);
 		if (len == 2)
-			len += recv(sock, rbuf + len, sizeof(rbuf) - len, 0);
+			len += recv(sock, rbuf + len, sizeof(rbuf) - len - 1, 0);
 		/* perform login ritual */
 		if (len <= 2) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
 			close(sock);
 			return(strdup(sbuf));
 		}
+		rbuf[len] = 0;
 		/* we only understand merovingian:1 and :2 (backwards compat
 		 * <=Aug2011) and mapi v9 on merovingian */
 		if (strncmp(rbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
@@ -296,12 +298,12 @@ char* control_send(
 		if (fdin != NULL) {
 			/* stream.h is sooo broken :( */
 			memset(rbuf, '\0', sizeof(rbuf));
-			if (mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1) < 0) {
+			if ((len = mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1)) < 0) {
 				close_stream(fdout);
 				close_stream(fdin);
 				return(strdup("no response from monetdbd after login"));
 			}
-			rbuf[strlen(rbuf) - 1] = '\0';
+			rbuf[len - 1] = '\0';
 		} else {
 			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
 				close(sock);

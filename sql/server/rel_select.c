@@ -3628,15 +3628,28 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
+	int type = (ek.card == card_none)?F_PROC:F_FUNC;
 
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
+	if (!l && !r) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		return rel_aggr(sql, rel, se, f);
+	}
 
 	if (!l || !r) 
 		return NULL;
 
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
+
+	if (type == F_FUNC) {
+		sql_subfunc *func = sql_find_func(sql->sa, s, fname, 2, F_AGGR);
+		if (func)
+			return _rel_aggr(sql, rel, 0, s, fname, dl->next, f);
+	}
 	return rel_binop_(sql, l, r, s, fname, ek.card);
 }
 
