@@ -651,7 +651,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			}
 			ops = sa_list(sql->sa);
 			append(ops, r);
-			append(ops, r2);
+			if (r2)
+				append(ops, r2);
 			r = stmt_list(sql->sa, ops);
 			s = stmt_genselect(sql->sa, l, r, e->f, sel);
 			if (s && is_anti(e))
@@ -1244,7 +1245,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 				list_append(l, s);
 			}
 		}
-		if (sub && sub->nrcols) { /* add sub */
+		if (!rel->flag && sub && sub->nrcols) { /* add sub, table func with table input, we expect alignment */
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
 		}

@@ -1024,8 +1024,10 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			break;
 		}
 	}
-	if ( !tblname )
+	if ( !tblname ){
+		GDKfree(mod);
 		return 0;
+	}
 
 	mb->legid = octopusSeq++;
 

@@ -65,29 +65,17 @@ stderr of test 'varchar` in directory 'sql/test/pg_regress` itself:
 #warning: please don't forget to set your vault key!
 #(see /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf)
 
-# 22:22:59 >  
-# 22:22:59 >  ./varchar.SQL.sh varchar 
-# 22:22:59 >  
+# 17:12:08 >  
+# 17:12:08 >  "./varchar.SQL.sh" "varchar"
+# 17:12:08 >  
 
 
-# 22:22:59 >  
-# 22:22:59 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=30462  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/varchar.sql
-# 22:22:59 >  
+# 17:12:08 >  
+# 17:12:08 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/varchar.sql
+# 17:12:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('cd');
-ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ');
-ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcde');
-ERROR = !value too long for type (var)char(4)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd    ');
-ERROR = !value too long for type (var)char(4)
 
-# 22:22:59 >  
-# 22:22:59 >  Done.
-# 22:22:59 >  
+# 17:12:08 >  
+# 17:12:08 >  "Done."
+# 17:12:08 >  
 

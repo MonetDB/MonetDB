@@ -94,6 +94,40 @@ Ready.
 % 20 # length
 [ "[ \"hallo\", \"world\" ]"	]
 [ "[ \"foobar\" ]"	]
+#delete from aggrtest00;
+[ 3	]
+#insert into aggrtest00 values (NULL, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#insert into aggrtest00 values ('hello', 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 11 # length
+[ "[ \"hello\" ]"	]
+#insert into aggrtest00 values ('world', 2);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 20 # length
+[ "[ \"hello\", \"world\" ]"	]
+#select json.tojsonarray(col1) from aggrtest00 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 11 # length
+[ "[ \"hello\" ]"	]
+[ "[ \"world\" ]"	]
+#drop table aggrtest00;
 
 # 15:08:41 >  
 # 15:08:41 >  "Done."

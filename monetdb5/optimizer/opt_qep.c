@@ -31,17 +31,22 @@ QEPnew(int p, int c){
 	qep->plimit = p;
 	if( p ) {
 		qep->parents = (QEP*) GDKzalloc( sizeof(QEP) * p);
-		if( qep->parents == NULL)
+		if( qep->parents == NULL){
+			GDKfree(qep);
 			return NULL;
+		}
 	}
 	qep->climit = c;
 	if( c){
 		qep->children = (QEP *) GDKzalloc( sizeof(QEP) * c);
-		if( qep->children == NULL)
+		if( qep->children == NULL){
+			GDKfree(qep);
 			return NULL;
+		}
 	}
 	return qep;
 }
+
 static QEP
 QEPnewNode(MalBlkPtr mb,InstrPtr p){
 	QEP q;
@@ -164,6 +169,16 @@ QEPdump(stream *f, QEP qep, int indent){
 		QEPdump(f,qep->children[i], indent+ inc);
 }
 
+static void
+QEPfree(QEP qep)
+{
+	int i;
+	for(i=0; i< qep->climit; i++)
+	if( qep->children[i])
+		QEPfree(qep->children[i]);
+	GDKfree(qep);
+}
+
 int
 OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	QEP qep;
@@ -173,5 +188,6 @@ OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	qep= QEPbuild(mb);
 	QEPdump(cntxt->fdout,qep,0);
+	QEPfree(qep);
 	return 1;
 }

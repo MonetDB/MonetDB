@@ -178,8 +178,9 @@ SQLPrepare_(ODBCStmt *stmt,
 			if (rec->sql_desc_schema_name) {
 				/* base table name and base column
 				 * name exist if there is a schema
-				 * name */
-				rec->sql_desc_base_table_name = (SQLCHAR *) strdup((char *) rec->sql_desc_table_name);
+				 * name; the extra check is for static
+				 * code analyzers and robustness */
+				rec->sql_desc_base_table_name = rec->sql_desc_table_name ? (SQLCHAR *) strdup((char *) rec->sql_desc_table_name) : NULL;
 				rec->sql_desc_base_column_name = (SQLCHAR *) strdup((char *) rec->sql_desc_name);
 			} else {
 				rec->sql_desc_base_table_name = NULL;

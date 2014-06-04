@@ -2111,7 +2111,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 			/* test for special commands */
 			if (mode != MAL)
 				while (length > 0 &&
-				       (*line & ~0x7F) == 0 &&
 				       isascii((int) *line) &&
 				       isspace((int) *line)) {
 					line++;

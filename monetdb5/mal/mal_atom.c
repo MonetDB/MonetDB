@@ -55,7 +55,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	assert(pci != 0);
 	name = getFunctionId(pci);
 	tpe = getTypeIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
-	if (tpe < 0 || tpe >= GDKatomcnt)
+	if (tpe < 0 || tpe >= GDKatomcnt || tpe >= MAXATOMS)
 		return 0;
 	assert(pci->fcn != NULL);
 	switch (name[0]) {

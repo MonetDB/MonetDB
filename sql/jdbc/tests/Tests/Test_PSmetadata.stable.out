@@ -53,7 +53,7 @@ Ready.
 0. false	false
 0. 6 columns:	6
 1.	mTests_sql_jdbc_tests
-	classname     java.lang.Integer
+	classname     java.lang.Short
 	displaysize   8
 	label         intnull
 	name          intnull

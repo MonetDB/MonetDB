@@ -1,0 +1,163 @@
+stderr of test 'without_oid` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:12:08 >  
+# 17:12:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:12:08 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:12:09 >  
+# 17:12:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:12:09 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TABLE wi (i INT,
+                         n1 int, n2 int, n3 int, n4 int,
+                         n5 int, n6 int, n7 int, n8 int) WITH OIDS;
+ERROR = !syntax error, unexpected WITH, expecting SCOLON in: "create table wi (i int,
+        !                 n1 int, n2 int, n3 int, n4 int,
+        !                 n5 int, n6 int, n7 int, n8 int) with"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TABLE wo (i INT,
+                         n1 int, n2 int, n3 int, n4 int,
+                         n5 int, n6 int, n7 int, n8 int) WITHOUT OIDS;
+ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create table wo (i int,
+        !                 n1 int, n2 int, n3 int, n4 int,
+        !                 n5 int, n6 int, n7 int, n8 int) without"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi VALUES (1);  -- 1
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i FROM wi;  -- 1
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+1 FROM wi;  -- 1+1=2
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+1 FROM wo;  -- 1+2=3
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+3 FROM wi;  -- 3+3=6
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+2 FROM wi;  -- 2+6=8
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+8 FROM wo;  -- 8+8=16
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+6 FROM wo;  -- 6+16=22
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+22 FROM wi;  -- 22+22=44
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+16 FROM wi;  -- 16+44=60
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+60 FROM wo;  -- 60+60=120
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+44 FROM wo;  -- 44+120=164
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+164 FROM wi;  -- 164+164=328
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+120 FROM wi;  -- 120+328=448
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+448 FROM wo;  -- 448+448=896
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+328 FROM wo;  -- 328+896=1224
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+1224 FROM wi;  -- 1224+1224=2448
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+896 FROM wi;  -- 896+2448=3344
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+3344 FROM wo;  -- 3344+3344=6688
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wi SELECT i+2448 FROM wo;  -- 2448+6688=9136
+ERROR = !INSERT INTO: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = INSERT INTO wo SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
+ERROR = !INSERT INTO: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(oid) FROM wi;
+ERROR = !SELECT: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(oid) FROM wo;
+ERROR = !SELECT: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = VACUUM ANALYZE wi;
+ERROR = !syntax error, unexpected IDENT in: "vacuum"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = VACUUM ANALYZE wo;
+ERROR = !syntax error, unexpected IDENT in: "vacuum"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
+          FROM pg_class
+         WHERE relname IN ('wi', 'wo');
+ERROR = !SELECT: no such table 'pg_class'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DROP TABLE wi;
+ERROR = !DROP TABLE: no such table 'wi'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DROP TABLE wo;
+ERROR = !DROP TABLE: no such table 'wo'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COPY create_table_test FROM stdin;
+ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy create_table_test"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = 5	10
+        10	15
+        \.
+        
+        CREATE TABLE create_table_test2 WITH OIDS AS
+            SELECT a + b AS c1, a - b AS c2 FROM create_table_test;
+ERROR = !syntax error, unexpected sqlINT in: "5"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TABLE create_table_test3 WITHOUT OIDS AS
+            SELECT a + b AS c1, a - b AS c2 FROM create_table_test;
+ERROR = !syntax error, unexpected IDENT, expecting AS in: "create table create_table_test3 without"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(oid) FROM create_table_test2;
+ERROR = !SELECT: no such table 'create_table_test2'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(oid) FROM create_table_test3;
+ERROR = !SELECT: no such table 'create_table_test3'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DROP TABLE create_table_test2;
+ERROR = !DROP TABLE: no such table 'create_table_test2'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DROP TABLE create_table_test3;
+ERROR = !DROP TABLE: no such table 'create_table_test3'
+
+# 17:12:09 >  
+# 17:12:09 >  "Done."
+# 17:12:09 >  
+

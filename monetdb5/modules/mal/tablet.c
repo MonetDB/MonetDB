@@ -247,6 +247,7 @@ TABLETcollect(Tablet *as)
 			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
 				as->error = M5OutOfMemory;
 			MT_lock_unset(&errorlock, "TABLETcollect");
+			GDKfree(bats);
 			return NULL;
 		}
 	}
@@ -294,6 +295,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
 				as->error = M5OutOfMemory;
 			MT_lock_unset(&errorlock, "TABLETcollect_parts");
+			GDKfree(bats);
 			return NULL;
 		}
 	}
@@ -537,8 +539,11 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
-	if (buf == NULL)
+	if (buf == NULL || localbuf == NULL){
+		if( buf) GDKfree(buf);
+		if( localbuf) GDKfree(localbuf);
 		return -1;
+	}
 	for (q = offset + as->nr, p = offset; p < q; p++) {
 		ptr h = BUNhead(orderi, p);
 
@@ -566,8 +571,11 @@ output_file_dense(Tablet *as, stream *fd)
 	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
 
-	if (buf == NULL)
+	if (buf == NULL || localbuf == NULL){
+		if( buf) GDKfree(buf);
+		if( localbuf) GDKfree(localbuf);
 		return -1;
+	}
 	for (i = 0; i < as->nr; i++) {
 		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			GDKfree(buf);
@@ -1230,6 +1238,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef MLOCK_TST
 	mlock(task->b->buf, task->b->size);
 #endif
+	if (b->pos == b->len && b->eof && maxrow > 0) {
+		/* special case:
+		 * mclient -s 'COPY INTO table FROM STDIN' - < file
+		 * Initially we've seen the complete input, but we need to read more.
+		 */
+#ifdef SQLLOADTHREAD
+		MT_sema_up(&task->producer, "SQLload_file");
+		MT_sema_down(&task->consumer, "SQLload_file");
+#else
+		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
+#endif
+	}
 	while ((task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
 		if (task->errbuf && task->errbuf[0]) {
