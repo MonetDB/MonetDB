@@ -38,7 +38,7 @@
 #define rapi_export extern
 #endif
 
-#define RAPI_MAX_TUPLES 900000000L
+#define RAPI_MAX_TUPLES 2147483647L
 
 rapi_export str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		InstrPtr pci);
