@@ -224,11 +224,11 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
-		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);		\
+		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
 	} while (0)
-#define _DBG_LOCK_SLEEP(l, n)					\
-	do {							\
-		if (_spincnt == 1024)				\
+#define _DBG_LOCK_SLEEP(l, n)						\
+	do {								\
+		if (_spincnt == 1024)					\
 			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
 	} while (0)
 #define _DBG_LOCK_COUNT_1(l)			\
