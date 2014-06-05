@@ -1497,27 +1497,20 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				timerHumanStop();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
+				mnstr_printf(toConsole,
+					     LLFMT " affected row%s",
+					     aff,
+					     "s" + (aff == 1));
 				if (lid != -1) {
 					mnstr_printf(toConsole,
-						     LLFMT " affected row%s, "
-						     "last generated key: "
-						     LLFMT "%s%s%s\n",
-						     aff,
-						     (aff == 1 ? "" : "s"),
-						     lid,
-						     singleinstr ? " (" : "",
-						     singleinstr && formatter != TESTformatter ? timerHuman() : "",
-						     singleinstr ? ")" : "");
-				} else {
-					mnstr_printf(toConsole,
-						     LLFMT " affected row%s"
-						     "%s%s%s\n",
-						     aff,
-						     (aff == 1 ? "" : "s"),
-						     singleinstr ? " (" : "",
-						     singleinstr && formatter != TESTformatter ? timerHuman() : "",
-						     singleinstr ? ")" : "");
+						     ", last generated key: "
+						     LLFMT,
+						     lid);
 				}
+				if (singleinstr && formatter != TESTformatter)
+					mnstr_printf(toConsole, " (%s)",
+						     timerHuman());
+				mnstr_printf(toConsole, "\n");
 			}
 			continue;
 		case Q_SCHEMA:
