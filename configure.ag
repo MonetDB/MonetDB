@@ -390,11 +390,11 @@ icc_ver=""
 CC_ver=""
 CC_version="`$CC --version 2>&1`"
 case "$CC_version" in
-*\(GCC\)*)
+*\(GCC\)*|*Copyright\ \(C\)\ *\ Free\ Software\ Foundation,\ Inc.*)
 	gcc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="gcc-$gcc_ver"
 	;;
-*\(ICC\)*)
+*\(ICC\)*|*Copyright\ \(C\)\ *\ Intel\ Corporation.\ \ All\ rights\ reserved.*)
 	icc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="icc-$icc_ver"
 	;;
