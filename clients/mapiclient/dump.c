@@ -429,10 +429,8 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 		space = mnstr_printf(toConsole, "TINYINT");
 	} else if (strcmp(c_type, "bigint") == 0) {
 		space = mnstr_printf(toConsole, "BIGINT");
-#ifdef HAVE_HGE
 	} else if (strcmp(c_type, "hugeint") == 0) {
 		space = mnstr_printf(toConsole, "HUGEINT");
-#endif
 	} else if (strcmp(c_type, "date") == 0) {
 		space = mnstr_printf(toConsole, "DATE");
 	} else if (strcmp(c_type, "month_interval") == 0) {
