@@ -1516,12 +1516,14 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			timerHumanStop();
-			if (formatter == TABLEformatter)
-				mnstr_printf(toConsole,
-					      "operation successful%s%s%s\n",
-					      singleinstr ? " (" : "",
-					      singleinstr && formatter != TESTformatter ? timerHuman() : "",
-					      singleinstr ? ")" : "");
+			if (formatter == TABLEformatter) {
+				mnstr_printf(toConsole, "operation successful");
+				if (singleinstr)
+					mnstr_printf(toConsole, " (%s)",
+						     timerHuman());
+				mnstr_printf(toConsole, "\n");
+			} else if (formatter == TIMERformatter)
+				printf("%s\n", timerHuman());
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
