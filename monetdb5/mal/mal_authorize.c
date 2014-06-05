@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. Kersten, F. Groffen
+ * (authors) M. Kersten, F. Groffen
  * Authorisation adminstration management
  * Authorisation of users is a key concept in protecting the server from
  * malicious and unauthorised users.  This file contains a number of
@@ -31,6 +31,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_authorize.h"
+#include "mal_exception.h"
 #include "mal_private.h"
 #include "mcrypt.h"
 #ifdef HAVE_UNISTD_H
@@ -112,12 +113,13 @@ AUTHcommit(void)
  * Localize the authorization tables in the database.  The authorization
  * tables are a set of aligned BATs that store username, password (hashed)
  * and scenario permissions.
- * If the BATs do not exist, they are created, and the monetdb/monetdb
- * administrator account is added.  Initialising the authorization tables
- * can only be done after the GDK kernel has been initialized.
+ * If the BATs do not exist, they are created, and the monetdb
+ * administrator account is added with the given password (or 'monetdb'
+ * if NULL).  Initialising the authorization tables can only be done
+ * after the GDK kernel has been initialized.
  */
 str
-AUTHinitTables(void) {
+AUTHinitTables(str *passwd) {
 	bat bid;
 	BAT *b;
 	int isNew = 1;
@@ -134,9 +136,10 @@ AUTHinitTables(void) {
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
 	if (!bid) {
-		b = BATnew(TYPE_oid, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
+		BATseqbase(b,0);
 
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_user");
@@ -151,9 +154,10 @@ AUTHinitTables(void) {
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
-		b = BATnew(TYPE_oid, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
+		BATseqbase(b,0);
 
 		BBPrename(BBPcacheid(b), "M5system_auth_passwd_v2");
 		BATmode(b, PERSISTENT);
@@ -168,12 +172,13 @@ AUTHinitTables(void) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
-		str pw; /* will become the right hash for "monetdb" */
-		int len = (int) strlen(user);
+		str pw = "monetdb";
 		oid uid;
 		Client c = &mal_clients[0];
 
-		pw = mcrypt_BackendSum(user /* because user == pass */, len);
+		if (passwd != NULL && *passwd != NULL)
+			pw = *passwd;
+		pw = mcrypt_BackendSum(pw, strlen(pw));
 		msg = AUTHaddUser(&uid, &c, &user, &pw);
 		free(pw);
 		if (msg)

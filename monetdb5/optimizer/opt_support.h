@@ -45,7 +45,6 @@
 #define DEBUG_OPT_ALIASES			3
 #define DEBUG_OPT_REDUCE			4
 #define DEBUG_OPT_COMMONTERMS		5
-#define DEBUG_OPT_COMPRESS			6
 #define DEBUG_OPT_CONSTANTS			7
 #define DEBUG_OPT_COSTMODEL			8
 #define DEBUG_OPT_CRACK				9
@@ -91,6 +90,7 @@
 #define DEBUG_OPT_HEURISTIC			49
 #define DEBUG_OPT_CENTIPEDE			50
 #define DEBUG_OPT_PUSHSELECT		51
+#define DEBUG_OPT_JSON				54
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;
@@ -112,6 +112,7 @@ opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int isUpdateInstruction(InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);

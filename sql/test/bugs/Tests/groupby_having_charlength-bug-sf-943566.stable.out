@@ -34,9 +34,10 @@ Ready.
 % sys.s,	sys.L1,	sys.L2 # table_name
 % name,	L1,	L2 # name
 % varchar,	int,	wrd # type
-% 3,	1,	2 # length
+% 4,	1,	2 # length
 [ "sys",	3,	10	]
 [ "tmp",	3,	10	]
+[ "json",	4,	10	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.

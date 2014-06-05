@@ -24,7 +24,6 @@
 
 #define OPTDEBUGdataflow  if ( optDebug & (1 <<DEBUG_OPT_DATAFLOW) )
 opt_export void removeDataflow(MalBlkPtr mb);
-opt_export int dataflowConflict(InstrPtr p);
 opt_export int OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

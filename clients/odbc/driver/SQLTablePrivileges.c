@@ -136,42 +136,41 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	 */
 
 	sprintf(query_end,
-		"select"
-		" e.\"value\" as \"table_cat\","
-		" \"s\".\"name\" as \"table_schem\","
-		" \"t\".\"name\" as \"table_name\","
-		" case \"a\".\"id\""
-		"      when \"s\".\"owner\" then '_SYSTEM'"
-		"      else \"g\".\"name\""
-		"      end as \"grantor\","
-		" case \"a\".\"name\""
-		"      when 'public' then 'PUBLIC'"
-		"      else \"a\".\"name\""
-		"      end as \"grantee\","
-		" case \"p\".\"privileges\""
-		"      when 1 then 'SELECT'"
-		"      when 2 then 'UPDATE'"
-		"      when 4 then 'INSERT'"
-		"      when 8 then 'DELETE'"
-		"      when 16 then 'EXECUTE'"
-		"      when 32 then 'GRANT'"
-		"      end as \"privilege\","
-		" case \"p\".\"grantable\""
-		"      when 1 then 'YES'"
-		"      when 0 then 'NO'"
-		"      end as \"is_grantable\" "
-		"from \"sys\".\"schemas\" \"s\","
-		" \"sys\".\"_tables\" \"t\","
-		" \"sys\".\"auths\" \"a\","
-		" \"sys\".\"privileges\" \"p\","
-		" \"sys\".\"auths\" \"g\","
-		" \"sys\".\"env\"() \"e\" "
-		"where \"p\".\"obj_id\" = \"t\".\"id\""
-		" and \"p\".\"auth_id\" = \"a\".\"id\""
-		" and \"t\".\"schema_id\" = \"s\".\"id\""
-		" and \"t\".\"system\" = false"
-		" and \"p\".\"grantor\" = \"g\".\"id\""
-		" and \"e\".\"name\" = 'gdk_dbname'");
+		"select e.value as table_cat, "
+			"s.name as table_schem, "
+			"t.name as table_name, "
+			"case a.id "
+			     "when s.owner then '_SYSTEM' "
+			     "else g.name "
+			     "end as grantor, "
+			"case a.name "
+			     "when 'public' then 'PUBLIC' "
+			     "else a.name "
+			     "end as grantee, "
+			"case p.privileges "
+			     "when 1 then 'SELECT' "
+			     "when 2 then 'UPDATE' "
+			     "when 4 then 'INSERT' "
+			     "when 8 then 'DELETE' "
+			     "when 16 then 'EXECUTE' "
+			     "when 32 then 'GRANT' "
+			     "end as privilege, "
+			"case p.grantable "
+			     "when 1 then 'YES' "
+			     "when 0 then 'NO' "
+			     "end as is_grantable "
+		"from sys.schemas s, "
+		      "sys._tables t, "
+		      "sys.auths a, "
+		      "sys.privileges p, "
+		      "sys.auths g, "
+		      "sys.env() e "
+		"where p.obj_id = t.id "
+		  "and p.auth_id = a.id "
+		  "and t.schema_id = s.id "
+		  "and t.system = false "
+		  "and p.grantor = g.id "
+		  "and e.name = 'gdk_dbname'");
 	assert(strlen(query) < 1000);
 	query_end += strlen(query_end);
 
@@ -197,7 +196,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by \"table_cat\", \"table_schem\", \"table_name\", \"privilege\", \"grantee\"");
+	       " order by table_cat, table_schem, table_name, privilege, grantee");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */

@@ -67,7 +67,7 @@
 
 gdk_export int BBPin;		/* BATs swapped into BBP  */
 gdk_export int BBPout;		/* BATs swapped out of BBP */
-gdk_export bat BBPsize;		/* current occupied size of BBP array */
+gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
 gdk_export int BBPdir(int cnt, bat *subcommit);

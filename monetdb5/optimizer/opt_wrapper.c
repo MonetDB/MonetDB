@@ -43,12 +43,10 @@
 #include "opt_cluster.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
-#include "opt_compression.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
-#include "opt_dictionary.h"
 #include "opt_emptySet.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
@@ -58,12 +56,11 @@
 #include "opt_joinpath.h"
 #include "opt_mapreduce.h"
 #include "opt_matpack.h"
+#include "opt_json.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
 #include "opt_octopus.h"
-#include "opt_origin.h"
-#include "opt_prejoin.h"
 #include "opt_pushranges.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
@@ -86,12 +83,10 @@ struct{
 	{"cluster", &OPTclusterImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
-	{"compression", &OPTcompressionImplementation},
 	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
-	{"dictionary", &OPTdictionaryImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},
@@ -102,12 +97,11 @@ struct{
 	{"joinPath", &OPTjoinPathImplementation},
 	{"mapreduce", &OPTmapreduceImplementation},
 	{"matpack", &OPTmatpackImplementation},
+	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"octopus", &OPToctopusImplementation},
-	{"origin", &OPToriginImplementation},
-	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
@@ -135,7 +129,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
-	optimizerInit();
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	q= copyInstruction(p);
 	OPTIMIZERDEBUG 

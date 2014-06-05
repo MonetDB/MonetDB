@@ -1,6 +1,40 @@
+0.9.2
+- monetdb_queryinfo method to find out things about an arbitrary query cheaply
+- new options monetdb.sequential, monetdb.debug.query and monetdb.debug.mapi
+- debug output now uses the message() function
+- source code cleanup
+- dbListTables() now hides system tables per default, also got options to include the
+  schema name and quoting in the result (sys_tables, schema_names and quote)
+- fixed various TODO's in the code to get closer to 1.0 (exciting)
+- fixed a bug when the error identifier sent by MonetDB was non-numeric
+- IPv6 addresses in dbConnect() should now work (another long-standing TODO)
+
+0.9.1
+- dbGetInfo() now supported on MonetDBConnection (dplyr compatibility)
+- dbTransaction(), dbCommit() and dbRollback() support
+- fixed leaking of socket variable in dbConnect()
+- fixed monetdb.server.setup for UNIX-like systems (Thanks, Enzo)
+- fixed issue in dbClearResult() which produced a protocol error
+
+0.9
+- various extensions to monetdb.read.csv
+- removed monet.frame from this package, moved to github
+
+0.8.5
+- added parameters newline and quote to monetdb.write.csv
+
+0.8.4
+- fixed bug when reading empty table (Thanks, Anthony)
+- removed assertion in mapisplit.c that triggered sometimes for unclear reasons
+
+0.8.3
+- fixed a problem where integer SEXPs turned to double somehow
+
+0.8.2
+- fixed bug in dbConnect() where port and timeout were not always integer values
+
 0.8.1
 - fixed bug in dbWriteTable() where VARCHAR(255) was used for character data instead of STRING
-- moved monet.frame into separate package
 
 0.8
 - New All-C socket code (Thanks, Windows)

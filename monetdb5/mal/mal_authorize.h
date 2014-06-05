@@ -22,7 +22,6 @@
 
 /* #define _DEBUG_AUTH_*/
 #include "mal.h"
-#include "mal_exception.h"
 #include "mal_instruction.h"
 #include "mal_client.h"
 
@@ -38,7 +37,7 @@ mal_export str AUTHgetUsers(BAT **ret, Client *c);
 mal_export str AUTHgetPasswordHash(str *ret, Client *c, str *username);
 
 mal_export str AUTHrequireAdmin(Client *c);
-mal_export str AUTHinitTables(void);
+mal_export str AUTHinitTables(str *passwd);
 
 
 /*

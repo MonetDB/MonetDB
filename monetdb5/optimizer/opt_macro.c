@@ -542,7 +542,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk= GDKusec();
 	int actions = 0;
 
-	optimizerInit();
 	if( p ==NULL )
 		return 0;
 	removeInstruction(mb, p);
@@ -571,7 +570,6 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk= GDKusec();
 	int actions = 0;
 
-	optimizerInit();
 	if( p ==NULL )
 		return 0;
 	removeInstruction(mb, p);

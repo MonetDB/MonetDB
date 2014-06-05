@@ -1,5 +1,0 @@
-#type resolution of variable target lists
-b:= bat.new(:oid,:int);
-(b1,b2):= bat.partition(b);
-b3:= bat.partition(b);
-mdb.List();

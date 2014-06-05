@@ -56,7 +56,7 @@ create function sys.bbp ()
 		ttype string, count BIGINT, refcnt int, lrefcnt int, 
 		location string, heat int, dirty string, 
 		status string, kind string) 
-	external name sql.bbp;
+	external name bbp.get;
 
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";

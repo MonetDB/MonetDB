@@ -1,0 +1,60 @@
+stdout of test 'imprints` in directory 'monetdb5/modules/mal` itself:
+
+
+# 15:17:50 >  
+# 15:17:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35270" "--set" "mapi_usock=/var/tmp/mtest-14341/.s.monetdb.35270" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "imprints.mal"
+# 15:17:50 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35270/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14341/.s.monetdb.35270
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    t0 := alarm.usec();
+    b := bat.new(:oid,:lng);
+    INT_MAX := 2147483647;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := calc.+(8,8388608);
+    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+    r := mmath.srand(0);
+barrier i := 0:lng;
+    k := mmath.rand();
+    l := calc.lng(k);
+    bat.append(b,l);
+    redo i := iterator.next(1:lng,1000000:lng);
+exit i;
+    mdb.setDebug(dbgmsk_restore);
+    io.printf("#imprint tuples 1000000\n");
+    sz := calc.*(1000000,8);
+    t0 := alarm.usec();
+    bat.imprints(b);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#imprint create %d\n",d0);
+    l := bat.imprintsize(b);
+    lf := calc.flt(l);
+    io.printf("#imprint size %d\n",l);
+    f := calc./(sz,100);
+    f := calc./(lf,f);
+    io.printf("#imprint percentage overhead %4.2f\n",f);
+end main;
+#imprint tuples 1000000
+#imprint create 60295
+#imprint size 500004
+#imprint percentage overhead 6.25
+
+# 15:17:52 >  
+# 15:17:52 >  "Done."
+# 15:17:52 >  
+

@@ -28,10 +28,10 @@ stderr of test 'pivot.Bug-3339` in directory 'sql/test/BugTracker-2013` itself:
 # 09:16:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21191" "--port=32634"
 # 09:16:37 >  
 
-MAPI  = monetdb@niels:35691
+MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
 QUERY = SELECT (SELECT * FROM groupElements(pivot.x))
         FROM (SELECT * FROM tmp) as pivot;
-ERROR = !cardinality violation (2>1)
+ERROR = !SELECT: no such column 'pivot.x'
 
 # 09:16:37 >  
 # 09:16:37 >  "Done."

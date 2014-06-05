@@ -42,14 +42,16 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 15:13:19 >  
-# 15:13:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=35691"
-# 15:13:19 >  
+# 13:34:05 >  
+# 13:34:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20269" "--port=36091"
+# 13:34:05 >  
 
 #CREATE FUNCTION groupElements(beg INTEGER)
 #RETURNS TABLE (x INTEGER)
@@ -79,7 +81,7 @@ Ready.
 #DROP TABLE tmp;
 #DROP FUNCTION groupElements;
 
-# 15:13:19 >  
-# 15:13:19 >  "Done."
-# 15:13:19 >  
+# 13:34:05 >  
+# 13:34:05 >  "Done."
+# 13:34:05 >  
 

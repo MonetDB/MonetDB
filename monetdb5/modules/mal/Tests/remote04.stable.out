@@ -26,34 +26,38 @@ function user.main():void;
     bat.append(b,"foo");
     bat.append(b,"bar");
     bat.append(b,"baz");
+    bo := bat.new(:oid,:oid);
+    bok := remote.put(conn,bo);
     k := remote.put(conn,b);
     io.print(k);
     l := remote.put(conn,"bar");
     io.print(l);
     m := remote.put(conn,"boe");
     io.print(m);
+    tt := remote.put(conn,true:bit);
+    tf := remote.put(conn,false:bit);
 # perform a selection remote, and get the result back 
-    k := remote.exec(conn,"algebra","select",k,l,m);
-    j:bat[:oid,:str]  := remote.get(conn,k);
+    bok := remote.exec(conn,"algebra","subselect",k,l,m,tt,tt,tf);
+    j:bat[:oid,:oid]  := remote.get(conn,bok);
     io.print(j);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
 end main;
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
-[ "rmt0_b_bat_oid_str" ]
-[ "rmt1__16_str" ]
-[ "rmt2__12_str" ]
-#-----------------#
+[ "rmt1_b_bat_oid_str" ]
+[ "rmt2__16_str" ]
+[ "rmt3__12_str" ]
+#--------------------------#
 # h	t	  # name
-# str	int	  # type
-#-----------------#
-[ 0@0,	  "bla"	  ]
-[ 1@0,	  "boe"	  ]
-[ 3@0,	  "bar"	  ]
-[ 4@0,	  "baz"	  ]
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
 
-# 12:15:04 >  
-# 12:15:04 >  "Done."
-# 12:15:04 >  
+# 08:07:03 >  
+# 08:07:03 >  "Done."
+# 08:07:03 >  
 

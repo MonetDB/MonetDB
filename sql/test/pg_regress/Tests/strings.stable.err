@@ -1,0 +1,180 @@
+stderr of test 'strings` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:33 >  
+# 17:11:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:33 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:33 >  
+# 17:11:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:33 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 'first line'
+        ' - next line' /* this comment is not allowed here */
+        ' - third line'
+        	AS "Illegal 
+        
+        --
+        -- test conversions between various string types
+        -- E021-10 implicit casting among the character data types
+        --
+        
+        SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+        
+        SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
+        
+        SELECT CAST(name 'namefield' AS text) AS "text(name)";
+        
+        -- since this is an explicit cast, it should truncate w/o error:
+        SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
+ERROR = !syntax error, unexpected sqlTEXT, expecting SCOLON in: "select 'first line'
+        !' - next line' /* this comment is not allowed here */
+        !' - third line'
+        !	as "Illegal 
+        !
+        !--
+        !-- test conversions between various string types
+        !-- E021-10 implicit casting among the character data types
+        !--
+        !
+        !SELECT CAST(f1 AS text) AS "text"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True";
+ERROR = !syntax error, unexpected sqlNULL in: "select substring('abcdefg' from '(b|c)' for null"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True";
+ERROR = !syntax error, unexpected sqlNULL in: "select substring(null"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True";
+ERROR = !syntax error, unexpected sqlNULL in: "select substring('abcdefg' from null"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde";
+ERROR = !conversion of string 'c.e' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde";
+ERROR = !conversion of string 'b(.*)f' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f";
+ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('abcdef' placing"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5) AS "yabadaba";
+ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('yabadoo' placing"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo";
+ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('yabadoo' placing"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba";
+ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('babosa' placing"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT text 'text' || ' and unknown' AS "Concat text to unknown type";
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'text'"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT char(20) 'characters' || ' and text' AS "Concat char to unknown type";
+ERROR = !syntax error, unexpected CHARACTER in: "select char"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT text 'text' || char(20) ' and characters' AS "Concat text to char";
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'text'"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT text 'text' || varchar ' and varchar' AS "Concat text to varchar";
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'text'"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = alter table toasttest alter column f1 set storage external;
+ERROR = !syntax error, unexpected IDENT, expecting sqlNULL or NOT or DEFAULT in: "alter table toasttest alter column f1 set storage"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, -1, 5) from toasttest;
+ERROR = !SELECT: no such operator 'substr'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 5, -1) from toasttest;
+ERROR = !SELECT: no such operator 'substr'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 99995) from toasttest;
+ERROR = !SELECT: no such binary operator 'substr(clob,int)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 99995, 10) from toasttest;
+ERROR = !SELECT: no such operator 'substr'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TABLE toasttest(f1 bytea);
+ERROR = !type (bytea) unknown in: "create table toasttest(f1 bytea)"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+ERROR = !INSERT INTO: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+ERROR = !INSERT INTO: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = alter table toasttest alter column f1 set storage external;
+ERROR = !syntax error, unexpected IDENT, expecting sqlNULL or NOT or DEFAULT in: "alter table toasttest alter column f1 set storage"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+ERROR = !INSERT INTO: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+ERROR = !INSERT INTO: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, -1, 5) from toasttest;
+ERROR = !SELECT: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 5, -1) from toasttest;
+ERROR = !SELECT: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 99995) from toasttest;
+ERROR = !SELECT: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT substr(f1, 99995, 10) from toasttest;
+ERROR = !SELECT: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = DROP TABLE toasttest;
+ERROR = !DROP TABLE: no such table 'toasttest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT strpos('abcdef', 'cd') AS "pos_3";
+ERROR = !SELECT: no such binary operator 'strpos(char,char)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT strpos('abcdef', 'xy') AS "pos_0";
+ERROR = !SELECT: no such binary operator 'strpos(char,char)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
+ERROR = !SELECT: no such operator 'split_part'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select split_part('joeuser@mydatabase','@',1) AS "joeuser";
+ERROR = !SELECT: no such operator 'split_part'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
+ERROR = !SELECT: no such operator 'split_part'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select split_part('joeuser@mydatabase','@',3) AS "empty string";
+ERROR = !SELECT: no such operator 'split_part'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
+ERROR = !SELECT: no such operator 'split_part'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
+ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select to_hex(256::bigint*256::bigint*256::bigint*256::bigint - 1) AS "ffffffff";
+ERROR = !unexpected symbol (:)
+
+# 17:11:34 >  
+# 17:11:34 >  "Done."
+# 17:11:34 >  
+

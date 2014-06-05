@@ -642,14 +642,6 @@ SERVERclient(int *res, stream **In, stream **Out)
 	return MAL_SUCCEED;
 }
 
-void
-SERVERexit(void){
-	int ret;
-	SERVERstop(&ret);
-	/* remove any port identity file */
-	ret = system("rm -rf .*_port");
-	(void) ret;
-}
 /*
  * @+ Remote Processing
  * The remainder of the file contains the wrappers around
@@ -1264,11 +1256,13 @@ SERVERfetch_field_bat(int *bid, int *key){
 	int i,j,cnt;
 	Mapi mid;
 	char *fld;
-	int o=0;
 	BAT *b;
 
 	accessTest(*key, "rpc");
-	b= BATnew(TYPE_oid,TYPE_str,256);
+	b= BATnew(TYPE_void,TYPE_str,256);
+	if( b == NULL)
+		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1278,8 +1272,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		BUNins(b,&o,fld, FALSE);
-		o++;
+		BUNappend(b,fld, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*bid = b->batCacheid;
@@ -1499,12 +1492,16 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	qry= (str*) getArgReference(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
 	ht= getHeadType(getVarType(mb,getArg(pci,0)));
-	tt= getTailType(getVarType(mb,getArg(pci,0)));
+	tt= getColumnType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
 
-	b= BATnew(ht,tt,256);
+	assert(ht == TYPE_void || ht== TYPE_oid);
+	b= BATnew(TYPE_void,tt,256);
+	if ( b == NULL)
+		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	i= 0;
 	if ( mapi_fetch_row(hdl)){
 		int oht = ht, ott = tt;
@@ -1569,7 +1566,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		/* reconstruct the object */
 		ht = getTypeName(getHeadType(tpe));
-		tt = getTypeName(getTailType(tpe));
+		tt = getTypeName(getColumnType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
@@ -1649,7 +1646,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
 		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
-			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
+			getTypeName(getColumnType(getVarType(mb,getDestVar(pci)))),
 			*nme, *tab,*col,i);
 	} else if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
@@ -1660,7 +1657,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(getHeadType(target));
-		tn= getTypeName(getTailType(target));
+		tn= getTypeName(getColumnType(target));
 		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
 		GDKfree(hn);

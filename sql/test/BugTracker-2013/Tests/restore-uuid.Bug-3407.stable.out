@@ -1,0 +1,75 @@
+stdout of test 'restore-uuid.Bug-3407` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 12:43:07 >  
+# 12:43:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39638" "--set" "mapi_usock=/var/tmp/mtest-8160/.s.monetdb.39638" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-virgin-candidate/var/MonetDB/mTests_sql_test_BugTracker-2013" "--set" "mal_listing=0"
+# 12:43:07 >  
+
+# MonetDB 5 server v11.17.0 (hg id: e3f4224d2aca)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:39638/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8160/.s.monetdb.39638
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 12:43:07 >  
+# 12:43:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8160" "--port=39638"
+# 12:43:07 >  
+
+#START TRANSACTION;
+#CREATE TABLE testuuid (
+#        column1 UUID
+#);
+#COPY 1 RECORDS INTO testuuid FROM stdin USING DELIMITERS '\t','\n','"';
+#38fded43-79ef-41b0-a2af-05d20d7c4d51
+#
+[ 1	]
+#select * from testuuid;
+% sys.testuuid # table_name
+% column1 # name
+% uuid # type
+% 0 # length
+[ 38fded43-79ef-41b0-a2af-05d20d7c4d51	]
+#ROLLBACK;
+
+# 12:43:08 >  
+# 12:43:08 >  "Done."
+# 12:43:08 >  
+

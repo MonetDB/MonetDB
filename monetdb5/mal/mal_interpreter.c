@@ -505,7 +505,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int garbages[16], *garbage;
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
-	runtimeProfile.stkpc = runtimeProfileFunction.stkpc = 0;
+	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
@@ -533,7 +533,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* also produce event record for start of function */
 	if ( startpc == 1 ){
 		runtimeProfileInit(cntxt, mb, stk);
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
+		runtimeProfileBegin(cntxt, mb, stk, NULL, &runtimeProfileFunction);
 		mb->starttime = GDKusec();
 		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_SESSION_TIMEOUT);
@@ -569,7 +569,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		//Ensure we spread system resources over multiple users as well.
-		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
+		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
         if (!RECYCLEentry(cntxt, mb, stk, pci,&runtimeProfile)){
 			/* The interpreter loop
 			 * The interpreter is geared towards execution a MAL

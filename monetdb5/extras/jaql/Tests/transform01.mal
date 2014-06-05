@@ -1,5 +1,0 @@
-# from the docs
-
-jaql.x("recs = [ {\"a\": 1, \"b\": 4}, {\"a\": 2, \"b\": 5}, {\"a\": -1, \"b\": 4} ];");
-jaql.x("recs -> transform {\"sum\": $.a + $.b};");
-jaql.x("recs -> transform each r {\"sum\": r.a + r.b};");

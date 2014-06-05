@@ -41,7 +41,7 @@ project (
 | | join (
 | | | select (
 | | | | table(sys.lineorder) [ lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ] COUNT 
-| | | ) [ int[tinyint "36"] <= lineorder.lo_quantity <= int[tinyint "40"], int[tinyint "5"] <= lineorder.lo_discount <= int[tinyint "7"] ],
+| | | ) [ int[tinyint "5"] <= lineorder.lo_discount <= int[tinyint "7"], int[tinyint "36"] <= lineorder.lo_quantity <= int[tinyint "40"] ],
 | | | select (
 | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.d_weeknuminyear, dwdate.%TID% NOT NULL ] COUNT 
 | | | ) [ dwdate.d_year = int[smallint "1994"], dwdate.d_weeknuminyear = int[tinyint "6"] ]

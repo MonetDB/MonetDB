@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.17.18], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.18.0], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -212,21 +212,12 @@ no-auto)
 	;;
 esac
 
-dft_jaql=auto
-AC_ARG_ENABLE(jaql,
-	AS_HELP_STRING([--enable-jaql],
-		[enable support for MonetDB/JAQL (default=auto)]),
-	enable_jaql=$enableval,
-	enable_jaql=$dft_jaql)
-case "$enable_monetdb5-$enable_jaql" in
-no-yes)
-	AC_MSG_ERROR([MonetDB/JAQL requires MonetDB5.])
-	;;
-no-auto)
-	enable_jaql=no
-	disable_jaql="(MonetDB/JAQL requires MonetDB5.)"
-	;;
-esac
+dft_jsonstore=no
+AC_ARG_ENABLE(jsonstore,
+	AS_HELP_STRING([--enable-jsonstore],
+		[enable support for MonetDB/jsonstore (default=no)]),
+	enable_jsonstore=$enableval,
+	enable_jsonstore=$dft_jsonstore)
 
 dft_gsl=auto
 AC_ARG_ENABLE(gsl,
@@ -1479,7 +1470,6 @@ fi
 AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
-AM_PROG_LEX
 AC_PROG_YACC
 case "$YACC" in
 	bison*)
@@ -1491,41 +1481,14 @@ case "$YACC" in
 		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4.3); then
 			X_CFLAGS="`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`"
 		fi
-		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4); then
-			if test "x$enable_jaql" = xyes; then
-				AC_MSG_ERROR([MonetDB/JAQL requires bison >=2.4])
-			elif test "x$enable_jaql" = xauto; then
-				enable_jaql=no
-				disable_jaql="(MonetDB/JAQL requires bison >= 2.4)"
-			fi
-		fi
 	;;
 	*)
 		if test "x$enable_sql" = xyes; then
 			AC_MSG_ERROR([MonetDB/SQL requires bison])
 		fi
-		if test "x$enable_jaql" = xyes; then
-			AC_MSG_ERROR([MonetDB/JAQL requires bison])
-		fi
 		enable_sql=no
-		enable_jaql=no
 		if test "x$disable_sql" = x; then
 			disable_sql="(MonetDB/SQL requires bison)"
-		fi
-		if test "x$disable_jaql" = x; then
-			disable_jaql="(MonetDB/JAQL requires bison)"
-		fi
-	;;
-esac
-case "$LEX" in
-	flex*) : ;;
-	*)
-		if test "x$enable_jaql" = xyes; then
-			AC_MSG_ERROR([MonetDB/JAQL requires flex])
-		fi
-		enable_jaql=no
-		if test "x$disable_jaql" = x; then
-			disable_jaql="(MonetDB/JAQL requires flex)"
 		fi
 	;;
 esac
@@ -2506,6 +2469,66 @@ if test x"$have_atomic_ops" = x"yes" ; then
 	esac
 fi
 
+dnl MicroHTTPD library
+dnl required for MonetDB5 SQL jsonstore, optional otherwise
+org_have_libmicrohttpd=auto
+have_libmicrohttpd=$org_have_libmicrohttpd
+AC_ARG_WITH(libmicrohttpd,
+	AS_HELP_STRING([--with-libmicrohttpd=DIR],
+		[libmicrohttpd library is installed in DIR]),
+	have_libmicrohttpd="$withval")
+
+dnl Uriparser library
+dnl required for MonetDB5 SQL jsonstore, optional otherwise
+org_have_liburiparser=auto
+have_liburiparser=$org_have_liburiparser
+AC_ARG_WITH(liburiparser,
+	AS_HELP_STRING([--with-liburiparser=DIR],
+		[liburiparser library is installed in DIR]),
+	have_liburiparser="$withval")
+
+if test "x$have_liburiparser" = xauto; then
+      PKG_CHECK_MODULES([liburiparser], [liburiparser],
+      		[have_liburiparser=yes],
+		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"])
+fi
+
+if test "x$have_libmicrohttpd" = xauto; then
+      PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
+      		[have_libmicrohttpd=yes],
+		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"])
+fi
+
+if test "x$enable_jsonstore" != xno; then
+      AC_DEFINE(HAVE_JSONSTORE, 1, [Define that you want to build the jsonstore library])
+
+      case "$enable_jsonstore-$have_libmicrohttpd" in
+        yes-no)
+	    AC_MSG_ERROR([LibMicroHTTPD library not found but required for jsonstore])
+	    ;;
+        yes-yes)
+            AC_DEFINE(HAVE_MICROHTTPD, 1, [Define if you have the LibMicroHTTPD library])
+	    save_LIBS="$LIBS"
+	    LIBS="$LIBS $libmicrohttpd_LIBS"
+	    save_CFLAGS="$CFLAGS"
+	    CFLAGS="$CFLAGS $libmicrohttpd_CFLAGS"
+            ;;
+      esac
+
+      case "$enable_jsonstore-$have_liburiparser" in
+        yes-no)
+	    AC_MSG_ERROR([LibUriParser library not found but required for jsonstore])
+	    ;;
+        yes-yes)
+            AC_DEFINE(HAVE_URIPARSER, 1, [Define if you have the LibUriParser library])
+	    save_LIBS="$LIBS"
+	    LIBS="$LIBS $liburiparser_LIBS"
+	    save_CFLAGS="$CFLAGS"
+	    CFLAGS="$CFLAGS $liburiparser_CFLAGS"
+            ;;
+      esac
+fi
+
 dnl Check for gsl library for statistical functions
 org_have_gsl=no
 have_gsl=$org_have_gsl
@@ -2984,19 +3007,13 @@ if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 		disable_sql="(MonetDB/SQL requires MonetDB5)"
 	fi
 fi
-if test x"$enable_jaql" = xauto && test x"$enable_monetdb5" = x"no" ; then
-	enable_jaql=no
-	if test "x$disable_jaql" = x; then
-		disable_jaql="(MonetDB/JAQL requires MonetDB5)"
-	fi
-fi
 
 dnl     output
 AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
-AM_CONDITIONAL(HAVE_JAQL, test "x$enable_jaql" = xyes -o "x$enable_jaql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
+AM_CONDITIONAL(HAVE_JSONSTORE, test "x$enable_jsonstore" = xyes -o "x$enable_jsonstore" = xauto)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
 AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
@@ -3353,7 +3370,7 @@ for comp in \
 	'gdk      ' \
 	'monetdb5 ' \
 	'sql      ' \
-	'jaql     ' \
+	'jsonstore' \
 	'geom     ' \
 	'gsl      ' \
 	'fits     ' \
@@ -3388,6 +3405,8 @@ for comp in \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \
+	'libmicrohttpd' \
+	'liburiparser ' \
 	'libxml2      ' \
 	'mseed        ' \
 	'openssl      ' \

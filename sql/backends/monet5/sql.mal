@@ -355,7 +355,7 @@ pattern importTable{unsafe}( sname:str, tname:str, fname:str... )(:bat[:oid,:any
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command zero_or_one( col:bat[:any_2,:any_1]) :any_1
+command zero_or_one( col:bat[:oid,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
@@ -461,7 +461,8 @@ pattern storage()(
 	atomwidth:bat[:oid,:int],
 	columnsize:bat[:oid,:lng],
 	heap:bat[:oid,:lng],
-	indices:bat[:oid,:lng],
+	hashes:bat[:oid,:lng],
+	imprints:bat[:oid,:lng],
 	sorted:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
@@ -981,26 +982,6 @@ pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
-pattern newdictionary(sch:str, tbl:str):void
-address SQLnewDictionary
-comment "Perform dictionary compression on a table";
-pattern dropdictionary(sch:str, tbl:str):void
-address SQLdropDictionary
-comment "Perform dictionary decompression on a table";
-
-pattern gzcompress(sch:str, tbl:str):void
-address SQLgzcompress
-comment "Perform LZ compression on a table";
-pattern gzdecompress(sch:str, tbl:str):void
-address SQLgzdecompress
-comment "Perform LZ decompression on a table";
-pattern gztruncate(sch:str, tbl:str):void
-address SQLtruncate
-comment "Remove the tables when you have a compressed image";
-pattern gzexpand(sch:str, tbl:str):void
-address SQLexpand
-comment "Remove the compressed image";
-
 command prelude()
 address SQLprelude;
 
@@ -1023,6 +1004,37 @@ command calc.timestamp( v:date, d:int) :timestamp
 address date_2_timestamp
 comment "cast date to a timestamp and check for overflow";
 
+command calc.index(v:str, u:bit) :bte 
+address STRindex_bte
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:bte] 
+address BATSTRindex_bte
+comment "Return the offsets as an index bat";
+
+command calc.index(v:str, u:bit) :sht 
+address STRindex_sht
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:sht] 
+address BATSTRindex_sht
+comment "Return the offsets as an index bat";
+
+command calc.index(v:str, u:bit) :int 
+address STRindex_int
+comment "Return the offsets as an index bat";
+
+command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:int] 
+address BATSTRindex_int
+comment "Return the offsets as an index bat";
+
+command calc.strings(v:str) :str 
+address STRstrings
+comment "Return the strings";
+
+command batcalc.strings(v:bat[:oid,:str]) :bat[:oid,:str] 
+address BATSTRstrings
+comment "Return the strings";
 
 include sql_decimal;
 include sql_rank;

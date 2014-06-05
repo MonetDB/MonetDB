@@ -31,8 +31,13 @@ bl_preversion( int oldversion, int newversion)
 #define CATALOG_APR2011 51100
 #define CATALOG_AUG2011 51101
 #define CATALOG_DEC2011 52000
+#define CATALOG_FEB2013 52001
 
 	(void)newversion;
+	if (oldversion == CATALOG_FEB2013) {
+		catalog_version = oldversion;
+		return 0;
+	}
 	if (oldversion == CATALOG_OCT2010) {
 		catalog_version = oldversion;
 		return 0;
@@ -74,6 +79,34 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
+	if (catalog_version == CATALOG_FEB2013) {
+		/* we need to add the new schemas.system column */
+		BAT *b, *b1;
+		BATiter bi;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
+		if (!b)
+			return;
+		bi = bat_iterator(b);
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
+        	BATseqbase(b1, b->hseqbase);
+		if (!b1)
+			return;
+		/* only sys and tmp are system schemas */
+		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			bit v = FALSE;
+			char *name = BUNtail(bi, p);
+			if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0)
+				v = TRUE;
+			BUNappend(b1, &v, TRUE);
+		}
+		b1 = BATsetaccess(b1, BAT_READ);
+		logger_add_bat(lg, b1, N(n, NULL, s, "schemas_system"));
+		bat_destroy(b);
+		bat_destroy(b1);
+	}
 	if (catalog_version == CATALOG_OCT2010) {
 		BAT *b, *b1;
 		char *s = "sys", n[64];

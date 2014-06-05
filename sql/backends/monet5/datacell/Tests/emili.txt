@@ -1,0 +1,13 @@
+This example models a fire-detection system.
+It can be exercised as follows.
+
+step 1) create an new database, e.g. called demo
+ sh> monetdb create demo; monetdb release demo
+
+step 2) initialize the datacell progream
+ sh> mclient -d demo 
+sql> \<emili.sql
+
+step 3) in a different window sent events at a rate of 10/seconds
+
+cat emilisensor.log |sensor --port=50500 --delay=100 --trace --replay

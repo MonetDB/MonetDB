@@ -93,36 +93,21 @@ sql_update_var(mvc *m, char *name, char *sval, lng sgn)
 int
 sql_create_env(mvc *m, sql_schema *s)
 {
-	list *l;
-	/* here we create a new table-type */
-	sql_subtype tpe;
-	sql_table *
+	list *res, *ops;
 
-	t = mvc_create_generated(m, s, "#env", NULL, 1);
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "value", "varchar", 2048);
-
-	sql_find_subtype(&tpe, "table", 0, 0);
-	tpe.comp_type = t;
-	tpe.digits = t->base.id; /* pass the table through digits */
+	res = sa_list(m->sa);
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  
+	list_append(res, sql_create_arg(m->sa, "value", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));  
 
 	/* add function */
-	l = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "env", l, &tpe, F_FUNC, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;");
-	if (m->sa == NULL)
-		_DELETE(l);
+	ops = sa_list(m->sa);
+	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE);
 
-	t = mvc_create_generated(m, s, "#var", NULL, 1);
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-
-	sql_find_subtype(&tpe, "table", 0, 0);
-	tpe.comp_type = t;
-	tpe.digits = t->base.id; /* pass the table through digits */
+	res = sa_list(m->sa);
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  
 
 	/* add function */
-	l = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "var", l, &tpe, F_FUNC, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;");
-	if (m->sa == NULL)
-		_DELETE(l);
+	ops = sa_list(m->sa);
+	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", FALSE, FALSE);
 	return 0;
 }

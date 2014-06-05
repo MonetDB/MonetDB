@@ -97,8 +97,6 @@ typedef enum stmt_type {
 	st_group,
 	st_unique,
 	st_convert,
-	st_unop,
-	st_binop,
 	st_Nop,
 	st_func,
 	st_aggr,
@@ -154,6 +152,7 @@ extern stmt *stmt_none(sql_allocator *sa);
 #define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_vars(sql_allocator *sa, char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(sql_allocator *sa, stmt *cols, int temp);
@@ -226,10 +225,13 @@ extern stmt *stmt_reverse(sql_allocator *sa, stmt *s);
 extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);
 extern stmt *stmt_result(sql_allocator *sa, stmt *s, int nr);
 
+/* dir: direction of the ordering, ie 1 Ascending, 0 decending
+ * order: is order important or not (topn vs slice)
+ * before_project(or distinct): intermediate step (or after this distinct is still needed) or last step (ie and no distinct) */
 #define LIMIT_DIRECTION(dir,order,before_project) \
 		(dir<<2)+(before_project<<1)+(order)
 extern stmt *stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction);
-extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *sb, stmt *offset, stmt *limit, int direction);
+extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int direction);
 extern stmt *stmt_sample(sql_allocator *sa, stmt *s, stmt *sample);
 extern stmt *stmt_order(sql_allocator *sa, stmt *s, int direction);
 extern stmt *stmt_reorder(sql_allocator *sa, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);

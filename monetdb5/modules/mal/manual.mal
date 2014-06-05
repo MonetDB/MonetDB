@@ -23,27 +23,15 @@ comment "Produces a list of all <module>.<function> that match
 	the text pattern. The wildcard '*' can be used for <module>
 and <function>. Using the '(' asks for signature information and
 using ')' asks for the complete help record.";
+
 pattern search(text:str)
 address MANUALsearch
 comment "Search the manual for command descriptions that match the
 regular expression 'text'";
 
-pattern createXML(mod:str):void
-address MANUALcreate1
-comment "Generate a synopsis of a module";
-pattern createXML():void
-address MANUALcreate0
-comment "Produces a XML-formatted manual over all modules loaded.";
-
-pattern section(mod:str):void
-address MANUALcreateSection
-comment "Generate a synopsis of a module for the reference manual";
-pattern index():void
-address MANUALcreateIndex
-comment "Produces an overview of all names grouped by module.";
 pattern summary():void
 address MANUALcreateSummary
-comment "Produces a manual with help lines grouped by module.";
+comment "Produces a manual summary with help lines grouped by module.";
 
 pattern completion(pat:str):void
 address MANUALcompletion

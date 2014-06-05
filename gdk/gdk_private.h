@@ -23,6 +23,20 @@
 #error this file should not be included outside its source directory
 #endif
 
+#include "gdk_system_private.h"
+
+/*
+ * The different parts of which a BAT consists are physically stored
+ * next to each other in the BATstore type.
+ */
+struct BATstore {
+	BAT B;			/* storage for BAT descriptor */
+	BAT BM;			/* mirror (reverse) BAT */
+	COLrec H;		/* storage for head column */
+	COLrec T;		/* storage for tail column */
+	BATrec S;		/* the BAT properties */
+};
+
 int ALIGNcommit(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int ALIGNundo(BAT *b)
@@ -71,6 +85,8 @@ void BBPcacheit(BATstore *bs, int lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void)
+	__attribute__((__visibility__("hidden")));
+BATstore *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
 void BBPinit(void)
 	__attribute__((__visibility__("hidden")));
@@ -123,6 +139,8 @@ void HASHremove(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__visibility__("hidden")));
+int HEAPcopy(Heap *dst, Heap *src)
+	__attribute__((__visibility__("hidden")));
 int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
@@ -135,13 +153,6 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
-__declspec(noreturn) void MT_global_exit(int status)
-	__attribute__((__noreturn__))
-#if defined(__GNUC__) && __GNUC__ >= 4 && (__GNUC__ > 4 || __GNUC_MINOR__ > 1)
-	/* buggy old GCC can't use pointers to hidden functions (CentOS 5.10) */
-	__attribute__((__visibility__("hidden")))
-#endif
-	;
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
@@ -178,6 +189,21 @@ void IMPSprint(BAT *b)
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
 
+struct PROPrec {
+	int id;
+	ValRecord v;
+	struct PROPrec *next;	/* simple chain of properties */
+};
+
+struct Imprints {
+	bte bits;        /* how many bits in imprints */
+	Heap *bins;      /* ranges of bins */
+	Heap *imps;      /* heap of imprints */
+	BUN impcnt;      /* counter for imprints*/
+	Heap *dict;      /* cache dictionary for compressing imprints */
+	BUN dictcnt;     /* counter for cache dictionary */
+};
+
 typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
@@ -189,6 +215,8 @@ typedef struct {
 	MT_Lock trim;
 	bat free;
 } bbplock_t;
+
+typedef char long_str[IDLENGTH];	/* standard GDK static string */
 
 extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];

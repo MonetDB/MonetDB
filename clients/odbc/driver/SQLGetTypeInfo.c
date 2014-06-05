@@ -137,7 +137,28 @@ static struct types {
 	/* this table is sorted on the value of data_type and then on
 	 * how "close" the type maps to the corresponding ODBC SQL
 	 * type (i.e. in the order SQLGetTypeInfo wants it) */
-	/* SQL_GUID */
+	{
+		"uuid",		       /* type_name */
+		SQL_GUID,	       /* data_type */
+		36,		       /* column_size */
+		NULL,		       /* literal_prefix */
+		NULL,		       /* literal_suffix */
+		NULL,		       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_FALSE,	       /* case_sensitive */
+		SQL_PRED_BASIC,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		-1,		       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_GUID,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
 	{
 		"character large object", /* type_name */
 		SQL_WLONGVARCHAR,      /* data_type */
@@ -1021,6 +1042,7 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 	}
 
 	for (t = types, i = 0; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+		assert(t == types || t->data_type >= (t-1)->data_type);
 		if (DataType == SQL_ALL_TYPES || DataType == t->data_type) {
 			if (t->tuple == NULL) {
 				char buf[32];

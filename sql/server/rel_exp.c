@@ -40,7 +40,6 @@ exp_create(sql_allocator *sa, int type )
 	e->p = NULL;
 	e->used = 0;
 	e->tpe.type = NULL;
-	e->tpe.comp_type = NULL;
 	e->tpe.digits = e->tpe.scale = 0;
 	return e;
 }
@@ -425,6 +424,17 @@ exp_var(sql_allocator *sa, char *name, sql_subtype *type, int level)
 	return e;
 }
 
+sql_exp * 
+exp_table(sql_allocator *sa, char *name, sql_table *t, int level)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->name = name;
+	e->f = t;
+	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
+	return e;
+}
+
 sql_exp *
 exp_return(sql_allocator *sa, sql_exp *val, int level)
 {
@@ -549,12 +559,15 @@ exp_subtype( sql_exp *e )
 		break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
-		return &a->res;
+		if (a->res && list_length(a->res) == 1) 
+			return a->res->h->data;
+		return NULL;
 	}
 	case e_func: {
 		if (e->f) {
 			sql_subfunc *f = e->f;
-			return &f->res;
+			if (f->res && list_length(f->res) == 1) 
+				return f->res->h->data;
 		}
 		return NULL;
 	}

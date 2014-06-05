@@ -327,7 +327,7 @@ getJoinPathType(MalBlkPtr mb, InstrPtr p)
 		!isaBatType(getArgType(mb,p,p->argc-1))) 
 		return TYPE_any;
 	ht = getHeadType(getArgType(mb,p,1));
-	tt = getTailType(getArgType(mb,p,p->argc-1));
+	tt = getColumnType(getArgType(mb,p,p->argc-1));
 	tpe = newBatType(ht,tt);
 	return tpe;
 }
@@ -634,7 +634,7 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 			if (isaBatType(tpe)) {
 				r = newFcnCall(mb, batRef, newRef);
 				r = pushType(mb, r, getHeadType(tpe));
-				r = pushType(mb, r, getTailType(tpe));
+				r = pushType(mb, r, getColumnType(tpe));
 			} else {
 				r = newAssignment(mb);
 				r = pushNil(mb, r, tpe);
@@ -876,7 +876,7 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 		if (isaBatType(tpe)) {                /* exec_qry:= bat.new(:htp,:ttp); */
 			q = newFcnCall(sm, batRef, newRef);
 			q = pushType(sm, q, getHeadType(tpe));
-			q = pushType(sm, q, getTailType(tpe));
+			q = pushType(sm, q, getColumnType(tpe));
 		}else  {                        /* exec_qry:= nil:tp; */
 			q = newAssignment(sm);
 			q = pushNil(sm, q, tpe);

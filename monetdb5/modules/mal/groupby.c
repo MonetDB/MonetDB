@@ -104,7 +104,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
-			bh = BATkunique(BATmirror(bs));
+			bh = BATsubunique(b, bs);
 			if (bh) {
 				a->unique[a->last] = BATcount(bh);
 				BBPreleaseref(bh->batCacheid);
@@ -165,7 +165,7 @@ GROUPdelete(AGGRtask *a){
  */
 
 str
-GROUPmulticolumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *grp = (bat *) getArgReference(stk, pci, 0);
 	bat *ext = (bat *) getArgReference(stk, pci, 1);

@@ -35,11 +35,17 @@
  * freeing the stack and code segment.
  */
 
+typedef enum output_format {
+	OFMT_CSV  = 	0,
+	OFMT_JSON =	1
+} ofmt;
+
 typedef struct backend {
 	int 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	mvc 	*mvc;
 	stream 	*out;
+	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	int 	mvc_var;	
 	int	vtop;		/* top of the variable stack before the current function */

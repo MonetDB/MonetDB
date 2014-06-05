@@ -67,10 +67,8 @@ tst100
 tst1000
 tst1002
 tst1004
-tst1005
 tst101
 tst1012
-tst1014
 tst102
 tst103
 tst104
@@ -133,7 +131,6 @@ tst253
 tst255
 tst2550
 tst256
-tst2560
 tst260
 tst2570
 # tst265 -- windowsum and slidingsum have been removed
@@ -160,20 +157,11 @@ tst3050
 tst3060
 tst307
 tst308
-#tst350
-#tst380
 tst400
 tst401
 tst500
 tst501
-tst550
 tst560
-tst600
-tst601
-tst605
-tst606
-tst607
-tst610
 tst611
 tst612
 tst620
@@ -181,7 +169,6 @@ tst660
 tst661
 tst662
 tst670
-tst680
 tst700
 tst710
 tst750
@@ -220,16 +207,10 @@ tst960
 
 #tests for garbage collection of strings
 tst920
-#
-# Microbenchmarks
-tst400a
-#tst400bHuge
-#tst400cHuge
 tst400d
 tst400e
 tst901a
 tst901b
-#
 
 recycle00
 recycle01

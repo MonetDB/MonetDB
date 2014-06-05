@@ -271,19 +271,6 @@ SEXP mapiRead(SEXP conn) {
 	}
 	response_buf[response_buf_offset] = '\0';
 
-	// We have this issue that on Windows sometimes a \0 appears in the middle of the response...
-	// since it always appears instead of a \t, let's replace it for now and pray
-	// MonetDB Bug #3369 http://bugs.monetdb.org/show_bug.cgi?id=3369
-#ifdef __WIN32__
-	size_t i;
-	for (i = 0; i < response_buf_offset; i++) {
-		if (response_buf[i] == '\0') {
-			warning("Removed a NULL character from response at offset "SZFMT" of "SZFMT"",i,response_buf_offset);
-			response_buf[i] = '\t';
-		}
-	}
-#endif
-
 	PROTECT(lines = NEW_STRING(1));
 	SET_STRING_ELT(lines, 0, mkChar(response_buf));
 	free(response_buf);

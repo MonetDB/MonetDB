@@ -29,7 +29,7 @@
 -- For strings we take a sample to determine their average length.
 
 create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, indices bigint, sorted boolean)
+returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
 external name sql.storage;
 
 create view sys.storage as select * from sys.storage();
@@ -118,7 +118,7 @@ begin
 	return 10240 + i * w;
 end;
 
-create function sys.indexsize(b boolean, i bigint)
+create function sys.hashsize(b boolean, i bigint)
 returns bigint
 begin
 	-- assume non-compound keys
@@ -126,6 +126,26 @@ begin
 	then
 		return 8 * i;
 	end if;
+	return 0;
+end;
+
+create function sys.imprintsize(i bigint, nme string)
+returns bigint
+begin
+	if nme = 'boolean'
+		or nme = 'tinyint'
+		or nme = 'smallint'
+		or nme = 'int'	
+		or nme = 'bigint'	
+		or nme = 'hugeint'	
+		or nme = 'decimal'	
+		or nme = 'date'
+		or nme = 'timestamp'
+		or nme = 'real'
+		or nme = 'double'
+	then
+		return cast( i * 0.12 as bigint);
+	end if ;
 	return 0;
 end;
 
@@ -138,16 +158,19 @@ returns table (
 	"count"	bigint,
 	columnsize bigint,
 	heapsize bigint,
-	indices bigint,
+	hashes bigint,
+	imprints bigint,
 	sorted boolean)
 begin
 	return select I."schema", I."table", I."column", I."type", I."count",
 	columnsize(I."type", I.count, I."distinct"),
 	heapsize(I."type", I."distinct", I."atomwidth"),
-	indexsize(I."reference", I."count"),
+	hashsize(I."reference", I."count"),
+	imprintsize(I."count",I."type"),
 	I.sorted
 	from sys.storagemodelinput I;
 end;
+
 create view sys.storagemodel as select * from sys.storagemodel();
 -- A summary of the table storage requirement is is available as a table view.
 -- The auxillary column denotes the maximum space if all non-sorted columns
@@ -156,7 +179,8 @@ create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
-	sum(indices) as indices,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
 from sys.storagemodel() group by "schema","table";
 

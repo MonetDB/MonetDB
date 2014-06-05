@@ -41,7 +41,6 @@
 #include <rel_bin.h>
 #include <bbp.h>
 #include <cluster.h>
-#include <opt_dictionary.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #ifdef HAVE_RAPTOR
@@ -367,11 +366,8 @@ str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str answ = *(str *) getArgReference(stk, pci, 0);
-	str msg;
 
-	msg =CLTshutdown(cntxt, mb, stk, pci);
-	if( msg)
-		GDKfree(msg);
+	CLTshutdown(cntxt, mb, stk, pci);
 
 	// administer the shutdown
 	mnstr_printf(GDKstdout, "#%s\n", answ);
@@ -835,8 +831,6 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				 return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
-			if (is_func && func->res.comp_type)
-				mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
 			mvc_drop_func(sql, s, func, action);
 		}
 	} else {
@@ -875,7 +869,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, &f->res, f->type, f->mod, f->imp, f->query);
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->mod, f->imp, f->query, f->varres, f->vararg);
 	if (nf && nf->query) {
 		char *buf;
 		sql_rel *r = NULL;
@@ -1321,7 +1315,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (vars == NULL)
 		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
 	BATseqbase(vars, 0);
-	for (i = 0; i < m->topvars && m->vars[i].s; i++)
+	for (i = 0; i < m->topvars && !m->vars[i].frame; i++)
 		BUNappend(vars, m->vars[i].name, FALSE);
 	*res = vars->batCacheid;
 	BBPkeepref(vars->batCacheid);
@@ -2675,6 +2669,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *locked = (int *) getArgReference(stk, pci, pci->retc + 9);
 	bstream *s;
 	stream *ss;
+	str utf8 = "UTF-8";
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2692,8 +2687,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		len = 0;
 	}
 
-	codeset(&cs);
-	strIconv(&filename, *fname, "UTF-8", cs);
+	STRcodeset(&cs);
+	STRIconv(&filename, fname, &utf8, &cs);
 	GDKfree(cs);
 	len = strlen((char *) (*N));
 	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
@@ -4186,7 +4181,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	mvc *m = NULL;
-	str msg= MAL_SUCCEED;
+	str msg;
 	BAT *b, *del;
 	node *o;
 	int ordered = 0;
@@ -4228,12 +4223,12 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* now decide on the algorithm */
 	if (ordered) {
 		if (BATcount(del) > cnt / 20)
-			msg = SQLshrink(cntxt, mb, stk, pci);
+			SQLshrink(cntxt, mb, stk, pci);
 	} else
-		msg = SQLreuse(cntxt, mb, stk, pci);
+		SQLreuse(cntxt, mb, stk, pci);
 
 	BBPreleaseref(del->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 /*
@@ -4274,159 +4269,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/*
- * Take a SQL table and compress its columns using the dictionary
- * compression scheme.
- */
-static str
-compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
-{
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
-	sql_schema *s;
-	sql_table *t;
-	mvc *m = NULL;
-	str msg;
-	sql_trans *tr;
-	node *o;
-	char buf[BUFSIZ], *nme = buf;
-	int ret;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	tr = m->session->tr;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		BAT *b, *e;
-		sql_delta *d;
-		sql_column *c = o->data;
-
-		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
-			throw(SQL, "sql.compress", "Can not access descriptor");
-		e = BATnew(b->htype, b->ttype, 0);
-		if (e == NULL) {
-			BBPreleaseref(b->batCacheid);
-			throw(SQL, "sql.compression", MAL_MALLOC_FAIL);
-		}
-		BATsetaccess(e, BAT_READ);
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = e->batCacheid;	/* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-		snprintf(buf, BUFSIZ, "%s/%s/%s/0", *sch, *tbl, c->base.name);
-		if (compr)
-			msg = DICTcompress(&ret, &nme, &b->batCacheid);
-		else
-			msg = DICTdecompress(&ret, &nme);
-		BBPkeepref(e->batCacheid);
-		BBPreleaseref(b->batCacheid);
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	return msg;
-}
-
-str
-SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return compression(cntxt, mb, stk, pci, 1);
-}
-
-str
-SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return compression(cntxt, mb, stk, pci, 0);
-}
-
-/*
- * LZ compression is inherited from the underlying stream implementation.
- */
-static str
-gzcompression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int *, int *, str *), const char *name)
-{
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
-	sql_schema *s;
-	sql_table *t;
-	mvc *m = NULL;
-	str msg;
-	sql_trans *tr;
-	node *o;
-	int ret, i;
-	char buf[PATHLENGTH], *sbuf = buf;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	tr = m->session->tr;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, name, "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, name, "42S02!Table missing");
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		BAT *b;
-		sql_column *c = o->data;
-
-		for (i = 0; i < 3; i++) {
-			b = store_funcs.bind_col(tr, c, i);
-			if (b == NULL)
-				throw(SQL, name, "Can not access descriptor");
-			snprintf(buf, PATHLENGTH, "%s_%s_%s_%d", *sch, *tbl, c->base.name, i);
-			msg = (*func) (&ret, &b->batCacheid, &sbuf);
-			BBPreleaseref(b->batCacheid);
-		}
-	}
-	return msg;
-}
-
-str
-SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpcompress, "sql.gzcompress");
-}
-
-str
-SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpdecompress, "sql.gzdecompress");
-}
-
-str
-SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbptruncate, "sql.truncate");
-}
-
-str
-SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return gzcompression(cntxt, mb, stk, pci, CMDbbpexpand, "sql.expand");
-}
 
 /* after an update on the optimizer catalog, we have to change
  * the internal optimizer pipe line administration
@@ -4458,7 +4300,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4474,7 +4316,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *rsize = (int *) getArgReference(stk, pci, 7);
 	int *rheap = (int *) getArgReference(stk, pci, 8);
 	int *rindices = (int *) getArgReference(stk, pci, 9);
-	int *rsort = (int *) getArgReference(stk, pci, 10);
+	int *rimprints = (int *) getArgReference(stk, pci, 10);
+	int *rsort = (int *) getArgReference(stk, pci, 11);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4502,9 +4345,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(heap, 0);
 	indices = BATnew(TYPE_void, TYPE_lng, 0);
 	BATseqbase(indices, 0);
+	imprints = BATnew(TYPE_void, TYPE_lng, 0);
+	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0);
 	BATseqbase(sort, 0);
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || imprints == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
 		if (sch)
 			BBPreleaseref(sch->batCacheid);
 		if (tab)
@@ -4525,6 +4370,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(heap->batCacheid);
 		if (indices)
 			BBPreleaseref(indices->batCacheid);
+		if (imprints)
+			BBPreleaseref(imprints->batCacheid);
 		if (sort)
 			BBPreleaseref(sort->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
@@ -4592,6 +4439,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
 								indices = BUNappend(indices, &sz, FALSE);
+								sz = IMPSimprintsize(bn);
+								imprints = BUNappend(imprints, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 								/*printf("\n"); */
 
@@ -4655,6 +4504,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
 									indices = BUNappend(indices, &sz, FALSE);
+									sz = IMPSimprintsize(bn);
+									imprints = BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 									/*printf("\n"); */
 									w = BATtordered(bn);
@@ -4676,6 +4527,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsize = size->batCacheid);
 	BBPkeepref(*rheap = heap->batCacheid);
 	BBPkeepref(*rindices = indices->batCacheid);
+	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -4755,4 +4607,192 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 	}
 	mb->ptop = j;
+}
+
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
+
+str
+STRindex_int(int *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_int(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		int v;
+
+		r = BATnew(TYPE_void, TYPE_int, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (int) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_int;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_sht(sht *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_sht(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		sht v;
+
+		r = BATnew(TYPE_void, TYPE_sht, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (sht) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_sht;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_bte(bte *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_bte(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		bte v;
+
+		r = BATnew(TYPE_void, TYPE_bte, 64);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (bte) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_bte;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRstrings(str *i, str src)
+{
+	(void)src;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRstrings(bat *res, bat *src)
+{
+	BAT *s, *r;
+	Heap *h;
+	size_t pad, pos;
+	size_t extralen;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.strings", "Cannot access descriptor");
+	
+       	h = s->T->vheap;
+       	extralen = h->hashash ? EXTRALEN : 0;
+	r = BATnew(TYPE_void, TYPE_str, 1024);
+	BATseqbase(r, 0);
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *s;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad + extralen;
+		s = h->base + pos;
+		BUNappend(r, s, FALSE);
+		pos += GDK_STRLEN(s);
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
 }

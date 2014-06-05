@@ -151,7 +151,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		if( !isaBatType( getArgType(mq,sig,i-2)) &&
 			isaBatType( getArgType(mb,p,i)) ){
 
-			if( getTailType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
+			if( getColumnType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
 				OPTDEBUGremap
 					mnstr_printf(cntxt->fdout,"#Type mismatch %d\n",i);
 				goto terminateMX;
@@ -458,13 +458,4 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (doit) 
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 	return mb->errors? 0: doit;
-}
-
-str
-OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	char buf[BUFSIZ];
-	(void) mb;
-	(void) cntxt;
-	snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *)getArgReference(stk,p,p->retc), (char *)getArgReference(stk,p,p->retc+1));
-	throw(MAL, "opt.remap", "%s",buf);
 }

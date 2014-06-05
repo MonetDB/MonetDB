@@ -18,31 +18,7 @@
  */
 
 /*
- * (co) M.L. Kersten
- * Name Space Management.
- * Significant speed improvement at type resolution and during the
- * optimization phases can be gained when each module or function identifier is
- * replaced by a fixed length internal identifier. This translation is
- * done once during parsing.
- * Variables are always stored local to the MAL block in which they
- * are used.
- *
- * The number of module and function names is expected to be limited.
- * Therefore, the namespace manager is organized as a shared global table.
- * The alternative is a namespace per client. However, this would force
- * passing around the client identity or an expensive operation to deduce
- * this from the process id. The price paid is that updates to the namespace
- * should be protected against concurrent access.
- * The current version is protected with locks, which by itself may cause quite
- * some overhead.
- *
- * The space can, however, also become polluted with identifiers generated on the fly.
- * Compilers are adviced to be conservative in their naming, or explicitly manage
- * the name space by deletion of non-used names once in a while.
- *
- * The SQL compiler currently pollutes the name space with function names,
- * because it guarantees a global unique name for each query plan for the
- * duration of the server session.
+ * (author) M.L. Kersten
  */
 #include "monetdb_config.h"
 #include "mal_type.h"

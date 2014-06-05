@@ -18,7 +18,7 @@
  */
 
 /*
- * Fabian Groffen, Martin Kersten
+ * (c) Fabian Groffen, Martin Kersten
  * Remote querying functionality
  * Communication with other mservers at the MAL level is a delicate task.
  * However, it is indispensable for any distributed functionality.  This
@@ -29,7 +29,7 @@
  * get, put, register and exec.
  *
  * The get method simply retrieves a copy of a remote object.  Objects can
- * be simple values, strings or BATs.  The same holds for the put method,
+ * be simple values, strings or Column.  The same holds for the put method,
  * but the other way around.  A local object can be stored on a remote
  * site.  Upon a successful store, the put method returns the remote
  * identifier for the stored object.  With this identifier the object can
@@ -50,7 +50,7 @@
  * It would require even more complicated (byte) code shipping and remote
  * compilation to make it work.
  *
- * The choice to let exec only execute functions was made to avoid problems
+ * The choice to let exec only execute functions avoids problems
  * to decide what should be returned to the caller.  With a function it is
  * clear and simple to return that what the function signature prescribes.
  * Any side effect (e.g. io.print calls) may cause havoc in the system,
@@ -110,9 +110,7 @@ str RMTresolve(int *ret, str *pat) {
 		throw(MAL, "remote.resolve", "this function needs the mserver "
 				"have been started by merovingian");
 
-	list = BATnew(TYPE_oid, TYPE_str, 20);
-	if (list == NULL)
-		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+	newColumn(list, TYPE_str, "remote.resolve");
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
@@ -456,6 +454,7 @@ str RMTepilogue(int *ret) {
 
 /**
  * get fetches the object referenced by ident over connection conn.
+ * We are only interested in retrieving void-headed BATs, i.e. single columns.
  */
 str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp, rt;
@@ -494,14 +493,14 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			rt, ident);
 	GDKfree(rt);
 
-	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type || (ATOMvarsized(getHeadType(rtype)))))
+	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type ))
 	{
-		int h, t, s;
-		ptr l, r;
-		str val, var;
+		int t, s;
+		ptr r;
+		str var;
 		BAT *b;
 
-		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
+		snprintf(qbuf, BUFSIZ, "io.table(%s);", ident);
 #ifdef _DEBUG_REMOTE
 		mnstr_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
 #else
@@ -518,41 +517,32 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					qbuf, tmp);
 #endif
 			MT_lock_unset(&c->lock, "remote.get");
-			val = createException(MAL, "remote.get", "%s", tmp);
+			var = createException(MAL, "remote.get", "%s", tmp);
 			GDKfree(tmp);
-			return val;
+			return var;
 		}
-		h = getHeadType(rtype);
-		t = getTailType(rtype);
-		b = BATnew(h, t, (BUN)BATTINY);
+		t = getColumnType(rtype);
+		newColumn(b,t,"remote.get");
 
-		while (mapi_fetch_row(mhdl)) {
-			val = mapi_fetch_field(mhdl, 0); /* should both be there */
-			var = mapi_fetch_field(mhdl, 1);
-			if (ATOMvarsized(h)) {
-				l = (ptr)(val == NULL ? str_nil : val);
-			} else {
-				s = 0;
-				l = NULL;
-				if (val == NULL)
-					val = "nil";
-				ATOMfromstr(h, &l, &s, val);
+		if (ATOMvarsized(t)) {
+			while (mapi_fetch_row(mhdl)) {
+				var = mapi_fetch_field(mhdl, 0); 
+				if( var == NULL)
+					BUNappend(b, str_nil, FALSE);
+				else 
+					BUNappend(b, var, FALSE);
 			}
-			if (ATOMvarsized(t)) {
-				r = (ptr)(var == NULL ? str_nil : var);
-			} else {
-				s = 0;
-				r = NULL;
+		} else
+			while (mapi_fetch_row(mhdl)) {
+				var = mapi_fetch_field(mhdl, 0); 
 				if (var == NULL)
 					var = "nil";
+				s = 0;
+				r = NULL;
 				ATOMfromstr(t, &r, &s, var);
+				BUNappend(b, r, FALSE);
+				GDKfree(r);
 			}
-
-			BUNins(b, l, r, FALSE);
-
-			if (!ATOMvarsized(h)) GDKfree(l);
-			if (!ATOMvarsized(t)) GDKfree(r);
-		}
 
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
@@ -687,22 +677,22 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	} else if (isaBatType(type)) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
-		char *head, *tail;
+		char *tail;
 		char qbuf[BUFSIZ];
 		int bid;
 		BAT *b = NULL;
 		BUN p, q;
-		str headv, tailv;
+		str tailv;
 		stream *sout;
 
-		head = getTypeIdentifier(getHeadType(type));
-		tail = getTypeIdentifier(getTailType(type));
+		tail = getTypeIdentifier(getColumnType(type));
 
 		bid = *(int *)value;
 		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
 			MT_lock_unset(&c->lock, "remote.put");
 			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
+		assert(b->htype == TYPE_void);
 
 		/* bypass Mapi from this point to efficiently write all data to
 		 * the server */
@@ -710,31 +700,29 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout,
-				"%s := remote.batload(:%s, :%s, " BUNFMT ");\n",
-				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
+				"%s := remote.batload(:%s, " BUNFMT ");\n",
+				ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				headv = tailv = NULL;
-				ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
-				ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
-				if (getTailType(type) <= TYPE_str &&
+				tailv = NULL;
+				ATOMformat(getColumnType(type), BUNtail(bi, p), &tailv);
+				if (getColumnType(type) <= TYPE_str &&
 						getHeadType(type) <= TYPE_str)
 				{
-					mnstr_printf(sout, "%s,%s\n", headv, tailv);
-				} else if (getTailType(type) > TYPE_str &&
+					mnstr_printf(sout, "%s\n", tailv);
+				} else if (getColumnType(type) > TYPE_str &&
 						getHeadType(type) > TYPE_str)
 				{
-					mnstr_printf(sout, "\"%s\",\"%s\"\n", headv, tailv);
-				} else if (getTailType(type) > TYPE_str) {
-					mnstr_printf(sout, "%s,\"%s\"\n", headv, tailv);
+					mnstr_printf(sout, "\"%s\"\n", tailv);
+				} else if (getColumnType(type) > TYPE_str) {
+					mnstr_printf(sout, "\"%s\"\n", tailv);
 				} else {
-					mnstr_printf(sout, "\"%s\",%s\n", headv, tailv);
+					mnstr_printf(sout, "%s\n", tailv);
 				}
-				GDKfree(headv);
 				GDKfree(tailv);
 			}
 			BBPunfix(b->batCacheid);
@@ -949,23 +937,23 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  */
 str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ValPtr v;
-	int h, t;
+	int t;
 	int size;
-	ptr l, r;
+	ptr  r;
 	int s;
 	BAT *b;
 	size_t len;
-	size_t pos;
-	char *val, *var;
-	bit escaped = 0, instr = 0;
+	//size_t pos;
+	char *var;
+	//bit escaped = 0, instr = 0;
 	bstream *fdin = cntxt->fdin;
 
 	v = getArgReference(stk, pci, 0); /* return */
-	h = getArgType(mb, pci, 1); /* head type */
-	t = getArgType(mb, pci, 2); /* tail type */
-	size = *(int *)getArgReference(stk, pci, 3); /* size */
+	t = getArgType(mb, pci, 1); /* tail type */
+	size = *(int *)getArgReference(stk, pci, 2); /* size */
 
-	b = BATnew(h, t, size);
+	newColumn(b,t,"remote.load");
+	BATextend(b,size);
 
 	/* grab the input stream and start reading */
 	fdin->eof = 0;
@@ -978,50 +966,26 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (fdin->buf[len] != '\n')
 			continue;
 		/* empty line, end of input */
-		if (fdin->pos == len)
-			break;
-		fdin->buf[len] = '\0'; /* kill \n */
-		/* we need to slice and dice here, bah */
-		var = val = NULL;
-		for (pos = fdin->pos; pos < len; pos++) {
-			switch (fdin->buf[pos]) {
-				case '"':
-					if (!escaped)
-						instr = !instr;
-				break;
-				case '\\':
-					escaped = !escaped;
-				break;
-				case ',':
-					if (!instr) {
-						/* we know it's only two values, so end here */
-						val = &fdin->buf[fdin->pos];
-						fdin->buf[pos] = '\0';
-						var = &fdin->buf[pos + 1];
-						pos = len; /* break out of the for-loop */
-					}
-				break;
+		if (fdin->pos == len) {
+			if (isa_block_stream(fdin->s)) {
+				ssize_t n = bstream_next(fdin);
+				assert(n == 0);
+				(void) n;
 			}
+			break;
 		}
+		fdin->buf[len] = '\0'; /* kill \n */
+		var = &fdin->buf[fdin->pos];
 		/* skip over this line */
 		fdin->pos = ++len;
 
-		if (val == NULL || var == NULL) {
-			/* now what? */
-			assert(0); /* FIXME */
-		}
-
-		s = 0;
-		l = NULL;
-		ATOMfromstr(h, &l, &s, val);
+		if (var == NULL) 
+			var ="nil";
 
 		s = 0;
 		r = NULL;
 		ATOMfromstr(t, &r, &s, var);
-
-		BUNins(b, l, r, FALSE);
-
-		GDKfree(l);
+		BUNappend(b, r, FALSE);
 		GDKfree(r);
 	}
 
@@ -1039,7 +1003,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int bid = *(int *)getArgReference(stk, pci, 1);
 	BAT *b = BBPquickdesc(abs(bid), FALSE);
-	char sendhead = 0;
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1058,48 +1021,36 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPincref(bid, FALSE);
 
-	sendhead = !BAThvoid(b);
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
-			"\"htype\":%d,"
 			"\"ttype\":%d,"
 			"\"hseqbase\":" OIDFMT ","
 			"\"tseqbase\":" OIDFMT ","
-			"\"hsorted\":%d,"
-			"\"hrevsorted\":%d,"
 			"\"tsorted\":%d,"
 			"\"trevsorted\":%d,"
-			"\"hkey\":%d,"
 			"\"tkey\":%d,"
-			"\"hnonil\":%d,"
 			"\"tnonil\":%d,"
 			"\"tdense\":%d,"
 			"\"size\":" BUNFMT ","
-			"\"headsize\":" SZFMT ","
 			"\"tailsize\":" SZFMT ","
 			"\"theapsize\":" SZFMT
 			"}\n",
-			sendhead ? b->htype : TYPE_void, b->ttype,
+			b->ttype,
 			b->hseqbase, b->tseqbase,
-			b->hsorted, b->hrevsorted,
 			b->tsorted, b->trevsorted,
-			b->hkey, b->tkey,
-			b->H->nonil, b->T->nonil,
+			b->tkey,
+			b->T->nonil,
 			b->tdense,
 			b->batCount,
-			sendhead ? (size_t)b->batCount * Hsize(b) : 0,
 			(size_t)b->batCount * Tsize(b),
 			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
 			);
 
 	if (b->batCount > 0) {
-		if (sendhead)
-			mnstr_write(cntxt->fdout, /* head */
-					Hloc(b, BUNfirst(b)), b->batCount * Hsize(b), 1);
 		mnstr_write(cntxt->fdout, /* tail */
-				Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+		Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
 					Tbase(b), b->T->vheap->free, 1);
@@ -1143,7 +1094,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	BAT *b;
 
 	/* hdr is a JSON structure that looks like
-	 * {"version":1,"htype":0,"ttype":6,"seqbase":0,"tailsize":4,"theapsize":0}
+	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
 	 * we take the binary data directly from the stream */
 
 	/* could skip whitespace, but we just don't allow that */
@@ -1175,18 +1126,12 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					if (strcmp(val, "1") != 0)
 						throw(MAL, "remote.bincopyfrom",
 								"unsupported version: %s", val);
-				} else if (strcmp(nme, "htype") == 0) {
-					bb.Htype = atoi(val);
-				} else if (strcmp(nme, "ttype") == 0) {
-					bb.Ttype = atoi(val);
 				} else if (strcmp(nme, "hseqbase") == 0) {
 					bb.Hseqbase = (oid)atol(val);
+				} else if (strcmp(nme, "ttype") == 0) {
+					bb.Ttype = atoi(val);
 				} else if (strcmp(nme, "tseqbase") == 0) {
 					bb.Tseqbase = (oid)atol(val);
-				} else if (strcmp(nme, "hsorted") == 0) {
-					bb.Hsorted = *val != '0';
-				} else if (strcmp(nme, "hrevsorted") == 0) {
-					bb.Hrevsorted = *val != '0';
 				} else if (strcmp(nme, "tsorted") == 0) {
 					bb.Tsorted = *val != '0';
 				} else if (strcmp(nme, "trevsorted") == 0) {
@@ -1195,16 +1140,12 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					bb.Hkey = *val != '0';
 				} else if (strcmp(nme, "tkey") == 0) {
 					bb.Tkey = *val != '0';
-				} else if (strcmp(nme, "hnonil") == 0) {
-					bb.Hnonil = *val != '0';
 				} else if (strcmp(nme, "tnonil") == 0) {
 					bb.Tnonil = *val != '0';
 				} else if (strcmp(nme, "tdense") == 0) {
 					bb.Tdense = *val != '0';
 				} else if (strcmp(nme, "size") == 0) {
 					bb.size = (BUN)atol(val);
-				} else if (strcmp(nme, "headsize") == 0) {
-					bb.headsize = atol(val);
 				} else if (strcmp(nme, "tailsize") == 0) {
 					bb.tailsize = atol(val);
 				} else if (strcmp(nme, "theapsize") == 0) {
@@ -1219,8 +1160,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		hdr++;
 	}
 
-	/* the BAT we will return */
-	b = BATnew(bb.Htype, bb.Ttype, bb.size);
+	newColumn(b, bb.Ttype,"remote.get");
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
@@ -1229,13 +1169,6 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		b->T->shift = ATOMelmshift(Tsize(b));
 	}
 
-	if (bb.headsize > 0) {
-		/* HEAPextend is cheap if already done */
-		if (HEAPextend(&b->H->heap, bb.headsize, TRUE) < 0 ||
-			mnstr_read(in, b->H->heap.base, bb.headsize, 1) < 0)
-			goto bailout;
-		b->H->heap.dirty = TRUE;
-	}
 	if (bb.tailsize > 0) {
 		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) < 0 ||
 			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
@@ -1257,12 +1190,8 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	b->hrevsorted = bb.Hrevsorted;
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
-	b->hkey = bb.Hkey;
 	b->tkey = bb.Tkey;
-	b->H->nonil = bb.Hnonil;
 	b->T->nonil = bb.Tnonil;
-	if (bb.Htype == TYPE_void)
-		b->hdense = b->hkey = TRUE;
 	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, (BUN) (bb.tailsize >> b->T->shift));
@@ -1371,3 +1300,4 @@ RMTisalive(int *ret, str *conn)
 
 	return MAL_SUCCEED;
 }
+

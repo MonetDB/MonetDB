@@ -20,7 +20,7 @@
 
 }
 \arguments{
-  \item{x}{A \code{\link[MonetDB.R]{monet.frame}} monet.frame virtual data object.}
+  \item{x}{A \code{\link[monet.frame]{monet.frame}} monet.frame virtual data object.}
    \item{row.names}{Unused.}
    \item{optional}{Unused.}
    \item{warnSize}{Prevent user from loading too many tuples from the DB. The limit is 

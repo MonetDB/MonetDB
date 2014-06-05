@@ -20,50 +20,54 @@
 /*
  *  N.J. Nes, M.L. Kersten
  * The String Module
- * Strings can be created in many ways. Already in the built-in operations
- * each atom can be cast to a string using the str(atom) mil command.
- * The string module gives the possibility of construction string as a
- * substring of the a given string (s). There are two such construction functions.
- * The first is the substring from some position (offset) until the end of
- * the string. The second start again on the given offset position but only
- * copies count number of bytes. The functions fail when the position and
- * count fall out of bounds. A negative position indicates that the position is
- * computed from the end of the source string.
+ * Strings can be created in many ways. Already in the built-in
+ * operations each atom can be cast to a string using the str(atom)
+ * mil command.  The string module gives the possibility of
+ * construction string as a substring of the a given string (s). There
+ * are two such construction functions.  The first is the substring
+ * from some position (offset) until the end of the string. The second
+ * start again on the given offset position but only copies count
+ * number of bytes. The functions fail when the position and count
+ * fall out of bounds. A negative position indicates that the position
+ * is computed from the end of the source string.
  *
  * The strings can be compared using the "=" and "!=" operators.
  *
- * The operator "+" concatenates a string and an atom. The atom will be
- * converted to a string using the atom to string c function. The
- * string and the result of the conversion are concatenated to form a new
- * string. This string is returned.
+ * The operator "+" concatenates a string and an atom. The atom will
+ * be converted to a string using the atom to string c function. The
+ * string and the result of the conversion are concatenated to form a
+ * new string. This string is returned.
  *
  * The length function returns the length of the string. The length is
  * the number of characters in the string. The maximum string length
  * handled by the kernel is 32-bits long.
  *
- * chrAt() returns the character at position index in the string s. The
- * function will fail when the index is out of range. The range is
- * from 0 to length(s)-1.
+ * chrAt() returns the character at position index in the string
+ * s. The function will fail when the index is out of range. The range
+ * is from 0 to length(s)-1.
  *
- * The startsWith and endsWith functions test if the string s starts with or
- * ends with the given prefix or suffix.
+ * The startsWith and endsWith functions test if the string s starts
+ * with or ends with the given prefix or suffix.
  *
- * The toLower and toUpper functions cast the string to lower or upper case
- * characters.
+ * The toLower and toUpper functions cast the string to lower or upper
+ * case characters.
  *
  * The search(str,chr) function searches for the first occurrence of a
- * character from the begining of the string. The search(chr,str) searches
- * for the last occurrence (or first from the end of the string). The last
- * search function locates the position of first occurrence of the string s2
- * in string s. All search functions return -1 when the search failed.
- * Otherwise the position is returned.
+ * character from the begining of the string. The search(chr,str)
+ * searches for the last occurrence (or first from the end of the
+ * string). The last search function locates the position of first
+ * occurrence of the string s2 in string s. All search functions
+ * return -1 when the search failed.  Otherwise the position is
+ * returned.
  *
- * All string functions fail when an incorrect string (NULL pointer) is given.
- * In the current implementation, a fail is signaled by returning nil, since
- * this facilitates the use of the string module in bulk operations.
+ * All string functions fail when an incorrect string (NULL pointer)
+ * is given.  In the current implementation, a fail is signaled by
+ * returning nil, since this facilitates the use of the string module
+ * in bulk operations.
  *
- * All functions in the module have now been converted to Unicode. Internally,
- * we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
+ * All functions in the module have now been converted to
+ * Unicode. Internally, we use UTF-8 to store strings as Unicode in
+ * zero-terminated byte-sequences.
  */
 #include "monetdb_config.h"
 #include "str.h"
@@ -78,74 +82,79 @@
 
 /*
  * UTF-8 Handling
- * UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
- * strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
- * the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.
- * These characteristics make UTF-8 an attractive format for upgrading an ASCII-oriented computer
- * program towards one that supports Unicode. That is why we use UTF-8 in Monet.
+ * UTF-8 is a way to store Unicode strings in zero-terminated byte
+ * sequences, which you can e.g. strcmp() with old 8-bit Latin-1
+ * strcmp() functions and which then gives the same results as doing
+ * the strcmp() on equivalent Latin-1 and ASCII character strings
+ * stored in simple one-byte sequences.  These characteristics make
+ * UTF-8 an attractive format for upgrading an ASCII-oriented computer
+ * program towards one that supports Unicode. That is why we use UTF-8
+ * in MonetDB.
  *
- * For Monet, UTF-8 mostly has no consequences, as strings stored in BATs are regarded as data,
- * and it does not matter for the database kernel whether the zero-terminated byte sequence it is
- * processing has UTF-8 or Latin-1 semantics. This module is the only place where explicit string
- * functionality is located. We {\bf do} have to adapt the behavior of the MIL length(), search(),
- * substring() and the like commands to the fact that one (Unicode) character is now stored in
- * a variable number of bytes (possibly > 1).
+ * For MonetDB, UTF-8 mostly has no consequences, as strings stored in
+ * BATs are regarded as data, and it does not matter for the database
+ * kernel whether the zero-terminated byte sequence it is processing
+ * has UTF-8 or Latin-1 semantics. This module is the only place where
+ * explicit string functionality is located. We {\bf do} have to adapt
+ * the behavior of the MIL length(), search(), substring() and the
+ * like commands to the fact that one (Unicode) character is now
+ * stored in a variable number of bytes (possibly > 1).
  *
- * One of the things that become more complex in Unicode are uppercase/lowercase conversions. The
- * below tables are the simple one-to-one Unicode case mappings. We do not support the special casing mappings
- * (e.g. from one to two letters).
+ * One of the things that become more complex in Unicode are
+ * uppercase/lowercase conversions. The below tables are the simple
+ * one-to-one Unicode case mappings. We do not support the special
+ * casing mappings (e.g. from one to two letters).
  *
  * References:
- * \begin{verbatim}
  * simple casing:	http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
  * complex casing: http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
- * \end{verbatim}
  *
- * The Unicode case conversion implementation in Monet fills a mapping BAT of int,int combinations,
- * in which we perform high-performance hash-lookup (all code inlined).
+ * The Unicode case conversion implementation in MonetDB fills a
+ * mapping BAT of int,int combinations, in which we perform
+ * high-performance hash-lookup (all code inlined).
  */
-/* This table was generated from the Unicode 5.0.0 spec.
-   The table is generated by using the codes for conversion to lower
-   case and for conversion to title case and upper case.
-   A few code points have been moved in order to get reasonable
-   conversions (if two code points are converted to the same value,
-   the first one in this table wins).  The code points that have
-   been interchanged are:
-   U+0345 (COMBINING GREEK YPOGEGRAMMENI) / U+03B9 (GREEK SMALL LETTER IOTA) <-> U+0399 (GREEK CAPITAL LETTER IOTA)
-   U+00B5 (MICRO SIGN) / U+03BC (GREEK SMALL LETTER MU) <-> U+039C (GREEK CAPITAL LETTER MU)
-   U+03C2 (GREEK SMALL LETTER FINAL SIGMA) / U+03C3 (GREEK SMALL LETTER SIGMA) <-> U+3A3 (GREEK CAPITAL LETTER SIGMA)
 
-   In addition, there are a few code points where there are different
-   versions for upper case and title case.  These had to be switched
-   around a little so that the mappings are done sensibly.
-
-   The following combinations are included in this order:
-   lower case <-> title case
-   lower case <-  upper case
-   upper case  -> title case
-   The conversion title case -> upper case was removed
-
-   The relevant code points are:
-   U+01C4 (LATIN CAPITAL LETTER DZ WITH CARON)
-   U+01C5 (LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON)
-   U+01C6 (LATIN SMALL LETTER DZ WITH CARON)
-   U+01C7 (LATIN CAPITAL LETTER LJ)
-   U+01C8 (LATIN CAPITAL LETTER L WITH SMALL LETTER J)
-   U+01C9 (LATIN SMALL LETTER LJ)
-   U+01CA (LATIN CAPITAL LETTER NJ)
-   U+01CB (LATIN CAPITAL LETTER N WITH SMALL LETTER J)
-   U+01CC (LATIN SMALL LETTER NJ)
-   U+01F1 (LATIN CAPITAL LETTER DZ)
-   U+01F2 (LATIN CAPITAL LETTER D WITH SMALL LETTER Z)
-   U+01F3 (LATIN SMALL LETTER DZ)
-
-   The script used was basically:
+/* This table was generated from the Unicode 5.0.0 spec. The table is
+ * generated by using the codes for conversion to lower case and for
+ * conversion to title case and upper case. A few code points have
+ * been moved in order to get reasonable conversions (if two code
+ * points are converted to the same value, the first one in this table
+ * wins).  The code points that have been interchanged are:
+ * U+0345 (COMBINING GREEK YPOGEGRAMMENI) / U+03B9 (GREEK SMALL LETTER IOTA) <-> U+0399 (GREEK CAPITAL LETTER IOTA)
+ * U+00B5 (MICRO SIGN) / U+03BC (GREEK SMALL LETTER MU) <-> U+039C (GREEK CAPITAL LETTER MU)
+ * U+03C2 (GREEK SMALL LETTER FINAL SIGMA) / U+03C3 (GREEK SMALL LETTER SIGMA) <-> U+3A3 (GREEK CAPITAL LETTER SIGMA)
+ *
+ * In addition, there are a few code points where there are different
+ * versions for upper case and title case.  These had to be switched
+ * around a little so that the mappings are done sensibly.
+ *
+ * The following combinations are included in this order:
+ * lower case <-> title case
+ * lower case <-  upper case
+ * upper case  -> title case
+ * The conversion title case -> upper case was removed
+ *
+ * The relevant code points are:
+ * U+01C4 (LATIN CAPITAL LETTER DZ WITH CARON)
+ * U+01C5 (LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON)
+ * U+01C6 (LATIN SMALL LETTER DZ WITH CARON)
+ * U+01C7 (LATIN CAPITAL LETTER LJ)
+ * U+01C8 (LATIN CAPITAL LETTER L WITH SMALL LETTER J)
+ * U+01C9 (LATIN SMALL LETTER LJ)
+ * U+01CA (LATIN CAPITAL LETTER NJ)
+ * U+01CB (LATIN CAPITAL LETTER N WITH SMALL LETTER J)
+ * U+01CC (LATIN SMALL LETTER NJ)
+ * U+01F1 (LATIN CAPITAL LETTER DZ)
+ * U+01F2 (LATIN CAPITAL LETTER D WITH SMALL LETTER Z)
+ * U+01F3 (LATIN SMALL LETTER DZ)
+ *
+ * The script used was basically:
 (cut -d\; -f1,14 UnicodeData.txt | sed -n 's/\(.*\);\(..*\)/\2;\1/p'
  cut -d\; -f1,15 UnicodeData.txt | grep -v ';$'
  cut -d\; -f1,13 UnicodeData.txt | grep -v ';$'
 ) | grep -v '^\([^ ]*\);\1$' | sort -t\; -u | sed 's/\(.*\);\(.*\)/{0x\1,0x\2,},/'
-   with some hand munging afterward.  The data file is UnicodeData.txt
-   from http://www.unicode.org/.
+ * with some hand munging afterward.  The data file is UnicodeData.txt
+ * from http://www.unicode.org/.
  */
 struct UTF8_lower_upper {
 	unsigned int lower, upper;
@@ -1094,25 +1103,31 @@ struct UTF8_lower_upper {
 
 #define UTF8_CONVERSIONS (sizeof(UTF8_lower_upper) / sizeof(UTF8_lower_upper[0]))
 
-static BAT *UTF8_toupperBat = NULL, *UTF8_tolowerBat;
+static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat;
 
 bat *
 strPrelude(void)
 {
-	if (!UTF8_toupperBat) {
+	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
-		UTF8_toupperBat = BATnew(TYPE_int, TYPE_int, UTF8_CONVERSIONS);
-		if (UTF8_toupperBat == NULL)
+		UTF8_upperBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		if (UTF8_upperBat == NULL)
 			return NULL;
-		while (--i >= 0) {
-			int lower = UTF8_lower_upper[i].lower;
-			int upper = UTF8_lower_upper[i].upper;
-
-			BUNins(UTF8_toupperBat, &lower, &upper, FALSE);
+		UTF8_lowerBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS);
+		if (UTF8_lowerBat == NULL) {
+			BBPreclaim(UTF8_upperBat);
+			UTF8_upperBat = NULL;
+			return NULL;
 		}
-		UTF8_tolowerBat = BATmirror(UTF8_toupperBat);
-		BATname(UTF8_toupperBat, "monet_unicode_case");
+		while (--i >= 0) {
+			BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE);
+			BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE);
+		}
+		BATseqbase(UTF8_upperBat, 0);
+		BATseqbase(UTF8_lowerBat, 0);
+		BATname(UTF8_upperBat, "monet_unicode_toupper");
+		BATname(UTF8_lowerBat, "monet_unicode_tolower");
 	}
 	return NULL;
 }
@@ -1120,79 +1135,215 @@ strPrelude(void)
 str
 strEpilogue(void)
 {
-	if (UTF8_toupperBat)
-		BBPunfix(UTF8_toupperBat->batCacheid);
+	if (UTF8_upperBat)
+		BBPunfix(UTF8_upperBat->batCacheid);
+	if (UTF8_lowerBat)
+		BBPunfix(UTF8_lowerBat->batCacheid);
+	UTF8_upperBat = UTF8_lowerBat = NULL;
 	return MAL_SUCCEED;
 }
 
-#define UTF8_GETCHAR(X1,X2)\
-	if (*X2 < 0x80) {\
-		(X1) = *(X2)++;\
-	} else if (*(X2) < 0xE0) {\
-		(X1)  = (*(X2)++ & 0x1F) << 6;\
-		(X1) |= (*(X2)++ & 0x3F);\
-	} else if (*(X2) < 0xF0) {\
-		(X1)  = (*(X2)++ & 0x0F) << 12;\
-		(X1) |= (*(X2)++ & 0x3F) << 6;\
-		(X1) |= (*(X2)++ & 0x3F);\
-	} else if (*X2 < 0xF8) {\
-		(X1)  = (*(X2)++ & 0x07) << 18;\
-		(X1) |= (*(X2)++ & 0x3F) << 12;\
-		(X1) |= (*(X2)++ & 0x3F) << 6;\
-		(X1) |= (*(X2)++ & 0x3F);\
-	} else if (*X2 < 0xFC) {\
-		(X1)  = (*(X2)++ & 0x03) << 24;\
-		(X1) |= (*(X2)++ & 0x3F) << 18;\
-		(X1) |= (*(X2)++ & 0x3F) << 12;\
-		(X1) |= (*(X2)++ & 0x3F) << 6;\
-		(X1) |= (*(X2)++ & 0x3F);\
-	} else if (*X2 < 0xFE) {\
-		(X1)  = (*(X2)++ & 0x01) << 30;\
-		(X1) |= (*(X2)++ & 0x3F) << 24;\
-		(X1) |= (*(X2)++ & 0x3F) << 18;\
-		(X1) |= (*(X2)++ & 0x3F) << 12;\
-		(X1) |= (*(X2)++ & 0x3F) << 6;\
-		(X1) |= (*(X2)++ & 0x3F);\
-	} else {\
-		(X1) = int_nil;\
-	}
+/* Get the last char in (X2), and #bytes it takes, but do not decrease the pos in (X2)
+ * The ELSE IF conditions are computed by comparing the left most byte with the
+ * (mask-bits - 1). The '-1' is to use '>' i.s.o. '>='.
+ * See gdk_atoms.c for UTF-8 encoding, especially, definitions of the mask-bits */
+#define UTF8_LASTCHAR(X1, SZ, X2, SZ2)				\
+	do {											\
+		if (*((X2)+SZ2-1) < 0x80) {					\
+			(X1) = *((X2)+SZ2-1);					\
+			(SZ) = 1;								\
+		} else if (*((X2)+SZ2-2) > 0xBF) {			\
+			(X1)  = (*((X2)+SZ2-2) & 0x1F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 2;								\
+		} else if (*((X2)+SZ2-3) > 0xDF) {			\
+			(X1)  = (*((X2)+SZ2-3) & 0x0F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 3;								\
+		} else if (*((X2)+SZ2-4) > 0xEF) {			\
+			(X1)  = (*((X2)+SZ2-4) & 0x07) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 4;								\
+		} else if (*((X2)+SZ2-5) > 0xF7) {			\
+			(X1)  = (*((X2)+SZ2-5) & 0x03) << 24;	\
+			(X1) |= (*((X2)+SZ2-4) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 5;								\
+		} else if (*((X2)+SZ2-6) > 0xFB) {			\
+			(X1)  = (*((X2)+SZ2-6) & 0x01) << 30;	\
+			(X1) |= (*((X2)+SZ2-5) & 0x3F) << 24;	\
+			(X1) |= (*((X2)+SZ2-4) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+SZ2-3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+SZ2-2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+SZ2-1) & 0x3F);			\
+			(SZ) = 6;								\
+		} else {									\
+			(X1) = int_nil;							\
+			(SZ) = 0;								\
+		}											\
+	} while (0)
 
-#define UTF8_PUTCHAR(X1,X2)\
-	if ((X1) < 0 || (SIZEOF_INT > 4 && (int) (X1) >= 0x80000000)) {\
-		*(X2)++ = '\200';\
-	} else if ((X1) < 0x80) {\
-		*(X2)++ = (X1);\
-	} else if ((X1) < 0x800) {\
-		*(X2)++ = 0xC0 | ((X1) >> 6);\
-		*(X2)++ = 0x80 | ((X1) & 0x3F);\
-	} else if ((X1) < 0x10000) {\
-		*(X2)++ = 0xE0 | ((X1) >> 12);\
-		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
-		*(X2)++ = 0x80 | ((X1) & 0x3F);\
-	} else if ((X1) < 0x200000) {\
-		*(X2)++ = 0xF0 | ((X1) >> 18);\
-		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
-		*(X2)++ = 0x80 | ((X1) & 0x3F);\
-	} else if ((X1) < 0x4000000) {\
-		*(X2)++ = 0xF8 | ((X1) >> 24);\
-		*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
-		*(X2)++ = 0x80 | ((X1) & 0x3F);\
-	} else /* if ((X1) < 0x80000000) */ {\
-		*(X2)++ = 0xFC | ((X1) >> 30);\
-		*(X2)++ = 0x80 | (((X1) >> 24) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
-		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
-		*(X2)++ = 0x80 | ((X1) & 0x3F);\
-	}
+/* Get the first char in (X2), and #bytes it takes, but do not increase the pos in (X2) */
+#define UTF8_NEXTCHAR(X1, SZ, X2)				\
+	do {										\
+		if (*(X2) < 0x80) {						\
+			(X1) = *(X2);						\
+			(SZ) = 1;							\
+		} else if (*(X2) < 0xE0) {				\
+			(X1)  = ( *(X2)   & 0x1F) << 6;		\
+			(X1) |= (*((X2)+1) & 0x3F);			\
+			(SZ) = 2;							\
+		} else if (*(X2) < 0xF0) {				\
+			(X1)  = ( *(X2)   & 0x0F) << 12;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+2) & 0x3F);			\
+			(SZ) = 3;							\
+		} else if (*(X2) < 0xF8) {				\
+			(X1)  = ( *(X2)   & 0x07) << 18;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+3) & 0x3F);			\
+			(SZ) = 4;							\
+		} else if (*(X2) < 0xFC) {				\
+			(X1)  = ( *(X2)   & 0x03) << 24;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+3) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+4) & 0x3F);			\
+			(SZ) = 5;							\
+		} else if (*(X2) < 0xFE) {				\
+			(X1)  = ( *(X2)   & 0x01) << 30;	\
+			(X1) |= (*((X2)+1) & 0x3F) << 24;	\
+			(X1) |= (*((X2)+2) & 0x3F) << 18;	\
+			(X1) |= (*((X2)+3) & 0x3F) << 12;	\
+			(X1) |= (*((X2)+4) & 0x3F) << 6;	\
+			(X1) |= (*((X2)+5) & 0x3F);			\
+			(SZ) = 6;							\
+		} else {								\
+			(X1) = int_nil;						\
+			(SZ) = 0;							\
+		}										\
+	} while (0)
+
+/* Get the first char in (X2), and #bytes it takes */
+#define UTF8_GETCHAR_SZ(X1, SZ, X2)				\
+	do {										\
+		if (*(X2) < 0x80) {						\
+			(X1) = *(X2)++;						\
+			(SZ) = 1;							\
+		} else if (*(X2) < 0xE0) {				\
+			(X1)  = (*(X2)++ & 0x1F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 2;							\
+		} else if (*(X2) < 0xF0) {				\
+			(X1)  = (*(X2)++ & 0x0F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 3;							\
+		} else if (*(X2) < 0xF8) {				\
+			(X1)  = (*(X2)++ & 0x07) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 4;							\
+		} else if (*(X2) < 0xFC) {				\
+			(X1)  = (*(X2)++ & 0x03) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 5;							\
+		} else if (*(X2) < 0xFE) {				\
+			(X1)  = (*(X2)++ & 0x01) << 30;		\
+			(X1) |= (*(X2)++ & 0x3F) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+			(SZ) = 6;							\
+		} else {								\
+			(X1) = int_nil;						\
+			(SZ) = 0;							\
+		}										\
+	} while (0)
+
+#define UTF8_GETCHAR(X1, X2)					\
+	do {										\
+		if (*(X2) < 0x80) {						\
+			(X1) = *(X2)++;						\
+		} else if (*(X2) < 0xE0) {				\
+			(X1)  = (*(X2)++ & 0x1F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+		} else if (*(X2) < 0xF0) {				\
+			(X1)  = (*(X2)++ & 0x0F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+		} else if (*(X2) < 0xF8) {				\
+			(X1)  = (*(X2)++ & 0x07) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+		} else if (*(X2) < 0xFC) {				\
+			(X1)  = (*(X2)++ & 0x03) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+		} else if (*(X2) < 0xFE) {				\
+			(X1)  = (*(X2)++ & 0x01) << 30;		\
+			(X1) |= (*(X2)++ & 0x3F) << 24;		\
+			(X1) |= (*(X2)++ & 0x3F) << 18;		\
+			(X1) |= (*(X2)++ & 0x3F) << 12;		\
+			(X1) |= (*(X2)++ & 0x3F) << 6;		\
+			(X1) |= (*(X2)++ & 0x3F);			\
+		} else {								\
+			(X1) = int_nil;						\
+		}										\
+	} while (0)
+
+#define UTF8_PUTCHAR(X1,X2)												\
+	do {																\
+		if ((X1) < 0 || (SIZEOF_INT > 4 && (int) (X1) >= 0x80000000)) {	\
+			*(X2)++ = '\200';											\
+		} else if ((X1) < 0x80) {										\
+			*(X2)++ = (X1);												\
+		} else if ((X1) < 0x800) {										\
+			*(X2)++ = 0xC0 | ((X1) >> 6);								\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else if ((X1) < 0x10000) {									\
+			*(X2)++ = 0xE0 | ((X1) >> 12);								\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else if ((X1) < 0x200000) {									\
+			*(X2)++ = 0xF0 | ((X1) >> 18);								\
+			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else if ((X1) < 0x4000000) {									\
+			*(X2)++ = 0xF8 | ((X1) >> 24);								\
+			*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else /* if ((X1) < 0x80000000) */ {							\
+			*(X2)++ = 0xFC | ((X1) >> 30);								\
+			*(X2)++ = 0x80 | (((X1) >> 24) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		}																\
+	} while (0)
 
 static inline int
-UTF8_strlen(str val)
+UTF8_strlen(const char *val)
 {
-	unsigned char *s = (unsigned char *) val;
+	const unsigned char *s = (const unsigned char *) val;
 	int pos = 0;
 
 	while (*s) {
@@ -1224,9 +1375,9 @@ UTF8_strlen(str val)
 }
 
 static inline int
-UTF8_strpos(str val, str end)
+UTF8_strpos(const char *val, const char *end)
 {
-	unsigned char *s = (unsigned char *) val;
+	const unsigned char *s = (const unsigned char *) val;
 	int pos = 0;
 
 	if (s > (unsigned char *) end) {
@@ -1263,9 +1414,9 @@ UTF8_strpos(str val, str end)
 }
 
 static inline str
-UTF8_strtail(str val, int pos)
+UTF8_strtail(const char *val, int pos)
 {
-	unsigned char *s = (unsigned char *) val;
+	const unsigned char *s = (const unsigned char *) val;
 
 	while (*s && pos-- > 0) {
 		int c = *s++;
@@ -1294,442 +1445,65 @@ UTF8_strtail(str val, int pos)
 	return (str) s;
 }
 
-#define RETURN_NIL_IF(b,t)						\
-	if (b) {							\
-		if (ATOMextern(t)) {					\
-			*(ptr*) res = (ptr) ATOMnil(t);			\
-		} else {						\
-			memcpy(res, ATOMnilptr(t), ATOMsize(t));	\
- 		}							\
-		return GDK_SUCCEED;					\
-	}
-
-#ifdef MAX
-#undef MAX
-#endif
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
-#ifdef MIN
-#undef MIN
-#endif
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-
-int
-strConcat(str *res, str s, ptr val, int t)
+static str
+convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 {
-	str valstr = NULL;
-	size_t l1;
-	int l2 = 0;
+	BATiter toi = bat_iterator(to);
+	BATiter fromi = bat_iterator(BATmirror(from));	/* hashes work on head columns */
+	size_t len = strlen(s);
+	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
+	BUN UTF8_CONV_r;
 
-	RETURN_NIL_IF(strNil(s) || ATOMcmp(t, val, ATOMnilptr(t)) == 0, TYPE_str);
-	if (t <= 0)
-		return GDK_FAIL;
-	l1 = strlen(s);
-	if (t != TYPE_str) {
-		BATatoms[t].atomToStr(&valstr, &l2, val);
-		val = (ptr) valstr;
-	} else
-		l2 = (int) strlen((str) val);
-
-	if (* (str) val == '\200' || *s == '\200')
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
-	else {
-		if (l1+l2+1 >= INT_MAX) {
-			if (valstr && (str) valstr != str_nil)
-				GDKfree(valstr);
-			return GDK_FAIL;
-		}
-		*res = (str) GDKmalloc((int) (l1 + l2 + 1));
-		memcpy(*res, s, l1);
-		memcpy(*res + l1, (str) val, l2);
-		(*res)[l1 + l2] = '\0';
-	}
-	if (valstr && (str) valstr != str_nil)
-		GDKfree(valstr);
-	return GDK_SUCCEED;
-}
+	} else {
+		*res = GDKmalloc(len + 1);
+		if (*res != NULL) {
+			dst = (unsigned char *) *res;
+			while (src < end) {
+				int c;
 
-int
-strLength(int *res, str s)
-{
-	size_t l;
-	RETURN_NIL_IF(strNil(s), TYPE_int);
-	l=  UTF8_strlen(s);
-	assert(l <INT_MAX);
-	*res = (int) l;
-	return GDK_SUCCEED;
-}
+				UTF8_GETCHAR(c, src);
+				HASHfnd_int(UTF8_CONV_r, fromi, &c);
+				if (UTF8_CONV_r != BUN_NONE)
+					c = *(int*) BUNtloc(toi, UTF8_CONV_r);
+				if (dst + 6 > (unsigned char *) *res + len) {
+					/* not guaranteed to fit, so allocate more space;
+					 * also allocate enough for the rest of the
+					 * source */
+					size_t off = dst - (unsigned char *) *res;
 
-int
-strBytes(int *res, str s)
-{
-	size_t l;
-	l= strlen(s);
-	assert(l <INT_MAX);
-	*res = (int) l;
-	return GDK_SUCCEED;
-}
-
-int
-strTail(str *res, str s, int *offset)
-{
-	int off = *offset;
-
-	RETURN_NIL_IF(strNil(s) || off == int_nil, TYPE_str);
-	if (off < 0) {
-		size_t l = UTF8_strlen(s);
-		int len= (int) l;
-		assert(l < INT_MAX);
-
-		RETURN_NIL_IF(len == int_nil, TYPE_str);
-		off = len + off;
-		if (off < 0)
-			off = 0;
-	}
-	*res = (char *) GDKstrdup(UTF8_strtail(s, off));
-	return GDK_SUCCEED;
-}
-
-int
-strSubString(str *res, str s, int *offset, int *length)
-{
-	int len, off = *offset, l = *length;
-
-	RETURN_NIL_IF(strNil(s) || off == int_nil || l == int_nil, TYPE_str);
-	if (off < 0) {
-		len = UTF8_strlen(s);
-		RETURN_NIL_IF(len == int_nil, TYPE_str);
-		off = len + off;
-		if (off < 0) {
-			l += off;
-			off = 0;
+					dst = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
+					if (dst == NULL) {
+						/* if realloc fails, original buffer is still
+						 * allocated, so free it */
+						GDKfree(*res);
+						goto hashfnd_failed;
+					}
+					*res = (char *) dst;
+					dst = (unsigned char *) *res + off;
+				}
+				UTF8_PUTCHAR(c, dst);
+			}
+			*dst = 0;
 		}
 	}
-	/* here, off >= 0 */
-	if (l < 0) {
-		*res = GDKstrdup("");
-		return GDK_SUCCEED;
-	}
-	s = UTF8_strtail(s, off);
-	len = (int)(UTF8_strtail(s, l) - s);
-	*res = (char *) GDKmalloc(len + 1);
-	strncpy(*res, s, len);
-	(*res)[len] = 0;
-	return GDK_SUCCEED;
+	if (*res != NULL)
+		return MAL_SUCCEED;
+  hashfnd_failed:
+	throw(MAL, malfunc, "Allocation failed");
 }
 
-int
-strFromWChr(str *res, int *c)
-{
-	str s = *res = GDKmalloc(7);
-
-	UTF8_PUTCHAR(*c,s);
-	*s = 0;
-	return GDK_SUCCEED;
-}
-
-
-int
-strWChrAt(int *res, str val, int *at)
-{
-/* 64bit: should have wrd arg */
-	unsigned char *s = (unsigned char *) val;
-
-	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_int);
-	s = (unsigned char *) UTF8_strtail((str) s, *at);
-	RETURN_NIL_IF(*s == 0, TYPE_int);
-	UTF8_GETCHAR(*res,s);
-	return GDK_SUCCEED;
-}
-
-int
-codeset(str *res)
-{
-#ifdef HAVE_NL_LANGINFO
-	char *code_set = nl_langinfo(CODESET);
-
-	if (!code_set)
-		return GDK_FAIL;
-	*res = GDKstrdup(code_set);
-	return GDK_SUCCEED;
-#else
-	*res = GDKstrdup("UTF-8");
-	return GDK_SUCCEED;
-#endif
-}
-
-int
-strIconv(str *res, str org, str f, str t)
-{
-#ifdef HAVE_ICONV
-	size_t len = strlen(org);
-	iconv_t cd = iconv_open(t, f);
-	size_t size = 4 * len;	/* make sure enough memory is claimed */
-	char *r;
-	ICONV_CONST char *from = org;
-
-	if (cd == (iconv_t)(-1)) {
-		GDKerror("strIconv: Cannot convert strings from (%s) to (%s)\n", f, t);
-		return GDK_FAIL;
-	}
-	*res = r = GDKmalloc(size);
-	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
-		GDKfree(*res);
-		*res = NULL;
-		iconv_close(cd);
-		GDKerror("strIconv: String conversion failed from (%s) to (%s)\n", f, t);
-		return GDK_FAIL;
-	}
-	*r = 0;
-	iconv_close(cd);
-	return GDK_SUCCEED;
-#else
-	*res = NULL;
-	if (strcmp(f, t) == 0) {
-		*res = GDKstrdup(org);
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-#endif
-}
-
-int
-strPrefix(bit *res, str s, str prefix)
-{
-	size_t pl, i;
-
-	RETURN_NIL_IF(strNil(s) || strNil(prefix), TYPE_bit);
-	pl = strlen(prefix);
-	if (strlen(s) < pl) {
-		*res = 0;
-		return GDK_SUCCEED;
-	}
-	*res = 1;
-	for (i = 0; i < pl; i++) {
-		if (s[i] != prefix[i]) {
-			*res = 0;
-			return GDK_SUCCEED;
-		}
-	}
-	return GDK_SUCCEED;
-}
-
-int
-strSuffix(bit *res, str s, str suffix)
-{
-	size_t i, sl, sul;
-
-	RETURN_NIL_IF(strNil(s) || strNil(suffix), TYPE_bit);
-	sl = strlen(s);
-	sul = strlen(suffix);
-
-	if (sl < sul) {
-		*res = 0;
-		return GDK_SUCCEED;
-	}
-	*res = 1;
-	for (i = 0; i < sul; i++) {
-		if (s[sl - 1 - i] != suffix[sul - 1 - i]) {
-			*res = 0;
-			return GDK_SUCCEED;
-		}
-	}
-	return GDK_SUCCEED;
-}
-
-int
-strLower(str *res, str s)
-{
-	BATiter UTF8_tolowerBati = bat_iterator(UTF8_tolowerBat);
-	size_t len = strlen(s);
-	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
-
-	RETURN_NIL_IF(strNil(s), TYPE_str);
-	*res = GDKmalloc(len + 1);
-	dst = (unsigned char *) *res;
-	while (src < end) {
-		int c;
-
-		UTF8_GETCHAR(c,src);
-		{
-			BUN UTF8_CONV_r;
-			int UTF8_CONV_v = (c);
-			HASHfnd_int(UTF8_CONV_r, UTF8_tolowerBati, &UTF8_CONV_v);
-			if (UTF8_CONV_r != BUN_NONE)
-				(c) = *(int*) BUNtloc(UTF8_tolowerBati, UTF8_CONV_r);
-		}
-		if (dst + 6 > (unsigned char *) *res + len) {
-			/* not guaranteed to fit, so allocate more space;
-			   also allocate enough for the rest of the source */
-			size_t off = dst - (unsigned char *) *res;
-
-			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
-			dst = (unsigned char *) *res + off;
-		}
-		UTF8_PUTCHAR(c,dst);
-	}
-	*dst = 0;
-	return GDK_SUCCEED;
-}
-
-int
-strUpper(str *res, str s)
-{
-	BATiter UTF8_toupperBati = bat_iterator(UTF8_toupperBat);
-	size_t len = strlen(s);
-	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
-
-	RETURN_NIL_IF(strNil(s), TYPE_str);
-	*res = GDKmalloc(len + 1);
-	dst = (unsigned char *) *res;
-	while (src < end) {
-		int c;
-
-		UTF8_GETCHAR(c,src);
-		{
-			BUN UTF8_CONV_r;
-			int UTF8_CONV_v = (c);
-			HASHfnd_int(UTF8_CONV_r, UTF8_toupperBati, &UTF8_CONV_v);
-			if (UTF8_CONV_r != BUN_NONE)
-				(c) = *(int*) BUNtloc(UTF8_toupperBati, UTF8_CONV_r);
-		}
-		if (dst + 6 > (unsigned char *) *res + len) {
-			/* not guaranteed to fit, so allocate more space;
-			   also allocate enough for the rest of the source */
-			size_t off = dst - (unsigned char *) *res;
-
-			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
-			dst = (unsigned char *) *res + off;
-		}
-		UTF8_PUTCHAR(c,dst);
-	}
-	*dst = 0;
-	return GDK_SUCCEED;
-}
-
-int
-strStrSearch(int *res, str s, str s2)
-{
-/* 64bit: should return wrd */
-	char *p;
-
-	RETURN_NIL_IF(strNil(s) || strNil(s2), TYPE_int);
-	if ((p = strstr(s, s2)) != 0)
-		*res = UTF8_strpos(s, p);
-	else
-		*res = -1;
-	return GDK_SUCCEED;
-}
-
-int
-strReverseStrSearch(int *res, str s, str s2)
-{
-/* 64bit: should return wrd */
-	size_t len, slen;
-	char *p, *q;
-	size_t i;
-
-	RETURN_NIL_IF(strNil(s) || strNil(s2), TYPE_int);
-	*res = -1;
-	len = strlen(s);
-	slen = strlen(s2);
-	for (p = s + len - slen; p >= s; p--) {
-		for (i = 0, q = p; i < slen && *q == s2[i]; i++, q++)
-			;
-		if (i == slen) {
-			*res = UTF8_strpos(s, p);
-			break;
-		}
-	}
-
-	return GDK_SUCCEED;
-}
-
-int
-strStrip(str *res, str s)
-{
-	str start = s;
-	size_t len;
-
-	while (GDKisspace(*start))
-		start++;
-
-	/* Remove the trailing spaces.  Make sure not to pass the start */
-	/* pointer in case a string only contains spaces.		*/
-	s = start + strlen(start);
-	while (s > start && GDKisspace(*(s - 1)))
-		s--;
-
-	len = s - start + 1;
-	*res = GDKmalloc(len);
-	memcpy(*res, start, len - 1);
-	(*res)[len - 1] = '\0';
-	return GDK_SUCCEED;
-}
-
-int
-strLtrim(str *res, str s)
-{
-	RETURN_NIL_IF(strNil(s), TYPE_str);
-	while (GDKisspace(*s))
-		s++;
-	*res = GDKstrdup(s);
-	return GDK_SUCCEED;
-}
-
-int
-strRtrim(str *res, str s)
-{
-	size_t len = strlen(s);
-
-	RETURN_NIL_IF(strNil(s), TYPE_str);
-	while (len > 0 && GDKisspace(s[len - 1]))
-		len--;
-	*res = GDKmalloc(len + 1);
-	memcpy(*res, s, len);
-	(*res)[len] = '\0';
-	return GDK_SUCCEED;
-}
-
-int
-strSubstitute(str *res, str s, str src, str dst, bit *g)
-{
-	int repeat = *g;
-	size_t lsrc = (src?strlen(src):0), ldst = (dst?strlen(dst):0);
-	size_t l = (s?strLen(s):0), n = l + ldst;
-	str buf, fnd, end;
-
-	if (repeat && ldst > lsrc && lsrc) {
-		n = (ldst * l) / lsrc;	/* max length */
-	}
-	buf = *res = (str) GDKzalloc(n);
-	end = buf + l;
-	fnd = buf;
-	if( s)
-		strcpy(buf, s);
-	if (!lsrc)
-		return GDK_SUCCEED;
-	do {
-		fnd = strstr((fnd < buf) ? buf : fnd, src);
-		if (!fnd)
-			break;
-		memmove(fnd + ldst, fnd + lsrc, end - fnd);
-		memcpy(fnd, dst, ldst);
-		end += ldst - lsrc;
-		fnd += ldst;
-	} while (repeat);
-
-	return GDK_SUCCEED;
-}
-
-int
-strSQLLength(int *res, str s)
+str
+STRSQLLength(int *res, str *s)
 {
 	str r = NULL;
-	strRtrim(&r, s);
-	strLength(res, r);
+	str msg;
+	if ((msg = STRRtrim(&r, s)) != MAL_SUCCEED)
+		return msg;
+	STRLength(res, &r);
 	GDKfree(r);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /*
@@ -1755,7 +1529,7 @@ STRfindUnescapedOccurrence(str b, str c, str esc){
 /*
  * The SQL like function return a boolean
  */
-int
+static int
 STRlike(str s, str pat, str esc){
 	str t,p;
 
@@ -1811,7 +1585,22 @@ STRtostr(str *res, str *src)
 str
 STRConcat(str *res, str *val1, str *val2)
 {
-	if (strConcat(res, *val1, *val2, TYPE_str) == GDK_FAIL)
+	size_t l1, l2;
+	const char *s1 = *val1;
+	const char *s2 = *val2;
+
+	if (strNil(s1) || strNil(s2)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		l1 = strlen(s1);
+		l2 = strlen(s2);
+		if ((*res = GDKmalloc(l1 + l2 + 1)) != NULL) {
+			memcpy(*res, s1, l1);
+			memcpy(*res + l1, s2, l2);
+			(*res)[l1 + l2] = '\0';
+		}
+	}
+	if (*res == NULL)
 		throw(MAL, "str.concat", "Allocation failed");
 	return MAL_SUCCEED;
 }
@@ -1819,115 +1608,461 @@ STRConcat(str *res, str *val1, str *val2)
 str
 STRLength(int *res, str *arg1)
 {
-	strLength(res, *arg1);
+	size_t l;
+	const char *s = *arg1;
+
+	if (strNil(s)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	l =  UTF8_strlen(s);
+	assert(l <INT_MAX);
+	*res = (int) l;
 	return MAL_SUCCEED;
 }
 
 str
 STRBytes(int *res, str *arg1)
 {
-	strBytes(res, *arg1);
+	size_t l;
+
+	l = strlen(*arg1);
+	assert(l <INT_MAX);
+	*res = (int) l;
 	return MAL_SUCCEED;
 }
 
 str
 STRTail(str *res, str *arg1, int *offset)
 {
-	strTail(res, *arg1, offset);
+	int off = *offset;
+	const char *s = *arg1;
+
+	if (strNil(s) || off == int_nil) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		if (off < 0) {
+			size_t l = UTF8_strlen(s);
+			int len = (int) l;
+			assert(l < INT_MAX);
+
+			if (len == int_nil) {
+				*res = GDKstrdup(str_nil);
+				if (*res == NULL)
+					throw(MAL, "str.tail", "Allocation failed");
+				return MAL_SUCCEED;
+			}
+			off = len + off;
+			if (off < 0)
+				off = 0;
+		}
+		*res = (char *) GDKstrdup(UTF8_strtail(s, off));
+	}
+	if (*res == NULL)
+		throw(MAL, "str.tail", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
 str
 STRSubString(str *res, str *arg1, int *offset, int *length)
 {
-	strSubString(res, *arg1, offset, length);
+	int len, off = *offset, l = *length;
+	const char *s = *arg1;
+
+	if (strNil(s) || off == int_nil || l == int_nil) {
+		*res = GDKstrdup(str_nil);
+		if (*res == NULL)
+			throw(MAL, "str.substring", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+	if (off < 0) {
+		len = UTF8_strlen(s);
+		if (len == int_nil) {
+			*res = GDKstrdup(str_nil);
+			if (*res == NULL)
+				throw(MAL, "str.substring", "Allocation failed");
+			return MAL_SUCCEED;
+		}
+		off = len + off;
+		if (off < 0) {
+			l += off;
+			off = 0;
+		}
+	}
+	/* here, off >= 0 */
+	if (l < 0) {
+		*res = GDKstrdup("");
+		if (*res == NULL)
+			throw(MAL, "str.substring", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+	s = UTF8_strtail(s, off);
+	len = (int) (UTF8_strtail(s, l) - s);
+	*res = GDKmalloc(len + 1);
+	if (*res == NULL)
+		throw(MAL, "str.substring", "Allocation failed");
+	strncpy(*res, s, len);
+	(*res)[len] = 0;
 	return MAL_SUCCEED;
 }
 
 str
-STRFromWChr(str *res, int *at)
+STRFromWChr(str *res, int *c)
 {
-	strFromWChr(res, at);
+	str s = *res = GDKmalloc(7);
+
+	if (*res == NULL)
+		throw(MAL, "str.unicode", "Allocation failed");
+	UTF8_PUTCHAR(*c, s);
+	*s = 0;
 	return MAL_SUCCEED;
 }
 
 str
 STRWChrAt(int *res, str *arg1, int *at)
 {
-	strWChrAt(res, *arg1, at);
+/* 64bit: should have wrd arg */
+	const char *s = *arg1;
+	const unsigned char *u;
+
+	if (strNil(*arg1) || *at == int_nil || *at < 0) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	s = UTF8_strtail(s, *at);
+	if (*s == 0) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	u = (const unsigned char *) s;
+	UTF8_GETCHAR(*res, u);
 	return MAL_SUCCEED;
 }
 
 str
 STRcodeset(str *res)
 {
-	codeset(res);
+#ifdef HAVE_NL_LANGINFO
+	const char *code_set = nl_langinfo(CODESET);
+
+	if (code_set == NULL)
+		throw(MAL, "str.codeset", "impossible return value from nl_langinfo");
+	*res = GDKstrdup(code_set);
+#else
+	*res = GDKstrdup("UTF-8");
+#endif
+	if (*res == NULL)
+		throw(MAL, "str.codeset", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
 str
 STRIconv(str *res, str *o, str *fp, str *tp)
 {
-	strIconv(res, *o, *fp, *tp);
+	const char *f = *fp;
+	const char *t = *tp;
+#ifdef HAVE_ICONV
+	size_t len = strlen(*o);
+	iconv_t cd = iconv_open(t, f);
+	size_t size = 4 * len;	/* make sure enough memory is claimed */
+	char *r;
+	ICONV_CONST char *from = *o;
+
+	if (cd == (iconv_t)(-1)) {
+		throw(MAL, "str.iconv", "Cannot convert strings from (%s) to (%s)", f, t);
+	}
+	*res = r = GDKmalloc(size);
+	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
+		GDKfree(*res);
+		*res = NULL;
+		iconv_close(cd);
+		throw(MAL, "str.iconv", "String conversion failed from (%s) to (%s)", f, t);
+	}
+	*r = 0;
+	iconv_close(cd);
 	return MAL_SUCCEED;
+#else
+	const char *org = *o;
+
+	*res = NULL;
+	if (strcmp(f, t) == 0) {
+		*res = GDKstrdup(org);
+		if (*res == NULL)
+			throw(MAL, "str.iconv", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "str.iconv", "Unsupported encoding");
+#endif
 }
 
 str
 STRPrefix(bit *res, str *arg1, str *arg2)
 {
-	strPrefix(res, *arg1, *arg2);
+	size_t pl, i;
+	const char *s = *arg1;
+	const char *prefix = *arg2;
+
+	if (strNil(s) || strNil(prefix)) {
+		*res = bit_nil;
+		return MAL_SUCCEED;
+	}
+	pl = strlen(prefix);
+	if (strlen(s) < pl) {
+		*res = 0;
+		return MAL_SUCCEED;
+	}
+	*res = 1;
+	for (i = 0; i < pl; i++) {
+		if (s[i] != prefix[i]) {
+			*res = 0;
+			break;
+		}
+	}
 	return MAL_SUCCEED;
 }
 
 str
 STRSuffix(bit *res, str *arg1, str *arg2)
 {
-	strSuffix(res, *arg1, *arg2);
+	size_t i, sl, sul;
+	const char *s = *arg1;
+	const char *suffix = *arg2;
+
+	if (strNil(s) || strNil(suffix)) {
+		*res = bit_nil;
+		return MAL_SUCCEED;
+	}
+	sl = strlen(s);
+	sul = strlen(suffix);
+
+	if (sl < sul) {
+		*res = 0;
+		return MAL_SUCCEED;
+	}
+	*res = 1;
+	for (i = 0; i < sul; i++) {
+		if (s[sl - 1 - i] != suffix[sul - 1 - i]) {
+			*res = 0;
+			break;
+		}
+	}
 	return MAL_SUCCEED;
 }
 
 str
 STRLower(str *res, str *arg1)
 {
-	strLower(res, *arg1);
-	return MAL_SUCCEED;
+	return convertCase(UTF8_upperBat, UTF8_lowerBat, res, *arg1, "str.lower");
 }
 
 str
 STRUpper(str *res, str *arg1)
 {
-	strUpper(res, *arg1);
-	return MAL_SUCCEED;
+	return convertCase(UTF8_lowerBat, UTF8_upperBat, res, *arg1, "str.upper");
 }
 
 str
 STRstrSearch(int *res, str *arg1, str *arg2)
 {
-	strStrSearch(res, *arg1, *arg2);
+/* 64bit: should return wrd */
+	char *p;
+	const char *s = *arg1;
+	const char *s2 = *arg2;
+
+	if (strNil(s) || strNil(s2)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	if ((p = strstr(s, s2)) != 0)
+		*res = UTF8_strpos(s, p);
+	else
+		*res = -1;
 	return MAL_SUCCEED;
 }
 
 str
 STRReverseStrSearch(int *res, str *arg1, str *arg2)
 {
-	strReverseStrSearch(res, *arg1, *arg2);
+/* 64bit: should return wrd */
+	size_t len, slen;
+	const char *p, *q;
+	size_t i;
+	const char *s = *arg1;
+	const char *s2 = *arg2;
+
+	if (strNil(s) || strNil(s2)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	*res = -1;
+	len = strlen(s);
+	slen = strlen(s2);
+	for (p = s + len - slen; p >= s; p--) {
+		for (i = 0, q = p; i < slen && *q == s2[i]; i++, q++)
+			;
+		if (i == slen) {
+			*res = UTF8_strpos(s, p);
+			break;
+		}
+	}
 	return MAL_SUCCEED;
 }
 
 str
 STRStrip(str *res, str *arg1)
 {
-	strStrip(res, *arg1);
+	const char *start = *arg1;
+	const char *s;
+	size_t len;
+
+	while (GDKisspace(*start))
+		start++;
+
+	/* Remove the trailing spaces.  Make sure not to pass the start */
+	/* pointer in case a string only contains spaces.		*/
+	s = start + strlen(start);
+	while (s > start && GDKisspace(*(s - 1)))
+		s--;
+
+	len = s - start + 1;
+	*res = GDKmalloc(len);
+	if (*res == NULL)
+		throw(MAL, "str.trim", "Allocation failed");
+	memcpy(*res, start, len - 1);
+	(*res)[len - 1] = '\0';
+	return MAL_SUCCEED;
+}
+
+/* Remove the longest string containing only characters from 'arg2' from the start of 'arg1'
+ * 
+ * Example: trim('zzzytrimzyxyyz', 'xyz')
+ * Result: trim
+ */
+str
+STRStrip2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL; /* candidate list of to be removed characters, converted to INT */
+	int i = 0, rm_cnt = UTF8_strlen(s2);
+	size_t len = strlen(*arg1);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.trim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of s2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.trim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+		const unsigned char *v = NULL;
+
+		/* trim left */
+		u = (const unsigned char *) s;
+		do {
+			UTF8_NEXTCHAR(c, sz, u);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					u += sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		/* trim right */
+		v = (const unsigned char *) s;
+		do {
+			UTF8_LASTCHAR(c, sz, v, len);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					len -= sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrndup((const char*)u, len - ((const char*)u - s));
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
 str
 STRLtrim(str *res, str *arg1)
 {
-	strLtrim(res, *arg1);
+	const char *s = *arg1;
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		while (GDKisspace(*s))
+			s++;
+		*res = GDKstrdup(s);
+	}
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
+/* Remove the longest string containing only characters from 'arg2' from the start of 'arg1'
+ * 
+ * Example: ltrim('zzzytrim', 'xyz')
+ * Result: trim
+ */
+str
+STRLtrim2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL; /* candidate list of to be removed characters, converted to INT */
+	int i = 0, rm_cnt = UTF8_strlen(s2);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of s2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.ltrim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+
+		u = (const unsigned char *) s;
+		do {
+			UTF8_NEXTCHAR(c, sz, u);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					u += sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrdup((const char*)u);
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
 
 str
 STRmax(str *res, str *left, str *right){
@@ -1987,14 +2122,305 @@ STRmin_no_nil(str *res, str *left, str *right){
 str
 STRRtrim(str *res, str *arg1)
 {
-	strRtrim(res, *arg1);
+	const char *s = *arg1;
+	size_t len = strlen(*arg1);
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		while (len > 0 && GDKisspace(s[len - 1]))
+			len--;
+		*res = GDKmalloc(len + 1);
+		if (*res != NULL) {
+			memcpy(*res, s, len);
+			(*res)[len] = '\0';
+		}
+	}
+	if (*res == NULL)
+		throw(MAL, "str.rtrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Remove the longest string containing only characters from 'arg2' from the end of 'arg1'
+ * 
+ * Example: rtrim('trimxxxxxxxxx', 'xyz')
+ * Result: trim
+ */
+str
+STRRtrim2(str *res, str *arg1, str *arg2)
+{
+	const char *s = *arg1, *s2 = *arg2;
+	const unsigned char *u = NULL;
+	int *toRm = NULL;
+	int i = 0, rm_cnt = UTF8_strlen(*arg2);
+	size_t len = strlen(*arg1);
+
+	toRm = GDKmalloc(sizeof(int) * rm_cnt);
+	if (toRm == NULL)
+		throw(MAL, "str.rtrim", "Allocation failed");
+	u = (const unsigned char *) s2;
+	for (i = 0; i < rm_cnt; i++)
+		UTF8_GETCHAR(toRm[i], u);
+	/* Just a sanity check that all bytes of arg2 are consumed */
+	if (u[0] != '\0') {
+		GDKfree(toRm);
+		throw(MAL, "str.rtrim", "Invalid UTF-8 string %s", *arg2);
+	}
+
+	if (strNil(s)) {
+		*res = GDKstrdup(str_nil);
+	} else {
+		int c = 0, sz = 0;
+		u = (unsigned char *) s;
+		do {
+			UTF8_LASTCHAR(c, sz, u, len);
+
+			for (i = 0; i < rm_cnt; i++) {
+				if (toRm[i] == c) {
+					len -= sz;
+					break;
+				}
+			}
+		} while (i < rm_cnt);
+		*res = GDKstrndup(s, len);
+	}
+
+	GDKfree(toRm);
+	if (*res == NULL)
+		throw(MAL, "str.ltrim", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by prepending whitespaces.
+ * If 'arg1' is already longer than 'len', then it's truncated on the right
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: lpad('hi', 5)
+ * Result: '   hi'
+ */
+str
+STRLpad(str *res, str *arg1, int *len)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be prepended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		int i = 0;
+		size_t s_len = strlen(s),
+			res_len = pad_cnt + s_len;
+		char *r = GDKmalloc(res_len+1);
+
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+		memcpy(r + pad_cnt, s, s_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (*res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by appending whitespaces.
+ * If 'arg1' is already longer than 'len', then it's truncated (on the right)
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: rpad('hi', 5)
+ * Result: 'hi   '
+ */
+str
+STRRpad(str *res, str *arg1, int *len)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be appended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		size_t i = 0,
+			   s_len = strlen(s),
+			   res_len = pad_cnt + s_len;
+		char *r = GDKmalloc(res_len+1);
+
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		memcpy(r, s, s_len);
+		for (i = s_len; i < res_len; i++) {
+			r[i] = ' ';
+		}
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (*res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by prepending characters from 'arg2'
+ * If 'arg1' is already longer than 'len', then it's truncated on the right
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: lpad('hi', 5, 'xy')
+ * Result: xyxhi
+ */
+str
+STRLpad2(str *res, str *arg1, int *len, str *arg2)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be prepended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		const char *s2 = *arg2, *s2_tmp = *arg2;
+		char *r = NULL;
+		const unsigned char *u = NULL;
+		int i = 0, c = 0, sz = 0,
+			s2_cnt = UTF8_strlen(s2),
+			nr_repeat = pad_cnt / s2_cnt,
+			nr_residual = pad_cnt % s2_cnt;
+		size_t s_len = strlen(s),
+			s2_len = strlen(s2),
+			repeat_len = s2_len * nr_repeat,
+			residual_len = 0,
+			res_len = s_len + repeat_len;
+
+		u = (const unsigned char *) s2_tmp;
+		for (i = 0; i < nr_residual; i++) {
+			UTF8_GETCHAR_SZ(c, sz, u);
+			residual_len += sz;
+		}
+		res_len += residual_len;
+		r = GDKmalloc(res_len+1);
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+
+		for (i = 0; i < nr_repeat; i++) {
+			memcpy(r + s2_len*i, s2, s2_len);
+		}
+		memcpy(r + repeat_len, s2, residual_len);
+		memcpy(r + repeat_len + residual_len, s, s_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (*res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
+	return MAL_SUCCEED;
+}
+
+/* Fill up 'arg1' to lenth 'len' by appending characters from 'arg2'
+ * If 'arg1' is already longer than 'len', then it's truncated (on the right)
+ * (NB: this is the PostgreSQL definition).
+ *
+ * Example: rpad('hi', 5, 'xy')
+ * Result: hixyx
+ */
+str
+STRRpad2(str *res, str *arg1, int *len, str *arg2)
+{
+	const char *s = *arg1;
+	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be appended */
+
+	if (pad_cnt == 0) {
+		*res = GDKstrdup(s);
+	} else if (pad_cnt < 0) { /* truncate */
+		s = UTF8_strtail(s, *len);
+		*res = GDKstrndup(*arg1, s - *arg1);
+	} else { /* pad_cnt > 0: fill */
+		const char *s2 = *arg2, *s2_tmp = *arg2;
+		char *r = NULL;
+		const unsigned char *u = NULL;
+		int i = 0, c = 0, sz = 0,
+			s2_cnt = UTF8_strlen(s2),
+			nr_repeat = pad_cnt / s2_cnt,
+			nr_residual = pad_cnt % s2_cnt;
+		size_t s_len = strlen(s),
+			s2_len = strlen(s2),
+			repeat_len = s2_len * nr_repeat,
+			residual_len = 0,
+
+			res_len = s_len + repeat_len;
+
+		u = (const unsigned char *)s2_tmp;
+		for (i = 0; i < nr_residual; i++) {
+			UTF8_GETCHAR_SZ(c, sz, u);
+			residual_len += sz;
+		}
+		res_len += residual_len;
+		r = GDKmalloc(res_len+1);
+		if (r == NULL)
+			throw(MAL, "str.lpad", "Allocation failed");
+		for (i = 0; i < pad_cnt; i++) {
+			r[i] = ' ';
+		}
+
+		memcpy(r, s, s_len);
+		for (i = 0; i < nr_repeat; i++) {
+			memcpy(r + s_len + s2_len*i, s2, s2_len);
+		}
+		memcpy(r + s_len + repeat_len, s2, residual_len);
+		r[res_len] = '\0';
+		*res = r;
+	}
+
+	if (*res == NULL)
+		throw(MAL, "str.lpad", "Allocation failed");
 	return MAL_SUCCEED;
 }
 
 str
 STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 {
-	strSubstitute(res, *arg1, *arg2, *arg3, g);
+	const char *s = *arg1;
+	const char *src = *arg2;
+	const char *dst = *arg3;
+	int repeat = *g;
+	size_t lsrc = src ? strlen(src) : 0;
+	size_t ldst = dst ? strlen(dst) : 0;
+	size_t l = s ? strLen(s) : 0;
+	size_t n = l + ldst;
+	str buf, fnd, end;
+
+	if (repeat && ldst > lsrc && lsrc) {
+		n = (ldst * l) / lsrc;	/* max length */
+	}
+	buf = *res = GDKmalloc(n);
+	if (*res == NULL)
+		throw(MAL, "str.substitute", "Allocation failed");
+	end = buf + l;
+	fnd = buf;
+	strcpy(buf, s);
+	if (lsrc == 0)
+		return MAL_SUCCEED;
+	do {
+		fnd = strstr(fnd < buf ? buf : fnd, src);
+		if (fnd == NULL)
+			break;
+		memmove(fnd + ldst, fnd + lsrc, end - fnd);
+		memcpy(fnd, dst, ldst);
+		end += ldst - lsrc;
+		fnd += ldst;
+	} while (repeat);
 	return MAL_SUCCEED;
 }
 
@@ -2037,7 +2463,7 @@ STRsuffix(str *ret, str *s, int *l){
 str
 STRlocate(int *ret, str *s1, str *s2){
 	int p;
-	strStrSearch(&p, *s2, *s1);
+	STRstrSearch(&p, s2, s1);
 	*ret=  p>=0? p+1:0;
 	return MAL_SUCCEED;
 }
@@ -2045,8 +2471,8 @@ str
 STRlocate2(int *ret, str *s1, str *s2, int *start){
 	int p;
 	str dummy;
-	strTail(&dummy, *s1, start);
-	strStrSearch(&p, *s2, dummy);
+	STRTail(&dummy, s1, start);
+	STRstrSearch(&p, s2, &dummy);
 	if( dummy) GDKfree(dummy);
 	*ret=  p>=0? p+1:0;
 	return MAL_SUCCEED;
@@ -2111,8 +2537,8 @@ str
 STRstringLength(int *res, str *s)
 {
 	str r = NULL;
-	strRtrim(&r, *s);
-	strLength(res, r);
+	STRRtrim(&r, s);
+	STRLength(res, &r);
 	GDKfree(r);
 	return MAL_SUCCEED;
 }

@@ -211,49 +211,49 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_str: hash build failed on %s.\n",	\
-			     BATgetId((y).b)))				\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_str((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_str_hv(x,y,z)						\
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_str_hv: hash build failed on %s.\n", \
-			     BATgetId((y).b)))				\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd(x,y,z)							\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;					\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd: hash build failed on %s.\n",	\
-			     BATgetId((y).b)))				\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_TYPE(x,y,z,TYPE)					\
 	do {								\
 		BUN _i;							\
-		(x) = BUN_NONE;					\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_" #TYPE ": hash build failed on %s.\n", \
-			     BATgetId((y).b)))				\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
 			HASHloop_##TYPE((y), (y).b->H->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+		} else							\
+			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
 #define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
@@ -380,27 +380,9 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		}							\
 		HASHputlink(h,j, HASHgetlink(h,i));			\
 	} while (0)
-/*
- * @+ Binary Search on a Sorted BAT
- * We have two main routines, SORTfndfirst(b,v) and
- * SORTfndlast(b,v), that search for a TAIL value 'v' in a sorted
- * BAT. If the value is present, the first routine returns a pointer
- * to its first occurrence, while the second routine returns a pointer
- * to the BUN just after the last occurrence of 'v'.  In case value
- * 'v' does not occur in the tail of BAT b, both routines return a
- * pointer to the first BUN with a tail value larger than 'v' (i.e.,
- * BUNfirst(b), in case all tail values are larger than 'v'); or
- * BUNlast(b), in case all tail values are smaller than 'v'.
- *
- * From the above routines we now also defined the SORTfnd function
- * that looks for a certain value in the HEAD and returns a (not
- * necessarily the first or last) reference to it, or hash BUN_NONE (if the
- * value does not exist).
- *
- * Note: of the SORTfnd, only SORTfndfirst(b,v) and
- * SORTfndlast(b,v) work on the tail of a bat!
- */
 
+/* Functions to perform a binary search on a sorted BAT.
+ * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
 gdk_export BUN SORTfndfirst(BAT *b, const void *v);
 gdk_export BUN SORTfndlast(BAT *b, const void *v);

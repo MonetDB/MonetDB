@@ -1,0 +1,195 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+atom json:str;
+
+command fromstr():json
+address JSONfromString
+comment "Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.";
+
+command tostr():str
+address JSONtoString
+comment "Convert JSON to its string equivalent. Dealing with escape characters";
+
+command new(j:str):json
+address JSONstr2json
+comment "Convert string to its JSON. Dealing with escape characters";
+
+command calc.json(j:str):json
+address JSONstr2json
+comment "Convert string to its JSON. Dealing with escape characters";
+
+command calc.json(j:json):json
+address JSONstr2json
+comment "Convert JSON to JSON. Dealing with escape characters";
+
+command str(j:json):str
+address JSONjson2str
+comment "Convert JSON to its string equivalent. Dealing with escape characters";
+
+command text(j:json):str
+address JSONjson2text
+comment "Convert JSON values to their plain string equivalent.";
+
+command text(j:json,s:str):str
+address JSONjson2textSeparator
+comment "Convert JSON values to their plain string equivalent, injecting a separator.";
+
+command number(j:json):dbl
+address JSONjson2number
+comment "Convert sinple JSON values to a double, return nil upon error.";
+
+command integer(j:json):lng
+address JSONjson2integer
+comment "Convert sinple JSON values to an integer, return nil upon error.";
+
+command dump(j:json):void
+address JSONdump;
+
+command filter(name:json, pathexpr:str) :json
+address JSONfilter
+comment "Filter all members of an object by a path expression, returning an array.
+Non-matching elements are skipped.";
+
+command filter(name:json, idx:bte) :json
+address JSONfilterArray;
+command filter(name:json, idx:bte,other:str) :json
+address JSONfilterArrayDefault;
+command filter(name:json, idx:sht) :json
+address JSONfilterArray;
+command filter(name:json, idx:sht,other:str) :json
+address JSONfilterArrayDefault;
+command filter(name:json, idx:int) :json
+address JSONfilterArray;
+command filter(name:json, idx:int, other:str) :json
+address JSONfilterArrayDefault;
+command filter(name:json, idx:lng) :json
+address JSONfilterArray;
+command filter(name:json, idx:lng, other:str) :json
+address JSONfilterArrayDefault
+comment "Extract a single array element";
+
+command isvalid(val:json):bit
+address JSONisvalid
+comment "Validate the string as a valid JSON document";
+
+command isobject(val:json):bit
+address JSONisobject
+comment "Validate the string as a valid JSON object";
+
+command isarray(val:json):bit
+address JSONisarray
+comment "Validate the string as a valid JSON array";
+
+command isvalid(val:str):bit
+address JSONisvalid
+comment "Validate the string as a valid JSON document";
+
+command isobject(val:str):bit
+address JSONisobject
+comment "Validate the string as a valid JSON object";
+
+command isarray(val:str):bit
+address JSONisarray
+comment "Validate the string as a valid JSON array";
+
+command length(val:json):int
+address JSONlength
+comment "Returns the number of elements in the outermost JSON object.";
+
+pattern unfold(val:json)(k:bat[:oid,:str],v:bat[:oid,:json])
+address JSONunfold
+comment "Expands the outermost JSON object into key-value pairs.";
+
+pattern unfold(val:json)(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json])
+address JSONunfold
+comment "Expands the outermost JSON object into key-value pairs.";
+
+pattern fold(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json
+address JSONfold
+comment "Combine the key-value pairs into a single json object list.";
+
+pattern fold(k:bat[:oid,:str],v:bat[:oid,:any]):json
+address JSONfold
+comment "Combine the key-value pairs into a single json object list.";
+
+pattern fold(k:bat[:oid,:any]):json
+address JSONfold
+comment "Combine the value list into a single json array object.";
+
+command keyarray(val:json):json
+address JSONkeyArray
+comment "Expands the outermost JSON object keys into a JSON value array.";
+
+command valuearray(val:json):json
+address JSONvalueArray
+comment "Expands the outermost JSON object values into a JSON value array.";
+
+command keys(val:json):bat[:oid,:str]
+address JSONkeyTable
+comment "Expands the outermost JSON object names.";
+
+command values(val:json):bat[:oid,:json]
+address JSONvalueTable
+comment "Expands the outermost JSON values.";
+
+command output(b:bat[:oid,:any_1]):str
+address JSONtextString
+comment "Pack the values into a single json structure";
+
+command suboutput(b:bat[:oid,:any_1], gid:bat[:oid,:oid], ext:bat[:oid,:wrd], flg:bit):bat[:oid,:str]
+address JSONtextGrouped
+comment "Pack the values into a json structure";
+
+command prelude()
+address JSONprelude;
+
+pattern renderobject(val:any...):json
+address JSONrenderobject;
+
+pattern renderarray(val:any...):json
+address JSONrenderarray;
+
+pattern calc.isnil(v:json):bit
+address CMDvarISNIL
+comment "Nil test for json value";
+
+command json.aggr(val:bat[:oid,:str]):str
+address JSONgroupStr
+comment "Aggregate the string values to array.";
+
+command json.aggr(val:bat[:oid,:dbl]):str
+address JSONgroupStr
+comment "Aggregate the double values to array.";
+
+command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjson
+comment "Grouped aggregation of values.";
+
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjson
+comment "Grouped aggregation of values.";
+
+command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
+
+command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
+
+json.prelude();

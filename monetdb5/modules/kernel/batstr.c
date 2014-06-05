@@ -77,13 +77,30 @@ batstr_export str STRbatUpper(bat *ret, bat *l);
 batstr_export str STRbatStrip(bat *ret, bat *l);
 batstr_export str STRbatLtrim(bat *ret, bat *l);
 batstr_export str STRbatRtrim(bat *ret, bat *l);
+batstr_export str STRbatStrip2_const(bat *ret, bat *l, str *s2);
+batstr_export str STRbatLtrim2_const(bat *ret, bat *l, str *s2);
+batstr_export str STRbatRtrim2_const(bat *ret, bat *l, str *s2);
+batstr_export str STRbatStrip2_bat(bat *ret, bat *l, bat *l2);
+batstr_export str STRbatLtrim2_bat(bat *ret, bat *l, bat *l2);
+batstr_export str STRbatRtrim2_bat(bat *ret, bat *l, bat *l2);
+
+batstr_export str STRbatLpad_const(bat *ret, bat *l, int *n);
+batstr_export str STRbatRpad_const(bat *ret, bat *l, int *n);
+batstr_export str STRbatLpad_bat(bat *ret, bat *l, bat *n);
+batstr_export str STRbatRpad_bat(bat *ret, bat *l, bat *n);
+batstr_export str STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2);
+batstr_export str STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2);
+batstr_export str STRbatLpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
+batstr_export str STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
+batstr_export str STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
+batstr_export str STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
+batstr_export str STRbatLpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
+batstr_export str STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
 
 batstr_export str STRbatLength(bat *ret, bat *l);
 batstr_export str STRbatstringLength(bat *ret, bat *l);
 batstr_export str STRbatBytes(bat *ret, bat *l);
 
-batstr_export str STRbatlike_uselect(bat *ret, bat *bid, str *pat, str *esc);
-batstr_export str STRbatlike_uselect2(bat *ret, bat *bid, str *pat);
 batstr_export str STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length);
 batstr_export str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t);
 batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
@@ -97,6 +114,18 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	if( (A= BATdescriptor(*B)) == NULL ){		\
 		BBPreleaseref(X->batCacheid);			\
+		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
+	}
+#define prepareOperand3(X,Y,A,B,I,J,Z)			\
+	if( (X= BATdescriptor(*Y)) == NULL )		\
+		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
+	if( (A= BATdescriptor(*B)) == NULL ){		\
+		BBPreleaseref(X->batCacheid);			\
+		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
+	}											\
+	if( (I= BATdescriptor(*J)) == NULL ){		\
+		BBPreleaseref(X->batCacheid);			\
+		BBPreleaseref(A->batCacheid);			\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
 #define prepareResult(X,Y,T,Z)					\
@@ -131,13 +160,14 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 	BBPreleaseref(Z->batCacheid);
 
 static str
-do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
+do_batstr_int(bat *ret, bat *l, const char *name, str (*func)(int *, str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
 	str x;
 	int y;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand(b, l, name);
 	prepareResult(bn, b, TYPE_int, name);
@@ -151,8 +181,9 @@ do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
 			y = int_nil;
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
-		} else
-			(*func)(&y, x);
+		} else if ((msg = (*func)(&y, &x)) != MAL_SUCCEED) {
+			goto bunins_failed;
+		}
 		bunfastins(bn, h, &y);
 	}
 	finalizeResult(ret, bn, b);
@@ -160,34 +191,37 @@ do_batstr_int(bat *ret, bat *l, const char *name, int (*func)(int *, str))
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	throw(MAL, name, OPERATION_FAILED " During bulk operation");
 }
 
 str
 STRbatLength(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.Length", strLength);
+	return do_batstr_int(ret, l, "batstr.Length", STRLength);
 }
 
 str
 STRbatstringLength(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.stringLength", strSQLLength);
+	return do_batstr_int(ret, l, "batstr.stringLength", STRSQLLength);
 }
 
 str
 STRbatBytes(bat *ret, bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.Bytes", strBytes);
+	return do_batstr_int(ret, l, "batstr.Bytes", STRBytes);
 }
 
 static str
-do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
+do_batstr_str(bat *ret, bat *l, const char *name, str (*func)(str *, str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
 	str x;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand(b, l, name);
 	prepareResult(bn, b, TYPE_str, name);
@@ -199,8 +233,9 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 		str y = NULL;
 
 		x = (str) BUNtail(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0)
-			(*func)(&y, x);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x)) != MAL_SUCCEED)
+			goto bunins_failed;
 		if (y == NULL)
 			y = (str) str_nil;
 		bunfastins(bn, h, y);
@@ -215,37 +250,536 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l' and a constant string 's2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_conststr_str(bat *ret, bat *l, str *s2, const char *name, str (*func)(str *, str *, str *))
+{
+	BATiter bi;
+	BAT *bn, *b;
+	BUN p, q;
+	str x;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, name);
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, s2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: two BATs of strings 'l' and 'l2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_batstr_str(bat *ret, bat *l, bat *l2, const char *name, str (*func)(str *, str *, str *))
+{
+	BATiter bi, bi2;
+	BAT *bn, *b, *b2;
+	BUN p, q;
+	str x, x2;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand2(b, l, b2, l2, name);
+	if(BATcount(b) != BATcount(b2))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+	bi2 = bat_iterator(b2);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		x2 = (str) BUNtail(bi2, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, &x2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l' and a constant int 'n'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_constint_str(bat *ret, bat *l, int *n, const char *name, str (*func)(str *, str *, int *))
+{
+	BATiter bi;
+	BAT *bn, *b;
+	BUN p, q;
+	str x;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, name);
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, n)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l' and a BAT of integers 'n'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_batint_str(bat *ret, bat *l, bat *n, const char *name, str (*func)(str *, str *, int *))
+{
+	BATiter bi, bi2;
+	BAT *bn, *b, *b2;
+	BUN p, q;
+	int nn;
+	str x;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand2(b, l, b2, n, name);
+	if(BATcount(b) != BATcount(b2))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+	bi2 = bat_iterator(b2);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		nn = *(int *)BUNtail(bi2, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, &nn)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l', a constant int 'n' and a constant str 's2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_constint_conststr_str(bat *ret, bat *l, int *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
+{
+	BATiter bi;
+	BAT *bn, *b;
+	BUN p, q;
+	str x;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, name);
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, n, s2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l', a BAT of integers 'n' and a constant str 's2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_batint_conststr_str(bat *ret, bat *l, bat *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
+{
+	BATiter bi, bi2;
+	BAT *bn, *b, *b2;
+	BUN p, q;
+	int nn;
+	str x;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand2(b, l, b2, n, name);
+	if(BATcount(b) != BATcount(b2))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+	bi2 = bat_iterator(b2);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		nn = *(int *)BUNtail(bi2, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, &nn, s2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l', a constant int 'n' and a BAT of strings 'l2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_constint_batstr_str(bat *ret, bat *l, int *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
+{
+	BATiter bi, bi2;
+	BAT *bn, *b, *b2;
+	BUN p, q;
+	str x, x2;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand2(b, l, b2, l2, name);
+	if(BATcount(b) != BATcount(b2))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+	bi2 = bat_iterator(b2);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		x2 = (str) BUNtail(bi2, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, n, &x2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+/* Input: a BAT of strings 'l', a BAT of int 'n' and a BAT of strings 'l2'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_batint_batstr_str(bat *ret, bat *l, bat *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
+{
+	BATiter bi, bi2, bi3;
+	BAT *bn, *b, *b2, *b3;
+	BUN p, q;
+	int nn;
+	str x, x2;
+	str msg = MAL_SUCCEED;
+
+
+	prepareOperand3(b, l, b2, n, b3, l2, name);
+	if(BATcount(b) != BATcount(b2))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	if(BATcount(b) != BATcount(b3))
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+	bi2 = bat_iterator(b2);
+	bi3 = bat_iterator(b3);
+
+	BATloop(b, p, q) {
+		ptr h = BUNhead(bi, p);
+		str y = NULL;
+
+		x = (str) BUNtail(bi, p);
+		nn = *(int *)BUNtail(bi2, p);
+		x2 = (str) BUNtail(bi3, p);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+			(msg = (*func)(&y, &x, &nn, &x2)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (y == NULL)
+			y = (str) str_nil;
+		bunfastins(bn, h, y);
+		if (y == str_nil) {
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	BBPreleaseref(b3->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	throw(MAL, name, OPERATION_FAILED " During bulk operation");
 }
 
 str
 STRbatLower(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Lower", strLower);
+	return do_batstr_str(ret, l, "batstr.Lower", STRLower);
 }
 
 str
 STRbatUpper(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Upper", strUpper);
+	return do_batstr_str(ret, l, "batstr.Upper", STRUpper);
 }
 
 str
 STRbatStrip(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Strip", strStrip);
+	return do_batstr_str(ret, l, "batstr.Strip", STRStrip);
 }
 
 str
 STRbatLtrim(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Ltrim", strLtrim);
+	return do_batstr_str(ret, l, "batstr.Ltrim", STRLtrim);
 }
 
 str
 STRbatRtrim(bat *ret, bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Rtrim", strRtrim);
+	return do_batstr_str(ret, l, "batstr.Rtrim", STRRtrim);
+}
+
+str
+STRbatStrip2_const(bat *ret, bat *l, str *s2)
+{
+	return do_batstr_conststr_str(ret, l, s2, "batstr.Strip", STRStrip2);
+}
+
+str
+STRbatLtrim2_const(bat *ret, bat *l, str *s2)
+{
+	return do_batstr_conststr_str(ret, l, s2, "batstr.Ltrim", STRLtrim2);
+}
+
+str
+STRbatRtrim2_const(bat *ret, bat *l, str *s2)
+{
+	return do_batstr_conststr_str(ret, l, s2, "batstr.Rtrim", STRRtrim2);
+}
+
+str
+STRbatStrip2_bat(bat *ret, bat *l, bat *l2)
+{
+	return do_batstr_batstr_str(ret, l, l2, "batstr.Strip", STRStrip2);
+}
+
+str
+STRbatLtrim2_bat(bat *ret, bat *l, bat *l2)
+{
+	return do_batstr_batstr_str(ret, l, l2, "batstr.Ltrim", STRLtrim2);
+}
+
+str
+STRbatRtrim2_bat(bat *ret, bat *l, bat *l2)
+{
+	return do_batstr_batstr_str(ret, l, l2, "batstr.Rtrim", STRRtrim2);
+}
+
+str
+STRbatLpad_const(bat *ret, bat *l, int *n)
+{
+	return do_batstr_constint_str(ret, l, n, "batstr.Lpad", STRLpad);
+}
+
+str
+STRbatRpad_const(bat *ret, bat *l, int *n)
+{
+	return do_batstr_constint_str(ret, l, n, "batstr.Rpad", STRRpad);
+}
+
+str
+STRbatLpad_bat(bat *ret, bat *l, bat *n)
+{
+	return do_batstr_batint_str(ret, l, n, "batstr.Lpad", STRLpad);
+}
+
+str
+STRbatRpad_bat(bat *ret, bat *l, bat *n)
+{
+	return do_batstr_batint_str(ret, l, n, "batstr.Rpad", STRRpad);
+}
+
+str
+STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2)
+{
+	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Lpad", STRLpad2);
+}
+
+str
+STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2)
+{
+	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Rpad", STRRpad2);
+}
+
+str
+STRbatLpad2_bat_const(bat *ret, bat *l, bat *n, str *s2)
+{
+	return do_batstr_batint_conststr_str(ret, l, n, s2, "batstr.Lpad", STRLpad2);
+}
+
+str
+STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2)
+{
+	return do_batstr_batint_conststr_str(ret, l, n, s2, "batstr.Rpad", STRRpad2);
+}
+
+str
+STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
+{
+	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Lpad", STRLpad2);
+}
+
+str
+STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
+{
+	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Rpad", STRRpad2);
+}
+
+str
+STRbatLpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2)
+{
+	return do_batstr_batint_batstr_str(ret, l, n, l2, "batstr.Lpad", STRLpad2);
+}
+
+str
+STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2)
+{
+	return do_batstr_batint_batstr_str(ret, l, n, l2, "batstr.Rpad", STRRpad2);
 }
 
 /*
@@ -631,9 +1165,9 @@ str STRbatTail(bat *ret, bat *l, bat *r)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		ptr tr = BUNtail(righti,p);
-		strTail(&v, tl, tr);
+		str tl = (str) BUNtail(lefti,p);
+		int *tr = (int *) BUNtail(righti,p);
+		STRTail(&v, &tl, tr);
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
@@ -663,8 +1197,8 @@ str STRbatTailcst(bat *ret, bat *l, bat *cst)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		strTail(&v, tl, cst);
+		str tl = (str) BUNtail(lefti,p);
+		STRTail(&v, &tl, cst);
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
@@ -695,9 +1229,9 @@ str STRbatWChrAt(bat *ret, bat *l, bat *r)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
+		str tl = (str) BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		strWChrAt(vp, tl, tr);
+		STRWChrAt(vp, &tl, tr);
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
@@ -726,8 +1260,8 @@ str STRbatWChrAtcst(bat *ret, bat *l, bat *cst)
 
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
-		ptr tl = BUNtail(lefti,p);
-		strWChrAt(vp, tl, cst);
+		str tl = (str) BUNtail(lefti,p);
+		STRWChrAt(vp, &tl, cst);
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
@@ -771,53 +1305,6 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
-}
-
-/*
- * The pattern matching routine is optimized for SQL pattern structures.
- */
-#define percent "\001"
-#define underscore "\002"
-str
-STRbatlike_uselect(bat *ret, bat *bid, str *pat, str *esc)
-{
-	BATiter bi;
-	BAT *b,*bn;
-	BUN p, q;
-	oid o = oid_nil;
-
-	if( (b= BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batstr.like", RUNTIME_OBJECT_MISSING);
-	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
-	BATseqbase(BATmirror(b),o);
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	bn->tsorted = 1;
-	bn->trevsorted = 1;
-
-	bi = bat_iterator(b);
-
-	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-		ptr t = BUNtail(bi, p);
-
-		if (STRlike((str) t, *pat, *esc))
-			bunfastins(bn, h, &o);
-	}
-	bn->T->nonil = 0;
-  bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-STRbatlike_uselect2(bat *ret, bat *bid, str *pat)
-{
-	str esc="";
-	return STRbatlike_uselect(ret,bid,pat,&esc);
 }
 
 /*
@@ -927,43 +1414,3 @@ str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t)
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 }
-
-str STRbatreplace(bat *ret, bat *l, str *pat, str *s2)
-{
-	BATiter li;
-	BAT *bn, *left;
-	BUN p,q;
-	str v, *vp= &v;
-
-	if( (left= BATdescriptor(*l)) == NULL )
-		throw(MAL, "batstr.replace" , RUNTIME_OBJECT_MISSING);
-	bn= BATnew(TYPE_void, TYPE_str,BATcount(left));
-	BATseqbase(bn, left->hseqbase);
-	if (bn == NULL){
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "batstr.replace", MAL_MALLOC_FAIL);
-	}
-	bn->hsorted= left->hsorted;
-	bn->hrevsorted= left->hrevsorted;
-	bn->tsorted=0;
-	bn->trevsorted=0;
-
-	li = bat_iterator(left);
-	BATloop(left, p, q) {
-		str tl = (str) BUNtail(li,p);
-		STRreplace(vp, &tl, pat, s2);
-		BUNappend(bn, *vp, FALSE);
-		GDKfree(*vp);
-	}
-	if (left->htype != bn->htype) {
-		BAT *r = VIEWcreate(left,bn);
-
-		BBPreleaseref(bn->batCacheid);
-		bn = r;
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-}
-
-

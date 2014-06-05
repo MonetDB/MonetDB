@@ -273,7 +273,7 @@ SQLConnect_(ODBCDbc *dbc,
 		    (dbc->major == 11 && dbc->minor >= 5))
 			mapi_set_size_header(mid, 1);
 		/* set timeout after we're connected */
-		mapi_timeout(mid, dbc->sql_attr_connection_timeout);
+		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
 	}
 
 	return rc;

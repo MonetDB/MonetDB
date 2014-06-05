@@ -135,6 +135,7 @@ Dependencies between database objects
 % 7,	4,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
+[ "monetdb",	"json",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	.L # table_name
@@ -379,12 +380,15 @@ Dependencies between database objects
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
+[ "=",	"hashsize",	"DEP_FUNC"	]
+[ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
 [ "and",	"heapsize",	"DEP_FUNC"	]
 [ "sql_add",	"heapsize",	"DEP_FUNC"	]
 [ "sql_mul",	"heapsize",	"DEP_FUNC"	]
-[ "=",	"indexsize",	"DEP_FUNC"	]
-[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
+[ "=",	"imprintsize",	"DEP_FUNC"	]
+[ "or",	"imprintsize",	"DEP_FUNC"	]
+[ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -401,8 +405,9 @@ Dependencies between database objects
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
-[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+[ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
 #SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % sys.f,	sys.tri,	.L # table_name
 % name,	name,	single_value # name
@@ -479,12 +484,15 @@ Dependencies between functions with same name
 [ "f1",	"f2",	"DEP_FUNC"	]
 [ "<",	"f3",	"DEP_FUNC"	]
 [ "f1",	"f3",	"DEP_FUNC"	]
+[ "=",	"hashsize",	"DEP_FUNC"	]
+[ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
 [ "and",	"heapsize",	"DEP_FUNC"	]
 [ "sql_add",	"heapsize",	"DEP_FUNC"	]
 [ "sql_mul",	"heapsize",	"DEP_FUNC"	]
-[ "=",	"indexsize",	"DEP_FUNC"	]
-[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
+[ "=",	"imprintsize",	"DEP_FUNC"	]
+[ "or",	"imprintsize",	"DEP_FUNC"	]
+[ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -501,8 +509,9 @@ Dependencies between functions with same name
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
-[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+[ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
 #DROP FUNCTION f2;
 #DROP FUNCTION f3;
 #DROP ALL FUNCTION f1;
@@ -526,12 +535,15 @@ Dependencies between functions with same name
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "=",	"hashsize",	"DEP_FUNC"	]
+[ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
 [ "and",	"heapsize",	"DEP_FUNC"	]
 [ "sql_add",	"heapsize",	"DEP_FUNC"	]
 [ "sql_mul",	"heapsize",	"DEP_FUNC"	]
-[ "=",	"indexsize",	"DEP_FUNC"	]
-[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
+[ "=",	"imprintsize",	"DEP_FUNC"	]
+[ "or",	"imprintsize",	"DEP_FUNC"	]
+[ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -548,8 +560,9 @@ Dependencies between functions with same name
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
-[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+[ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
 #create table t1(id int, name varchar(1024), age int);
 #create function f1()
 #returns int
@@ -574,9 +587,10 @@ Cleanup
 % sys.a,	sys.s,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	3,	10 # length
+% 7,	4,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
+[ "monetdb",	"json",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	.L # table_name
 % name,	name,	single_value # name
@@ -784,7 +798,8 @@ Cleanup
 [ "=",	"columnsize",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "=",	"indexsize",	"DEP_FUNC"	]
+[ "=",	"hashsize",	"DEP_FUNC"	]
+[ "=",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
 [ "and",	"heapsize",	"DEP_FUNC"	]
@@ -792,14 +807,16 @@ Cleanup
 [ "concat",	"ms_stuff",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
+[ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
-[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+[ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "or",	"ms_stuff",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "pi",	"radians",	"DEP_FUNC"	]
@@ -812,8 +829,9 @@ Cleanup
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"columnsize",	"DEP_FUNC"	]
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
+[ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"heapsize",	"DEP_FUNC"	]
-[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
+[ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_sub",	"ms_stuff",	"DEP_FUNC"	]

@@ -95,10 +95,11 @@ function user.main():void;
     bat.insert(z,7@0,"c");
     bat.insert(z,8@0,"a");
     io.print("sort x");
-    xs := algebra.sort(x);
+    xs := algebra.subsort(x,false:bit,false:bit);
     io.print(xs);
     io.print("hsort xrev");
-    xrev := bat.reverse(x);
+    xrev := algebra.subsort(x,true:bit,false:bit);
+    io.print(xrev);
 end main;
 [ "sort x" ]
 #-----------------#
@@ -114,6 +115,18 @@ end main;
 [ 7@0,	  3	  ]
 [ 8@0,	  3	  ]
 [ "hsort xrev" ]
+#--------------------------#
+# h	t  # name
+# void	bte  # type
+#--------------------------#
+[ 1@0,	3  ]
+[ 2@0,	3  ]
+[ 3@0,	2  ]
+[ 4@0,	2  ]
+[ 5@0,	2  ]
+[ 6@0,	2  ]
+[ 7@0,	1  ]
+[ 8@0,	1  ]
 
 # 07:59:07 >  
 # 07:59:07 >  Done.

@@ -167,7 +167,7 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 		InstrPtr c, q = old[ord[0]], *no, m, s, o;
 		int i, j, p, cur = 0;
 		int ht = getHeadType(getArgType(mb, q, 1)), 
-		    tt = getTailType(getArgType(mb, q, 1)); 
+		    tt = getColumnType(getArgType(mb, q, 1)); 
 		int bits = 5; 
 		int offset = 3; 
 		
@@ -395,9 +395,9 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 		int njn0 = -1, mr0 = -1, rmr0 = -1, p;
 		int i, j, cur = 0;
 		int ht = getHeadType(getArgType(mb, q, 1)), 
-		    tt = getTailType(getArgType(mb, q, 1)); 
+		    tt = getColumnType(getArgType(mb, q, 1)); 
 		int t2 = getHeadType(getArgType(mb, q, 2)), 
-		    h2 = getTailType(getArgType(mb, q, 2)); 
+		    h2 = getColumnType(getArgType(mb, q, 2)); 
 		int bits = 5; 
 		int offset = 0; 
 		

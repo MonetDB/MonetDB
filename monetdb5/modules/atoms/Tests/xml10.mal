@@ -37,17 +37,13 @@ bat.insert(g,2@0,1@0);
 
 k:= algebra.join(g,te);
 io.print(k);
-l:= algebra.sort(k);
+l:= algebra.subsort(k,false,false);
 io.print(l);
 
 ag:= xml.agg(te,g);
 io.print(ag);
 
-gr:= bat.reverse(g);
-j2:= algebra.join(gr,ax);
-k2:=algebra.kunique(j2);
-io.print(k2);
-cc:= batxml.concat(k2,ag);
+cc:= batxml.concat(ax,te);
 io.print(cc);
 io.print("author construction");
 ae:= batxml.element("author",cc);

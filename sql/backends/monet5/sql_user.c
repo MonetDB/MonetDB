@@ -194,8 +194,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *err = NULL;
 	int schema_id = 0;
 	str monetdbuser = "monetdb";
-	sql_subtype tpe;
-	list *l;
+	list *res, *ops;
 
 	/* create the authorisation related tables */
 	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1);
@@ -205,20 +204,14 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	uinfo = t;
 
 	(void) err;
-	t = mvc_create_generated(m, s, "#db_users", NULL, 1);
-	mvc_create_column_(m, t, "name", "varchar", 2048);
-
-	sql_find_subtype(&tpe, "table", 0, 0);
-	tpe.comp_type = t;
-	tpe.digits = t->base.id;	/* pass the table through digits */
+	res = sa_list(m->sa);
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));  
 
 	/* add function */
-	l = sa_list(m->sa);
+	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", l, &tpe, F_FUNC, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;");
-	if (m->sa == NULL)
-		_DELETE(l);
+	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST, "SELECT u.\"name\" AS \"name\", " "ui.\"fullname\", ui.\"default_schema\" " "FROM db_users() AS u LEFT JOIN " "\"sys\".\"db_user_info\" AS ui " "ON u.\"name\" = ui.\"name\" " ";", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);

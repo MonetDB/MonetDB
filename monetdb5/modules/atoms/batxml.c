@@ -78,13 +78,13 @@ batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *ski
 
 
 #define prepareResult(X,Y,tpe,Z)					\
-    (X) = BATnew((Y)->htype, (tpe), BATcount(Y));	\
+	assert((Y)->htype == TYPE_void);				\
+    (X) = BATnew(TYPE_void, (tpe), BATcount(Y));	\
     if ((X) == NULL) {								\
         BBPreleaseref((Y)->batCacheid);				\
         throw(MAL, "xml." Z, MAL_MALLOC_FAIL); \
     }												\
-    if ((Y)->htype == TYPE_void)					\
-        BATseqbase((X), (Y)->hseqbase);				\
+	BATseqbase((X), (Y)->hseqbase);					\
     (X)->hsorted = (Y)->hsorted;					\
     (X)->hrevsorted = (Y)->hrevsorted;				\
     (X)->tsorted =  0;								\
@@ -1158,7 +1158,7 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_oid, b->ttype, BATcount(e));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(e));
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1167,6 +1167,7 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
+	BATseqbase(bn,0);
 
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
@@ -1276,7 +1277,7 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 		throw(MAL, "xml.agg", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATnew(TYPE_oid, b->ttype, BATcount(g));
+	bn = BATnew(TYPE_void, b->ttype, BATcount(g));
 	if (bn == NULL) {
 		GDKfree(buf);
 		BBPunfix(b->batCacheid);
@@ -1284,6 +1285,7 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
+	BATseqbase(bn,0);
 
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
 	BBPreleaseref(b->batCacheid);
@@ -1540,10 +1542,10 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		for (p = 0, q = BATcount(g); p <= q; p++) {
 			if (p == q || grps[p] != prev) {
 				while (BATcount(bn) < prev - min) {
-					bunfastins_nocheck(bn, BUNlast(bn), 0, str_nil, 0, Tsize(bn));
+					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
 					nils++;
 				}
-				bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				nils += strNil(buf);
 				strncpy(buf, str_nil, maxlen);
 				buflen = 0;
@@ -1626,7 +1628,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto bunins_failed;
 			}
 		}
-		bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
 	BATseqbase(bn, min);
 	bn->T->nil = nils != 0;

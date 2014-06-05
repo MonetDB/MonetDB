@@ -14,21 +14,13 @@ stdout of test 'return_types_of_head_and_tail.SF-701641` in directory 'monetdb5/
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
     x := bat.new(:oid,:int);
-    (ht,tt) := inspect.getType(x);
-    io.print(ht);
+    tt := inspect.getType(x);
     io.print(tt);
-    hi := inspect.getTypeIndex(ht);
-    io.print(hi);
-    hs := inspect.getTypeName(hi);
-    io.print(hs);
     s := "hello";
     st := inspect.getType(s);
     io.print(st);
 end main;
-[ "oid" ]
-[ "int" ]
-[ 12 ]
-[ "str" ]
+[ "bat[:oid,:int]" ]
 [ "str" ]
 
 # 17:35:43 >  

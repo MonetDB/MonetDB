@@ -902,6 +902,18 @@ GDKstrdup(const char *s)
 
 #endif	/* STATIC_CODE_ANALYSIS */
 
+#undef GDKstrndup
+char *
+GDKstrndup(const char *s, size_t n)
+{
+	char *r = (char *) GDKmalloc(n+1);
+
+	if (r) {
+		memcpy(r, s, n);
+		r[n] = '\0';
+	}
+	return r;
+}
 
 /*
  * @- virtual memory
@@ -1260,6 +1272,7 @@ GDKexit(int status)
 #endif
 		MT_global_exit(status);
 	}
+	MT_exit_thread(-1);
 }
 
 /*
@@ -1569,7 +1582,7 @@ GDKclrerr(void)
 }
 
 /* coverity[+kill] */
-int
+void
 GDKfatal(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -1609,7 +1622,6 @@ GDKfatal(const char *format, ...)
 		GDKexit(1);
 #endif
 	}
-	return -1;
 }
 
 

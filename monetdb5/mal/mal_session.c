@@ -17,6 +17,8 @@
  * All Rights Reserved.
  */
 
+/* (author) M.L. Kersten
+ */
 #include "monetdb_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
@@ -325,6 +327,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	 * demand. */
 
 	/* fork a new thread to handle this client */
+	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	if (MT_create_thread(&p, MSserveClient, (void *) c, MT_THR_DETACHED) != 0) {
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");
@@ -667,10 +670,6 @@ MALengine(Client c)
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
-	}
-	if (prg->def->profiler) {
-		GDKfree(prg->def->profiler);
-		prg->def->profiler = NULL;
 	}
 	prg->def->errors = 0;
 	if (c->itrace)

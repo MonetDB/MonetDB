@@ -48,28 +48,28 @@ address BKCrevert
 comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
         BAT sequence module)";
 
-command info ( b:bat[:any_1,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
+command info ( b:bat[:oid,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
 address BKCinfo
 comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
         It contains all properties of the BAT record. See the BAT documentation 
         in GDK for more information.";
 
-command getSize ( b:bat[:any_1,:any_2]) :lng
+command getSize ( b:bat[:oid,:any_2]) :lng
 address BKCbatsize
 comment "Calculate the size of the BAT descriptor, heaps and indices in bytes.";
 
-command getMemorySize ( b:bat[:any_1,:any_2]) :lng
+command getMemorySize ( b:bat[:oid,:any_2]) :lng
 address BKCbatvmsize
 comment "Calculate the size of the BAT heaps and indices in bytes
 rounded to the memory page size (see bbp.getPageSize()).";
 
-command getDiskSize ( b:bat[:any_1,:any_2]) :lng
+command getDiskSize ( b:bat[:oid,:any_2]) :lng
 address BKCbatdisksize
 comment "Approximate size of the (persistent) BAT heaps as stored on disk 
 in pages of 512 bytes. Indices are not included, as they only live temporarily
 in virtual memory.";
 
-command getCapacity(b:bat[:any_1,:any_2]):lng 
+command getCapacity(b:bat[:oid,:any_2]):lng 
 address BKCgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
@@ -77,11 +77,11 @@ command getHeadType(b:bat[:any_1,:any_2] ) :str
 address BKCgetHeadType
 comment "Returns the type of the head column of a BAT, as an integer type number.";
 
-command getTailType( b:bat[:any_1,:any_2] ) :str 
-address BKCgetTailType 
+command getColumnType( b:bat[:oid,:any_2] ) :str 
+address BKCgetColumnType 
 comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
-command getRole ( bid:bat[:any_1,:any_2] ) :str 
+command getRole ( bid:bat[:oid,:any_2] ) :str 
 address BKCgetRole
 comment "Returns the rolename of the head column of a BAT.";
 
@@ -96,18 +96,6 @@ comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode,
 command isaKey( b:bat[:any_1,:any_2]) :bit 
 address BKCgetKey
 comment "return whether the head column of a BAT is unique (key).";
-
-command setSet( b:bat[:any_1,:any_2], mode:bit) :bat[:any_1,:any_2] 
-address BKCsetSet
-comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set 
-        to TRUE, this function does not automatically eliminate duplicates. 
-        Use b := b.sunique; Returns the BAT itself.";
-
-command isaSet( b:bat[:any_1,:any_1]) :bit 
-address BKCisaSet
-comment "return whether the BAT mode is set to unique.";
 
 command setAccess( b:bat[:any_1,:any_2], mode:str) :bat[:any_1,:any_2]
 address BKCsetAccess
@@ -267,44 +255,44 @@ comment "Obtain the list of BUNs added";
 command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCgetDelta
 comment "Obtain the list of BUNs deleted";
-command setName ( b:bat[:any_1,:any_2] , s:str) :void
+command setName ( b:bat[:oid,:any_2] , s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
-command getName ( b:bat[:any_1,:any_2]) :str 
+command getName ( b:bat[:oid,:any_2]) :str 
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:any_1,:any_2], h:str, t:str) :void
+command setRole( b:bat[:oid,:any_2], h:str, t:str) :void
 address BKCsetRole
 comment "Give a logical name to the columns of a BAT.";
 
-command setColumn( b:bat[:any_1,:any_2], t:str) :void
+command setColumn( b:bat[:oid,:any_2], t:str) :void
 address BKCsetColumn
 comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:any_1,:any_2], h:str, t:str) :void
+command setColumn( b:bat[:oid,:any_2], h:str, t:str) :void
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
-command isTransient( b:bat[:any_1,:any_2]) :bit 
+command isTransient( b:bat[:oid,:any_2]) :bit 
 address BKCisTransient;
-command setTransient( b:bat[:any_1,:any_2]) :void
+command setTransient( b:bat[:oid,:any_2]) :void
 address BKCsetTransient
 comment "Make the BAT transient.  Returns 
 	boolean which indicates if the
 BAT administration has indeed changed.";
 
-command isPersistent( b:bat[:any_1,:any_2]) :bit 
+command isPersistent( b:bat[:oid,:any_2]) :bit 
 address BKCisPersistent;
-command setPersistent( b:bat[:any_1,:any_2],f:bit) :void
+command setPersistent( b:bat[:oid,:any_2],f:bit) :void
 address BKCpersists
 comment "Backward compatibility";
-command setPersistent( b:bat[:any_1,:any_2]) :void
+command setPersistent( b:bat[:oid,:any_2]) :void
 address BKCsetPersistent
 comment "Make the BAT persistent.";
 
-command save(nme:bat[:any_1,:any_2]) :void
+command save(nme:bat[:oid,:any_2]) :void
 address BKCsave2;
 
 command save(nme:str) :bit 
@@ -314,7 +302,7 @@ comment "Save a BAT to storage, if it was loaded and dirty.
 	calling this function violates the atomic commit protocol!!";
 
 
-command load(name:str) :bat[:any_1,:any_2] 
+command load(name:str) :bat[:oid,:any_2] 
 address BKCload
 comment "Load a particular BAT from disk";
 
@@ -323,24 +311,24 @@ address BKCunload
 comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
         Returns whether the unload indeed happened. ";
 
-command isCached(b:bat[:any_1,:any_2]):bit 
+command isCached(b:bat[:oid,:any_2]):bit 
 address BKCisCached
 comment "Bat is stored in main memory.";
 
-command getHeat(b:bat[:any_1,:any_2]) :lng 
+command getHeat(b:bat[:oid,:any_2]) :lng 
 address BKCheat
 comment "Return the current BBP heat (LRU stamp)";
 
-command setCold(b:bat[:any_1,:any_1]) :void 
+command setCold(b:bat[:oid,:any_1]) :void 
 address BKCcoldBAT
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
         for swapout is big, afterwards.";
-command setHot(b:bat[:any_1,:any_2]) :void 
+command setHot(b:bat[:oid,:any_2]) :void 
 address BKChotBAT
 comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
         swapout is small, afterwards.";
 
-command setMemoryMap(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
+command setMemoryMap(b:bat[:oid,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
@@ -348,32 +336,15 @@ comment "For each individual heap, you can change the allocation mode
 	will cause a BAT save (this has to happen before the heap can 
         be mapped into virtual memory). These modes are persistent. ";
 
-command setMemoryMap(b:bat[:any_1,:any_2], mode:int):bit 
+command setMemoryMap(b:bat[:oid,:any_2], mode:int):bit 
 address BKCmmap2
 comment "Alias for mmap(b, mode, mode, mode, mode)";
 
-command setMemoryAdvise(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
-address BKCmadvise
-comment "Modern Operating Systems allow users to influence the buffer 
-        management policy of virtual memory. This is a crucial feature 
-        for database systems, and eliminates the need to reimplement 
-	the OS in a database buffer manager.  The supported flags are 
-        BUF_NORMAL (the normal adaptive kernel algorithm),
-	BUF_RANDOM (no page prefetching), 
-	BUF_SEQUENTIAL (prefetch and swapout),
-	BUF_WILLNEED (load everything with prefetch), 
-	BUF_DONTNEED (swapout).
-	These buffer management modes are not persistent. 
-	Returns the BAT operated upon.";
+command setHash(b:bat[:oid,:any_2],prop:bit):bit 
+address BKCsetHash
+comment "Create a hash structure on the column";
 
-command setMemoryAdvise(b:bat[:any_1,:any_2], mode:int):bit 
-address BKCmadvise2
-comment "alias for madvise(b, mode, mode, mode, mode)";
-
-command setHash(b:bat[:any_1,:any_2],prop:bit):bit 
-address BKCsetHash;
-
-command isSynced (b1:bat[:any_1,:any_2], b2:bat[:any_3,:any_4]) :bit 
+command isSynced (b1:bat[:oid,:any_2], b2:bat[:oid,:any_4]) :bit 
 address BKCisSynced
 comment "Tests whether two BATs are synced or not. ";
 

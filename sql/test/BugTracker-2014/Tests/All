@@ -7,6 +7,7 @@ integer-cast.Bug-3424
 current_timestamp.Bug-3427
 two-column-aggr-with-null.Bug-3428
 sample-crash.Bug-3429
+temporary.Bug-3430
 indices.Bug-3435
 utf8bom.Bug-3436
 python-microseconds.Bug-3439

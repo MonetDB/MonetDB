@@ -15,62 +15,18 @@ stdout of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module v2.31.0 loaded
 
 Ready.
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
 
-# 19:52:32 >  
-# 19:52:32 >  "./strings_cast.SQL.sh" "strings_cast"
-# 19:52:32 >  
+# 17:11:31 >  
+# 17:11:31 >  "./strings_cast.SQL.sh" "strings_cast"
+# 17:11:31 >  
 
 
-# 19:52:32 >  
-# 19:52:32 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-15695 --port=36739 -e < /home/niels/data/rc/clean/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
-# 19:52:32 >  
+# 17:11:31 >  
+# 17:11:31 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
+# 17:11:31 >  
 
-#SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
-% sys.L # table_name
-% text(varchar) # name
-% clob # type
-% 4 # length
-[ "a"	]
-[ "ab"	]
-[ "abcd"	]
-#SELECT CAST(name 'namefield' AS text) AS "text(name)";
-#-- since this is an explicit cast, it should truncate w/o error:
-#SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
-% sys.L # table_name
-% char(text) # name
-% char # type
-% 10 # length
-[ "doh!"	]
-[ "hi de ho n"	]
-#-- note: implicit-cast case is tested in char.sql
-#SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
-% sys.L # table_name
-% char(text) # name
-% char # type
-% 20 # length
-[ "doh!"	]
-[ "hi de ho neighbor"	]
-#SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
-% sys.L # table_name
-% char(varchar) # name
-% char # type
-% 10 # length
-[ "a"	]
-[ "ab"	]
-[ "abcd"	]
-#SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
-#SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
-#SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
-#SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
 
-# 22:34:06 >  
-# 22:34:06 >  Done.
-# 22:34:06 >  
+# 17:11:31 >  
+# 17:11:31 >  "Done."
+# 17:11:31 >  
 

@@ -104,7 +104,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (size_t) ValuePtr;
 		if (dbc->mid)
-			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout);
+			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
 		break;
 	case SQL_ATTR_TXN_ISOLATION:
 		/* nothing to change, we only do the highest level */

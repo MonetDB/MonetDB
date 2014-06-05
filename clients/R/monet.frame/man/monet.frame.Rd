@@ -26,7 +26,7 @@
   \code{monet.frame} wraps a MonetDB table or query result and behaves like a R \code{\link[base]{data.frame}}.
   Many operations typical for \code{data.frame} are supported, e.g. \code{$}, \code{[}, basic math and comparisons.
   
-  Data is only loaded when \code{\link[MonetDB.R]{as.data.frame}} or \code{as.vector} are called, 
+  Data is only loaded when \code{\link[monet.frame]{as.data.frame}} or \code{as.vector} are called, 
   and most basic operations and calculations are mapped to SQL statements. 
   This greatly reduces the amount of data that has to be transferred between MonetDB and R 
   and thereby also increases speed, allowing you to analyse even more data with R.
@@ -35,8 +35,8 @@
   of these methods closely follow those implemented for \code{data.frame} objects.
     
      \itemize{
-         \item \code{\link[MonetDB.R]{mf}} -- Shorthand constructor, also creates a DB connection
-         \item \code{\link[MonetDB.R]{as.data.frame}} -- DB table or query result to R \code{data.frame} object
+         \item \code{\link[monet.frame]{mf}} -- Shorthand constructor, also creates a DB connection
+         \item \code{\link[monet.frame]{as.data.frame}} -- DB table or query result to R \code{data.frame} object
          \item \code{\link[=as.data.frame]{as.vector}} -- Single DB column to R \code{vector}
          \item \code{\link[utils]{str}} -- Display object structure (SQL query, columns, data types, ..)
          \item \code{\link[base]{print}} -- Prints database content wrapped in object to screen)
@@ -51,7 +51,7 @@
          \item \code{\link[=Extract]{$}} -- Extracts a single column from the wrapped object, behaves like \code{$} on \code{data.frame}
          \item \code{\link[base]{subset}} -- Returns a subset of the wrapped table that meets filter conditions
          \item \code{\link[=na.fail]{na.omit}} -- Filters out NA/NULL values (only for single columns)
-         \item \code{\link[MonetDB.R]{sample}} -- Gets n randomly selected rows of the wrapped query result or table as \code{data.frame}
+         \item \code{\link[monet.frame]{sample}} -- Gets n randomly selected rows of the wrapped query result or table as \code{data.frame}
           
          \item {\link[=groupGeneric]{S3 Group Generic Functions}}
          \itemize{
@@ -63,12 +63,12 @@
          	\item \code{min}, \code{max}, \code{sum}, \code{range}, \code{prod}
          }
          
-         \item \code{\link[MonetDB.R]{sd}} -- Calculates the standard deviation (only for single columns)
-         \item \code{\link[MonetDB.R]{var}} -- Calculates the variance (only for single columns)
+         \item \code{\link[monet.frame]{sd}} -- Calculates the standard deviation (only for single columns)
+         \item \code{\link[monet.frame]{var}} -- Calculates the variance (only for single columns)
          \item \code{\link[stats]{quantile}} -- Provides quantile values (only for single numeric columns)
          \item \code{\link[stats]{median}} -- Retrieves the Median value (only for single numeric columns)
          \item \code{\link[stats]{aggregate}} -- Computes summary statistics by groups
-         \item \code{\link[MonetDB.R]{aggregatef}} -- Computes summary statistics by groups using formula
+         \item \code{\link[monet.frame]{aggregatef}} -- Computes summary statistics by groups using formula
          \item \code{\link[=cbind]{rbind}} -- Combines \code{monet.frame} objects of compatible structure through concatenation
          \item \code{\link[base]{merge}} -- Merge two \code{monet.frame} objects together using a DB JOIN operation
          \item \code{\link[base]{sort}} -- Sort a database column ascending or descending (only for single columns)

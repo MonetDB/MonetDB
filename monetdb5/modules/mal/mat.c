@@ -293,12 +293,12 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cap -= fst;
 	cnt = MIN(cnt, cap);
 
-	bn = BATnew(ht, tt, cnt);
+	assert(ht== TYPE_void);
+	bn = BATnew(TYPE_void, tt, cnt);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
 	/* must set seqbase or else BATins will not materialize column */
-	if (ht == TYPE_void)
-		BATseqbase(bn, 0);
+	BATseqbase(bn, 0);
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
 
@@ -375,70 +375,6 @@ MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	return MATpack2Internal(stk,p);
-}
-
-/*
- * the next one is specific to the centipede, where we carve out
- * a portion of table based on the value ids. They are simply glued
- * together in a void-headed bat.
- * The special case that only one partition is filled is taken separately.
-*/
-static str
-MATpack3Internal(MalStkPtr stk, InstrPtr p)
-{
-	int i,*ret, nonempty=0, ref=0, type =0;
-	BAT *b, *bn;
-	BUN cap=0;
-
-	for(i = 1; i < p->argc; i++){
-		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL)
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		type= b->ttype;	/* all tail types are the same */
-		cap += BATcount(b);
-		nonempty += (BATcount(b) != 0);
-		if ( BATcount(b)) 
-			ref = i;
-		BBPunfix(b->batCacheid);
-	}
-	if ( nonempty == 1) {
-		b= BATdescriptor(stk->stk[getArg(p,ref)].val.ival);
-		if( b == NULL)
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		if ( b->htype == TYPE_void && b->hseqbase == 0 ) {
-			/* steal the BAT */
-			ret= (int*) getArgReference(stk,p,0);
-			BBPkeepref(*ret = b->batCacheid);
-			return MAL_SUCCEED;
-		} 
-		bn = BATcopy(b, TYPE_void, type, TRUE);
-		BBPreleaseref(b->batCacheid);
-	} else {
-		bn = BATnew( TYPE_void, type, cap);
-		for( i = 1; bn && i < p->argc; i++){
-			b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-			if( b == NULL){
-				BBPreleaseref(bn->batCacheid);
-				throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-			}
-			BATappend(bn,b,FALSE);
-			BBPreleaseref(b->batCacheid);
-		}
-	}
-	if( bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	BATseqbase(bn,0);
-	ret= (int*) getArgReference(stk,p,0);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	return MATpack3Internal(stk,p);
 }
 
 str
@@ -569,6 +505,8 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
 	}
+    BATsettrivprop(bn);
+    BATderiveProps(bn,FALSE);
 	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;

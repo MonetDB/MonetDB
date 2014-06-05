@@ -22,12 +22,6 @@
 #include "mal.h"
 #include "mal_namespace.h"
 
-typedef struct MalProp {
-	bte idx;
-	bte op;
-	int var;
-} *MalPropPtr, MalProp;
-
 typedef enum prop_op_t {
 	op_lt = 0,
 	op_lte = 1,

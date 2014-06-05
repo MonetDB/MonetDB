@@ -84,12 +84,14 @@ For all commands, database arguments can be glob-like expressions.
 This allows to do wildcard matches.  For details on the syntax, see
 .IR EXPRESSIONS .
 .TP
-\fBcreate\fP [\fB\-m\fP \fIpattern\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+\fBcreate\fP [\fB\-m\fP \fIpattern\fP]  [\fB\-p\fP \fIpassword\fB] \fIdatabase\fP [\fIdatabase\fP ...]
 Initializes a new database in the MonetDB Database Server.  A database
 created with this command makes it available under its database name,
 but not yet for use by clients, as the database is put into maintenance
 mode.  This allows the database administrator to perform initialization
-steps before releasing it to users.  See also
+steps before releasing it to users, unless the
+.B \-p
+argument is supplied.  See also
 .BR "monetdb lock" .
 The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
 .TP
@@ -108,6 +110,15 @@ sequence, separated by commas.  Here the
 .I pattern
 is an ordinary pattern as would be used for connecting to a database,
 and can hence also be just the name of a database.
+.TP
+\fB\-p\fP \fIpassword\fB
+The
+.B \-p
+flag allows to create a database with the given password for the monetdb
+user.  Since this protects the database from being accessed via
+well-known credentials, the created database is not locked after
+creation.  This way, a new database can be created and used right away
+using the password supplied.
 .TP
 \fBdestroy\fP [\fB\-f\fP] \fIdatabase\fP [\fIdatabase\fP ...]
 Removes the given

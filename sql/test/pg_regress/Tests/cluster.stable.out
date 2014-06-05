@@ -1,0 +1,122 @@
+stdout of test 'cluster` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:09:58 >  
+# 17:09:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:09:58 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:09:58 >  
+# 17:09:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:09:58 >  
+
+#CREATE TABLE clstr_1 (a INT PRIMARY KEY);
+#CREATE TABLE clstr_2 (a INT PRIMARY KEY);
+#CREATE TABLE clstr_3 (a INT PRIMARY KEY);
+#INSERT INTO clstr_1 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_1 VALUES (1);
+[ 1	]
+#INSERT INTO clstr_2 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_2 VALUES (1);
+[ 1	]
+#INSERT INTO clstr_3 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_3 VALUES (1);
+[ 1	]
+#SELECT * FROM clstr_1 UNION ALL
+#  SELECT * FROM clstr_2 UNION ALL
+#  SELECT * FROM clstr_3;
+% .L # table_name
+% a # name
+% int # type
+% 1 # length
+[ 2	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 1	]
+#DELETE FROM clstr_1;
+[ 2	]
+#DELETE FROM clstr_2;
+[ 2	]
+#DELETE FROM clstr_3;
+[ 2	]
+#INSERT INTO clstr_1 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_1 VALUES (1);
+[ 1	]
+#INSERT INTO clstr_2 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_2 VALUES (1);
+[ 1	]
+#INSERT INTO clstr_3 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_3 VALUES (1);
+[ 1	]
+#SET SESSION AUTHORIZATION clstr_user;
+#SELECT * FROM clstr_1 UNION ALL
+#  SELECT * FROM clstr_2 UNION ALL
+#  SELECT * FROM clstr_3;
+% .L # table_name
+% a # name
+% int # type
+% 1 # length
+[ 2	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 1	]
+#DELETE FROM clstr_1;
+[ 2	]
+#INSERT INTO clstr_1 VALUES (2);
+[ 1	]
+#INSERT INTO clstr_1 VALUES (1);
+[ 1	]
+#SELECT * FROM clstr_1;
+% sys.clstr_1 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 2	]
+[ 1	]
+\?      - show this message
+\<file  - read input from file
+\>file  - save response in file, or stdout if no file is given
+\|cmd   - pipe result to process, or stop when no command is given
+\h      - show the readline history
+\D table- dumps the table, or the complete database if none given.
+\d[Stvsfn]+ [obj] - list database objects, or describe if obj given
+\A      - enable auto commit
+\a      - disable auto commit
+\e      - echo the query in sql formatting mode
+\f      - format using a built-in renderer {csv,tab,raw,sql,xml}
+\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)
+\r#     - set maximum rows per page (-1=raw)
+\L file - save client/server interaction
+\X      - trace mclient code
+\q      - terminate session
+#DROP TABLE clstr_1;
+#DROP TABLE clstr_3;
+
+# 17:09:59 >  
+# 17:09:59 >  "Done."
+# 17:09:59 >  
+

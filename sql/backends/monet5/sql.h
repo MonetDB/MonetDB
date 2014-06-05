@@ -138,10 +138,6 @@ sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 sql5_export str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoctopusBind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -334,4 +330,13 @@ sql5_export str timestamp_2_daytime(daytime *res, timestamp *v, int *d);
 sql5_export str date_2_timestamp(timestamp *res, date *v, int *d);
 sql5_export str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+sql5_export str STRindex_int(int *res, str src, bit *u);
+sql5_export str BATSTRindex_int(bat *res, bat *src, bit *u);
+sql5_export str STRindex_sht(sht *res, str src, bit *u);
+sql5_export str BATSTRindex_sht(bat *res, bat *src, bit *u);
+sql5_export str STRindex_bte(bte *res, str src, bit *u);
+sql5_export str BATSTRindex_bte(bat *res, bat *src, bit *u);
+sql5_export str STRstrings(str *res, str src);
+sql5_export str BATSTRstrings(bat *res, bat *src);
 #endif /* _SQL_H */

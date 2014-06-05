@@ -379,7 +379,7 @@ static struct convert {
 	{ "SQL_DECIMAL", "decimal(18,7)", },
 	{ "SQL_DOUBLE", "double", },
 	{ "SQL_FLOAT", "float", },
-	/* { "SQL_GUID", "uuid", }, */
+	{ "SQL_GUID", "uuid", },
 	{ "SQL_INTEGER", "integer", },
 	{ "SQL_INTERVAL_DAY", "interval day", },
 	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },

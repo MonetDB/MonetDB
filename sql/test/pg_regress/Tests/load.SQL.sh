@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-Mlog -x "$SQL_CLIENT < $TSTSRCDIR/../monetdb/create_table.sql"
+Mlog -x "$SQL_CLIENT < create_table.sql"
 
 Mlog "loading data with sed-foo"
 

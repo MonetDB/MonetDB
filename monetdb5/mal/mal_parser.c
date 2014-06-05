@@ -17,28 +17,7 @@
  * All Rights Reserved.
  */
 
-/* Author(s): M. L. Kersten
- *The Parser Implementation
- * The parser (and its target language) are designed for speed of analysis.
- * For, parsing is a dominant cost-factor in applications interfering with
- * MonetDB. For the language design it meant that look-ahead and ambiguity
- * is avoided where-ever possible without compromising readability and
- * to ease debugging.
- *
- * The syntax layout of a MAL program consists of a module name,
- * a list of include commands, a list of function/ pattern/ command/ factory
- * definitions and concludes with the statements to be executed as
- * the main body of the program.  All components are optional.
- *
- * The program may be decorated with comments, which starts with a # and
- * runs till the end of the current line. Comments are retained
- * in the code block for debugging, but can be removed with an optimizer to reduce space
- * and interpretation overhead.
- *
- * @+ The lexical analyzer
- * The implementation of the lexical analyzer is straightforward:
- * the input is taken from a client input buffer. It is assumed that
- * this buffer contains the complete MAL structure to be parsed.
+/* (c): M. L. Kersten
 */
 
 #include "monetdb_config.h"
@@ -260,19 +239,6 @@ keyphrase2(Client cntxt, str kw)
 	}
 	return 0;
 }
-
-#if 0							/* unused */
-static inline int
-keyphrase(Client cntxt, str kw, int length)
-{
-	skipSpace(cntxt);
-	if (strncmp(CURRENT(cntxt), kw, length) == 0) {
-		advance(cntxt, length);
-		return 1;
-	}
-	return 0;
-}
-#endif
 
 /*
  * A similar approach is used for string literals.
@@ -756,7 +722,7 @@ parseTypeId(Client cntxt, int defaultType)
 		if (kh > 0)
 			setAnyHeadIndex(i, kh);
 		if (kt > 0)
-			setAnyTailIndex(i, kt);
+			setAnyColumnIndex(i, kt);
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
@@ -772,13 +738,13 @@ parseTypeId(Client cntxt, int defaultType)
 	if (strncmp(s, ":col", 4) == 0 && !idCharacter[(int) s[4]]) {
 		/* parse default for :col[:any] */
 		advance(cntxt, 4);
-		return newColType(TYPE_any);
+		return newColumnType(TYPE_any);
 	}
 	if (currChar(cntxt) == ':') {
 		ht = simpleTypeId(cntxt);
 		kt = typeAlias(cntxt, ht);
 		if (kt > 0)
-			setAnyTailIndex(ht, kt);
+			setAnyColumnIndex(ht, kt);
 		return ht;
 	}
 	parseError(cntxt, "<type identifier> expected\n");

@@ -439,13 +439,13 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The delta indicates the number of triangulat divisions should be ignored.
  * For delta =0 the pairs match when their HtmID is equal
  * for delta =1 the pairs match if their HtmID shifted 2 bits match and so on.
- * Ideally the two columns are sorted upfront.
+ * The two columns should be sorted upfront.
 */
 
 str
 LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 {
-    	BAT *j, *L, *R, *bl, *br;
+	BAT *xl, *xr, *bl, *br;
 	lng *l, *r;
 	lng lhtm, rhtm;
 	lng *lend, *rend;
@@ -456,24 +456,54 @@ LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
          	throw(MAL, "algebra.xmatch", "delta not in 0--31");
 	shift = 2 * *delta; 
 
-    	if( (bl= BATdescriptor(*lid)) == NULL )
-        	throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
- 
-    	if( (br= BATdescriptor(*rid)) == NULL )
-         	throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	if( !bl->tsorted){
+		BBPreleaseref(*lid);
+		throw(MAL, "algebra.xmatch", "sorted input required");
+	}
+
+	if( (br= BATdescriptor(*rid)) == NULL ){
+		BBPreleaseref(*lid);
+		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	}
+	if( !br->tsorted){
+		BBPreleaseref(*lid);
+		BBPreleaseref(*rid);
+		throw(MAL, "algebra.xmatch", "sorted input required");
+	}
 
 	l= (lng*) Tloc(bl, BUNfirst(bl));
 	lend= (lng*) Tloc(bl, BUNlast(bl));
 	r= (lng*) Tloc(br, BUNfirst(br));
 	rend= (lng*) Tloc(br, BUNlast(br));
 
-	j = BATnew(TYPE_oid, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
-	if ( j == NULL)
-        	throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
-    	j->hsorted = j->tsorted = 0;
-    	j->hrevsorted = j->trevsorted = 0;
-	j->T->nonil = 1;
-	j->H->nonil = 1;
+	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
+	if ( xl == NULL){
+		BBPreleaseref(*lid);
+		BBPreleaseref(*rid);
+		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(xl,0);
+	xl->hsorted = 1;
+	xl->tsorted = 0;
+	xl->trevsorted = 0;
+	xl->T->nonil = 1;
+	xl->H->nonil = 1;
+
+	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
+	if ( xr == NULL){
+		BBPreleaseref(*lid);
+		BBPreleaseref(*rid);
+		BBPreleaseref(xl->batCacheid);
+		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(xr,0);
+	xr->hsorted = 1;
+	xr->tsorted = 0;
+	xr->trevsorted = 0;
+	xr->T->nonil = 1;
+	xr->H->nonil = 1;
 
 	for(; l < lend; lo++, l++) 
 		if ( *l != lng_nil) {
@@ -483,7 +513,8 @@ LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 			rhtm = *r >> shift;
 			if ( lhtm == rhtm){
 				/* match */
-				BUNins(j,&lo,&ro, FALSE);
+				BUNappend(xl,&lo, FALSE);
+				BUNappend(xr,&ro, FALSE);
 			} else if ( lhtm < rhtm ) {
 				lhtm = lhtm << shift;
 				for ( ; *l < lhtm && l < lend; lo++, l++)
@@ -497,10 +528,9 @@ LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 			}
 		}
 	}
-	L = BATmirror(BATmark(j,0));
-	R = BATmirror(BATmark(BATmirror(j),0));
-	BBPunfix(j->batCacheid);
-	BBPkeepref(*lres = L->batCacheid);
-	BBPkeepref(*rres = R->batCacheid);
+	BBPreleaseref(*lid);
+	BBPreleaseref(*rid);
+	BBPkeepref(*lres = xl->batCacheid);
+	BBPkeepref(*rres = xr->batCacheid);
 	return MAL_SUCCEED;
 }

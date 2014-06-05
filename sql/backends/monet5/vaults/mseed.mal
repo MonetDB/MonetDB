@@ -23,7 +23,3 @@ comment "Fetch the record descriptors of a mseed file and stores them into the m
 pattern load{unsafe}(entry:str)(:bat[:oid,:timestamp],:bat[:oid,:int])
 address MseedLoad
 comment "Load the content of a mseed file into BATs";
-
-pattern load{unsafe}(entry:str):bat[:str,:bat]
-address MseedLoadSQL
-comment "Load the content of a mseed file into SQL TABLE";

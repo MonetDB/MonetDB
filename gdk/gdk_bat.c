@@ -90,9 +90,8 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	if (bs == NULL)
 		return NULL;
 	HEADLESSDEBUG {
-		if ( ht != TYPE_void && ht != TYPE_oid)
-			fprintf(stderr, "#headless violation in BATcreatedesc %d\n", ht);
-
+		if (ht != TYPE_void && ht != TYPE_oid)
+			fprintf(stderr, "#headless violation in BATcreatedesc for bat[:%s,:%s]\n", ATOMname(ht), ATOMname(tt));
 	}
 	/*
 	 * assert needed in the kernel to get symbol eprintf resolved.
@@ -101,12 +100,10 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	assert(ht >= 0 && tt >= 0);
 	bs->BM.H = &bs->T;
 	bs->BM.T = &bs->H;
-	bs->BM.P = &bs->P;
-	bs->BM.U = &bs->U;
+	bs->BM.S = &bs->S;
 	bs->B.H = &bs->H;
 	bs->B.T = &bs->T;
-	bs->B.P = &bs->P;
-	bs->B.U = &bs->U;
+	bs->B.S = &bs->S;
 
 	bn = &bs->B;
 
@@ -1185,9 +1182,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 	void_materialize(b, h);
 	void_materialize(b, t);
 
-	if (b->batSet && BUNlocate(b, h, t) != BUN_NONE) {
-		return b;
-	}
 	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h)) != BUN_NONE) {
 		if (BUNinplace(b, p, h, t, force) == NULL)
 			return NULL;
@@ -1530,6 +1524,8 @@ BUNdelete(BAT *b, BUN p, bit force)
 	return BUNdelete_(b, p, force);
 }
 
+static BUN BUNlocate(BAT *b, const void *x, const void *y);
+
 BAT *
 BUNdel(BAT *b, const void *x, const void *y, bit force)
 {
@@ -1749,6 +1745,20 @@ void_replace_bat(BAT *b, BAT *u, bit force)
  * known and a hash index is available, one should use the inline
  * functions to speed-up processing.
  */
+static BUN
+slowfnd(BAT *b, const void *v)
+{
+	BATiter bi = bat_iterator(b);
+	BUN p, q;
+	int (*cmp)(const void *, const void *) = BATatoms[b->htype].atomCmp;
+
+	BATloop(b, p, q) {
+		if ((*cmp)(v, BUNhead(bi, p)) == 0)
+			return p;
+	}
+	return BUN_NONE;
+}
+
 BUN
 BUNfnd(BAT *b, const void *v)
 {
@@ -1764,7 +1774,7 @@ BUNfnd(BAT *b, const void *v)
 	}
 	if (!b->H->hash) {
 		if (BAThordered(b) || BAThrevordered(b))
-			return SORTfnd(b, v);
+			return SORTfnd(BATmirror(b), v);
 	}
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_bte:
@@ -1793,6 +1803,9 @@ BUNfnd(BAT *b, const void *v)
 		HASHfnd(r, bi, v);
 	}
 	return r;
+  hashfnd_failed:
+	/* can't build hash table, search the slow way */
+	return slowfnd(b, v);
 }
 
 #define usemirror()						\
@@ -1813,7 +1826,7 @@ BUNfnd(BAT *b, const void *v)
 			 (ATOMstorage(hp->type) != TYPE_str ||	\
 			  !GDK_ELIMDOUBLES(hp->vheap)))
 
-BUN
+static BUN
 BUNlocate(BAT *b, const void *x, const void *y)
 {
 	BATiter bi = bat_iterator(b);
@@ -2168,26 +2181,6 @@ BATkey(BAT *b, int flag)
 
 
 BAT *
-BATset(BAT *b, int flag)
-{
-	BATcheck(b, "BATset");
-	if (b->htype == TYPE_void) {
-		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE)
-			BATkey(BATmirror(b), flag);
-	} else if (b->ttype == TYPE_void) {
-		if (b->tseqbase == oid_nil && flag == BOUND2BTRUE)
-			BATkey(b, flag);
-	} else {
-		if (flag)
-			flag = TRUE;
-		if (b->batSet != flag)
-			b->batDirtydesc = TRUE;
-		b->batSet = flag;
-	}
-	return b;
-}
-
-BAT *
 BATseqbase(BAT *b, oid o)
 {
 	BATcheck(b, "BATseqbase");
@@ -2348,23 +2341,6 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 	b->batMaptheap = thp;
 	HEAPnewstorage(b, force);
 	b->batDirtydesc = 1;
-	return 0;
-}
-
-/*
- * @- BATmadvise
- * deprecated
- */
-int
-BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
-{
-	(void) b;
-	(void) hb;
-	(void) tb;
-	(void) hhp;
-	(void) thp;
-	BATcheck(b, "BATmadvise");
-
 	return 0;
 }
 
@@ -2977,8 +2953,7 @@ BATassertHeadProps(BAT *b)
  * A BAT can have a bunch of properties set.  Mostly, the property
  * bits are set if we *know* the property holds, and not set if we
  * don't know whether the property holds (or if we know it doesn't
- * hold).  Most properties are per column, only the "set" property is
- * over two columns.
+ * hold).  All properties are per column.
  *
  * The properties currently maintained are:
  *
@@ -2992,18 +2967,11 @@ BATassertHeadProps(BAT *b)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
- * set		The combinations of head and tail values are distinct.
  *
  * The "key" property consists of two bits.  The lower bit, when set,
  * indicates that all values in the column are distinct.  The upper
  * bit, when set, indicates that all values must be distinct
  * (BOUND2BTRUE).
- *
- * Note also that the "set" property is somewhat confused.  On the one
- * hand, some comments suggest it is merely an indication of the
- * current state of affairs, i.e. all head/tail combinations are
- * distinct.  The code in BUNins suggests that it means that the
- * combinations must be distinct.
  *
  * Note that the functions BATseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
@@ -3024,8 +2992,7 @@ BATassertProps(BAT *b)
 	assert(bm != NULL);
 	assert(b->H == bm->T);
 	assert(b->T == bm->H);
-	assert(b->U == bm->U);
-	assert(b->P == bm->P);
+	assert(b->S == bm->S);
 	assert(b->batDeleted < BUN_MAX);
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);

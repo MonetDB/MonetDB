@@ -301,8 +301,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
+		sql_column *c = rel->r;
 		print_indent(sql, fout, depth);
-		if (t->s)
+		if (!t && c) 
+			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
+		else if (t->s)
 			mnstr_printf(fout, "%s(%s.%s)", 
 				isStream(t)?"stream":
 				isRemote(t)?"REMOTE":

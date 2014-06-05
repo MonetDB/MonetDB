@@ -24,6 +24,7 @@
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+#include "manifold.h"
 
 /*
  * dataflow processing incurs overhead and is only
@@ -68,7 +69,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-/* optimizers may remove the dataflow hints first */
+/* optimizers may remove the dataflow and language.pass hints first */
 void removeDataflow(MalBlkPtr mb)
 {
 	int i, k, flowblock=0, limit;
@@ -110,6 +111,10 @@ void removeDataflow(MalBlkPtr mb)
 				flowblock = 0;
 				delete[i] = 1;
 			}
+		} else 
+		if ( getModuleId(p) == languageRef &&
+			 getFunctionId(p) == passRef){
+			delete[i] =1;
 		} else {
 			/* remember first initialization */
 			for ( k = p->retc; k < p->argc; k++)
@@ -164,9 +169,14 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 */
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
-int
-dataflowConflict(InstrPtr p) {
-	if ( p->token == ENDsymbol || getFunctionId(p) == multiplexRef || blockCntrl(p) || blockStart(p) || blockExit(p))	
+static int
+dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) 
+{
+	if (p->token == ENDsymbol || 
+	    (getFunctionId(p) == multiplexRef &&
+		 getModuleId(p) == malRef &&
+	     MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
+	    blockCntrl(p) || blockStart(p) || blockExit(p))
 		return TRUE;
 	switch(p->token){
 	case ASSIGNsymbol:
@@ -249,7 +259,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(p);
 		conflict = 0;
 
-		if ( dataflowConflict(p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
+		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){

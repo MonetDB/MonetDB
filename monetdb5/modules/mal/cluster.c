@@ -289,7 +289,6 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * The hash key and the oid are materialized to prepare for reclustering.
  */
 str
@@ -335,7 +334,6 @@ CLUSTER_key( bat *M, bat *B){
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Recluster the hash <oid,oid> table into a number of buckets
  * on the high order bits,
  * If the baskets are full before we have moved everything
@@ -382,7 +380,6 @@ CLUSTER_map(bat *RB, bat *B)
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
 	rng++; 
 	/*
-	 * @-
 	 * The key challenge is to determine the number of clusters.
 	 * A large number of clusters benefits subsequent performance,
 	 * but also challenges the prepare phase. The clustering should
@@ -452,7 +449,6 @@ CLUSTER_map(bat *RB, bat *B)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * The order of the tuples in the cluster map
  * represent the read/write order. Under the assumption
  * that those read/writes are already localized, it becomes
@@ -467,7 +463,8 @@ str
 CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
 	BAT *nb;
-	nb= BATnew(b->htype, b->ttype, BATcapacity(b));
+	assert(b->htype==TYPE_void);
+	nb= BATnew(TYPE_void, b->ttype, BATcapacity(b));
 	BATseqbase(nb,0);
 	nb->hrevsorted = 0;
 	nb->tsorted= FALSE;

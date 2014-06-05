@@ -250,7 +250,7 @@ bat_max_strlength(BAT *b)
 
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
-		strLength(&l, v);
+		STRLength(&l, &v);
 
 		if (l == int_nil)
 			l = 0;
@@ -588,7 +588,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			return NULL;
 		}
 		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
-			strLength(&len, c->data);
+			str v = c->data;
+			STRLength(&len, &v);
 			if (len > (int) col->type.digits)
 				return NULL;
 		}
@@ -1186,13 +1187,19 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
+	int csv = (b->output_format == OFMT_CSV);
+	int json = (b->output_format == OFMT_JSON);
 
 	if (!s)
 		return 0;
 
 	(void) ssep;
-	if (btag[0])
+	if (csv && btag[0])
 		ok = (mnstr_write(s, btag, strlen(btag), 1) == 1);
+	if (json) {
+		sep = ", ";
+		seplen = strlen(sep);
+	}
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -1200,6 +1207,10 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 			ok = (mnstr_write(s, sep, seplen, 1) == 1);
 			if (!ok)
 				break;
+		}
+		if (json) {
+			mnstr_write(s, c->name, strlen(c->name), 1);
+			mnstr_write(s, ": ", 2, 1);
 		}
 		ok = export_value(m, s, c->type.type->eclass, c->type.type->sqlname, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
 	}
@@ -1219,6 +1230,9 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	Column *fmt;
 	int i;
 	struct time_res *tres;
+	int csv = (b->output_format == OFMT_CSV);
+	int json = (b->output_format == OFMT_JSON);
+	char *bj;
 
 	if (!t)
 		return -1;
@@ -1232,7 +1246,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
-	fmt[0].sep = btag;
+	fmt[0].sep = (csv) ? btag : "";
 	fmt[0].rsep = rsep;
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
@@ -1247,9 +1261,39 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].c = BATdescriptor(c->b);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
-		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
-		fmt[i].seplen = _strlen(fmt[i].sep);
-		fmt[i].rsep = rsep;
+		if (csv) {
+			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
+			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].rsep = rsep;
+		}
+		if (json) {
+			res_col *p = t->cols + (i - 1);
+
+			/*  
+			 * We define the "proper" way of returning
+			 * a relational table in json format as a
+			 * json array of objects, where each row is
+			 * represented as a json object.
+			 */
+			if (i == 1) {
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(btag));
+				snprintf(bj, strlen(p->name) + strlen(btag), btag, p->name);
+				fmt[i - 1].sep = bj;
+				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
+				fmt[i - 1].rsep = NULL;
+			} else if (i <= t->nr_cols) {
+				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(sep));
+				snprintf(bj, strlen(p->name) + 10, sep, p->name);
+				fmt[i - 1].sep = bj;
+				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
+				fmt[i - 1].rsep = NULL;
+			}
+			if (i == t->nr_cols) {
+				fmt[i].sep = rsep;
+				fmt[i].seplen = _strlen(fmt[i].sep);
+				fmt[i].rsep = NULL;
+			}
+		}
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
@@ -1340,7 +1384,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 			} else if (p) {
 				str v = (str) p;
 
-				strLength(&l, v);
+				STRLength(&l, &v);
 				if (l == int_nil)
 					l = 0;
 			}
@@ -1464,18 +1508,37 @@ mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int
 	int len = 0;
 	int ok = 1;
 	char *rsep = "\t]\n";
+	int csv = (b->output_format == OFMT_CSV);
+	int json = (b->output_format == OFMT_JSON);
 
 #ifdef NDEBUG
 	(void) qtype;		/* pacify compiler in case asserts are disabled */
 #endif
 	assert(qtype == Q_TABLE);
 
-	if (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
-	    /* fallback to default tuplecount (1) and id (0) */
-	    /* TODO first header name then values */
-	    mnstr_write(s, "% ", 2, 1) == 1 && mnstr_write(s, tn, strlen(tn), 1) == 1 && mnstr_write(s, " # table_name\n% ", 16, 1) == 1 && mnstr_write(s, cn, strlen(cn), 1) == 1 && mnstr_write(s, " # name\n% ", 10, 1) == 1 &&
-	    mnstr_write(s, type, strlen(type), 1) == 1 && mnstr_write(s, " # type\n% ", 10, 1) == 1 && export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) && mnstr_write(s, " # length\n[ ", 12, 1) == 1 &&
-	    export_value(m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns))
+	if (csv && 
+	   (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) != 1 ||
+	   	/* fallback to default tuplecount (1) and id (0) */
+	    	/* TODO first header name then values */
+	    mnstr_write(s, "% ", 2, 1) != 1 || 
+	    mnstr_write(s, tn, strlen(tn), 1) != 1 || 
+	    mnstr_write(s, " # table_name\n% ", 16, 1) != 1 || 
+	    mnstr_write(s, cn, strlen(cn), 1) != 1 ||
+	    mnstr_write(s, " # name\n% ", 10, 1) != 1 ||
+	    mnstr_write(s, type, strlen(type), 1) != 1 ||
+	    mnstr_write(s, " # type\n% ", 10, 1) != 1 ||
+	    !export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) ||
+	    mnstr_write(s, " # length\n[ ", 12, 1) != 1))
+		ok = 0; 
+	if (ok) {
+		if (json) {
+			mnstr_write(s, cn, strlen(cn), 1);
+			mnstr_write(s, ": ", 2, 1);
+		}
+		ok = export_value(m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns);
+	}
+
+	if (ok && !json)
 		ok = (mnstr_write(s, rsep, strlen(rsep), 1) == 1);
 
 	if (buf)
@@ -1684,6 +1747,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	BUN count;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
+	int json = (b->output_format == OFMT_JSON);
 
 	if (!s || !t)
 		return 0;
@@ -1693,7 +1757,9 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (t->tsep)
 		return mvc_export_file(b, s, t);
 
-	mvc_export_head(b, s, res_id, TRUE);
+	if (!json) {
+		mvc_export_head(b, s, res_id, TRUE);
+	}
 
 	if (!t->order)
 		return mvc_export_row(b, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
@@ -1706,7 +1772,26 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		count = BATcount(order);
 		clean = 1;
 	}
-	res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	if (json) {
+	 	switch(count) {
+		case 0:
+			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
+			break;
+		case 1:
+			res = mvc_export_table(b, s, t, order, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
+			break;
+		case 2:
+			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			 break;
+		default:
+			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, order, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+		}
+	} else {
+		res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	}
 	BBPunfix(order->batCacheid);
 	if (clean)
 		m->results = res_tables_remove(m->results, t);

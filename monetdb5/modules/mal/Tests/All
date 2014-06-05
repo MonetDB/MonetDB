@@ -5,8 +5,6 @@ clients01
 
 bigsum
 
-NOT_WIN32?compress
-
 inspect00
 inspect05
 inspect10
@@ -20,14 +18,12 @@ qgram
 
 groupby00
 
-# statistics00
-#statistics01
+imprints
 
 call00
 callstring
 callfunction
 
-#radix
 
 #ascii_io2 needs work
 
@@ -69,6 +65,10 @@ cluster00
 tokenizer00
 zorder
 
+manifold
+manifoldstr
+#manifoldaggr
+
 #HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2
@@ -81,3 +81,5 @@ clients-getpasswd
 #cpustat too system dependent to always run.
 
 pqueue
+pqueue2
+pqueue3

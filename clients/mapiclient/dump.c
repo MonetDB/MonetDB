@@ -34,18 +34,13 @@ quoted_print(stream *f, const char *s, const char singleq)
 	while (*s) {
 		switch (*s) {
 		case '\\':
-			mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "\\\\", 1, 2);
 			break;
 		case '"':
-			if (!singleq)
-				mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "\"\"", 1, singleq ? 1 : 2);
 			break;
 		case '\'':
-			if (singleq)
-				mnstr_write(f, "\\", 1, 1);
-			mnstr_write(f, s, 1, 1);
+			mnstr_write(f, "''", 1, singleq ? 2 : 1);
 			break;
 		case '\n':
 			mnstr_write(f, "\\n", 1, 2);
@@ -80,7 +75,7 @@ get_schema(Mapi mid)
 	char *sname = NULL;
 	MapiHdl hdl;
 
-	if ((hdl = mapi_query(mid, "SELECT \"current_schema\"")) == NULL || mapi_error(mid))
+	if ((hdl = mapi_query(mid, "SELECT current_schema")) == NULL || mapi_error(mid))
 		goto bailout;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		sname = mapi_fetch_field(hdl, 0);
@@ -108,6 +103,7 @@ get_schema(Mapi mid)
 	return NULL;
 }
 
+/* return TRUE if the sys.systemfunctions table exists */
 int
 has_systemfunctions(Mapi mid)
 {
@@ -115,12 +111,53 @@ has_systemfunctions(Mapi mid)
 	int ret;
 
 	if ((hdl = mapi_query(mid,
-			      "SELECT \"t\".\"id\" "
-			      "FROM \"sys\".\"_tables\" \"t\","
-				   "\"sys\".\"schemas\" \"s\" "
-			      "WHERE \"t\".\"name\" = 'systemfunctions' AND "
-				    "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-				    "\"s\".\"name\" = 'sys'")) == NULL ||
+			      "SELECT t.id "
+			      "FROM sys._tables t, "
+			           "sys.schemas s "
+			      "WHERE t.name = 'systemfunctions' AND "
+			            "t.schema_id = s.id AND "
+			            "s.name = 'sys'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	return ret;
+
+  bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 0;
+}
+
+/* return TRUE if the sys.schemas table has a column named system */
+static int
+has_schemas_system(Mapi mid)
+{
+	MapiHdl hdl;
+	int ret;
+
+	if ((hdl = mapi_query(mid,
+			      "SELECT c.id "
+			      "FROM sys._columns c, "
+			           "sys._tables t, "
+			           "sys.schemas s "
+			      "WHERE c.name = 'system' AND "
+				    "c.table_id = t.id AND "
+				    "t.name = 'schemas' AND "
+				    "t.schema_id = s.id AND "
+				    "s.name = 'sys'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -157,92 +194,92 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		maxquerylen = 1024 + strlen(tname) + strlen(schema);
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
-			 "SELECT \"ps\".\"name\","		/* 0 */
-				"\"pkt\".\"name\","		/* 1 */
-				"\"pkkc\".\"name\","		/* 2 */
-				"\"fkkc\".\"name\","		/* 3 */
-				"\"fkkc\".\"nr\","		/* 4 */
-				"\"fkk\".\"name\","		/* 5 */
-				"\"fkk\".\"action\","		/* 6 */
-				"\"fs\".\"name\","		/* 7 */
-				"\"fkt\".\"name\" "		/* 8 */
-			 "FROM \"sys\".\"_tables\" \"fkt\","
-			      "\"sys\".\"objects\" \"fkkc\","
-			      "\"sys\".\"keys\" \"fkk\","
-			      "\"sys\".\"_tables\" \"pkt\","
-			      "\"sys\".\"objects\" \"pkkc\","
-			      "\"sys\".\"keys\" \"pkk\","
-			      "\"sys\".\"schemas\" \"ps\","
-			      "\"sys\".\"schemas\" \"fs\" "
-			 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
-			       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
-			       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
-			       "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
-			       "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
-			       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
-			       "\"pkt\".\"schema_id\" = \"ps\".\"id\" AND "
-			       "\"fkt\".\"schema_id\" = \"fs\".\"id\" AND "
-			       "\"fs\".\"name\" = '%s' AND "
-			       "\"fkt\".\"name\" = '%s'"
-			 "ORDER BY \"fkk\".\"name\", \"nr\"", schema, tname);
+			 "SELECT ps.name, "		/* 0 */
+			        "pkt.name, "		/* 1 */
+				"pkkc.name, "		/* 2 */
+				"fkkc.name, "		/* 3 */
+				"fkkc.nr, "		/* 4 */
+				"fkk.name, "		/* 5 */
+				"fkk.\"action\", "	/* 6 */
+				"fs.name, "		/* 7 */
+				"fkt.name "		/* 8 */
+			 "FROM sys._tables fkt, "
+			      "sys.objects fkkc, "
+			      "sys.keys fkk, "
+			      "sys._tables pkt, "
+			      "sys.objects pkkc, "
+			      "sys.keys pkk, "
+			      "sys.schemas ps, "
+			      "sys.schemas fs "
+			 "WHERE fkt.id = fkk.table_id AND "
+			       "pkt.id = pkk.table_id AND "
+			       "fkk.id = fkkc.id AND "
+			       "pkk.id = pkkc.id AND "
+			       "fkk.rkey = pkk.id AND "
+			       "fkkc.nr = pkkc.nr AND "
+			       "pkt.schema_id = ps.id AND "
+			       "fkt.schema_id = fs.id AND "
+			       "fs.name = '%s' AND "
+			       "fkt.name = '%s' "
+			 "ORDER BY fkk.name, nr", schema, tname);
 	} else if (tid != NULL) {
 		maxquerylen = 1024;
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
-			 "SELECT \"ps\".\"name\","		/* 0 */
-				"\"pkt\".\"name\","		/* 1 */
-				"\"pkkc\".\"name\","		/* 2 */
-				"\"fkkc\".\"name\","		/* 3 */
-				"\"fkkc\".\"nr\","		/* 4 */
-				"\"fkk\".\"name\","		/* 5 */
-				"\"fkk\".\"action\","		/* 6 */
-				"0,"				/* 7 */
-				"\"fkt\".\"name\" "		/* 8 */
-			 "FROM \"sys\".\"_tables\" \"fkt\","
-			      "\"sys\".\"objects\" \"fkkc\","
-			      "\"sys\".\"keys\" \"fkk\","
-			      "\"sys\".\"_tables\" \"pkt\","
-			      "\"sys\".\"objects\" \"pkkc\","
-			      "\"sys\".\"keys\" \"pkk\","
-			      "\"sys\".\"schemas\" \"ps\""
-			 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
-			       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
-			       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
-			       "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
-			       "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
-			       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
-			       "\"pkt\".\"schema_id\" = \"ps\".\"id\" AND "
-			       "\"fkt\".\"id\" = %s"
-			 "ORDER BY \"fkk\".\"name\", \"nr\"", tid);
+			 "SELECT ps.name, "		/* 0 */
+			        "pkt.name, "		/* 1 */
+				"pkkc.name, "		/* 2 */
+				"fkkc.name, "		/* 3 */
+				"fkkc.nr, "		/* 4 */
+				"fkk.name, "		/* 5 */
+				"fkk.\"action\", "	/* 6 */
+				"0, "			/* 7 */
+				"fkt.name "		/* 8 */
+			 "FROM sys._tables fkt, "
+			      "sys.objects fkkc, "
+			      "sys.keys fkk, "
+			      "sys._tables pkt, "
+			      "sys.objects pkkc, "
+			      "sys.keys pkk, "
+			      "sys.schemas ps "
+			 "WHERE fkt.id = fkk.table_id AND "
+			       "pkt.id = pkk.table_id AND "
+			       "fkk.id = fkkc.id AND "
+			       "pkk.id = pkkc.id AND "
+			       "fkk.rkey = pkk.id AND "
+			       "fkkc.nr = pkkc.nr AND "
+			       "pkt.schema_id = ps.id AND "
+			       "fkt.id = %s "
+			 "ORDER BY fkk.name, nr", tid);
 	} else {
-		query = "SELECT \"ps\".\"name\","		/* 0 */
-			       "\"pkt\".\"name\","		/* 1 */
-			       "\"pkkc\".\"name\","		/* 2 */
-			       "\"fkkc\".\"name\","		/* 3 */
-			       "\"fkkc\".\"nr\","		/* 4 */
-			       "\"fkk\".\"name\","		/* 5 */
-			       "\"fkk\".\"action\","		/* 6 */
-			       "\"fs\".\"name\","		/* 7 */
-			       "\"fkt\".\"name\" "		/* 8 */
-			"FROM \"sys\".\"_tables\" \"fkt\","
-			     "\"sys\".\"objects\" \"fkkc\","
-			     "\"sys\".\"keys\" \"fkk\","
-			     "\"sys\".\"_tables\" \"pkt\","
-			     "\"sys\".\"objects\" \"pkkc\","
-			     "\"sys\".\"keys\" \"pkk\","
-			     "\"sys\".\"schemas\" \"ps\","
-			     "\"sys\".\"schemas\" \"fs\" "
-			"WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
-			      "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
-			      "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
-			      "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
-			      "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
-			      "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
-			      "\"pkt\".\"schema_id\" = \"ps\".\"id\" AND "
-			      "\"fkt\".\"schema_id\" = \"fs\".\"id\" AND "
-			      "\"fkt\".\"system\" = FALSE "
-			"ORDER BY \"fs\".\"name\",\"fkt\".\"name\","
-			      "\"fkk\".\"name\", \"nr\"";
+		query = "SELECT ps.name, "		/* 0 */
+			       "pkt.name, "		/* 1 */
+			       "pkkc.name, "		/* 2 */
+			       "fkkc.name, "		/* 3 */
+			       "fkkc.nr, "		/* 4 */
+			       "fkk.name, "		/* 5 */
+			       "fkk.\"action\", "	/* 6 */
+			       "fs.name, "		/* 7 */
+			       "fkt.name "		/* 8 */
+			"FROM sys._tables fkt, "
+			     "sys.objects fkkc, "
+			     "sys.keys fkk, "
+			     "sys._tables pkt, "
+			     "sys.objects pkkc, "
+			     "sys.keys pkk, "
+			     "sys.schemas ps, "
+			     "sys.schemas fs "
+			"WHERE fkt.id = fkk.table_id AND "
+			      "pkt.id = pkk.table_id AND "
+			      "fkk.id = fkkc.id AND "
+			      "pkk.id = pkkc.id AND "
+			      "fkk.rkey = pkk.id AND "
+			      "fkkc.nr = pkkc.nr AND "
+			      "pkt.schema_id = ps.id AND "
+			      "fkt.schema_id = fs.id AND "
+			      "fkt.system = FALSE "
+			"ORDER BY fs.name,fkt.name, "
+			      "fkk.name, nr";
 	}
 	hdl = mapi_query(mid, query);
 	if (query != NULL && maxquerylen != 0)
@@ -512,33 +549,33 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 
 	if (tid)
 		snprintf(query, maxquerylen,
-			 "SELECT \"c\".\"name\","		/* 0 */
-				"\"c\".\"type\","		/* 1 */
-				"\"c\".\"type_digits\","	/* 2 */
-				"\"c\".\"type_scale\","		/* 3 */
-				"\"c\".\"null\","		/* 4 */
-				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
-			 "FROM \"sys\".\"_columns\" \"c\" "
-			 "WHERE \"c\".\"table_id\" = %s "
-			 "ORDER BY \"number\"", tid);
+			 "SELECT c.name, "		/* 0 */
+				"c.type, "		/* 1 */
+				"c.type_digits, "	/* 2 */
+				"c.type_scale, "	/* 3 */
+				"c.\"null\", "		/* 4 */
+				"c.\"default\", "	/* 5 */
+				"c.number "		/* 6 */
+			 "FROM sys._columns c "
+			 "WHERE c.table_id = %s "
+			 "ORDER BY number", tid);
 	else
 		snprintf(query, maxquerylen,
-			 "SELECT \"c\".\"name\","		/* 0 */
-				"\"c\".\"type\","		/* 1 */
-				"\"c\".\"type_digits\","	/* 2 */
-				"\"c\".\"type_scale\","		/* 3 */
-				"\"c\".\"null\","		/* 4 */
-				"\"c\".\"default\","		/* 5 */
-				"\"c\".\"number\" "		/* 6 */
-			 "FROM \"sys\".\"_columns\" \"c\", "
-			      "\"sys\".\"_tables\" \"t\", "
-			      "\"sys\".\"schemas\" \"s\" "
-			 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
-			 "AND '%s' = \"t\".\"name\" "
-			 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
-			 "AND \"s\".\"name\" = '%s' "
-			 "ORDER BY \"number\"", tname, schema);
+			 "SELECT c.name, "		/* 0 */
+				"c.type, "		/* 1 */
+				"c.type_digits, "	/* 2 */
+				"c.type_scale, "	/* 3 */
+				"c.\"null\", "		/* 4 */
+				"c.\"default\", "	/* 5 */
+				"c.number "		/* 6 */
+			 "FROM sys._columns c, "
+			      "sys._tables t, "
+			      "sys.schemas s "
+			 "WHERE c.table_id = t.id AND "
+			       "'%s' = t.name AND "
+			       "t.schema_id = s.id AND "
+			       "s.name = '%s' "
+			 "ORDER BY number", tname, schema);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -583,33 +620,33 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 	   constraint */
 	if (tid)
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"name\","		/* 0 */
-				"\"kc\".\"nr\", "		/* 1 */
-				"\"k\".\"name\", "		/* 2 */
-				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"objects\" \"kc\", "
-			      "\"sys\".\"keys\" \"k\" "
-			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
-			       "\"k\".\"table_id\" = %s AND "
-			       "\"k\".\"type\" = 0 "
-			 "ORDER BY \"id\", \"nr\"", tid);
+			 "SELECT kc.name, "		/* 0 */
+				"kc.nr, "		/* 1 */
+				"k.name, "		/* 2 */
+				"k.id "			/* 3 */
+			 "FROM sys.objects kc, "
+			      "sys.keys k "
+			 "WHERE kc.id = k.id AND "
+			       "k.table_id = %s AND "
+			       "k.type = 0 "
+			 "ORDER BY id, nr", tid);
 	else
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"name\","		/* 0 */
-				"\"kc\".\"nr\", "		/* 1 */
-				"\"k\".\"name\", "		/* 2 */
-				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"objects\" \"kc\", "
-			      "\"sys\".\"keys\" \"k\", "
-			      "\"sys\".\"schemas\" \"s\", "
-			      "\"sys\".\"_tables\" \"t\" "
-			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
-			       "\"k\".\"table_id\" = \"t\".\"id\" AND "
-			       "\"k\".\"type\" = 0 AND "
-			       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-			       "\"s\".\"name\" = '%s' AND "
-			       "\"t\".\"name\" = '%s' "
-			 "ORDER BY \"id\", \"nr\"", schema, tname);
+			 "SELECT kc.name, "		/* 0 */
+				"kc.nr, "		/* 1 */
+				"k.name, "		/* 2 */
+				"k.id "			/* 3 */
+			 "FROM sys.objects kc, "
+			      "sys.keys k, "
+			      "sys.schemas s, "
+			      "sys._tables t "
+			 "WHERE kc.id = k.id AND "
+			       "k.table_id = t.id AND "
+			       "k.type = 0 AND "
+			       "t.schema_id = s.id AND "
+			       "s.name = '%s' AND "
+			       "t.name = '%s' "
+			 "ORDER BY id, nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -642,33 +679,33 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 
 	if (tid)
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"name\","		/* 0 */
-				"\"kc\".\"nr\", "		/* 1 */
-				"\"k\".\"name\", "		/* 2 */
-				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"objects\" \"kc\", "
-			      "\"sys\".\"keys\" \"k\" "
-			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
-			       "\"k\".\"table_id\" = %s AND "
-			       "\"k\".\"type\" = 1 "
-			 "ORDER BY \"id\", \"nr\"", tid);
+			 "SELECT kc.name, "		/* 0 */
+				"kc.nr, "		/* 1 */
+				"k.name, "		/* 2 */
+				"k.id "			/* 3 */
+			 "FROM sys.objects kc, "
+			      "sys.keys k "
+			 "WHERE kc.id = k.id AND "
+			       "k.table_id = %s AND "
+			       "k.type = 1 "
+			 "ORDER BY id, nr", tid);
 	else
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"name\","		/* 0 */
-				"\"kc\".\"nr\", "		/* 1 */
-				"\"k\".\"name\", "		/* 2 */
-				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"objects\" \"kc\", "
-			      "\"sys\".\"keys\" \"k\", "
-			      "\"sys\".\"schemas\" \"s\", "
-			      "\"sys\".\"_tables\" \"t\" "
-			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
-			       "\"k\".\"table_id\" = \"t\".\"id\" AND "
-			       "\"k\".\"type\" = 1 AND "
-			       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-			       "\"s\".\"name\" = '%s' AND "
-			       "\"t\".\"name\" = '%s' "
-			 "ORDER BY \"id\", \"nr\"", schema, tname);
+			 "SELECT kc.name, "		/* 0 */
+				"kc.nr, "		/* 1 */
+				"k.name, "		/* 2 */
+				"k.id "			/* 3 */
+			 "FROM sys.objects kc, "
+			      "sys.keys k, "
+			      "sys.schemas s, "
+			      "sys._tables t "
+			 "WHERE kc.id = k.id AND "
+			       "k.table_id = t.id AND "
+			       "k.type = 1 AND "
+			       "t.schema_id = s.id AND "
+			       "s.name = '%s' AND "
+			       "t.name = '%s' "
+			 "ORDER BY id, nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -755,11 +792,11 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "SELECT \"t\".\"name\", \"t\".\"query\" "
-		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
-		 "WHERE \"s\".\"name\" = '%s' "
-		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
-		 "AND \"t\".\"name\" = '%s'",
+		 "SELECT t.name, t.query "
+		 "FROM sys._tables t, sys.schemas s "
+		 "WHERE s.name = '%s' AND "
+		       "t.schema_id = s.id AND "
+		       "t.name = '%s'",
 		 schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -799,25 +836,25 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		mnstr_printf(toConsole, ";\n");
 
 		snprintf(query, maxquerylen,
-			 "SELECT \"i\".\"name\", "		/* 0 */
-				"\"k\".\"name\", "		/* 1 */
-				"\"kc\".\"nr\", "		/* 2 */
-				"\"c\".\"name\" "		/* 3 */
-			 "FROM \"sys\".\"idxs\" AS \"i\" LEFT JOIN \"sys\".\"keys\" AS \"k\" "
-					"ON \"i\".\"name\" = \"k\".\"name\", "
-			      "\"sys\".\"objects\" AS \"kc\", "
-			      "\"sys\".\"_columns\" AS \"c\", "
-			      "\"sys\".\"schemas\" \"s\", "
-			      "\"sys\".\"_tables\" AS \"t\" "
-			 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
-			       "\"i\".\"id\" = \"kc\".\"id\" AND "
-			       "\"t\".\"id\" = \"c\".\"table_id\" AND "
-			       "\"kc\".\"name\" = \"c\".\"name\" AND "
-			       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
-			       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-			       "\"s\".\"name\" = '%s' AND "
-			       "\"t\".\"name\" = '%s' "
-			 "ORDER BY \"i\".\"name\", \"kc\".\"nr\"", schema, tname);
+			 "SELECT i.name, "		/* 0 */
+				"k.name, "		/* 1 */
+				"kc.nr, "		/* 2 */
+				"c.name "		/* 3 */
+			 "FROM sys.idxs AS i LEFT JOIN sys.keys AS k "
+					"ON i.name = k.name, "
+			      "sys.objects AS kc, "
+			      "sys._columns AS c, "
+			      "sys.schemas s, "
+			      "sys._tables AS t "
+			 "WHERE i.table_id = t.id AND "
+			       "i.id = kc.id AND "
+			       "t.id = c.table_id AND "
+			       "kc.name = c.name AND "
+			       "(k.type IS NULL OR k.type = 1) AND "
+			       "t.schema_id = s.id AND "
+			       "s.name = '%s' AND "
+			       "t.name = '%s' "
+			 "ORDER BY i.name, kc.nr", schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 			goto bailout;
 		cnt = 0;
@@ -907,19 +944,19 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		"SELECT \"s\".\"name\","
-		     "\"seq\".\"name\","
-		     "get_value_for(\"s\".\"name\",\"seq\".\"name\"),"
-		     "\"seq\".\"minvalue\","
-		     "\"seq\".\"maxvalue\","
-		     "\"seq\".\"increment\","
-		     "\"seq\".\"cycle\" "
-		"FROM \"sys\".\"sequences\" \"seq\", "
-		     "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
-		  "AND \"s\".\"name\" = '%s' "
-		  "AND \"seq\".\"name\" = '%s' "
-		"ORDER BY \"s\".\"name\",\"seq\".\"name\"",
+		"SELECT s.name, "
+		     "seq.name, "
+		     "get_value_for(s.name,seq.name), "
+		     "seq.\"minvalue\", "
+		     "seq.\"maxvalue\", "
+		     "seq.\"increment\", "
+		     "seq.\"cycle\" "
+		"FROM sys.sequences seq, "
+		     "sys.schemas s "
+		"WHERE s.id = seq.schema_id AND "
+		      "s.name = '%s' AND "
+		      "seq.name = '%s' "
+		"ORDER BY s.name,seq.name",
 		schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -983,12 +1020,12 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 	char schemas[256];
 
 	snprintf(schemas, 256,
-		"SELECT \"s\".\"name\", \"a\".\"name\" "
-		"FROM \"sys\".\"schemas\" \"s\", "
-		     "\"sys\".\"auths\" \"a\" "
-		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
-		      "\"s\".\"name\" = '%s' "
-		"ORDER BY \"s\".\"name\"",
+		"SELECT s.name, a.name "
+		"FROM sys.schemas s, "
+		     "sys.auths a "
+		"WHERE s.\"authorization\" = a.id AND "
+		      "s.name = '%s' "
+		"ORDER BY s.name",
 		sname);
 
 	if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
@@ -1048,11 +1085,11 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	query = malloc(maxquerylen);
 
 	snprintf(query, maxquerylen,
-		 "SELECT \"t\".\"name\", \"t\".\"query\" "
-		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
-		 "WHERE \"s\".\"name\" = '%s' "
-		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
-		 "AND \"t\".\"name\" = '%s'",
+		 "SELECT t.name, t.query "
+		 "FROM sys._tables t, sys.schemas s "
+		 "WHERE s.name = '%s' AND "
+		       "t.schema_id = s.id AND "
+		       "t.name = '%s'",
 		 schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1110,7 +1147,8 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		string[i] = 0;
 		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 		    strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "clob") == 0) {
+		    strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
+		    strcmp(mapi_get_type(hdl, i), "json") == 0) {
 			string[i] = 1;
 		}
 	}
@@ -1189,154 +1227,18 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	return rc;
 }
 
-static int
-dump_external_functions(Mapi mid, const char *schema, const char *fname, stream *toConsole, const char dumpSystem)
-{
-	const char functions[] =
-		"SELECT \"f\".\"id\","
-		       "\"f\".\"name\","
-		       "\"f\".\"mod\","
-		       "\"f\".\"func\","
-		       "\"a\".\"name\","
-		       "\"a\".\"type\","
-		       "\"a\".\"type_digits\","
-		       "\"a\".\"type_scale\","
-		       "\"a\".\"number\", "
-			   "\"s\".\"name\" "
-		"FROM \"sys\".\"args\" \"a\","
-		     "\"sys\".\"functions\" \"f\", "
-			 "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"f\".\"sql\" = FALSE AND "
-		      "\"a\".\"func_id\" = \"f\".\"id\" AND "
-			  "\"f\".\"schema_id\" = \"s\".\"id\" "
-		      "%s %s "
-		"ORDER BY \"f\".\"id\", \"a\".\"number\"";
-	char query[512];
-	MapiHdl hdl;
-	char *prev_f_id = NULL;
-	char *prev_f_mod = NULL;
-	char *prev_f_func = NULL;
-	char *prev_a_name = NULL;
-	char *prev_a_type = NULL;
-	char *prev_a_type_digits = NULL;
-	char *prev_a_type_scale = NULL;
-	char *sep = NULL;
-
-	snprintf(query, sizeof(query), functions,
-			dumpSystem ? "" : "AND \"f\".\"id\"",
-			dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000");
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-		goto bailout;
-	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		char *f_id = mapi_fetch_field(hdl, 0);
-		char *f_name = mapi_fetch_field(hdl, 1);
-		char *f_mod = mapi_fetch_field(hdl, 2);
-		char *f_func = mapi_fetch_field(hdl, 3);
-		char *a_name = mapi_fetch_field(hdl, 4);
-		char *a_type = mapi_fetch_field(hdl, 5);
-		char *a_type_digits = mapi_fetch_field(hdl, 6);
-		char *a_type_scale = mapi_fetch_field(hdl, 7);
-		char *a_number = mapi_fetch_field(hdl, 8);
-		char *s_name = mapi_fetch_field(hdl, 9);
-
-		if (schema != NULL && strcmp(s_name, schema) != 0)
-			continue;
-		if (fname != NULL && strcmp(f_name, fname) != 0)
-			continue;
-
-		if (prev_f_id == NULL || strcmp(prev_f_id, f_id) != 0) {
-			if (prev_f_id) {
-				mnstr_printf(toConsole, ")");
-				if (strcmp(prev_a_name, "result") == 0) {
-					mnstr_printf(toConsole, " RETURNS ");
-					dump_type(mid, toConsole, prev_a_type, prev_a_type_digits, prev_a_type_scale);
-				}
-				mnstr_printf(toConsole,
-					     " EXTERNAL NAME \"%s\".\"%s\";\n",
-					     prev_f_mod, prev_f_func);
-				free(prev_f_id);
-				free(prev_f_mod);
-				free(prev_f_func);
-				free(prev_a_name);
-				free(prev_a_type);
-				free(prev_a_type_digits);
-				free(prev_a_type_scale);
-			}
-			if (strcmp(a_name, "result") == 0) {
-				mnstr_printf(toConsole,
-					     "CREATE FUNCTION \"%s\"(",
-					     f_name);
-			} else
-				mnstr_printf(toConsole,
-					     "CREATE PROCEDURE \"%s\"(",
-					     f_name);
-			prev_f_id = strdup(f_id);
-			prev_f_mod = strdup(f_mod);
-			prev_f_func = strdup(f_func);
-			prev_a_name = strdup(a_name);
-			prev_a_type = strdup(a_type);
-			prev_a_type_digits = strdup(a_type_digits);
-			prev_a_type_scale = strdup(a_type_scale);
-			sep = "";
-		}
-		if (strcmp(a_name, "result") != 0 ||
-		    strcmp(a_number, "0") != 0) {
-			mnstr_printf(toConsole, "%s\"%s\" ", sep, a_name);
-			dump_type(mid, toConsole, a_type, a_type_digits, a_type_scale);
-			sep = ", ";
-		}
-	}
-	if (prev_f_id) {
-		mnstr_printf(toConsole, ")");
-		if (strcmp(prev_a_name, "result") == 0) {
-			mnstr_printf(toConsole, " RETURNS ");
-			dump_type(mid, toConsole, prev_a_type, prev_a_type_digits, prev_a_type_scale);
-		}
-		mnstr_printf(toConsole,
-			     " EXTERNAL NAME \"%s\".\"%s\";\n",
-			     prev_f_mod, prev_f_func);
-		free(prev_f_id);
-	}
-	if (prev_f_mod)
-		free(prev_f_mod);
-	if (prev_f_func)
-		free(prev_f_func);
-	if (prev_a_name)
-		free(prev_a_name);
-	if (prev_a_type)
-		free(prev_a_type);
-	if (prev_a_type_digits)
-		free(prev_a_type_digits);
-	if (prev_a_type_scale)
-		free(prev_a_type_scale);
-
-	mapi_close_handle(hdl);
-	return mnstr_errnr(toConsole) ? 1 : 0;
-
-  bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 1;
-}
-
 int
 dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
 	const char functions[] =
-		"SELECT \"f\".\"func\", \"f\".\"name\", \"s\".\"name\" "
-		"FROM \"sys\".\"schemas\" \"s\","
-		     "\"sys\".\"functions\" \"f\" "
-		"WHERE \"f\".\"sql\" = TRUE AND "
-		      "\"s\".\"id\" = \"f\".\"schema_id\""
-			  "%s %s "
-		      "%s%s%s "
-		"ORDER BY \"f\".\"id\"";
+		"SELECT f.func "
+		"FROM sys.schemas s, "
+		     "sys.functions f "
+		"WHERE f.sql = TRUE AND "
+		      "s.id = f.schema_id "
+		      "%s%s"
+		      "%s%s%s%s%s%s"
+		"ORDER BY f.id";
 	MapiHdl hdl;
 	char *q;
 	size_t l;
@@ -1361,32 +1263,23 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 
 	dumpSystem = sname && fname;
 
-	if (dump_external_functions(mid, sname, fname, toConsole, dumpSystem)) {
-		if (schema)
-			free(schema);
-		return 1;
-	}
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
 	snprintf(q, l, functions,
-		 dumpSystem ? "" : "AND \"f\".\"id\"",
-		 dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000",
-		 sname ? " AND \"s\".\"name\" = '" : "",
+		 dumpSystem ? "" : "AND f.id ",
+		 dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT function_id FROM sys.systemfunctions) " : "> 2000 ",
+		 sname ? "AND s.name = '" : "",
 		 sname ? sname : "",
-		 sname ? "'" : "");
+		 sname ? "' " : "",
+		 fname ? "AND f.name = '" : "",
+		 fname ? fname : "",
+		 fname ? "' " : "");
 	hdl = mapi_query(mid, q);
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		char *query = mapi_fetch_field(hdl, 0);
-		char *f_name = mapi_fetch_field(hdl, 1);
-		char *s_name = mapi_fetch_field(hdl, 2);
-
-		if (sname != NULL && strcmp(sname, s_name) != 0)
-			continue;
-		if (fname != NULL && strcmp(fname, f_name) != 0)
-			continue;
 
 		mnstr_printf(toConsole, "%s\n", query);
 	}
@@ -1417,89 +1310,89 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
 	const char *chkhash =
-		"SELECT \"id\" "
-		"FROM \"sys\".\"functions\" "
-		"WHERE \"name\" = 'password_hash'";
+		"SELECT id "
+		"FROM sys.functions "
+		"WHERE name = 'password_hash'";
 	const char *createhash =
-		"CREATE FUNCTION \"password_hash\" (\"username\" STRING) "
+		"CREATE FUNCTION password_hash (username STRING) "
 		"RETURNS STRING "
-		"EXTERNAL NAME \"sql\".\"password\"";
-	const char *drophash = "DROP FUNCTION \"password_hash\"";
+		"EXTERNAL NAME sql.password";
+	const char *drophash = "DROP FUNCTION password_hash";
 	const char *users =
-		"SELECT \"ui\".\"name\", "
-		       "\"ui\".\"fullname\", "
-		       "\"password_hash\"(\"ui\".\"name\"), "
-		       "\"s\".\"name\" "
-		"FROM \"sys\".\"db_user_info\" \"ui\", "
-		     "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"ui\".\"default_schema\" = \"s\".\"id\" AND "
-		      "\"ui\".\"name\" <> 'monetdb' "
-		"ORDER BY \"ui\".\"name\"";
+		"SELECT ui.name, "
+		       "ui.fullname, "
+		       "password_hash(ui.name), "
+		       "s.name "
+		"FROM sys.db_user_info ui, "
+		     "sys.schemas s "
+		"WHERE ui.default_schema = s.id AND "
+		      "ui.name <> 'monetdb' "
+		"ORDER BY ui.name";
 	const char *roles =
-		"SELECT \"name\" "
-		"FROM \"sys\".\"auths\" "
-		"WHERE \"name\" NOT IN (SELECT \"name\" "
-				       "FROM \"sys\".\"db_user_info\") AND "
-		      "\"grantor\" <> 0 "
-		"ORDER BY \"name\"";
+		"SELECT name "
+		"FROM sys.auths "
+		"WHERE name NOT IN (SELECT name "
+				       "FROM sys.db_user_info) AND "
+		      "grantor <> 0 "
+		"ORDER BY name";
 	const char *grants =
-		"SELECT \"a1\".\"name\", "
-		       "\"a2\".\"name\" "
-		"FROM \"sys\".\"auths\" \"a1\", "
-		     "\"sys\".\"auths\" \"a2\", "
-		     "\"sys\".\"user_role\" \"ur\" "
-		"WHERE \"a1\".\"id\" = \"ur\".\"login_id\" AND "
-		      "\"a2\".\"id\" = \"ur\".\"role_id\" "
-		"ORDER BY \"a1\".\"name\", \"a2\".\"name\"";
+		"SELECT a1.name, "
+		       "a2.name "
+		"FROM sys.auths a1, "
+		     "sys.auths a2, "
+		     "sys.user_role ur "
+		"WHERE a1.id = ur.login_id AND "
+		      "a2.id = ur.role_id "
+		"ORDER BY a1.name, a2.name";
 	const char *table_grants =
-		"SELECT \"s\".\"name\", \"t\".\"name\", "
-		       "\"a\".\"name\", "
-		       "sum(\"p\".\"privileges\"), "
-		       "\"g\".\"name\", \"p\".\"grantable\" "
-		"FROM \"sys\".\"schemas\" \"s\", \"sys\".\"tables\" \"t\", "
-		     "\"sys\".\"auths\" \"a\", \"sys\".\"privileges\" \"p\", "
-		     "\"sys\".\"auths\" \"g\" "
-		"WHERE \"p\".\"obj_id\" = \"t\".\"id\" AND "
-		      "\"p\".\"auth_id\" = \"a\".\"id\" AND "
-		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-		      "\"t\".\"system\" = FALSE AND "
-		      "\"p\".\"grantor\" = \"g\".\"id\" "
+		"SELECT s.name, t.name, "
+		       "a.name, "
+		       "sum(p.privileges), "
+		       "g.name, p.grantable "
+		"FROM sys.schemas s, sys.tables t, "
+		     "sys.auths a, sys.privileges p, "
+		     "sys.auths g "
+		"WHERE p.obj_id = t.id AND "
+		      "p.auth_id = a.id AND "
+		      "t.schema_id = s.id AND "
+		      "t.system = FALSE AND "
+		      "p.grantor = g.id "
 		"GROUP BY s.name, t.name, a.name, g.name, p.grantable "
 		"ORDER BY s.name, t.name, a.name, g.name, p.grantable";
 	const char *column_grants =
-		"SELECT \"s\".\"name\", \"t\".\"name\", "
-		       "\"c\".\"name\", \"a\".\"name\", "
-		       "CASE \"p\".\"privileges\" "
+		"SELECT s.name, t.name, "
+		       "c.name, a.name, "
+		       "CASE p.privileges "
 			    "WHEN 1 THEN 'SELECT' "
 			    "WHEN 2 THEN 'UPDATE' "
 			    "WHEN 4 THEN 'INSERT' "
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
 			    "WHEN 32 THEN 'GRANT' END, "
-		       "\"g\".\"name\", \"p\".\"grantable\" "
-		"FROM \"sys\".\"schemas\" \"s\", \"sys\".\"tables\" \"t\", "
-		     "\"sys\".\"columns\" \"c\", \"sys\".\"auths\" \"a\", "
-		     "\"sys\".\"privileges\" \"p\", \"sys\".\"auths\" \"g\" "
-		"WHERE \"p\".\"obj_id\" = \"c\".\"id\" AND "
-		      "\"c\".\"table_id\" = \"t\".\"id\" AND "
-		      "\"p\".\"auth_id\" = \"a\".\"id\" AND "
-		      "\"t\".\"schema_id\" = \"s\".\"id\" AND "
-		      "\"t\".\"system\" = FALSE AND "
-		      "\"p\".\"grantor\" = \"g\".\"id\" "
+		       "g.name, p.grantable "
+		"FROM sys.schemas s, sys.tables t, "
+		     "sys.columns c, sys.auths a, "
+		     "sys.privileges p, sys.auths g "
+		"WHERE p.obj_id = c.id AND "
+		      "c.table_id = t.id AND "
+		      "p.auth_id = a.id AND "
+		      "t.schema_id = s.id AND "
+		      "t.system = FALSE AND "
+		      "p.grantor = g.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *schemas =
-		"SELECT \"s\".\"name\", \"a\".\"name\" "
-		"FROM \"sys\".\"schemas\" \"s\", "
-		     "\"sys\".\"auths\" \"a\" "
-		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
-		      "\"s\".\"name\" NOT IN ('sys', 'tmp') "
-		"ORDER BY \"s\".\"name\"";
+		"SELECT s.name, a.name "
+		"FROM sys.schemas s, "
+		     "sys.auths a "
+		"WHERE s.\"authorization\" = a.id AND "
+		      "%s "
+		"ORDER BY s.name";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
 	   FROM "sys"."schemas" "s"
 		LEFT OUTER JOIN "sys"."auths" "a"
 		     ON "s"."authorization" = "a"."id" AND
-		"s"."name" NOT IN ('sys', 'tmp')
+		        "s"."system" = FALSE
 	   ORDER BY "s"."name"
 
 	   This may be needed after a sequence:
@@ -1514,57 +1407,57 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	   anymore.
 	 */
 	const char *sequences1 =
-		"SELECT \"sch\".\"name\",\"seq\".\"name\" "
-		"FROM \"sys\".\"schemas\" \"sch\", "
-		     "\"sys\".\"sequences\" \"seq\" "
-		"WHERE \"sch\".\"id\" = \"seq\".\"schema_id\" "
-		"ORDER BY \"sch\".\"name\",\"seq\".\"name\"";
+		"SELECT sch.name,seq.name "
+		"FROM sys.schemas sch, "
+		     "sys.sequences seq "
+		"WHERE sch.id = seq.schema_id "
+		"ORDER BY sch.name,seq.name";
 	const char *sequences2 =
-		"SELECT \"s\".\"name\","
-		     "\"seq\".\"name\","
-		     "get_value_for(\"s\".\"name\",\"seq\".\"name\"),"
-		     "\"seq\".\"minvalue\","
-		     "\"seq\".\"maxvalue\","
-		     "\"seq\".\"increment\","
-		     "\"seq\".\"cycle\" "
-		"FROM \"sys\".\"sequences\" \"seq\", "
-		     "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";
+		"SELECT s.name, "
+		     "seq.name, "
+		     "get_value_for(s.name,seq.name), "
+		     "seq.\"minvalue\", "
+		     "seq.\"maxvalue\", "
+		     "seq.\"increment\", "
+		     "seq.\"cycle\" "
+		"FROM sys.sequences seq, "
+		     "sys.schemas s "
+		"WHERE s.id = seq.schema_id "
+		"ORDER BY s.name,seq.name";
 	const char *tables_and_functions =
-		"WITH \"tf_xYzzY\" AS ("
-			"SELECT \"s\".\"name\" AS \"sname\", "
-			       "\"f\".\"name\" AS \"name\", "
-			       "\"f\".\"id\" AS \"id\", "
-			       "\"f\".\"func\" AS \"func\" "
-			"FROM \"sys\".\"schemas\" \"s\", "
-			     "\"sys\".\"functions\" \"f\" "
-			"WHERE \"f\".\"sql\" = TRUE AND "
-			      "\"s\".\"id\" = \"f\".\"schema_id\" "
+		"WITH tf AS ("
+			"SELECT s.name AS sname, "
+			       "f.name AS name, "
+			       "f.id AS id, "
+			       "f.func AS func "
+			"FROM sys.schemas s, "
+			     "sys.functions f "
+			"WHERE f.sql = TRUE AND "
+			      "s.id = f.schema_id "
 			      "%s"  /* and f.id not in systemfunctions */
 			"UNION "
-			"SELECT \"s\".\"name\" AS \"sname\", "
-			       "\"t\".\"name\" AS \"name\", "
-			       "\"t\".\"id\" AS \"id\", "
-			       "CAST(NULL AS VARCHAR(8196)) AS \"func\" "
-			"FROM \"sys\".\"schemas\" \"s\", "
-			     "\"sys\".\"_tables\" \"t\" "
-			"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
-			      "\"t\".\"system\" = FALSE AND "
-			      "\"s\".\"id\" = \"t\".\"schema_id\" AND "
-			      "\"s\".\"name\" <> 'tmp' "
+			"SELECT s.name AS sname, "
+			       "t.name AS name, "
+			       "t.id AS id, "
+			       "CAST(NULL AS VARCHAR(8196)) AS func "
+			"FROM sys.schemas s, "
+			     "sys._tables t "
+			"WHERE t.type BETWEEN 0 AND 1 AND "
+			      "t.system = FALSE AND "
+			      "s.id = t.schema_id AND "
+			      "s.name <> 'tmp' "
 			"UNION "
-			"SELECT \"s\".\"name\" AS \"sname\", "
-			       "\"tr\".\"name\" AS \"name\", "
-			       "\"tr\".\"id\" AS \"id\", "
-			       "\"tr\".\"statement\" AS \"func\" "
-			"FROM \"sys\".\"triggers\" \"tr\", "
-			     "\"sys\".\"schemas\" \"s\", "
-			     "\"sys\".\"_tables\" \"t\" "
-			"WHERE \"s\".\"id\" = \"t\".\"schema_id\" AND "
-			      "\"t\".\"id\" = \"tr\".\"table_id\""
+			"SELECT s.name AS sname, "
+			       "tr.name AS name, "
+			       "tr.id AS id, "
+			       "tr.\"statement\" AS func "
+			"FROM sys.triggers tr, "
+			     "sys.schemas s, "
+			     "sys._tables t "
+			"WHERE s.id = t.schema_id AND "
+			      "t.id = tr.table_id"
 		") "
-		"SELECT * FROM \"tf_xYzzY\" ORDER BY \"tf_xYzzY\".\"id\"";
+		"SELECT * FROM tf ORDER BY tf.id";
 	char *sname;
 	char *curschema = NULL;
 	MapiHdl hdl;
@@ -1624,16 +1517,16 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			char *pwhash = mapi_fetch_field(hdl, 2);
 			char *sname = mapi_fetch_field(hdl, 3);
 
-			mnstr_printf(toConsole, "CREATE USER \"%s\"", uname);
+			mnstr_printf(toConsole, "CREATE USER \"%s\" ", uname);
 			if (describe)
 				mnstr_printf(toConsole,
-					     " WITH ENCRYPTED PASSWORD '%s'"
-					     " NAME '%s' SCHEMA \"%s\";\n",
+					     "WITH ENCRYPTED PASSWORD '%s' "
+					     "NAME '%s' SCHEMA \"%s\";\n",
 					     pwhash, fullname, sname);
 			else
 				mnstr_printf(toConsole,
-					     " WITH ENCRYPTED PASSWORD '%s'"
-					     " NAME '%s' SCHEMA \"sys\";\n",
+					     "WITH ENCRYPTED PASSWORD '%s' "
+					     "NAME '%s' SCHEMA \"sys\";\n",
 					     pwhash, fullname);
 		}
 		if (mapi_error(mid))
@@ -1641,7 +1534,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump schemas */
-		if ((hdl = mapi_query(mid, schemas)) == NULL ||
+		snprintf(query, sizeof(query), schemas,
+			 has_schemas_system(mid) ?
+				"s.system = FALSE" :
+				"s.name NOT IN ('sys', 'tmp')");
+		if ((hdl = mapi_query(mid, query)) == NULL ||
 		    mapi_error(mid))
 			goto bailout;
 
@@ -1736,10 +1633,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	hdl = NULL;
 
 	/* dump tables and functions */
-	if (dump_external_functions(mid, NULL, NULL, toConsole, 0))
-		goto bailout;
 	snprintf(query, sizeof(query), tables_and_functions,
-		 has_systemfunctions(mid) ? "AND \"f\".\"id\" NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\") " : "");
+		 has_systemfunctions(mid) ? "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) " : "");
 	if ((hdl = mapi_query(mid, query)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
@@ -1968,9 +1863,9 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 	char *name, *val;
 
 	if ((hdl = mapi_query(mid,
-			      "SELECT \"name\", \"value\" "
+			      "SELECT name, value "
 			      "FROM sys.env() AS env "
-			      "WHERE \"name\" IN ('gdk_dbname', "
+			      "WHERE name IN ('gdk_dbname', "
 					"'monet_version', "
 					"'monet_release', "
 					"'merovingian_uri')")) == NULL ||

@@ -1,0 +1,155 @@
+stdout of test 'json02` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 22:41:31 >  
+# 22:41:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35654" "--set" "mapi_usock=/var/tmp/mtest-10794/.s.monetdb.35654" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json02.mal"
+# 22:41:31 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35654/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10794/.s.monetdb.35654
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#validity tests 
+    b := json.new("{\"f1\":1}");
+    f := json.keys(b);
+    io.print(f);
+    ff := json.values(b);
+    io.print(ff);
+    b := json.new("{\"f1\":1,\"f2\":2}");
+    f := json.keys(b);
+    io.print(f);
+    ff := json.values(b);
+    io.print(ff);
+    b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
+    f := json.keys(b);
+    io.print(f);
+    ff := json.values(b);
+    io.print(ff);
+    b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+    f := json.keys(b);
+    io.print(f);
+    ff := json.values(b);
+    io.print(ff);
+    i := json.length(b);
+    io.print(i);
+    b := json.new("[]");
+    z := json.isarray(b);
+    io.print(z);
+    ff := json.values(b);
+    io.print(ff);
+    i := json.length(b);
+    io.print(i);
+    b := json.new("[1,\"f2\", 2]");
+    z := json.isarray(b);
+    io.print(z);
+    ff := json.values(b);
+    io.print(ff);
+    b := json.new("[1,2,null,true,false ]");
+    z := json.isarray(b);
+    io.print(z);
+    ff := json.values(b);
+    io.print(ff);
+    i := json.length(b);
+    io.print(i);
+    b := json.new("[\"\\/\" , 2 ]");
+    z := json.isarray(b);
+    io.print(z);
+    ff := json.values(b);
+    io.print(ff);
+end main;
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "f1"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "1"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "f1"	  ]
+[ 1@0,	  "f2"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "1"	  ]
+[ 1@0,	  "2"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "f1"	  ]
+[ 1@0,	  "f2"	  ]
+[ 2@0,	  "f1"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "1"	  ]
+[ 1@0,	  "2"	  ]
+[ 2@0,	  "3"	  ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "f1"	  ]
+[ 1@0,	  "f2"	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "{\"f12\":3}"	  ]
+[ 1@0,	  "[2,3,4]"	  ]
+[ 2 ]
+[ true ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0 ]
+[ true ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "1"		  ]
+[ 1@0,	  "\"f2\""	  ]
+[ 2@0,	  "2"		  ]
+[ true ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "1"		  ]
+[ 1@0,	  "2"		  ]
+[ 2@0,	  nil		  ]
+[ 3@0,	  "true"	  ]
+[ 4@0,	  "false"	  ]
+[ 5 ]
+[ true ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "\"\\/\""	  ]
+[ 1@0,	"2"  ]
+
+# 22:41:31 >  
+# 22:41:31 >  "Done."
+# 22:41:31 >  
+

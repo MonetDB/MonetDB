@@ -24,7 +24,7 @@ function user.dir():void;
     d := bbp.getRefCount();
     dl := bbp.getLRefCount();
     dn := bbp.getNames();
-    ds := algebra.sort(dn);
+    ds := algebra.subsort(dn,false,false);
     io.table(ds,d,dl);
 end dir;
 #

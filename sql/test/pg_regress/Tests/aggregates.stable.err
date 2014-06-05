@@ -1,0 +1,237 @@
+stderr of test 'aggregates` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:09:48 >  
+# 17:09:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:09:48 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:09:48 >  
+# 17:09:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:09:48 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT avg(four) AS avg_1 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT cast(avg(b) as numeric(10,3)) AS avg_107_943 FROM aggtest;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT avg(gpa) AS avg_3_4  FROM student;
+ERROR = !SELECT: no such table 'student'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT sum(four) AS sum_1500 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT sum(a) AS sum_198 FROM aggtest;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT sum(b) AS avg_431_773 FROM aggtest;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT sum(gpa) AS avg_6_8  FROM student;
+ERROR = !SELECT: no such table 'student'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT max(four) AS max_3 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT max(a) AS max_100 FROM aggtest;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT max(aggtest.b) AS max_324_78 FROM aggtest;
+ERROR = !SELECT: no such table 'aggtest'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT max(student.gpa) AS max_3_7 FROM student;
+ERROR = !SELECT: no such table 'student'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(four) AS cnt_1000 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+QUERY = SELECT count(four) AS cnt_1000 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT count(DISTINCT four) AS cnt_4 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select ten, count(*), sum(four) from onek
+        group by ten order by ten;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select ten, count(four), sum(DISTINCT four) from onek
+        group by ten order by ten;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT newavg(four) AS avg_1 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT newsum(four) AS sum_1500 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT newcnt(four) AS cnt_1000 FROM onek;
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select ten, sum(distinct four) from onek a
+        group by ten
+        having exists (select 1 from onek b where sum(distinct a.four) = b.four);
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select ten, sum(distinct four) from onek a
+        group by ten
+        having exists (select 1 from onek b
+                       where sum(distinct a.four + b.four) = b.four);
+ERROR = !SELECT: no such table 'onek'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE TEMPORARY TABLE bitwise_test(
+          i2 smallint,
+          i4 integer,
+          i8 bigint,
+          i INTEGER,
+          x smallint,
+          y BIT(4)
+ERROR = !type (bit) unknown in: "create temporary table bitwise_test(
+        !  i2 smallint,
+        !  i4 integer,
+        !  i8 bigint,
+        !  i integer,
+        !  x smallint,
+        !  y bit(4)"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = );
+ERROR = !syntax error, unexpected ')' in: ")"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 
+          BIT_AND(i2) AS "?",
+          BIT_OR(i4)  AS "?"
+        FROM bitwise_test;
+ERROR = !SELECT: no such table 'bitwise_test'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COPY bitwise_test FROM STDIN NULL 'null';
+ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy bitwise_test"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = 1	1	1	1	1	B0101
+        3	3	3	null	2	B0100
+        7	7	7	3	4	B1100
+        \.
+        
+        SELECT
+          BIT_AND(i2) AS "1",
+          BIT_AND(i4) AS "1",
+          BIT_AND(i8) AS "1",
+          BIT_AND(i)  AS "?",
+          BIT_AND(x)  AS "0",
+          BIT_AND(y)  AS "0100",
+        
+          BIT_OR(i2)  AS "7",
+          BIT_OR(i4)  AS "7",
+          BIT_OR(i8)  AS "7",
+          BIT_OR(i)   AS "?",
+          BIT_OR(x)   AS "7",
+          BIT_OR(y)   AS "1101"
+        FROM bitwise_test;
+ERROR = !syntax error, unexpected sqlINT in: "1"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT
+          -- boolean and transitions
+          -- null because strict
+          booland_statefunc(NULL, NULL)  IS NULL AS "t",
+          booland_statefunc(TRUE, NULL)  IS NULL AS "t",
+          booland_statefunc(FALSE, NULL) IS NULL AS "t",
+          booland_statefunc(NULL, TRUE)  IS NULL AS "t",
+          booland_statefunc(NULL, FALSE) IS NULL AS "t",
+          -- and actual computations
+          booland_statefunc(TRUE, TRUE) AS "t",
+          NOT booland_statefunc(TRUE, FALSE) AS "t",
+          NOT booland_statefunc(FALSE, TRUE) AS "t",
+          NOT booland_statefunc(FALSE, FALSE) AS "t";
+ERROR = !SELECT: no such binary operator 'booland_statefunc(any,any)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT
+          -- boolean or transitions
+          -- null because strict
+          boolor_statefunc(NULL, NULL)  IS NULL AS "t",
+          boolor_statefunc(TRUE, NULL)  IS NULL AS "t",
+          boolor_statefunc(FALSE, NULL) IS NULL AS "t",
+          boolor_statefunc(NULL, TRUE)  IS NULL AS "t",
+          boolor_statefunc(NULL, FALSE) IS NULL AS "t",
+          -- actual computations
+          boolor_statefunc(TRUE, TRUE) AS "t",
+          boolor_statefunc(TRUE, FALSE) AS "t",
+          boolor_statefunc(FALSE, TRUE) AS "t",
+          NOT boolor_statefunc(FALSE, FALSE) AS "t";
+ERROR = !SELECT: no such binary operator 'boolor_statefunc(any,any)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT
+          BOOL_AND(b1)   AS "n",
+          BOOL_OR(b3)    AS "n"
+        FROM bool_test;
+ERROR = !SELECT: no such unary operator 'bool_and(boolean)'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = COPY bool_test FROM STDIN NULL 'null';
+ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy bool_test"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = TRUE	null	FALSE	null
+        FALSE	TRUE	null	null
+        null	TRUE	FALSE	null
+        \.
+        
+        SELECT
+          BOOL_AND(b1)     AS "f",
+          BOOL_AND(b2)     AS "t",
+          BOOL_AND(b3)     AS "f",
+          BOOL_AND(b4)     AS "n",
+          BOOL_AND(NOT b2) AS "f",
+          BOOL_AND(NOT b3) AS "t"
+        FROM bool_test;
+ERROR = !syntax error, unexpected BOOL_TRUE in: "true"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT
+          EVERY(b1)     AS "f",
+          EVERY(b2)     AS "t",
+          EVERY(b3)     AS "f",
+          EVERY(b4)     AS "n",
+          EVERY(NOT b2) AS "f",
+          EVERY(NOT b3) AS "t"
+        FROM bool_test;
+ERROR = !syntax error, unexpected ANY in: "select
+        !  every"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT
+          BOOL_OR(b1)      AS "t",
+          BOOL_OR(b2)      AS "t",
+          BOOL_OR(b3)      AS "f",
+          BOOL_OR(b4)      AS "n",
+          BOOL_OR(NOT b2)  AS "f",
+          BOOL_OR(NOT b3)  AS "t"
+        FROM bool_test;
+ERROR = !syntax error, unexpected NOT in: "select
+        !  bool_or(b1)      as "t",
+        !  bool_or(b2)      as "t",
+        !  bool_or(b3)      as "f",
+        !  bool_or(b4)      as "n",
+        !  bool_or(not"
+
+# 17:09:49 >  
+# 17:09:49 >  "Done."
+# 17:09:49 >  
+

@@ -35,17 +35,9 @@ function user.main():void;
     io.print(ka);
     ka := algebra.kintersect(b,a);
     io.print(ka);
-    ka := algebra.sintersect(a,b);
-    io.print(ka);
-    ka := algebra.sintersect(b,a);
-    io.print(ka);
     ka := algebra.kdifference(a,b);
     io.print(ka);
     ka := algebra.kdifference(b,a);
-    io.print(ka);
-    ka := algebra.sdifference(a,b);
-    io.print(ka);
-    ka := algebra.sdifference(b,a);
     io.print(ka);
 end main;
 #-----------------#
@@ -70,44 +62,14 @@ end main;
 [ 4@0,	  -5	  ]
 [ 5@0,	  nil	  ]
 [ 6@0,	  -7	  ]
-#-----------------#
+#--------------------------#
 # h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1@0,	  2	  ]
-#-----------------#
+# oid	int  # type
+#--------------------------#
+#--------------------------#
 # h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1@0,	  2	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 2@0,	  3	  ]
-[ 3@0,	  nil	  ]
-[ 4@0,	  5	  ]
-[ 5@0,	  nil	  ]
-[ 6@0,	  7	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 0@0,	  -1	  ]
-[ 2@0,	  -3	  ]
-[ 3@0,	  nil	  ]
-[ 4@0,	  -5	  ]
-[ 5@0,	  nil	  ]
-[ 6@0,	  -7	  ]
+# oid	int  # type
+#--------------------------#
 
 # 15:27:41 >  
 # 15:27:41 >  Done.

@@ -29,7 +29,7 @@ command stop(c:int) :void
 address CNTRSstop
 comment "Stop the counting for the handle identified";
 
-command bat(c:int) :bat[:str,:lng]
+command bat(c:int) (k:bat[:oid,:str],v:bat[:oid,:lng]
 address CNTRScounter2bat
 comment "Store the retrieved results in a BAT";
 
@@ -37,11 +37,11 @@ command str(c:int) :str
 address CNTRScounter2str
 comment "Store the retrieved results in a str";
 
-command nativeEvents() :bat[:int,:str]
+command nativeEvents() :bat[:oid,:str]
 address CNTRSnativeEvents
 comment "All available events";
 
-command unifiedEvents() :bat[:int,:str]
+command unifiedEvents() :bat[:oid,:str]
 address CNTRSunifiedEvents
 comment "All unified event names";
 

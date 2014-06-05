@@ -100,7 +100,7 @@ monetdb.server.setup <-
     # must be empty or not exist
     
     # find the main path to the monetdb installation program
-    monetdb.program.path ,
+    monetdb.program.path ="",
     
     # choose a database name
     dbname = "demo" ,
@@ -111,26 +111,11 @@ monetdb.server.setup <-
     # cannot be accessed at the same time
     dbport = 50000
   ){
-    
-    
-    
-    
+
     # switch all slashes to match windows
     monetdb.program.path <- normalizePath( monetdb.program.path , mustWork = FALSE )
     database.directory <- normalizePath( database.directory , mustWork = FALSE )
-    
-    
-    # determine that the monetdb.program.path has been correctly specified #
-    
-    # first find the alleged path of mclient.exe
-    mcl <- file.path( monetdb.program.path , "bin" )
-    
-    # then confirm it exists
-    if( !file.exists( mcl ) ) stop( paste( mcl , "does not exist.  are you sure monetdb.program.path has been specified correctly?" ) )
-    
-    
-    # confirm that the database directory is either empty or does not exist
-    
+        
     # if the database directory does not exist, print that it's being created
     if ( !file.exists( database.directory ) ) {
       
@@ -151,7 +136,6 @@ monetdb.server.setup <-
       
     }
     
-    
     # determine the batch file's location on the local disk
     bfl <- normalizePath( file.path( database.directory ,dbname  ) , mustWork = FALSE )
     
@@ -162,8 +146,13 @@ monetdb.server.setup <-
     dir.create( dbfl )
     if ( .Platform$OS.type == "windows" ) {
       bfl <- paste0(bfl,".bat")
-      
-      
+
+      # first find the alleged path of mclient.exe
+      mcl <- file.path( monetdb.program.path , "bin" )
+    
+      # then confirm it exists
+      if( !file.exists( mcl ) ) stop( paste( mcl , "does not exist.  are you sure monetdb.program.path has been specified correctly?" ) )
+            
       # store all file lines for the .bat into a character vector
       bat.contents <-
         c(
@@ -221,19 +210,60 @@ monetdb.server.setup <-
     if ( .Platform$OS.type == "unix" ) { # create shell script
       bfl <- paste0(bfl,".sh")
       bat.contents <- c('#!/bin/sh',
-                        paste0( monetdb.program.path,
-                                '/bin/mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
+                        paste0( ifelse(monetdb.program.path=="","",paste0(monetdb.program.path,"/")) ,
+                                'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
                                 dbport, " --daemon yes > /dev/null &" 
                         ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))
-      
-      
     }
     
     # write the .bat contents to a file on the local disk
     writeLines( bat.contents , bfl )
-    if ( .Platform$OS.type == "unix" ) {
+    if (.Platform$OS.type == "unix" ) {
       Sys.chmod(bfl,mode="755")
     }
     # return the filepath to the batch file
     bfl
   }
+
+
+monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhost", port=50000L, 
+                                                      timeout=86400L) {
+  
+  rawstr <- .monetdbd.command(passphrase, host, port, timeout)
+  lines <- strsplit(rawstr, "\n", fixed=T)[[1]] # split by newline, first line is "=OK", so skip
+  lines <- lines[grepl("^=sabdb:2:", lines)] # make sure we get a db list here, protocol v.2
+  lines <- sub("=sabdb:2:", "", lines, fixed=T)
+  # convert value into propert types etc
+  dbdf <- as.data.frame(do.call("rbind", strsplit(lines, ", ", fixed=T)), stringsAsFactors=F)
+  names(dbdf) <- c("dbname", "uri", "locked", "state", "scenarios", "startCounter", "stopCounter", 
+                   "crashCounter", "avgUptime", "maxUptime", "minUptime", "lastCrash", "lastStart", "lastStop", 
+                   "crashAvg1", "crashAvg10", "crashAvg30")
+  
+  dbdf$locked <- dbdf$locked=="1"
+  
+  states <- c("illegal", "running", "crashed", "inactive", "starting")
+  dbdf$state <- factor(states[as.integer(dbdf$state)+1])
+  
+  dbdf$startCounter <- as.numeric(dbdf$startCounter)
+  dbdf$stopCounter <- as.numeric(dbdf$stopCounter)
+  dbdf$crashCounter <- as.numeric(dbdf$crashCounter)
+  
+  dbdf$avgUptime <- as.numeric(dbdf$avgUptime)
+  dbdf$maxUptime <- as.numeric(dbdf$maxUptime)
+  dbdf$minUptime <- as.numeric(dbdf$minUptime)
+  
+  convertts <- function(col) {
+    col[col=="-1"] <- NA
+    return(as.POSIXct(as.numeric(col), origin="1970-01-01"))
+  }
+  dbdf$lastCrash <- convertts(dbdf$lastCrash)
+  dbdf$lastStart <- convertts(dbdf$lastStart)
+  dbdf$lastStop <- convertts(dbdf$lastStop)
+  
+  dbdf$crashAvg1 <- dbdf$crashAvg1=="1"
+  dbdfcrashAvg10 <- as.numeric(dbdf$crashAvg10)
+  dbdf$crashAvg30 <- as.numeric(dbdf$crashAvg30)
+  dbdf$scenarios <- gsub("'", ", ", dbdf$scenarios, fixed=T)
+  
+  return(dbdf[order(dbdf$dbname), ])
+}

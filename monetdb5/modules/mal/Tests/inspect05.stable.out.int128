@@ -1,0 +1,146 @@
+stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
+
+
+# 18:15:32 >  
+# 18:15:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/sjoerd/Monet-devel/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=37682" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_modules_mal" "inspect05.mal"
+# 18:15:32 >  
+
+# MonetDB 5 server v11.10.0 (hg id: d6a857b5d084)
+# This is an unreleased version
+# Serving database 'mTests_modules_mal', using 2 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.861 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://koolmees.mullender.nl:37682/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#Illustrate the modules loaded after start 
+    k := inspect.getKind();
+    m := inspect.getModule();
+    m0 := algebra.select(m,"bat");
+    f := inspect.getFunction();
+    f1 := bat.reverse(f);
+    f2 := algebra.ssort(f1);
+    fs := bat.reverse(f2);
+    s := inspect.getSignatures();
+    a := inspect.getAddresses();
+    io.table(1,fs,k,m0,s,a);
+end main;
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# h				symbol		symbol		 symbol																	 symbol							  # name
+# str				str		str		str																	str							  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "append",			  "command",	  "bat",	  "(i:bat[:any_1,:any_2],u:any_2,force:bit):bat[:any_1,:any_2] ",									  "BKCappend_val_force_wrap;"				  ]
+[ "append",				  "command",	  "bat",	  "(i:bat[:any_1,:void],u:any_1):bat[:any_1,:void] ",								  "BKCappend_reverse_val_wrap;"				  ]
+[ "append",				  "command",	  "bat",	  "(i:bat[:void,:any_1],u:any_1):bat[:void,:any_1] ",									  "BKCappend_val_wrap;"					  ]
+[ "append",				  "command",	  "bat",	  "(i:bat[:oid,:any_1],u:any_1):bat[:oid,:any_1] ",									  "BKCappend_val_wrap;"					  ]
+[ "append",			  "command",	  "bat",	  "(i:bat[:any_1,:any_2],u:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",								  "BKCappend_force_wrap;"				  ]
+[ "append",			  "command",	  "bat",	  "(i:bat[:any_1,:any_2],u:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCappend_wrap;"					  ]
+[ "attach",			  "command",	  "bat",	  "(tt:int,heapfile:str):bat[:void,:any_1] ",													  "BKCattach;"					  ]
+[ "delete",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCdelete_bat_bun;"					  ]
+[ "delete",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCdelete_all;"					  ]
+[ "delete",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1):bat[:any_1,:any_2] ",											  "BKCdelete;"						  ]
+[ "delete",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] ",										  "BKCdelete_bun;"					  ]
+[ "deleteHead",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):void ",				  "BKCdelete_bat;"			  ]
+[ "densebat",			  "command",	  "bat",	  "(size:wrd):bat[:void,:void] ",														  "BKCdensebat;"				  ]
+[ "getAccess",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):str ",						  "BKCgetAccess;"			  ]
+[ "getAlpha",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCgetAlpha;"			  ]
+[ "getCapacity",	"command",	"bat",	"(b:bat[:oid,:any_2]):lng ",	"BKCgetCapacity;"  ]
+[ "getColumnType",	"command",	"bat",	"(b:bat[:oid,:any_2]):str ",	"BKCgetColumnType;"  ]
+[ "getDelta",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCgetDelta;"			  ]
+[ "getDiskSize",	"command",	"bat",	"(b:bat[:oid,:any_2]):lng ",	"BKCbatdisksize;"  ]
+[ "getHeadType",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):str ",						  "BKCgetHeadType;"			  ]
+[ "getHeat",	"command",	"bat",	"(b:bat[:oid,:any_2]):lng ",	"BKCheat;"  ]
+[ "getMemorySize",	"command",	"bat",	"(b:bat[:oid,:any_2]):lng ",	"BKCbatvmsize;"  ]
+[ "getName",	"command",	"bat",	"(b:bat[:oid,:any_2]):str ",	"BKCgetBBPname;"  ]
+[ "getRole",	"command",	"bat",	"(bid:bat[:oid,:any_2]):str ",	"BKCgetRole;"  ]
+[ "getSequenceBase",		  "command",	  "bat",	  "(b:bat[:oid,:any_1]):oid ",							  "BKCgetSequenceBase;"			  ]
+[ "getSize",	"command",	"bat",	"(b:bat[:oid,:any_2]):lng ",	"BKCbatsize;"  ]
+[ "getSpaceUsed",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):lng ",													  "BKCgetSpaceUsed;"					  ]
+[ "getStorageSize",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):lng ",													  "BKCgetStorageSize;"					  ]
+[ "hasAppendMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKChasAppendMode;"			  ]
+[ "hasReadMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKChasReadMode;"					  ]
+[ "hasWriteMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKChasWriteMode;"					  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:hge]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:dbl]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:flt]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:lng]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:int]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:sht]):void ",	"CMDBATimprints;"  ]
+[ "imprints",	"command",	"bat",	"(b:bat[:oid,:bte]):void ",	"CMDBATimprints;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:hge]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:dbl]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:flt]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:lng]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:int]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:sht]):lng ",	"CMDBATimprintsize;"  ]
+[ "imprintsize",	"command",	"bat",	"(b:bat[:oid,:bte]):lng ",	"CMDBATimprintsize;"  ]
+[ "info",	"command",	"bat",	"(b:bat[:oid,:any_2]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) ",	"BKCinfo;"  ]
+[ "inplace",				  "command",	  "bat",	  "(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",							  "BKCbat_inplace_force;"			  ]
+[ "inplace",				  "command",	  "bat",	  "(o:bat[:any_1,:any_2],id:any_1,t:any_2,force:bit):bat[:any_1,:any_2] ",							  "BKCbun_inplace_force;"			  ]
+[ "inplace",				  "command",	  "bat",	  "(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",								  "BKCbat_inplace;"				  ]
+[ "inplace",				  "command",	  "bat",	  "(o:bat[:any_1,:any_2],id:any_1,t:any_2):bat[:any_1,:any_2] ",								  "BKCbun_inplace;"				  ]
+[ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] ",								  "BKCinsert_bun_force;"				  ]
+[ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] ",										  "BKCinsert_bun;"					  ]
+[ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",							  "BKCinsert_bat_force;"				  ]
+[ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCinsert_bat;"					  ]
+[ "intersectcand",		  "command",	  "bat",  "(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",						  "BKCintersectcand;"			  ]
+[ "isCached",	"command",	"bat",	"(b:bat[:oid,:any_2]):bit ",	"BKCisCached;"  ]
+[ "isPersistent",	"command",	"bat",	"(b:bat[:oid,:any_2]):bit ",	"BKCisPersistent;"  ]
+[ "isSorted",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCisSorted;"					  ]
+[ "isSortedReverse",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisSortedReverse;"			  ]
+[ "isSynced",	"command",	"bat",	"(b1:bat[:oid,:any_2],b2:bat[:oid,:any_4]):bit ",	"BKCisSynced;"  ]
+[ "isTransient",	"command",	"bat",	"(b:bat[:oid,:any_2]):bit ",	"BKCisTransient;"  ]
+[ "isaKey",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCgetKey;"						  ]
+[ "load",	"command",	"bat",	"(name:str):bat[:oid,:any_2] ",	"BKCload;"  ]
+[ "mergecand",			  "command",	  "bat",  "(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",						  "BKCmergecand;"			  ]
+[ "mirror",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_1] ",												  "BKCmirror;"						  ]
+[ "new",		  "command",	  "bat",  "(nme:str):bat[:oid,:any_1] ",								  "CMDBATderivedByName;"	  ]
+[ "new",		  "pattern",	  "bat",  "(b:bat[:oid,:any_1],size:lng):bat[:oid,:any_1] ",						  "CMDBATnewDerived;"		  ]
+[ "new",		  "pattern",	  "bat",  "(b:bat[:oid,:any_1]):bat[:oid,:any_1] ",							  "CMDBATnewDerived;"		  ]
+[ "new",		  "pattern",	  "bat",  "(ht:oid,tt:any_1,size:lng):bat[:oid,:any_1] ",						  "CMDBATnew;"			  ]
+[ "new",		  "pattern",	  "bat",  "(ht:oid,tt:any_1,size:int):bat[:oid,:any_1] ",						  "CMDBATnewint;"		  ]
+[ "new",		  "pattern",	  "bat",  "(ht:oid,tt:any_1):bat[:oid,:any_1] ",							  "CMDBATnew;"			  ]
+[ "order",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCorder;"						  ]
+[ "orderReverse",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCorder_rev;"			  ]
+[ "partition",	"pattern",	"bat",	"(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] ",	"CMDBATpartition2;"  ]
+[ "partition",	"pattern",	"bat",	"(b:bat[:oid,:any_1]):bat[:oid,:any_1]... ",	"CMDBATpartition;"  ]
+[ "replace",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] ",								  "BKCreplace_bun_force;"				  ]
+[ "replace",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] ",										  "BKCreplace_bun;"					  ]
+[ "replace",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",							  "BKCreplace_bat_force;"				  ]
+[ "replace",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCreplace_bat;"					  ]
+[ "reuse",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] ",			  "BKCreuseBAT;"			  ]
+[ "reuseMap",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] ",			  "BKCreuseBATmap;"			  ]
+[ "reverse",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] ",												  "BKCreverse;"						  ]
+[ "revert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCrevert;"				  ]
+[ "save",			  "command",	  "bat",	  "(nme:str):bit ",								  "BKCsave;"				  ]
+[ "save",	"command",	"bat",	"(nme:bat[:oid,:any_2]):void ",	"BKCsave2;"  ]
+[ "setAccess",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],mode:str):bat[:any_1,:any_2] ",			  "BKCsetAccess;"			  ]
+[ "setAppendMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCsetAppendMode;"			  ]
+[ "setCold",	"command",	"bat",	"(b:bat[:oid,:any_1]):void ",	"BKCcoldBAT;"  ]
+[ "setColumn",	"command",	"bat",	"(b:bat[:oid,:any_2],h:str,t:str):void ",	"BKCsetColumns;"  ]
+[ "setColumn",	"command",	"bat",	"(b:bat[:oid,:any_2],t:str):void ",	"BKCsetColumn;"  ]
+[ "setHash",	"command",	"bat",	"(b:bat[:oid,:any_2],prop:bit):bit ",	"BKCsetHash;"  ]
+[ "setHot",	"command",	"bat",	"(b:bat[:oid,:any_2]):void ",	"BKChotBAT;"  ]
+[ "setKey",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] ",			  "BKCsetkey;"				  ]
+[ "setMemoryMap",	"command",	"bat",	"(b:bat[:oid,:any_2],mode:int):bit ",	"BKCmmap2;"  ]
+[ "setMemoryMap",	"command",	"bat",	"(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit ",	"BKCmmap;"  ]
+[ "setName",	"command",	"bat",	"(b:bat[:oid,:any_2],s:str):void ",	"BKCsetName;"  ]
+[ "setPersistent",	"command",	"bat",	"(b:bat[:oid,:any_2]):void ",	"BKCsetPersistent;"  ]
+[ "setPersistent",	"command",	"bat",	"(b:bat[:oid,:any_2],f:bit):void ",	"BKCpersists;"  ]
+[ "setReadMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCsetReadMode;"			  ]
+[ "setRole",	"command",	"bat",	"(b:bat[:oid,:any_2],h:str,t:str):void ",	"BKCsetRole;"  ]
+[ "setTransient",	"command",	"bat",	"(b:bat[:oid,:any_2]):void ",	"BKCsetTransient;"  ]
+[ "setWriteMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCsetWriteMode;"					  ]
+[ "shrink",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] ",			  "BKCshrinkBAT;"			  ]
+[ "shrinkMap",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] ",			  "BKCshrinkBATmap;"			  ]
+[ "unload",			  "command",	  "bat",	  "(name:str):bit ",								  "BKCunload;"				  ]
+
+# 08:55:30 >  
+# 08:55:30 >  Done.
+# 08:55:30 >  
+

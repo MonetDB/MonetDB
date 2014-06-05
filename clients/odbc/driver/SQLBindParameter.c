@@ -204,7 +204,7 @@ SQLBindParameter_(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
-/* 	case SQL_GUID: */
+	case SQL_GUID:
 		break;
 	default:
 		/* Invalid SQL data type */
@@ -226,7 +226,6 @@ SQLBindParameter_(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_NUMERIC:
 	case SQL_FLOAT:
-	case SQL_GUID:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;

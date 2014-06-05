@@ -1,9 +1,0 @@
-# from the docs
-
-jaql.x("employees = [ {\"id\":1, \"dept\": 1, \"income\":12000}, {\"id\":2, \"dept\": 1, \"income\":13000}, {\"id\":3, \"dept\": 2, \"income\":15000}, {\"id\":4, \"dept\": 1, \"income\":10000}, {\"id\":5, \"dept\": 3, \"income\":8000}, {\"id\":6, \"dept\": 2, \"income\":5000}, {\"id\":7, \"dept\": 1, \"income\":24000} ]; ");
-jaql.x("employees -> group into count($);");
-jaql.x("employees -> group by d = $.dept into {d, \"total\": sum($[*].income)};");
-jaql.x("employees -> group each emp by d = emp.dept as deptEmps into {d, \"total\": sum(deptEmps[*].income)};");
-
-jaql.x("depts = [ {\"did\": 1, \"name\": \"development\"}, {\"did\": 2, \"name\": \"marketing\"}, {\"did\": 3, \"name\": \"sales\"} ];");
-jaql.x("group employees by g = $.dept as es, depts by g = $.did as ds into { \"dept\": g, \"deptName\": ds[0].name, \"emps\": es[*].id, \"numEmps\": count(es) };");

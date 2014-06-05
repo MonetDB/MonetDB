@@ -30,7 +30,6 @@ lib_mal = {
 		mal.c mal.h \
 		mal_atom.c mal_atom.h \
 		mal_authorize.c mal_authorize.h \
-		mal_box.c mal_box.h \
 		mal_builder.c mal_builder.h \
 		mal_client.c mal_client.h \
 		mal_debugger.c mal_debugger.h \
@@ -38,6 +37,7 @@ lib_mal = {
 		mal_exception.c mal_exception.h \
 		mal_factory.c mal_factory.h \
 		mal_function.c mal_function.h \
+		mal_http_daemon.c mal_http_daemon.h \
 		mal_import.c mal_import.h \
 		mal_runtime.c mal_runtime.h \
 		mal_instruction.c mal_instruction.h \
@@ -60,7 +60,6 @@ lib_mal = {
 		mal_stack.c mal_stack.h \
 		mal_type.c mal_type.h \
 		mal_utils.c mal_utils.h \
-		mal_xml.c mal_xml.h \
 		mal_private.h
 }
 

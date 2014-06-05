@@ -1,0 +1,113 @@
+stdout of test 'json03` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 19:03:08 >  
+# 19:03:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38853" "--set" "mapi_usock=/var/tmp/mtest-430/.s.monetdb.38853" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "json03.mal"
+# 19:03:08 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38853/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-430/.s.monetdb.38853
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    js := calc.json("{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }");
+    (k,v) := json.unfold(js);
+    io.print(k,v);
+    jsn := json.fold(k,v);
+    io.print(jsn);
+    (o,l,w) := json.unfold(js);
+    io.print(o,l,w);
+    jsm := json.fold(o,l,w);
+    io.print(jsm);
+    js := calc.json("[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, { \"color\": \"red\", \"price\": 19.95 }]");
+    io.print(js);
+    (k,v) := json.unfold(js);
+    io.print(k,v);
+    jsn := json.fold(k,v);
+    io.print(jsn);
+    (o,l,w) := json.unfold(js);
+    io.print(o,l,w);
+    jsm := json.fold(o,l,w);
+    io.print(jsm);
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
+    bat.append(b,22);
+    bat.append(b,333);
+    bl := json.fold(b);
+    io.print(bl);
+# create comple structure 
+    bat.append(b,2);
+    bat.append(b,3);
+    bat.append(b,4);
+    n := bat.new(:oid,:str);
+    bat.append(n,"a");
+    bat.append(n,"b");
+    bat.append(n,"c");
+    bat.append(n,"a");
+    bat.append(n,"c");
+    bat.append(n,"b");
+    i := bat.new(:oid,:oid);
+    bat.append(i,0@0);
+    bat.append(i,0@0);
+    bat.append(i,0@0);
+    bat.append(i,1@0);
+    bat.append(i,1@0);
+    bat.append(i,2@0);
+    jsn := json.fold(i,n,b);
+    io.print(jsn);
+end main;
+#--------------------------#
+# h	t		t				  # name
+# void	str		json				  # type
+#---------------------------------------------------------#
+[ 0@0,	  "category",	  "\"reference\""		  ]
+[ 1@0,	  "author",	  "\"Nigel Rees\""		  ]
+[ 2@0,	  "title",	  "\"Sayings of the Century\""	  ]
+[ 3@0,	"price",	"8.95"  ]
+[ "[\"category\":\"reference\",\"author\":\"Nigel Rees\",\"title\":\"Sayings of the Century\",\"price\":8.95]" ]
+#--------------------------#
+# h	t	t		t				  # name
+# void	oid	str		json				  # type
+#--------------------------#
+[ 0@0,	0@0,	"category",	"\"reference\""  ]
+[ 1@0,	1@0,	"author",	"\"Nigel Rees\""  ]
+[ 2@0,	2@0,	"title",	"\"Sayings of the Century\""  ]
+[ 3@0,	3@0,	"price",	"8.95"  ]
+[ "[\"category\":\"reference\",, \"author\":\"Nigel Rees\",, \"title\":\"Sayings of the Century\",, \"price\":8.95]" ]
+[ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, { \"color\": \"red\", \"price\": 19.95 }]" ]
+#--------------------------#
+# h	t	t  # name
+# void	str	json  # type
+#--------------------------#
+[ 0@0,	nil,	"{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }"  ]
+[ 1@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }"  ]
+[ 2@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }"  ]
+[ 3@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }"  ]
+[ 4@0,	nil,	"{ \"color\": \"red\", \"price\": 19.95 }"  ]
+[ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 },{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 },{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 },{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 },{ \"color\": \"red\", \"price\": 19.95 }]" ]
+#--------------------------#
+# h	t	t	t  # name
+# void	oid	str	json  # type
+#--------------------------#
+[ 0@0,	0@0,	nil,	"{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }"  ]
+[ 1@0,	1@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }"  ]
+[ 2@0,	2@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }"  ]
+[ 3@0,	3@0,	nil,	"{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }"  ]
+[ 4@0,	4@0,	nil,	"{ \"color\": \"red\", \"price\": 19.95 }"  ]
+[ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 },, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 },, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 },, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 },, { \"color\": \"red\", \"price\": 19.95 }]" ]
+[ "[1,22,333]" ]
+[ "[\"a\":1,\"b\":22,\"c\":333,, \"a\":2,\"c\":3,, \"b\":4]" ]
+
+# 19:03:08 >  
+# 19:03:08 >  "Done."
+# 19:03:08 >  
+

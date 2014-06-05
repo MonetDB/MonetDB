@@ -35,7 +35,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     d := bat.new(:oid,:str);            #  6 d:bat[:oid,:str] := CMDBATnew(_2:oid, _13:str) {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDbatISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
-    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);#  9 y:bat[:int,:int] := OPTremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
+    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);#  9 y:bat[:int,:int] := MANIFOLDremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
 end tst;                                # 10  
 
 # 22:31:17 >  

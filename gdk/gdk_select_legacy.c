@@ -23,6 +23,12 @@
 
 /* This file contains the legacy interface to the select functions */
 
+#undef BATselect_
+#undef BATuselect_
+#undef BATantiuselect_
+#undef BATselect
+#undef BATuselect
+
 static BAT *
 BAT_select_(BAT *b, const void *tl, const void *th,
 	    bit li, bit hi, bit tail, bit anti, const char *name)

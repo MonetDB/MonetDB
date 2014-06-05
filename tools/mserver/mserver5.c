@@ -390,7 +390,13 @@ main(int argc, char **av)
 			break;
 		case 'd':
 			if (optarg) {
-				debug |= strtol(optarg, NULL, 10);
+				char *endarg;
+				debug |= strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
 			} else {
 				debug |= 1;
 			}
@@ -429,13 +435,14 @@ main(int argc, char **av)
 		usage(prog, -1);
 
 	if (debug || grpdebug) {
-		long_str buf;
+		char buf[16];
+		char wasdebug = debug != 0;
 
-		if (debug)
-			mo_print_options(set, setlen);
 		debug |= grpdebug;  /* add the algorithm tracers */
-		snprintf(buf, sizeof(long_str) - 1, "%d", debug);
+		snprintf(buf, sizeof(buf) - 1, "%d", debug);
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
+		if (wasdebug)
+			mo_print_options(set, setlen);
 	}
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
@@ -587,7 +594,7 @@ main(int argc, char **av)
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
-	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
+	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
 		msab_registerStop();
 		GDKfatal("%s", err);

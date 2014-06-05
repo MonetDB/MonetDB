@@ -33,7 +33,6 @@
 #include <rel_exp.h>
 #include <rel_dump.h>
 #include <rel_bin.h>
-#include <opt_dictionary.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mal_instruction.h"
@@ -123,7 +122,7 @@ str_2_timestamp(timestamp *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "timestamp", "%s", buf);
 	}
 	*res = *(timestamp *) p;
@@ -221,7 +220,7 @@ str_2_daytime(daytime *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "daytime", "%s", buf);
 	}
 	*res = *(daytime *) p;
@@ -319,7 +318,7 @@ str_2_date(date *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "date", "%s", buf);
 	}
 	*res = *(date *) p;
@@ -417,7 +416,7 @@ str_2_sqlblob(sqlblob * *res, str *val)
 	if (e < 0 || !p || (ATOMcmp(TYPE_sqlblob, p, ATOMnilptr(TYPE_sqlblob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val);
+		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
 		throw(SQL, "sqlblob", "%s", buf);
 	}
 	*res = (sqlblob *) p;
@@ -508,7 +507,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str) p;
-		strLength(&sz, v);
+		STRLength(&sz, &v);
 		if (len == 0 || (sz >= 0 && sz <= len)) {
 			r = GDKstrdup(v);
 			if (r == NULL)

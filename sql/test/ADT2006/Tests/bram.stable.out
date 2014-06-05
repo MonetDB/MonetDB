@@ -504,7 +504,7 @@ Ready.
 [ "Carrie Brown"	]
 #select d.name as doctor, d.victim, v.date from doctor d JOIN victim v ON (d.victim = v.name)
 #WHERE not exists (select doc.name from doctor doc where doc.victim = v.name and doc.name <> d.name);
-% sys.L2,	sys.d,	sys.v # table_name
+% sys.L,	sys.d,	sys.v # table_name
 % doctor,	victim,	date # name
 % varchar,	varchar,	date # type
 % 0,	0,	10 # length

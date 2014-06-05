@@ -19,13 +19,12 @@
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
-#define bitset int
 
+#include "mal.h"
 /*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 #include "mal_profiler.h"
-#include "mal.h"
 
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
@@ -36,15 +35,6 @@
 #define BLOCKCLIENT     3
 
 #define PROCESSTIMEOUT  2   /* seconds */
-
-#ifdef HAVE_SYS_RESOURCE_H
-# include <sys/resource.h>
-#endif
-
-#ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
-#endif
-#include <setjmp.h>
 
 /*
  * The prompt structure is designed to simplify recognition of the
@@ -116,7 +106,7 @@ typedef struct CLIENT {
 	 * input, (2) also demonstrates the MAL internal structure, (4) adds
 	 * the type information.
 	 */
-	bitset  listing;        
+	int  listing;        
 	str prompt;         /* acknowledge prompt */
 	size_t promptlength;
 	ClientInput *bak;   /* used for recursive script and string execution */
@@ -137,7 +127,7 @@ typedef struct CLIENT {
 	 * pervasive debugger command. For detailed information on the
 	 * debugger features.
 	 */
-	bitset debug;
+	int debug;
 	void  *mdb;            /* context upon suspend */
 	str    history;	       /* where to keep console history */
 	short  mode;           /* FREECLIENT..BLOCKED */
@@ -173,13 +163,12 @@ typedef struct CLIENT {
 	int exception_buf_initialized;
 
 	/*
-	 * These are pointers to scenario backends contexts.  For the time
-	 * being just SQL and JAQL.  We need a pointer for each of them,
-	 * since they have to be able to interoperate with each other, e.g.
-	 * both contexts at the same time are in use.
+	 * Here are pointers to scenario backends contexts.  For the time
+	 * being just SQL.  We need a pointer for each of them, since they
+	 * have to be able to interoperate with each other, e.g.  both
+	 * contexts at the same time are in use.
 	 */
 	void *sqlcontext;
-	void *jaqlcontext;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

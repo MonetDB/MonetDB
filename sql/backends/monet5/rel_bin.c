@@ -306,7 +306,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			stmt *r = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_assign(sql->sa, e->name, r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
-			return stmt_var(sql->sa, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
+			if (e->f) /* TODO TABLE */
+				return stmt_vars(sql->sa, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
+			else
+				return stmt_var(sql->sa, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_RETURN) {
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(sql, l, left, right, grp, ext, cnt, sel);
@@ -762,78 +765,77 @@ stmt_dels( mvc *sql, sql_table *t)
 }
 
 
+#if 0
 static stmt *
-check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
+check_table_types(mvc *sql, list *types, stmt *s, check_type tpe)
 {
-	char *tname;
+	//char *tname;
 	stmt *tab = s;
 	int temp = 0;
 
 	if (s->type != st_table) {
-		char *t = (ct->type==tt_generated)?"table":"unknown";
 		return sql_error(
 			sql, 03,
-			"single value and complex type '%s' are not equal", t);
+			"single value and complex type are not equal");
 	}
 	tab = s->op1;
 	temp = s->flag;
 	if (tab->type == st_var) {
-		sql_table *tbl = tail_type(tab)->comp_type;
+		sql_table *tbl = NULL;//tail_type(tab)->comp_type;
 		stmt *dels = stmt_dels(sql, tbl);
 		node *n, *m;
 		list *l = sa_list(sql->sa);
 		
 		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
 
-		for (n = ct->columns.set->h, m = tbl->columns.set->h; 
+		for (n = types->h, m = tbl->columns.set->h; 
 			n && m; n = n->next, m = m->next) 
 		{
-			sql_column *c = n->data;
+			sql_subtype *ct = n->data;
 			sql_column *dtc = m->data;
 			stmt *dtcs = stmt_col(sql, dtc, dels);
-			stmt *r = check_types(sql, &c->type, dtcs, tpe);
+			stmt *r = check_types(sql, ct, dtcs, tpe);
 			if (!r) 
 				return NULL;
-			r = stmt_alias(sql->sa, r, tbl->base.name, c->base.name);
+			//r = stmt_alias(sql->sa, r, tbl->base.name, c->base.name);
 			list_append(l, r);
 		}
 	 	return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
 	} else if (tab->type == st_list) {
 		node *n, *m;
 		list *l = sa_list(sql->sa);
-		for (n = ct->columns.set->h, m = tab->op4.lval->h; 
+		for (n = types->h, m = tab->op4.lval->h; 
 			n && m; n = n->next, m = m->next) 
 		{
-			sql_column *c = n->data;
-			stmt *r = check_types(sql, &c->type, m->data, tpe);
+			sql_subtype *ct = n->data;
+			stmt *r = check_types(sql, ct, m->data, tpe);
 			if (!r) 
 				return NULL;
-			tname = table_name(sql->sa, r);
-			r = stmt_alias(sql->sa, r, tname, c->base.name);
+			//tname = table_name(sql->sa, r);
+			//r = stmt_alias(sql->sa, r, tname, c->base.name);
 			list_append(l, r);
 		}
 		return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
 	} else { /* single column/value */
-		sql_column *c;
 		stmt *r;
-		sql_subtype *st = tail_type(tab);
+		sql_subtype *st = tail_type(tab), *ct;
 
-		if (list_length(ct->columns.set) != 1) {
+		if (list_length(types) != 1) {
 			stmt *res = sql_error(
 				sql, 03,
-				"single value of type %s and complex type '%s' are not equal",
-				st->type->sqlname,
-				(ct->type==tt_generated)?"table":"unknown"
+				"single value of type %s and complex type are not equal",
+				st->type->sqlname
 			);
 			return res;
 		}
-		c = ct->columns.set->h->data;
-		r = check_types(sql, &c->type, tab, tpe);
-		tname = table_name(sql->sa, r);
-		r = stmt_alias(sql->sa, r, tname, c->base.name);
+		ct = types->h->data;
+		r = check_types(sql, ct, tab, tpe);
+		//tname = table_name(sql->sa, r);
+		//r = stmt_alias(sql->sa, r, tname, c->base.name);
 		return stmt_table(sql->sa, r, temp);
 	}
 }
+#endif
 
 static void
 sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
@@ -899,8 +901,10 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	int c = 0;
 	sql_subtype *t = NULL, *st = NULL;
 
-	if (ct->comp_type) 
-		return check_table_types(sql, ct->comp_type, s, tpe);
+	/*
+	if (ct->types) 
+		return check_table_types(sql, ct->types, s, tpe);
+		*/
 
  	st = tail_type(s);
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
@@ -966,10 +970,12 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 			f = NULL;
 	}
 	if (f) {
+		/*
 		if (f->func->res.scale == INOUT) {
 			f->res.digits = rt->digits;
 			f->res.scale = rt->scale;
 		}
+		*/
 		return stmt_unop(sql->sa, rs, f);
 	} else if (rs) {
 		char *type = tail_type(rs)->type->sqlname;
@@ -1131,19 +1137,40 @@ static stmt *
 rel2bin_basetable( mvc *sql, sql_rel *rel)
 {
 	sql_table *t = rel->l;
+	sql_column *c = rel->r;
 	list *l = sa_list(sql->sa);
-	stmt *dels = stmt_dels( sql, t);
+	stmt *dels;
 	node *en;
 
-	assert(rel->exps);
+	if (!t && c)
+		t = c->t;
+       	dels = stmt_dels( sql, t);
+
 	/* add aliases */
+	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		char *rname = exp->rname?exp->rname:exp->l;
 		char *oname = exp->r;
 		stmt *s = NULL;
 
-		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+		if (is_func(exp->type)) {
+			list *exps = exp->l;
+			sql_exp *cexp = exps->h->data;
+			char *cname = cexp->r;
+			list *l = sa_list(sql->sa);
+
+		       	c = find_sql_column(t, cname);
+			s = stmt_col(sql, c, dels);
+			append(l, s);
+			if (exps->h->next) {
+				sql_exp *at = exps->h->next->data;
+				stmt *u = exp_bin(sql, at, NULL, NULL, NULL, NULL, NULL, NULL);
+
+				append(l, u);
+			}
+			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), exp->f);
+		} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
 			char *rnme = t->base.name;
 
@@ -1176,12 +1203,8 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	if (op) {
 		int i;
 		sql_subfunc *f = op->f;
-		sql_table *t = f->res.comp_type;
 		stmt *psub = NULL;
 			
-		if (!t)
-			t = f->func->res.comp_type;
-
 		if (rel->l) { /* first construct the sub relation */
 			sql_rel *l = rel->l;
 			if (l->op == op_ddl) {
@@ -1197,21 +1220,32 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		}
 
 		psub = exp_bin(sql, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
-		if (!t || !psub) { 
+		if (!f || !psub) { 
 			assert(0);
 			return NULL;	
 		}
 		l = sa_list(sql->sa);
-		for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
-			sql_column *c = n->data;
-			stmt *s = stmt_rs_column(sql->sa, psub, i, &c->type); 
-			char *nme = c->base.name;
-			char *rnme = exp_find_rel_name(op);
-
-			s = stmt_alias(sql->sa, s, rnme, nme);
-			list_append(l, s);
+		if (f->func->varres) {
+			for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
+				sql_exp *exp = en->data;
+				sql_subtype *st = n->data;
+				char *rnme = exp->rname?exp->rname:exp->l;
+				stmt *s = stmt_rs_column(sql->sa, psub, i, st); 
+		
+				s = stmt_alias(sql->sa, s, rnme, exp->name);
+				list_append(l, s);
+			}
+		} else {
+			for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
+				sql_arg *a = n->data;
+				stmt *s = stmt_rs_column(sql->sa, psub, i, &a->type); 
+				char *rnme = exp_find_rel_name(op);
+	
+				s = stmt_alias(sql->sa, s, rnme, a->name);
+				list_append(l, s);
+			}
 		}
-		if (sub && sub->nrcols) { /* add sub */
+		if (!rel->flag && sub && sub->nrcols) { /* add sub, table func with table input, we expect alignment */
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
 		}
@@ -2249,7 +2283,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique) */
 		int distinct = need_distinct(rel);
-		stmt *limit = NULL; 
+		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL; 
 
 		for (n=oexps->h; n; n = n->next) {
 			sql_exp *orderbycole = n->data; 
@@ -2263,18 +2297,19 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			} else { 	/* topn based on 2 columns */
-				stmt *obc = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, limit), orderbycolstmt);
-
-				limit = stmt_limit2(sql->sa, limit, obc, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
+				limit = stmt_limit2(sql->sa, orderbycolstmt, lpiv, lgid, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
 			}
 			if (!limit) 
 				return NULL;
+			lpiv = stmt_result(sql->sa, limit, 0);
+			lgid = stmt_result(sql->sa, limit, 1);
 		}
 
-		if (!distinct) 
-			limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
-		else	/* add limit to mark end of pqueue topns */
-			limit = stmt_limit(sql->sa, limit, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(0, 0, 0));
+		if (!distinct)  /* ready to project */
+			limit = lpiv;
+		else 		/* TODO */
+			limit = lpiv; 
+		
 		for ( n=pl->h ; n; n = n->next) 
 			list_append(npl, stmt_project(sql->sa, limit, column(sql->sa, n->data)));
 		psub = stmt_list(sql->sa, npl);
@@ -2300,7 +2335,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			sub = stmt_list(sql->sa, npl);
 		}
 	}
-	if ((!topn || need_distinct(rel)) && rel->r) {
+	if (/*(!topn || need_distinct(rel)) &&*/ rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 

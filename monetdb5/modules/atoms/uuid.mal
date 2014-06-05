@@ -1,0 +1,42 @@
+atom uuid;
+
+# the atom functions
+command cmp() :int address UUIDcompare;
+command fromstr() :uuid address UUIDfromString;
+command hash() :int address UUIDhash;
+command null() :uuid address UUIDnull;
+command read() :uuid address UUIDread;
+command tostr() :str address UUIDtoString;
+command write() :int address UUIDwrite;
+
+# fix up the rest of the atom definition
+command prelude():void address UUIDprelude;
+uuid.prelude();
+
+command new() :uuid
+address UUIDgenerateUuid
+comment "Generate a new uuid";
+
+command uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+command calc.uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+command str(u:uuid):str
+address UUIDuuid2str
+comment "Coerce a uuid to its string type";
+
+command calc.str(s:uuid):str
+address UUIDuuid2str
+comment "Coerce a uuid to a string type";
+
+command isaUUID(u:str):bit
+address UUIDisaUUID
+comment "Test a string for a UUID format";
+
+command calc.==(l:uuid,r:uuid):bit
+address UUIDequal
+comment "Compare two UUID values for equality";

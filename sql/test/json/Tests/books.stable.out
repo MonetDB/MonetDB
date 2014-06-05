@@ -1,0 +1,104 @@
+stdout of test 'books` in directory 'sql/test/json` itself:
+
+
+# 19:34:44 >  
+# 19:34:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36709" "--set" "mapi_usock=/var/tmp/mtest-28375/.s.monetdb.36709" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0"
+# 19:34:44 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36709/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28375/.s.monetdb.36709
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:34:44 >  
+# 19:34:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28375" "--port=36709"
+# 19:34:44 >  
+
+#create table books(i integer, j json);
+#insert into books values( 1, ' { "store": {
+#    "book": [ 
+#      { "category": "reference",
+#        "author": "Nigel Rees",
+#        "title": "Sayings of the Century",
+#        "price": 8.95
+#      },
+#      { "category": "fiction",
+#        "author": "Evelyn Waugh",
+#        "title": "Sword of Honour",
+#        "price": 12.99
+#      },
+#      { "category": "fiction",
+#        "author": "Herman Melville",
+#        "title": "Moby Dick",
+#        "isbn": "0-553-21311-3",
+#        "price": 8.99
+#      },
+#      { "category": "fiction",
+[ 1	]
+#select * from books;
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	717 # length
+[ 1,	" { \"store\": {\n    \"books\": [ \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }\n    ],\n    \"bicycle\": {\n      \"color\": \"red\",\n      \"price\": 19.95\n    }\n  }\n}"	]
+#SELECT json.filter(j,'store.books.[1]..author') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 16 # length
+[ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..books..author[1]') AS j FROM (
+#	SELECT json.filter(j,'store') AS j FROM books
+#) AS L1;
+% sys.L # table_name
+% j # name
+% json # type
+% 16 # length
+[ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..author') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 66 # length
+[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
+#SELECT json_path(j,'store.book[*].author') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 66 # length
+[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
+#SELECT json_path(j,'..bicycle.price') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 66 # length
+[ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
+#SELECT json.filter(j,'store.books..author[1]') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 16 # length
+[ "[\"Evelyn Waugh\"]"	]
+#SELECT json.filter(j,'..bicycle.price') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 7 # length
+[ "[19.95]"	]
+#drop table books;
+
+# 19:34:44 >  
+# 19:34:44 >  "Done."
+# 19:34:44 >  
+

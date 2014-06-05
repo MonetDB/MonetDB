@@ -556,7 +556,7 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_readInt(s, &len))
+	if (mnstr_readInt(s, &len) != 1)
 		return NULL;
 	if ((a = GDKmalloc(wkb_size(len))) == NULL)
 		return NULL;
@@ -746,7 +746,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 {
 	BAT *bo = NULL, *bx = NULL, *by = NULL;
 	dbl *x = NULL, *y = NULL;
-	BUN i, o;
+	BUN i;
 	wkb *p = NULL;
 
 	if ((bx = BATdescriptor(*ix)) == NULL) {
@@ -756,8 +756,8 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 		BBPreleaseref(bx->batCacheid);
 		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
 	}
-	if (!BAThdense(bx) ||
-	    !BAThdense(by) ||
+	if ( bx->htype != TYPE_void ||
+		 by->htype != TYPE_void ||
 	    bx->hseqbase != by->hseqbase ||
 	    BATcount(bx) != BATcount(by)) {
 		BBPreleaseref(bx->batCacheid);
@@ -771,14 +771,10 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bo, bx->hseqbase);
-	bo->hdense = TRUE;
-	bo->hsorted = TRUE;
-	bo->H->nonil = TRUE;
-	BATkey(bo, TRUE);
 
 	x = (dbl *) Tloc(bx, BUNfirst(bx));
 	y = (dbl *) Tloc(by, BUNfirst(bx));
-	for (i = 0, o = BUNlast(bo); i < BATcount(bx); i++, o++) {
+	for (i = 0; i < BATcount(bx); i++) {
 		str err = NULL;
 		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
 			str msg;
@@ -789,32 +785,18 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 			GDKfree(err);
 			return msg;
 		}
-		tfastins_nocheck(bo, o, p, Tsize(bo));
+		BUNappend(bo,p,TRUE);
 		GDKfree(p);
 		p = NULL;
 	}
 
 	BATsetcount(bo, BATcount(bx));
-	bo->batDirty = TRUE;
-	bo->tdense = FALSE;
-	bo->tsorted = BATcount(bo) <= 1;
-	bo->trevsorted = BATcount(bo) <= 1;
-	bo->hrevsorted = BATcount(bo) <= 1;
-	bo->T->nonil = (bx->T->nonil && by->T->nonil);
-	BATkey(BATmirror(bo), (bx->tkey && by->tkey));
-
+    BATsettrivprop(bo);
+    BATderiveProps(bo,FALSE);
 	BBPreleaseref(bx->batCacheid);
 	BBPreleaseref(by->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
 	return MAL_SUCCEED;
-
-  bunins_failed:
-	if (p)
-		GDKfree(p);
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(by->batCacheid);
-	BBPreleaseref(bo->batCacheid);
-	throw(MAL, "geom.point", "bunins failed");
 }
 
 str

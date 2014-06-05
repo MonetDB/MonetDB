@@ -41,6 +41,9 @@
 #include <utils/database.h>
 #include <utils/control.h>
 
+#include "gdk.h"  /* these three for creation of dbs with password */
+#include "mal_authorize.h"
+
 #include "merovingian.h"
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
@@ -354,8 +357,15 @@ static void ctl_handle_client(
 							"database is not running: %s\n", q);
 					send_client("!");
 				}
-			} else if (strcmp(p, "create") == 0) {
-				err e = db_create(q);
+			} else if (strcmp(p, "create") == 0 ||
+					strncmp(p, "create password=", strlen("create password=")) == 0) {
+				err e;
+
+				p += strlen("create");
+				if (*p == ' ')
+					p += strlen(" password=");
+
+				e = db_create(q);
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: failed to create "
 							"database '%s': %s\n", origin, q, getErrMsg(e));
@@ -364,6 +374,67 @@ static void ctl_handle_client(
 					send_client("!");
 					free(e);
 				} else {
+					if (*p != '\0') {
+						pid_t child;
+						if ((child = fork()) == 0) {
+							FILE *secretf;
+							size_t len;
+							char *err;
+							char *vaultkey;
+							opt *set = malloc(sizeof(opt) * 2);
+							int setlen = 0;
+							char *sadbfarm;
+
+							msab_getDBfarm(&sadbfarm);
+							snprintf(buf2, sizeof(buf2), "%s/%s", sadbfarm, q);
+							free(sadbfarm);
+							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
+							setlen = mo_system_config(&set, setlen);
+							/* the child, pollute scope by loading BBP */
+							if (chdir(q) < 0) {
+								/* Fabian says "Ignore the output.
+								 * The idea is that the stuff below
+								 * will also fail, and therefore emit
+								 * some error, but if that happens,
+								 * the world already is in such a bad
+								 * shape that that most likely isn't
+								 * your biggest problem.
+								 * Hence a (void) probably does.
+								 * If not, a fake if.
+								 * (exit(0) should be fine)."
+								 * (https://www.monetdb.org/pipermail/developers-list/2014-February/004238.html)
+								 */
+								Mfprintf(_mero_ctlerr, "%s: could not chdir to "
+									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
+								exit(0);
+							}
+
+							buf2[0] = '\0';
+							if ((secretf = fopen(".vaultkey", "r")) != NULL) {
+								len = fread(buf2, 1, sizeof(buf2), secretf);
+								buf2[len] = '\0';
+								len = strlen(buf2); /* secret can contain null-bytes */
+								fclose(secretf);
+							}
+							GDKinit(set, setlen);
+							vaultkey = buf2;
+							AUTHunlockVault(&vaultkey);
+							err = AUTHinitTables(&p);
+							if (err != NULL) {
+								Mfprintf(_mero_ctlerr, "%s: could not setup "
+										"database '%s': %s\n", origin, q, err);
+							} else {
+								/* don't start locked */
+								unlink(".maintenance");
+							}
+
+							exit(0); /* return to the parent */
+						} else {
+							/* wait for the child to finish */
+							waitpid(child, NULL, 0);
+						}
+					}
+
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
 							origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");

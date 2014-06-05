@@ -14,7 +14,7 @@ can change that.
 
 }
 \arguments{
-  \item{x}{A \code{\link[MonetDB.R]{monet.frame}} monet.frame virtual data object.}
+  \item{x}{A \code{\link[monet.frame]{monet.frame}} monet.frame virtual data object.}
   \item{debug}{Boolean (TRUE/FALSE) to enable/disable debugging}
  }
 \examples{

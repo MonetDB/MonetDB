@@ -19,9 +19,8 @@
 
 /*
  * (c) Martin Kersten
- * @+ MonetDB Basic Definitions
- * Definitions that need to included in every file of the Monet system,
- * as well as in user defined module implementations.
+ *  MonetDB Basic Definitions
+ * Definitions that need to included in every file of the Monet system, as well as in user defined module implementations.
  */
 #ifndef _MAL_H
 #define _MAL_H
@@ -38,8 +37,13 @@
 #define mal_export extern
 #endif
 
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
+#include <setjmp.h>
 /*
- * @+ MonetDB Calling Options
+ * MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
  * See `man mserver5` or tools/mserver/mserver5.1
  * for additional system variable settings.
@@ -70,46 +74,6 @@ mal_export char		*mal_trace;		/* enable profile events on console */
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
 #define GRPrecycler (1<<30)
-/*
- * @+ Execution Engine
- * The execution engine comes in several flavors. The default is a
- * simple, sequential MAL interpreter. For each MAL function call it creates
- * a stack frame, which is initialized with all constants found in the
- * function body. During interpretation the garbage collector
- * ensures freeing of space consumptive tables (BATs) and strings.
- * Furthermore, all temporary structures are garbage collected before
- * the funtion returns the result.
- *
- * This simple approach leads to an accumulation of temporary variables.
- * They can be freed earlier in the process using an explicit garbage collection
- * command, but the general intend is to leave such decisions to an optimizer
- * or scheduler.
- *
- * The execution engine is only called when all MAL instructions
- * can be resolved against the available libraries.
- * Most modules are loaded when the server starts using a
- * bootstrap script @sc{mal_init.mx}
- * Failure to find the startup-file terminates the session.
- * It most likely points to an error in the MonetDB configuration file.
- *
- * During the boot phase, the global symbol table is initialized
- * with MAL function and factory definitions, and
- * loading the pre-compiled commands and patterns.
- * The libraries are dynamically loaded by default.
- * Expect tens of modules and hundreds of operations to become readily available.
- *
- * Modules can not be dropped without restarting the server.
- * The rational behind this design decision is that a dynamic load/drop feature
- * is often hardly used and severely complicates the code base.
- * In particular, upon each access to the global symbol table we have to be
- * prepared that concurrent threads may be actively changing its structure.
- * Especially, dropping modules may cause severe problems by not being
- * able to detect all references kept around.
- * This danger required all accesses to global information to be packaged
- * in a critical section, which is known to be a severe performance hindrance.
- *
- */
-
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
@@ -152,5 +116,153 @@ mal_export void mal_exit(void);
 #define MAXPATHLEN 1024
 #endif
 
+/* The MAL instruction block type definitions */
+/* Variable properties */
+#define VAR_CONSTANT 	1
+#define VAR_TYPEVAR	2
+#define VAR_FIXTYPE	4
+#define VAR_UDFTYPE	8
+#define VAR_CLEANUP	16
+#define VAR_INIT	32
+#define VAR_USED	64
+#define VAR_DISABLED	128		/* used for comments and scheduler */
+
+/* type check status is kept around to improve type checking efficiency */
+#define TYPE_ERROR      -1
+#define TYPE_UNKNOWN     0
+#define TYPE_RESOLVED    2
+#define GARBAGECONTROL   3
+
+#define VARARGS 1				/* deal with variable arguments */
+#define VARRETS 2
+
 #define SERVERSHUTDOWNDELAY 5 /* seconds */
+
+typedef int malType;
+typedef str (*MALfcn) ();
+
+typedef struct MalProp {
+	bte idx;
+	bte op;
+	int var;
+} *MalPropPtr, MalProp;
+
+typedef struct SYMDEF {
+	struct SYMDEF *peer;		/* where to look next */
+	struct SYMDEF *skip;		/* skip to next different symbol */
+	str name;
+	int kind;
+	struct MALBLK *def;			/* the details of the MAL fcn */
+} *Symbol, SymRecord;
+
+typedef struct VARRECORD {
+	str name;					/* argname or lexical value repr */
+	malType type;				/* internal type signature */
+	int flags;					/* see below, reserve some space */
+	int tmpindex;				/* temporary variable */
+	ValRecord value;
+	int eolife;					/* pc index when it should be garbage collected */
+	int propc, maxprop;			/* proc count and max number of properties */
+	int prps[];					/* property array */
+} *VarPtr, VarRecord;
+
+/* For performance analysis we keep track of the number of calls and
+ * the total time spent while executing the instruction. (See
+ * mal_profiler.mx) 
+ */
+
+typedef struct {
+	bit token;					/* instruction type */
+	bit barrier;				/* flow of control modifier takes:
+								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
+	bit typechk;				/* type check status */
+	bit gc;						/* garbage control flags */
+	bit polymorphic;			/* complex type analysis */
+	bit varargs;				/* variable number of arguments */
+	int recycle;				/* <0 or index into recycle cache */
+	int jump;					/* controlflow program counter */
+	MALfcn fcn;					/* resolved function address */
+	struct MALBLK *blk;			/* resolved MAL function address */
+	/* inline statistics */
+	bit trace;
+	int calls;					/* number of calls made */
+	lng ticks;					/* total micro seconds spent */
+	lng rbytes,wbytes;			/* accumulated number of bytes touched */
+	/* the core admin */
+	str modname;				/* module context */
+	str fcnname;				/* function name */
+	int argc, retc, maxarg;		/* total and result argument count */
+	int argv[];					/* at least a few entries */
+} *InstrPtr, InstrRecord;
+
+typedef struct MALBLK {
+	str binding;				/* related C-function */
+	str help;					/* supportive commentary */
+	oid tag;					/* unique block tag */
+	struct MALBLK *alternative;
+	int vtop;					/* next free slot */
+	int vsize;					/* size of variable arena */
+	VarRecord **var;			/* Variable table */
+	int stop;					/* next free slot */
+	int ssize;					/* byte size of arena */
+	InstrPtr *stmt;				/* Instruction location */
+	int ptop;					/* next free slot */
+	int psize;					/* byte size of arena */
+	MalProp *prps;				/* property table */
+	int errors;					/* left over errors */
+	int typefixed;				/* no undetermined instruction */
+	int flowfixed;				/* all flow instructions are fixed */
+	struct MALBLK *history;		/* of optimizer actions */
+	short keephistory;			/* do we need the history at all */
+	short dotfile;				/* send dot file to stethoscope? */
+	str marker;					/* history points are marked for backtracking */
+	int maxarg;					/* keep track on the maximal arguments used */
+	ptr replica;				/* for the replicator tests */
+	sht recycle;				/* execution subject to recycler control */
+	lng recid;					/* Recycler identifier */
+	lng legid;					/* Octopus control */
+	sht trap;					/* call debugger when called */
+	lng starttime;				/* track when the query started, for resource management */
+	lng runtime;				/* average execution time of block in ticks */
+	int calls;					/* number of calls */
+	lng optimize;				/* total optimizer time */
+} *MalBlkPtr, MalBlkRecord;
+
+#define STACKINCR   128
+#define MAXGLOBALS  (4 * STACKINCR)
+#define MAXSHARES   8
+
+typedef int (*DFhook) (void *, void *, void *, void *);
+
+typedef struct MALSTK {
+	int stksize;
+	int stktop;
+	int stkbot;			/* the first variable to be initialized */
+	int stkdepth;		/* to protect against runtime stack overflow */
+	int calldepth;		/* to protect against runtime stack overflow */
+	short keepAlive;	/* do not garbage collect when set */
+	short garbageCollect; /* stack needs garbage collection */
+	lng tmpspace;		/* amount of temporary space produced */
+	/*
+	 * Parallel processing is mostly driven by dataflow, but within this context
+	 * there may be different schemes to take instructions into execution.
+	 * The admission scheme (and wrapup) are the necessary scheduler hooks.
+	 */
+	DFhook admit;
+	DFhook wrapup;
+	MT_Lock stklock;	/* used for parallel processing */
+
+/*
+ * It is handy to administer the timing in the stack frame
+ * for use in profiling and recylcing instructions.
+ */
+	struct timeval clock;		/* time this stack was created */
+	char cmd;		/* debugger and runtime communication */
+	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
+	int pcup;		/* saved pc upon a recursive all */
+	struct MALSTK *up;	/* stack trace list */
+	struct MALBLK *blk;	/* associated definition */
+	ValRecord stk[1];
+} MalStack, *MalStkPtr;
+
 #endif /*  _MAL_H*/

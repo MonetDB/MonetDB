@@ -140,7 +140,7 @@ Ready.
 % int,	double # type
 % 1,	24 # length
 [ 1,	1	]
-[ 2,	4.25	]
+[ 2,	4	]
 [ 3,	3	]
 #select j,avg(i) from Rc group by j;
 % sys.rc,	sys.L1 # table_name

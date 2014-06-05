@@ -8,8 +8,7 @@ function user.f1();
   
   # check existance
   xxx_1 := bbp.getNames();
-  xr:= bat.reverse(xxx_1);
-  xxx_3 := algebra.exist(xr,"xxx");
+  xxx_3 := algebra.exist(xxx_1,"xxx");
   
   # if it exists, print it
   barrier ifb := xxx_3;

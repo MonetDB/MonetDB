@@ -54,6 +54,7 @@ TABLE_TYPE
 mTests_sql_jdbc_tests	
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
+json	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 tmp	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 3 columns
@@ -109,7 +110,8 @@ create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
-	sum(indices) as indices,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
 from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	rowid	SYSTEM	

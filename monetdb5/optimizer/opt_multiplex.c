@@ -19,6 +19,7 @@
 
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
+#include "manifold.h"
 #include "mal_interpreter.h"
 
 /*
@@ -62,7 +63,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ht = getHeadType(getArgType(mb, pci, 0));
 	if (ht != TYPE_oid)
 		throw(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getTailType(getArgType(mb, pci, 0));
+	tt = getColumnType(getArgType(mb, pci, 0));
 	if (tt== TYPE_any)
 		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
 	if (isAnyExpression(getArgType(mb, pci, 0)))
@@ -73,7 +74,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn,strlen(fcn));
 #ifndef NDEBUG
-	mnstr_printf(GDKstdout,"#Bulk operator required for %s.%s\n", mod,fcn);
+	mnstr_printf(GDKstdout,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n", mod,fcn);
 #endif
 
 	/* search the iterator bat */
@@ -104,7 +105,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return NULL;
 
 	/* x := bat.reverse(A1); */
-	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
+	x = newTmpVariable(mb, newBatType(getColumnType(getVarType(mb,iter)),
 									  getHeadType(getVarType(mb,iter))));
 	q = newFcnCall(mb, batRef, reverseRef);
 	getArg(q, 0) = x;
@@ -132,7 +133,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i++; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
-			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
+			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
 			(void) pushArgument(mb, q, hvar);
@@ -228,16 +229,24 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED &&
-                    getModuleId(p) == malRef &&
+		if (msg == MAL_SUCCEED && getModuleId(p) == malRef &&
 		    getFunctionId(p) == multiplexRef) {
+
+			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
+				setFunctionId(p, manifoldRef);
+				pushInstruction(mb, p);
+				actions++;
+				continue;
+			}
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
 				freeInstruction(p);
 				old[i]=0;
-			} else {
-				pushInstruction(mb, p);
-			}
+				actions++;
+				continue;
+			} 
+
+			pushInstruction(mb, p);
 			actions++;
 		} else if( old[i])
 			pushInstruction(mb, p);

@@ -1,7 +1,0 @@
-io.print("Contents of the 'const' box");
-barrier (b,nme):= const.newIterator();
-	io.printf("[ %s ]\n",nme);
-	val:str := const.toString(nme);
-	io.printf("#%s\n",val);
-	redo (b,nme):= const.hasMoreElements();
-exit b;

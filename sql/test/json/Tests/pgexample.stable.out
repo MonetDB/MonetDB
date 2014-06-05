@@ -1,0 +1,70 @@
+stdout of test 'pgexample` in directory 'sql/test/json` itself:
+
+
+# 02:53:37 >  
+# 02:53:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37692" "--set" "mapi_usock=/var/tmp/mtest-30874/.s.monetdb.37692" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0"
+# 02:53:37 >  
+
+# MonetDB 5 server v11.16.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37692/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30874/.s.monetdb.37692
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 02:53:37 >  
+# 02:53:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30874" "--port=37692"
+# 02:53:37 >  
+
+#CREATE TABLE jsonTbl (a int, b json);
+#INSERT INTO jsonTbl  VALUES (1, '{"f1":1,"f2":true,"f3":"Hi I''m \\"Daisy\\""}');
+[ 1	]
+#INSERT INTO jsonTbl VALUES (2, '{"f1":{"f11":11,"f12":12},"f2":2}');
+[ 1	]
+#INSERT INTO jsonTbl VALUES (3, '{"f1":[1,"Robert \\"M\\"",true],"f2":[2,"Kevin \\"K\\"",false]}');
+[ 1	]
+#SELECT  json_path(b,'f1') AS f1, json_path(b,'f3') FROM jsonTbl WHERE a =1;
+% sys.L,	sys.L # table_name
+% f1,	filter_b # name
+% json,	json # type
+% 3,	20 # length
+[ "[1]",	"[\"Hi I'm \\\"Daisy\\\"\"]"	]
+#SELECT json_path(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2;
+% sys.L # table_name
+% f12 # name
+% json # type
+% 4 # length
+[ "[12]"	]
+#SELECT json_path(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3;
+% sys.L # table_name
+% f1_0 # name
+% json # type
+% 25 # length
+[ "[[1,\"Robert \\\"M\\\"\",true]]"	]
+#SELECT  json_path(b,'f3') AS f1, json_text(b,'f3') FROM jsonTbl WHERE a =1;
+% sys.L,	sys.L # table_name
+% f1,	text_filter_b # name
+% json,	clob # type
+% 20,	14 # length
+[ "[\"Hi I'm \\\"Daisy\\\"\"]",	"Hi I'm \"Daisy\""	]
+#SELECT json_path(b,'f1[0]') as f1_0 , json_text(b,'f1[0]')FROM jsonTbl WHERE a = 3;
+% sys.L,	sys.L # table_name
+% f1_0,	text_filter_b # name
+% json,	clob # type
+% 25,	17 # length
+[ "[[1,\"Robert \\\"M\\\"\",true]]",	"1 Robert \"M\" true"	]
+#drop table jsonTbl;
+
+# 02:53:37 >  
+# 02:53:37 >  "Done."
+# 02:53:37 >  
+

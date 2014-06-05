@@ -39,7 +39,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isReplicaTable(t) || isRemote(t)) 
+		if (t && (isReplicaTable(t) || isRemote(t))) 
 			return 1;
 		break;
 	}
@@ -121,7 +121,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isReplicaTable(t)) {
+		if (t && isReplicaTable(t)) {
 			node *n;
 
 			if (uri) {
@@ -212,7 +212,7 @@ distribute(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		/* set_remote() */
-		if (isRemote(t)) {
+		if (t && isRemote(t)) {
 			char *uri = t->query;
 
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p); 

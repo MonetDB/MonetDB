@@ -18,46 +18,19 @@
  */
 
 /*
- * author Martin Kersten
- * Factory management
+ * (c) Martin Kersten
  * The factory infrastructure can be inspected and steered with
- * the commands provided here.
+ * the commands provided here. to-be-completed-when-needed
  */
 #include "monetdb_config.h"
 #include "factories.h"
 
-
-
-static void
-pseudo(int *ret, BAT *b, str X1,str X2, str X3) {
-	char buf[BUFSIZ];
-	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
-	BATroles(b,X1,X2);
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-}
-
 str
 FCTgetPlants(int *ret, int *ret2)
 {
-	BAT *bmod, *bfcn;
-
-	bmod = BATnew(TYPE_oid, TYPE_str, 256);
-	if( bmod == NULL)
-		throw(MAL, "factories.getPlants", MAL_MALLOC_FAIL);
-	if (!(bmod->batDirty&2)) bmod = BATsetaccess(bmod, BAT_READ);
-    BBPkeepref(*ret= bmod->batCacheid);
-
-	bfcn = BATnew(TYPE_oid, TYPE_str, 256);
-	if( bfcn == NULL)
-		throw(MAL, "factories.getPlants", MAL_MALLOC_FAIL);
-	if (!(bfcn->batDirty&2)) bfcn = BATsetaccess(bfcn, BAT_READ);
-    BBPkeepref(*ret2= bfcn->batCacheid);
-	return MAL_SUCCEED;
+	(void) ret;
+	(void) ret2;
+	throw(MAL, "factories.getPlants", PROGRAM_NYI);
 }
 
 str
@@ -70,37 +43,21 @@ FCTgetCaller(int *ret)
 str
 FCTgetOwners(int *ret)
 {
-	BAT *b;
-
 	(void) ret;
-	b = BATnew(TYPE_oid, TYPE_str, 256);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-    *ret = b->batCacheid;
-    BBPkeepref(*ret);
 	throw(MAL, "factories.getOwner", PROGRAM_NYI);
 }
 
 str
 FCTgetArrival(int *ret)
 {
-	BAT *b;
-
 	(void) ret;
-	b = BATnew(TYPE_oid, TYPE_str, 256);
-    *ret = b->batCacheid;
-    BBPkeepref(*ret);
 	throw(MAL, "factories.getArrival", PROGRAM_NYI);
 }
 
 str
 FCTgetDeparture(int *ret)
 {
-	BAT *b;
-
 	(void) ret;
-	b = BATnew(TYPE_oid, TYPE_str, 256);
-    *ret = b->batCacheid;
-    BBPkeepref(*ret);
 	throw(MAL, "factories.getDeparture", PROGRAM_NYI);
 }
 
@@ -115,12 +72,7 @@ FCTsetLocation(int *ret, str *loc)
 str
 FCTgetLocations(int *ret)
 {
-	BAT *b;
-
 	(void) ret;
-	b = BATnew(TYPE_int, TYPE_str, 256);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"factories,","plantid,","location");
 	throw(MAL, "factories.getLocations", PROGRAM_NYI);
 }
 

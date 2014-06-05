@@ -42,17 +42,17 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     bat.append(b,3);                    #  4 _8:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
     bat.append(b,4);                    #  5 _10:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _11:int) {G}
     bat.append(b,5);                    #  6 _12:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _13:int) {G}
-    c := bat.partition(b,2,0);          #  7 c:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _15:int) {G}
+    c := bat.partition(b,2,0);          #  7 c:bat[:oid,:int] := CMDBATpartition2(b:bat[:oid,:int], _7:int, _15:int) {G}
     io.print(c);                        #  8 _16:void := IOprint_val(c:bat[:oid,:int]) {G}
-    d := bat.partition(b,2,1);          #  9 d:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _5:int) {G}
+    d := bat.partition(b,2,1);          #  9 d:bat[:oid,:int] := CMDBATpartition2(b:bat[:oid,:int], _7:int, _5:int) {G}
     io.print(d);                        # 10 _18:void := IOprint_val(d:bat[:oid,:int]) {G}
-    (b1,b2) := bat.partition(b);        # 11 (b1:bat[:oid,:int], b2:bat[:oid,:int]) := CMDbatpartition(b:bat[:oid,:int]) {G}
+    (b1,b2) := bat.partition(b);        # 11 (b1:bat[:oid,:int], b2:bat[:oid,:int]) := CMDBATpartition(b:bat[:oid,:int]) {G}
     io.print(b1);                       # 12 _21:void := IOprint_val(b1:bat[:oid,:int]) {G}
     io.print(b2);                       # 13 _22:void := IOprint_val(b2:bat[:oid,:int]) {G}
-    b3 := bat.partition(b);             # 14 b3:bat[:oid,:int] := CMDbatpartition(b:bat[:oid,:int]) {G}
+    b3 := bat.partition(b);             # 14 b3:bat[:oid,:int] := CMDBATpartition(b:bat[:oid,:int]) {G}
     io.print(b3);                       # 15 _24:void := IOprint_val(b3:bat[:oid,:int]) {G}
 # an error should be produced 
-    e := bat.partition(b,2,-1);         # 17 e:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _27:int) {G}
+    e := bat.partition(b,2,-1);         # 17 e:bat[:oid,:int] := CMDBATpartition2(b:bat[:oid,:int], _7:int, _27:int) {G}
     io.print(e);                        # 18 _28:void := IOprint_val(e:bat[:oid,:int]) {G}
 end tst;                                # 19  
 #-----------------#

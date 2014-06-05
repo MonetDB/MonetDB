@@ -363,181 +363,6 @@ handle_error(mvc *m, stream *out, int pstatus)
 }
 
 static str
-sql_update_dec2011(Client c, mvc *m)
-{
-	node *nsch, *ntab, *ncol;
-	sql_trans *tr;
-	char *buf = GDKmalloc(1024), *err = NULL;
-	size_t bufsize = 1024, pos = 0;
-
-	buf[0] = 0;
-	tr = m->session->tr;
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_schema *s = nsch->data;
-
-		if (isalpha((int) s->base.name[0])) {
-			if (!s->tables.set)
-				continue;
-			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
-				sql_table *t = ntab->data;
-
-				if (!isTable(t) || !t->columns.set)
-					continue;
-				for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
-					sql_column *c = (sql_column *) ncol->data;
-
-					if (c->type.type->eclass == EC_INTERVAL &&
-					    strcmp(c->type.type->sqlname, "sec_interval") == 0) {
-						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 3 * strlen(c->base.name))
-							buf = GDKrealloc(buf, bufsize += 1024);
-						pos += snprintf(buf + pos, bufsize - pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\" where \"%s\" is not null;\n",
-								s->base.name, t->base.name, c->base.name, c->base.name, c->base.name);
-					}
-				}
-			}
-		}
-	}
-	if (bufsize < pos + 400)
-		buf = GDKrealloc(buf, bufsize += 1024);
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name pcre.like_filter;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name pcre.ilike_filter;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('ilike', 'like') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FILT);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_apr2012(Client c)
-{
-	char *buf = GDKmalloc(2048), *err = NULL;
-	size_t bufsize = 2048, pos = 0;
-
-	/* sys.median and sys.corr functions */
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val TINYINT) returns TINYINT external name \"aggr\".\"median\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val SMALLINT) returns SMALLINT external name \"aggr\".\"median\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val INTEGER) returns INTEGER external name \"aggr\".\"median\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val BIGINT) returns BIGINT external name \"aggr\".\"median\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val HUGEINT) returns HUGEINT external name \"aggr\".\"median\";\n");
-#endif
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val REAL) returns REAL external name \"aggr\".\"median\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val DOUBLE) returns DOUBLE external name \"aggr\".\"median\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 TINYINT, e2 TINYINT) returns TINYINT external name \"aggr\".\"corr\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 SMALLINT, e2 SMALLINT) returns SMALLINT external name \"aggr\".\"corr\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 INTEGER, e2 INTEGER) returns INTEGER external name \"aggr\".\"corr\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 BIGINT, e2 BIGINT) returns BIGINT external name \"aggr\".\"corr\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT external name \"aggr\".\"corr\";\n");
-#endif
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 REAL, e2 REAL) returns REAL external name \"aggr\".\"corr\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE external name \"aggr\".\"corr\";\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('median', 'corr') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
-
-	assert(pos < 2048);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_apr2012_sp1(Client c)
-{
-	char *buf = GDKmalloc(2048), *err = NULL;
-	size_t bufsize = 2048, pos = 0;
-
-	/* changes in createdb/25_debug.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "update sys.functions set type = %d, side_effect = false where type = %d and id not in (select func_id from sys.args where number = 0 and name = 'result');\n", F_PROC, F_FUNC);
-	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, location string, \"count\" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted boolean) external name sql.storage;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create function sys.optimizers() returns table (name string, def string, status string) external name sql.optimizers;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.ra;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create procedure sys.evalAlgebra( ra_stmt string, opt bool) external name sql.\"evalAlgebra\";\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'optimizers') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('evalalgebra') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
-
-	assert(pos < 2048);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_jul2012(Client c)
-{
-	char *buf = GDKmalloc(2048), *err = NULL;
-	size_t bufsize = 2048, pos = 0;
-
-	/* new function sys.alpha */
-	pos += snprintf(buf + pos, bufsize - pos, "create function sys.alpha(pdec double, pradius double) returns double external name sql.alpha;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'alpha' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
-
-	assert(pos < 2048);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_oct2012(Client c)
-{
-	char *buf = GDKmalloc(2048), *err = NULL;
-	size_t bufsize = 2048, pos = 0;
-
-	/* new function sys.alpha */
-	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.zorder_slice;\n");
-
-	assert(pos < 2048);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_oct2012_sp1(Client c)
-{
-	char *buf = GDKmalloc(2048), *err = NULL;
-	size_t bufsize = 2048, pos = 0;
-
-	/* sys.stddev functions */
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(TINYINT);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(SMALLINT);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(INTEGER);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(BIGINT);\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(HUGEINT);\n");
-#endif
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(REAL);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(DOUBLE);\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(DATE);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(TIME);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop aggregate sys.stddev(TIMESTAMP);\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.systemfunctions where function_id in (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
-
-	assert(pos < 2048);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_update_feb2013(Client c)
 {
 	char *buf = GDKmalloc(4096), *err = NULL;
@@ -785,10 +610,18 @@ sql_update_feb2013_sp3(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+/*
+ * TODO
+ * 	rewrite args table, ie add vararg and inout columns
+ * 	update all table functions, ie make them type F_UNION
+ *	update columns view, ie change storage_type-int into storage - varchar
+ *	remove table return types (#..), ie tt_generated from _tables
+ *	drop declared schema.
+ */
 static str
 sql_update_jan2014(Client c)
 {
-	size_t bufsize = 15000, pos = 0;
+	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
@@ -998,7 +831,7 @@ create procedure analyze(sch string, tbl string, col string, \"sample\" bigint)\
 external name sql.analyze;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('json_filter', 'json_filter_all', 'json_isvalid', 'json_isvalidarray', 'json_isvalidobject', 'json_length', 'json_path', 'json_text', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('analyze', 'pause', 'querylog_disable', 'querylog_empty', 'querylog_enable', 'resume', 'setsession', 'settimeout', 'shutdown', 'stop', 'sysmon_resume') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
@@ -1007,10 +840,104 @@ external name sql.analyze;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('environment', 'optimizers', 'queue', 'sessions', 'statistics', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* 17_compress script has been removed */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcdeompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzctruncate;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcexpand;\n");
+
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}
+
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default(Client c)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
+	char *schema = NULL;
+	char *fullname;
+	FILE *fp;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* change in 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;\n");
+
+	/* new file 40_json.sql */
+	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
+	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
+		if ((fp = fopen(fullname, "r")) != NULL) {
+			pos += fread(buf + pos, 1, bufsize - pos, fp);
+			fclose(fp);
+		}
+		GDKfree(fullname);
+	}
+
+	/* new file 41_jsonstore.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
+
+	/* new file 45_uuid.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "create type uuid external name uuid;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.uuid() returns uuid external name uuid.\"new\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.isaUUID(u uuid) returns uuid external name uuid.\"isaUUID\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'md5', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_FUNC);
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	/* change to 75_storage functions */
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storage;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storagemodel;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.tablestoragemodel;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storagemodel();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storagemodel() returns table ("
+"    \"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint,"
+"    columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)"
+"	begin return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\","
+"		columnsize(I.\"type\", I.count, I.\"distinct\"),"
+"		heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),"
+"		hashsize(I.\"reference\", I.\"count\"),"
+"		imprintsize(I.\"count\",I.\"type\"),"
+"		I.sorted"
+"		from sys.storagemodelinput I;"
+"	end;\n");
+	pos += snprintf(buf + pos, bufsize - pos, 
+"create view sys.tablestoragemodel"
+" as select \"schema\",\"table\",max(count) as \"count\","
+"    sum(columnsize) as columnsize,"
+"    sum(heapsize) as heapsize,"
+"    sum(hashes) as hashes,"
+"    sum(imprints) as imprints,"
+"    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
+"from sys.storagemodel() group by \"schema\",\"table\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	assert(pos < bufsize);
 
@@ -1138,66 +1065,6 @@ SQLinitClient(Client c)
 
 		if (!m->sa)
 			m->sa = sa_create();
-		/* if filter function sys.like(str,str,str) does not
-		 * exist, we need to update */
-		sql_find_subtype(&tp, "clob", 0, 0);
-		if (!sql_bind_func3(m->sa, mvc_bind_schema(m, "sys"), "like", &tp, &tp, &tp, F_FILT)) {
-			if ((err = sql_update_dec2011(c, m)) !=NULL) {
-				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
-			}
-		}
-		/* if aggregate function sys.median(int) does not
-		 * exist, we need to update */
-		sql_find_subtype(&tp, "int", 0, 0);
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "median", &tp, NULL, F_AGGR)) {
-			if ((err = sql_update_apr2012(c)) !=NULL) {
-				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
-			}
-		}
-		/* if function sys.optimizers() does not exist, we
-		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "optimizers", NULL, NULL, F_FUNC)) {
-			if ((err = sql_update_apr2012_sp1(c)) !=NULL) {
-				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
-			}
-		}
-		/* if function sys.alpa(double) does not
-		 * exist, we need to update */
-		sql_find_subtype(&tp, "double", 0, 0);
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "alpha", &tp, &tp, F_FUNC)) {
-			if ((err = sql_update_jul2012(c)) !=NULL) {
-				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
-			}
-		}
-		/* if function sys.zorder_slice() does exist, we need
-		 * to update */
-		{
-			list *l = sa_list(m->sa);
-			sql_find_subtype(&tp, "int", 0, 0);
-			list_append(l, &tp);
-			list_append(l, &tp);
-			list_append(l, &tp);
-			list_append(l, &tp);
-			if (sql_bind_func_(m->sa, mvc_bind_schema(m, "sys"), "zorder_slice", l, F_FUNC)) {
-				if ((err = sql_update_oct2012(c)) !=NULL) {
-					fprintf(stderr, "!%s\n", err);
-					GDKfree(err);
-				}
-			}
-		}
-		/* if aggregate function sys.stddev(int) does
-		 * exist, we need to update */
-		sql_find_subtype(&tp, "int", 0, 0);
-		if (sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "stddev", &tp, NULL, F_AGGR)) {
-			if ((err = sql_update_oct2012_sp1(c)) !=NULL) {
-				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
-			}
-		}
 		/* if aggregate function sys.stddev_samp(int) does not
 		 * exist, we need to update */
 		sql_find_subtype(&tp, "int", 0, 0);
@@ -1209,7 +1076,8 @@ SQLinitClient(Client c)
 		}
 		/* if function sys.storagemodel() does not exist, we
 		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC)) {
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC) && 
+		    !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_feb2013_sp1(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
@@ -1226,8 +1094,18 @@ SQLinitClient(Client c)
 		}
 		/* if function sys.querylog_catalog() does not exist, we
 		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_FUNC)) {
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_FUNC) &&
+		    !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "querylog_catalog", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_jan2014(c)) !=NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if function sys.md5(str) does not exist, we need to
+		 * update */
+		sql_find_subtype(&tp, "clob", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
+			if ((err = sql_update_default(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
@@ -1291,9 +1169,7 @@ SQLexitClient(Client c)
 str
 SQLinitEnvironment(Client cntxt)
 {
-	if ( !SQLinitialized)
-		return SQLinitClient(cntxt);
-	return MAL_SUCCEED;
+	return SQLinitClient(cntxt);
 }
 
 static void
@@ -1366,6 +1242,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	sql->output_format = be->output_format;
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;

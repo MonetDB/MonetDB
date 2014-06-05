@@ -18,24 +18,8 @@
  */
 
 /*
- * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes, K.S. Mullender
- * @* Common BAT Operations
- * This module contains the following BAT algebra operations:
- * @itemize
- * @item bulk updates
- * multi-insert, multi-delete, multi-replace
- * @item common aggregates
- * min, max and histogram
- * @item oid column manipulations
- * mark, number and split.
- * @item bat selections
- * select, slice, sample, fragment and restrict.
- * Note: non hash-/index-supported scanselects have been "outsourced"
- * to gdk_scanselect.mx as the fully expanded code grows too large to
- * be (conveniently) compiled in a single file.
- * @item bat partitioning
- * hash partition, range partitioning
- * @end itemize
+ * (c) M. L. Kersten, P. Boncz, S. Manegold, N. Nes, K.S. Mullender
+ * Common BAT Operations
  * We factor out all possible overhead by inlining code.  This
  * includes the macros BUNhead and BUNtail, which do a test to see
  * whether the atom resides in the buns or in a variable storage
@@ -58,7 +42,7 @@
 	} while (0)
 
 /*
- * @+ BAT insert/delete/replace
+ * BAT insert/delete/replace
  * The content of a BAT can be appended to (removed from) another
  * using BATins (BATdel).
  */
@@ -302,7 +286,7 @@ BATins(BAT *b, BAT *n, bit force)
 				return NULL;
 		}
 	}
-	if (b->T->hash == NULL && b->batSet == 0 &&
+	if (b->T->hash == NULL &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
 	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
 	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
@@ -414,7 +398,7 @@ BATins(BAT *b, BAT *n, bit force)
 				BATiter ni = bat_iterator(n);
 
 				BATloop(n, p, q) {
-					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					bunfastapp_nocheck(b, r, BUNtail(ni, p), Tsize(b));
 					r++;
 				}
 			}
@@ -544,7 +528,6 @@ BATappend(BAT *b, BAT *n, bit force)
 		HASHremove(BATmirror(b));
 	}
 	if (b->T->hash != NULL ||
-	    b->batSet ||
 	    (b->tkey & BOUND2BTRUE) != 0 ||
 	    (b->H->hash != NULL && ATOMstorage(b->htype) != ATOMstorage(TYPE_oid)))
 		fastpath = 0;
@@ -618,7 +601,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATiter ni = bat_iterator(n);
 
 				BATloop(n, p, q) {
-					bunfastins_nocheck(b, r, NULL, BUNtail(ni, p), 0, Tsize(b));
+					bunfastapp_nocheck(b, r, BUNtail(ni, p), Tsize(b));
 					r++;
 				}
 			}
@@ -775,14 +758,14 @@ BATreplace(BAT *b, BAT *n, bit force)
 
 
 /*
- * @+ BAT Selections
+ *  BAT Selections
  * The BAT selectors are among the most heavily used operators.
  * Their efficient implementation is therefore mandatory.
  *
  * The interface supports seven operations: BATslice, BATselect,
  * BATfragment, BATproject, BATrestrict.
  *
- * @- BAT slice
+ * BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
  * execution by avoiding to copy when the BAT is memory mapped (in
  * this case, an independent submap is created) or else when it is
@@ -860,7 +843,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATsetcount(bn, h - l);
 		} else if (BAThdense(b) && b->ttype) {
 			for (; p < q; p++) {
-				bunfastins(bn, NULL, BUNtail(bi, p));
+				bunfastapp(bn, BUNtail(bi, p));
 			}
 		} else if (b->htype != b->ttype || b->htype != TYPE_void) {
 			for (; p < q; p++) {
@@ -923,7 +906,7 @@ BATslice(BAT *b, BUN l, BUN h)
 }
 
 /*
- * @- Top-N selection
+ * Top-N selection
  *
  * The top-N elements can be easily obtained by trimming the
  * space. The auxiliary index structures are removed.  For
@@ -953,217 +936,7 @@ BATtopN(BAT *b, BUN topN)
 }
 
 /*
- * The baseline algorithm for fragment location is a two-phase
- * process.  First we search on the 1st dimension and collect the
- * qualifying BUNs in a marking on the stack. In the second phase, the
- * tail is analyzed for all items already marked and qualifying
- * associations are copied into the result.  An index is exploited
- * when possible.
- */
-#define restrict1(cmptype, TYPE, BUNhead)				\
-	do {								\
-		if (BAThordered(b)) {					\
-			BUN p1, p2;					\
-									\
-			b = BATmirror(b);				\
-			SORTloop(b, p1, p2, hl, hh) {			\
-				*m++ = p1;				\
-			}						\
-			b = BATmirror(b);				\
-		} else {						\
-			int lval = !cmptype##_EQ(ATOMnilptr(t), hl, TYPE); \
-			int hval = !cmptype##_EQ(ATOMnilptr(t), hh, TYPE); \
-									\
-			if (hval && lval && cmptype##_GT(hl,hh,TYPE)) {	\
-				GDKerror("BATrestrict: illegal head range.\n");	\
-			} else {					\
-				BATiter bi = bat_iterator(b);		\
-									\
-				BATloop(b, p, l) {			\
-					if ((!lval || cmptype##_LE(hl, BUNhead(bi, p), TYPE)) && \
-					    (!hval || cmptype##_LE(BUNhead(bi, p), hh, TYPE))) { \
-						*m++ = p;		\
-					}				\
-				}					\
-			}						\
-		}							\
-	} while (0)
-
-#define restrict2(cmptype, TYPE, BUNhead, BUNtail)			\
-	do {								\
-		tl = cmptype##_EQ(ATOMnilptr(t), tl, TYPE) ? 0 : tl;	\
-		th = cmptype##_EQ(ATOMnilptr(t), th, TYPE) ? 0 : th;	\
-		if (th && tl && cmptype##_GT(tl, th, TYPE)) {		\
-			GDKerror("BATrestrict: illegal tail range.\n");	\
-		} else {						\
-			BATiter bi = bat_iterator(b);			\
-									\
-			for (; i < m; i++) {				\
-				const void *v = BUNtail(bi, *i);	\
-									\
-				if ((!tl || cmptype##_LE(tl, v, TYPE)) && \
-				    (!th || cmptype##_LE(v, th, TYPE))) { \
-					bunfastins(bn, BUNhead(bi, *i), v); \
-				}					\
-			}						\
-		}							\
-	} while (0)
-
-BAT *
-BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th)
-{
-	BAT *bn;
-	BUN p = 0, l;
-	BUN *mark, *m, *i;
-	BUN s;
-	int t;
-
-	BATcheck(hl, "BATrestrict: hl is null");
-	BATcheck(hh, "BATrestrict: hh is null");
-	BATcheck(tl, "BATrestrict: tl is null");
-	BATcheck(th, "BATrestrict: th is null");
-	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
-	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: estimated resultsize: " BUNFMT "\n", BATguess(b));
-
-	if (bn == NULL) {
-		return NULL;
-	}
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), BATtkey(b));
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATtrevordered(b);
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-
-	s = BATcount(b);
-	if (s == 0) {
-		ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " BUNFMT "\n", BATcount(bn));
-
-		return bn;
-	}
-	if ((mark = (BUN *) GDKmalloc((unsigned) s * sizeof(BUN))) == NULL)
-		goto bunins_failed;
-	m = mark;
-	i = mark;
-	switch (ATOMstorage(t = b->htype)) {
-	case TYPE_bte:
-		restrict1(simple, bte, BUNhloc);
-		break;
-	case TYPE_sht:
-		restrict1(simple, sht, BUNhloc);
-		break;
-	case TYPE_int:
-		restrict1(simple, int, BUNhloc);
-		break;
-	case TYPE_flt:
-		restrict1(simple, flt, BUNhloc);
-		break;
-	case TYPE_dbl:
-		restrict1(simple, dbl, BUNhloc);
-		break;
-	case TYPE_lng:
-		restrict1(simple, lng, BUNhloc);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		restrict1(simple, hge, BUNhloc);
-		break;
-#endif
-	default:
-		if (b->hvarsized) {
-			restrict1(atom, t, BUNhvar);
-		} else {
-			restrict1(atom, t, BUNhloc);
-		}
-		break;
-	}
-
-	/* second phase */
-	if (b->hvarsized) {
-		switch (ATOMstorage(t = b->ttype)) {
-		case TYPE_bte:
-			restrict2(simple, bte, BUNhvar, BUNtloc);
-			break;
-		case TYPE_sht:
-			restrict2(simple, sht, BUNhvar, BUNtloc);
-			break;
-		case TYPE_int:
-			restrict2(simple, int, BUNhvar, BUNtloc);
-			break;
-		case TYPE_flt:
-			restrict2(simple, flt, BUNhvar, BUNtloc);
-			break;
-		case TYPE_dbl:
-			restrict2(simple, dbl, BUNhvar, BUNtloc);
-			break;
-		case TYPE_lng:
-			restrict2(simple, lng, BUNhvar, BUNtloc);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			restrict2(simple, hge, BUNhvar, BUNtloc);
-			break;
-#endif
-		default:
-			if (b->tvarsized) {
-				restrict2(atom, t, BUNhvar, BUNtvar);
-			} else {
-				restrict2(atom, t, BUNhvar, BUNtloc);
-			}
-			break;
-		}
-	} else {
-		switch (ATOMstorage(t = b->ttype)) {
-		case TYPE_bte:
-			restrict2(simple, bte, BUNhloc, BUNtloc);
-			break;
-		case TYPE_sht:
-			restrict2(simple, sht, BUNhloc, BUNtloc);
-			break;
-		case TYPE_int:
-			restrict2(simple, int, BUNhloc, BUNtloc);
-			break;
-		case TYPE_flt:
-			restrict2(simple, flt, BUNhloc, BUNtloc);
-			break;
-		case TYPE_dbl:
-		case TYPE_lng:
-			restrict2(simple, lng, BUNhloc, BUNtloc);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			restrict2(simple, hge, BUNhloc, BUNtloc);
-			break;
-#endif
-		default:
-			if (b->tvarsized) {
-				restrict2(atom, t, BUNhloc, BUNtvar);
-			} else {
-				restrict2(atom, t, BUNhloc, BUNtloc);
-			}
-			break;
-		}
-	}
-	GDKfree(mark);
-
-	/* propagate alignment info */
-	if (BATcount(bn) == BATcount(b))
-		ALIGNset(bn, b);
-
-	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " BUNFMT "\n", BATcount(bn));
-
-	return bn;
-
-      bunins_failed:
-	GDKfree(mark);
-	BBPreclaim(bn);
-	return NULL;
-}
-
-/*
- * @+ BAT Sorting
+ *  BAT Sorting
  * BATsort returns a sorted copy. BATorder sorts the BAT itself.
  */
 int
@@ -1278,6 +1051,13 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 
 	return b;
 }
+
+#undef BATorder
+#undef BATorder_rev
+#undef BATsort
+#undef BATsort_rev
+#undef BATssort
+#undef BATssort_rev
 
 BAT *
 BATorder(BAT *b)
@@ -1566,7 +1346,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 }
 
 /*
- * @+ Reverse a BAT
+ * Reverse a BAT
  * BATrevert rearranges a BAT in reverse order.
  */
 BAT *
@@ -1869,7 +1649,8 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	if (gc)
 		BBPreclaim(gc);
 	return bn;
-      bunins_failed:
+  bunins_failed:
+  hashfnd_failed:
 	if (gc)
 		BBPreclaim(gc);
 	if (bn)
@@ -1973,7 +1754,7 @@ BATconst(BAT *b, int tailtype, const void *v)
 }
 
 /*
- * @+ BAT Aggregates
+ * BAT Aggregates
  *
  * We retain the size() and card() aggregate results in the column
  * descriptor.  We would like to have such functionality in an

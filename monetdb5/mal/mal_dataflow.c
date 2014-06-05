@@ -18,6 +18,7 @@
  */
 
 /*
+ * (author) M Kersten
  * Out of order execution
  * The alternative is to execute the instructions out of order
  * using dataflow dependencies and as an independent process.
@@ -38,6 +39,8 @@
 #include "monetdb_config.h"
 #include "mal_dataflow.h"
 #include "mal_private.h"
+#include "mal_runtime.h"
+#include "mal_resource.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */

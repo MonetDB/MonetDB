@@ -54,7 +54,7 @@ static struct msql_types {
 	{"double", SQL_DOUBLE},
 	{"int", SQL_INTEGER},
 	{"month_interval", SQL_INTERVAL_MONTH},
-	{"oid", SQL_GUID},
+	{"oid", SQL_BIGINT},
 	{"real", SQL_REAL},
 	{"sec_interval", SQL_INTERVAL_SECOND},
 	{"smallint", SQL_SMALLINT},
@@ -65,6 +65,7 @@ static struct msql_types {
 	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
+	{"uuid", SQL_GUID},
 	{"varchar", SQL_WVARCHAR},
 	{"wrd", SQL_BIGINT},
 	{0, 0},			/* sentinel */

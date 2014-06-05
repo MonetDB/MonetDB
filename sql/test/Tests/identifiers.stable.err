@@ -28,13 +28,13 @@ stderr of test 'identifiers` in directory 'sql/test` itself:
 # 18:30:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20764" "--port=38230"
 # 18:30:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-20764/.s.monetdb.38230
+MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
 QUERY = CREATE TABLE "B\"la\"" (id int); -- should fail
 ERROR = !Invalid identifier 'B\"la\"'
-MAPI  = (monetdb) /var/tmp/mtest-20764/.s.monetdb.38230
+MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
 QUERY = SELECT 1 AS "B\"la\""; -- should fail
 ERROR = !Invalid identifier 'B\"la\"'
-MAPI  = (monetdb) /var/tmp/mtest-20764/.s.monetdb.38230
+MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
 QUERY = SELECT 1 AS "\"Bla\""; -- should fail
 ERROR = !Invalid identifier '\"Bla\"'
 

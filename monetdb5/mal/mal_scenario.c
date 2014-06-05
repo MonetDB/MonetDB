@@ -18,9 +18,7 @@
  */
 
 /*
- * @f mal_scenario
- * @a M. Kersten
- * @v 0.0
+ * (author) M. Kersten
  * @+ Session Scenarios
  * In MonetDB multiple languages, optimizers, and execution engines can
  * be combined at run time to satisfy a wide user-community.
@@ -29,7 +27,7 @@
  * @emph{tactic scheduler} and @emph{engine}. These hooks allow
  * for both linked-in and external components.
  *
- * The languages supported are SQL, XQuery,
+ * The languages supported are SQL
  * and the Monet Assembly Language (MAL).
  * The default scenario handles MAL instructions, which is used
  * to illustrate the behavior of the scenario steps.

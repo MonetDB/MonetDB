@@ -17,6 +17,6 @@
 
 module group;
 
-pattern group.subgroup(b:bat[:oid,:any]...)(ref:bat[:oid,:oid], grp:bat[:oid,:oid], hist:bat[:oid,:any])
-address GROUPmulticolumn
+pattern group.multicolumn(b:bat[:oid,:any]...)(ref:bat[:oid,:oid], grp:bat[:oid,:oid], hist:bat[:oid,:any])
+address GROUPmulticolumngroup
 comment "Derivation of a group index over multiple columns.";

@@ -1,9 +1,0 @@
-# from the docs
-
-nums = [ 2, 1, 3 ];
-nums -> sort by [ $ ];
-nums -> sort each n by [ n ];
-nums -> sort by [ $ desc ];
-
-test = [[2,2,"first"],[1,2,"second"],[2,1,"third"],[1,1,"fourth"]];
-test -> sort by [$[0], $[1] desc];

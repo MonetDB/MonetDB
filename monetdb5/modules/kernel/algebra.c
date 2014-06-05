@@ -18,9 +18,8 @@
  */
 
 /*
- * @a Peter Boncz, Martin Kersten, Niels Nes, Sjoerd Mullender
- * @v 2.0
- * @+ BAT Algebra
+ * (c) Peter Boncz, Martin Kersten, Niels Nes, Sjoerd Mullender
+ * BAT Algebra
  * This modules contains the most common algebraic BAT manipulation
  * commands. We call them algebra, because all operations take
  * values as parameters, and produce new result values, but
@@ -54,11 +53,11 @@
 #include <math.h>
 
 /*
- * @* Command Implementations in C
+ * Command Implementations in C
  * This module contains just a wrapper implementations; since all described
  * operations are part of the GDK kernel.
  *
- * @+ BAT sum operation
+ * BAT sum operation
  * The sum aggregate only works for int and float fields.
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
@@ -161,7 +160,6 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 
 
 /*
- * @- Substring Select
  * The string pattern matching routine has been added. It should be
  * dynamically linked.
  * A simple string matcher is included. It should be refined later on
@@ -233,9 +231,6 @@ CMDlike(BAT **ret, BAT *b, str s)
 	return GDK_SUCCEED;
 }
 
-/*
- * @- BAT slice
- */
 static int
 slice(BAT **retval, BAT *b, lng start, lng end)
 {
@@ -253,119 +248,13 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
-
 /*
- * @- BUN Get/Fetch
- */
-static int
-CMDposition(wrd *retval, BAT *b, ptr val)
-{
-	BUN v = BUNfnd(b, val);
-
-	if (v == BUN_NONE)
-		return GDK_FAIL;
-	*retval = (wrd) (v - BUNfirst(b));
-	return GDK_SUCCEED;
-}
-
-static int
-CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
-{
-	BUN v = BUNlocate(b, val, tval);
-
-	if (v == BUN_NONE)
-		return GDK_FAIL;
-	*retval = (wrd) (v - BUNfirst(b));
-	return GDK_SUCCEED;
-}
-
-static int
-CMDexist(bit *ret, BAT *b, ptr val)
-{
-	BUN q = BUNfnd(b, val);
-
-	*ret = (q != BUN_NONE) ? 1 : 0;
-	return GDK_SUCCEED;
-}
-static int
-CMDexistBUN(bit *ret, BAT *b, ptr val, ptr tval)
-{
-	BUN q = BUNlocate(b, val, tval);
-
-	*ret = (q != BUN_NONE) ? 1 : 0;
-	return GDK_SUCCEED;
-}
-
-static BAT *
-BATmerge(BAT *b)
-{
-	BUN n = BATcount(b);
-	BAT *bn = BATnew(TYPE_lng, TYPE_void, n);
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
-	BUN p, q;
-	lng *r = (lng *) BUNhead(bni, BUNfirst(bn));
-
-	BATloop(b, p, q) {
-		oid hp = *(oid *) BUNhead(bi, p);
-		oid tp = *(oid *) BUNtail(bi, p);
-
-		*r++ = (((lng) hp) << 32) + tp;
-	}
-	BATsetcount(bn, p);
-	if (!bn->batDirty)
-		bn->batDirty = TRUE;
-
-	bn->hsorted = BAThordered(b) && (BATtordered(b) || BAThkey(b));
-	bn->hrevsorted = BAThrevordered(b) && (BATtrevordered(b) || BAThkey(b));
-	bn->tsorted = FALSE ;
-	bn->trevsorted = FALSE ;
-	bn->tdense = FALSE ;
-	BATkey(bn, BAThkey(b) || BATtkey(b)) ;
-	BATkey(BATmirror(bn), FALSE) ;
-
-	return bn;
-}
-
-static BAT *
-BATsplit(BAT *b)
-{
-	BATiter bi = bat_iterator(b);
-	BUN n = BATcount(b);
-	BAT *bn = BATnew(TYPE_oid, TYPE_oid, n);
-	BUN i;
-	lng *r = (lng *) BUNhead(bi, BUNfirst(b));
-
-	for (i = 0; i < n; i++, r++) {
-		oid hp = (int) (*r >> 32);
-		oid tp = (int) *r;
-
-		bunfastins(bn, &hp, &tp);
-	}
-
-	bn->hsorted = BAThordered(b) ;
-	bn->hrevsorted = BAThrevordered(b) ;
-	bn->tsorted = FALSE ;
-	bn->trevsorted = FALSE ;
-	bn->hdense = FALSE ;
-	bn->tdense = FALSE ;
-	bn->H->nonil = FALSE ;
-	bn->T->nonil = FALSE ;
-	BATkey(bn, FALSE) ;
-	BATkey(BATmirror(bn), FALSE) ;
-
-	return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-/*
- * @- Wrapper
+ * 
  * The remainder of this file contains the wrapper around the V4 code base
  * The BAT identifiers passed through this module may indicate
  * that the 'reverse' view applies. This should be taken into
  * account while resolving them.
- * @+ BAT sum and product aggregation
+ * 
  * The sum aggregate only works for int and float fields.
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
@@ -583,28 +472,6 @@ ALGselect1(int *result, int *bid, ptr value)
 }
 
 str
-ALGselect1Head(int *result, int *bid, ptr value)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, value);
-	bn = BATselect(b, value, 0);
-	bn = BATmirror(bn);
-	BBPreleaseref(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGuselect1(int *result, int *bid, ptr value)
 {
 	BAT *b, *bn = NULL;
@@ -740,30 +607,6 @@ ALGselectNotNil(int *result, int *bid)
 }
 
 str
-ALGselectHead(int *result, int *bid, ptr low, ptr high)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	bn = BATselect(b, low, high);
-	bn = BATmirror(bn);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGuselect(int *result, int *bid, ptr low, ptr high)
 {
 	BAT *b, *bn = NULL;
@@ -852,30 +695,6 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 }
 
 str
-ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	b = BATmirror(b);
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	CMDselect_(&bn, b, low, high, lin, rin);
-	bn = BATmirror(bn);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 {
 	BAT *b, *bn = NULL;
@@ -917,30 +736,6 @@ ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit 
 	}
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
-}
-
-str
-ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.fragment", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, hlow);
-	derefStr(b, h, hhigh);
-	derefStr(b, t, tlow);
-	derefStr(b, t, thigh);
-	bn = BATrestrict(b, hlow, hhigh, tlow, thigh);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.fragment", GDK_EXCEPTION);
 }
 
 str
@@ -1225,18 +1020,6 @@ ALGhistogram(bat *result, bat *bid)
 	return ALGunary(result, bid, BAThistogram, "algebra.histogram");
 }
 
-str
-ALGmerge(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATmerge, "algebra.merge");
-}
-
-str
-ALGsplit(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATsplit, "algebra.split");
-}
-
 static BAT *
 BATwcopy(BAT *b)
 {
@@ -1256,9 +1039,34 @@ ALGkunique(bat *result, bat *bid)
 }
 
 str
-ALGsunique(bat *result, bat *bid)
+ALGsubunique2(bat *result, bat *bid, bat *sid)
 {
-	return ALGunary(result, bid, BATsunique, "algebra.sunique");
+	BAT *b, *s = NULL, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATsubunique(b, s);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subunique", GDK_EXCEPTION);
+	if (!(bn->batDirty & 2))
+		bn = BATsetaccess(bn, BAT_READ);
+	*result = bn->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
+}
+
+str
+ALGsubunique1(bat *result, bat *bid)
+{
+	return ALGsubunique2(result, bid, NULL);
 }
 
 str
@@ -1501,27 +1309,9 @@ ALGsemijoin(bat *result, bat *lid, bat *rid)
 }
 
 str
-ALGsunion(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsunion, "algebra.sunion");
-}
-
-str
 ALGkunion(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATkunion, "algebra.kunion");
-}
-
-str
-ALGsintersect(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsintersect, "algebra.sintersect");
-}
-
-str
-ALGsdiff(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsdiff, "algebra.sdiff");
 }
 
 str
@@ -1534,12 +1324,6 @@ str
 ALGsample(bat *result, bat *bid, int *param)
 {
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
-}
-
-str
-ALGsubsample(bat *result, bat *bid, int *param)
-{
-	return ALGbinaryint(result, bid, param, BATsample_, "algebra.subsample");
 }
 
 /* add items missing in the kernel */
@@ -2166,26 +1950,6 @@ ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
 }
 
 str
-ALGhistogram_rev(int *result, int *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.histogram", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BAThistogram(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.histogram", GDK_EXCEPTION);
-}
-
-str
 ALGlike(int *ret, int *bid, str *k)
 {
 	BAT *b, *bn = NULL;
@@ -2288,42 +2052,8 @@ ALGsubslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
 }
 
 /*
- * @- BUN Get/Fetch
+ * BUN Get/Fetch
  */
-str
-ALGposition(wrd *retval, int *bid, ptr val)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	if (CMDposition(retval, b, val) == GDK_FAIL){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
-	}
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.position", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	derefStr(b, t, tval);
-	if( (CMDpositionBUN(retval, b, val, tval) == GDK_FAIL) ){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.position", GDK_EXCEPTION "Item not found");
-	}
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 static str
 doALGfetch(ptr ret, BAT *b, BUN pos)
@@ -2400,27 +2130,14 @@ str
 ALGexist(bit *ret, int *bid, ptr val)
 {
 	BAT *b;
+	BUN q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, h, val);
-	CMDexist(ret, b, val);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, h, val);
-	derefStr(b, t, tval);
-	CMDexistBUN(ret, b, val, tval);
+	q = BUNfnd(BATmirror(b), val);
+	*ret = (q != BUN_NONE) ? 1 : 0;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2608,7 +2325,6 @@ str ALGreuse(int *ret, int *bid)
 }
 
 /*
- * @+ BAT avg operation
  * The avg aggregate only works for int and float fields.
  */
 str
@@ -2631,7 +2347,7 @@ ALGavg(dbl *res, int *bid)
 }
 
 /*
- * @+ BAT standard deviation
+ * BAT standard deviation
  */
 str
 ALGstdev(dbl *res, int *bid)
@@ -2666,7 +2382,7 @@ ALGstdevp(dbl *res, int *bid)
 }
 
 /*
- * @+ BAT variance
+ * BAT variance
  */
 str
 ALGvariance(dbl *res, int *bid)

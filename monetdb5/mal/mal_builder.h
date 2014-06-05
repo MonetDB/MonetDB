@@ -21,8 +21,7 @@
 #define _MAL_BUILDER_
 
 #include "mal.h"
-#include "mal_function.h"
-#include "mal_namespace.h"
+#include "mal_instruction.h"
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, char *module, char *name);
 mal_export InstrPtr newStmt1(MalBlkPtr mb, str module, char *name);
@@ -34,15 +33,16 @@ mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
+mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
-mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
-mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
-mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
-mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 #ifdef HAVE_HGE
 mal_export InstrPtr pushHge(MalBlkPtr mb, InstrPtr q, hge val);
 #endif
+mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
+mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
+mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
+mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
 mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);

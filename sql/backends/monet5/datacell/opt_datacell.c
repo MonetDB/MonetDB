@@ -18,8 +18,7 @@
  */
 
 /*
- * @a M. Kersten
- * @- Datacell optimizer
+ * (author) M. Kersten
  * Assume simple queries . Clear out all non-datacell schema related sql statements, except
  * for the bare minimum.
  */
@@ -43,7 +42,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int bskt, i, j, k, limit, slimit;
 	InstrPtr r, p, qq, *old;
 	str col;
-	int maxbasket = 128, m = 0, a = 0;
+	int maxbasket = 128, m = 0, a = 0, movetofront=0;
 	char *tables[128] = { NULL };
 	char *appends[128] = { NULL };
 	InstrPtr q[128], qa[128] = { NULL };
@@ -55,13 +54,13 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	(void) pci;
 
+	removeDataflow(mb);
 	OPTDEBUGdatacell {
 		mnstr_printf(cntxt->fdout, "#Datacell optimizer started\n");
-		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 	} else
 		(void) stk;
 
-	removeDataflow(mb);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -80,17 +79,15 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			p = old[i];
 
 			if (getModuleId(p) == datacellRef && getFunctionId(p) == putName("window", 6) &&
-				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2)) && isVarConstant(mb, getArg(p, 3))) {
+				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2)) && isVarConstant(mb, getArg(p, 3)))
 				/* let's move the window to the start of the block  when it consists of constants*/
-				pushInstruction(mb, p);
-				for (j = mb->stop - 1; j > 1; j--)
-					mb->stmt[j] = mb->stmt[j - 1];
-				mb->stmt[j] = p;
-				continue;
-			}
+				movetofront=1;
 			if (getModuleId(p) == datacellRef && (getFunctionId(p) == putName("threshold", 9) || getFunctionId(p) == putName("beat", 4)) &&
-				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2))) {
+				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2)))
 				/* let's move the threshold/beat to the start of the block  when it consists of constants*/
+				movetofront=1;
+			if( movetofront){
+				movetofront =0;
 				pushInstruction(mb, p);
 				for (j = mb->stop - 1; j > 1; j--)
 					mb->stmt[j] = mb->stmt[j - 1];
@@ -131,14 +128,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				continue;
 			}
 
-			/* remove delta processing for baskets */
-			if (getModuleId(p) == sqlRef && (getFunctionId(p) == deltaRef || getFunctionId(p) == projectdeltaRef || getFunctionId(p) == subdeltaRef) ) {
-				clrFunction(p);
-				getArg(p,1) = alias[getArg(p,1)];
-				p->argc =2;
-				pushInstruction(mb, p);
-				continue;
-			}
 			/* localize access to basket tables */
 			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == binddbatRef)) {
 				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
@@ -186,7 +175,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					getFunctionId(p) = newRef;
 					p->argc = p->retc= 1;
 					p = pushType(mb, p, TYPE_oid);
-					p = pushType(mb, p, getTailType(getVarType(mb,getArg(p,0))));
+					p = pushType(mb, p, getColumnType(getVarType(mb,getArg(p,0))));
 					varSetProp(mb, p->argv[0], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				}
 			}
@@ -195,11 +184,33 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
 				bskt = BSKTlocate(buf);
 				tidlist[getArg(p,0)] = bskt > 0;
+				if ( bskt == 0){
+					clrFunction(p);
+					p->argc=1;
+					p = pushNil(mb,p, getArgType(mb,p,0));
+				}
 			}
 			/* remove consolidation of tid lists */
 			if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef  && tidlist[getArg(p,1)]){
 				alias[getArg(p, 0)] = getArg(p,2);
 				freeInstruction(p);
+				continue;
+			}
+			/* remove delta processing for baskets */
+			if (getModuleId(p) == sqlRef && (getFunctionId(p) == deltaRef || getFunctionId(p) == subdeltaRef) ) {
+				clrFunction(p);
+				p->argc =2;
+				pushInstruction(mb, p);
+				continue;
+			}
+
+			/* remove delta processing for baskets */
+			if (getModuleId(p) == sqlRef && (getFunctionId(p) == projectdeltaRef || getFunctionId(p) == subdeltaRef) ) {
+				clrFunction(p);
+				setModuleId(p,algebraRef);
+				setFunctionId(p,joinRef);
+				p->argc =3;
+				pushInstruction(mb, p);
 				continue;
 			}
 
@@ -275,7 +286,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	OPTDEBUGdatacell {
 		mnstr_printf(cntxt->fdout, "#Datacell optimizer intermediate\n");
-		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 	} 
 	/* optimize this new continous query using the default pipe */
 	addOptimizers(cntxt, mb, "default_pipe");
@@ -286,7 +297,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	OPTDEBUGdatacell {
 		mnstr_printf(cntxt->fdout, "#Datacell optimizer finished\n");
-		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 	} 
 
 	if (actions)

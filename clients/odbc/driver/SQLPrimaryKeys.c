@@ -139,21 +139,20 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	   VARCHAR      pk_name
 	 */
 	strcpy(query_end,
-	       "select "
-	       "e.\"value\" as table_cat, "
-	       "s.\"name\" as table_schem, "
-	       "t.\"name\" as table_name, "
-	       "kc.\"name\" as column_name, "
-	       "cast(kc.\"nr\" + 1 as smallint) as key_seq, "
-	       "k.\"name\" as pk_name "
-	       "from sys.\"schemas\" s, sys.\"tables\" t, "
-	       "sys.\"keys\" k, sys.\"objects\" kc, "
-	       "sys.\"env\"() e "
-	       "where k.\"id\" = kc.\"id\" and "
-	       "k.\"table_id\" = t.\"id\" and "
-	       "t.\"schema_id\" = s.\"id\" and "
-	       "k.\"type\" = 0 and "
-	       "e.\"name\" = 'gdk_dbname'");
+	       "select e.value as table_cat, "
+		      "s.name as table_schem, "
+		      "t.name as table_name, "
+		      "kc.name as column_name, "
+		      "cast(kc.nr + 1 as smallint) as key_seq, "
+		      "k.name as pk_name "
+	       "from sys.schemas s, sys.tables t, "
+		    "sys.keys k, sys.objects kc, "
+		    "sys.env() e "
+	       "where k.id = kc.id and "
+		     "k.table_id = t.id and "
+		     "t.schema_id = s.id and "
+		     "k.type = 0 and "
+		     "e.name = 'gdk_dbname'");
 	assert(strlen(query) < 800);
 	query_end += strlen(query_end);
 

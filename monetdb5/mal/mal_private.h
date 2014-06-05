@@ -92,6 +92,7 @@ extern void malGarbageCollector(MalBlkPtr mb)
 extern void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
 
+/* mal_http_daemon.h */
 extern void startHttpdaemon(void)
 	__attribute__((__visibility__("hidden")));
 extern void stopHttpdaemon(void)
