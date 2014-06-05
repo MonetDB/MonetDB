@@ -1483,6 +1483,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		}
 
+		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
@@ -1493,8 +1494,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+			else if (formatter == TIMERformatter)
+				printf("%s\n", timerHuman());
 			else {
-				timerHumanStop();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
@@ -1515,7 +1517,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
-			timerHumanStop();
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
 				if (singleinstr)
@@ -1541,7 +1542,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     mapi_get_tableid(hdl));
 			/* fall through */
 		case Q_TABLE:
-			timerHumanStop();
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
