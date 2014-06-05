@@ -674,8 +674,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
-	for(; cnt-- > 0; os++, o++){\
-		val = f + ((TPE) ( b->ttype == TYPE_void?os:*o)) * s;\
+	for(; cnt-- > 0; genoid++, o++){\
+		val = f + ((TPE) ( b->ttype == TYPE_void?genoid:*o)) * s;\
 		if ( val < f || val >= l)\
 			continue;\
 		*v++ = val;\
@@ -688,7 +688,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int bid =0, c= 0, tpe;
 	BAT *b, *bn = NULL;
 	BUN cnt;
-	oid *o =0, os= 0;
+	oid *o =0, genoid= 0;
 	InstrPtr p;
 	str msg;
 
@@ -703,7 +703,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 	cnt = BATcount(b);
 	if ( b->ttype == TYPE_void)
-		os = b->tseqbase;
+		genoid = b->tseqbase;
 	else
 		o = (oid*) Tloc(b,BUNfirst(b));
 
@@ -732,8 +732,8 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 			v = (timestamp*) Tloc(bn,BUNfirst(bn));
 
-			for(; cnt-- > 0; os++, o++){
-				t = ((lng) ( b->ttype == TYPE_void?os:*o)) * s;
+			for(; cnt-- > 0; genoid++, o++){
+				t = ((lng) ( b->ttype == TYPE_void?genoid:*o)) * s;
 				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
 					return msg;
 
@@ -765,11 +765,11 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
-	for( ; cnt >0; cnt--,os++,o++,v++){\
+	for( ; cnt >0; cnt--,genoid++,v++){\
 		w = (BUN) floor( (double)((*v -f)/s));\
 		if ( *v >= f && *v < l && f + (TPE)(w * s) == *v ){\
 			*or++ = w;\
-			*ol++ = os;\
+			*ol++ = genoid;\
 			c++;\
 		}\
 	} }\
@@ -778,7 +778,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
-	oid *o = 0, os= 0, *ol, *or;
+	oid genoid= 0, *ol, *or;
 	int tpe;
 	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
@@ -805,16 +805,18 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(!( p && q));
 	assert(p || q);
 
+mnstr_printf(cntxt->fdout,"Left? %d Right %d\n", p != NULL, q!= NULL);
 	// switch roles to have a single target bat[:oid,:any] designated 
 	// by b and reference instruction p for the generator
 	b = q? bl : br;
 	p = q? q : p;
 	cnt = BATcount(b);
 	tpe = b->ttype;
-	os = b->tseqbase;
+	genoid = b->tseqbase;
 	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt);
+mnstr_printf(cntxt->fdout,"lid? %d rid %d\n", bln->batCacheid, brn->batCacheid);
 	if( bln == NULL || brn == NULL){
 		if(bln) BBPreleaseref(bln->batCacheid);
 		if(brn) BBPreleaseref(brn->batCacheid);
@@ -833,11 +835,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
 	v = (bte*) Tloc(b,BUNfirst(b));
-	for( ; cnt >0; cnt--,os++,o++,v++){
+	for( ; cnt >0; cnt--,genoid++,v++){
 		w = (BUN) floor((*v -f)/s);
 		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
 			*or++ = (oid) w;
-			*ol++ = os;
+			*ol++ = genoid;
 			c++;
 		}
 	} }
@@ -858,7 +860,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		l = *(timestamp*) getArgReference(stk,p, 2);
 		s = *(lng*) getArgReference(stk,p, 3);
 		v = (timestamp*) Tloc(bl,BUNfirst(bl));
-		for( ; cnt >0; cnt--,os++,o++, v++){
+		for( ; cnt >0; cnt--,genoid++, v++){
 			offset = ((lng)*o) * s;
 			if( (msg = MTIMEtimestamp_add(&val, &f, &offset)) != MAL_SUCCEED)
 				return msg;
@@ -875,22 +877,22 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATsetcount(bln,c);
 	bln->hdense = 1;
-	bln->hseqbase = bl? bl->hseqbase:0;
+	bln->hseqbase = 0;
 	bln->hkey = 1;
 	BATderiveProps(bln,0);
 	
 	BATsetcount(brn,c);
 	brn->hdense = 1;
-	brn->hseqbase = br? br->hseqbase:0;
+	brn->hseqbase = 0;
 	brn->hkey = 1;
 	BATderiveProps(brn,0);
 	if( q){
-		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
-	} else {
-		// switch their role
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
 		BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
+	} else {
+		// switch their role
+		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
+		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
 	}
 	return msg;
 /*

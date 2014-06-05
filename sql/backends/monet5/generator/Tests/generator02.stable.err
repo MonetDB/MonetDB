@@ -29,17 +29,18 @@ stderr of test 'generator02` in directory 'sql/backends/monet5/generator` itself
 # 21:27:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4222" "--port=32932"
 # 21:27:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4222/.s.monetdb.32932
+MAPI  = (monetdb) /var/tmp/mtest-11132/.s.monetdb.31930
 QUERY = select * from generate_series(0.0,10.0,1.6);
-ERROR = !types decimal(2,1) and timestamp(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-4222/.s.monetdb.32932
+ERROR = !types decimal(2,1) and timestamp(7,0) are not equal for column 'L1'
+MAPI  = (monetdb) /var/tmp/mtest-11132/.s.monetdb.31930
 QUERY = select * from generate_series(0.1,10.0,1.77) 
         where value <5.0;
-ERROR = !types decimal(2,1) and timestamp(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-4222/.s.monetdb.32932
+ERROR = !types decimal(2,1) and timestamp(7,0) are not equal for column 'L1'
+MAPI  = (monetdb) /var/tmp/mtest-11132/.s.monetdb.31930
 QUERY = select * from generate_series(0.2,10.0,1.9) as v
         where value <7.0 and value >3.0;
-ERROR = !types decimal(2,1) and timestamp(7,0) are not equal
+ERROR = !types decimal(2,1) and timestamp(7,0) are not equal for column 'L1'
+
 
 # 21:27:46 >  
 # 21:27:46 >  "Done."
