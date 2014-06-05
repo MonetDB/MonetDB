@@ -766,7 +766,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
 	for( ; cnt >0; cnt--,os++,o++,v++){\
-		w = (BUN) floor((*v -f)/s);\
+		w = (BUN) floor( (double)((*v -f)/s));\
 		if ( *v >= f && *v < l && f + (TPE)(w * s) == *v ){\
 			*or++ = w;\
 			*ol++ = os;\
@@ -857,8 +857,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		f = *(timestamp*) getArgReference(stk,p, 1);
 		l = *(timestamp*) getArgReference(stk,p, 2);
 		s = *(lng*) getArgReference(stk,p, 3);
-		for( ; cnt >0; cnt--,os++,o++){
-			v = (timestamp*) Tloc(bl,BUNfirst(bl));
+		v = (timestamp*) Tloc(bl,BUNfirst(bl));
+		for( ; cnt >0; cnt--,os++,o++, v++){
 			offset = ((lng)*o) * s;
 			if( (msg = MTIMEtimestamp_add(&val, &f, &offset)) != MAL_SUCCEED)
 				return msg;
@@ -875,13 +875,13 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATsetcount(bln,c);
 	bln->hdense = 1;
-	bln->hseqbase = 0;
+	bln->hseqbase = bl? bl->hseqbase:0;
 	bln->hkey = 1;
 	BATderiveProps(bln,0);
 	
 	BATsetcount(brn,c);
 	brn->hdense = 1;
-	brn->hseqbase = 0;
+	brn->hseqbase = br? br->hseqbase:0;
 	brn->hkey = 1;
 	BATderiveProps(brn,0);
 	if( q){
