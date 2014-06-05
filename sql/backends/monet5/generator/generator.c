@@ -628,13 +628,14 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetasubselect","Unknown operator");
 
 			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
-				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++)
-				if( ((timestamp_isnil(low) || (f.days > low.days || (f.days == l.days && f.msecs >= l.msecs)) ) && ((f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh))) || anti){
-					*v++ = o;
+				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++){
+					if( ((timestamp_isnil(low) || (f.days > low.days || (f.days == l.days && f.msecs >= l.msecs)) ) && ((f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh))) || anti){
+						*v++ = o;
+						c++;
+					}
 					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
 						return msg;
-					c++;
-				} 
+				}
 			} else
 			if( (f.days > l.days || (f.days = l.days && f.msecs >= l.msecs)) && s < 0){
 				for(; f.days>l.days || (f.days == l.days && f.msecs > l.msecs);o++ )
