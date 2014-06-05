@@ -2238,7 +2238,7 @@ if test "x$enable_rintegration" != xno; then
 		XPATH="$PATH"
 		;;
 	/*)
-		XPATH="$enable_rintegragtion"
+		XPATH="$enable_rintegration"
 		enable_rintegration=yes
 		;;
 	*)
