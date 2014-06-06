@@ -12,6 +12,11 @@ select * from generate_series(
 	cast( '1' as interval day));
 
 select * from generate_series(
+	timestamp '2008-03-04 12:00',
+	timestamp '2008-03-01 00:00',
+	cast( '-1' as interval day));
+
+select * from generate_series(
 	timestamp '2008-03-01 00:00',
 	timestamp '2008-03-04 12:00',
 	cast( '10' as interval hour))
