@@ -412,7 +412,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_dbl: calculate_range(dbl, dbl); break;
 	default:
 		/* timestamp to be implemented */
-		throw(MAL, "generator.subselect", "unsupported type");
+		throw(MAL, "generator.subselect", "Unsupported type in subselect");
 	}
 	if (o1 > n)
 		o1 = n;
@@ -588,21 +588,12 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
 			s = *(lng*) getArgReference(stk,p, 3);
-			low = *(timestamp*) getArgReference(stk,pci, idx);
-			hgh = *(timestamp*) getArgReference(stk,pci, idx+1);
+			hgh = low = *(timestamp*) getArgReference(stk,pci, idx);
 
-			cap = l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s);
-			bn = BATnew(TYPE_void, TYPE_oid, cap);
-			if( bn == NULL)
-				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
-
-			if( timestamp_isnil(low) ){
+			if( timestamp_isnil(low) )
 				low = f;
-			}
-			if( timestamp_isnil(hgh)){
+			if( timestamp_isnil(hgh))
 				hgh = l;
-			}
-			v = (oid*) Tloc(bn,BUNfirst(bn));
 
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(timestamp*) getArgReference(stk,pci,idx);
@@ -622,14 +613,18 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				hgh= low= *(timestamp*) getArgReference(stk,pci,idx);
 				anti++;
 			} else
-			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(timestamp*) getArgReference(stk,pci,idx);
-			} else
+			if ( strcmp(oper,"==") != 0)
 				throw(MAL,"generator.thetasubselect","Unknown operator");
+
+			cap = l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s);
+			bn = BATnew(TYPE_void, TYPE_oid, cap);
+			if( bn == NULL)
+				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
+			v = (oid*) Tloc(bn,BUNfirst(bn));
 
 			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
 				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++){
-					if( ((timestamp_isnil(low) || (f.days > low.days || (f.days == l.days && f.msecs >= l.msecs)) ) && ((f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh))) || anti){
+					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
 						*v++ = o;
 						c++;
 					}
