@@ -264,11 +264,7 @@ GDKextendf(int fd, size_t size)
 	}
 	/* if necessary, extend the underlying file */
 	if (stb.st_size < (off_t) size) {
-#ifdef WIN32
-		return -(_chsize_s(fd, (__int64) size) != 0);
-#else
 		return ftruncate(fd, (off_t) size);
-#endif
 	}
 	return 0;
 }

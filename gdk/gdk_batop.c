@@ -937,43 +937,6 @@ BATtopN(BAT *b, BUN topN)
 }
 
 /*
- * The baseline algorithm for fragment location is a two-phase
- * process.  First we search on the 1st dimension and collect the
- * qualifying BUNs in a marking on the stack. In the second phase, the
- * tail is analyzed for all items already marked and qualifying
- * associations are copied into the result.  An index is exploited
- * when possible.
- */
-#define restrict1(cmptype, TYPE, BUNhead)				\
-	do {								\
-		if (BAThordered(b)) {					\
-			BUN p1, p2;					\
-									\
-			b = BATmirror(b);				\
-			SORTloop(b, p1, p2, hl, hh) {			\
-				*m++ = p1;				\
-			}						\
-			b = BATmirror(b);				\
-		} else {						\
-			int lval = !cmptype##_EQ(ATOMnilptr(t), hl, TYPE); \
-			int hval = !cmptype##_EQ(ATOMnilptr(t), hh, TYPE); \
-									\
-			if (hval && lval && cmptype##_GT(hl,hh,TYPE)) {	\
-				GDKerror("BATrestrict: illegal head range.\n");	\
-			} else {					\
-				BATiter bi = bat_iterator(b);		\
-									\
-				BATloop(b, p, l) {			\
-					if ((!lval || cmptype##_LE(hl, BUNhead(bi, p), TYPE)) && \
-					    (!hval || cmptype##_LE(BUNhead(bi, p), hh, TYPE))) { \
-						*m++ = p;		\
-					}				\
-				}					\
-			}						\
-		}							\
-	} while (0)
-
-/*
  *  BAT Sorting
  * BATsort returns a sorted copy. BATorder sorts the BAT itself.
  */

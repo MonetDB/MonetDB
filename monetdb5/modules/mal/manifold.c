@@ -84,7 +84,7 @@ typedef struct{
 // The target BAT tail type determines the result variable
 #define Manifoldbody(...) \
 switch(ATOMstorage(mut->args[0].b->T->type)){\
-case TYPE_bte: ManifoldLoop(bit,__VA_ARGS__); break;\
+case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;\
 case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;\
 case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;\
 case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\

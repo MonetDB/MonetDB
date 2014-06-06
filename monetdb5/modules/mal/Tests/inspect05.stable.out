@@ -128,8 +128,6 @@ end main;
 [ "setHash",	"command",	"bat",	"(b:bat[:oid,:any_2],prop:bit):bit ",	"BKCsetHash;"  ]
 [ "setHot",	"command",	"bat",	"(b:bat[:oid,:any_2]):void ",	"BKChotBAT;"  ]
 [ "setKey",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] ",			  "BKCsetkey;"				  ]
-[ "setMemoryAdvise",	"command",	"bat",	"(b:bat[:oid,:any_2],mode:int):bit ",	"BKCmadvise2;"  ]
-[ "setMemoryAdvise",	"command",	"bat",	"(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit ",	"BKCmadvise;"  ]
 [ "setMemoryMap",	"command",	"bat",	"(b:bat[:oid,:any_2],mode:int):bit ",	"BKCmmap2;"  ]
 [ "setMemoryMap",	"command",	"bat",	"(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit ",	"BKCmmap;"  ]
 [ "setName",	"command",	"bat",	"(b:bat[:oid,:any_2],s:str):void ",	"BKCsetName;"  ]
