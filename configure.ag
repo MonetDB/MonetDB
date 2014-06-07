@@ -388,11 +388,11 @@ icc_ver=""
 CC_ver=""
 CC_version="`$CC --version 2>&1`"
 case "$CC_version" in
-*\(GCC\)*)
+*\(GCC\)*|*Copyright\ \(C\)\ *\ Free\ Software\ Foundation,\ Inc.*)
 	gcc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="gcc-$gcc_ver"
 	;;
-*\(ICC\)*)
+*\(ICC\)*|*Copyright\ \(C\)\ *\ Intel\ Corporation.\ \ All\ rights\ reserved.*)
 	icc_ver="`$CC -dumpversion 2>/dev/null`"
 	CC_ver="icc-$icc_ver"
 	;;
@@ -402,16 +402,20 @@ case "$CC_version" in
 	CC_ver="clang-$gcc_ver"
 	;;
 *)
-	CC_version="`$CC -V 2>&1`"
-	case "$CC_version" in
+	CC_V="`$CC -V 2>&1`"
+	case "$CC_V" in
 	*Sun\ Ceres\ C\ *|*Sun\ C\ *)
 		# developer/sunstudioexpress and
 		# developer/sunstudio12u1 respectively
 		CC_ver="suncc-`echo "$CC_version" | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
+		CC_version="$CC_V"
 		;;
 	*)
-		AC_MSG_WARN([compiler not recognized: `$CC --version` says
+		AC_MSG_WARN([compiler not recognized:
+`$CC --version` says
 $CC_version
+`$CC -V` says
+$CC_V
 	])
 		;;
 	esac
