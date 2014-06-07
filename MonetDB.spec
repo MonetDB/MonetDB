@@ -56,7 +56,7 @@ BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
 %if %{?with_geos:1}%{!?with_geos:0}
-BuildRequires: geos-devel >= 2.2.0
+BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
 BuildRequires: libcurl-devel

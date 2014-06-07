@@ -461,7 +461,7 @@ GDKvm_cursize(void)
 	do {								\
 		int _idx;						\
 									\
-		ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc"); \
+		(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc"); \
 		GDKmallidx(_idx, _memdelta);				\
 		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc"); \
 	} while (0)
@@ -470,15 +470,15 @@ GDKvm_cursize(void)
 		ssize_t _memdelta = (ssize_t) (memdelta);		\
 		int _idx;						\
 									\
-		ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec"); \
+		(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec"); \
 		GDKmallidx(_idx, _memdelta);				\
 		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec"); \
 	} while (0)
 #else
 #define heapinc(_memdelta)						\
-	ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc")
+	(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc")
 #define heapdec(_memdelta)						\
-	ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec")
+	(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec")
 #endif
 
 #ifdef GDK_VM_KEEPHISTO
@@ -489,7 +489,7 @@ GDKvm_cursize(void)
 									\
 		GDKmallidx(_idx, _vmdelta);				\
 		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
-		ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
+		(void) ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock, fcn); \
 	} while (0)
 #define memdec(vmdelta, fcn)						\
 	do {								\
@@ -498,13 +498,13 @@ GDKvm_cursize(void)
 									\
 		GDKmallidx(_idx, _vmdelta);				\
 		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
-		ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock, fcn);	\
+		(void) ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock, fcn); \
 	} while (0)
 #else
 #define meminc(vmdelta, fcn)						\
-	ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
+	(void) ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
 #define memdec(vmdelta, fcn)						\
-	ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
+	(void) ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
 #endif
 
 #ifndef STATIC_CODE_ANALYSIS

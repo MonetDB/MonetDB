@@ -109,8 +109,8 @@ Ready.
 #    set z1 = sin(radians(pdec));
 #select count(S.objID) 
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
-% .L1 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % wrd # type
 % 1 # length
 [ 3	]
