@@ -157,11 +157,24 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	int nil = 0;
 	int nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
+	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+	char *c;
 
 	if (strcmp(src, str_nil) == 0)
 		nil = 1;
 
-	if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
+	if (!nil && strstr(src,"BOX") ==  src && (c = strstr(src,"(")) != NULL) {
+		/* Parse the mbr */
+		if ((c - src) != 3 && (c - src) != 4) {
+			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'");
+			return 0;
+		}
+
+		if (sscanf(c,"(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
+			return 0;
+			GDKerror("ParseException: Not enough coordinates.");
+		}
+	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
 		return 0;
 
 	if (*len < (int) sizeof(mbr)) {
@@ -172,6 +185,19 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	if (nil) {
 		nchars = 3;
 		**atom = *mbrNULL();
+	} else if (geosMbr == NULL) {
+		size_t l;
+		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
+		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
+		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
+		assert(GDK_flt_min <= ymax && ymax <= GDK_flt_max);
+		(*atom)->xmin = (float) xmin;
+		(*atom)->ymin = (float) ymin;
+		(*atom)->xmax = (float) xmax;
+		(*atom)->ymax = (float) ymax;
+		l = strlen(src);
+		assert(l <= GDK_int_max);
+		nchars = (int) l;
 	} else if (getMbrGeos(*atom, geosMbr)) {
 		size_t l = strlen(src);
 		assert(l <= GDK_int_max);
