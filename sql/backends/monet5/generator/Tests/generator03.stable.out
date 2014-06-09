@@ -63,6 +63,45 @@ Ready.
 [ 2008-03-01 00:00:00.000000	]
 [ 2008-03-02 00:00:00.000000	]
 [ 2008-03-03 00:00:00.000000	]
+#select * from generate_series(
+#	timestamp '2008-03-04 12:00',
+#	timestamp '2008-03-01 00:00',
+#	cast( '-1' as interval day));
+% . # table_name
+% value # name
+% timestamp # type
+% 26 # length
+[ 2008-03-04 12:00:00.000000	]
+[ 2008-03-03 12:00:00.000000	]
+[ 2008-03-02 12:00:00.000000	]
+#select * from generate_series(
+#	timestamp '2008-03-01 00:00',
+#	timestamp '2008-03-04 12:00',
+#	cast( '10' as interval hour))
+#where value < timestamp '2008-03-03 00:00';
+% . # table_name
+% value # name
+% timestamp # type
+% 26 # length
+[ 2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000	]
+[ 2008-03-02 06:00:00.000000	]
+[ 2008-03-02 16:00:00.000000	]
+#select * from generate_series(
+#	timestamp '2008-03-01 00:00',
+#	timestamp '2008-03-04 12:00',
+#	cast( '10' as interval hour))
+#where value > timestamp '2008-03-01 00:00'
+#and value < timestamp '2008-03-03 00:00';
+% . # table_name
+% value # name
+% timestamp # type
+% 26 # length
+[ 2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000	]
+[ 2008-03-02 06:00:00.000000	]
+[ 2008-03-02 16:00:00.000000	]
 
 # 09:47:33 >  
 # 09:47:33 >  "Done."

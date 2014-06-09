@@ -45,8 +45,16 @@ Ready.
 [ 0.1	]
 [ 1.87	]
 [ 3.64	]
-#select * from generate_series(0.2,10.0,1.9) as v
-#where value <7.0 and value >3.0;
+#select * from generate_series(0.2e0,10.0e0,1.9e0) as v
+#where value <7.0e0 and value >3.0e0;
+% .v # table_name
+% value # name
+% double # type
+% 24 # length
+[ 4	]
+[ 5.9	]
+#select * from generate_series(0.2e0,10.0e0,1.9e0) as v
+#where value > 0.0 and value <7.0e0 and value >3.0e0;
 % .v # table_name
 % value # name
 % double # type

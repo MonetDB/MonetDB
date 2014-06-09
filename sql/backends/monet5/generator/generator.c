@@ -245,7 +245,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
 			n = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
-			bn = BATnew(TYPE_void, tpe, n + 1);
+			bn = BATnew(TYPE_void, TYPE_timestamp, n + 1);
 			if (bn == NULL)
 				throw(MAL, "generator.table", MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, BUNfirst(bn));
@@ -289,11 +289,11 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
-	str vaultRef = putName("generator",9);
+	//str vaultRef = putName("generator",9);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target && getModuleId(q) == vaultRef)
+		if (q->argv[0] == target )//&& getModuleId(q) == vaultRef)
 			p = q;
 		if (q == pci)
 			return p;
@@ -376,9 +376,13 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int li, hi, anti, i;
 	lng o1, o2;
-	lng n;
+	lng n = 0;
+	oid *cl;
+	BUN c;
 	BAT *bn, *cand = NULL;
 	InstrPtr p;
+	str msg = MAL_SUCCEED;
+	int tpe;
 
 	(void) cntxt;
 	p = findLastAssign(mb, pci, pci->argv[1]);
@@ -393,6 +397,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (cand == NULL)
 				throw(MAL, "generator.subselect",
 				      RUNTIME_OBJECT_MISSING);
+			cl = (oid *) Tloc(cand, BUNfirst(cand));
 		}
 		i = 3;
 	} else
@@ -402,7 +407,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	hi = * (bit *) getArgReference(stk, pci, i + 3);
 	anti = * (bit *) getArgReference(stk, pci, i + 4);
 
-	switch (getArgType(mb, pci, i)) {
+	switch ( tpe = getArgType(mb, pci, i)) {
 	case TYPE_bte: calculate_range(bte, int); break;
 	case TYPE_sht: calculate_range(sht, int); break;
 	case TYPE_int: calculate_range(int, lng); break;
@@ -411,8 +416,78 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: calculate_range(flt, dbl); break;
 	case TYPE_dbl: calculate_range(dbl, dbl); break;
 	default:
-		/* timestamp to be implemented */
-		throw(MAL, "generator.subselect", "Unsupported type in subselect");
+		if(  tpe == TYPE_timestamp){
+			timestamp tsf,tsl;
+			timestamp tlow,thgh;
+			lng tss;
+			oid *ol;
+			ValRecord ret;
+
+			if (VARcalccmp(&ret, &stk->stk[p->argv[1]], &stk->stk[p->argv[2]]) == GDK_FAIL)
+				throw(MAL, "generator.subselect", "Illegal generator arguments");
+			tsf = *(timestamp *) getArgReference(stk, p, 1);
+			tsl = *(timestamp *) getArgReference(stk, p, 2);
+			tss = *(lng *) getArgReference(stk, p, 3);
+			if ( tss == 0 ||
+			    ( tss > 0 && ret.val.btval > 0) ||
+			    ( tss < 0 && ret.val.btval < 0))
+				throw(MAL, "generator.subselect", "Illegal generator arguments");
+
+			tlow = *(timestamp*) getArgReference(stk,pci,i);
+			thgh = *(timestamp*) getArgReference(stk,pci,i+1);
+
+			if( hi && !timestamp_isnil(thgh) ){
+				msg = MTIMEtimestamp_add(&thgh, &thgh, &tss);
+				if (msg != MAL_SUCCEED) 
+					return msg;
+			}
+			if( !li && !timestamp_isnil(tlow) ){
+				msg = MTIMEtimestamp_add(&tlow, &tlow, &tss);
+				if (msg != MAL_SUCCEED) 
+					return msg;
+			}
+
+			/* casting one value to lng causes the whole
+			 * computation to be done as lng, reducing the
+			 * risk of overflow */
+			o2 = (BUN) ((((lng) tsl.days - tsf.days) * 24*60*60*1000 + tsl.msecs - tsf.msecs) / tss);
+			bn = BATnew(TYPE_void, TYPE_oid, o2 + 1);
+			if (bn == NULL)
+				throw(MAL, "generator.subselect", MAL_MALLOC_FAIL);
+
+			// simply enumerate the sequence and filter it by predicate and candidate list
+			ol = (oid *) Tloc(bn, BUNfirst(bn));
+			for (c=0, o1=0; o1 <= o2; o1++) {
+				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || timestamp_isnil(tlow))) &&
+				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) || anti ){
+					/* could be improved when no candidate list is available into a void/void BAT */
+					if( cand){
+						while ( c < BATcount(cand) && (lng) *cl < o1 ) {cl++; c++;}
+						if( (lng) *cl == o1){
+							*ol++ = o1;
+							cl++;
+							n++;
+							c++;
+						}
+					} else{
+						*ol++ = o1;
+						n++;
+					}
+				}
+				msg = MTIMEtimestamp_add(&tsf, &tsf, &tss);
+				if (msg != MAL_SUCCEED) {
+					BBPreclaim(bn);
+					return msg;
+				}
+			}
+			BATsetcount(bn, (BUN) n);
+			bn->tsorted = tss > 0 || n <= 1;
+			bn->trevsorted = tss < 0 || n <= 1;
+			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+			BBPkeepref(bn->batCacheid);
+			return MAL_SUCCEED;
+		} else
+			throw(MAL, "generator.subselect", "Unsupported type in subselect");
 	}
 	if (o1 > n)
 		o1 = n;
@@ -500,10 +575,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define VLTthetasubselect(TPE) {\
 	TPE f,l,s, low, hgh;\
-	oid *v;\
+	BUN j; oid *v;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
+	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
+		throw(MAL,"generator.thetasubselect","Illegal range");\
 	cap = (l>f ? (l-f+abs(s))/abs(s):(f-l+abs(s))/abs(s));\
 	bn = BATnew(TYPE_void, TYPE_oid, cap);\
 	if( bn == NULL)\
@@ -530,30 +607,20 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		hgh= low= *(TPE*) getArgReference(stk,pci,idx);\
 	} else\
 		throw(MAL,"generator.thetasubselect","Unknown operator");\
-	if( f < l && s > 0){\
-		for(; f<l; f+= s, o++)\
+	for(j=0;j<cap;j++, f+=s, o++)\
 		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
-			*v++ = o;\
-			c++;\
+			if(cl){ while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; if ( *cl == o){ *v++= o; c++;} }\
+			else {*v++ = o; c++;}\
 		} \
-	} else\
-	if( f > l && s < 0){\
-		for(; f>l; f+= s, o++)\
-		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
-			*v++ = o;\
-			c++;\
-		} \
-	} else\
-		throw(MAL,"generator.thetasubselect","illegal generator arguments");\
 }
 
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, cndid =0, c= 0, anti =0,tpe;
-	BAT *cnd = 0, *bn = NULL;
-	BUN cap;
-	oid o = 0;
+	BAT *cand = 0, *bn = NULL;
+	BUN cap,cn= 0;
+	oid o = 0, *cl = 0;
 	InstrPtr p;
 	str oper, msg= MAL_SUCCEED;
 
@@ -565,14 +632,17 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	if( pci->argc == 5){ // candidate list included
 		cndid = *(int*) getArgReference(stk,pci, 2);
 		if( cndid){
-			cnd = BATdescriptor(cndid);
-			if( cnd == NULL)
+			cand = BATdescriptor(cndid);
+			if( cand == NULL)
 				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
-		} else throw(MAL,"generator.subselect","candidate list not implemented");
+			cl = (oid*) Tloc(cand,BUNfirst(cand));\
+		} 
 		idx = 3;
 	} else idx = 2;
 	oper= *(str*) getArgReference(stk,pci,idx+1);
 
+	// check the step direction
+	
 	switch( tpe =getArgType(mb,pci,idx)){
 	case TYPE_bte: VLTthetasubselect(bte);break;
 	case TYPE_int: VLTthetasubselect(int);break;
@@ -616,7 +686,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,"==") != 0)
 				throw(MAL,"generator.thetasubselect","Unknown operator");
 
-			cap = l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s);
+			cap = (BUN)( l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s));
 			bn = BATnew(TYPE_void, TYPE_oid, cap);
 			if( bn == NULL)
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
@@ -625,26 +695,33 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
 				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++){
 					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
-						*v++ = o;
-						c++;
+						if(cl){
+							while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; 
+							if ( *cl == o){ *v++= o; c++;}
+						} else {*v++ = o; c++;}
 					}
 					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
+						goto wrapup;
+				}
+			} else 
+			if( (f.days > l.days || (f.days = l.days && f.msecs >l.msecs)) && s < 0){
+				for(; f.days>l.days || (f.days == l.days && f.msecs >l.msecs); o++){
+					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
+						if(cl){
+							while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; 
+							if ( *cl == o){ *v++= o; c++;}
+						} else {*v++ = o; c++;}
+					}
+					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
+						goto wrapup;
 				}
 			} else
-			if( (f.days > l.days || (f.days = l.days && f.msecs >= l.msecs)) && s < 0){
-				for(; f.days>l.days || (f.days == l.days && f.msecs > l.msecs);o++ )
-				if( (f.days > hgh.days|| (f.days== hgh.days && f.msecs > hgh.msecs))  || timestamp_isnil(hgh) || anti){
-					*v++ = o;
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						return msg;
-					c++;
-				} 
-			} else
-				throw(MAL,"generator.subselect","illegal generator arguments");
-		}
+				throw(MAL,"generator.thetasubselect","Illegal generator arguments");
+		} else
+			throw(MAL,"generator.thetasubselect","Illegal generator arguments");
 	}
 
+wrapup:
 	if( cndid)
 		BBPreleaseref(cndid);
 	if( bn){
@@ -655,7 +732,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		BATderiveProps(bn,0);
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 #define VLTleftfetchjoin(TPE) {\
