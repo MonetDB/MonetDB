@@ -114,6 +114,8 @@ monetdb.server.setup <-
 
     # switch all slashes to match windows
     monetdb.program.path <- normalizePath( monetdb.program.path , mustWork = FALSE )
+    # remove trailing slash from paths, otherwise the server won't start
+    monetdb.program.path <- gsub("\\\\$|/$", "", monetdb.program.path)
     database.directory <- normalizePath( database.directory , mustWork = FALSE )
         
     # if the database directory does not exist, print that it's being created
