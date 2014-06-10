@@ -29,22 +29,22 @@ stderr of test 'generator01` in directory 'sql/backends/monet5/generator` itself
 # 12:42:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23485" "--port=37579"
 # 12:42:21 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23485/.s.monetdb.37579
+MAPI  = (monetdb) /var/tmp/mtest-14690/.s.monetdb.36598
 QUERY = select * from generate_series(0,10,-2);
-ERROR = !illegal generator arguments
-MAPI  = (monetdb) /var/tmp/mtest-23485/.s.monetdb.37579
+ERROR = !Illegal generator arguments
+MAPI  = (monetdb) /var/tmp/mtest-14690/.s.monetdb.36598
 QUERY = select * from generate_series(10,2,2);
-ERROR = !illegal generator arguments
-MAPI  = (monetdb) /var/tmp/mtest-23485/.s.monetdb.37579
+ERROR = !Illegal generator arguments
+MAPI  = (monetdb) /var/tmp/mtest-14690/.s.monetdb.36598
 QUERY = select * from generate_series(0,10,0) ;
 ERROR = !zero step size not allowed
-MAPI  = (monetdb) /var/tmp/mtest-23485/.s.monetdb.37579
+MAPI  = (monetdb) /var/tmp/mtest-14690/.s.monetdb.36598
 QUERY = select * from generate_series(0,10,null) ;
 ERROR = !null step size not allowed
-MAPI  = (monetdb) /var/tmp/mtest-23485/.s.monetdb.37579
+MAPI  = (monetdb) /var/tmp/mtest-14690/.s.monetdb.36598
 QUERY = select * from generate_series(0,10,-2) as v
         where value <7 and value >3;
-ERROR = !illegal generator arguments
+ERROR = !Illegal generator arguments
 
 # 12:42:21 >  
 # 12:42:21 >  "Done."

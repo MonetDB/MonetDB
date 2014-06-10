@@ -177,9 +177,9 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		f = *(TPE*) getArgReference(stk, pci, 1);		\
 		l = *(TPE*) getArgReference(stk, pci, 2);		\
 		s = pci->argc == 3 ? 1 : *(TPE*) getArgReference(stk, pci, 3); \
-		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l))	\
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
 			throw(MAL, "generator.table",			\
-			      "illegal generator arguments");		\
+			      "Illegal generator arguments");		\
 		n = (lng) ((l - f) / s);				\
 		assert(n >= 0);						\
 		if (n * s + f != l)					\
@@ -239,15 +239,16 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
 				       &stk->stk[pci->argv[2]]) == GDK_FAIL)
 				throw(MAL, "generator.table",
-				      "illegal generator arguments");
+				      "Illegal generator expression arguments");
 			f = *(timestamp *) getArgReference(stk, pci, 1);
 			l = *(timestamp *) getArgReference(stk, pci, 2);
 			s = *(lng *) getArgReference(stk, pci, 3);
 			if (s == 0 ||
 			    (s > 0 && ret.val.btval > 0) ||
-			    (s < 0 && ret.val.btval < 0))
+			    (s < 0 && ret.val.btval < 0) ||
+				timestamp_isnil(f) || timestamp_isnil(l))
 				throw(MAL, "generator.table",
-				      "illegal generator arguments");
+				      "Illegal generator arguments");
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
@@ -315,9 +316,9 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 		f = * (TPE *) getArgReference(stk, p, 1);		\
 		l = * (TPE *) getArgReference(stk, p, 2);		\
 		s = p->argc == 3 ? 1 : * (TPE *) getArgReference(stk, p, 3); \
-		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l))	\
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.subselect",		\
-			      "illegal generator arguments");		\
+			      "Illegal generator arguments");		\
 		n = (lng) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
 		assert(n >= 0);						\
 		if (n * s + f != l)					\
@@ -428,16 +429,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timestamp tlow,thgh;
 			lng tss;
 			oid *ol;
-			ValRecord ret;
 
-			if (VARcalccmp(&ret, &stk->stk[p->argv[1]], &stk->stk[p->argv[2]]) == GDK_FAIL)
-				throw(MAL, "generator.subselect", "Illegal generator arguments");
 			tsf = *(timestamp *) getArgReference(stk, p, 1);
 			tsl = *(timestamp *) getArgReference(stk, p, 2);
 			tss = *(lng *) getArgReference(stk, p, 3);
 			if ( tss == 0 ||
-			    ( tss > 0 && ret.val.btval > 0) ||
-			    ( tss < 0 && ret.val.btval < 0))
+				timestamp_isnil(tsf) || timestamp_isnil(tsl))
 				throw(MAL, "generator.subselect", "Illegal generator arguments");
 
 			tlow = *(timestamp*) getArgReference(stk,pci,i);
@@ -662,11 +659,14 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			timestamp f,l, low, hgh;
 			lng  s;
 			oid *v;
+
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
 			s = *(lng*) getArgReference(stk,p, 3);
 			hgh = low = *(timestamp*) getArgReference(stk,pci, idx);
 
+			if ( s == 0 || timestamp_isnil(f) || timestamp_isnil(l))
+				throw(MAL, "generator.subselect", "Illegal generator arguments");
 			if( timestamp_isnil(low) )
 				low = f;
 			if( timestamp_isnil(hgh))
@@ -749,7 +749,7 @@ wrapup:
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.leftfetchjoin","illegal range");\
+		throw(MAL,"generator.leftfetchjoin","Illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt);\
 	if( bn == NULL){\
 		BBPreleaseref(bid);\
@@ -854,7 +854,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.join","illegal range");\
+		throw(MAL,"generator.join","Illegal range");\
 	for( ; cnt >0; cnt--,o++,v++){\
 		w = (BUN) floor( (double)((*v -f)/s));\
 		if ( f + (TPE)(w * s) == *v ){\
@@ -923,7 +923,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
-		throw(MAL,"generator.join","illegal range");
+		throw(MAL,"generator.join","Illegal range");
 	v = (bte*) Tloc(b,BUNfirst(b));
 	for( ; cnt >0; cnt--,o++,v++){
 		w = (BUN) floor((*v -f)/s);
