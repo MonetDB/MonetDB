@@ -588,8 +588,7 @@ str RAPIprelude(void) {
 			}
 		}
 		MT_lock_unset(&rapiLock, "rapi.evaluate");
+		fprintf(stdout, "# MonetDB/R   module loaded\n");
 	}
-
-	fprintf(stdout, "# MonetDB/R   module loaded\n");
 	return MAL_SUCCEED;
 }
