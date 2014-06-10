@@ -57,6 +57,8 @@ comment "returns 1 if the geometry has m coordinate";
 command getType{unsafe}(flags:int) :str address geoGetType
 comment "returns the str representation of the geometry type";
 
+command calc.wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address A_2_B;
+
 #Geometry Constructors
 command AsText(w:wkb) :str address wkbAsText
 comment "Creates the text representation of the Geometry.";

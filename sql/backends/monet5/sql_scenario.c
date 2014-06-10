@@ -2075,6 +2075,8 @@ SQLexecutePrepared(Client c, backend *be, cq *q)
 	argc = m->argc;
 	parc = q->paramlen;
 
+
+
 	if (argc != parc) {
 		if (pci->argc >= MAXARG)
 			GDKfree(argv);
@@ -2158,6 +2160,8 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
+
+
 
 	if (m->emode == m_inplace) {
 		msg = SQLexecutePrepared(c, be, be->q);
@@ -2266,7 +2270,23 @@ str
 SQLengine(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+/*int i=0;
+
+if(be->q != NULL) {
+	MalBlkPtr mbPtr = (MalBlkPtr)((Symbol)((cq*)((backend*)be)->q)->code)->def; 
+	fprintf(stderr,"SQLengine: %s\n", be->q->codestring);
+	if(mbPtr == NULL)
+		fprintf(stderr, "!\n");
+
+	for(i=1; i < mbPtr->stop; i++) {
+		InstrPtr ipci = getInstrPtr(mbPtr, i);
+		fprintf(stderr, "%s\n", (str)ipci->fcnname);
+	}
+}
+
+*/
 	return SQLengineIntern(c, be);
+
 }
 
 /*

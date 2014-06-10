@@ -27,10 +27,12 @@
 --CREATE TYPE MultiSurface EXTERNAL NAME wkb;
 --CREATE TYPE MultiPolygon EXTERNAL NAME wkb;
 
-CREATE TYPE Geometry EXTERNAL NAME wkb;
-CREATE TYPE GeometrySubtype EXTERNAL NAME wkb;
+--CREATE TYPE Geometry EXTERNAL NAME wkb;
+--CREATE TYPE GeometrySubtype EXTERNAL NAME wkb;
 
 --CREATE TYPE Point EXTERNAL NAME wkb;
+--UPDATE types SET digits=4 WHERE name='point';
+
 --CREATE TYPE LineString EXTERNAL NAME wkb;
 
 --CREATE TYPE GeomCollection EXTERNAL NAME wkb;

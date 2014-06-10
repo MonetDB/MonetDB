@@ -440,6 +440,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	cntxt->lastcmd= time(0);
 	cntxt->active = TRUE;
 	MT_sema_down(&mal_parallelism,"callMAL");
+
+
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -465,6 +467,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->cmd = debug;
+
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:

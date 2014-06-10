@@ -402,6 +402,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					}
 				} else {
 					/* only allow correlation in a single row of values */
+					/* loop over the inserted values anf the table columns */
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
 						sql_rel *r = NULL;

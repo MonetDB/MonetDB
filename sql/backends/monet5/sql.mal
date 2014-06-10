@@ -883,6 +883,7 @@ command calc.str( v:date ) :str
 address SQLdate_2_str
 comment "cast date to str";
 
+
 command calc.sqlblob( v:str ) :sqlblob 
 address str_2_sqlblob
 comment "cast to sqlblob";

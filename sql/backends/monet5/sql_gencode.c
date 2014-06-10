@@ -1570,6 +1570,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* convert to string, give error on to large strings */
 			if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0))
 				q = pushInt(mb, q, t->digits);
+			if (t->type->eclass == EC_GEOM) {
+				/* push the type and coordinates of the column */
+				q = pushInt(mb, q, t->digits);
+				/* push the SRID of the whole columns */
+				q = pushInt(mb, q, t->scale);
+
+/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
+				/* push the SRID provided for this value */
+				/* GEOS library is able to store in the returned wkb the type an
+ 				* number if coordinates but not the SRID so SRID should be provided 
+ 				* from this level */
+/*				if(sql->mvc->argc > 1)
+					f->scale = ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival;
+				
+				q = pushInt(mb, q, f->digits);
+				q = pushInt(mb, q, f->scale);
+*/				//q = pushInt(mb, q, ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival);
+			}
 			s->nr = getDestVar(q);
 			break;
 		}

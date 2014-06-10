@@ -23,6 +23,7 @@
 #include "sql_types.h"
 #include "sql_atom.h"
 
+/* the type of the symbol data */
 typedef enum symtype {
 	type_int,
 	type_lng,
@@ -32,6 +33,7 @@ typedef enum symtype {
 	type_type
 } symtype;
 
+/* the actual symbol data */
 typedef union symbdata {
 	int i_val;
 	wrd w_val;
@@ -64,6 +66,7 @@ extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);
 extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
 extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
 
+/* the symbol parsed by LEX ? */
 typedef struct symbol {
 	int token;
 	symtype type;

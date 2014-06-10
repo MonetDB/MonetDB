@@ -59,6 +59,7 @@ static lng scales[20] = {
 	LL_CONSTANT(1000000000000000000)
 };
 
+
 str
 nil_2_timestamp(timestamp *res, void *val)
 {

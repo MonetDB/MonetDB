@@ -481,7 +481,7 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
-	GEOMETRY GEOMETRYSUBTYPE  
+	GEOMETRY GEOMETRYSUBTYPE 
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
 %token  CURRENT_ROLE sqlSESSION
@@ -3970,9 +3970,9 @@ user:
 
 literal:
     string 	{ char *s = sql2str($1);
-		  int len = _strlen(s);
+		  int digits = _strlen(s);
 		  sql_subtype t;
-		  sql_find_subtype(&t, "char", len, 0 );
+		  sql_find_subtype(&t, "char", digits, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
@@ -4656,7 +4656,23 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
+/*| GEOMETRYSUBTYPE {
+	sql_type *t = mvc_bind_type(m, "geometry");
+	int geoSubType = find_subgeometry_type($1);
+	
+	 if(geoSubType == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		yyerror(m, msg);
+		_DELETE(msg);
+		$$.type = NULL;
+		YYABORT;	
+	} else {
+		sql_init_subtype(&$$, t, geoSubType, 0);
+	}
+}*/
 | GEOMETRY {
+		sql_find_subtype(&$$, "geometry", 0, 0 );
+/*
 		sql_type *t = mvc_bind_type(m, "geometry");
 		if (!t) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
@@ -4668,41 +4684,37 @@ data_type:
 		  } else {
 			sql_init_subtype(&$$, t, 0, 0);
 	  	}
+*/
 	}
 | GEOMETRY '(' subgeometry_type ')' {
 		int geoSubType = $3; 
-		int srid = 0; 
 
-		sql_type *t = mvc_bind_type(m, "geometry");
-		if (!t) {
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
 			yyerror(m, msg);
 			_DELETE(msg);
 			$$.type = NULL;
 			YYABORT;
-		} else if(geoSubType == 0) {
-				$$.type = NULL;
-				YYABORT;
-		} else
-			sql_init_subtype(&$$, t, geoSubType, srid);
+		}
 		
 	}
 | GEOMETRY '(' subgeometry_type ',' nonzero ')' {
 		int geoSubType = $3; 
 		int srid = $5; 
 
-		sql_type *t = mvc_bind_type(m, "geometry");
-		if (!t) {
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, srid )) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
 			yyerror(m, msg);
 			_DELETE(msg);
 			$$.type = NULL;
 			YYABORT;
-		} else if(geoSubType == 0) {
-				$$.type = NULL;
-				YYABORT;
-		} else	
-			sql_init_subtype(&$$, t, geoSubType, srid);
+		}
 	}
  ;
 

@@ -62,8 +62,15 @@ geom_export void geom_epilogue(void);
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
 
+/* The WKB we use is the EWKB used also in PostGIS 
+ * because we decided that it is easire to carry around
+ * the SRID */
+ 
 /* gets a GEOSGeometry and creates a WKB */
-geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
+geom_export wkb* geos2wkb(GEOSGeom geosGeometry);
+/* gets a WKB and creates a GEOSGeometry */
+//geom_export GEOSGeom wkb2geos(wkb* geomWKB);
+
 
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
@@ -101,6 +108,45 @@ geom_export str wkbIsSimple(bit *out, wkb **geom);
 geom_export str wkbIsValid(bit *out, wkb **geom);
 geom_export str wkbIsValidReason(char** out, wkb **geom);
 geom_export str wkbIsValidDetail(char** out, wkb **geom);
+
+
+geom_export str A_2_B(wkb **res, wkb **geo, int* columnType, int* columnSRID); 
+
+str A_2_B(wkb **res, wkb **geo, int* columnType, int* columnSRID) {
+	GEOSGeom geosGeometry;
+	int geoCoordinatesNum = 2;
+	int valueType = 0;
+	int valueSRID = 0;
+
+	if(valueSRID != *columnSRID)
+		throw(MAL, "geom.A_2_B", "Geometry should be expressed in SRID %d and it is expressed in SRID %d\n", *columnSRID, valueSRID);
+
+	/* get the geosGeometry from the wkb */
+	geosGeometry = wkb2geos(*geo);
+	/* get the number of coordinates the geometry has */
+	geoCoordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the type of the geometry */
+	valueType = (GEOSGeomTypeId(geosGeometry)+1) << 2;
+
+	if(geoCoordinatesNum > 2)
+		valueType += (1<<1);
+	if(geoCoordinatesNum > 3)
+		valueType += 1;
+	
+	//fprintf(stderr, "SRDI: %d, type:%d - coordinates:%d\n", *valueSRID, *valueType, geoCoordinatesNum);
+
+	if(valueType != *columnType)
+		throw(MAL, "geom.A_2_B", "Geometry should be of type %d and it is of type %d\n", *columnType, valueType);
+
+	/* get the wkb from the geosGeometry */
+	*res = geos2wkb(geosGeometry);
+
+
+
+	//fprintf(stderr, "%d - %d vs %d\n", *columnSRID, *columnType, *valueType);
+	
+	return MAL_SUCCEED;
+}
 
 
 /*check if the geometry has z coordinate*/
@@ -170,6 +216,45 @@ wkb *wkbNULL(void) {
 	nullval.len = ~(int) 0;
 	return (&nullval);
 }
+
+wkb* geos2wkb(GEOSGeom geosGeometry) {
+	size_t wkbLen = 0;
+	unsigned char *w = NULL;
+	wkb *geosWKB;
+
+	if (geosGeometry != NULL){
+		GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
+		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	}
+
+	geosWKB = GDKmalloc(wkb_size(wkbLen));
+	if (geosWKB == NULL)
+		return NULL;
+
+	if (geosGeometry == NULL || w == NULL) {
+		*geosWKB = *wkbNULL();
+	} else {
+		assert(wkbLen <= GDK_int_max);
+		geosWKB->len = (int) wkbLen;
+		geosWKB->srid = GEOSGetSRID(geosGeometry);
+		memcpy(&geosWKB->data, w, wkbLen);
+		GEOSFree(w);
+	}
+	
+return geosWKB;
+}
+
+/*GEOSGeom wkb2geos(wkb* geomWKB) {
+	GEOSGeom geosGeometry;
+	
+	if(wkb_isnil(geom))
+		return NULL;
+	
+	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *)((geomWKB)->data), (geomWKB)->len);
+	GEOSSetSRID(geosGeometry, (geomWKB)->srid);
+
+	return geosGeometry;
+}*/
 
 /*str wkbFromString(wkb **w, str *wkt) {
 	int len = 0;
@@ -257,59 +342,73 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 /* FROMSTR: parse string to @1. */
 /* return number of parsed characters. */
 int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
-	GEOSGeom geometry_FROM_wkt = NULL;	/* The geometry object that is parsed from the src string. */
-	unsigned char *geometry_TO_wkb = NULL;	/* The "well known binary" serialization of the geometry object. */
-	size_t wkbLen = 0;		/* The length of the wkbSer string. */
-	int nil = 0;
-	int coordinateDimensions = 0;
+	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
+	//unsigned char *geometry_TO_wkb = NULL;	/* The "well known binary" serialization of the geometry object. */
+	//size_t wkbLen = 0;		/* The length of the wkbSer string. */
+	//int nil = 0;
+	//int coordinateDimensions = 0;
+	GEOSWKTReader *WKT_reader;
 
-	if (strcmp(src, str_nil) == 0)
-		nil = 1;
+	if (strcmp(src, str_nil) == 0) {
+		**atom = *wkbNULL();
+		return 0;
+	}
+		//nil = 1;
 
-	if (!nil) {
-		GEOSWKTReader *WKT_reader = GEOSWKTReader_create();
-		geometry_FROM_wkt = GEOSWKTReader_read(WKT_reader, src); // GEOSGeomFromWKT(src)) == NULL) {
-		GEOSWKTReader_destroy(WKT_reader);
+	//if (!nil) {
+	WKT_reader = GEOSWKTReader_create();
+	geosGeometry = GEOSWKTReader_read(WKT_reader, src); // GEOSGeomFromWKT(src)) == NULL) {
+	GEOSWKTReader_destroy(WKT_reader);
 
-		if(geometry_FROM_wkt == NULL)
-			goto return_nil;
+	if(geosGeometry == NULL){
+		**atom = *wkbNULL();
+		return 0;
+	}
+	//	goto return_nil;
+	//}
+
+	//it returns 2 or 3. How can I get 4??
+	//coordinateDimensions =  GEOSGeom_getCoordinateDimension(geosGeometry);
+
+	if (GEOSGeomTypeId(geosGeometry) == -1) {
+		GEOSGeom_destroy(geosGeometry);
+		**atom = *wkbNULL();
+		return 0;
 	}
 
-	////it returns 2 or 3. How can I get 4??
-	coordinateDimensions =  GEOSGeom_getCoordinateDimension(geometry_FROM_wkt);
-
-	if (!nil && GEOSGeomTypeId(geometry_FROM_wkt) == -1) {
-		GEOSGeom_destroy(geometry_FROM_wkt);
-		goto return_nil;
-	}
-
-	if (!nil) {
-		//add the srid
-		if(srid == 0 )
-			GEOSSetSRID(geometry_FROM_wkt, 4326);
-		else //should we check whether the srid exists in spatial_ref_sys?
-			GEOSSetSRID(geometry_FROM_wkt, srid);
-		//the srid is lost with the transformation of the GEOSGeom to wkb
+//	if (!nil) {
+	//add the srid
+	if(srid == 0 )
+		GEOSSetSRID(geosGeometry, 4326);
+	else //should we check whether the srid exists in spatial_ref_sys?
+		GEOSSetSRID(geosGeometry, srid);
+	/* the srid was lost with the transformation of the GEOSGeom to wkb
+	* so we decided to store it in the wkb */ 
 		
-		//set the number of dimensions
-		GEOS_setWKBOutputDims(coordinateDimensions); 
+	//set the number of dimensions
+	//GEOS_setWKBOutputDims(coordinateDimensions); 
 
-		geometry_TO_wkb = GEOSGeomToWKB_buf(geometry_FROM_wkt, &wkbLen);
-		GEOSGeom_destroy(geometry_FROM_wkt);
-	}
+	/* we have a GEOSGeometry will number of coordinates and SRID and we 
+ 	* want to get the wkb out of it */
+	*atom = geos2wkb(geosGeometry);
+/*
+//		geometry_TO_wkb = GEOSGeomToWKB_buf(geometry_FROM_wkt, &wkbLen);
+//		GEOSGeom_destroy(geometry_FROM_wkt);
+//	}
 	if (*atom == NULL || *len < (int) wkb_size(wkbLen)) {
 		if (*atom)
 			GDKfree(*atom);
 		*atom = GDKmalloc(*len = (int) wkb_size(wkbLen));
 	}
-	if (!geometry_TO_wkb) {
-		**atom = *wkbNULL();
-	} else {
-		assert(wkbLen <= GDK_int_max);
-		(*atom)->len = (int) wkbLen;
-		memcpy(&(*atom)->data, geometry_TO_wkb, wkbLen);
-		GEOSFree(geometry_TO_wkb);
-	}
+//	if (!geometry_TO_wkb) {
+//		**atom = *wkbNULL();
+//	} else {
+
+	assert(wkbLen <= GDK_int_max);
+	(*atom)->len = (int) wkbLen;
+	memcpy(&(*atom)->data, geometry_TO_wkb, wkbLen);
+	GEOSFree(geometry_TO_wkb);
+//	}
 	wkbLen = strlen(src);
 	assert(wkbLen <= GDK_int_max);
 	return (int) wkbLen;
@@ -320,6 +419,8 @@ int wkbFROMSTR(char *src, int srid, int *len, wkb **atom) {
 		*atom = GDKmalloc(*len = (int) sizeof(wkb));
 	}
 	**atom = *wkbNULL();
+*/	*len = (*atom)->len;
+
 	return 0;
 }
 
@@ -1313,30 +1414,7 @@ wkbMBR(mbr **res, wkb **geom)
 	throw(MAL, "geom.mbr", "Failed to create mbr");
 }
 
-wkb* geos2wkb(GEOSGeom geosGeometry) {
-	size_t wkbLen = 0;
-	unsigned char *w = NULL;
-	wkb *atom;
 
-	if (geosGeometry != NULL){
-		GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
-		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-	}
-
-	atom = GDKmalloc(wkb_size(wkbLen));
-	if (atom == NULL)
-		return NULL;
-
-	if (geosGeometry == NULL || w == NULL) {
-		*atom = *wkbNULL();
-	} else {
-		assert(wkbLen <= GDK_int_max);
-		atom->len = (int) wkbLen;
-		memcpy(&atom->data, w, wkbLen);
-		GEOSFree(w);
-	}
-	return atom;
-}
 
 
 

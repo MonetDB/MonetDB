@@ -110,6 +110,18 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 	return 1;
 }
 
+GEOSGeom wkb2geos(wkb* geomWKB) {
+	GEOSGeom geosGeometry;
+	
+	if(wkb_isnil(geomWKB))
+		return NULL;
+	
+	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *)((geomWKB)->data), (geomWKB)->len);
+	GEOSSetSRID(geosGeometry, (geomWKB)->srid);
+
+	return geosGeometry;
+}
+
 /* Function getMbrGeom
  * A wrapper for getMbrGeos on a geom_geometry.
  */
@@ -166,6 +178,24 @@ const char* geom_type2str(int t, int flag){
 		case wkbGeometryCollection:
 			return "ST_GeometryCollection";
 		}
-}
+	}
 	return "UKNOWN";
 }
+
+
+/*
+str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID) {
+
+//char* geomStr;
+//int len = 0;
+//fprintf(stderr, "geometry_2_geometry\n");
+//wkbTOSTR(&geomStr, &len, *geom);
+if(*geom != NULL)
+fprintf(stderr, "type:%d - wkbTOSTR cannot be seen at this point\n", *columnType);
+
+if(res == NULL)
+        fprintf(stderr, "-> ");
+
+        fprintf(stderr, "%d vs %d\n", *columnSRID, *valueSRID);
+                return "0";
+}*/

@@ -89,20 +89,21 @@ int bits2digits(int bits)
 /* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
-/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
-/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0 },
-/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
-/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 3, 1, 1, 0, 0, 0, 0 },
-/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3, 0 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0 },
-/* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
+/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0 },
+/* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0 },
+/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 3, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0 },
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0 },
+/* EC_GEOM */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0 },
+/* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
 int sql_type_convert (int from, int to) 
@@ -1096,6 +1097,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY, *TABLE;
+	//sql_type *POINT /* add the others*/, *GEOM;
 	sql_func *f;
 	sql_arg *sres;
 
@@ -1160,8 +1162,14 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
 	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+
+	/*GEOM =*/ *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
+	/*POINT =*/ *t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
+
 	end = t;
 	*t = NULL;
+
+//	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", OID, NULL, OID, SCALE_FIX);
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */

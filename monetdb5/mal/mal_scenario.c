@@ -538,6 +538,7 @@ runScenarioBody(Client c)
 	str msg= MAL_SUCCEED;
 	lng start;
 
+
 	c->exception_buf_initialized = 1;
 	if (setjmp( c->exception_buf) < 0)
 		c->mode = FINISHCLIENT;

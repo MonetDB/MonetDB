@@ -107,7 +107,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
 {
 	int scale = *s1;
 	TP2 r, h = (*v < 0) ? -5 : 5;
-
+//fprintf(stderr, "FUN(,TP1,_dec2_,TP2): v* = %ld\n", *(long*)v);
 	/* shortcut nil */
 	if (*v == NIL(TP1)) {
 		*res = NIL(TP2);
@@ -119,6 +119,9 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
 	r = (TP2) *v;
 	if (scale)
 		r = (TP2) ((r + h * scales[scale - 1]) / scales[scale]);
+
+//fprintf(stderr, "FUN(,TP1,_dec2_,TP2): scale = %ld - %ld - %ld\n", (long)scale, (long)scales[scale-1], (long)scales[scale]);
+
 	*res = r;
 	return (MAL_SUCCEED);
 }
@@ -143,6 +146,8 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
 
 	/* rounding is allowed */
 	inlen += (s2 - s1);
+	
+
 	if (p && inlen > p) {
 		throw(SQL, "convert", "22003!too many digits (%d > %d)", inlen, p);
 	}
@@ -161,6 +166,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
 str
 FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
 {
+
 	int zero = 0;
 	return FUN(,TP1,_dec2dec_,TP2)(res, &zero, v, d2, s2);
 }

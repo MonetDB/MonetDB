@@ -371,6 +371,7 @@ scanner_init_keywords(void)
 
 	/* keywords for opengis */
 	keywords_insert("GEOMETRY", GEOMETRY);
+
 	keywords_insert("POINT", GEOMETRYSUBTYPE);
 	keywords_insert("LINESTRING", GEOMETRYSUBTYPE);
 	keywords_insert("POLYGON", GEOMETRYSUBTYPE);

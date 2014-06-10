@@ -111,6 +111,7 @@ libgeom_export const char *geom_type2str(int t, int flag);
 
 typedef struct wkb {
 	int len;
+	int srid;
 	char data[1];
 } wkb;
 
@@ -129,13 +130,14 @@ libgeom_export void libgeom_exit(void);
  * Returns a GEOSGeom, created from a geom_geometry.
  * On failure, returns NULL.
  */
-#define wkb2geos( geom ) \
-	wkb_isnil((geom))? NULL: \
-	GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+//#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define wkb_nil geos2wkb(NULL);
 
 libgeom_export int wkb_isnil(wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
+libgeom_export GEOSGeom wkb2geos(wkb* geomWKB);
+
+//libgeom_export str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID);
 
 #endif /* LIBGEOM_H */
