@@ -748,15 +748,17 @@ wrapup:
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
+	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
+		throw(MAL,"generator.leftfetchjoin","illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt);\
 	if( bn == NULL){\
 		BBPreleaseref(bid);\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
-	for(; cnt-- > 0; genoid++, o++){\
-		val = f + ((TPE) ( b->ttype == TYPE_void?genoid:*o)) * s;\
-		if ( val < f || val >= l)\
+	for(; cnt-- > 0; ol++, o++){\
+		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
+		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val<l || val >=f))) \
 			continue;\
 		*v++ = val;\
 		c++;\
@@ -768,7 +770,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int bid =0, c= 0, tpe;
 	BAT *b, *bn = NULL;
 	BUN cnt;
-	oid *o =0, genoid= 0;
+	oid *ol =0, o= 0;
 	InstrPtr p;
 	str msg;
 
@@ -783,9 +785,9 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 	cnt = BATcount(b);
 	if ( b->ttype == TYPE_void)
-		genoid = b->tseqbase;
+		o = b->tseqbase;
 	else
-		o = (oid*) Tloc(b,BUNfirst(b));
+		ol = (oid*) Tloc(b,BUNfirst(b));
 
 	/* the actual code to perform a leftfetchjoin over generators */
 	switch( tpe = getArgType(mb,p,1)){
@@ -803,6 +805,10 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
 			s =  *(lng*) getArgReference(stk,p, 3);
+			if ( s == 0 ||
+				(s< 0 &&	(f.days<= l.days || (f.days == l.days && f.msecs < l.msecs))) ||
+				(s> 0 &&	(l.days<= f.days || (l.days == f.days && l.msecs < f.msecs))) )
+				throw(MAL,"generator.thetasubselect","Illegal range");
 
 			bn = BATnew(TYPE_void, tpe, cnt);
 			if( bn == NULL){
@@ -812,12 +818,14 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 			v = (timestamp*) Tloc(bn,BUNfirst(bn));
 
-			for(; cnt-- > 0; genoid++, o++){
-				t = ((lng) ( b->ttype == TYPE_void?genoid:*o)) * s;
+			for(; cnt-- > 0; ol++, o++){
+				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
 				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
 					return msg;
 
-				if ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  || timestamp_isnil(val))
+				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  || timestamp_isnil(val)) )
+					continue;
+				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs < l.msecs)) || ((val.days>f.days || (val.days== f.days && val.msecs >= f.msecs)))  || timestamp_isnil(val)) )
 					continue;
 				*v++ = val;
 				c++;
@@ -976,12 +984,4 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
 	}
 	return msg;
-/*
-wrapup:
-	if(bl) BBPreleaseRef(bl->batCacheid);
-	BBPreleaseRef(bln->batCacheid);
-	if(br)BBPreleaseRef(br->batCacheid);
-	BBPreleaseRef(brn->batCacheid);
-	return msg;
-*/
 }
