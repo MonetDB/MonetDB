@@ -29,8 +29,8 @@ INCLUDES = .. \
 	../../../../common/options \
 	../../../../common/stream \
 	../../../../gdk \
-    ../../../../tools/merovingian \
-    ../../../../tools/merovingian/daemon \
+	../../../../tools/merovingian \
+	../../../../tools/merovingian/daemon \
 	$(SAMTOOLS_CFLAGS)
 
 lib__bam = {
@@ -43,8 +43,8 @@ lib__bam = {
 	          bam_lib.c bam_lib.h \
 	          bam_export.c bam_export.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../gdk/libbat \
-	$(SAMTOOLS_LIBS)
+	       ../../../../gdk/libbat \
+	       $(SAMTOOLS_LIBS)
 }
 
 headers_mal = {

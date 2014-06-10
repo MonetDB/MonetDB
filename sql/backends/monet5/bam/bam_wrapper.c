@@ -182,7 +182,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	bw->cnt_alignments_extra = 0;
 	bw->cnt_alignments_paired_primary = 0;
 	bw->cnt_alignments_paired_secondary = 0;
-    bw->cnt_alignments_total = 0;
+	bw->cnt_alignments_total = 0;
 
 	for (i = 0; i < 6; ++i) {
 		snprintf(bw->fp_files[i], BW_FP_BUF_SIZE, "%s/files_%d",
