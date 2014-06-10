@@ -345,8 +345,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		// check the BAT count, if it is bigger than RAPI_MAX_TUPLES, fail
 		if (BATcount(b) > RAPI_MAX_TUPLES) {
 			msg = createException(MAL, "rapi.eval",
-					"Got "BUNFMT" rows, but can only handle "BUNFMT". Sorry.",
-					BATcount(b), RAPI_MAX_TUPLES);
+					"Got "BUNFMT" rows, but can only handle "LLFMT". Sorry.",
+					BATcount(b), (lng) RAPI_MAX_TUPLES);
 			goto wrapup;
 		}
 		varname = PROTECT(Rf_install(args[i]));
