@@ -29,6 +29,14 @@ stderr of test 'joins00` in directory 'sql/backends/monet5/generator` itself:
 # 14:48:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27422" "--port=30956"
 # 14:48:53 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-15961/.s.monetdb.33803
+QUERY = select * from generate_series(0,10,2) X, tmp Y where X.value = Y.i;
+
+        !BATproject: does not match always
+MAPI  = (monetdb) /var/tmp/mtest-15961/.s.monetdb.33803
+QUERY = select * from generate_series(0,10,2) X, tmp Y where Y.i = X.value;
+
+        !BATproject: does not match always
 
 # 14:48:53 >  
 # 14:48:53 >  "Done."

@@ -66,7 +66,7 @@ static int
 VLTgenerator_optimizer(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p,q;
-	int i,j, used= 0, cases;
+	int i,j,k, used= 0, cases, blocked;
 	str vaultRef = putName("vault",5);
 	str generateRef = putName("generate_series",15);
 	str generatorRef = putName("generator",9);
@@ -78,36 +78,43 @@ VLTgenerator_optimizer(Client cntxt, MalBlkPtr mb)
 			/* found a target for propagation */
 			if ( assignedOnce(mb, getArg(p,0)) ){
 				cases = useCount(mb, getArg(p,0));
-				for( j = i+1; j< mb->stop; j++){
+				blocked = 0;
+				for( j = i+1; j< mb->stop && blocked == 0; j++){
 					q = getInstrPtr(mb,j);
 					if ( getModuleId(q) == algebraRef && getFunctionId(q) == subselectRef && getArg(q,1) == getArg(p,0)){
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
 						used++;
-					}
+					} else
 					if ( getModuleId(q) == algebraRef && getFunctionId(q) == thetasubselectRef && getArg(q,1) == getArg(p,0)){
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
 						used++;
-					}
+					} else
 					if ( getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef && getArg(q,2) == getArg(p,0)){
 						// projection over a series
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
 						used++;
-					}
+					} else
 					if ( getModuleId(q) == algebraRef && getFunctionId(q) == joinRef && (getArg(q,2) == getArg(p,0) || getArg(q,3) == getArg(p,0))){
 						// projection over a series
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
 						used++;
-					}
+					} else
 					if ( getModuleId(q) == languageRef && getFunctionId(q) == passRef && getArg(q,1) == getArg(p,0))
 						// nothing happens in this instruction
 						used++;
+					else {
+						// check for use without conversion
+						for(k = q->retc; k < q->argc; k++)
+						if( getArg(q,k) == getArg(p,0))
+							blocked++;
+					}
 				}
 				// fix the original, only when all use cases are replaced by the overloaded function
-				if(used == cases){
+				if(used == cases && blocked == 0){
 					setModuleId(p, generatorRef);
 					setFunctionId(p, noopRef);
 					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
@@ -289,11 +296,11 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
-	//str vaultRef = putName("generator",9);
+	str vaultRef = putName("generator",9);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target )//&& getModuleId(q) == vaultRef)
+		if (q->argv[0] == target && getModuleId(q) == vaultRef)
 			p = q;
 		if (q == pci)
 			return p;
@@ -838,11 +845,13 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
-	for( ; cnt >0; cnt--,genoid++,v++){\
+	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
+		throw(MAL,"generator.join","illegal range");\
+	for( ; cnt >0; cnt--,o++,v++){\
 		w = (BUN) floor( (double)((*v -f)/s));\
-		if ( *v >= f && *v < l && f + (TPE)(w * s) == *v ){\
-			*or++ = w;\
-			*ol++ = genoid;\
+		if ( f + (TPE)(w * s) == *v ){\
+			*ol++ = w;\
+			*or++ = o;\
 			c++;\
 		}\
 	} }\
@@ -851,7 +860,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
-	oid genoid= 0, *ol, *or;
+	oid o= 0, *ol, *or;
 	int tpe;
 	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
@@ -878,18 +887,16 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(!( p && q));
 	assert(p || q);
 
-mnstr_printf(cntxt->fdout,"Left? %d Right %d\n", p != NULL, q!= NULL);
 	// switch roles to have a single target bat[:oid,:any] designated 
 	// by b and reference instruction p for the generator
 	b = q? bl : br;
 	p = q? q : p;
 	cnt = BATcount(b);
 	tpe = b->ttype;
-	genoid = b->tseqbase;
+	o= b->tseqbase;
 	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt);
-mnstr_printf(cntxt->fdout,"lid? %d rid %d\n", bln->batCacheid, brn->batCacheid);
 	if( bln == NULL || brn == NULL){
 		if(bln) BBPreleaseref(bln->batCacheid);
 		if(brn) BBPreleaseref(brn->batCacheid);
@@ -907,12 +914,14 @@ mnstr_printf(cntxt->fdout,"lid? %d rid %d\n", bln->batCacheid, brn->batCacheid);
 	f = *(bte*) getArgReference(stk,p, 1);
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
+	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
+		throw(MAL,"generator.join","illegal range");
 	v = (bte*) Tloc(b,BUNfirst(b));
-	for( ; cnt >0; cnt--,genoid++,v++){
+	for( ; cnt >0; cnt--,o++,v++){
 		w = (BUN) floor((*v -f)/s);
 		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
-			*or++ = (oid) w;
-			*ol++ = genoid;
+			*ol++ = (oid) w;
+			*or++ = o;
 			c++;
 		}
 	} }
@@ -933,7 +942,7 @@ mnstr_printf(cntxt->fdout,"lid? %d rid %d\n", bln->batCacheid, brn->batCacheid);
 		l = *(timestamp*) getArgReference(stk,p, 2);
 		s = *(lng*) getArgReference(stk,p, 3);
 		v = (timestamp*) Tloc(bl,BUNfirst(bl));
-		for( ; cnt >0; cnt--,genoid++, v++){
+		for( ; cnt >0; cnt--,o++, v++){
 			offset = ((lng)*o) * s;
 			if( (msg = MTIMEtimestamp_add(&val, &f, &offset)) != MAL_SUCCEED)
 				return msg;
@@ -963,7 +972,6 @@ mnstr_printf(cntxt->fdout,"lid? %d rid %d\n", bln->batCacheid, brn->batCacheid);
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
 		BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
 	} else {
-		// switch their role
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
 		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
 	}
