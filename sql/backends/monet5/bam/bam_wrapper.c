@@ -1560,7 +1560,7 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 
         for (i = 0; i < a_in->core.n_cigar; ++i) {
             snprintf(&a_out->cigar[index],
-                 a_out->cigar_size - index, "%d%c",
+                 a_out->cigar_size - index, "%u%c",
                  cigar_bin[i] >> BAM_CIGAR_SHIFT,
                  bam_cigar_opchr(cigar_bin[i]));
             index += strlen(&a_out->cigar[index]);
@@ -1978,7 +1978,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	int nr_aligs;
 
 	lng voffset;
-	bam1_t *alig;
+	bam1_t *alig = NULL;
 
 	int alig_index = 0;
 
@@ -2027,7 +2027,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 
 	while (TRUE) { /* One iteration per alignment */
         alignment *a;
-        int aux_len;
+        int aux_len = 0;
         
 		/* Start the processing of every alignment with
 		 * checking if we should return due to another

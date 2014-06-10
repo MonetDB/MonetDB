@@ -233,7 +233,7 @@ bind_export_result(Client cntxt, MalBlkPtr mb, bam_field fields[11], int *tuple_
     sql_schema *s_bam;
     sql_table *t_export;
     
-    int cnt, i;
+    int cnt = int_nil, i;
     str msg;
     
     if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED) {
