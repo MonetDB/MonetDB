@@ -1,3 +1,6 @@
+0.9.3
+- Remove trailing slashes for monetdb.program.path parameter for monetdb.server.setup (Thanks, Anthony!)
+
 0.9.2
 - monetdb_queryinfo method to find out things about an arbitrary query cheaply
 - new options monetdb.sequential, monetdb.debug.query and monetdb.debug.mapi
