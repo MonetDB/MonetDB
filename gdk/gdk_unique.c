@@ -236,8 +236,8 @@ BATsubunique(BAT *b, BAT *s)
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->ttype, s?BUNlast(s):BUNlast(b),
-				  s?HASHmask(s->batCount):HASHmask(b->batCount))) == NULL) {
+		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
+				  HASHmask(b->batCount))) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);
