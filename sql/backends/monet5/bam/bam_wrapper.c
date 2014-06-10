@@ -78,7 +78,7 @@ str
 init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location, 
          lng file_id, sht dbschema)
 {
-	unsigned int i;
+	int i;
 	char flushdir[128];
 
 	/* Enables clear function to check variables */
