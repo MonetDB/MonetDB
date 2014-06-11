@@ -3639,17 +3639,23 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(sql, rel, se, f);
 	}
 
-	if (!l || !r) 
-		return NULL;
-
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
 	if (type == F_FUNC) {
 		sql_subfunc *func = sql_find_func(sql->sa, s, fname, 2, F_AGGR);
-		if (func)
+		if (func) {
+			if (!l || !r) { /* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+			}
 			return _rel_aggr(sql, rel, 0, s, fname, dl->next, f);
+		}
 	}
+
+	if (!l || !r) 
+		return NULL;
+
 	return rel_binop_(sql, l, r, s, fname, ek.card);
 }
 
