@@ -464,10 +464,15 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(q);
+				ValRecord cst;
 
-				/* subslice the candidates */
+				/* slice the candidates */
+				setFunctionId(r, sliceRef);
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				getArg(r, 1) = getArg(s, 1); 
+				cst.vtype = getArgType(mb, r, 2);
+				cst.val.wval = 0;
+				getArg(r, 2) = defConstant(mb, cst.vtype, &cst); /* start from zero */
 				pushInstruction(mb,r);
 
 				/* dummy result for the old q, will be removed by deadcode optimizer */
