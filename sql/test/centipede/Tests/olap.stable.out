@@ -56,6 +56,8 @@ Ready.
 [ 5	]
 #insert into Sc values (1,1), (1,3);
 [ 2	]
+#insert into Tc values (1,1,1), (2,2,3), (2,2,4), (2,2,5), (3,3,3);
+[ 5	]
 #select * from Rc;
 % sys.rc,	sys.rc # table_name
 % i,	j # name
@@ -73,6 +75,16 @@ Ready.
 % 1,	1 # length
 [ 1,	1	]
 [ 1,	3	]
+#select * from Tc;
+% sys.tc,	sys.tc,	sys.tc # table_name
+% x,	y,	z # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	2,	3	]
+[ 2,	2,	4	]
+[ 2,	2,	5	]
+[ 3,	3,	3	]
 #set optimizer='centipede_pipe';
 #select i,count(*) from Rc group by i;
 % sys.rc,	sys.L1 # table_name
@@ -224,6 +236,30 @@ Ready.
 % 1,	1 # length
 [ 1,	1	]
 [ 3,	1	]
+#select x,y,count(*) from Tc group by x,y;
+% sys.tc,	sys.tc,	sys.L1 # table_name
+% x,	y,	L1 # name
+% int,	int,	wrd # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	2,	3	]
+[ 3,	3,	1	]
+#select x,y,max(z) from Tc group by x,y;
+% sys.tc,	sys.tc,	sys.L1 # table_name
+% x,	y,	L1 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	2,	4	]
+[ 3,	3,	3	]
+#select x,y,sum(z) from Tc group by x,y;
+% sys.tc,	sys.tc,	sys.L1 # table_name
+% x,	y,	L1 # name
+% int,	int,	bigint # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	2,	12	]
+[ 3,	3,	3	]
 #drop table Rc;
 #drop table Sc;
 
