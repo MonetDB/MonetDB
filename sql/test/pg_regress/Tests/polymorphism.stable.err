@@ -1,0 +1,404 @@
+stderr of test 'polymorphism` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:59 >  
+# 17:10:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:59 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:59 >  
+# 17:10:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION stfp(anyarray) returns anyarray as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected ')' in: "create function stfp(anyarray)"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION stfnp(int[]) returns int[] as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected sqlINTEGER, expecting ')' in: "create function stfnp(int"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION tfp(anyarray,anyelement) returns anyarray as
+        'select $1 || $2' language 'sql';
+ERROR = !syntax error, unexpected ',' in: "create function tfp(anyarray,"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION tfnp(int[],int) returns int[] as
+        'select $1 || $2' language 'sql';
+ERROR = !syntax error, unexpected sqlINTEGER, expecting ')' in: "create function tfnp(int"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION tf1p(anyarray,int) returns anyarray as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected ',' in: "create function tf1p(anyarray,"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION tf2p(int[],anyelement) returns int[] as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected sqlINTEGER, expecting ')' in: "create function tf2p(int"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION ffp(anyarray) returns anyarray as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected ')' in: "create function ffp(anyarray)"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE FUNCTION ffnp(int[]) returns int[] as
+        'select $1' language 'sql';
+ERROR = !syntax error, unexpected sqlINTEGER, expecting ')' in: "create function ffnp(int"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp01a(BASETYPE = "ANY", SFUNC = stfnp, STYPE = integer[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp01a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp02a(BASETYPE = "ANY", SFUNC = stfnp, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp02a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp03a(BASETYPE = "ANY", SFUNC = stfp, STYPE = integer[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp03a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp03b(BASETYPE = "ANY", SFUNC = stfp, STYPE = integer[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp03b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp04a(BASETYPE = "ANY", SFUNC = stfp, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp04a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp04b(BASETYPE = "ANY", SFUNC = stfp, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp04b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp05a(BASETYPE = int, SFUNC = tfnp, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp05a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp06a(BASETYPE = int, SFUNC = tf2p, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp06a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp07a(BASETYPE = anyelement, SFUNC = tfnp, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp07a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp08a(BASETYPE = anyelement, SFUNC = tf2p, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp08a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp09a(BASETYPE = int, SFUNC = tf1p, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp09a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp09b(BASETYPE = int, SFUNC = tf1p, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp09b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp10a(BASETYPE = int, SFUNC = tfp, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp10a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp10b(BASETYPE = int, SFUNC = tfp, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp10b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp11a(BASETYPE = anyelement, SFUNC = tf1p, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp11a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp11b(BASETYPE = anyelement, SFUNC = tf1p, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp11b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp12a(BASETYPE = anyelement, SFUNC = tfp, STYPE = int[],
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp12a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp12b(BASETYPE = anyelement, SFUNC = tfp, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp12b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp13a(BASETYPE = int, SFUNC = tfnp, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp13a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp14a(BASETYPE = int, SFUNC = tf2p, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp14a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp15a(BASETYPE = anyelement, SFUNC = tfnp,
+          STYPE = anyarray, FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp15a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp16a(BASETYPE = anyelement, SFUNC = tf2p,
+          STYPE = anyarray, FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp16a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp17a(BASETYPE = int, SFUNC = tf1p, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp17a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp17b(BASETYPE = int, SFUNC = tf1p, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp17b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp18a(BASETYPE = int, SFUNC = tfp, STYPE = anyarray,
+          FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp18a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp18b(BASETYPE = int, SFUNC = tfp, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp18b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp19a(BASETYPE = anyelement, SFUNC = tf1p,
+          STYPE = anyarray, FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp19a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp19b(BASETYPE = anyelement, SFUNC = tf1p,
+          STYPE = anyarray, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp19b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp20a(BASETYPE = anyelement, SFUNC = tfp,
+          STYPE = anyarray, FINALFUNC = ffp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp20a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggp20b(BASETYPE = anyelement, SFUNC = tfp,
+          STYPE = anyarray, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggp20b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn01a(BASETYPE = "ANY", SFUNC = stfnp, STYPE = integer[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn01a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn01b(BASETYPE = "ANY", SFUNC = stfnp, STYPE = integer[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn01b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn02a(BASETYPE = "ANY", SFUNC = stfnp, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn02a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn02b(BASETYPE = "ANY", SFUNC = stfnp, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn02b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn03a(BASETYPE = "ANY", SFUNC = stfp, STYPE = integer[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn03a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn04a(BASETYPE = "ANY", SFUNC = stfp, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn04a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn05a(BASETYPE = int, SFUNC = tfnp, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn05a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn05b(BASETYPE = int, SFUNC = tfnp, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn05b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn06a(BASETYPE = int, SFUNC = tf2p, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn06a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn06b(BASETYPE = int, SFUNC = tf2p, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn06b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn07a(BASETYPE = anyelement, SFUNC = tfnp, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn07a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn07b(BASETYPE = anyelement, SFUNC = tfnp, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn07b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn08a(BASETYPE = anyelement, SFUNC = tf2p, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn08a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn08b(BASETYPE = anyelement, SFUNC = tf2p, STYPE = int[],
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn08b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn09a(BASETYPE = int, SFUNC = tf1p, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn09a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn10a(BASETYPE = int, SFUNC = tfp, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn10a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn11a(BASETYPE = anyelement, SFUNC = tf1p, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn11a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn12a(BASETYPE = anyelement, SFUNC = tfp, STYPE = int[],
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn12a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn13a(BASETYPE = int, SFUNC = tfnp, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn13a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn13b(BASETYPE = int, SFUNC = tfnp, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn13b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn14a(BASETYPE = int, SFUNC = tf2p, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn14a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn14b(BASETYPE = int, SFUNC = tf2p, STYPE = anyarray,
+          INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn14b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn15a(BASETYPE = anyelement, SFUNC = tfnp,
+          STYPE = anyarray, FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn15a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn15b(BASETYPE = anyelement, SFUNC = tfnp,
+          STYPE = anyarray, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn15b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn16a(BASETYPE = anyelement, SFUNC = tf2p,
+          STYPE = anyarray, FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn16a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn16b(BASETYPE = anyelement, SFUNC = tf2p,
+          STYPE = anyarray, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn16b(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn17a(BASETYPE = int, SFUNC = tf1p, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn17a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn18a(BASETYPE = int, SFUNC = tfp, STYPE = anyarray,
+          FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn18a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn19a(BASETYPE = anyelement, SFUNC = tf1p,
+          STYPE = anyarray, FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn19a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = CREATE AGGREGATE myaggn20a(BASETYPE = anyelement, SFUNC = tfp,
+          STYPE = anyarray, FINALFUNC = ffnp, INITCOND = '{}');
+ERROR = !syntax error, unexpected '=' in: "create aggregate myaggn20a(basetype ="
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = create temp table t(f1 int, f2 int[], f3 text);
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "create temp table t(f1 int, f2 int["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(1,array[1],'a');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(1,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(1,array[11],'b');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(1,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(1,array[111],'c');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(1,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(2,array[2],'a');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(2,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(2,array[22],'b');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(2,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(2,array[222],'c');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(2,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(3,array[3],'a');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(3,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into t values(3,array[3],'b');
+ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into t values(3,array["
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp01a(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggp01a(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp03a(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggp03a(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp03b(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggp03b(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp05a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp06a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp08a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp09a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp09b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp10a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp10b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp20a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggp20b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn01a(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggn01a(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn01b(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggn01b(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn03a(*) from t group by f3;
+ERROR = !syntax error, unexpected '*' in: "select f3, myaggn03a(*"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn05a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn05b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn06a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn06b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn08a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn08b(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn09a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select f3, myaggn10a(f1) from t group by f3;
+ERROR = !SELECT: no such table 't'
+
+# 17:11:00 >  
+# 17:11:00 >  "Done."
+# 17:11:00 >  
+

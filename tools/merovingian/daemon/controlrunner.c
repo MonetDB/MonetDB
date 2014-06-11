@@ -641,6 +641,7 @@ static void ctl_handle_client(
 				}
 
 				val = strchr(p, '=');
+				assert(val != NULL); /* see above */
 				*val++ = '\0';
 				if (*val == '\0')
 					val = NULL;

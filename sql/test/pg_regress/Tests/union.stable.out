@@ -1,0 +1,352 @@
+stdout of test 'union` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:58 >  
+# 17:11:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:58 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#Interpreting lng as wrd.
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+#Interpreting lng as wrd.
+
+# 17:11:58 >  
+# 17:11:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:58 >  
+
+#SELECT 1 AS two UNION SELECT 2;
+% .L1 # table_name
+% two # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+#SELECT 1 AS one UNION SELECT 1;
+% .L1 # table_name
+% one # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT 1 AS two UNION ALL SELECT 2;
+% .L1 # table_name
+% two # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+#SELECT 1 AS two UNION ALL SELECT 1;
+% .L1 # table_name
+% two # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+#SELECT 1 AS three UNION SELECT 2 UNION SELECT 3;
+% .L2 # table_name
+% three # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#SELECT 1 AS two UNION SELECT 2 UNION SELECT 2;
+% .L2 # table_name
+% two # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+#SELECT 1 AS three UNION SELECT 2 UNION ALL SELECT 2;
+% .L2 # table_name
+% three # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 2	]
+#SELECT 1.1 AS two UNION SELECT 2.2;
+% .L1 # table_name
+% two # name
+% decimal # type
+% 4 # length
+[ 1.1	]
+[ 2.2	]
+#SELECT 1.1 AS two UNION SELECT 2;
+% .L1 # table_name
+% two # name
+% decimal # type
+% 6 # length
+[ 1.1	]
+[ 2.0	]
+#SELECT 1 AS two UNION SELECT 2.2;
+% .L1 # table_name
+% two # name
+% decimal # type
+% 6 # length
+[ 1.0	]
+[ 2.2	]
+#SELECT 1.1 AS two UNION ALL SELECT 2;
+% .L1 # table_name
+% two # name
+% decimal # type
+% 6 # length
+[ 1.1	]
+[ 2.0	]
+#SELECT 1.1 AS three UNION SELECT 2 UNION SELECT 3;
+% .L2 # table_name
+% three # name
+% decimal # type
+% 6 # length
+[ 1.1	]
+[ 2.0	]
+[ 3.0	]
+#SELECT 1.1 AS three UNION SELECT 2 UNION ALL SELECT 2;
+% .L2 # table_name
+% three # name
+% decimal # type
+% 6 # length
+[ 1.1	]
+[ 2.0	]
+[ 2.0	]
+#SELECT 1.1 AS two UNION (SELECT 2 UNION ALL SELECT 2);
+% .L2 # table_name
+% two # name
+% decimal # type
+% 6 # length
+[ 1.1	]
+[ 2.0	]
+#SELECT f1 AS five FROM FLOAT8_TBL
+#UNION
+#SELECT f1 FROM FLOAT8_TBL;
+% .L # table_name
+% five # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+#SELECT f1 AS ten FROM FLOAT8_TBL
+#UNION ALL
+#SELECT f1 FROM FLOAT8_TBL;
+% .L # table_name
+% ten # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+#SELECT f1 AS nine FROM FLOAT8_TBL
+#UNION
+#SELECT f1 FROM INT4_TBL;
+% .L # table_name
+% nine # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+[ -123456	]
+[ 2147483647	]
+[ -2147483647	]
+#SELECT f1 AS ten FROM FLOAT8_TBL
+#UNION ALL
+#SELECT f1 FROM INT4_TBL;
+% .L # table_name
+% ten # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+[ -123456	]
+[ 2147483647	]
+[ -2147483647	]
+#SELECT f1 AS five FROM FLOAT8_TBL
+#  WHERE f1 BETWEEN -1e6 AND 1e6
+#UNION
+#SELECT f1 FROM INT4_TBL
+#  WHERE f1 BETWEEN 0 AND 1000000;
+% .L # table_name
+% five # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+#SELECT q2 FROM int8_tbl INTERSECT SELECT q1 FROM int8_tbl;
+% sys.L # table_name
+% q2 # name
+% bigint # type
+% 16 # length
+[ 4567890123456789	]
+#SELECT q2 FROM int8_tbl INTERSECT ALL SELECT q1 FROM int8_tbl;
+% sys.L # table_name
+% q2 # name
+% bigint # type
+% 16 # length
+[ 4567890123456789	]
+#SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl;
+% sys.L # table_name
+% q2 # name
+% bigint # type
+% 17 # length
+[ 123	]
+[ -4567890123456789	]
+#SELECT q2 FROM int8_tbl EXCEPT ALL SELECT q1 FROM int8_tbl;
+% sys.L # table_name
+% q2 # name
+% bigint # type
+% 17 # length
+[ 123	]
+[ -4567890123456789	]
+#SELECT q2 FROM int8_tbl EXCEPT ALL SELECT DISTINCT q1 FROM int8_tbl;
+% sys.L # table_name
+% q2 # name
+% bigint # type
+% 17 # length
+[ 123	]
+[ -4567890123456789	]
+#SELECT q1 FROM int8_tbl EXCEPT SELECT q2 FROM int8_tbl;
+% sys.L # table_name
+% q1 # name
+% bigint # type
+% 1 # length
+#SELECT q1 FROM int8_tbl EXCEPT ALL SELECT q2 FROM int8_tbl;
+% sys.L # table_name
+% q1 # name
+% bigint # type
+% 16 # length
+[ 4567890123456789	]
+[ 4567890123456789	]
+#SELECT q1 FROM int8_tbl EXCEPT ALL SELECT DISTINCT q2 FROM int8_tbl;
+% sys.L # table_name
+% q1 # name
+% bigint # type
+% 16 # length
+[ 4567890123456789	]
+[ 4567890123456789	]
+#SELECT f1 FROM float8_tbl INTERSECT SELECT f1 FROM int4_tbl;
+% sys.L # table_name
+% f1 # name
+% double # type
+% 24 # length
+#SELECT f1 FROM float8_tbl EXCEPT SELECT f1 FROM int4_tbl;
+% sys.L # table_name
+% f1 # name
+% double # type
+% 24 # length
+[ 0	]
+[ -34	]
+[ -1004	]
+[ -1	]
+[ -1	]
+#SELECT q1 FROM int8_tbl INTERSECT SELECT q2 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl;
+% .L # table_name
+% q1 # name
+% bigint # type
+% 17 # length
+[ 4567890123456789	]
+[ 123	]
+[ 4567890123456789	]
+[ -4567890123456789	]
+#SELECT q1 FROM int8_tbl INTERSECT (((SELECT q2 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl)));
+% sys.L # table_name
+% q1 # name
+% bigint # type
+% 16 # length
+[ 4567890123456789	]
+#(((SELECT q1 FROM int8_tbl INTERSECT SELECT q2 FROM int8_tbl))) UNION ALL SELECT q2 FROM int8_tbl;
+% .L # table_name
+% q1 # name
+% bigint # type
+% 17 # length
+[ 4567890123456789	]
+[ 123	]
+[ 4567890123456789	]
+[ -4567890123456789	]
+#SELECT q1 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl;
+% .L # table_name
+% q1 # name
+% bigint # type
+% 17 # length
+[ 123	]
+[ -4567890123456789	]
+#SELECT q1 FROM int8_tbl UNION ALL (((SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl)));
+% .L # table_name
+% q1 # name
+% bigint # type
+% 17 # length
+[ 4567890123456789	]
+[ 4567890123456789	]
+[ 4567890123456789	]
+[ 123	]
+[ -4567890123456789	]
+#(((SELECT q1 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl))) EXCEPT SELECT q1 FROM int8_tbl;
+% .L # table_name
+% q1 # name
+% bigint # type
+% 17 # length
+[ 123	]
+[ -4567890123456789	]
+#SELECT q1,q2 FROM int8_tbl EXCEPT SELECT q2,q1 FROM int8_tbl
+#ORDER BY q2,q1;
+% sys.L,	sys.L # table_name
+% q1,	q2 # name
+% bigint,	bigint # type
+% 16,	17 # length
+[ 4567890123456789,	-4567890123456789	]
+[ 4567890123456789,	123	]
+#(((((select * from int8_tbl)))));
+% sys.int8_tbl,	sys.int8_tbl # table_name
+% q1,	q2 # name
+% bigint,	bigint # type
+% 16,	17 # length
+[ 4567890123456789,	123	]
+[ 4567890123456789,	4567890123456789	]
+[ 4567890123456789,	-4567890123456789	]
+
+# 17:11:59 >  
+# 17:11:59 >  "Done."
+# 17:11:59 >  
+

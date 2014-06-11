@@ -89,7 +89,6 @@ command_create(int argc, char *argv[])
 	char path[2048];
 	char *p;
 	char *dbfarm;
-	struct stat sb;
 	confkeyval phrase[2];
 
 	if (argc != 2) {
@@ -100,26 +99,23 @@ command_create(int argc, char *argv[])
 	dbfarm = argv[1];
 
 	/* check if dbfarm actually exists */
-	if (stat(dbfarm, &sb) == -1) {
-		strncpy(path, dbfarm, sizeof(path) - 1);
-		path[sizeof(path) - 1] = '\0';
-		p = path;
-		/* try to create the dbfarm */
-		while ((p = strchr(p + 1, '/')) != NULL) {
-			*p = '\0';
-			/* coverity[toctou] */
-			if (stat(path, &sb) == -1 && mkdir(path, 0755)) {
-				fprintf(stderr, "unable to create directory '%s': %s\n",
-						path, strerror(errno));
-				return(1);
-			}
-			*p = '/';
-		}
-		if (mkdir(path, 0755)) {
-			fprintf(stderr, "unable to create directory '%s': %s\n",
-					path, strerror(errno));
+	strncpy(path, dbfarm, sizeof(path) - 1);
+	path[sizeof(path) - 1] = '\0';
+	p = path;
+	while ((p = strchr(p + 1, '/')) != NULL) {
+		*p = '\0';
+		if (mkdir(path, 0755) == -1 && errno != EEXIST) {
+			fprintf(stderr,
+				"unable to create directory '%s': %s\n",
+				path, strerror(errno));
 			return(1);
 		}
+		*p = '/';
+	}
+	if (mkdir(dbfarm, 0755) == -1 && errno != EEXIST) {
+		fprintf(stderr, "unable to create directory '%s': %s\n",
+			dbfarm, strerror(errno));
+		return(1);
 	}
 
 	phrase[0].key = NULL;

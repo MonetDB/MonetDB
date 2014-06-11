@@ -219,8 +219,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
 				OPTDEBUGevaluate {
+					str tpename;
 					mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
-						getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
+						getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
+					GDKfree(tpename);
 				}
 			} else {
 				/* if there is an error, we should postpone message handling,
