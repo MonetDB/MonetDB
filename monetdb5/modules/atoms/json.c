@@ -1761,12 +1761,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 		}
 	}
-	if (g && BATtdense(g)) {
-		/* singleton groups: return group ID's (g's tail) and original
-		 * values from b */
-		bn = VIEWcreate(BATmirror(g), b);
-		goto out;
-	}
 
 	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
@@ -1797,6 +1791,59 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			mapoff = b->tseqbase;
 		} else {
 			map = (const oid *) Tloc(t2, BUNfirst(t2));
+		}
+		if (g && BATtdense(g)) {
+		  for (p = 0, q = BATcount(g); p < q; p++) {
+			switch(b->ttype) {
+				case  TYPE_str:
+				v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				break;
+			case TYPE_dbl:
+				val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				if (*val != dbl_nil) {
+					snprintf(temp, sizeof(temp), "%f", *val);
+					v = (const char *)temp;
+			  	} else {
+                                	v =  NULL;
+				}
+				break;
+			}
+			if (!v||strNil(v)) {
+				if (skip_nils)
+					continue;
+				strncpy(buf, str_nil, buflen);
+				isnil = 1;
+			} else {
+				len = strlen(v);
+				if (len >= maxlen - buflen) {
+					maxlen += len + BUFSIZ;
+					buf = GDKrealloc(buf, maxlen);
+					if (buf == NULL) {
+						err = MAL_MALLOC_FAIL;
+						goto bunins_failed;
+					}
+				}
+				switch (b->ttype) {
+				case TYPE_str:
+				  len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\" ]", v);
+				  buflen += len;
+				  break;
+				case TYPE_dbl:
+				  len = snprintf(buf + buflen, maxlen - buflen, "[ %s ]", v);
+				  buflen += len;
+				  break;
+				}
+			}
+			bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+			buflen = 0;
+		  }
+		  BATseqbase(bn, min);
+		  bn->T->nil = nils != 0;
+		  bn->T->nonil = nils == 0;
+		  bn->T->sorted = BATcount(bn) <= 1;
+		  bn->T->revsorted = BATcount(bn) <= 1;
+		  bn->T->key = BATcount(bn) <= 1;
+		  goto out;
 		}
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
