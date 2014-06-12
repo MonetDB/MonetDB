@@ -236,7 +236,8 @@ monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhos
   lines <- lines[grepl("^=sabdb:2:", lines)] # make sure we get a db list here, protocol v.2
   lines <- sub("=sabdb:2:", "", lines, fixed=T)
   # convert value into propert types etc
-  dbdf <- as.data.frame(do.call("rbind", strsplit(lines, ", ", fixed=T)), stringsAsFactors=F)
+  dbdf <- as.data.frame(do.call("rbind", strsplit(lines, ",", fixed=T)), stringsAsFactors=F)
+
   names(dbdf) <- c("dbname", "uri", "locked", "state", "scenarios", "startCounter", "stopCounter", 
                    "crashCounter", "avgUptime", "maxUptime", "minUptime", "lastCrash", "lastStart", "lastStop", 
                    "crashAvg1", "crashAvg10", "crashAvg30")

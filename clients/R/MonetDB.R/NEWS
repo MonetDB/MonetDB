@@ -1,5 +1,6 @@
 0.9.3
 - Remove trailing slashes for monetdb.program.path parameter for monetdb.server.setup (Thanks, Anthony!)
+- fixed monetdbd.liststatus (Thanks, Bart)
 
 0.9.2
 - monetdb_queryinfo method to find out things about an arbitrary query cheaply
