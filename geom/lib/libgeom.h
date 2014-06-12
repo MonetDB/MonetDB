@@ -100,7 +100,7 @@ typedef enum wkb_type {
 	//wkbGeometry = 0,
 	wkbPoint = 1,
 	wkbLineString = 2,
-	wkbPolygon = 3,
+	wkbPolygon = 4,
 	wkbMultiPoint = 5,
 	wkbMultiLineString = 6,
 	wkbMultiPolygon = 7,

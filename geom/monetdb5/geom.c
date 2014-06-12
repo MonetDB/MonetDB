@@ -160,7 +160,7 @@ void geoHasM(int* res, int* info) {
 void geoGetType(char** res, int* info, int flag) {
 	int type = (*info >> 2);
 	const char* typeStr=geom_type2str(type, flag) ;
-	
+
 	*res=GDKmalloc(strlen(typeStr));
 	strcpy(*res, typeStr);
 }
@@ -345,6 +345,7 @@ int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
 	GEOSWKTReader *WKT_reader;
 
 	if (strcmp(geomWKT, str_nil) == 0) {
+		*geomWKB = GDKmalloc(sizeof(wkb));
 		**geomWKB = *wkbNULL();
 		return 0;
 	}
@@ -356,6 +357,7 @@ int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
 	GEOSWKTReader_destroy(WKT_reader);
 
 	if(geosGeometry == NULL){
+		*geomWKB = GDKmalloc(sizeof(wkb));
 		**geomWKB = *wkbNULL();
 		return 0;
 	}
@@ -367,6 +369,7 @@ int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
+		*geomWKB = GDKmalloc(sizeof(wkb));
 		**geomWKB = *wkbNULL();
 		return 0;
 	}
@@ -498,31 +501,14 @@ str wkbAsText(str *r, wkb **w) {
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
 }
 
-static str geomMakePoint(wkb **out, GEOSGeom geosGeometry) {
-	unsigned char* wkbSer = NULL;
-	size_t wkbLen = 0;
-
-	//creates the wkbSer from the GeosGeometry structure
-	wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-	GEOSGeom_destroy(geosGeometry);
-
-	if(!wkbSer) {
-		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to create wkb from GEOSGeometry");
+static str geomMakePoint(wkb **geomWKB, GEOSGeom geosGeometry) {
+	
+	*geomWKB = geos2wkb(geosGeometry);
+	
+	if(wkb_isnil(*geomWKB)) {
+		*geomWKB = wkb_nil;
+		throw(MAL, "geomMakePoint", "Failed to crete WKB from GEOSGeometry");
 	}
-
-	assert(wkbLen <= GDK_int_max);
-	*out = GDKmalloc((int) wkb_size(wkbLen));
-
-	if(*out == NULL) {
-		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to reserve memory for *wkb");
-	}
-
-	(*out)->len = (int) wkbLen;
-	memcpy(&(*out)->data, wkbSer, wkbLen);
-	GEOSFree(wkbSer);
-
 	return MAL_SUCCEED;
 }
 
@@ -535,6 +521,7 @@ str geomMakePoint2D(wkb** out, double* x, double* y) {
 	GEOSCoordSeq_setX(seq, 0, *x);
 	GEOSCoordSeq_setY(seq, 0, *y);
 	geosGeometry = GEOSGeom_createPoint(seq);
+	GEOSSetSRID(geosGeometry, 0);
 
 	if(geosGeometry == NULL){
 		*out = wkb_nil;

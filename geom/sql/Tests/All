@@ -4,4 +4,8 @@ polygonFromText
 mpointFromText
 mlineFromText
 mpolygonFromText
+makePoint
+geomFromText
+geometryType
+
 
