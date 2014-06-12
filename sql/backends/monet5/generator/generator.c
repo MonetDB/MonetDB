@@ -385,7 +385,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int li, hi, anti, i;
 	lng o1, o2;
 	lng n = 0;
-	oid *cl;
+	oid *cl = 0;
 	BUN c;
 	BAT *bn, *cand = NULL;
 	InstrPtr p;
@@ -465,7 +465,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || timestamp_isnil(tlow))) &&
 				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) || anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
-					if( cand){
+					if( cl){
 						while ( c < BATcount(cand) && (lng) *cl < o1 ) {cl++; c++;}
 						if( (lng) *cl == o1){
 							*ol++ = o1;
@@ -693,7 +693,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,"==") != 0)
 				throw(MAL,"generator.thetasubselect","Unknown operator");
 
-			cap = (BUN)( l.days > f.days ? ((l.days -f.days)*24*60*60 +abs(s))/abs(s):((f.days -l.days)*24*60*60 +abs(s))/abs(s));
+			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
 			bn = BATnew(TYPE_void, TYPE_oid, cap);
 			if( bn == NULL)
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
