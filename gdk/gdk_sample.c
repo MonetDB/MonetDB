@@ -31,22 +31,73 @@
 
 #define DRAND ((double)rand()/(double)RAND_MAX)
 
-/*
- * @+ Uniform Sampling.
- *
- * The implementation of the uniform sampling is based on the
- * algorithm A as described in the paper "Faster Methods for Random
- * Sampling" by Jeffrey Scott Vitter. Algorithm A is not the fastest
- * one, but it only makes s calls in function random() and it is
- * simpler than the other more complex and CPU intensive algorithms in
- * the literature.
- *
- * Algorithm A instead of performing one random experiment for each
- * row to decide if it should be included in the sample or not, it
- * skips S rows and includes the S+1 row. The algorithm scans the
- * input relation sequentially and maintains the unique and sort
- * properties. The sample is without replacement.
- */
+/* this is a straightforward implementation of a binary tree */
+struct oidtreenode {
+	BUN oid;
+	struct oidtreenode* left;
+	struct oidtreenode* right;
+};
+
+static int OIDTreeLookup(struct oidtreenode* node, BUN target) {
+	if (node == NULL) {
+		return (FALSE);
+	} else {
+		if (target == node->oid)
+			return (TRUE);
+		else {
+			if (target < node->oid)
+				return (OIDTreeLookup(node->left, target));
+			else
+				return (OIDTreeLookup(node->right, target));
+		}
+	}
+}
+
+static struct oidtreenode* OIDTreeNew(BUN oid) {
+	struct oidtreenode * node = malloc(sizeof(struct oidtreenode));
+	node->oid = oid;
+	node->left = NULL;
+	node->right = NULL;
+	return (node);
+}
+
+static struct oidtreenode* OIDTreeInsert(struct oidtreenode* node, BUN oid) {
+	if (node == NULL) {
+		return (OIDTreeNew(oid));
+	} else {
+		if (oid <= node->oid)
+			node->left = OIDTreeInsert(node->left, oid);
+		else
+			node->right = OIDTreeInsert(node->right, oid);
+		return (node);
+	}
+}
+
+#define APPEND(b, o)		(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
+
+// inorder traversal
+static void OIDTreeToBAT(struct oidtreenode* node, BAT *bat) {
+	if (node->left != NULL) OIDTreeToBAT(node->left,bat);
+	 APPEND(bat, node->oid);
+	if (node->right != NULL) OIDTreeToBAT(node->right,bat);
+}
+
+static void OIDTreeDestroy(struct oidtreenode* node) {
+	if (node->left != NULL) {
+		OIDTreeDestroy(node->left);
+		free(node->left);
+	}
+	if (node->right != NULL) {
+		OIDTreeDestroy(node->right);
+		free(node->right);
+	}
+}
+
+// TODO: clean up tree
+
+// TODO: describe
+
+// nice macro, could be globally available
 
 /* BATsample implements sampling for void headed BATs */
 BAT *
@@ -54,6 +105,8 @@ BATsample(BAT *b, BUN n)
 {
 	BAT *bn;
 	BUN cnt;
+	BUN rescnt = 0;
+	struct oidtreenode* tree = NULL;
 
 	BATcheck(b, "BATsample");
 	assert(BAThdense(b));
@@ -74,36 +127,31 @@ BATsample(BAT *b, BUN n)
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), b->H->seq);
 	} else {
-		BUN smp = 0;
-		/* we use wrd and not BUN since p may be -1 */
-		wrd top = b->hseqbase + cnt - n;
-		wrd p = ((wrd) b->hseqbase) - 1;
-		oid *o;
+		BUN minoid = b->hseqbase;
+		BUN maxoid = b->hseqbase + cnt;
+		//oid *o;
 		bn = BATnew(TYPE_void, TYPE_oid, n);
+
 		if (bn == NULL) {
 			GDKerror("#BATsample: memory allocation error");
 			return NULL;
 		}
-		o = (oid *) Tloc(bn, BUNfirst(bn));
-		while (smp < n-1) { /* loop until all but 1 values are sampled */
-			double v = DRAND;
-			double quot = (double)top/(double)cnt;
-			BUN jump = 0;
-			while (quot > v) { /* determine how many positions to jump */
-				jump++;
-				top--;
-				cnt--;
-				quot *= (double)top/(double)cnt;
-			}
-			p += (jump+1);
-			cnt--;
-			o[smp++] = (oid) p;
+		/* while we do not have enough sample OIDs yet */
+		while (rescnt < n) {
+			BUN candoid;
+			do {
+				double v = DRAND;
+				/* generate a new random OID */
+				candoid = minoid + v * (maxoid - minoid);
+				/* if the OID was already in the BAT, try again */
+			} while (OIDTreeLookup(tree, candoid));
+			tree = OIDTreeInsert(tree, candoid);
+			rescnt++;
 		}
-		/* 1 left */
-		p += (BUN) rand() % cnt;
-		o[smp] = (oid) p+1;
+		OIDTreeToBAT(tree, bn);
+		OIDTreeDestroy(tree);
+		free(tree);
 
-		/* property management */
 		BATsetcount(bn, n);
 		bn->trevsorted = bn->batCount <= 1;
 		bn->tkey = 1;
@@ -115,6 +163,5 @@ BATsample(BAT *b, BUN n)
 		bn->hkey = 1;
 		bn->hrevsorted = bn->batCount <= 1;
 	}
-
 	return bn;
 }
