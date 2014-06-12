@@ -1855,6 +1855,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		} else {
 			printf("scale_down missing (%s)\n", et->type->base.name);
 		}
+	//} else if(ct->type->scale == SCALE_DIGITS_FIX && et->type->scale == SCALE_DIGITS_FIX) {
+	//	int scale_diff = ((int)ct->scale - (int)et->scale);
+	//	int digits_diff = ((int) ct->digits - (int)et->digits);
+	//	if(scale_diff || digits_diff)
+	//		fprintf(stderr, "ere");
 	}
 	return e;
 }

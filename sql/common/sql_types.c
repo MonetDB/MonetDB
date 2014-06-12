@@ -317,8 +317,10 @@ type_cmp(sql_type *t1, sql_type *t2)
 int
 subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
+	//check whether the types exist
 	if (!t1->type || !t2->type)
 		return -1;
+	
 	if ( !(t1->type->eclass == t2->type->eclass && 
 	       t1->type->eclass == EC_INTERVAL) &&
 	      (t1->digits != t2->digits || t1->scale != t2->scale) )
@@ -1163,8 +1165,8 @@ sqltypeinit( sql_allocator *sa)
 
 	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
 
-	/*GEOM =*/ *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
-	/*POINT =*/ *t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
+	/*GEOM =*/ *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
+	/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
 
 	end = t;
 	*t = NULL;

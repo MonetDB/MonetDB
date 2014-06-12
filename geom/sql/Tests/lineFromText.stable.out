@@ -1,0 +1,105 @@
+stdout of test 'lineFromText` in directory 'geom/sql` itself:
+
+
+# 10:09:05 >  
+# 10:09:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32445" "--set" "mapi_usock=/var/tmp/mtest-28995/.s.monetdb.32445" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 10:09:05 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32445/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28995/.s.monetdb.32445
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 10:09:06 >  
+# 10:09:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28995" "--port=32445"
+# 10:09:06 >  
+
+#create table lines_tbl(g geometry(linestring));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
+[ 1	]
+#insert into lines_tbl values (st_linefromtext('linestring(30 30, 40 40, 50 50)', 0));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 10, 20 20, 30 30)"	]
+[ "LINESTRING (30 30, 40 40, 50 50)"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(linestring, 4326));
+#insert into lines_tbl values (st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (20 20, 30 30, 40 40)"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(linestringz));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
+[ 1	]
+#insert into lines_tbl values (st_linefromtext('linestring(30 30 30, 40 40 40, 50 50 50)', 0));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "LINESTRING Z (10 10 10, 20 20 20, 30 30 30)"	]
+[ "LINESTRING Z (30 30 30, 40 40 40, 50 50 50)"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(linestringz, 4326));
+#insert into lines_tbl values (st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "LINESTRING Z (20 20 20, 30 30 30, 40 40 40)"	]
+#drop table lines_tbl;
+
+# 10:09:07 >  
+# 10:09:07 >  "Done."
+# 10:09:07 >  
+

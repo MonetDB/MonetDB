@@ -1,0 +1,72 @@
+stderr of test 'pointFromText` in directory 'geom/sql` itself:
+
+
+# 09:44:13 >  
+# 09:44:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32689" "--set" "mapi_usock=/var/tmp/mtest-28112/.s.monetdb.32689" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 09:44:13 >  
+
+# builtin opt 	gdk_dbpath = /ufs/alvanaki/INSTALL/monetdb/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32689
+# cmdline opt 	mapi_usock = /var/tmp/mtest-28112/.s.monetdb.32689
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:44:14 >  
+# 09:44:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28112" "--port=32689"
+# 09:44:14 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20)', 4326));
+ERROR = !column needs geometry(4, 0) and value is geometry(4, 4326)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
+ERROR = !column needs geometry(4, 0) and value is geometry(8, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20)'));
+ERROR = !column needs geometry(4, 4326) and value is geometry(4, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20)', 0));
+ERROR = !column needs geometry(4, 4326) and value is geometry(4, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4329));
+ERROR = !column needs geometry(4, 4326) and value is geometry(8, 4329)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20 20)', 4326));
+ERROR = !column needs geometry(6, 0) and value is geometry(6, 4326)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
+ERROR = !column needs geometry(6, 0) and value is geometry(8, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20 20)'));
+ERROR = !column needs geometry(6, 4326) and value is geometry(6, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_pointfromtext('point(0 20 20)', 0));
+ERROR = !column needs geometry(6, 4326) and value is geometry(6, 0)
+MAPI  = (monetdb) /var/tmp/mtest-28248/.s.monetdb.30802
+QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
+ERROR = !column needs geometry(6, 4326) and value is geometry(8, 4326)
+
+
+
+
+
+
+
+# 09:44:15 >  
+# 09:44:15 >  "Done."
+# 09:44:15 >  
+

@@ -1,0 +1,105 @@
+stdout of test 'mpolygonFromText` in directory 'geom/sql` itself:
+
+
+# 14:46:09 >  
+# 14:46:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35467" "--set" "mapi_usock=/var/tmp/mtest-13942/.s.monetdb.35467" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 14:46:09 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:35467/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13942/.s.monetdb.35467
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 14:46:10 >  
+# 14:46:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13942" "--port=35467"
+# 14:46:10 >  
+
+#create table polygons_tbl(g geometry(multipolygon));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
+[ 1	]
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30, 40 40, 50 50, 30 30),(300 300, 400 400, 500 500, 300 300)))', 0));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))"	]
+[ "MULTIPOLYGON (((30 30, 40 40, 50 50, 30 30), (300 300, 400 400, 500 500, 300 300)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygon, 4326));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygonz));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
+[ 1	]
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30 30, 40 40 40, 50 50 50, 30 30 30),(300 300 300, 400 400 400, 500 500 500, 300 300 300)))', 0));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))"	]
+[ "MULTIPOLYGON Z (((30 30 30, 40 40 40, 50 50 50, 30 30 30), (300 300 300, 400 400 400, 500 500 500, 300 300 300)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygonz, 4326));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20 20, 30 30 30, 40 40 40, 20 20 20),(200 200 200, 300 300 300, 400 400 400, 200 200 200)))', 4326));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
+#drop table polygons_tbl;
+
+# 14:46:10 >  
+# 14:46:10 >  "Done."
+# 14:46:10 >  
+

@@ -1,0 +1,78 @@
+stdout of test 'mlineFromText` in directory 'geom/sql` itself:
+
+
+# 12:38:20 >  
+# 12:38:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31405" "--set" "mapi_usock=/var/tmp/mtest-7631/.s.monetdb.31405" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 12:38:20 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:31405/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7631/.s.monetdb.31405
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:38:22 >  
+# 12:38:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7631" "--port=31405"
+# 12:38:22 >  
+
+#create table lines_tbl(g geometry(multilinestring));
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
+[ 1	]
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((30 30, 40 40, 50 50), (60 60, 70 70, 80 80))', 0));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))"	]
+[ "MULTILINESTRING ((30 30, 40 40, 50 50), (60 60, 70 70, 80 80))"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(multilinestring, 4326));
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(multilinestringz));
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))'));
+[ 1	]
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((30 30 30, 40 40 40, 50 50 50), (60 60 60, 70 70 70, 80 80 80))', 0));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTILINESTRING Z ((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))"	]
+[ "MULTILINESTRING Z ((30 30 30, 40 40 40, 50 50 50), (60 60 60, 70 70 70, 80 80 80))"	]
+#drop table lines_tbl;
+#create table lines_tbl(g geometry(multilinestringz, 4326));
+#insert into lines_tbl values (st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326));
+[ 1	]
+#select * from lines_tbl;
+% sys.lines_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))"	]
+#drop table lines_tbl;
+
+# 12:38:23 >  
+# 12:38:23 >  "Done."
+# 12:38:23 >  
+

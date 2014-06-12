@@ -1009,9 +1009,11 @@ insert_types(sql_trans *tr, sql_table *systype)
 static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
+
+
 	int zero = 0;
 	node *n = NULL, *m = NULL;
-
+	
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
 		bit sql = f->sql;
@@ -3669,9 +3671,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 	return t;
 }
 
-sql_func *
-create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg)
-{
+sql_func* create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg) {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
 	base_init(sa, &t->base, next_oid(), TR_NEW, func);
@@ -3691,6 +3691,7 @@ create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, 
 	return t;
 }
 
+/* creates and stores a function */
 sql_func *
 sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg)
 {
