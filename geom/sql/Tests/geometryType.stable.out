@@ -376,6 +376,102 @@ Ready.
 % clob # type
 % 15 # length
 [ "ST_MultiPolygon"	]
+#create table points_tbl(g geometry(point));
+#insert into points_tbl values (st_pointfromtext('point(10 10)'));
+[ 1	]
+#select geometrytype(g) from points_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 5 # length
+[ "POINT"	]
+#select st_geometrytype(g) from points_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 8 # length
+[ "ST_Point"	]
+#drop table points_tbl;
+#create table lines_tbl(g geometry(linestring));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
+[ 1	]
+#select geometrytype(g) from lines_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 10 # length
+[ "LINESTRING"	]
+#select st_geometrytype(g) from lines_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 13 # length
+[ "ST_Linestring"	]
+#drop table lines_tbl;
+#create table polygons_tbl(g geometry(polygon));
+#insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
+[ 1	]
+#select geometrytype(g) from polygons_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 7 # length
+[ "POLYGON"	]
+#select st_geometrytype(g) from polygons_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 10 # length
+[ "ST_Polygon"	]
+#drop table polygons_tbl;
+#create table points_tbl(g geometry(pointz));
+#insert into points_tbl values (st_pointfromtext('point(10 10 10)'));
+[ 1	]
+#select geometrytype(g) from points_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 5 # length
+[ "POINT"	]
+#select st_geometrytype(g) from points_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 8 # length
+[ "ST_Point"	]
+#drop table points_tbl;
+#create table lines_tbl(g geometry(linestringz));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
+[ 1	]
+#select geometrytype(g) from lines_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 10 # length
+[ "LINESTRING"	]
+#select st_geometrytype(g) from lines_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 13 # length
+[ "ST_Linestring"	]
+#drop table lines_tbl;
+#create table polygons_tbl(g geometry(polygonz));
+#insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
+[ 1	]
+#select geometrytype(g) from polygons_tbl;
+% sys.L # table_name
+% geometrytype_g # name
+% clob # type
+% 7 # length
+[ "POLYGON"	]
+#select st_geometrytype(g) from polygons_tbl;
+% sys.L # table_name
+% st_geometrytype_g # name
+% clob # type
+% 10 # length
+[ "ST_Polygon"	]
+#drop table polygons_tbl;
 
 # 16:36:27 >  
 # 16:36:27 >  "Done."
