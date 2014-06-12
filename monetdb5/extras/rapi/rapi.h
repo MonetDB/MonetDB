@@ -46,6 +46,7 @@ rapi_export str RAPIprelude(void);
 
 rapi_export void writeConsoleEx(const char * buf, int buflen, int foo);
 rapi_export void writeConsole(const char * buf, int buflen);
+rapi_export void clearRErrConsole(void);
 
 char* rtypename(int rtypeid);
 int RAPIEnabled(void);

@@ -150,6 +150,10 @@ void writeConsole(const char * buf, int buflen) {
 	writeConsoleEx(buf, buflen, -42);
 }
 
+void clearRErrConsole(void) {
+	// Do nothing?
+}
+
 static int RAPIinitialize(void) {
 
 #ifdef RIF_HAS_RSIGHAND
@@ -192,6 +196,7 @@ static int RAPIinitialize(void) {
 	ptr_R_WriteConsoleEx = writeConsoleEx;
 	ptr_R_WriteConsole = writeConsole;
 	ptr_R_ReadConsole = NULL;
+	ptr_R_ClearerrConsole = clearRErrConsole;
 
 	// big boy here
 	setup_Rmainloop();
