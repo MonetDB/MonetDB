@@ -60,7 +60,7 @@ static int OIDTreeLookup(struct oidtreenode* node, BUN target) {
 }
 
 static struct oidtreenode* OIDTreeNew(BUN oid) {
-	struct oidtreenode *node = malloc(sizeof(struct oidtreenode));
+	struct oidtreenode *node = GDKmalloc(sizeof(struct oidtreenode));
 	if (node == NULL) {
 		GDKerror("#BATsample: memory allocation error");
 		return NULL ;
@@ -102,7 +102,7 @@ static void OIDTreeDestroy(struct oidtreenode* node) {
 	if (node->right != NULL) {
 		OIDTreeDestroy(node->right);
 	}
-	free(node);
+	GDKfree(node);
 }
 
 
