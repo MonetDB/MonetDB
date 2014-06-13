@@ -110,6 +110,18 @@ geom_export str wkbIsValid(bit *out, wkb **geom);
 geom_export str wkbIsValidReason(char** out, wkb **geom);
 geom_export str wkbIsValidDetail(char** out, wkb **geom);
 
+geom_export str wkbArea(dbl *out, wkb **a);
+geom_export str wkbCentroid(wkb **out, wkb **geom);
+geom_export str wkbDistance(dbl *out, wkb **a, wkb **b);
+
+geom_export str wkbLength(dbl *out, wkb **a);
+geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
+geom_export str wkbConvexHull(wkb **out, wkb **geom);
+geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
+geom_export str wkbIntersection(wkb **out, wkb **a, wkb **b);
+geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
+geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
+
 
 geom_export str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID, int* Type, int* SRID); 
 
@@ -213,31 +225,44 @@ wkb *wkbNULL(void) {
 	return (&nullval);
 }
 
+/* create the WKB out of the GEOSGeometry 
+ * It makes sure to make all checks before returning */
 wkb* geos2wkb(GEOSGeom geosGeometry) {
 	size_t wkbLen = 0;
 	unsigned char *w = NULL;
-	wkb *geosWKB;
+	wkb *geomWKB;
 
-	if (geosGeometry != NULL){
-		GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
-		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	/* if the geosGeometry is NULL create a NULL WKB */
+	if(geosGeometry == NULL) {
+		geomWKB = GDKmalloc(sizeof(wkb));
+		*geomWKB = *wkbNULL();
+		return geomWKB;
 	}
 
-	geosWKB = GDKmalloc(wkb_size(wkbLen));
-	if (geosWKB == NULL)
-		return NULL;
-
-	if (geosGeometry == NULL || w == NULL) {
-		*geosWKB = *wkbNULL();
-	} else {
-		assert(wkbLen <= GDK_int_max);
-		geosWKB->len = (int) wkbLen;
-		geosWKB->srid = GEOSGetSRID(geosGeometry);
-		memcpy(&geosWKB->data, w, wkbLen);
-		GEOSFree(w);
-	}
+	GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
+	w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 	
-return geosWKB;
+	if(w == NULL) {
+		geomWKB = GDKmalloc(sizeof(wkb));
+		*geomWKB = *wkbNULL();
+		return geomWKB;
+	}
+
+	geomWKB = GDKmalloc(wkb_size(wkbLen));
+	if (geomWKB == NULL) {
+		GEOSFree(w);
+		geomWKB = GDKmalloc(sizeof(wkb));
+		*geomWKB = *wkbNULL();
+		return geomWKB;
+	}
+
+	assert(wkbLen <= GDK_int_max);
+	geomWKB->len = (int) wkbLen;
+	geomWKB->srid = GEOSGetSRID(geosGeometry);
+	memcpy(&geomWKB->data, w, wkbLen);
+	GEOSFree(w);
+	
+	return geomWKB;
 }
 
 /*GEOSGeom wkb2geos(wkb* geomWKB) {
@@ -348,8 +373,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 //fprintf(stderr, "wkbFROMSTR: %s\n", geomWKT);
 
 	if (strcmp(geomWKT, str_nil) == 0) {
-		*geomWKB = GDKmalloc(sizeof(wkb));
-		**geomWKB = *wkbNULL();
+		*geomWKB = wkb_nil;
 		return 0;
 	}
 		//nil = 1;
@@ -360,8 +384,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	GEOSWKTReader_destroy(WKT_reader);
 
 	if(geosGeometry == NULL){
-		*geomWKB = GDKmalloc(sizeof(wkb));
-		**geomWKB = *wkbNULL();
+		*geomWKB = wkb_nil;
 		return 0;
 	}
 	//	goto return_nil;
@@ -372,8 +395,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
-		*geomWKB = GDKmalloc(sizeof(wkb));
-		**geomWKB = *wkbNULL();
+		*geomWKB = wkb_nil;
 		return 0;
 	}
 
@@ -477,8 +499,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = *((*geomWKB)->data + 1) & 0x0f) == *tpe))
 		return MAL_SUCCEED;
 	if (*geomWKB == NULL) {
-		*geomWKB = (wkb *) GDKmalloc(sizeof(wkb));
-		**geomWKB = *wkbNULL();
+		*geomWKB = wkb_nil;
 	}
 	if (*tpe > 0 && te != *tpe)
 		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te,0), geom_type2str(*tpe,0));
@@ -648,8 +669,7 @@ str wkbSetSRID(wkb** resultGeomWKB, wkb **geom, int* srid) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*resultGeomWKB = (wkb *) GDKmalloc(sizeof(wkb));
-		**resultGeomWKB = *wkbNULL();	
+		*resultGeomWKB = wkb_nil; 
 		return MAL_SUCCEED;
 	}
 
@@ -1105,6 +1125,43 @@ str wkbIsValidDetail(char** out, wkb **geom) {
 	return MAL_SUCCEED;
 }
 
+/* returns the area of the geometry */
+str wkbArea(dbl *out, wkb** geomWKB) {
+	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
+
+	if (!geosGeometry) {
+		*out = dbl_nil;
+		throw(MAL, "geom.Area", "wkb2geos failed");
+	}
+
+	if (!GEOSArea(geosGeometry, out)) {
+		GEOSGeom_destroy(geosGeometry);
+		*out = dbl_nil;
+		throw(MAL, "geom.Area", "GEOSArea failed");
+	}
+
+	GEOSGeom_destroy(geosGeometry);
+
+	return MAL_SUCCEED;
+}
+
+/* returns the centroid of the geometry */
+str wkbCentroid(wkb **out, wkb **geom) {
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb(GEOSGetCentroid(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	return MAL_SUCCEED;
+
+}
+
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
@@ -1131,7 +1188,6 @@ geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 
 
 
-geom_export str wkbConvexHull(wkb **out, wkb **geom);
 geom_export str wkbEquals(bit *out, wkb **a, wkb **b);
 geom_export str wkbDisjoint(bit *out, wkb **a, wkb **b);
 geom_export str wkbIntersect(bit *out, wkb **a, wkb **b);
@@ -1141,17 +1197,9 @@ geom_export str wkbWithin(bit *out, wkb **a, wkb **b);
 geom_export str wkbContains(bit *out, wkb **a, wkb **b);
 geom_export str wkbOverlaps(bit *out, wkb **a, wkb **b);
 geom_export str wkbRelate(bit *out, wkb **a, wkb **b, str *pattern);
-geom_export str wkbArea(dbl *out, wkb **a);
-geom_export str wkbLength(dbl *out, wkb **a);
-geom_export str wkbDistance(dbl *out, wkb **a, wkb **b);
-geom_export str wkbIntersection(wkb **out, wkb **a, wkb **b);
-geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
-geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
-geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
-geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
 
-geom_export str wkbCentroid(wkb **out, wkb **geom);
+
 
 
 
@@ -1437,8 +1485,7 @@ wkbcreatepoint(wkb **out, dbl *x, dbl *y)
 {
 	GEOSCoordSeq pnt;
 	if (*x == dbl_nil || *y == dbl_nil) {
-		if ((*out = GDKmalloc(sizeof(wkb))) != NULL)
-			**out = *wkbNULL();
+		*out = wkb_nil;
 	} else {
 		pnt = GEOSCoordSeq_create(1, 2);
 		GEOSCoordSeq_setX(pnt, 0, *x);
@@ -1649,26 +1696,7 @@ wkbRelate(bit *out, wkb **a, wkb **b, str *pattern)
 	return MAL_SUCCEED;
 }
 
-str
-wkbArea(dbl *out, wkb **a)
-{
-	str ret = MAL_SUCCEED;
-	GEOSGeom ga = wkb2geos(*a);
 
-	if (!ga) {
-		*out = dbl_nil;
-		return ret;
-	}
-
-	if (GEOSArea(ga, out) == 0)
-		ret = "GEOSArea failed";
-
-	GEOSGeom_destroy(ga);
-
-	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.Area", "%s", ret);
-	return ret;
-}
 
 str
 wkbLength(dbl *out, wkb **a)
@@ -1694,34 +1722,40 @@ wkbLength(dbl *out, wkb **a)
 str
 wkbDistance(dbl *out, wkb **a, wkb **b)
 {
-	str ret = MAL_SUCCEED;
 	GEOSGeom ga = wkb2geos(*a);
 	GEOSGeom gb = wkb2geos(*b);
+
+	 
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
 		*out = dbl_nil;
-		return ret;
+		return MAL_SUCCEED;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
 		*out = dbl_nil;
-		return ret;
+		return MAL_SUCCEED;
 	}
 	if (!ga && !gb) {
 		*out = dbl_nil;
-		return ret;
+		return MAL_SUCCEED;
 	}
 
-	if (GEOSDistance(ga, gb, out) == 0)
-		ret = "GEOSDistance failed";
+	if(GEOSGetSRID(ga) != GEOSGetSRID(gb)) {
+		GEOSGeom_destroy(ga);
+		GEOSGeom_destroy(gb);
+		throw(MAL, "geom.Distance", "Geometries of different SRID");
+	}
 
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+	if (!GEOSDistance(ga, gb, out)) {
+		GEOSGeom_destroy(ga);
+		GEOSGeom_destroy(gb);
+		throw(MAL, "geom.Distance", "GEOSDistance failed");
+	}
 
-	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.Distance", "%s", ret);
-	return ret;
+	
+	return MAL_SUCCEED;
 }
 
 static str
@@ -1803,25 +1837,7 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 
 
 
-str
-wkbCentroid(wkb **out, wkb **geom)
-{
-	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry) {
-		*out = wkb_nil;
-		return MAL_SUCCEED;
-	}
-
-	*out = geos2wkb(GEOSGetCentroid(geosGeometry));
-
-	GEOSGeom_destroy(geosGeometry);
-
-	//if (GDKerrbuf && GDKerrbuf[0])
-	//	throw(MAL, "geom.Centroid", "GEOSGetCentroid failed");
-	return MAL_SUCCEED;
-
-}
 
 
 

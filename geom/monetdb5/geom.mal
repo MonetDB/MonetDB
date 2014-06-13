@@ -200,6 +200,16 @@ command IsValidReason(w:wkb) :str address wkbIsValidReason
 comment "Returns text stating if a geometry is valid or not and if not valid, a reason why.";
 command IsValidDetail(w:wkb) :str address wkbIsValidDetail
 comment "Returns a valid_detail (valid,reason,location) row stating if a geometry is valid or not and if not valid, a reason why and a location where.";
+command Area(w:wkb) :dbl address wkbArea
+comment "Returns the area of the surface if it is a polygon or multi-polygon";
+command Centroid(w:wkb) :wkb address wkbCentroid
+comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
+command Distance(a:wkb, b:wkb) :dbl address wkbDistance
+comment "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.";
+
+
+
+
 
 #function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
 #	x := wkb.FromText(wkt,2);
@@ -291,21 +301,9 @@ module geom;
 
 # @+ ogc Spatial Analysis methods
 
-#command Area(g:wkb) :dbl
-#address wkbArea
-#comment "Returns the area of the geometry.";
-
-#command Centroid(w:wkb) :wkb
-#address wkbCentroid
-#comment "Returns the centroid of this Geometry.";
-
 #command Length(g:wkb) :dbl
 #address wkbLength
 #comment "Returns the length of the geometry.";
-
-#command Distance(a:wkb, b:wkb) :dbl
-#address wkbDistance
-#comment "Returns the shortest distance between any two points in the two geometries as calculated in the spatial reference system of this Geometries.";
 
 #command Buffer(a:wkb, distance:dbl) :wkb
 #address wkbBuffer

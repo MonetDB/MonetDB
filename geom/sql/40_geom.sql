@@ -237,9 +237,10 @@ CREATE FUNCTION ST_AsText(g Geometry) RETURNS string EXTERNAL NAME geom."AsText"
 --CREATE FUNCTION ST_3DLongestLine RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_3DMaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_3DShortestLine RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Area RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Area(geom Geometry) RETURNS double EXTERNAL NAME geom."Area";
+--CREATE FUNCTION ST_Area(geog Geography, use_spheroid boolean) RETURNS flt EXTERNAL NAME geom."Area";
 --CREATE FUNCTION ST_Azimuth RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Centroid RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Centroid(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Centroid";
 --CREATE FUNCTION ST_ClosestPoint RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Contains RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_ContainsProperly RETURNS EXTERNAL NAME
@@ -248,7 +249,9 @@ CREATE FUNCTION ST_AsText(g Geometry) RETURNS string EXTERNAL NAME geom."AsText"
 --CREATE FUNCTION ST_Crosses RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Disjoint RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Distance RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
+--CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
+--CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME
@@ -354,18 +357,13 @@ CREATE FUNCTION ST_AsText(g Geometry) RETURNS string EXTERNAL NAME geom."AsText"
 --//CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
 
 -- ogc Spatial Analysis methods
---//CREATE FUNCTION Area(g Geometry) RETURNS FLOAT external name geom."Area";
 --//CREATE FUNCTION Length(g Geometry) RETURNS FLOAT external name geom."Length";
---//CREATE FUNCTION Distance(a Geometry, b Geometry) RETURNS FLOAT external name geom."Distance";
---//CREATE FUNCTION Buffer(a Geometry, distance FLOAT) RETURNS Geometry external name geom."Buffer";
 --//CREATE FUNCTION ConvexHull(a Geometry) RETURNS Geometry external name geom."ConvexHull";
 --//CREATE FUNCTION Intersection(a Geometry, b Geometry) RETURNS Geometry external name geom."Intersection";
 --//CREATE FUNCTION "Union"(a Geometry, b Geometry) RETURNS Geometry external name geom."Union";
 --//CREATE FUNCTION Difference(a Geometry, b Geometry) RETURNS Geometry external name geom."Difference";
 --//CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external name geom."SymDifference";
 
-
---//CREATE FUNCTION Centroid(g Geometry) RETURNS Geometry external name geom."Centroid";
 
 
 -- create spatial_ref_sys metadata table
