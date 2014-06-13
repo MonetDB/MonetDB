@@ -41,7 +41,7 @@
 #define RAPI_MAX_TUPLES 2147483647L
 
 rapi_export str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci, bool grouped);
+		InstrPtr pci, bit grouped);
 rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		InstrPtr pci);
 rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
