@@ -18,8 +18,14 @@
  */
 
 /*
- * @a Lefteris Sidirourgos
+ * @a Lefteris Sidirourgos, Hannes Muehleisen
  * @* Low level sample facilities
+ *
+ * This sampling implementation generates a sorted set of OIDs by calling the
+ * random number generator, and uses a binary tree to eliminate duplicates.
+ * The elements of the tree are then used to create a sorted sample BAT.
+ * This implementation has a logarithmic complexity that only depends on the
+ * sample size.
  *
  */
 
@@ -54,7 +60,11 @@ static int OIDTreeLookup(struct oidtreenode* node, BUN target) {
 }
 
 static struct oidtreenode* OIDTreeNew(BUN oid) {
-	struct oidtreenode * node = malloc(sizeof(struct oidtreenode));
+	struct oidtreenode *node = malloc(sizeof(struct oidtreenode));
+	if (node == NULL) {
+		GDKerror("#BATsample: memory allocation error");
+		return NULL ;
+	}
 	node->oid = oid;
 	node->left = NULL;
 	node->right = NULL;
@@ -73,36 +83,32 @@ static struct oidtreenode* OIDTreeInsert(struct oidtreenode* node, BUN oid) {
 	}
 }
 
-#define APPEND(b, o)		(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
-
-// inorder traversal
+/* inorder traversal, gives us a sorted BAT */
 static void OIDTreeToBAT(struct oidtreenode* node, BAT *bat) {
-	if (node->left != NULL) OIDTreeToBAT(node->left,bat);
-	 APPEND(bat, node->oid);
-	if (node->right != NULL) OIDTreeToBAT(node->right,bat);
+	if (node->left != NULL)
+		OIDTreeToBAT(node->left, bat);
+	((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = node->oid;
+	if (node->right != NULL )
+		OIDTreeToBAT(node->right, bat);
 }
 
 static void OIDTreeDestroy(struct oidtreenode* node) {
+	if (node == NULL) {
+		return;
+	}
 	if (node->left != NULL) {
 		OIDTreeDestroy(node->left);
-		free(node->left);
 	}
 	if (node->right != NULL) {
 		OIDTreeDestroy(node->right);
-		free(node->right);
 	}
+	free(node);
 }
 
-// TODO: clean up tree
-
-// TODO: describe
-
-// nice macro, could be globally available
 
 /* BATsample implements sampling for void headed BATs */
 BAT *
-BATsample(BAT *b, BUN n)
-{
+BATsample(BAT *b, BUN n) {
 	BAT *bn;
 	BUN cnt;
 	BUN rescnt = 0;
@@ -111,7 +117,8 @@ BATsample(BAT *b, BUN n)
 	BATcheck(b, "BATsample");
 	assert(BAThdense(b));
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n");
-	ALGODEBUG fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
+	ALGODEBUG
+		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
 
 	cnt = BATcount(b);
 	/* empty sample size */
@@ -120,7 +127,7 @@ BATsample(BAT *b, BUN n)
 		BATsetcount(bn, 0);
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
-	/* sample size is larger than the input BAT, return all oids */
+		/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
 		bn = BATnew(TYPE_void, TYPE_void, cnt);
 		BATsetcount(bn, cnt);
@@ -132,36 +139,45 @@ BATsample(BAT *b, BUN n)
 		//oid *o;
 		bn = BATnew(TYPE_void, TYPE_oid, n);
 
-		if (bn == NULL) {
+		if (bn == NULL ) {
 			GDKerror("#BATsample: memory allocation error");
 			return NULL;
 		}
 		/* while we do not have enough sample OIDs yet */
 		while (rescnt < n) {
 			BUN candoid;
+			struct oidtreenode* ttree;
 			do {
-				double v = DRAND;
 				/* generate a new random OID */
-				candoid = minoid + v * (maxoid - minoid);
-				/* if the OID was already in the BAT, try again */
+				candoid = minoid + DRAND * (maxoid - minoid);
+				/* if that candidate OID was already generated, try again */
 			} while (OIDTreeLookup(tree, candoid));
-			tree = OIDTreeInsert(tree, candoid);
+			ttree = OIDTreeInsert(tree, candoid);
+			if (ttree == NULL) {
+				GDKerror("#BATsample: memory allocation error");
+				/* if malloc fails, we still need to clean up the tree */
+				OIDTreeDestroy(tree);
+				return NULL;
+			}
+			tree = ttree;
 			rescnt++;
 		}
 		OIDTreeToBAT(tree, bn);
 		OIDTreeDestroy(tree);
-		free(tree);
 
 		BATsetcount(bn, n);
 		bn->trevsorted = bn->batCount <= 1;
+		bn->tsorted = 1;
 		bn->tkey = 1;
 		bn->tdense = bn->batCount <= 1;
 		if (bn->batCount == 1)
-			bn->tseqbase = * (oid *) Tloc(bn, BUNfirst(bn));
+			bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 		bn->hdense = 1;
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		bn->hrevsorted = bn->batCount <= 1;
+		bn->hsorted = 1;
 	}
 	return bn;
 }
+
