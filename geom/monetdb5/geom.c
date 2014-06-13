@@ -71,11 +71,11 @@ geom_export wkb* geos2wkb(GEOSGeom geosGeometry);
 /* gets a WKB and creates a GEOSGeometry */
 //geom_export GEOSGeom wkb2geos(wkb* geomWKB);
 
-
+/* the len argument is needed for correct storage and retrieval */
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
-geom_export int wkbFROMSTR(char* geomWKT, wkb** geomWKB, int srid);
-geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
+geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
+geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
 geom_export str wkbFromText(wkb **w, str *wkt, int* srid, int *tpe);
 geom_export str wkbAsText(str *r, wkb **w);
 //geom_export str wkbFromString(wkb**, str*); 
@@ -89,7 +89,8 @@ geom_export str wkbGeometryType(char**, wkb**, int* flag);
 geom_export str wkbBoundary(wkb**, wkb**);
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbDimension(int*, wkb**);
-geom_export str wkbSRID(int*, wkb**);
+geom_export str wkbGetSRID(int*, wkb**);
+geom_export str wkbSetSRID(wkb**, wkb**, int*);
 geom_export str wkbGetCoordX(double*, wkb**);
 geom_export str wkbGetCoordY(double*, wkb**);
 geom_export str wkbGetCoordZ(double*, wkb**);
@@ -336,13 +337,15 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
-int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
+int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	//unsigned char *geometry_TO_wkb = NULL;	/* The "well known binary" serialization of the geometry object. */
 	//size_t wkbLen = 0;		/* The length of the wkbSer string. */
 	//int nil = 0;
 	//int coordinateDimensions = 0;
 	GEOSWKTReader *WKT_reader;
+
+//fprintf(stderr, "wkbFROMSTR: %s\n", geomWKT);
 
 	if (strcmp(geomWKT, str_nil) == 0) {
 		*geomWKB = GDKmalloc(sizeof(wkb));
@@ -389,6 +392,10 @@ int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
 	/* we have a GEOSGeometry will number of coordinates and SRID and we 
  	* want to get the wkb out of it */
 	*geomWKB = geos2wkb(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	*len = (int) wkb_size((*geomWKB)->len);
+
 /*
 //		geometry_TO_wkb = GEOSGeomToWKB_buf(geometry_FROM_wkt, &wkbLen);
 //		GEOSGeom_destroy(geometry_FROM_wkt);
@@ -422,10 +429,12 @@ int wkbFROMSTR(char* geomWKT, wkb **geomWKB, int srid) {
 
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
-int wkbTOSTR(char **dst, int *len, wkb *atom) {
+int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 	char *wkt = NULL;
 	int dstStrLen = 3;			/* "nil" */
-	GEOSGeom geosGeometry = wkb2geos(atom);
+
+	/* from WKB to GEOSGeometry */
+	GEOSGeom geosGeometry = wkb2geos(geomWKB);
 
 	
 	if (geosGeometry) {
@@ -442,18 +451,15 @@ int wkbTOSTR(char **dst, int *len, wkb *atom) {
 		GEOSGeom_destroy(geosGeometry);
 	}
 
-	if (*len < dstStrLen + 1) {	/* + 1 for the '\0' */
-		if (*dst)
-			GDKfree(*dst);
-		*dst = GDKmalloc(*len = dstStrLen + 1);
-	}
-
 	if (wkt) {
-		snprintf(*dst, *len, "\"%s\"", wkt);
+		*geomWKT = GDKmalloc(dstStrLen+1);
+		snprintf(*geomWKT, dstStrLen+1, "\"%s\"", wkt);
 		GEOSFree(wkt);
 	} else {
-		strcpy(*dst, "nil");
+		strcpy(*geomWKT, "nil");
 	}
+	
+	*len = dstStrLen+1;
 
 	return dstStrLen;
 }
@@ -462,17 +468,18 @@ int wkbTOSTR(char **dst, int *len, wkb *atom) {
 /*int* tpe is needed to verify that the type of the FromText function used is the
  * same with the type of the geometry created from the wkt representation */
 str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
-	int te = *tpe;
+	int len=0, te = *tpe;
 	char *errbuf;
 	str ex;
 
 	*geomWKB = NULL;
-	if (wkbFROMSTR(*geomWKT, geomWKB, *srid) &&
+	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) &&
 	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = *((*geomWKB)->data + 1) & 0x0f) == *tpe))
 		return MAL_SUCCEED;
-	if (*geomWKB == NULL)
+	if (*geomWKB == NULL) {
 		*geomWKB = (wkb *) GDKmalloc(sizeof(wkb));
-	**geomWKB = *wkbNULL();
+		**geomWKB = *wkbNULL();
+	}
 	if (*tpe > 0 && te != *tpe)
 		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te,0), geom_type2str(*tpe,0));
 	errbuf = GDKerrbuf;
@@ -492,11 +499,9 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 }
 
 /*create textual representation of the wkb */
-str wkbAsText(str *r, wkb **w) {
-	int len = 0;
-
-	wkbTOSTR(r, &len, *w);
-	if (len)
+str wkbAsText(str *geomWKT, wkb **geomWKB) {
+	int len =0;
+	if(wkbTOSTR(geomWKT, &len, *geomWKB))
 		return MAL_SUCCEED;
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
 }
@@ -634,9 +639,28 @@ str wkbDimension(int *out, wkb **geom) {
 }
 
 /* returns the srid of the geometry */
-/* there is no srid information on the wkb representation of the wkb*/
-str wkbSRID(int *out, wkb **geom) {
-	return wkbBasicInt(out, geom, GEOSGetSRID, "geom.SRID");
+str wkbGetSRID(int *out, wkb **geom) {
+	return wkbBasicInt(out, geom, GEOSGetSRID, "geom.getSRID");
+}
+
+/* sets the srid of the geometry */
+str wkbSetSRID(wkb** resultGeomWKB, wkb **geom, int* srid) {
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if (!geosGeometry) {
+		*resultGeomWKB = (wkb *) GDKmalloc(sizeof(wkb));
+		**resultGeomWKB = *wkbNULL();	
+		return MAL_SUCCEED;
+	}
+
+	GEOSSetSRID(geosGeometry, *srid);
+	*resultGeomWKB = geos2wkb(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	if(*resultGeomWKB == NULL)
+		throw(MAL, "geom.setSRID", "wkbSetSRID failed");
+
+	return MAL_SUCCEED;
 }
 
 
@@ -654,6 +678,9 @@ static str wkbGetCoord(double *out, wkb **geom, int dimNum, const char *name) {
 		*out = dbl_nil;
 		throw(MAL, name, "wkb2geos failed");
 	}
+
+	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPoint)
+		throw(MAL, name, "Geometry not a Point"); 
 
 	gcs = GEOSGeom_getCoordSeq(geosGeometry);
 
@@ -935,6 +962,7 @@ static int wkbBasicBoolean(wkb **geom, char (*func)(const GEOSGeometry*)) {
  * a linestring. I made it to be like PostGIS */
 str wkbIsClosed(bit *out, wkb **geom) {
 	int res = -1;
+	int geometryType = 0;
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	*out = bit_nil;
@@ -942,8 +970,18 @@ str wkbIsClosed(bit *out, wkb **geom) {
 	if (!geosGeometry)
 		throw(MAL, "geom.IsClosed", "wkb2geos failed");
 
-	if(GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
+	geometryType = GEOSGeomTypeId(geosGeometry)+1;
+
+	/* if the geometry is point or multipoint it is always closed */
+	if(geometryType == wkbPoint || geometryType == wkbMultiPoint) {
 		*out = 1;
+		GEOSGeom_destroy(geosGeometry);
+		return MAL_SUCCEED;	
+	}
+
+	/* if the geometry is not a point, multipoint or linestring, it is always not closed */
+	if(geometryType != wkbLineString) {
+		*out = 0;
 		GEOSGeom_destroy(geosGeometry);
 		return MAL_SUCCEED;	
 	}
@@ -991,21 +1029,6 @@ str wkbIsSimple(bit *out, wkb **geom) {
 	*out = res;
 
 	return MAL_SUCCEED;
-/*	GEOSGeom geosGeometry = wkb2geos(*geom);
-
-	if (!geosGeometry) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
-	}
-
-	*out = GEOSisSimple(geosGeometry);
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "geom.IsSimple", "GEOSisSimple failed");
-	return MAL_SUCCEED;
-*/
 }
 
 /*geom prints a message sayig the reasom why the geometry is not valid but
@@ -1025,21 +1048,26 @@ str wkbIsValid(bit *out, wkb **geom) {
 	return MAL_SUCCEED;
 }
 
-str wkbIsValidReason(char** out, wkb **geom) {
+str wkbIsValidReason(char** reason, wkb **geom) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
+	char* GEOSReason = NULL;
 
 	if (!geosGeometry) {
-		*out = NULL;
+		*reason = NULL;
 		throw(MAL, "geom.IsValidReason", "wkb2geos failed");
 	}
 
-	*out = GEOSisValidReason(geosGeometry);
+	GEOSReason = GEOSisValidReason(geosGeometry);
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if(*out == NULL)
+	if(GEOSReason == NULL)
 		throw(MAL, "geom.IsValidReason", "GEOSisValidReason failed");
 	
+	*reason = GDKmalloc((int)sizeof(GEOSReason)+1);
+	strcpy(*reason, GEOSReason);
+	GEOSFree(GEOSReason);
+
 	return MAL_SUCCEED;
 }
 

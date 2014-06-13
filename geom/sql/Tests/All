@@ -7,5 +7,10 @@ mpolygonFromText
 makePoint
 geomFromText
 geometryType
-
-
+asText
+isClosed
+isSimple
+isValid
+isRing
+coordinates
+srid

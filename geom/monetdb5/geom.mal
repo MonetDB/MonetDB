@@ -160,8 +160,10 @@ command CoordDim(w:wkb) :int address wkbCoordDim
 comment " Return the coordinate dimension of the geometry";
 command Dimension(w:wkb) :int address wkbDimension
 comment "The inherent dimension of this Geometry object, which must be less than or equal to the coordinate dimension.";
-command SRID(w:wkb) :int address wkbSRID
+command getSRID(w:wkb) :int address wkbGetSRID
 comment "Returns the Spatial Reference System ID for this Geometry.";
+command setSRID(w:wkb, srid:int) :wkb address wkbSetSRID
+comment "Sets the Reference System ID for this Geometry.";
 command X(g:wkb) :dbl address wkbGetCoordX
 comment  "Return the X coordinate of the point, or NULL if not available. Input must be a point.";
 command Y(g:wkb) :dbl address wkbGetCoordY
