@@ -34,9 +34,9 @@ Ready.
 #SELECT rquantile(val,0.05) AS q5, rquantile(val,0.95) AS q95 FROM rval;
 % sys.L1,	sys.L2 # table_name
 % q5,	q95 # name
-% double,	double # type
-% 24,	24 # length
-[ 3824.28,	78690.573	]
+% int,	int # type
+% 4,	5 # length
+[ 3824,	78690	]
 #DROP AGGREGATE rquantile;
 #DROP TABLE rval;
 #ROLLBACK;

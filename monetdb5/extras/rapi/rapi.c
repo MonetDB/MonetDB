@@ -248,7 +248,16 @@ static int RAPIinitialize(void) {
 	return 0;
 }
 
-str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+		InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 0);
+}
+rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+		InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 1);
+}
+
+str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped) {
 	sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
 	str exprStr = *(str*) getArgReference(stk, pci, pci->retc + 1);
 
@@ -299,7 +308,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	// first argument after the return contains the pointer to the sql_func structure
 	// NEW macro temporarily renamed to MNEW to allow including sql_catalog.h
 
-	if (!list_empty(sqlfun->ops)) {
+	if (sqlfun != NULL && !list_empty(sqlfun->ops)) {
 		int carg = pci->retc + 2;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
@@ -312,11 +321,11 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	// the first unknown argument is the group, we don't really care for the rest.
 	for (i = pci->retc + 2; i < pci->argc; i++) {
 		if (args[i] == NULL) {
-			if (!seengrp) {
+			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
 				seengrp = TRUE;
 			} else {
-				sprintf(argbuf, "arg%i", i);
+				sprintf(argbuf, "arg%i", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
 			}
 		}
@@ -508,6 +517,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		case TYPE_str: {
 			SEXP levels;
+			size_t j;
 			if (!IS_CHARACTER(ret_col) && !isFactor(ret_col)) {
 				msg =
 						createException(MAL, "rapi.eval",
@@ -525,17 +535,18 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			b->tdense = 1;
 			/* get levels once, since this is a function call */
 			levels = GET_LEVELS(ret_col);
-			for (i = 0; i < (int) cnt; i++) {
+
+			for (j = 0; j < cnt; j++) {
 				SEXP rse;
 				if (isFactor(ret_col)) {
-					int ii = INTEGER(ret_col)[i];
+					int ii = INTEGER(ret_col)[j];
 					if (ii == NA_INTEGER) {
 						rse = NA_STRING;
 					} else {
 						rse = STRING_ELT(levels, ii - 1);
 					}
 				} else {
-					rse = STRING_ELT(ret_col, i);
+					rse = STRING_ELT(ret_col, j);
 				}
 				if (rse == NA_STRING) {
 					b->T->nil = 1;

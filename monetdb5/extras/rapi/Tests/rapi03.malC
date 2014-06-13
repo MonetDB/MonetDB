@@ -13,7 +13,6 @@ bat.append(b,1189641421);
 
 io.print(b);
 
-r:bat[:oid,:dbl] := rapi.eval("print(arg1);someval <- Re(fft(arg1)); print(someval); return(someval);",b);
-io.print(r);
-
+(t:bat[:oid,:dbl], s:bat[:oid,:dbl]) := rapi.eval(nil:ptr,"someval2 <- Re(fft(arg1)); print(someval2); return(data.frame(someval2,someval2));",b);
+io.print(t,s);
 

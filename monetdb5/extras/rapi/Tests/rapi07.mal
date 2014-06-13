@@ -1,2 +1,0 @@
-(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) := rapi.eval("x <- seq(arg1,arg2,by=arg3);y <- dnorm(x,mean=arg4,sd=arg5);return(data.frame(x,y))",-10,10,0.1,10,3);
-io.print(x,y);

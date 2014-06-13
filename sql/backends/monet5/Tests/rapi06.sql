@@ -3,11 +3,11 @@ START TRANSACTION;
 CREATE TABLE rval(groupcol integer,datacol integer);
 INSERT INTO rval VALUES (1,42), (1,84), (2,42), (2,21);
 
-CREATE AGGREGATE aggrmedian(val integer) RETURNS double LANGUAGE R {
+CREATE AGGREGATE aggrmedian(val integer) RETURNS integer LANGUAGE R {
 	if (exists("aggr_group")) {
-		return(aggregate(val, by=list(aggr_group), FUN=median)$x)
+		return(as.integer(aggregate(val, by=list(aggr_group), FUN=median)$x))
 	} else {
-		return(median(val))
+		return(as.integer(median(val)))
 	}
 
 };

@@ -21,7 +21,7 @@ X_8 := algebra.leftfetchjoin(ti,gv);
 (X_9,r1_9,r2_9) := group.subgroupdone(X_8);
 X_12 := algebra.leftfetchjoin(r1_9,X_8);
 X_15 := algebra.leftfetchjoin(ti,dv); 
-X_16:bat[:any,:dbl] := rapi.subeval("res <- aggregate(arg1, by=list(arg2), FUN=median); return(res$x)",X_15,X_9,r1_9,true);
+X_16:bat[:any,:dbl] := rapi.subeval(nil:ptr,"res <- aggregate(arg1, by=list(arg2), FUN=median); return(res$x)",X_15,X_9,r1_9,true);
 
 io.print(X_16);
 

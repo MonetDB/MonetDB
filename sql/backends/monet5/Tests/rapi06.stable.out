@@ -66,16 +66,16 @@ Ready.
 #SELECT aggrmedian(datacol) FROM rval;
 % sys.L1 # table_name
 % L1 # name
-% double # type
-% 24 # length
+% int # type
+% 2 # length
 [ 42	]
 #SELECT groupcol,aggrmedian(datacol) FROM rval GROUP BY groupcol;
 % sys.rval,	sys.L1 # table_name
 % groupcol,	L1 # name
-% int,	double # type
-% 1,	24 # length
+% int,	int # type
+% 1,	2 # length
 [ 1,	63	]
-[ 2,	31.5	]
+[ 2,	31	]
 #DROP AGGREGATE aggrmedian;
 #DROP TABLE rval;
 #ROLLBACK;

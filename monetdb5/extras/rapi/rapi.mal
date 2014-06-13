@@ -18,21 +18,21 @@
 module rapi;
 
 pattern eval(fptr:ptr,expr:str):any
-address RAPIeval
+address RAPIevalStd
 comment "Execute a simple R script returning a single value";
 
 #the generic R interface
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalStd
 comment "Execute a simple R script value";
 
 #grouped things
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalAggr
 comment "grouped aggregates through R";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalAggr
 comment "grouped aggregates through R";
 
 # initializer code
@@ -44,13 +44,13 @@ rapi.prelude();
 module batrapi;
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalStd
 comment "Execute a simple R script value";
 
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalAggr
 comment "Execute a simple R script value";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address RAPIeval
+address RAPIevalAggr
 comment "grouped aggregates through R";
