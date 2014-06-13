@@ -1,0 +1,61 @@
+stdout of test 'rapi00` in directory 'monetdb5/extras/rapi` itself:
+
+
+# 16:45:15 >  
+# 16:45:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33997" "--set" "mapi_usock=/var/tmp/mtest-95437/.s.monetdb.33997" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-rint-install/var/MonetDB/mTests_monetdb5_extras_rapi" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 16:45:15 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_rapi', using 8 threads
+# Compiled for x86_64-apple-darwin13.2.0/64bit with 64bit OIDs dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://herbert2.local:33997/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-95437/.s.monetdb.33997
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:45:15 >  
+# 16:45:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-95437" "--port=33997"
+# 16:45:15 >  
+
+#io.print(b);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	1957747793	]
+[ 5@0,	424238335	]
+[ 6@0,	719885386	]
+[ 7@0,	1649760492	]
+[ 8@0,	596516649	]
+[ 9@0,	1189641421	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	1,258534004e+10	]
+[ 1@0,	525771362	]
+[ 2@0,	-879667492	]
+[ 3@0,	2456894287	]
+[ 4@0,	158316768	]
+[ 5@0,	934923939	]
+[ 6@0,	158316768	]
+[ 7@0,	2456894287	]
+[ 8@0,	-879667492	]
+[ 9@0,	525771362	]
+
+# 16:45:15 >  
+# 16:45:15 >  "Done."
+# 16:45:15 >  
+
