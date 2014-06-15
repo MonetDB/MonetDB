@@ -585,7 +585,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
-	cap = (l>f ? (l-f+abs(s))/abs(s):(f-l+abs(s))/abs(s));\
+	cap = (BUN)((lng)l-(lng)f)/abs(s);\
 	bn = BATnew(TYPE_void, TYPE_oid, cap);\
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
