@@ -206,6 +206,38 @@ command Centroid(w:wkb) :wkb address wkbCentroid
 comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
 command Distance(a:wkb, b:wkb) :dbl address wkbDistance
 comment "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.";
+command Length(w:wkb) :dbl address wkbLength
+comment "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring";
+command ConvexHull(w:wkb) :wkb address wkbConvexHull
+comment "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.";
+command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
+comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
+command Union(a:wkb, b:wkb) :wkb address wkbUnion
+comment "Returns a geometry that represents the point set union of the Geometries a, b";
+command Difference(a:wkb, b:wkb) :wkb address wkbDifference
+comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";
+command SymDifference(a:wkb, b:wkb) :wkb address wkbSymDifference
+comment "Returns a geometry that represents the portions of A and B that do not intersect";
+command Buffer(a:wkb, distance:dbl) :wkb address wkbBuffer
+comment "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.";
+command Contains(a:wkb, b:wkb) :bit address wkbContains
+comment "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.";
+command Crosses(a:wkb, b:wkb) :bit address wkbCrosses
+comment "Returns TRUE if the supplied geometries have some, but not all, interior points in common.";
+command Disjoint(a:wkb, b:wkb) :bit address wkbDisjoint
+comment "Returns true if these Geometries are 'spatially disjoint'";
+command Equals(a:wkb, b:wkb) :bit address wkbEquals
+comment "Returns true if the given geometries represent the same geometry. Directionality is ignored.";
+command Intersects(a:wkb, b:wkb) :bit address wkbIntersects
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
+command Overlaps(a:wkb, b:wkb) :bit address wkbOverlaps
+comment " Returns TRUE if the Geometries intersect but are not completely contained by each other.";
+command Relate(a:wkb, b:wkb, intersection_matrix_pattern:str) :bit address wkbRelate
+comment "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.";
+command Touches(a:wkb, b:wkb) :bit address wkbTouches
+comment "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.";
+command Within(a:wkb, b:wkb) :bit address wkbWithin
+comment "Returns true if the geometry A is completely inside geometry B";
 
 
 
@@ -247,43 +279,6 @@ comment "Returns the 2-dimensional minimum cartesian distance between the two ge
 #comment "Creates the mbr for the given wkb.";
 
 
-# @+ ogc spatial relation methods
-
-#command Equals(a:wkb, b:wkb) :bit
-#address wkbEquals
-#comment "Returns true if these Geometries are 'spatially equal'";
-
-#command Disjoint(a:wkb, b:wkb) :bit
-#address wkbDisjoint
-#comment "Returns true if these Geometries are 'spatially disjoint'";
-
-#command Intersect(a:wkb, b:wkb) :bit
-#address wkbIntersect
-#comment "Returns true if these Geometries 'spatially intersect'";
-
-#command Touches(a:wkb, b:wkb) :bit
-#address wkbTouches
-#comment "Returns true if these Geometries 'spatially touch' each other";
-
-#command Crosses(a:wkb, b:wkb) :bit
-#address wkbCrosses
-#comment "Returns true if the Geometry a 'spatially crosses' Geometry b";
-
-#command Within(a:wkb, b:wkb) :bit
-#address wkbWithin
-#comment "Returns true if the Geometry a 'spatially within' Geometry b";
-
-#command Contains(a:wkb, b:wkb) :bit
-#address wkbContains
-#comment "Returns true if the Geometry a 'spatially contains' Geometry b";
-
-#command Overlaps(a:wkb, b:wkb) :bit
-#address wkbOverlaps
-#comment "Returns true if the Geometry a 'spatially overlaps' Geometry b";
-
-#command Relate(a:wkb, b:wkb, intersectionPatternMatrix:str) :bit
-#address wkbRelate
-#comment "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.";
 
 # @+ ogc constructor functions
 #command point(x:dbl,y:dbl) :wkb
@@ -294,40 +289,9 @@ comment "Returns the 2-dimensional minimum cartesian distance between the two ge
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
 #comment "Construct a point-BAT from two geometry-BATs";
-module geom;
-
-# @+ ogc information methods
 
 
-# @+ ogc Spatial Analysis methods
 
-#command Length(g:wkb) :dbl
-#address wkbLength
-#comment "Returns the length of the geometry.";
-
-#command Buffer(a:wkb, distance:dbl) :wkb
-#address wkbBuffer
-#comment "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.";
-
-#command ConvexHull(a:wkb) :wkb
-#address wkbConvexHull
-#comment "Returns a geometry that represents the convex hull of this geometry.";
-
-#command Intersection(a:wkb, b:wkb) :wkb
-#address wkbIntersection
-#comment "Returns a geometry that represents the point set intersection of Geometry a with b.";
-
-#command Union(a:wkb, b:wkb) :wkb
-#address wkbUnion
-#comment "Returns a geometry that represents the point set union of Geometry a with b.";
-
-#command Difference(a:wkb, b:wkb) :wkb
-#address wkbDifference
-#comment "Returns a geometry that represents the point set difference of Geometry a with b.";
-
-#command SymDifference(a:wkb, b:wkb) :wkb
-#address wkbSymDifference
-#comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
 
 
 

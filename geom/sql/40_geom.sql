@@ -242,13 +242,13 @@ CREATE FUNCTION ST_Area(geom Geometry) RETURNS double EXTERNAL NAME geom."Area";
 --CREATE FUNCTION ST_Azimuth RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Centroid(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Centroid";
 --CREATE FUNCTION ST_ClosestPoint RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Contains RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Contains(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Contains";
 --CREATE FUNCTION ST_ContainsProperly RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Covers RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_CoveredBy RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Crosses RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Disjoint RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
@@ -258,10 +258,12 @@ CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTER
 --CREATE FUNCTION ST_Distance_Spheroid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_DFullyWithin RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_DWithin RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Equals RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Equals(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Equals";
 --CREATE FUNCTION ST_HasArc RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Intersects RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Length RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Intersects";
+--CREATE FUNCTION ST_Intersects(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."Intersects";
+CREATE FUNCTION ST_Length(geom Geometry) RETURNS double EXTERNAL NAME geom."Length";
+--CREATE FUNCTION ST_Length(geog Geography, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Length";
 --CREATE FUNCTION ST_Length2D RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_3DLength RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Length_Spheroid RETURNS EXTERNAL NAME
@@ -269,34 +271,40 @@ CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTER
 --CREATE FUNCTION ST_3DLength_Spheroid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_LongestLine RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_OrderingEquals RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Overlaps RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Overlaps";
 --CREATE FUNCTION ST_Perimeter RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Perimeter2D RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_3DPerimeter RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_PointOnSurface RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Project RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Relate RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
+--CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry) RETURNS string EXTERNAL NAME geom."Relate";
+--CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, boundary_node_rule integer) RETURNS string EXTERNAL NAME geom."Relate";
 --CREATE FUNCTION ST_RelateMatch RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_ShortestLine RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Touches RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Within RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Touches";
+CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Withis";
 
 -------------------------------------------------------------------------
 ------------------------- Geometry Processing ---------------------------
 -------------------------------------------------------------------------
---CREATE FUNCTION ST_Buffer RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Buffer(geom Geometry, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
+--CREATE FUNCTION ST_Buffer(geom Geometry, radius double, circle_quarters_num integer) RETURNS Geometry EXTERNAL NAME geom."Buffer";
+--CREATE FUNCTION ST_Buffer(geom Geometry, radius double, buffer_style_parameters string) RETURNS Geometry EXTERNAL NAME geom."Buffer";
+--CREATE FUNCTION ST_Buffer(geog Geography, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
 --CREATE FUNCTION ST_BuildArea RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Collect RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_ConvexHull RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_ConvexHull(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ConvexHull";
 --CREATE FUNCTION ST_CurveToLine RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_DelaunayTriangles RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_DifferenceRETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";
 --CREATE FUNCTION ST_Dump RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_DumpPoints RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Intersection RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
+--CREATE FUNCTION ST_Intersection(geog1 Geography, geog2 Geography) RETURNS Geography EXTERNAL NAME geom."Intersection";
 --CREATE FUNCTION ST_LineToCurve RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MakeValid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MemUnion RETURNS EXTERNAL NAME
@@ -310,8 +318,10 @@ CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTER
 --CREATE FUNCTION ST_Simplify RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SimplifyPreserveTopology RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Split RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_SymDifference RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Union RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_SymDifference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."SymDifference";
+--CREATE FUNCTION ST_Union(geoms Geometry set???) RETURNS Geometry EXTERNAL NAME geom."Union";
+--CREATE FUNCTION ST_Union(geoms Geometry[]) RETURNS Geometry EXTERNAL NAME geom."Union";
+CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
 --CREATE FUNCTION ST_UnaryUnion RETURNS EXTERNAL NAME
 
 -------------------------------------------------------------------------
@@ -344,27 +354,6 @@ CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTER
 -- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
--- ogc spatial relation methods
---//CREATE FUNCTION Equals(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Equals";
---//CREATE FUNCTION Disjoint(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Disjoint";
---//CREATE FUNCTION "Intersect"(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Intersect";
---//CREATE FUNCTION Touches(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Touches";
---//CREATE FUNCTION Crosses(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Crosses";
---//CREATE FUNCTION Within(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Within";
---//CREATE FUNCTION Contains(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Contains";
---//CREATE FUNCTION Overlaps(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Overlaps";
---//CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
-
--- ogc Spatial Analysis methods
---//CREATE FUNCTION Length(g Geometry) RETURNS FLOAT external name geom."Length";
---//CREATE FUNCTION ConvexHull(a Geometry) RETURNS Geometry external name geom."ConvexHull";
---//CREATE FUNCTION Intersection(a Geometry, b Geometry) RETURNS Geometry external name geom."Intersection";
---//CREATE FUNCTION "Union"(a Geometry, b Geometry) RETURNS Geometry external name geom."Union";
---//CREATE FUNCTION Difference(a Geometry, b Geometry) RETURNS Geometry external name geom."Difference";
---//CREATE FUNCTION SymDifference(a Geometry, b Geometry) RETURNS Geometry external name geom."SymDifference";
-
-
 
 -- create spatial_ref_sys metadata table
 CREATE TABLE spatial_ref_sys (

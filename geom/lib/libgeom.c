@@ -117,8 +117,10 @@ GEOSGeom wkb2geos(wkb* geomWKB) {
 		return NULL;
 	
 	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *)((geomWKB)->data), (geomWKB)->len);
-	GEOSSetSRID(geosGeometry, (geomWKB)->srid);
-//fprintf(stderr, "wkb2geos: srid=%d\n", (geomWKB)->srid);
+
+	if(geosGeometry != NULL)
+		GEOSSetSRID(geosGeometry, (geomWKB)->srid);
+	
 	return geosGeometry;
 }
 
