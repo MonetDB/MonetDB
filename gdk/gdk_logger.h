@@ -25,7 +25,7 @@
 
 typedef struct logaction {
 	int type;		/* type of change */
-	int nr;
+	lng nr;
 	int ht;			/* vid(-1),void etc */
 	int tt;
 	lng id;
