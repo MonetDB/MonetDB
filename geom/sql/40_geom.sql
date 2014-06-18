@@ -135,7 +135,7 @@ CREATE FUNCTION ST_Dimension(geom Geometry) RETURNS integer EXTERNAL NAME geom."
 CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."EndPoint";
 CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Envelope";
 CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ExteriorRing"; --gets polygon
---CREATE FUNCTION ST_GeometryN(gem Geometry, geomNum integer) RETURNS Geometry EXTERNAL NAME
+CREATE FUNCTION ST_GeometryN(geom Geometry, geomNum integer) RETURNS Geometry EXTERNAL NAME geom."GeometryN";
 CREATE FUNCTION ST_GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType2";
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, ringNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
 CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsClosed";
@@ -151,9 +151,9 @@ CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geo
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry, flags integer) RETURNS A_CUSTOM_ROW EXTERNAL NAME
 --CREATE FUNCTION ST_M(geom Geometry) RETURNS double EXTERNAL NAME
 --CREATE FUNCTION ST_NDims(geom Geometry) RETURNS integer EXTERNAL NAME
---CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME
---CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME --is meaningfull for polygon and multipolygon
---CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME
+--CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom;
+CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningfull for polygon and multipolygon
+CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumGeometries";
 CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
 CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
 --CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polyhedral surface
@@ -202,7 +202,7 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 CREATE FUNCTION ST_SetSRID(geom Geometry, srid integer) RETURNS Geometry EXTERNAL NAME geom."setSRID";
 --CREATE FUNCTION ST_SnapToGrid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Snap RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Transform RETURNS EXTERNAL NAME
+--CREATE FUNCTION ST_Transform() RETURNS void EXTERNAL NAME geom."Transform";
 --CREATE FUNCTION ST_Translate RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_TransScale RETURNS EXTERNAL NAME
 

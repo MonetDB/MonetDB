@@ -22,11 +22,18 @@
  * @* The simple geom module
  */
 
+
 #include <monetdb_config.h>
+#include "libgeom.h"
+
+
 #include <mal.h>
 #include <mal_atom.h>
 #include <mal_exception.h>
-#include "libgeom.h"
+#include <mal_client.h>
+#include <stream.h>
+#include "sql_scenario.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,7 +75,7 @@ geom_export mbr *mbrNULL(void);
  * the SRID */
  
 /* gets a GEOSGeometry and creates a WKB */
-geom_export wkb* geos2wkb(GEOSGeom geosGeometry);
+geom_export wkb* geos2wkb(const GEOSGeometry* geosGeometry);
 
 /* the len argument is needed for correct storage and retrieval */
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
@@ -123,7 +130,7 @@ geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
-geom_export str wkbNumInteriorRings(int*, wkb**);
+geom_export str wkbNumRings(int*, wkb**, int*);
 geom_export str wkbIsClosed(bit *out, wkb **geom);
 geom_export str wkbIsRing(bit *out, wkb **geom);
 geom_export str wkbIsValid(bit *out, wkb **geom);
@@ -141,11 +148,92 @@ geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
+geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum); 
+geom_export str wkbNumGeometries(int* out, wkb** geom);
+
+/*
+//geom_export str wkbTransform(wkb**, wkb*, int*);
+geom_export str wkbTransform(void);
+
+static str executeQuery(char** result, char* query) {
+	// input from GDKin
+	bstream* fin = NULL; 
+
+	// output to user buffer
+	stream* fout = NULL;
+	struct buffer* resultsBuffer = NULL;
+
+	Client c = NULL;
+	str qmsg = MAL_SUCCEED;
+
+	char* resultstring = NULL;
+	int len = 0;
+
+	//create the output stream
+	resultsBuffer = buffer_create(BLOCK);
+	fout = buffer_wastream(resultsBuffer, "resultsring");
+	
+	//create a client
+	c = MCinitClient(CONSOLE, fin, fout);
+	qmsg = SQLstatementIntern(c, &query, "queryName", TRUE, TRUE);
+
+        if (qmsg == MAL_SUCCEED) {
+                resultstring = buffer_get_buf(resultsBuffer);
+                *result = GDKstrdup(resultstring);
+                free(resultstring);
+        } else {
+                len = strlen(qmsg) + 19;
+                resultstring = malloc(len);
+                snprintf(resultstring, len, "{ \"error\": \"%s\" }\n", qmsg);
+                *result = GDKstrdup(resultstring);
+                free(resultstring);
+        }
+        buffer_destroy(resultsBuffer);
+fprintf(stderr, "%s\n", resultstring);
+	
+	//destroy client when done
+	SQLexitClient(c);
 
 
-geom_export str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID, int* Type, int* SRID); 
+	return qmsg;
 
-str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID, int* Type, int* SRID) {
+}
+
+str wkbTransform(void) {
+	char* query = "SELECT count(*) FROM spatial_ref_sys";
+	char** result = NULL;
+
+	executeQuery(result, query);
+
+	return MAL_SUCCEED;
+}*/
+
+/* It gets a geometry and transforms its coordinates to the provided srid */
+//str wkbTransform(wkb** trasformedWKB, wkb* geomWKB, int* srid) {
+/*str wkbTransform(wkb* geomWKB, int* srid) {
+	projPJ input_pj, output_pj;
+	GEOSGeom geosGeometry;
+//	str qmsg = MAL_SUCCEED;
+
+	//check if the new srid is the same with the old one
+	if(geomWKB->srid == *srid)
+		fprintf(stderr, "New and old srids are the same\n");
+
+	//get GEOSGeometry from WKB	
+	geosGeometry = wkb2geos(geomWKB);
+	if(geosGeometry == NULL)
+		throw(MAL, "geom.Transform", "wkb2geos failed");
+	
+	//read the projection information from spatial_ref_sys	
+
+	return MAL_SUCCEED;
+}
+
+*/
+
+geom_export str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
+
+str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) {
 	GEOSGeom geosGeometry;
 	int geoCoordinatesNum = 2;
 	int valueType = 0;
@@ -167,8 +255,8 @@ str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID, int* T
 	if(valueSRID != *columnSRID || valueType != *columnType)
 		throw(MAL, "geom.A_2_B", "column needs geometry(%d, %d) and value is geometry(%d, %d)\n", *columnType, *columnSRID, valueType, valueSRID);
 
-	*SRID = valueSRID;
-	*Type = valueType;
+	//*SRID = valueSRID;
+	//*Type = valueType;
 
 	/* get the wkb from the geosGeometry */
 	*resWKB = geos2wkb(geosGeometry);
@@ -246,13 +334,14 @@ wkb *wkbNULL(void) {
 }
 
 /* create the WKB out of the GEOSGeometry 
- * It makes sure to make all checks before returning */
-wkb* geos2wkb(GEOSGeom geosGeometry) {
+ * It makes sure to make all checks before returning 
+ * Hte input should geosGeometry should not be altered by this function*/
+wkb* geos2wkb(const GEOSGeometry* geosGeometry) {
 	size_t wkbLen = 0;
 	unsigned char *w = NULL;
 	wkb *geomWKB;
 
-	/* if the geosGeometry is NULL create a NULL WKB */
+	// if the geosGeometry is NULL create a NULL WKB
 	if(geosGeometry == NULL) {
 		geomWKB = GDKmalloc(sizeof(wkb));
 		*geomWKB = *wkbNULL();
@@ -261,7 +350,8 @@ wkb* geos2wkb(GEOSGeom geosGeometry) {
 
 	GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension(geosGeometry));
 	w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-	
+
+	//If the GEOSGeomToWKB_buf did not succeed create a NULL WKB	
 	if(w == NULL) {
 		geomWKB = GDKmalloc(sizeof(wkb));
 		*geomWKB = *wkbNULL();
@@ -269,6 +359,7 @@ wkb* geos2wkb(GEOSGeom geosGeometry) {
 	}
 
 	geomWKB = GDKmalloc(wkb_size(wkbLen));
+	//If malloc failed create a NULL wkb
 	if (geomWKB == NULL) {
 		GEOSFree(w);
 		geomWKB = GDKmalloc(sizeof(wkb));
@@ -433,7 +524,8 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 	}
 
 	if (wkt) {
-		*len = dstStrLen+1;
+	//	if (*len < (int) dstStrLen + 1) 
+			*len = dstStrLen+1;
 		
 		*geomWKT = GDKmalloc(*len);
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
@@ -442,7 +534,7 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 		strcpy(*geomWKT, "nil");
 	}
 
-	return *len;
+	return (int) dstStrLen;
 }
 
 /* creates a wkb from the given textual representation */
@@ -575,8 +667,9 @@ str geomMakePointM(wkb** out, double* x, double* y, double* m) {
 }
 
 /* common code for functions that return integer */
-static str wkbBasicInt(int *out, wkb **geom, int (*func)(const GEOSGeometry *), const char *name) {
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+static str wkbBasicInt(int *out, wkb *geom, int (*func)(const GEOSGeometry *), const char* name) {
+	GEOSGeom geosGeometry = wkb2geos(geom);
+	str ret = MAL_SUCCEED;
 
 	if (!geosGeometry) {
 		*out = int_nil;
@@ -587,9 +680,15 @@ static str wkbBasicInt(int *out, wkb **geom, int (*func)(const GEOSGeometry *), 
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if (GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, name, "failed");
-	return MAL_SUCCEED;
+	//if there was an error returned by geos
+	if (GDKerrbuf && GDKerrbuf[0]) {
+		//create an exception with this name
+		ret = createException(MAL, name, "%s", GDKerrbuf);
+		
+		//clear the error buffer
+		GDKerrbuf[0]='\0'; 
+	}
+	return ret;
 
 }
 
@@ -599,7 +698,9 @@ str wkbGeometryType(char** out, wkb** geomWKB, int* flag) {
 	int typeId = 0;
 	str ret = MAL_SUCCEED;
 
-	ret = wkbBasicInt(&typeId, geomWKB, GEOSGeomTypeId, "geom.GeometryType");
+	ret = wkbBasicInt(&typeId, *geomWKB, GEOSGeomTypeId, "geom.GeometryType");
+	if(ret != MAL_SUCCEED)
+		return ret;
 	typeId = ((typeId+1) << 2);
 	geoGetType(out, &typeId, *flag);
 	
@@ -610,17 +711,17 @@ str wkbGeometryType(char** out, wkb** geomWKB, int* flag) {
 /* geos does not know the number of dimensions as long as a wkb has been created 
  * more precisely it descards all dimensions but x and y*/
 str wkbCoordDim(int *out, wkb **geom) {
-	return wkbBasicInt(out, geom, GEOSGeom_getCoordinateDimension, "geom.CoordDim");
+	return wkbBasicInt(out, *geom, GEOSGeom_getCoordinateDimension, "geom.CoordDim");
 }
 
 /* returns the inherent dimension of the geometry, e.g 0 for point */
 str wkbDimension(int *dimension, wkb **geomWKB) {
-	return wkbBasicInt(dimension, geomWKB, GEOSGeom_getDimensions, "geom.Dimensions");
+	return wkbBasicInt(dimension, *geomWKB, GEOSGeom_getDimensions, "geom.Dimension");
 }
 
 /* returns the srid of the geometry */
 str wkbGetSRID(int *out, wkb **geomWKB) {
-	return wkbBasicInt(out, geomWKB, GEOSGetSRID, "geom.getSRID");
+	return wkbBasicInt(out, *geomWKB, GEOSGetSRID, "geom.GetSRID");
 }
 
 /* sets the srid of the geometry */
@@ -744,25 +845,28 @@ str wkbEndPoint(wkb **out, wkb **geom) {
 	return wkbBorderPoint(out, geom, GEOSGeomGetEndPoint, "geom.EndPoint");
 }
 
-/* Returns the number of points in the linestring */
+/* Returns the number of points in a geometry */
 str wkbNumPoints(int *out, wkb **geom) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
 		*out = int_nil;
-		throw(MAL, "geolib/libgeom.hm.NumPoints", "wkb2geos failed");	
+		throw(MAL, "geom.NumPoints", "wkb2geos failed");	
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
 		*out = int_nil;
-		throw(MAL, "geom.NumPoints", "failed. Geometry not a LineString");
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.NumPoints", "Geometry not a LineString");
 	}
 
 	*out = GEOSGeomGetNumPoints(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 
-	if (*out == -1)
-		throw(MAL, "geom.NumPoints", "failed");
+	if (*out == -1) {
+		*out = int_nil;
+		throw(MAL, "geom.NumPoints", "GEOSGeomGetNumPoints failed");
+	}
 
 	return MAL_SUCCEED;
 }
@@ -916,9 +1020,26 @@ str wkbInteriorRingN(wkb **out, wkb **geom, short* ringNum) {
 	return MAL_SUCCEED;
 }
 
-/* Returns the number of interior rings in the first polygon of the provided geometry */
-str wkbNumInteriorRings(int* out, wkb** geom) {
-	return wkbBasicInt(out, geom, GEOSGetNumInteriorRings, "geom.NumInteriorRings");
+/* Returns the number of interior rings in the first polygon of the provided geometry 
+ * plus the exterior ring depending on the value of exteriorRing*/
+str wkbNumRings(int* out, wkb** geom, int* exteriorRing) {
+	str ret = MAL_SUCCEED;
+
+	//check the type of the geometry
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+	if(GEOSGeomTypeId(geosGeometry)+1 == wkbMultiPolygon) {
+		//use the first polygon as done by PostGIS
+		ret = wkbBasicInt(out, geos2wkb(GEOSGetGeometryN(geosGeometry, 0)), GEOSGetNumInteriorRings, "geom.NumRngs");
+	} else {
+		ret = wkbBasicInt(out, *geom, GEOSGetNumInteriorRings, "geom.NumRings");
+	}
+
+	if(ret != MAL_SUCCEED)
+		return ret; 
+	
+	(*out) += (*exteriorRing);
+
+	return MAL_SUCCEED;
 }
 
 /* it handles functions that take as input a single geometry and return boolean */
@@ -1497,6 +1618,64 @@ str wkbWithin(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	return MAL_SUCCEED;
 }
 
+/*returns the n-th geometry in a multi-geometry */
+str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum) {
+	int geometriesNum = -1;
+	GEOSGeom geosGeometry = NULL;
+
+	//no geometry at this position
+	if(*geometryNum <= 0) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
+
+	geosGeometry = wkb2geos(*geom);
+
+	if(!geosGeometry) {
+		*out = wkb_nil;
+		throw(MAL, "geom.GeometryN", "wkb2geos failed");
+	}
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	if(geometriesNum < 0) {
+		*out = wkb_nil;
+		throw(MAL, "geom.GeometryN","GEOSGetNumGeometries failed");
+	}
+	
+	//geometry is not a multi geometry
+	if(geometriesNum == 1) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
+
+	//no geometry at this position
+	if(geometriesNum < *geometryNum) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
+
+	*out = geos2wkb(GEOSGetGeometryN(geosGeometry, (*geometryNum-1)));
+
+	return MAL_SUCCEED;
+}
+
+/* returns the number of geometries */
+str wkbNumGeometries(int* out, wkb** geom) {
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+
+	if(!geosGeometry) {
+		*out = int_nil;
+		throw(MAL, "geom.NumGeometries", "wkb2geos failed");
+	}
+
+	*out = GEOSGetNumGeometries(geosGeometry);
+	if(*out < 0) {
+		*out = int_nil;
+		throw(MAL, "geom.GeometryN","GEOSGetNumGeometries failed");
+	}
+
+	return MAL_SUCCEED;
+}
 
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);

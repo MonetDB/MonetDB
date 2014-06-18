@@ -14,3 +14,7 @@ isValid
 isRing
 coordinates
 srid
+geometryN
+numGeometries
+numPoints
+numRings

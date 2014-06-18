@@ -1576,9 +1576,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* push the SRID of the whole columns */
 				q = pushInt(mb, q, t->scale);
 				/* push the type and coordinates of the inserted value */
-				q = pushInt(mb, q, f->digits);
+				//q = pushInt(mb, q, f->digits);
 				/* push the SRID of the inserted value */
-				q = pushInt(mb, q, f->scale);
+				//q = pushInt(mb, q, f->scale);
 
 /* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
 				/* push the SRID provided for this value */

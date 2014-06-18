@@ -1,0 +1,101 @@
+stdout of test 'geometryN` in directory 'geom/sql` itself:
+
+
+# 10:30:28 >  
+# 10:30:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36310" "--set" "mapi_usock=/var/tmp/mtest-6012/.s.monetdb.36310" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 10:30:28 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:36310/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6012/.s.monetdb.36310
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 10:30:30 >  
+# 10:30:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6012" "--port=36310"
+# 10:30:30 >  
+
+#select ST_GeometryN(ST_mpointfromtext('multipoint(1 2 7, 3 4 7, 5 6 7, 8 9 10)'), 4);
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT Z (8 9 10)"	]
+#select ST_GeometryN(ST_mpointfromtext('multipoint(1 2 7, 3 4 7, 5 6 7, 8 9 10)'), 0);
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ NULL	]
+#select ST_GeometryN(ST_mpointfromtext('multipoint(1 2 7, 3 4 7, 5 6 7, 8 9 10)'), 1);
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT Z (1 2 7)"	]
+#SELECT ST_GeometryN(
+# ST_GeomCollFromText(
+#  'geometryCollection(
+#    polygon((2.5 2.5,4.5 2.5, 3.5 3.5, 2.5 2.5), (10 11, 12 11, 11 12, 10 11)), 
+#    multipoint(10 10, 20 20, 30 30))'), 
+#  4
+#);
+% .L # table_name
+% st_geomcollfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ NULL	]
+#SELECT ST_GeometryN(
+# ST_GeomCollFromText(
+#  'geometryCollection(
+#    polygon((2.5 2.5,4.5 2.5, 3.5 3.5, 2.5 2.5), (10 11, 12 11, 11 12, 10 11)), 
+#    multipoint(10 10, 20 20, 30 30))'),
+#  2
+#);
+% .L # table_name
+% st_geomcollfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "MULTIPOINT (10 10, 20 20, 30 30)"	]
+
+# 10:30:30 >  
+# 10:30:30 >  "Done."
+# 10:30:30 >  
+

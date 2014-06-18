@@ -21,7 +21,7 @@ GEOSGeometry. In case {\tt geomWKB} is {\bf NULL} {\tt wkb2geos} returns {\bf NU
 
 \subsection{geos2wkb}
 
-{\tt wkb* geos2wkb(GEOSGeom geosGeometry)}
+{\tt wkb* geos2wkb(const GEOSGeometry* geosGeometry)}
 
 \vspace{10pt}
 
@@ -29,7 +29,7 @@ GEOSGeometry. In case {\tt geomWKB} is {\bf NULL} {\tt wkb2geos} returns {\bf NU
 The function gets a pointer to a GEOSGeometry and uses GEOS library to create a wkb struct.
 In case {\tt geosGeometry} is {\bf NULL}, {\tt malloc} cannot reserve the needed memory 
 or GEOS {\tt GEOSGeomToWKB\_buf} function returns {\bf NULL} the function also returns a pointer
-to a {\bf NULL wkb struct}.
+to a {\bf NULL wkb struct}. 
 
 
 \subsection{wkbFROMSTR}
@@ -43,8 +43,9 @@ The function is used when reading data from disk. It gets a WKT geometry represe
 {\tt geomWKT} and the {\tt srid} of it and creates the wkb struct {\tt geomWKB}. In case 
 {\tt geomWKT} is {\tt str\_nil} or there is some error when creating the GEOSGeometry or 
 the wkb struct from it the function creates a {\tt wkb\_nil}. It returns the number of 
-characters in {\tt geomWKT} or 0 if an error occurred. {\tt *len} is set to the size of the 
-size of the {\tt geomWKB} but I am not sure why this is needed.
+characters in {\tt geomWKT} or 0 if an error occurred. {\tt *len} is set to the size of the  
+{\tt geomWKB} but I am not sure why this is needed. The function returns the size of the created 
+{\tt geomWKT} and it is important in order to return the correact value.
 
 
 \subsection{wkbTOSTR}
@@ -128,5 +129,13 @@ The function is used by the SQL function {\tt ST\_AsText}.
 \subsection{wkbBoundary}
 
 {\tt str wkbBoundary(wkb **boundaryWKB, wkb **geomWKB)}
+
+\section{Notes on sql level}
+
+\subsection{{\tt int atom\_cast(atom *a, sql\_subtype *tp)}}
+It is called to check the arguments of a function (once for each argument) \\
+{\tt sql\_subtype *tp} has the type of the expected argument and {\tt sql\_subtype *at = \&a->tpe} 
+has the type of the provided argument.
+
 
 \end{document}

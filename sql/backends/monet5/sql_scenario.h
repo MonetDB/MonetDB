@@ -19,6 +19,7 @@
 
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
+
 #include "sql.h"
 
 /* #define _SQL_SCENARIO_DEBUG */

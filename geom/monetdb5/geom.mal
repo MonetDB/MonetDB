@@ -46,7 +46,6 @@ command heap() :int		address wkbHEAP;
 
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
-command GeometryType{unsafe}(w:wkb, flag:int) :str address wkbGeometryType;
 
 module geom;
 
@@ -57,7 +56,11 @@ comment "returns 1 if the geometry has m coordinate";
 command getType{unsafe}(flags:int) :str address geoGetType
 comment "returns the str representation of the geometry type";
 
-command calc.wkb(geo:wkb, columnType:int, columnSRID:int, type:int, srid:int) :wkb address A_2_B;
+
+command GeometryType{unsafe}(w:wkb, flag:int) :str address wkbGeometryType;
+command NumRings{unsafe}(w:wkb, exterior:int) :int address wkbNumRings
+comment "Returns the number of interior rings+exterior on the first polygon of the geometry";
+
 
 #Geometry Constructors
 command AsText(w:wkb) :str address wkbAsText
@@ -134,6 +137,17 @@ end GeomCollFromText;
 #	return x;
 #end GeomFromWKB;
 
+
+function NumInteriorRings{unsafe}(w:wkb) :int;
+	x := NumRings(w, 0);
+	return x;
+end NumInteriorRings
+function NRings{unsafe}(w:wkb) :int;
+	x := NumRings(w, 1);
+	return x;
+end NRings;
+
+
 command MakePoint{unsafe}(x:dbl, y:dbl) :wkb address geomMakePoint2D
 comment "creates a point using the coordinates";
 command MakePoint{unsafe}(x:dbl, y:dbl, z:dbl) :wkb address geomMakePoint3D
@@ -146,11 +160,11 @@ comment "creates a point using the coordinates";
 
 #Geometry Accessors
 function GeometryType1{unsafe}(w:wkb) :str;
-	x := wkb.GeometryType(w, 0);
+	x := GeometryType(w, 0);
 	return x;
 end GeometryType1;
 function GeometryType2{unsafe}(w:wkb) :str;
-	x := wkb.GeometryType(w, 1);
+	x := GeometryType(w, 1);
 	return x;
 end GeometryType2;
 
@@ -175,7 +189,7 @@ comment "Returns the first point of a LINESTRING geometry as a POINT or NULL if 
 command EndPoint(w:wkb) :wkb address wkbEndPoint
 comment "Returns the last point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING.";
 command NumPoints(w:wkb) :int address wkbNumPoints
-comment "The number of points in the Geometry. Argument w should be Linestring.";
+comment "The number of points in the Geometry. The geometry should be a linestring";
 command PointN(w:wkb, n:int) :wkb address wkbPointN
 comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 command Envelope(w:wkb) :wkb address wkbEnvelope
@@ -184,8 +198,6 @@ command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
 comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
 command InteriorRingN(w:wkb, n:int) :wkb address wkbInteriorRingN
 comment "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.";
-command NumInteriorRings(w:wkb) :int address wkbNumInteriorRings
-comment "Return the number of interior rings of the first polygon in the geometry. This will work with both POLYGON and MULTIPOLYGON types but only looks at the first polygon.";
 command IsClosed(w:wkb) :bit address wkbIsClosed
 comment "Returns TRUE if the LINESTRING's start and end points are coincident.";
 command IsEmpty(w:wkb) :bit address wkbIsEmpty
@@ -238,7 +250,13 @@ command Touches(a:wkb, b:wkb) :bit address wkbTouches
 comment "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.";
 command Within(a:wkb, b:wkb) :bit address wkbWithin
 comment "Returns true if the geometry A is completely inside geometry B";
+command GeometryN(g:wkb, n:int) :wkb address wkbGeometryN
+comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
+command NumGeometries(g:wkb) :int address wkbNumGeometries
+comment "Returns the number of geometries";
 
+#command Transfomr() :void address wkbTransform
+#comment "";
 
 
 
@@ -308,6 +326,8 @@ command mbr(v:mbr) :mbr address mbrFromMBR;
 command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command wkb(v:wkb) :wkb address wkbFromWKB;
 
+command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address A_2_B
+comment "Called when iserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition"
 #function point{unsafe}( wkt:str ) :wkb;
 #	x := wkb.FromText(wkt,1);
 #	return x;
