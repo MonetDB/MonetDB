@@ -180,11 +180,10 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
 			throw(MAL, "generator.table",			\
 			      "Illegal generator arguments");		\
-		n = (lng) ((l - f) / s);				\
-		assert(n >= 0);						\
-		if (n * s + f != l)					\
+		n = (BUN) ((l - f) / s);				\
+		if ((TPE) (n * s + f) != l)				\
 			n++;						\
-		bn = BATnew(TYPE_void, TYPE_##TPE, (BUN) n);		\
+		bn = BATnew(TYPE_void, TYPE_##TPE, n);			\
 		if (bn == NULL)						\
 			throw(MAL, "generator.table", MAL_MALLOC_FAIL);	\
 		v = (TPE*) Tloc(bn, BUNfirst(bn));			\
@@ -197,7 +196,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng c, n;
+	BUN c, n;
 	BAT *bn;
 	str msg;
 	int tpe;
@@ -319,9 +318,8 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.subselect",		\
 			      "Illegal generator arguments");		\
-		n = (lng) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
-		assert(n >= 0);						\
-		if (n * s + f != l)					\
+		n = (BUN) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
+		if ((TPE)(n * s + f) != l)				\
 			n++;						\
 									\
 		low = * (TPE *) getArgReference(stk, pci, i);		\
@@ -336,44 +334,44 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 				/* match all non-NIL values, */		\
 				/* i.e. everything */			\
 				o1 = 0;					\
-				o2 = n;					\
+				o2 = (oid) n;				\
 			}						\
 		} else if (s > 0) {					\
 			if (low == TPE##_nil || low < f)		\
 				o1 = 0;					\
 			else {						\
-				o1 = (lng) (((TPE2) low - (TPE2) f) / (TPE2) s); \
-				if (f + o1 * s < low ||			\
-				    (!li && f + o1 * s == low))		\
+				o1 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s); \
+				if ((TPE) (f + o1 * s) < low ||			\
+				    (!li && (TPE) (f + o1 * s) == low))		\
 					o1++;				\
 			}						\
 			if (hgh == TPE##_nil)				\
-				o2 = n;					\
+				o2 = (oid) n;				\
 			else if (hgh < f)				\
 				o2 = 0;					\
 			else {						\
-				o2 = (lng) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
-				if ((hi && f + o2 * s == hgh) ||	\
-				    f + o2 * s < hgh)			\
+				o2 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
+				if ((hi && (TPE) (f + o2 * s) == hgh) ||	\
+				    (TPE) (f + o2 * s) < hgh)			\
 					o2++;				\
 			}						\
 		} else {						\
 			if (low == TPE##_nil)				\
-				o2 = n;					\
+				o2 = (oid) n;				\
 			else if (low > f)				\
 				o2 = 0;					\
 			else {						\
-				o2 = (lng) (((TPE2) low - (TPE2) f) / (TPE2) s); \
-				if ((li && f + o2 * s == low) ||	\
-				    f + o2 * s > low)			\
+				o2 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s); \
+				if ((li && (TPE) (f + o2 * s) == low) ||	\
+				    (TPE) (f + o2 * s) > low)			\
 					o2++;				\
 			}						\
 			if (hgh == TPE##_nil || hgh > f)		\
 				o1 = 0;					\
 			else {						\
-				o1 = (lng) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
-				if ((!hi && f + o1 * s == hgh) ||	\
-				    f + o1 * s > hgh)			\
+				o1 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
+				if ((!hi && (TPE) (f + o1 * s) == hgh) ||	\
+				    (TPE) (f + o1 * s) > hgh)			\
 					o1++;				\
 			}						\
 		}							\
@@ -382,9 +380,10 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 str
 VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int li, hi, anti, i;
-	lng o1, o2;
-	lng n = 0;
+	bit li, hi, anti;
+	int i;
+	oid o1, o2;
+	BUN n = 0;
 	oid *cl = 0;
 	BUN c;
 	BAT *bn, *cand = NULL;
@@ -466,8 +465,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) || anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
 					if( cl){
-						while ( c < BATcount(cand) && (lng) *cl < o1 ) {cl++; c++;}
-						if( (lng) *cl == o1){
+						while ( c < BATcount(cand) && *cl < o1 ) {cl++; c++;}
+						if( *cl == o1){
 							*ol++ = o1;
 							cl++;
 							n++;
@@ -493,46 +492,45 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 			throw(MAL, "generator.subselect", "Unsupported type in subselect");
 	}
-	if (o1 > n)
-		o1 = n;
-	if (o2 > n)
-		o2 = n;
-	assert(o1 >= 0);
+	if (o1 > (oid) n)
+		o1 = (oid) n;
+	if (o2 > (oid) n)
+		o2 = (oid) n;
 	assert(o1 <= o2);
-	assert(o2 - o1 <= n);
+	assert(o2 - o1 <= (oid) n);
 	if (anti && o1 == o2) {
 		o1 = 0;
-		o2 = n;
+		o2 = (oid) n;
 		anti = 0;
 	}
 	if (cand) {
 		oid o;
-		o = (oid) o1;
-		o1 = (lng) SORTfndfirst(cand, &o);
-		o = (oid) o2;
-		o2 = (lng) SORTfndfirst(cand, &o);
-		n = (lng) BATcount(cand);
+		o = o1;
+		o1 = SORTfndfirst(cand, &o);
+		o = o2;
+		o2 = SORTfndfirst(cand, &o);
+		n = BATcount(cand);
 		if (anti && o1 < o2) {
-			bn = BATnew(TYPE_void, TYPE_oid, (BUN) (n - (o2 - o1)));
+			bn = BATnew(TYPE_void, TYPE_oid, n - (o2 - o1));
 			if (bn) {
 				oid *op = (oid *) Tloc(bn, BUNfirst(bn));
 				const oid *cp = (const oid *) Tloc(cand, BUNfirst(cand));
-				BATsetcount(bn, (BUN) (n - (o2 - o1)));
+				BATsetcount(bn, n - (o2 - o1));
 				BATseqbase(bn, 0);
 				bn->T->nil = 0;
 				bn->T->nonil = 1;
 				bn->tsorted = 1;
 				bn->trevsorted = BATcount(bn) <= 1;
 				bn->tkey = 1;
-				for (o = 0; o < (oid) o1; o++)
+				for (o = 0; o < o1; o++)
 					*op++ = cp[o];
-				for (o = (oid) o2; o < (oid) n; o++)
+				for (o = o2; o < (oid) n; o++)
 					*op++ = cp[o];
 			}
 		} else {
 			if (anti) {
 				o1 = 0;
-				o2 = n;
+				o2 = (oid) n;
 			}
 			bn = BATslice(cand, (BUN) o1, (BUN) o2);
 		}
@@ -542,20 +540,20 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			      MAL_MALLOC_FAIL);
 	} else {
 		if (anti) {
-			lng o;
+			oid o;
 			oid *op;
 
-			bn = BATnew(TYPE_void, TYPE_oid, (BUN) (n - (o2 - o1)));
+			bn = BATnew(TYPE_void, TYPE_oid, n - (o2 - o1));
 			if (bn == NULL)
 				throw(MAL, "generator.subselect",
 				      MAL_MALLOC_FAIL);
-			BATsetcount(bn, (BUN) (n - (o2 - o1)));
+			BATsetcount(bn, n - (o2 - o1));
 			BATseqbase(bn, 0);
 			op = (oid *) Tloc(bn, BUNfirst(bn));
 			for (o = 0; o < o1; o++)
-				*op++ = (oid) o;
-			for (o = o2; o < n; o++)
-				*op++ = (oid) o;
+				*op++ = o;
+			for (o = o2; o < (oid) n; o++)
+				*op++ = o;
 			bn->T->nil = 0;
 			bn->T->nonil = 1;
 			bn->tsorted = 1;
