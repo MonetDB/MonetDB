@@ -575,7 +575,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-#define VLTthetasubselect(TPE) {\
+#define VLTthetasubselect(TPE,ABS) {\
 	TPE f,l,s, low, hgh;\
 	BUN j; oid *v;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
@@ -583,7 +583,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
-	cap = (BUN)((lng)l-(lng)f)/abs(s);\
+	cap = (BUN)((lng)l-(lng)f)/ABS(s);\
 	bn = BATnew(TYPE_void, TYPE_oid, cap);\
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
@@ -646,12 +646,12 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	// check the step direction
 	
 	switch( tpe =getArgType(mb,pci,idx)){
-	case TYPE_bte: VLTthetasubselect(bte);break;
-	case TYPE_int: VLTthetasubselect(int);break;
-	case TYPE_sht: VLTthetasubselect(sht);break;
-	case TYPE_lng: VLTthetasubselect(lng);break;
-	case TYPE_flt: VLTthetasubselect(flt);break;
-	case TYPE_dbl: VLTthetasubselect(dbl);break;
+	case TYPE_bte: VLTthetasubselect(bte,abs);break;
+	case TYPE_int: VLTthetasubselect(int,abs);break;
+	case TYPE_sht: VLTthetasubselect(sht,abs);break;
+	case TYPE_lng: VLTthetasubselect(lng,llabs);break;
+	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
+	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
 	default:
 		if ( tpe == TYPE_timestamp){
 			timestamp f,l, low, hgh;
