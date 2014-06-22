@@ -49,7 +49,7 @@ typedef void (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
-	size_t changes;
+	lng changes;
 	int version;
 	lng id;
 	int tid;
