@@ -1780,8 +1780,8 @@ log_delta(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	nr = (BUNlast(b) - BUNfirst(b));
-	assert(nr <= GDK_int_max);
-	l.nr = (int) nr;
+	assert(nr <= GDK_lng_max);
+	l.nr = nr;
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -1823,7 +1823,7 @@ log_bat(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (int) (BUNlast(b) - b->batInserted);
+	l.nr = (BUNlast(b) - b->batInserted);
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -1856,7 +1856,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	l.nr = (int) (b->batFirst - b->batDeleted);
+	l.nr = (b->batFirst - b->batDeleted);
 	lg->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
