@@ -32,7 +32,6 @@
 #include <mal_exception.h>
 #include <mal_client.h>
 #include <stream.h>
-#include "sql_scenario.h"
 
 
 #include <stdio.h>
@@ -151,85 +150,52 @@ geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum); 
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 
-/*
-//geom_export str wkbTransform(wkb**, wkb*, int*);
-geom_export str wkbTransform(void);
-
-static str executeQuery(char** result, char* query) {
-	// input from GDKin
-	bstream* fin = NULL; 
-
-	// output to user buffer
-	stream* fout = NULL;
-	struct buffer* resultsBuffer = NULL;
-
-	Client c = NULL;
-	str qmsg = MAL_SUCCEED;
-
-	char* resultstring = NULL;
-	int len = 0;
-
-	//create the output stream
-	resultsBuffer = buffer_create(BLOCK);
-	fout = buffer_wastream(resultsBuffer, "resultsring");
-	
-	//create a client
-	c = MCinitClient(CONSOLE, fin, fout);
-	qmsg = SQLstatementIntern(c, &query, "queryName", TRUE, TRUE);
-
-        if (qmsg == MAL_SUCCEED) {
-                resultstring = buffer_get_buf(resultsBuffer);
-                *result = GDKstrdup(resultstring);
-                free(resultstring);
-        } else {
-                len = strlen(qmsg) + 19;
-                resultstring = malloc(len);
-                snprintf(resultstring, len, "{ \"error\": \"%s\" }\n", qmsg);
-                *result = GDKstrdup(resultstring);
-                free(resultstring);
-        }
-        buffer_destroy(resultsBuffer);
-fprintf(stderr, "%s\n", resultstring);
-	
-	//destroy client when done
-	SQLexitClient(c);
-
-
-	return qmsg;
-
-}
-
-str wkbTransform(void) {
-	char* query = "SELECT count(*) FROM spatial_ref_sys";
-	char** result = NULL;
-
-	executeQuery(result, query);
-
-	return MAL_SUCCEED;
-}*/
+geom_export str wkbTransform(wkb**, wkb*, int*, char**, char**);
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
-//str wkbTransform(wkb** trasformedWKB, wkb* geomWKB, int* srid) {
-/*str wkbTransform(wkb* geomWKB, int* srid) {
-	projPJ input_pj, output_pj;
-	GEOSGeom geosGeometry;
+str wkbTransform(wkb** transformedWKB, wkb* geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
+	projPJ proj4_src, proj4_dst;
+	double x=10, y=10, z=10;
+
+
+if(geomWKB == NULL) 
+	fprintf(stderr, "NULL wkb\n");
+*transformedWKB = wkb_nil;
+
+fprintf(stderr, "SRID=%d SRC=%s DEST=%s\n", *srid, *proj4_src_str, *proj4_dst_str);
+
+proj4_src = pj_init_plus(*proj4_src_str);
+proj4_dst = pj_init_plus(*proj4_dst_str);
+
+fprintf(stderr, "BEFORE: (%f, %f, %f)\n", x, y, z);
+pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
+fprintf(stderr, "AFTER: (%f, %f, %f)\n", x, y, z);
+
+pj_free(proj4_src);
+pj_free(proj4_dst);
+
+//for each geometry in a multigeometry
+//for each point in the geometry
+//pj_transform(proj_src, proj_dst, 1, 0, x, y, z)
+
+
 //	str qmsg = MAL_SUCCEED;
 
 	//check if the new srid is the same with the old one
-	if(geomWKB->srid == *srid)
-		fprintf(stderr, "New and old srids are the same\n");
-
-	//get GEOSGeometry from WKB	
-	geosGeometry = wkb2geos(geomWKB);
-	if(geosGeometry == NULL)
-		throw(MAL, "geom.Transform", "wkb2geos failed");
-	
-	//read the projection information from spatial_ref_sys	
-
+//	if(geomWKB->srid == *srid)
+//		fprintf(stderr, "New and old srids are the same\n");
+//
+//	//get GEOSGeometry from WKB	
+//	geosGeometry = wkb2geos(geomWKB);
+//	if(geosGeometry == NULL)
+//		throw(MAL, "geom.Transform", "wkb2geos failed");
+//	
+//	//read the projection information from spatial_ref_sys	
+//
 	return MAL_SUCCEED;
 }
 
-*/
+
 
 geom_export str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 

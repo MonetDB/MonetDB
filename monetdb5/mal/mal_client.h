@@ -62,9 +62,9 @@ typedef struct CLIENT {
 	oid user;       /* user id in the auth administration */
 	/*
 	 * The actions for a client is separated into several stages:
-	 * parsing, strategic optimization, tactial optimization, and
-	 * execution.  The routines to handle them are obtained once the
-	 * scenario is choosen.  Each stage carries a state descriptor, but
+	 * parsing, strategic optimization, tactical optimization, and
+	 * execution. The routines to handle them are obtained once the
+	 * scenario is choosen. Each stage carries a state descriptor, but
 	 * they share the IO state description. A backup structure is
 	 * provided to temporarily switch to another scenario.
 	 */
@@ -98,7 +98,7 @@ typedef struct CLIENT {
 	bstream  *fdin;
 	int       yycur;    /* the scanners current position */
 	/*
-	 * Keeping track of instructions executed is a valueable tool for
+	 * Keeping track of instructions executed is a valuable tool for
 	 * script processing and debugging.  It can be changed at runtime
 	 * for individual clients using the operation clients.listing(mask).
 	 * A listing bit controls the level of detail to be generated during

@@ -255,8 +255,8 @@ comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTIO
 command NumGeometries(g:wkb) :int address wkbNumGeometries
 comment "Returns the number of geometries";
 
-#command Transfomr() :void address wkbTransform
-#comment "";
+command Transform(g:wkb, srid:int, proj_src:str, proj_dest:str) :wkb address wkbTransform
+comment "Transforms a geometry from one srid to another";
 
 
 

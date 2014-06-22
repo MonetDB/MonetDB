@@ -36,7 +36,7 @@ lib__geom = {
 		   ../../gdk/libbat \
 	       ../../common/stream/libstream \
 	       ../../monetdb5/tools/libmonetdb5 \
-	       $(GEOS_LIBS)
+	       $(GEOS_LIBS) $(PROJ_LIBS)
 }
 
 headers_mal = {

@@ -16,6 +16,44 @@
 -- All Rights Reserved.
 
 -- make sure you load the geom module before loading this sql module
+-- create spatial_ref_sys metadata table
+
+CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
+CREATE FUNCTION Has_M(info integer) RETURNS integer EXTERNAL NAME geom."hasM";
+CREATE FUNCTION get_type(info integer) RETURNS string EXTERNAL NAME geom."getType";
+
+
+
+CREATE TABLE spatial_ref_sys (
+	srid INTEGER NOT NULL PRIMARY KEY,
+	auth_name VARCHAR (256),
+	auth_srid INTEGER,
+	srtext VARCHAR (2048),
+	proj4text VARCHAR (2048)
+);
+
+-- create geometry_columns metadata view
+create view geometry_columns as
+	select e.value as f_table_catalog,
+		s.name as f_table_schema,
+		y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type
+	from schemas s, environment e, (
+		select t.schema_id,
+			t.name as f_table_name,
+			x.name as f_geometry_column,
+			has_z(info)+has_m(info)+2 as coord_dimension,
+			srid, get_type(info) as type
+		from tables t, (
+			select name, table_id, type_digits AS info, type_scale AS srid
+			from columns
+			where type in ( select distinct sqlname from types where systemname='wkb')
+			) as x
+		where t.id=x.table_id
+		) y
+	where y.schema_id=s.id and e.name='gdk_dbname';
+
+
+copy into spatial_ref_sys from '/export/scratch1/alvanaki/DEV/MonetDB/geom/sql/postgis_spatial_ref_sys.csv' using delimiters ',';
 
 
 --CREATE TYPE Curve EXTERNAL NAME wkb;
@@ -39,10 +77,6 @@
 
 CREATE TYPE mbr EXTERNAL NAME mbr;
 
-
-CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
-CREATE FUNCTION Has_M(info integer) RETURNS integer EXTERNAL NAME geom."hasM";
-CREATE FUNCTION get_type(info integer) RETURNS string EXTERNAL NAME geom."getType";
 
 -- currently we only use mbr instead of
 -- Envelope():Geometry
@@ -202,7 +236,24 @@ CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --get
 CREATE FUNCTION ST_SetSRID(geom Geometry, srid integer) RETURNS Geometry EXTERNAL NAME geom."setSRID";
 --CREATE FUNCTION ST_SnapToGrid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Snap RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Transform() RETURNS void EXTERNAL NAME geom."Transform";
+CREATE FUNCTION getProj4(srid_in integer) RETURNS string 
+BEGIN
+	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; 
+END;
+CREATE FUNCTION InternalTransform(geom Geometry, srid integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom."Transform";
+CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry
+BEGIN
+	DECLARE srid_src integer;
+	DECLARE proj4_src string;
+	DECLARE proj4_dest string;
+
+	SELECT st_srid(geom) INTO srid_src;
+	SELECT getProj4(srid_src) INTO proj4_src;
+	SELECT getProj4(srid) INTO proj4_dest;
+
+	RETURN SELECT InternalTransform(geom, srid, proj4_src, proj4_dest);	
+END;
+
 --CREATE FUNCTION ST_Translate RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_TransScale RETURNS EXTERNAL NAME
 
@@ -354,37 +405,6 @@ CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERN
 -- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
--- create spatial_ref_sys metadata table
-CREATE TABLE spatial_ref_sys (
-	srid INTEGER NOT NULL PRIMARY KEY,
-	auth_name VARCHAR (256),
-	auth_srid INTEGER,
-	srtext VARCHAR (2048),
-	proj4text VARCHAR (2048)
-);
-
--- create geometry_columns metadata view
-create view geometry_columns as
-	select e.value as f_table_catalog,
-		s.name as f_table_schema,
-		y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type
-	from schemas s, environment e, (
-		select t.schema_id,
-			t.name as f_table_name,
-			x.name as f_geometry_column,
-			has_z(info)+has_m(info)+2 as coord_dimension,
-			srid, get_type(info) as type
-		from tables t, (
-			select name, table_id, type_digits AS info, type_scale AS srid
-			from columns
-			where type in ( select distinct sqlname from types where systemname='wkb')
-			) as x
-		where t.id=x.table_id
-		) y
-	where y.schema_id=s.id and e.name='gdk_dbname';
-
-
 
 
 

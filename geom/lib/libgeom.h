@@ -38,7 +38,7 @@
 #endif
 
 #include <geos_c.h>
-//#include "proj_api.h" //it is needed to transform from one srid to another
+#include "proj_api.h" //it is needed to transform from one srid to another
 
 typedef struct mbr {
 	float xmin;
