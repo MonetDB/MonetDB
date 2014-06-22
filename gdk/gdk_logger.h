@@ -25,7 +25,7 @@
 
 typedef struct logaction {
 	int type;		/* type of change */
-	int nr;
+	lng nr;
 	int ht;			/* vid(-1),void etc */
 	int tt;
 	lng id;
@@ -49,7 +49,7 @@ typedef void (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
-	size_t changes;
+	lng changes;
 	int version;
 	lng id;
 	int tid;
