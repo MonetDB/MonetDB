@@ -108,7 +108,7 @@ static char *log_commands[] = {
 typedef struct logformat_t {
 	char flag;
 	int tid;
-	int nr;
+	lng nr;
 } logformat;
 
 #define LOGFILE "log"
@@ -138,10 +138,24 @@ logbat_new(int tt, BUN size)
 }
 
 static int
+log_read_format_old(logger *l, logformat *data)
+{
+	int nr = 0;
+	int ok =  mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
+		mnstr_readInt(l->log, &nr) == 1 &&
+		mnstr_readInt(l->log, &data->tid) == 1;
+	data->nr = nr;
+	return ok;
+}
+
+static int
 log_read_format(logger *l, logformat *data)
 {
+	if (l->postfuncp) /* we need to convert from the old logformat, 
+       		             needs to be removed once we released Aug2014 */
+		return log_read_format_old(l, data);
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->log, &data->nr) == 1 &&
+		mnstr_readLng(l->log, &data->nr) == 1 &&
 		mnstr_readInt(l->log, &data->tid) == 1;
 }
 
@@ -149,7 +163,7 @@ static int
 log_write_format(logger *l, logformat *data)
 {
 	if (mnstr_write(l->log, &data->flag, 1, 1) == 1 &&
-	    mnstr_writeInt(l->log, data->nr) &&
+	    mnstr_writeLng(l->log, data->nr) &&
 	    mnstr_writeInt(l->log, data->tid))
 		return LOG_OK;
 	fprintf(stderr, "!ERROR: log_write_format: write failed\n");
@@ -246,7 +260,7 @@ la_bat_clear(logger *lg, logaction *la)
 static int
 log_read_seq(logger *lg, logformat *l)
 {
-	int seq = l->nr;
+	lng seq = l->nr;
 	lng val;
 	BUN p;
 
@@ -273,7 +287,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	int ht = -1, tt = -1, hseq = 0, tseq = 0;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "#logger found log_read_updates %s %s %d\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
+		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
 
 	if (b) {
 		ht = b->htype;
@@ -806,7 +820,7 @@ logger_readlog(logger *lg, char *filename)
 				fprintf(stderr, "%s", log_commands[(int) l.flag]);
 			else
 				fprintf(stderr, "%d", l.flag);
-			fprintf(stderr, " %d %d", l.tid, l.nr);
+			fprintf(stderr, " %d " LLFMT, l.tid, l.nr);
 			if (name)
 				fprintf(stderr, " %s", name);
 			fprintf(stderr, "\n");
@@ -818,7 +832,7 @@ logger_readlog(logger *lg, char *filename)
 		case LOG_START:
 			if (l.nr > lg->tid)
 				lg->tid = l.nr;
-			tr = tr_create(tr, l.nr);
+			tr = tr_create(tr, (int)l.nr);
 			if (lg->debug & 1)
 				fprintf(stderr, "#logger tstart %d\n", tr->tid);
 			break;
@@ -1878,8 +1892,8 @@ log_delta(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	nr = (BUNlast(b) - BUNfirst(b));
-	assert(nr <= GDK_int_max);
-	l.nr = (int) nr;
+	assert(nr <= GDK_lng_max);
+	l.nr = nr;
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -1901,7 +1915,7 @@ log_delta(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "#Logged %s %d inserts\n", name, l.nr);
+			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	if (ok == GDK_FAIL)
 		fprintf(stderr, "!ERROR: log_delta: write failed\n");
@@ -1921,7 +1935,7 @@ log_bat(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (int) (BUNlast(b) - b->batInserted);
+	l.nr = (BUNlast(b) - b->batInserted);
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -1952,9 +1966,9 @@ log_bat(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "#Logged %s %d inserts\n", name, l.nr);
+			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	l.nr = (int) (b->batFirst - b->batDeleted);
+	l.nr = (b->batFirst - b->batDeleted);
 	lg->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
@@ -1976,7 +1990,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		}
 
 		if (lg->debug & 1)
-			fprintf(stderr, "#Logged %s %d deletes\n", name, l.nr);
+			fprintf(stderr, "#Logged %s " LLFMT " deletes\n", name, l.nr);
 	}
 	if (ok == GDK_FAIL)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");

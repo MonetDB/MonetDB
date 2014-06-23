@@ -32,8 +32,8 @@
 #include "mal_interpreter.h"
 #include "algebra.h"
 
-#define DEBUG_OPT_DETAIL
-#define _DEBUG_OPT_CENTIPEDE_ 
+//#define DEBUG_OPT_DETAIL
+//#define _DEBUG_OPT_CENTIPEDE_ 
 
 #define BLOCKED 1	// Instruction should remain in main routine
 #define PARTITION 2	// Instruction is part of the fragment routine
