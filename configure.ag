@@ -2388,6 +2388,36 @@ AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
+#proj only used in geom module
+have_proj=''
+PROJ_INCS=''
+PROJ_LIBS=''
+AC_ARG_WITH(proj,
+	AS_HELP_STRING([--with-proj=DIR],
+		[proj library is installed in DIR]),
+	have_proj="$withval")
+case "$enable_geom" in
+yes|auto)
+	if test "x$have_proj" != xno; then
+		PROJ_INCS="-I$have_proj/include"
+		PROJ_LIBS="-L$have_proj/lib -lproj"
+	fi
+	if test "x$have_proj" = xno; then
+		if test "x$enable_geon" = xyes; then
+			AC_MSG_ERROR([proj library required for geom module])
+		fi
+		# no proj, so don't compile geom
+		enable_geom=no
+		if test "x$disable_geom" = x; then
+			disable_geom="(proj library required for geom module)"
+		fi
+	fi
+	;;
+esac
+AC_SUBST(PROJ_INCS)
+AC_SUBST(PROJ_LIBS)
+
+
 # geos, only used in geom module
 org_have_geos=auto
 have_geos=$org_have_geos

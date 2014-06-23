@@ -17,22 +17,7 @@
 
 MTSAFE
 INCLUDES = ../lib \
-		   ../../common/options \
-		   ../../common/stream \
-		   ../../gdk \
-		   ../../monetdb5/modules/atoms \
-		   ../../monetdb5/modules/kernel \
-		   ../../monetdb5/mal \
-		   ../../monetdb5/modules/mal \
-		   ../../monetdb5/optimizer \
-		   ../../monetdb5/scheduler \
-		   ../../sql/backends/monet5 \
-		   ../../sql/include \
-		   ../../sql/server \
-		   ../../sql/common \
-		   ../../sql/storage \
-		   ../../clients/mapilib \
-		   $(GEOS_INCS)
+		   $(GEOS_INCS) $(PROJ_INCS)
 
 lib__geom = {
 	MODULE

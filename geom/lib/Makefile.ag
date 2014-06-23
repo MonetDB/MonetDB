@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS)
+INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS) $(PROJ_INCS)
 
 lib_geom = {
 	NOINST
