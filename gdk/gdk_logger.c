@@ -1771,7 +1771,7 @@ log_delta(logger *lg, BAT *b, char *name)
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
-	BUN nr;
+	lng nr;
 
 	if (lg->debug & 128) {
 		/* logging is switched off */
@@ -1842,7 +1842,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
 
-			ok = wt(t, lg->log, l.nr);
+			ok = wt(t, lg->log, (size_t)l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
 				const void *h = BUNhead(bi, p);
