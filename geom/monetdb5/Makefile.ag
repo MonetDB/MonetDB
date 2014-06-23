@@ -26,6 +26,12 @@ INCLUDES = ../lib \
 		   ../../monetdb5/modules/mal \
 		   ../../monetdb5/optimizer \
 		   ../../monetdb5/scheduler \
+		   ../../sql/backends/monet5 \
+		   ../../sql/include \
+		   ../../sql/server \
+		   ../../sql/common \
+		   ../../sql/storage \
+		   ../../clients/mapilib \
 		   $(GEOS_INCS)
 
 lib__geom = {
