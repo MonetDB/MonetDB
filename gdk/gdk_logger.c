@@ -831,7 +831,7 @@ logger_readlog(logger *lg, char *filename)
 		switch (l.flag) {
 		case LOG_START:
 			if (l.nr > lg->tid)
-				lg->tid = l.nr;
+				lg->tid = (int)l.nr;
 			tr = tr_create(tr, (int)l.nr);
 			if (lg->debug & 1)
 				fprintf(stderr, "#logger tstart %d\n", tr->tid);
