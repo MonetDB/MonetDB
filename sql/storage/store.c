@@ -1616,7 +1616,7 @@ store_manager(void)
 			/* get the shared transactions drift */
 			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
 			if (shared_transactions_drift == LOG_ERR) {
-				GDKfatal("shared write-ahead log loading failure");
+				GDKfatal("shared write-ahead log last transaction read failure");
 			}
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_manager shared_transactions_drift=%d\n", shared_transactions_drift);
