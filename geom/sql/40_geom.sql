@@ -53,7 +53,7 @@ create view geometry_columns as
 	where y.schema_id=s.id and e.name='gdk_dbname';
 
 
-copy into spatial_ref_sys from '/export/scratch1/alvanaki/DEV/MonetDB/geom/sql/postgis_spatial_ref_sys.csv' using delimiters ',';
+--copy into spatial_ref_sys from '/export/scratch1/alvanaki/DEV/MonetDB/geom/sql/postgis_spatial_ref_sys.csv' using delimiters ',';
 
 
 --CREATE TYPE Curve EXTERNAL NAME wkb;
