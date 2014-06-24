@@ -23,5 +23,5 @@ update _tables
 	where name = 'systemfunctions'
 		and schema_id = (select id from schemas where name = 'sys');
 
--- sofar only system schemas
+-- so far only system schemas
 update schemas set system = true;

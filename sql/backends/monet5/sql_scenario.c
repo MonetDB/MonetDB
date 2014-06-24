@@ -381,6 +381,10 @@ sql_update_feb2013(Client c)
 	char *buf = GDKmalloc(4096), *err = NULL;
 	size_t bufsize = 4096, pos = 0;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stdout, "#sql_update_feb2013\n");
+#endif
+
 	/* sys.stddev_samp functions */
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val TINYINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
@@ -443,6 +447,10 @@ sql_update_feb2013_sp1(Client c)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
+
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stdout, "#sql_update_feb2013_sp1\n");
+#endif
 
 	/* sys.stddev functions */
 	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"like\"(string, string, string);\n");
@@ -591,6 +599,10 @@ sql_update_feb2013_sp3(Client c)
 	char *buf = GDKmalloc(4096), *err = NULL;
 	size_t bufsize = 4096, pos = 0;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stdout, "#sql_update_feb2013_sp3\n");
+#endif
+
 	/* aggregates on type WRD */
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val WRD) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val WRD) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
@@ -623,9 +635,12 @@ sql_update_jan2014(Client c)
 	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
 	char *schema = NULL;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stdout, "#sql_update_jan2014\n");
+#endif
+
 	if (schvar)
 		schema = strdup(schvar->val.sval);
-
 	
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -871,6 +886,10 @@ sql_update_default(Client c)
 	sql_table *t;
 	sql_schema *s;
 
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stdout, "#sql_update_default\n");
+#endif
+
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 
@@ -1074,7 +1093,10 @@ SQLinitClient(Client c)
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
 	} else {		/* handle upgrades */
+#ifdef _SQL_SCENARIO_DEBUG
 		fprintf(stdout, "# SQL catalog found, handling upgrades\n");
+#endif
+
 		sql_subtype tp;
 		char *err;
 

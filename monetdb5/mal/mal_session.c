@@ -353,7 +353,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
  * symbol table should also not be affected.  Aside from removing
  * instruction, we should also condense the variable stack, i.e.
  * removing at least the temporary variables, but maybe everything
- * beyond a previous defined pont.
+ * beyond a previous defined point.
  *
  * Beware that we have to cleanup the global stack as well. This to
  * avoid subsequent calls to find garbage information.  However, this
