@@ -86,8 +86,12 @@ void removeDataflow(MalBlkPtr mb)
 	}
 	old = mb->stmt;
 	limit = mb->stop;
-	if ( newMalBlkStmt(mb, mb->ssize) <0 )
+	if ( newMalBlkStmt(mb, mb->ssize) <0 ){
+		GDKfree(delete);
+		GDKfree(used);
+		GDKfree(init);
 		return;
+	}
 	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
@@ -169,7 +173,8 @@ static int
 dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) 
 {
 	if (p->token == ENDsymbol || 
-	    (getFunctionId(p) == multiplexRef && 
+	    (getFunctionId(p) == multiplexRef &&
+		 getModuleId(p) == malRef &&
 	     MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
 	    blockCntrl(p) || blockStart(p) || blockExit(p))
 		return TRUE;

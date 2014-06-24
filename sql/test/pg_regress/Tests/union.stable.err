@@ -1,0 +1,80 @@
+stderr of test 'union` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:58 >  
+# 17:11:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:58 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:58 >  
+# 17:11:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:58 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 1 AS one UNION SELECT 1.0::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 1.0::double AS two UNION ALL SELECT 1;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT 1.1::double AS two UNION SELECT 2 UNION SELECT 2.0::double;
+ERROR = !unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT CAST(f1 AS char(4)) AS three FROM VARCHAR_TBL
+        UNION
+        SELECT f1 FROM CHAR_TBL;
+ERROR = !SELECT: no such table 'varchar_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT f1 AS three FROM VARCHAR_TBL
+        UNION
+        SELECT CAST(f1 AS varchar) FROM CHAR_TBL;
+ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select f1 as three from varchar_tbl
+        !union
+        !select cast(f1 as varchar)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT f1 AS eight FROM VARCHAR_TBL
+        UNION ALL
+        SELECT f1 FROM CHAR_TBL;
+ERROR = !SELECT: no such table 'varchar_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT f1 AS five FROM TEXT_TBL
+        UNION
+        SELECT f1 FROM VARCHAR_TBL
+        UNION
+        SELECT TRIM(TRAILING FROM f1) FROM CHAR_TBL;
+ERROR = !syntax error, unexpected FROM, expecting ')' or ',' in: "select f1 as five from text_tbl
+        !union
+        !select f1 from varchar_tbl
+        !union
+        !select trim(trailing from"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT q1 FROM int8_tbl EXCEPT SELECT q2 FROM int8_tbl ORDER BY q2 LIMIT 1;
+ERROR = !SELECT: identifier 'q2' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT q1 FROM int8_tbl EXCEPT (((SELECT q2 FROM int8_tbl ORDER BY q2 LIMIT 1)));
+ERROR = !syntax error, unexpected ORDER, expecting INTERSECT or EXCEPT or UNION or ')' in: "select q1 from int8_tbl except (((select q2 from int8_tbl order"
+
+# 17:11:59 >  
+# 17:11:59 >  "Done."
+# 17:11:59 >  
+

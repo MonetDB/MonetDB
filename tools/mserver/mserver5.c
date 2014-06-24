@@ -62,7 +62,9 @@
 #endif
 
 static int malloc_init = 1;
+#ifdef HAVE_CONSOLE
 static int monet_daemon;
+#endif
 
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
@@ -133,6 +135,7 @@ monet_hello(void)
 	}
 
 	printf("# MonetDB 5 server v" VERSION);
+	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("\n# This is an unreleased version");
 	else
@@ -376,6 +379,7 @@ main(int argc, char **av)
 			usage(prog, -1);
 		/* not reached */
 		case 'c':
+			/* coverity[var_deref_model] */
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
 		case 'd':
@@ -396,6 +400,7 @@ main(int argc, char **av)
 			break;
 		case 's': {
 			/* should add option to a list */
+			/* coverity[var_deref_model] */
 			char *tmp = strchr(optarg, '=');
 
 			if (tmp) {

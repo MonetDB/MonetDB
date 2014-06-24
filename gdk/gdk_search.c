@@ -218,10 +218,11 @@ HASHcollisions(BAT *b, Hash *h)
 {
 	lng cnt, entries = 0, max = 0;
 	double total = 0;
-	BUN p, i, j, nil = HASHnil(h);
+	BUN p, i, j, nil;
 
 	if (b == 0 || h == 0)
 		return;
+	nil = HASHnil(h);
 	for (i = 0, j = h->mask; i <= j; i++)
 		if ((p = HASHget(h, i)) != nil) {
 			entries++;
@@ -252,6 +253,7 @@ BAThash(BAT *b, BUN masksize)
 		bat p = VIEWhparent(b);
 		o = b;
 		b = BATdescriptor(p);
+		assert(b != NULL);
 		if (!ALIGNsynced(o, b) || BUNfirst(o) != BUNfirst(b)) {
 			BBPunfix(b->batCacheid);
 			b = o;

@@ -411,8 +411,8 @@ recover_dir(int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
-		GDKunlink(BATDIR, "BBP", "bak");
-		GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
+		(void) GDKunlink(BATDIR, "BBP", "bak");
+		(void) GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
 	return GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -2258,14 +2258,14 @@ BBPkeepref(bat i)
 void
 BBPreleaseref(bat i)
 {
-        int lock = locked_by ? MT_getpid() != locked_by : 1;
+	int lock = locked_by ? MT_getpid() != locked_by : 1;
 
-        if (i == bat_nil)
-                return;
-        if (i < 0)
-                i = -i;
-        assert(BBP_refs(i) > 0);
-        decref(i, FALSE, FALSE, lock);
+	if (i == bat_nil)
+		return;
+	if (i < 0)
+		i = -i;
+	assert(BBP_refs(i) > 0);
+	decref(i, FALSE, FALSE, lock);
 }
 
 static inline void
@@ -3142,14 +3142,11 @@ BBPprepare(bit subcommit)
 		ret = (BBPrecover_subdir() < 0);
 	}
 	if (backup_files == 0) {
-		struct stat st;
-
 		backup_dir = 0;
-		ret = (stat(BAKDIR, &st) == 0 && BBPrecover());
-
+		ret = BBPrecover();
 		if (ret == 0) {
-			/* make a new BAKDIR */
-			ret = mkdir(BAKDIR, 0755);
+			ret = (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST);
+			/* if BAKDIR already exists, don't signal error */
 			IODEBUG THRprintf(GDKstdout, "#mkdir %s = %d\n", BAKDIR, ret);
 		}
 	}
@@ -3209,7 +3206,7 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		if (tp && dirty && !file_exists(BAKDIR, nme, ext)) {
 			/* file will be saved (is dirty), move the old
 			 * image into backup */
-		        mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
+			mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
 		} else if (subcommit && tp &&
 			   (dirty || file_exists(BAKDIR, nme, ext))) {
 			/* file is clean. move the backup into the
@@ -3218,10 +3215,10 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
 		}
 		/* there is a situation where the move may fail,
-                 * namely if this heap was not supposed to be existing
-                 * before, i.e. after a BATmaterialize on a persistent
-                 * bat as a workaround, do not complain about move
-                 * failure if the source file is nonexistent
+		 * namely if this heap was not supposed to be existing
+		 * before, i.e. after a BATmaterialize on a persistent
+		 * bat as a workaround, do not complain about move
+		 * failure if the source file is nonexistent
 		 */
 		if (mvret && file_exists(srcdir, nme, ext)) {
 			ret |= mvret;
@@ -3404,7 +3401,6 @@ force_move(const char *srcdir, const char *dstdir, const char *name)
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
-		struct stat st;
 		ptrdiff_t len = p - name;
 
 		strncpy(srcpath, name, len);
@@ -3413,23 +3409,19 @@ force_move(const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
-		if (stat(dstpath, &st) == 0) {
-			ret = unlink(dstpath);	/* clear destination */
-			if (ret) {
-				/* if it exists and cannot be removed,
-				 * all this is going to fail */
-				GDKsyserror("force_move: unlink(%s)\n", dstpath);
-				return ret;
-			}
+		if (unlink(dstpath) < 0 && errno != ENOENT) {
+			/* if it exists and cannot be removed, all
+			 * this is going to fail */
+			GDKsyserror("force_move: unlink(%s)\n", dstpath);
+			return -1;
 		}
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		GDKfilepath(killfile, srcdir, name, NULL);
-		ret = unlink(killfile);
-		if (ret) {
+		if (unlink(killfile) < 0) {
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
-			return ret;
+			return -1;
 		}
 		return 0;
 	}
@@ -3474,7 +3466,10 @@ BBPrecover(void)
 	dstdir = dstpath + j;
 	IODEBUG THRprintf(GDKstdout, "#BBPrecover(start)\n");
 
-	mkdir(LEFTDIR, 0755);
+	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST) {
+		closedir(dirp);
+		return -1;
+	}
 
 	/* move back all files */
 	while ((dent = readdir(dirp)) != NULL) {
@@ -3642,7 +3637,6 @@ BBPdiskscan(const char *parent)
 		const char *p;
 		bat bid;
 		int ok, delete;
-		struct stat st;
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */
@@ -3672,11 +3666,6 @@ BBPdiskscan(const char *parent)
 			/* it was a directory */
 			continue;
 		}
-		if (stat(fullname, &st)) {
-			IODEBUG mnstr_printf(GDKstdout,"BBPdiskscan: stat(%s)", fullname);
-			continue;
-		}
-		IODEBUG THRprintf(GDKstdout, "#BBPdiskscan: stat(%s) = 0\n", fullname);
 
 		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
@@ -3710,7 +3699,7 @@ BBPdiskscan(const char *parent)
 			break;
 		}
 		if (delete) {
-			if (unlink(fullname) < 0) {
+			if (unlink(fullname) < 0 && errno != ENOENT) {
 				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
 				continue;
 			}

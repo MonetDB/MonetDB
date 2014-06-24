@@ -95,6 +95,11 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 		if (dbc->dbname)
 			free(dbc->dbname);
 		dbc->dbname = dupODBCstring(ValuePtr, StringLength);
+		if (dbc->dbname == NULL) {
+			/* Memory allocation error */
+			addDbcError(dbc, "HY001", NULL, 0);
+			return SQL_ERROR;
+		}
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (size_t) ValuePtr;

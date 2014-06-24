@@ -641,6 +641,7 @@ static void ctl_handle_client(
 				}
 
 				val = strchr(p, '=');
+				assert(val != NULL); /* see above */
 				*val++ = '\0';
 				if (*val == '\0')
 					val = NULL;
@@ -828,7 +829,8 @@ static void ctl_handle_client(
 					/* set uri */
 					setURI(stats);
 					/* currently never fails (just crashes) */
-					msab_serialise(&sdb, stats);
+					if ((e = msab_serialise(&sdb, stats)) != NULL)
+						break;
 					stats->uri = NULL;
 					len = snprintf(buf2, sizeof(buf2), "%s\n", sdb);
 					if (fout == NULL) {
@@ -837,6 +839,16 @@ static void ctl_handle_client(
 						mnstr_printf(fout, "=%s", buf2);
 					}
 					free(sdb);
+				}
+				if (e != NULL) {
+					len = snprintf(buf2, sizeof(buf2),
+							"internal error, please review the logs\n");
+					send_client("!");
+					Mfprintf(_mero_ctlerr, "%s: status: msab_getStatus: "
+							"%s\n", origin, e);
+					msab_freeStatus(&topdb);
+					freeErr(e);
+					break;
 				}
 
 				if (fout != NULL)

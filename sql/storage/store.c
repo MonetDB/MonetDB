@@ -29,8 +29,8 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
-/* version 05.20.02 of catalog */
-#define CATALOG_VERSION 52002
+/* version 05.21.00 of catalog */
+#define CATALOG_VERSION 52100
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
@@ -160,6 +160,29 @@ schema_destroy(sql_schema *s)
 	s->triggers = NULL;
 }
 
+static void
+trans_drop_tmp(sql_trans *tr) 
+{
+	sql_schema *tmp;
+
+	if (!tr)
+		return;
+
+	tmp = find_sql_schema(tr, "tmp");
+		
+	if (tmp->tables.set) {
+		node *n;
+		for (n = tmp->tables.set->h; n; ) {
+			node *nxt = n->next;
+			sql_table *t = n->data;
+
+			if (t->persistence == SQL_LOCAL_TEMP)
+				list_remove_node(tmp->tables.set, n);
+			n = nxt;
+		}
+	}
+}
+
 /*#define STORE_DEBUG 1*/ 
 
 sql_trans *
@@ -176,6 +199,7 @@ sql_trans_destroy(sql_trans *t)
 #ifdef STORE_DEBUG
 		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
+		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
 		return res;
 	}
@@ -3096,8 +3120,8 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
 
 		if (ok == LOG_OK)
-			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
-		if (ok == LOG_OK) {
+			ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+		if (ok == LOG_OK && cs_size(&pfs->tables)) {
 			node *n;
 			for (n = pfs->tables.set->h; n; n = n->next) {
 				sql_table *ot = n->data;

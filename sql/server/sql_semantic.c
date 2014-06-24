@@ -97,7 +97,8 @@ sql_bind_paramnr(mvc *sql, int nr)
 		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++) 
 			;
 
-		return n->data;
+		if (n)
+			return n->data;
 	}
 	return NULL;
 }

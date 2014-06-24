@@ -45,14 +45,14 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
 %if %{?with_geos:1}%{!?with_geos:0}
-BuildRequires: geos-devel >= 2.2.0
+BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
 BuildRequires: libcurl-devel
@@ -449,29 +449,6 @@ numerical analysis (gsl).
 %{_libdir}/monetdb5/gsl.mal
 %{_libdir}/monetdb5/lib_gsl.so
 
-%package jaql
-Summary: MonetDB5 JAQL
-Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
-
-%description jaql
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the JAQL extension for MonetDB.  JAQL is a
-query language for JavaScript Object Notation (JSON).
-
-%files jaql
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_jaql.mal
-%{_libdir}/monetdb5/jaql*.mal
-%{_libdir}/monetdb5/json.mal
-%{_libdir}/monetdb5/json_util.mal
-%{_libdir}/monetdb5/lib_jaql.so
-%{_libdir}/monetdb5/lib_json_jaql.so
-
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -523,9 +500,6 @@ fi
 %exclude %{_libdir}/monetdb5/gsl.mal
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
-%exclude %{_libdir}/monetdb5/jaql*.mal
-%exclude %{_libdir}/monetdb5/json.mal
-%exclude %{_libdir}/monetdb5/json_util.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
@@ -538,8 +512,6 @@ fi
 %exclude %{_libdir}/monetdb5/lib_gsl.so
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
-%exclude %{_libdir}/monetdb5/lib_jaql.so
-%exclude %{_libdir}/monetdb5/lib_json_jaql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
 
@@ -763,7 +735,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
-	--enable-jaql=yes \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
@@ -829,6 +800,49 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed May 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.17-20140514
+- Rebuilt.
+- BZ#3482: Crossproduct error
+
+* Thu May 08 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- Rebuilt.
+- BZ#3424: numeric values at the front of strings determines whether
+  CAST works successfully
+- BZ#3439: Python driver drops milliseconds from timestamps
+- BZ#3446: SET READ ONLY forgets previous changes
+- BZ#3455: String columns unusable from 64-bit .NET via ODBC
+- BZ#3456: Insert fails
+- BZ#3457: When kernel of remote client crashes, the connection remains
+  established on server side
+- BZ#3458: mserver5 crash on SQL: SELECT COUNT(*) FROM SYS.TABLES HAVING
+  COUNT(*) > 0
+- BZ#3461: mserver5 crash on SQL: SELECT * FROM SYS.ARGS WHERE FUNC_ID
+  NOT IN (SELECT ID FROM SYS.FUNCTIONS) OR FUNC_ID NOT IN (SELECT *
+  FROM SYS.FUNCTIONS)
+- BZ#3462: Invalid SQL (IN with subquery which returns multiple columns)
+  is accepted
+- BZ#3463: Crash on SELECT with SERIAL aggregation and GROUP BY column
+  alias's
+- BZ#3468: Local temporary table persists across sessions
+- BZ#3469: Absolute network paths considered invalid for COPY INTO
+  ... FROM statement.
+- BZ#3473: Various memory leaks in SQL compilation
+- BZ#3477: ODBC driver raises "unexpected end of input" for prepared
+  string parameter from .NET application
+- BZ#3481: Cannot run multiple COPY INTO statements in one 's'-command
+
+* Wed Apr 30 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- buildtools: Lots of minor fixes were made for potential defects found by Coverity
+  Scan.
+
+* Tue Apr  1 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- clients: ODBC: Implemented {call procedure-name(...)} escape.  The version
+  {?=call ...} is not implemented.
+
+* Mon Mar 24 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.15-20140508
+- buildtools: On Windows we now build the geom module against version 3.4.2 of the
+  geos library.
+
 * Thu Mar 06 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.13-20140306
 - Rebuilt.
 - BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting

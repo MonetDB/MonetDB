@@ -202,6 +202,9 @@ malInclude(Client c, str name, int listing)
 			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
 				parseMAL(c, c->curprg);
 				bstream_destroy(c->fdin);
+			} else {
+				GDKfree(s); // not interested in error here
+				s = MAL_SUCCEED;
 			}
 			if (p)
 				filename = p + 1;
@@ -259,8 +262,8 @@ evalFile(Client c, str fname, int listing)
 	while ((p = strchr(filename, PATH_SEP)) != NULL) {
 		*p = '\0';
 		fd = malOpenSource(filename);
-		if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-			mnstr_destroy(fd);
+		if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+			if(fd) mnstr_destroy(fd);
 			mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
 					filename);
 		} else {
@@ -274,10 +277,9 @@ evalFile(Client c, str fname, int listing)
 		filename = p + 1;
 	}
 	fd = malOpenSource(filename);
-	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
-		mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
-				filename);
+	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+		if( fd == 0) mnstr_destroy(fd);
+		msg = createException(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
 	} else {
 		c->srcFile = filename;
 		c->yycur = 0;
@@ -390,8 +392,10 @@ callString(Client c, str s, int listing)
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if (b == NULL)
+	if (b == NULL){
+		GDKfree(qry);
 		return -1;
+	}
 	buffer_init(b, qry, len);
 	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0) {
 		GDKfree(b);

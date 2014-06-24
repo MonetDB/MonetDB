@@ -1,2 +1,0 @@
-jaql.x("[1,2,5]->top 2;");
-jaql.x("[1,2,5]->top 2 each n by [n desc];");

@@ -1,0 +1,189 @@
+stderr of test 'join` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:10:43 >  
+# 17:10:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:10:43 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:44 >  
+# 17:10:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:10:44 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", t1.a, t2.e
+          FROM J1_TBL t1 (a, b, c), J2_TBL t2 (d, e)
+          WHERE t1.a = t2.d;
+ERROR = !SELECT: no such column 't1.a'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", i, k, t
+          FROM J1_TBL CROSS JOIN J2_TBL;
+ERROR = !SELECT: identifier 'i' ambiguous
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", ii, tt, kk
+          FROM (J1_TBL CROSS JOIN J2_TBL)
+            AS tx (ii, jj, tt, ii2, kk);
+ERROR = !syntax error, unexpected AS, expecting SCOLON in: "select '' as "xxx", ii, tt, kk
+        !  from (j1_tbl cross join j2_tbl)
+        !    as"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", tx.ii, tx.jj, tx.kk
+          FROM (J1_TBL t1 (a, b, c) CROSS JOIN J2_TBL t2 (d, e))
+            AS tx (ii, jj, tt, ii2, kk);
+ERROR = !syntax error, unexpected AS, expecting SCOLON in: "select '' as "xxx", tx.ii, tx.jj, tx.kk
+        !  from (j1_tbl t1 (a, b, c) cross join j2_tbl t2 (d, e))
+        !    as"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", *
+          FROM J1_TBL t1 (a, b, c) JOIN J2_TBL t2 (a, d) USING (a)
+          ORDER BY a, d;
+ERROR = !JOIN: tables '' and '' do not have a matching column 'a'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", *
+          FROM J1_TBL t1 (a, b, c) JOIN J2_TBL t2 (a, b) USING (b)
+          ORDER BY b, t1.a;
+ERROR = !JOIN: tables '' and '' do not have a matching column 'b'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT '' AS "xxx", *
+          FROM J1_TBL UNION JOIN J2_TBL;
+ERROR = !syntax error, unexpected SCOLON in: "select '' as "xxx", *
+        !  from j1_tbl union join j2_tbl;"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+        NATURAL INNER JOIN
+        (SELECT string, n as s3_n, 3 as s3_2 FROM t3) s3;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+        NATURAL LEFT JOIN
+        (SELECT string, n as s3_n, 3 as s3_2 FROM t3) s3;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+        NATURAL FULL JOIN
+        (SELECT string, n as s3_n, 3 as s3_2 FROM t3) s3;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s1_n, 1 as s1_1 FROM t1) as s1
+        NATURAL INNER JOIN
+        (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+        NATURAL INNER JOIN
+        (SELECT string, n as s3_n, 3 as s3_2 FROM t3) s3;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s1_n, 1 as s1_1 FROM t1) as s1
+        NATURAL FULL JOIN
+        (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+        NATURAL FULL JOIN
+        (SELECT string, n as s3_n, 3 as s3_2 FROM t3) s3;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s1_n FROM t1) as s1
+        NATURAL FULL JOIN
+          (SELECT * FROM
+            (SELECT string, n as s2_n FROM t2) as s2
+            NATURAL FULL JOIN
+            (SELECT string, n as s3_n FROM t3) as s3
+          ) ss2;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = SELECT * FROM
+        (SELECT string, n as s1_n FROM t1) as s1
+        NATURAL FULL JOIN
+          (SELECT * FROM
+            (SELECT string, n as s2_n, 2 as s2_2 FROM t2) as s2
+            NATURAL FULL JOIN
+            (SELECT string, n as s3_n FROM t3) as s3
+          ) ss2;
+ERROR = !syntax error, unexpected CLOB in: "select * from
+        !(select string"
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into x values (1,11);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'x'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into x values (2,22);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'x'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into x values (3,null);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'x'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into x values (4,44);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'x'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = insert into x values (5,null);
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'x'
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from x left join y on (x1 = y1 and x2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from x left join y on (x1 = y1 and y2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1 and x2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1 and y2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1 and xx2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1) where (x2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1) where (y2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select * from (x left join y on (x1 = y1)) left join x xx(xx1,xx2)
+        on (x1 = xx1) where (xx2 is not null);
+ERROR = !SELECT: identifier 'x1' unknown
+MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
+QUERY = select count(*) from tenk1 a where unique1 in
+          (select unique1 from tenk1 b join tenk1 c using (unique1)
+           where b.unique2 = 42);
+ERROR = !SELECT: no such table 'tenk1'
+
+# 17:10:44 >  
+# 17:10:44 >  "Done."
+# 17:10:44 >  
+

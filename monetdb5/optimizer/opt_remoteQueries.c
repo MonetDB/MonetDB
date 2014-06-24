@@ -278,12 +278,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				prepareRemote(TYPE_void)
 				putRemoteVariables()
 				remoteAction()
-			} else
-				pushInstruction(mb,p);
+			} else {
 #ifdef DEBUG_OPT_REMOTE
-			printf("found remote variable %s ad %d\n",
-				getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
+				printf("found remote variable %s ad %d\n",
+					getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
 #endif
+				pushInstruction(mb,p);
+			}
 		} else
 		if( getModuleId(p) && strcmp(getModuleId(p),"optimizer")==0 &&
 		    getFunctionId(p) && strcmp(getFunctionId(p),"remoteQueries")==0 )

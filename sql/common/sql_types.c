@@ -323,7 +323,10 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 	
 	if ( !(t1->type->eclass == t2->type->eclass && 
 	       t1->type->eclass == EC_INTERVAL) &&
-	      (t1->digits != t2->digits || t1->scale != t2->scale) )
+	      (t1->digits != t2->digits || 
+	      (!(t1->type->eclass == t2->type->eclass && 
+	       t1->type->eclass == EC_FLT) &&
+	       t1->scale != t2->scale)) )
 		return -1;
 
 	/* subtypes are only equal iff
@@ -696,7 +699,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 				return _dup_subfunc(sa, f, NULL, tp);
 		}
 	}
-	if (tp->type->eclass == EC_NUM) {
+	if (tp && tp->type->eclass == EC_NUM) {
 	 	/* add second round but now look for Decimals only */
 		for (n = funcs->h; n; n = n->next) {
 			sql_func *f = n->data;
@@ -1440,6 +1443,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "get_value_for", "sql", "get_value", STR, STR, LNG, SCALE_NONE);
 	sql_create_func3(sa, "restart", "sql", "restart", STR, STR, LNG, LNG, SCALE_NONE);
 	for (t = strings; t < numerical; t++) {
+		sql_create_func(sa, "index", "calc", "index", *t, BIT, BTE, SCALE_NONE);
+		sql_create_func(sa, "index", "calc", "index", *t, BIT, SHT, SCALE_NONE);
+		sql_create_func(sa, "index", "calc", "index", *t, BIT, INT, SCALE_NONE);
+		sql_create_func(sa, "strings", "calc", "strings", *t, NULL, *t, SCALE_NONE);
+
 		sql_create_func(sa, "locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3(sa, "locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
 		sql_create_func(sa, "substring", "str", "substring", *t, INT, *t, INOUT);

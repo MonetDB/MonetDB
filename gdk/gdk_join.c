@@ -2958,23 +2958,25 @@ BATproject(BAT *l, BAT *r)
 
 		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l));
-		if (bn != NULL) {
-			bn = BATseqbase(bn, l->hseqbase);
-			if (ATOMtype(bn->ttype) == TYPE_oid &&
-			    BATcount(bn) == 0) {
-				bn->tdense = 1;
-				BATseqbase(BATmirror(bn), 0);
-			}
+		if (bn == NULL)
+			return NULL;
+		bn = BATseqbase(bn, l->hseqbase);
+		if (ATOMtype(bn->ttype) == TYPE_oid &&
+		    BATcount(bn) == 0) {
+			bn->tdense = 1;
+			BATseqbase(BATmirror(bn), 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
-			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-			  bn->tsorted ? "-sorted" : "",
-			  bn->trevsorted ? "-revsorted" : "");
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(bn), BATcount(bn),
+				  bn->tsorted ? "-sorted" : "",
+				  bn->trevsorted ? "-revsorted" : "");
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);
 
-	if (ATOMstorage(tpe) == TYPE_str && (!rcount || (lcount << 3) > rcount)) {
+	if (ATOMstorage(tpe) == TYPE_str &&
+	    (rcount == 0 || lcount > (rcount >> 3))) {
 		/* insert strings as ints, we need to copy the string
 		 * heap whole sale */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));

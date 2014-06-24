@@ -49,6 +49,7 @@
 #include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
+#include "dotmonetdb.h"
 
 __declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
@@ -92,8 +93,6 @@ main(int argc, char **argv)
 	Mapi mid;
 	int quiet = 0;
 	stream *out;
-	struct stat statb;
-	stream *config = NULL;
 	char user_set_as_flag = 0;
 	char *table = NULL;
 	static struct option long_options[] = {
@@ -111,71 +110,14 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	if (getenv("DOTMONETDBFILE") == NULL) {
-		if (stat(".monetdb", &statb) == 0) {
-			config = open_rastream(".monetdb");
-		} else if (getenv("HOME") != NULL) {
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
-			if (stat(buf, &statb) == 0) {
-				config = open_rastream(buf);
-			}
-		}
-	} else {
-		char *cfile = getenv("DOTMONETDBFILE");
-		if (strcmp(cfile, "") != 0) {
-			if (stat(cfile, &statb) == 0) {
-				config = open_rastream(cfile);
-			} else {
-				fprintf(stderr, "failed to open file '%s': %s\n",
-						cfile, strerror(errno));
-			}
-		}
-	}
-
-	if (config != NULL) {
-		char buf[1024];
-		char *q;
-		ssize_t len;
-		int line = 0;
-		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
-			line++;
-			buf[len - 1] = '\0'; /* drop newline */
-			if (buf[0] == '#' || buf[0] == '\0')
-				continue;
-			if ((q = strchr(buf, '=')) == NULL) {
-				fprintf(stderr, "%s:%d: syntax error: %s\n",
-						mnstr_name(config), line, buf);
-				continue;
-			}
-			*q++ = '\0';
-			/* this basically sucks big time, as I can't easily set
-			 * a default, hence I only do things I think are useful
-			 * for now, needs a better solution */
-			if (strcmp(buf, "user") == 0) {
-				user = strdup(q); /* leak */
-				q = NULL;
-			} else if (strcmp(buf, "password") == 0 ||
-					strcmp(buf, "passwd") == 0)
-			{
-				passwd = strdup(q); /* leak */
-				q = NULL;
-			} else if (strcmp(buf, "language") == 0) {
-				/* make sure we don't barf about this as unknown
-				 * property, it's supported by mclient */
-				q = NULL;
-			}
-			if (q != NULL)
-				fprintf(stderr, "%s:%d: unknown property: %s\n",
-						mnstr_name(config), line, buf);
-		}
-		mnstr_destroy(config);
-	}
+	parse_dotmonetdb(&user, &passwd, NULL, NULL, NULL, NULL);
 
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
-			user = optarg;
+			if (user)
+				free(user);
+			user = strdup(optarg);
 			user_set_as_flag = 1;
 			break;
 		case 'h':
@@ -235,6 +177,10 @@ main(int argc, char **argv)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
 
 	mid = mapi_connect(host, port, user, passwd, "sql", dbname);
+	if (user)
+		free(user);
+	if (passwd)
+		free(passwd);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);

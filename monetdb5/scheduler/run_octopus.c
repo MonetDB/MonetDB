@@ -231,9 +231,9 @@ OCTOPUSdiscover(Client cntxt){
 		BBPreleaseref(bid);
 	}
 
-	if ( !nrworkers  ) {
+	if ( !nrworkers && msg == MAL_SUCCEED  ) {
 	 	/* there is a last resort, local execution */
-		SABAOTHgetLocalConnection(&s);
+		msg = SABAOTHgetLocalConnection(&s);
 
 		workers[nrworkers].pnum = OCTOPUSgetPeer(s); /*ref to peers registry*/
 		snprintf(buf,BUFSIZ,"worker_%d",nrworkers);
@@ -256,11 +256,12 @@ OCTOPUSdiscover(Client cntxt){
 		if ( !peers[i].active )
 			OCTOPUScleanFunReg(i);
 
-	return MAL_SUCCEED;
+	if( s != buf)
+		GDKfree(s);
+	return msg;
 }
 
 /*
- * @-
  * We first register the tentacle code at all worker sites and keep
  * a list of those already sent.
  */
@@ -275,7 +276,6 @@ OCTOPUSfind(int i, str qry){
 
 
 /*
- * @-
  * The work division looks at the system opportunities and
  * replaces all null valued target site references in all instructions.
  * The first policy is to simply perform round robin.
@@ -284,7 +284,6 @@ OCTOPUSfind(int i, str qry){
 
 
 /*
- * @-
  * The scheduler runs all tentacles asynchronously.
  * We should be careful in accessing a site that runs out
  * of clients or any failure. It may cause the system to
@@ -380,7 +379,6 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 
 
 /*
- * @-
  * Discover available workers and register tentacles on them
  * scheduler.register():bit;
  */
@@ -407,6 +405,8 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	worker to be skipped. */
 
 	start= getPC(mb,pci);
+	if( start< 0)
+		throw(MAL,"run.octopus","Illegal instruction");
 	for (j = start + 1; j<mb->stop ; j++){
 		p= getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
@@ -487,6 +487,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	GDKfree(conn);
 	return msg;
 }
 
@@ -503,6 +504,8 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     *res = 1;       /* execute the block */
 
     start = getPC(mb,pci);
+	if( start < 0)
+		throw(MAL,"octopus.bidding","Illegal instruction pointer");
     for (j = start + 1; j< mb->stop ; j++){
     	p = getInstrPtr(mb,j);
     	if ( p->barrier == EXITsymbol )
@@ -651,7 +654,9 @@ OCTOPUSdisconnect(Client cntxt)
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< nrpeers; i++)
-		if ( peers[i].active && peers[i].conn != NULL ) {
+	if ( peers[i].active && peers[i].conn != NULL ) {
+		if( msg ) 
+			GDKfree(msg);
 		msg = RMTdisconnect(cntxt,&peers[i].conn);
 		GDKfree(peers[i].conn);
 		peers[i].conn = NULL;
@@ -665,10 +670,12 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = (bit*) getArgReference(stk,pci,0);
 	int j, start;
 	InstrPtr p;
-	str msg = MAL_SUCCEED;
+	str msg, msg2 = MAL_SUCCEED;
 
 	*res = 1;	/* execute the block */
 	start = getPC(mb,pci);
+	if( start < 0)
+		throw(MAL,"octopus.run","Illegal instruction pointer");
 	for (j = start + 1; j< mb->stop ; j++){
 		p = getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
@@ -682,7 +689,8 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stk->wrapup = NULL;
 
 	*res = 0; 	/* skip to the exit */
-	OCTOPUSdisconnect(cntxt);
+	msg2 = OCTOPUSdisconnect(cntxt);
+	if ( msg2)
+		GDKfree(msg2);
 	return msg;
-
 }

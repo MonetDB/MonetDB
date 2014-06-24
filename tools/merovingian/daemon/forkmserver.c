@@ -543,6 +543,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
+	pthread_mutex_unlock(&fork_lock);
 	return(newErr("%s", strerror(errno)));
 }
 

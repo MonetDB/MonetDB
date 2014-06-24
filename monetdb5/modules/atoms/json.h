@@ -94,9 +94,14 @@ json_export str JSONvalueTable(int *ret, json *j);
 json_export str JSONkeyArray(json *ret, json *arg);
 json_export str JSONvalueArray(json *ret, json *arg);
 
+json_export str JSONtextString(str *ret, int *bid);
+json_export str JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg);
 json_export str JSONdump(int *ret, json *val);
 json_export str JSONprelude(int *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+json_export str JSONgroupStr(str *ret, const bat *bid);
+json_export str JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *id, bit *skip_nils);
+json_export str JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skipnils);
 #endif /* JSON_H */

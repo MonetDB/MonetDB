@@ -88,38 +88,51 @@ SQLProcedures_(ODBCStmt *stmt,
 			cat = ODBCParseOA("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			pro = ODBCParsePV("p", "name",
 					  (const char *) ProcName,
 					  (size_t) NameLength3);
+			if (pro == NULL)
+				goto nomem;
 		}
 	} else {
 		if (NameLength1 > 0) {
 			cat = ODBCParseID("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			pro = ODBCParseID("p", "name",
 					  (const char *) ProcName,
 					  (size_t) NameLength3);
+			if (pro == NULL)
+				goto nomem;
 		}
 	}
 
 	query = malloc(1000 + (cat ? strlen(cat) : 0) +
 		       (sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0));
-	assert(query);
+	if (query == NULL)
+		goto nomem;
 	query_end = query;
 
 /* see sql_catalog.h */
@@ -179,6 +192,18 @@ SQLProcedures_(ODBCStmt *stmt,
 	free(query);
 
 	return rc;
+
+  nomem:
+	/* note that query must be NULL when we get here */
+	if (cat)
+		free(cat);
+	if (sch)
+		free(sch);
+	if (pro)
+		free(pro);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API

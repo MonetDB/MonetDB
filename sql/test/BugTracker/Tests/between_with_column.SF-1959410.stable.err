@@ -12,9 +12,9 @@ stderr of test 'between_with_column.SF-1959410` in directory 'sql/test/BugTracke
 # 10:53:08 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=39845 
 # 10:53:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-20471/.s.monetdb.30833
 QUERY = select yea from t1959410d, t1959410e where age between 0.03 and id < 30 ;
-ERROR = !types boolean(1,0) and double(53,2) are not equal
+ERROR = !types boolean(1,0) and double(53,0) are not equal
 
 # 10:53:08 >  
 # 10:53:08 >  Done.

@@ -200,7 +200,7 @@ MT_Id sqllogthread, minmaxthread;
 static str
 SQLinit(void)
 {
-	char *debug_str = GDKgetenv("sql_debug");
+	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
 	int readonly = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
@@ -223,7 +223,9 @@ SQLinit(void)
 	be_funcs.fresolve_function = &monet5_resolve_function;
 	monet5_user_init(&be_funcs);
 
-	MTIMEtimezone(&tz, &gmt);
+	msg = MTIMEtimezone(&tz, &gmt);
+	if (msg)
+		return msg;
 	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
@@ -598,11 +600,7 @@ sql_update_feb2013_sp3(Client c)
 
 /*
  * TODO
- * 	rewrite args table, ie add vararg and inout columns
  * 	update all table functions, ie make them type F_UNION
- *	update columns view, ie change storage_type-int into storage - varchar
- *	remove table return types (#..), ie tt_generated from _tables
- *	drop declared schema.
  */
 static str
 sql_update_jan2014(Client c)
@@ -615,7 +613,12 @@ sql_update_jan2014(Client c)
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 
+	
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+ 	/* remove table return types (#..), ie tt_generated from _tables/_columns */
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select id from _tables where name like '#%%');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _tables where name like '#%%';\n");
 
 	/* replaced 15_history.sql by 15_querylog.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.resetHistory;\n");
@@ -847,10 +850,13 @@ sql_update_default(Client c)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 	char *fullname;
 	FILE *fp;
+	sql_table *t;
+	sql_schema *s;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
@@ -889,6 +895,13 @@ sql_update_default(Client c)
 	}
 
 	/* change to 75_storage functions */
+	s = mvc_bind_schema(sql, "sys");
+	if (s && (t = mvc_bind_table(sql, s, "storage")) != NULL)
+		t->system = 0;
+	if (s && (t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
+		t->system = 0;
+	if (s && (t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+		t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
@@ -898,6 +911,11 @@ sql_update_default(Client c)
 
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.hashsize(b boolean, i bigint) returns bigint begin if  b = true then return 8 * i; end if; return 0; end;");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int'	or nme = 'bigint'	or nme = 'decimal'	or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast( i * 0.12 as bigint); end if ; return 0; end;");
 
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storagemodel() returns table ("
 "    \"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint,"
@@ -918,7 +936,7 @@ sql_update_default(Client c)
 "    sum(hashes) as hashes,"
 "    sum(imprints) as imprints,"
 "    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
-"from sys.storagemodel() group by \"schema\",\"table\";\n");
+" from sys.storagemodel() group by \"schema\",\"table\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
@@ -1159,7 +1177,7 @@ static void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (m && !m->session->active)
+	if (!m->session->active)
 		mvc_trans(m);
 }
 
@@ -1204,8 +1222,10 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		msg = SQLinitEnvironment(c);
 		sql = (backend *) c->sqlcontext;
 	}
-	if (msg)
+	if (msg){
+		GDKfree(msg);
 		throw(SQL, "SQLstatement", "Catalogue not available");
+	}
 
 	initSQLreferences();
 	m = sql->mvc;
@@ -1431,8 +1451,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
 	bfd = bstream_create(fd, 128 * BLOCK);
-	if (bstream_next(bfd) < 0)
+	if (bstream_next(bfd) < 0) {
+		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);
+	}
 
 	expr = &bfd->buf;
 	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
@@ -2139,7 +2161,7 @@ SQLengineIntern(Client c, backend *be)
 			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		goto cleanup_engine;
 	}
@@ -2148,7 +2170,7 @@ SQLengineIntern(Client c, backend *be)
 			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg && c->curprg->def)
+		else if (c->curprg->def)
 			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
 		goto cleanup_engine;
 	}
@@ -2185,7 +2207,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = (str) runMAL(c, c->curprg->def, 0, 0);
 	}
 
-      cleanup_engine:
+cleanup_engine:
 	if (m->type == Q_SCHEMA)
 		qc_clean(m->qc);
 	if (msg) {
@@ -2196,7 +2218,9 @@ SQLengineIntern(Client c, backend *be)
 			be->language = oldlang;
 			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 			c->glb = oldglb;
-			return SQLrecompile(c, be);
+			if ( msg)
+				GDKfree(msg);
+			return SQLrecompile(c, be); // retry compilation
 		} else {
 			/* don't print exception decoration, just the message */
 			char *n = NULL;
@@ -2218,7 +2242,7 @@ SQLengineIntern(Client c, backend *be)
 	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q);
 	} else if (m->type != Q_SCHEMA && be->q && mb && varGetProp(mb, getArg(p = getInstrPtr(mb, 0), 0), runonceProp)) {
-		SQLCacheRemove(c, getFunctionId(p));
+		msg = SQLCacheRemove(c, getFunctionId(p));
 		qc_delete(be->mvc->qc, be->q);
 		///* this should invalidate any match */
 		//be->q->key= -1;
@@ -2246,8 +2270,11 @@ SQLrecompile(Client c, backend *be)
 	mvc *m = be->mvc;
 	int oldvtop = c->curprg->def->vtop;
 	int oldstop = c->curprg->def->stop;
+	str msg;
 
-	SQLCacheRemove(c, be->q->name);
+	msg = SQLCacheRemove(c, be->q->name);
+	if( msg )
+		GDKfree(msg);
 	s = sql_relation2stmt(m, be->q->rel);
 	be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;

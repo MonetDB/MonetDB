@@ -29,14 +29,14 @@
 #include "gdk_private.h"
 #include "gdk_imprints.h"
 
-#define BINSIZE(B, FUNC, T) do {                 \
-	switch (B) {                             \
-		case 8: FUNC(T,8); break;        \
-		case 16: FUNC(T,16); break;      \
-		case 32: FUNC(T,32); break;      \
-		case 64: FUNC(T,64); break;      \
-		default: assert(0); break;       \
-	}                                        \
+#define BINSIZE(B, FUNC, T) do {		\
+	switch (B) {				\
+		case 8: FUNC(T,8); break;	\
+		case 16: FUNC(T,16); break;	\
+		case 32: FUNC(T,32); break;	\
+		case 64: FUNC(T,64); break;	\
+		default: assert(0); break;	\
+	}					\
 } while (0)
 
 /* binary search */
@@ -416,76 +416,76 @@ imprints_create(BAT *b, char *inbins, bte bits,
 	cchdc_t *d = (cchdc_t *) dict;
 	dcnt = icnt = 0;
 
-#define IMPS_CREATE(TYPE,B)                                                   \
-do {                                                                          \
-	uint##B##_t mask, prvmask;                                            \
-	uint##B##_t *im = (uint##B##_t *) imps;                               \
-	TYPE *col = (TYPE *) Tloc(b, 0);                                      \
-	TYPE *bins = (TYPE *) inbins;                                         \
-	prvmask = mask = 0;                                                   \
-	new = (IMPS_PAGE/sizeof(TYPE))-1;                                     \
-	for (i = 0; i < b->batFirst+b->batCount; i++) {                       \
-		if (!(i&new) && i>0) {                                        \
-			/* same mask as previous and enough count to add */   \
-			if ((prvmask == mask) &&                              \
-			    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {             \
-				/* not a repeat header */                     \
-				if (!d[dcnt-1].repeat) {                      \
-					/* if compressed */                   \
-					if (d[dcnt-1].cnt > 1) {              \
-						/* uncompress last */         \
-						d[dcnt-1].cnt--;              \
-						dcnt++; /* new header */      \
-						d[dcnt-1].cnt = 1;            \
-					}                                     \
-					/* set repeat */                      \
-					d[dcnt-1].repeat = 1;                 \
-				}                                             \
-				/* increase cnt */                            \
-				d[dcnt-1].cnt++;                              \
-			} else { /* new mask (or run out of header count) */  \
-				prvmask=mask;                                 \
-				im[icnt] = mask;                              \
-				icnt++;                                       \
-				if ((dcnt > 0) && !(d[dcnt-1].repeat) &&      \
-				    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {     \
-					d[dcnt-1].cnt++;                      \
-				} else {                                      \
-					d[dcnt].cnt = 1;                      \
-					d[dcnt].repeat = 0;                   \
-					dcnt++;                               \
-				}                                             \
-			}                                                     \
-			/* new mask */                                        \
-			mask = 0;                                             \
-		}                                                             \
-		GETBIN##B(bin,col[i]);                                        \
-		mask = IMPSsetBit(B,mask,bin);                                \
-	}                                                                     \
-	/* one last left */                                                   \
-	if (prvmask == mask && dcnt > 0 &&                                    \
-	    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {                             \
-		if (!d[dcnt-1].repeat) {                                      \
-			if (d[dcnt-1].cnt > 1) {                              \
-				d[dcnt-1].cnt--;                              \
-				dcnt++;                                       \
-				d[dcnt-1].cnt = 1;                            \
-			}                                                     \
-			d[dcnt-1].repeat = 1;                                 \
-		}                                                             \
-		d[dcnt-1].cnt ++;                                             \
-	} else {                                                              \
-		im[icnt] = mask;                                              \
-		icnt++;                                                       \
-		if ((dcnt > 0) && !(d[dcnt-1].repeat) &&                      \
-		    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {                     \
-			d[dcnt-1].cnt++;                                      \
-		} else {                                                      \
-			d[dcnt].cnt = 1;                                      \
-			d[dcnt].repeat = 0;                                   \
-			dcnt++;                                               \
-		}                                                             \
-	}                                                                     \
+#define IMPS_CREATE(TYPE,B)						\
+do {									\
+	uint##B##_t mask, prvmask;					\
+	uint##B##_t *im = (uint##B##_t *) imps;				\
+	TYPE *col = (TYPE *) Tloc(b, 0);				\
+	TYPE *bins = (TYPE *) inbins;					\
+	prvmask = mask = 0;						\
+	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
+	for (i = 0; i < b->batFirst+b->batCount; i++) {			\
+		if (!(i&new) && i>0) {					\
+			/* same mask as previous and enough count to add */ \
+			if ((prvmask == mask) &&			\
+			    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
+				/* not a repeat header */		\
+				if (!d[dcnt-1].repeat) {		\
+					/* if compressed */		\
+					if (d[dcnt-1].cnt > 1) {	\
+						/* uncompress last */	\
+						d[dcnt-1].cnt--;	\
+						dcnt++; /* new header */ \
+						d[dcnt-1].cnt = 1;	\
+					}				\
+					/* set repeat */		\
+					d[dcnt-1].repeat = 1;		\
+				}					\
+				/* increase cnt */			\
+				d[dcnt-1].cnt++;			\
+			} else { /* new mask (or run out of header count) */ \
+				prvmask=mask;				\
+				im[icnt] = mask;			\
+				icnt++;					\
+				if ((dcnt > 0) && !(d[dcnt-1].repeat) && \
+				    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
+					d[dcnt-1].cnt++;		\
+				} else {				\
+					d[dcnt].cnt = 1;		\
+					d[dcnt].repeat = 0;		\
+					dcnt++;				\
+				}					\
+			}						\
+			/* new mask */					\
+			mask = 0;					\
+		}							\
+		GETBIN##B(bin,col[i]);					\
+		mask = IMPSsetBit(B,mask,bin);				\
+	}								\
+	/* one last left */						\
+	if (prvmask == mask && dcnt > 0 &&				\
+	    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {			\
+		if (!d[dcnt-1].repeat) {				\
+			if (d[dcnt-1].cnt > 1) {			\
+				d[dcnt-1].cnt--;			\
+				dcnt++;					\
+				d[dcnt-1].cnt = 1;			\
+			}						\
+			d[dcnt-1].repeat = 1;				\
+		}							\
+		d[dcnt-1].cnt ++;					\
+	} else {							\
+		im[icnt] = mask;					\
+		icnt++;							\
+		if ((dcnt > 0) && !(d[dcnt-1].repeat) &&		\
+		    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
+			d[dcnt-1].cnt++;				\
+		} else {						\
+			d[dcnt].cnt = 1;				\
+			d[dcnt].repeat = 0;				\
+			dcnt++;						\
+		}							\
+	}								\
 } while (0)
 
 	switch (ATOMstorage(b->T->type)) {
@@ -536,7 +536,7 @@ BATimprints(BAT *b) {
 		break;
 	default: /* type not supported */
 		GDKerror("#BATimprints: col type not "
-		         "suitable for imprints index.\n");
+			 "suitable for imprints index.\n");
 		return b; /* do nothing */
 	}
 
@@ -605,29 +605,29 @@ BATimprints(BAT *b) {
 			return NULL;
 		}
 
-#define FILL_HISTOGRAM(TYPE)                                      \
-do {                                                              \
-	BUN k;                                                    \
-	TYPE *s = (TYPE *)Tloc(smp, smp->batFirst);               \
-	TYPE *h = (TYPE *)imprints->bins->base;                   \
-	if (cnt < 64-1) {                                         \
-		TYPE max = GDK_##TYPE##_max;                      \
-		for (k = 0; k < cnt; k++)                         \
-			h[k] = s[k];                              \
-		if (k<8) imprints->bits=8;                        \
-		if (8<=k && k<16) imprints->bits=16;              \
-		if (16<=k && k<32) imprints->bits=32;             \
-		if (32<=k && k<64) imprints->bits=64;             \
-		for (;k<(BUN)imprints->bits; k++)                 \
-			h[k] = max;                               \
-	} else {                                                  \
-		double y, ystep = (double)cnt/(double)(64-1);     \
-		for (k=0, y = 0; (BUN)y<cnt; y+= ystep, k++)      \
-				h[k] = s[(BUN)y];                 \
-		if (k==64-1) /* there is one left */              \
-			h[k] = s[cnt-1];                          \
-		imprints->bits=64;                                \
-	}                                                         \
+#define FILL_HISTOGRAM(TYPE)					\
+do {								\
+	BUN k;							\
+	TYPE *s = (TYPE *)Tloc(smp, smp->batFirst);		\
+	TYPE *h = (TYPE *)imprints->bins->base;			\
+	if (cnt < 64-1) {					\
+		TYPE max = GDK_##TYPE##_max;			\
+		for (k = 0; k < cnt; k++)			\
+			h[k] = s[k];				\
+		if (k<8) imprints->bits=8;			\
+		if (8<=k && k<16) imprints->bits=16;		\
+		if (16<=k && k<32) imprints->bits=32;		\
+		if (32<=k && k<64) imprints->bits=64;		\
+		for (;k<(BUN)imprints->bits; k++)		\
+			h[k] = max;				\
+	} else {						\
+		double y, ystep = (double)cnt/(double)(64-1);	\
+		for (k=0, y = 0; (BUN)y<cnt; y+= ystep, k++)	\
+				h[k] = s[(BUN)y];		\
+		if (k==64-1) /* there is one left */		\
+			h[k] = s[cnt-1];			\
+		imprints->bits=64;				\
+	}							\
 } while (0)
 		switch (ATOMstorage(b->T->type)) {
 		case TYPE_bte:
@@ -666,16 +666,16 @@ do {                                                              \
 			GDKerror("#BATimprints: memory allocation error");
 			HEAPfree(imprints->bins);
 			GDKfree(imprints->bins);
-			if (imprints->imps->filename != NULL) {
-				GDKfree(imprints->imps->filename);
-			}
-			if (imprints->dict->filename != NULL) {
-				GDKfree(imprints->dict->filename);
-			}
 			if (imprints->imps != NULL) {
+				if (imprints->imps->filename != NULL) {
+					GDKfree(imprints->imps->filename);
+				}
 				GDKfree(imprints->imps);
 			}
 			if (imprints->dict != NULL) {
+				if (imprints->dict->filename != NULL) {
+					GDKfree(imprints->dict->filename);
+				}
 				GDKfree(imprints->dict);
 			}
 			GDKfree(imprints);

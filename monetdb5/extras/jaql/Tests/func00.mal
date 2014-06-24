@@ -1,6 +1,0 @@
-# test of "native" functions (all inputs/outputs are json arrays)
-jaql.x("arrayToRecord([\"DEF\", \"ABC\"], [123, 456]);");
-jaql.x("arrayToRecord([\"DEF\", \"ABC\"], [456]);");
-
-jaql.x("pairwise([\"DEF\", \"ABC\"], [123, 456]);");
-jaql.x("pairwise([\"DEF\", \"ABC\"], [456]);");

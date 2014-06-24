@@ -27,11 +27,9 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"
 # 13:48:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15406/.s.monetdb.34903
+MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !TypeException:user.s2_1[115]:'sql.x' undefined in: _213:any := sql.x(_209:int, _211:int)
-        !TypeException:user.s2_1[117]:'bat.insert' undefined in: _216:any := bat.insert(_204:bat[:oid,:int], _214:oid, _213:any)
-        !program contains errors
+ERROR = !SELECT: 'x' requires a single sub query
 
 # 13:48:49 >  
 # 13:48:49 >  "Done."

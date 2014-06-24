@@ -98,6 +98,10 @@ grid_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
+	if (out == NULL) {
+		GDKerror("grid: NULL BAT reference\n");
+		return GDK_FAIL;
+	}
 	new_bat(*out, (i * (n - o) * r), int);
 	if (out == NULL) {
 		GDKerror("grid: cannot create the bat (%d BUNs)\n", (i * (n - o) * r));
@@ -174,6 +178,10 @@ grid_lng(BAT **out, lng *groups, lng *groupsize, lng *clustersize, lng *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
+	if (out == NULL) {
+		GDKerror("grid: NULL BAT reference\n");
+		return GDK_FAIL;
+	}
 	new_bat(*out, (i * (n - o) * r), lng);
 	if (out == NULL) {
 		GDKerror("grid: cannot create the bat (" LLFMT " BUNs)\n", (i * (n - o) * r));

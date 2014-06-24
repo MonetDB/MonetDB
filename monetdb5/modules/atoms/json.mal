@@ -147,6 +147,14 @@ command values(val:json):bat[:oid,:json]
 address JSONvalueTable
 comment "Expands the outermost JSON values.";
 
+command output(b:bat[:oid,:any_1]):str
+address JSONtextString
+comment "Pack the values into a single json structure";
+
+command suboutput(b:bat[:oid,:any_1], gid:bat[:oid,:oid], ext:bat[:oid,:wrd], flg:bit):bat[:oid,:str]
+address JSONtextGrouped
+comment "Pack the values into a json structure";
+
 command prelude()
 address JSONprelude;
 
@@ -159,5 +167,29 @@ address JSONrenderarray;
 pattern calc.isnil(v:json):bit
 address CMDvarISNIL
 comment "Nil test for json value";
+
+command aggr.jsonaggr(val:bat[:oid,:str]):str
+address JSONgroupStr
+comment "Aggregate the string values to array.";
+
+command aggr.jsonaggr(val:bat[:oid,:dbl]):str
+address JSONgroupStr
+comment "Aggregate the double values to array.";
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjson
+comment "Grouped aggregation of values.";
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjson
+comment "Grouped aggregation of values.";
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
 
 json.prelude();

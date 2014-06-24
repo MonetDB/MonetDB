@@ -141,11 +141,12 @@ str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
+	int pc = getPC(mb,pci);
 
-	if ( getPC(mb, pci) > pci->jump)
+	if ( pc <0 || pc > pci->jump)
 		throw(MAL,"language.dataflow","Illegal statement range");
 	*ret = 0;	/* continue at end of block */
-	return runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
+	return runMALdataflow(cntxt, mb, pc, pci->jump, stk);
 }
 
 /*

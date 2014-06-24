@@ -75,8 +75,15 @@ returns  json external name json.valuearray;
 
 create function json.text(js json)
 returns string external name json.text;
+create function json.text(js string)
+returns string external name json.text;
+create function json.text(js int)
+returns string external name json.text;
 
 -- The remainder awaits the implementation 
+
+create aggregate json.output(js json)
+returns string external name json.output;
 
 -- create function json.object(*) returns json external name json.objectrender;
 
@@ -96,4 +103,5 @@ returns string external name json.text;
 -- create function json.nest table( id integer, k string, v string)
 -- returns json external name json.nest;
 
-
+create aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;
+create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;

@@ -792,6 +792,8 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 		if (p == NULL)
 			continue;
 		typeChecker(out, s, mb, p, silent);
+		if (mb->errors)
+			return;
 
 		if (getFunctionId(p)) {
 			if (p->fcn != NULL && p->typechk == TYPE_RESOLVED)
@@ -820,7 +822,11 @@ chkProgram(stream *out, Module s, MalBlkPtr mb)
 /*	if( mb->flowfixed == 0)*/
 
 	chkTypes(out, s, mb, FALSE);
+	if (mb->errors)
+		return;
 	chkFlow(out, mb);
+	if (mb->errors)
+		return;
 	chkDeclarations(out, mb);
 	/* malGarbageCollector(mb); */
 }

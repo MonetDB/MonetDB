@@ -728,11 +728,14 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
 			_DELETE(arg_list);
+			list_destroy(type_list);
 			return NULL;
 		} else {
+			list_destroy(type_list);
 			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
 		}
 	} else {
+		list_destroy(type_list);
 		if (create && !schema_privs(sql->role_id, s)) {
 			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
 					"for user '%s' in schema '%s'", KF, F,
@@ -771,8 +774,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				list *b = NULL;
 				sql_schema *old_schema = cur_schema(sql);
 	
-				if (s)
-					sql->session->schema = s;
+				sql->session->schema = s;
 				b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
 				sql->session->schema = old_schema;
 				sql->params = NULL;
@@ -799,6 +801,8 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
 
+				if (!fmod || !fnme)
+					return NULL;
 				sql->params = NULL;
 				if (create) {
 					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, fmod, fnme, q, FALSE, vararg);
@@ -906,9 +910,11 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 					}
 				}
 				list_destroy(list_func);
+				list_destroy(type_list);
 				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
 			}
 			list_destroy(list_func);
+			list_destroy(type_list);
 			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
 
 		} else {
@@ -916,13 +922,13 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || 
 		   (!is_func && func->res)) {
-		if (list_func)
-			list_destroy(list_func);
+		list_destroy(list_func);
+		list_destroy(type_list);
 		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
 	}
 
-	if (list_func)
-		list_destroy(list_func);
+	list_destroy(list_func);
+	list_destroy(type_list);
 	return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
 }
 
@@ -1095,7 +1101,8 @@ psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
 		sql_subtype *tpe = sql_bind_localtype("lng");
 
        		sample_exp = rel_value_exp( sql, NULL, sample, 0, ek);
-		sample_exp = rel_check_type(sql, tpe, sample_exp, type_cast); 
+		if (sample_exp)
+			sample_exp = rel_check_type(sql, tpe, sample_exp, type_cast); 
 	}
 	if (qname) {
 		if (qname->h->next)

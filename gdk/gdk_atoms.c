@@ -167,7 +167,7 @@ ATOMallocate(const char *id)
 		if (strlen(id) >= IDLENGTH)
 			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		strncpy(BATatoms[t].name, id, IDLENGTH);
+		snprintf(BATatoms[t].name, IDLENGTH, "%s", id);
 		BATatoms[t].size = sizeof(int);		/* default */
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
@@ -321,7 +321,8 @@ ATOMformat(int t, const void *p, char **buf)
 {
 	int (*tostr) (str *, int *, const void *);
 
-	if (p && (t >= 0) && (t < GDKatomcnt) && (tostr = BATatoms[t].atomToStr)) {
+	if (p && 0 <= t && t < GDKatomcnt &&
+	    (tostr = BATatoms[t].atomToStr)) {
 		int sz = 0, l = (*tostr) (buf, &sz, p);
 
 		return l;
@@ -329,8 +330,7 @@ ATOMformat(int t, const void *p, char **buf)
 	*buf = GDKmalloc(4);
 	if (*buf == NULL)
 		return -1;
-	strncpy(*buf, "nil", 4);
-	return 3;
+	return snprintf(*buf, 4, "nil");
 }
 
 ptr
@@ -377,8 +377,7 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 {							\
 	atommem(char, TYPE##Strlen);			\
 	if (*src == TYPE##_nil) {			\
-		strncpy(*dst, "nil", *len);		\
-		return 3;				\
+		return snprintf(*dst, *len, "nil");	\
 	}						\
 	snprintf(*dst, *len, FMT, FMTCAST *src);	\
 	return (int) strlen(*dst);			\
@@ -411,8 +410,7 @@ voidToStr(str *dst, int *len, void *src)
 	(void) src;
 
 	atommem(char, 4);
-	strncpy(*dst, "nil", *len);
-	return 3;
+	return snprintf(*dst, *len, "nil");
 }
 #endif
 
@@ -468,15 +466,11 @@ bitToStr(char **dst, int *len, const bit *src)
 {
 	atommem(char, 6);
 
-	if (*src == bit_nil) {
-		strncpy(*dst, "nil", *len);
-		return 3;
-	} else if (*src) {
-		strncpy(*dst, "true", *len);
-		return 4;
-	}
-	strncpy(*dst, "false", *len);
-	return 5;
+	if (*src == bit_nil)
+		return snprintf(*dst, *len, "nil");
+	if (*src)
+		return snprintf(*dst, *len, "true");
+	return snprintf(*dst, *len, "false");
 }
 
 static bit *
@@ -538,13 +532,11 @@ batToStr(char **dst, int *len, const bat *src)
 
 	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(char, 4);
-		strncpy(*dst, "nil", *len);
-		return 3;
+		return snprintf(*dst, *len, "nil");
 	}
 	i = (int) (strlen(s) + 4);
 	atommem(char, i);
-	snprintf(*dst, *len, "<%s>", s);
-	return (int) strlen(*dst);
+	return snprintf(*dst, *len, "<%s>", s);
 }
 
 static bat *
@@ -1356,6 +1348,7 @@ strFromStr(const char *src, int *len, char **dst)
 	if (p != NULL && (char *) p != str_nil && *len < l) {
 		GDKfree(p);
 		p = NULL;
+		*dst = NULL;
 	}
 	if (p == NULL || (char *) p == str_nil)
 		if ((p = GDKmalloc(*len = l)) == NULL)
@@ -1379,7 +1372,7 @@ strFromStr(const char *src, int *len, char **dst)
  */
 /*
 #define printable_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
-		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
+			   GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
 */
 /* all but control characters (in range 0 to 31) and DEL */
 #ifdef ASCII_CHR
@@ -1486,8 +1479,7 @@ strToStr(char **dst, int *len, const char *src)
 	if (GDK_STRNIL((str) src)) {
 		atommem(char, 4);
 
-		strncpy(*dst, "nil", *len);
-		return 3;
+		return snprintf(*dst, *len, "nil");
 	} else {
 		int sz = escapedStrlen(src, NULL, NULL, '"');
 		atommem(char, sz + 3);
@@ -1701,11 +1693,9 @@ OIDtoStr(char **dst, int *len, const oid *src)
 	atommem(char, oidStrlen);
 
 	if (*src == oid_nil) {
-		strncpy(*dst, "nil", *len);
-		return 3;
+		return snprintf(*dst, *len, "nil");
 	}
-	snprintf(*dst, *len, OIDFMT "@0", *src);
-	return (int) strlen(*dst);
+	return snprintf(*dst, *len, OIDFMT "@0", *src);
 }
 
 atomDesc BATatoms[MAXATOMS] = {
@@ -1903,7 +1893,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (int (*)(const void *, stream *, size_t)) ptrWrite, /* atomWrite */
 #if SIZEOF_VOID_P == SIZEOF_INT
 	 (int (*)(const void *, const void *)) intCmp,       /* atomCmp */
-	 (BUN (*)(const void *)) intHash,	             /* atomHash */
+	 (BUN (*)(const void *)) intHash,		     /* atomHash */
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
 	 (BUN (*)(const void *)) lngHash,		     /* atomHash */

@@ -36,7 +36,7 @@ struct DIR {
 	char *dir_name;
 	int just_opened;
 	HANDLE find_file_handle;
-	char *find_file_data;
+	void *find_file_data;
 };
 
 typedef struct DIR DIR;

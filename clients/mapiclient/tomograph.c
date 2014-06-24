@@ -618,7 +618,7 @@ fixed_colors[] = {
 };
 /* initial mod.fcn list for adaptive colormap */
 Color
-base_colors[] = {
+base_colors[NUM_COLORS] = {
 	/* reserve (base_)colors[0] for generic "*.*" */
 /* 99999 */	{ 0, 0, "*", "*", 0 },
 /* arbitrarily ordered by descending frequency in TPCH SF-100 with 32 threads */
@@ -831,6 +831,10 @@ dumpboxes(void)
 		f = fopen(buf, "w");
 		snprintf(buf, BUFSIZ, "%s_cpu.dat", filename);
 		fcpu = fopen(buf, "w");
+	}
+	if( fcpu == NULL){
+		fprintf(stderr,"Can not create/open the trace file\n");
+		return;
 	}
 
 	for (i = 0; i < topbox; i++)
@@ -1102,7 +1106,10 @@ showcolormap(char *filename, int all)
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s.gpl", filename);
 		f = fopen(buf, "w");
-		assert(f);
+		if (f == NULL) {
+			fprintf(stderr, "Creating file %s.gpl failed\n", filename);
+			exit(1);
+		}
 		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
 		fprintf(f, "set size 1,1\n");
@@ -1233,6 +1240,10 @@ showcolormap(char *filename, int all)
 	fprintf(f, "\" at %d,%d\n",
 		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
+	if (all) {
+		assert(f != gnudata);
+		fclose(f);
+	}
 }
 
 static void
@@ -1292,7 +1303,10 @@ keepdata(char *filename)
 		return;
 	snprintf(buf, BUFSIZ, "%s.trace", filename);
 	f = fopen(buf, "w");
-	assert(f);
+	if (f == NULL) {
+		fprintf(stderr, "Creating file %s.trace failed\n", filename);
+		exit(1);
+	}
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
@@ -1414,7 +1428,8 @@ static void createTomogram(void)
 		printf("ERROR in creation of %s\n", buf);
 		exit(-1);
 	}
-	*strchr(buf, '.') = 0;
+	if( strchr(buf,'.'))
+		*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
 	showio();
@@ -1626,7 +1641,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		return;
 	}
 
-	if (state == DONE && strncmp(fcn, "profiler.tomograph", 18) == 0) {
+	if (state == DONE && fcn && strncmp(fcn, "profiler.tomograph", 18) == 0) {
 #ifdef _DEBUG_TOMOGRAPH_
 		fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
 #endif
@@ -1739,7 +1754,7 @@ static int
 parser(char *row)
 {
 #ifdef HAVE_STRPTIME
-	char *c, *cc;
+	char *c, *cc, *v;
 	struct tm stm;
 	lng clkticks = 0;
 	int thread = 0;
@@ -1850,18 +1865,20 @@ parser(char *row)
 		/* find genuine function calls */
 		while (isspace((int) *fcn) && *fcn)
 			fcn++;
-		if (strchr(fcn, '.') == 0)
+		if (strchr(fcn, '.') == 0) {
+			free(stmt);
 			return -10;
+		}
 	} else {
 		fcn = strchr(fcn, '"');
 		if (fcn) {
-			fcn++;
-			*strchr(fcn, '"') = 0;
+			v=  strchr(fcn+1,'"');
+			if ( v ) *v = 0;
 		}
 	}
 
-	if (fcn && strchr(fcn, '('))
-		*strchr(fcn, '(') = 0;
+	if (fcn && (v=strchr(fcn, '(')))
+		*v = 0;
 
 #ifdef FOOTPRINT
 wrapup:
@@ -1887,6 +1904,8 @@ processFile(char *fname)
 	s = open_rastream(fname);
 	if (s == NULL || mnstr_errnr(s)) {
 		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
+		if (s)
+			mnstr_destroy(s);
 		return;
 	}
 	len = 0;
@@ -1909,7 +1928,7 @@ processFile(char *fname)
 		} else
 			len = 0;
 	}
-	mnstr_close(s);
+	close_stream(s);
 }
 
 static void
@@ -2142,6 +2161,10 @@ stop_cleanup:
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
 stop_disconnect:
+	if (dbhsql) {
+		mapi_disconnect(dbhsql);
+		mapi_destroy(dbhsql);
+	}
 	if (wthr->dbh) {
 		mapi_disconnect(wthr->dbh);
 		mapi_destroy(wthr->dbh);

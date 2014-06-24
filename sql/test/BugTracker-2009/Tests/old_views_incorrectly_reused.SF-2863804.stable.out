@@ -138,8 +138,9 @@ Ready.
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 2,	4,	24 # length
-[ "A2",	"term",	1	]
 [ "A1",	"term",	1	]
+[ "A2",	"term",	1	]
+#ROLLBACK;
 
 # 23:06:18 >  
 # 23:06:18 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=localhost --port=31419  /home/wouter/opt/MonetDB-Aug2009/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.view2.sql
@@ -168,8 +169,9 @@ Ready.
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 4,	4,	24 # length
-[ "2001",	"term",	1	]
 [ "2000",	"term",	1	]
+[ "2001",	"term",	1	]
+#ROLLBACK;
 
 # 23:06:18 >  
 # 23:06:18 >  Done.

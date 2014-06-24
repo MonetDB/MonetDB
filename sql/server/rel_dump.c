@@ -301,8 +301,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
+		sql_column *c = rel->r;
 		print_indent(sql, fout, depth);
-		if (t->s)
+		if (!t && c) 
+			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
+		else if (t->s)
 			mnstr_printf(fout, "%s(%s.%s)", 
 				isStream(t)?"stream":
 				isRemote(t)?"REMOTE":
@@ -320,12 +323,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	case op_table:
 		print_indent(sql, fout, depth);
 		mnstr_printf(fout, "table ");
-		/*
-		if (rel->l)
-			rel_print_(sql, fout, rel->l, depth+1, refs);
-		*/
+
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, 1, 0);
+		if (rel->l)
+			rel_print_(sql, fout, rel->l, 0, refs);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
@@ -769,6 +771,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			rexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			return exp_or(sql->sa, lexps, rexps);
 		}
+		/* fall through */
 	case '[': 
 		old = *e;
 		*e = 0;
@@ -866,6 +869,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			skipWS(r,pos);
 		}
 	}
+	if (!exp)
+		return NULL;
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("NOT");
@@ -1293,11 +1298,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			*pos += (int) strlen("union");
 			j = op_union;
 		}
+		/* fall through */
 	case 'i':
 		if (j != op_basetable) {
 			*pos += (int) strlen("intersect");
 			j = op_inter;
 		}
+		/* fall through */
 	case 'e':
 		if (j != op_basetable) {
 			*pos += (int) strlen("except");

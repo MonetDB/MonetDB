@@ -1,0 +1,10 @@
+START TRANSACTION;
+drop TABLE lineitem;
+drop TABLE orders;
+drop TABLE partsupp;
+drop TABLE part;
+drop TABLE customer;
+drop TABLE supplier;
+drop TABLE nation;
+drop TABLE region;
+COMMIT;

@@ -50,8 +50,10 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 
 	alias= (int*) GDKmalloc(sizeof(int)* mb->vtop);
-	if (alias == NULL)
+	if (alias == NULL){
+		GDKfree(span);
 		return 0;
+	}
 	for(i=0; i<mb->vtop; i++) alias[i]=i;
 
 	limit = mb->stop;

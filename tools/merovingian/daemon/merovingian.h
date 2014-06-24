@@ -45,9 +45,11 @@ typedef char* err;
 #define NO_ERR (err)0
 
 /* when not writing to stderr, one has to flush, make it easy to do so */
-#define Mfprintf(S, ...) \
-	fprintf(S, __VA_ARGS__); \
-	fflush(S);
+#define Mfprintf(S, ...)						\
+	do {										\
+		fprintf(S, __VA_ARGS__);				\
+		fflush(S);								\
+	} while (0)
 
 char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));

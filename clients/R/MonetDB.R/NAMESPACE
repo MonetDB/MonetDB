@@ -12,6 +12,9 @@ export(monetdb_queryinfo)
 # shorthand for db connections
 export(mc)
 
+# shorthand for db queries
+export(mq)
+
 # control.R
 export(monetdb.server.setup)
 export(monetdb.server.start)

@@ -38,7 +38,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	mvc_debug = debug;
+	mvc_debug = debug&4;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();
@@ -241,11 +241,6 @@ build up the hash (not copyied in the trans dup)) */
 	}
 	cur -> parent = tr;
 	tr = cur;
-	if (ok != SQL_OK) {
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
-		mvc_rollback(m, chain, name);
-		return -1;
-	}
 
 	store_lock();
 	/* if there is nothing to commit reuse the current transaction */
@@ -366,6 +361,9 @@ mvc_release(mvc *m, char *name)
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_release %s\n", (name) ? name : "");
+
+	if (!name)
+		mvc_rollback(m, 0, name);
 
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
@@ -639,7 +637,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_bind_table %s.%s\n", s->base.name, tname);
+		fprintf(stderr, "#mvc_bind_table %s.%s\n", s ? s->base.name : "<noschema>", tname);
 
 	return t;
 }
@@ -1247,7 +1245,7 @@ stack_set(mvc *sql, int var, char *name, sql_subtype *type, sql_rel *rel, sql_ta
 	v->type.type = NULL;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].value, tpe, ATOMnil(tpe));
+		VALinit(&sql->vars[var].value, tpe, ATOMnilptr(tpe));
 		v->type = *type;
 	}
 	if (name)

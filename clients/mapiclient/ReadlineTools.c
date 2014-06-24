@@ -92,8 +92,9 @@ sql_tablename_generator(const char *text, int state)
 	while (seekpos < rowcount) {
 		const char *name;
 
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (strncmp(name, text, len) == 0) {
 			char *s;
@@ -160,50 +161,6 @@ sql_completion(const char *text, int start, int end)
 	return (matches);
 }
 
-static char *
-mil_batname_generator(const char *text, int state)
-{
-
-	static int seekpos, len, rowcount;
-	static MapiHdl table_hdl;
-	char *name;
-
-	if (!state) {
-		seekpos = 0;
-		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "ls();")) == NULL || mapi_error(_mid)) {
-			if (table_hdl) {
-				mapi_explain_query(table_hdl, stderr);
-				mapi_close_handle(table_hdl);
-			} else
-				mapi_explain(_mid, stderr);
-			return NULL;
-		}
-		mapi_fetch_all_rows(table_hdl);
-		rowcount = mapi_get_row_count(table_hdl);
-	}
-
-	while (seekpos < rowcount) {
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
-		name = mapi_fetch_field(table_hdl, 0);
-		if (strncmp(name, text, len) == 0)
-			return strdup(name);
-	}
-
-	return NULL;
-}
-
-static char **
-mil_completion(const char *text, int start, int end)
-{
-	(void) start;
-	(void) end;
-
-	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	return rl_completion_matches(text, mil_batname_generator);
-}
-
 /* The MAL completion help */
 
 static char *mal_commands[] = {
@@ -256,8 +213,9 @@ mal_help(int cnt, int key)
 
 	printf("\n");
 	while (seekpos < rowcount) {
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (name)
 			printf("%s\n", name);
@@ -323,8 +281,9 @@ mal_command_generator(const char *text, int state)
 	}
 
 	while (seekpos < rowcount) {
-		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
-		mapi_fetch_row(table_hdl);
+		if (mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET) != MOK ||
+		    mapi_fetch_row(table_hdl) <= 0)
+			continue;
 		name = mapi_fetch_field(table_hdl, 0);
 		if (name)
 			return strdup(name);
@@ -370,8 +329,6 @@ init_readline(Mapi mid, char *lang, int save_history)
 	 * before std completion (filename) kicks in. */
 	if (strcmp(language, "sql") == 0) {
 		rl_attempted_completion_function = sql_completion;
-	} else if (strcmp(language, "mil") == 0) {
-		rl_attempted_completion_function = mil_completion;
 	} else if (strcmp(language, "mal") == 0) {
 		/* recognize the help function, should react to <FCN2> */
 #ifdef illegal_ESC_binding

@@ -119,6 +119,11 @@ SQLGetCursorNameW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	cursor = malloc(n);
+	if (cursor == NULL) {
+		/* Memory allocation error */
+		addStmtError(stmt, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	rc = SQLGetCursorName_(stmt, cursor, BufferLength, &n);
 	if (SQL_SUCCEEDED(rc))    {
 		fixWcharOut(rc, cursor, n, CursorName, BufferLength,

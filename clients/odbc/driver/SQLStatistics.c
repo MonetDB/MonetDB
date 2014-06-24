@@ -142,39 +142,52 @@ SQLStatistics_(ODBCStmt *stmt,
 			cat = ODBCParseOA("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseOA("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParseOA("t", "name",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
+			if (tab == NULL)
+				goto nomem;
 		}
 	} else {
 		if (NameLength1 > 0) {
 			cat = ODBCParseID("e", "value",
 					  (const char *) CatalogName,
 					  (size_t) NameLength1);
+			if (cat == NULL)
+				goto nomem;
 		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
 					  (size_t) NameLength2);
+			if (sch == NULL)
+				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParseID("t", "name",
 					  (const char *) TableName,
 					  (size_t) NameLength3);
+			if (tab == NULL)
+				goto nomem;
 		}
 	}
 
 	/* construct the query now */
 	query = malloc(1200 + (cat ? strlen(cat) : 0) +
 		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
-	assert(query);
+	if (query == NULL)
+		goto nomem;
 	query_end = query;
 
 	/* SQLStatistics returns a table with the following columns:
@@ -261,6 +274,18 @@ SQLStatistics_(ODBCStmt *stmt,
 	free(query);
 
 	return rc;
+
+  nomem:
+	/* note that query must be NULL when we get here */
+	if (cat)
+		free(cat);
+	if (sch)
+		free(sch);
+	if (tab)
+		free(tab);
+	/* Memory allocation error */
+	addStmtError(stmt, "HY001", NULL, 0);
+	return SQL_ERROR;
 }
 
 SQLRETURN SQL_API

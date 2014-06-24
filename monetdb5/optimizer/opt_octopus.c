@@ -270,7 +270,7 @@ isAView(InstrPtr p)
 static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
-	str s;
+	str s, msg= MAL_SUCCEED;
 	str l = NULL;
 
 	(void) cntxt;
@@ -278,13 +278,17 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
 	p = newStmt(mb, remoteRef,connectRef);
 	s = GDKgetenv("merovingian_uri");
 	if (s == NULL) /* aparently not under Merovingian control, fall back to local only */
-		SABAOTHgetLocalConnection(&l);
-	p= pushStr(mb,p, s == NULL ? l : s);
-	p= pushStr(mb,p,"monetdb");
-	p= pushStr(mb,p,"monetdb");
-	p= pushStr(mb,p,"msql");
+		msg = SABAOTHgetLocalConnection(&l);
+	if( msg == MAL_SUCCEED){
+		p= pushStr(mb,p, s == NULL ? l : s);
+		p= pushStr(mb,p,"monetdb");
+		p= pushStr(mb,p,"monetdb");
+		p= pushStr(mb,p,"msql");
+	}
 	if (l)
 		GDKfree(l);
+	if ( msg) 
+		GDKfree(msg);
 	return getArg(p,0);
 }
 
@@ -982,6 +986,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str tnm, tblname = NULL;
 	char rname[BUFSIZ];
 	MalBlkPtr *tentacle = NULL;
+	Module mod;
 
 	(void) stk;
 
@@ -992,7 +997,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
-	(void) fixModule(cntxt->nspace,octopusRef);
+	mod= fixModule(cntxt->nspace,octopusRef);
 	old = mb->stmt;
 	limit = mb->stop;
 
@@ -1006,8 +1011,10 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( update || autocommit==0 ) 
+	if ( update || autocommit==0 ) {
+		GDKfree(mod);
 		return 0;
+	}
 
 	/* find table leading the split */
 	for (i = 1; i < limit; i++) {
@@ -1017,8 +1024,10 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			break;
 		}
 	}
-	if ( !tblname )
+	if ( !tblname ){
+		GDKfree(mod);
 		return 0;
+	}
 
 	mb->legid = octopusSeq++;
 
@@ -1307,6 +1316,8 @@ cleanup:
 		octCluster = NULL;
 		octClCnt = 0;
 	}
+	if(mod)
+		GDKfree(mod);
 	return actions;
 }
 
@@ -1337,7 +1348,8 @@ OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b = BBPquickdesc(bid, FALSE);
 			if ( b != NULL && BATcount(b) > 0 )
 				return (int) BATcount(b);
-		}
+		} else
+			GDKfree(msg);
 		/*	return GDKnr_threads;*/
 	}
 	return -1;

@@ -1,7 +1,8 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Mon Mar 24 2014 Sjoerd Mullender <sjoerd@acm.org>
-- On Windows we now build the geom module against version 3.4.2 of the
-  geos library.
+* Tue Jun  3 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Fix configure to continue without Python if the python binary is
+  too old.  This instead of always aborting configure if python happens
+  to be too old.
 
