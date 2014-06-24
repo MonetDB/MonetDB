@@ -1654,7 +1654,7 @@ logger_cleanup(logger *lg)
 	return LOG_OK;
 }
 
-size_t
+lng
 logger_changes(logger *lg)
 {
 	return lg->changes;
