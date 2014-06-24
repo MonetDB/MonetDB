@@ -132,6 +132,8 @@ str
 SQLprelude(void)
 {
 	str tmp;
+	Client c;
+
 	Scenario ms, s = getFreeScenario();
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
@@ -161,9 +163,20 @@ SQLprelude(void)
 	ms->optimizer = "MALoptimizer";
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
+
+	/* init the SQL store */
 	tmp = SQLinit();
-	if (tmp != MAL_SUCCEED)
+	if (tmp != MAL_SUCCEED) {
 		return (tmp);
+	}
+
+	/* init the client as well */
+	c = mal_clients; /* run as admin in SQL mode*/
+	tmp = SQLinitClient(c);
+	if (tmp != MAL_SUCCEED) {
+		return (tmp);
+	}
+
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 
@@ -1061,6 +1074,7 @@ SQLinitClient(Client c)
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
 	} else {		/* handle upgrades */
+		fprintf(stdout, "# SQL catalog found, handling upgrades\n");
 		sql_subtype tp;
 		char *err;
 
