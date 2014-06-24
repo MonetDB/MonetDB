@@ -135,6 +135,8 @@ Ready.
 [ "",	"abcd"	]
 #DROP TABLE VARCHAR_TBL;
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/varchar.out) ! =
+
 # 22:22:59 >  
 # 22:22:59 >  Done.
 # 22:22:59 >  

@@ -47,6 +47,8 @@ Ready.
 #-- illegal string continuation syntax
 #SELECT 'first line'
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/strings_concat.out) ! =
+
 # 22:00:37 >  
 # 22:00:37 >  Done.
 # 22:00:37 >  

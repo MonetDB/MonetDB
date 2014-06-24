@@ -360,6 +360,8 @@ Ready.
 % 5 # length
 [ false	]
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/strings_like.out) ! =
+
 # 21:34:53 >  
 # 21:34:53 >  Done.
 # 21:34:53 >  

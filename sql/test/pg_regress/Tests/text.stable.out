@@ -45,6 +45,8 @@ Ready.
 [ "",	"doh!"	]
 [ "",	"hi de ho neighbor"	]
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/text.out) ! =
+
 # 21:59:24 >  
 # 21:59:24 >  Done.
 # 21:59:24 >  

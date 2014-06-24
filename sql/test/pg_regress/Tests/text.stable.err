@@ -81,6 +81,8 @@ MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = SELECT text 'this is a text string' = text 'this is a text strin' AS false;
 ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'this is a text string'"
 
+= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/text.out) ! =
+
 # 22:26:27 >  
 # 22:26:27 >  Done.
 # 22:26:27 >  

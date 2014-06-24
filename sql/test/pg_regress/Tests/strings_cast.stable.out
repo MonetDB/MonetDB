@@ -70,6 +70,8 @@ Ready.
 #SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
 #SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/strings_cast.out) ! =
+
 # 22:34:06 >  
 # 22:34:06 >  Done.
 # 22:34:06 >  

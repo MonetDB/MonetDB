@@ -95,6 +95,8 @@ MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
 QUERY = SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
 ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
 
+= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/strings_cast.out) ! =
+
 # 22:34:06 >  
 # 22:34:06 >  Done.
 # 22:34:06 >  

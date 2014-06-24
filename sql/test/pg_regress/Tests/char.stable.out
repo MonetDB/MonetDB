@@ -140,6 +140,8 @@ Ready.
 [ "",	"ab"	]
 [ "",	"abcd"	]
 
+= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/char.out) ! =
+
 # 22:08:26 >  
 # 22:08:26 >  Done.
 # 22:08:26 >  

@@ -90,6 +90,8 @@ MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
 ERROR = !value too long for type (var)char(4)
 
+= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/char.out) ! =
+
 # 22:08:26 >  
 # 22:08:26 >  Done.
 # 22:08:26 >  
