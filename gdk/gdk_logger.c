@@ -324,7 +324,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		if (tt == TYPE_oid && lg->read32bitoid)
 			rt = BATatoms[TYPE_int].atomRead;
 #endif
-		r = BATnew(ht, tt, l->nr);
+		assert(l->nr <= (lng) BUN_MAX);
+		r = BATnew(ht, tt, (BUN) l->nr);
 
 		if (hseq)
 			BATseqbase(r, 0);
@@ -592,10 +593,11 @@ log_read_use(logger *lg, trans *tr, logformat *l, char *name)
 static void
 la_bat_use(logger *lg, logaction *la)
 {
-	log_bid bid = la->nr;
+	log_bid bid = (log_bid) la->nr;
 	BAT *b = BATdescriptor(bid);
 	BUN p;
 
+	assert(la->nr <= (lng) INT_MAX);
 	if (!b) {
 		GDKerror("logger: could not use bat (%d) for %s\n", (int) bid, la->name);
 		return;
@@ -830,6 +832,7 @@ logger_readlog(logger *lg, char *filename)
 			tr = tr_find(tr, l.tid);
 		switch (l.flag) {
 		case LOG_START:
+			assert(l.nr <= (lng) INT_MAX);
 			if (l.nr > lg->tid)
 				lg->tid = (int)l.nr;
 			tr = tr_create(tr, (int)l.nr);
