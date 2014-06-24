@@ -831,7 +831,7 @@ logger_readlog(logger *lg, char *filename)
 		switch (l.flag) {
 		case LOG_START:
 			if (l.nr > lg->tid)
-				lg->tid = l.nr;
+				lg->tid = (int)l.nr;
 			tr = tr_create(tr, (int)l.nr);
 			if (lg->debug & 1)
 				fprintf(stderr, "#logger tstart %d\n", tr->tid);
@@ -1883,7 +1883,6 @@ log_delta(logger *lg, BAT *b, char *name)
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
-	BUN nr;
 
 	if (lg->debug & 128) {
 		/* logging is switched off */
@@ -1891,10 +1890,8 @@ log_delta(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	nr = (BUNlast(b) - BUNfirst(b));
-	assert(nr <= GDK_lng_max);
-	l.nr = nr;
-	lg->changes += l.nr;
+	l.nr = (BUNlast(b) - BUNfirst(b));
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1936,7 +1933,7 @@ log_bat(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(b) - b->batInserted);
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1954,7 +1951,7 @@ log_bat(logger *lg, BAT *b, char *name)
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
 
-			ok = wt(t, lg->log, l.nr);
+			ok = wt(t, lg->log, (size_t)l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
 				const void *h = BUNhead(bi, p);
@@ -1969,7 +1966,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	l.nr = (b->batFirst - b->batDeleted);
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
 		BATiter bi = bat_iterator(b);
@@ -2009,7 +2006,7 @@ log_bat_clear(logger *lg, char *name)
 
 	l.nr = 1;
 	l.tid = lg->tid;
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	l.flag = LOG_CLEAR;
 	if (log_write_format(lg, &l) == LOG_ERR ||
