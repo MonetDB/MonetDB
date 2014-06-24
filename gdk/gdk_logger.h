@@ -104,7 +104,7 @@ gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg);
-gdk_export size_t logger_changes(logger *lg);
+gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */

@@ -1,9 +1,9 @@
 stderr of test 'limit` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:44 >  
-# 17:10:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:44 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,57 +25,12 @@ stderr of test 'limit` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:45 >  
-# 17:10:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:45 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS two, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 > 50 
-        		ORDER BY unique1 LIMIT 2;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS five, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 > 60 
-        		ORDER BY unique1 LIMIT 5;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS two, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 > 60 AND unique1 < 63
-        		ORDER BY unique1 LIMIT 5;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS three, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 > 100 
-        		ORDER BY unique1 LIMIT 3 OFFSET 20;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS zero, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 < 50 
-        		ORDER BY unique1 DESC LIMIT 8 OFFSET 99;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS eleven, unique1, unique2, stringu1 
-        		FROM onek WHERE unique1 < 50 
-        		ORDER BY unique1 DESC LIMIT 20 OFFSET 39;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS ten, unique1, unique2, stringu1 
-        		FROM onek
-        		ORDER BY unique1 OFFSET 990;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS five, unique1, unique2, stringu1 
-        		FROM onek
-        		ORDER BY unique1 OFFSET 990 LIMIT 5;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT ''::text AS five, unique1, unique2, stringu1 
-        		FROM onek
-        		ORDER BY unique1 LIMIT 5 OFFSET 900;
-ERROR = !unexpected symbol (:)
 
-# 17:10:45 >  
-# 17:10:45 >  "Done."
-# 17:10:45 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

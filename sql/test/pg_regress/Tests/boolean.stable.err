@@ -1,9 +1,9 @@
 stderr of test 'boolean` in directory 'sql/test/pg_regress` itself:
 
 
-# 16:51:47 >  
-# 16:51:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30210" "--set" "mapi_usock=/var/tmp/mtest-399/.s.monetdb.30210" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 16:51:47 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,151 +17,20 @@ stderr of test 'boolean` in directory 'sql/test/pg_regress` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 30210
-# cmdline opt 	mapi_usock = /var/tmp/mtest-399/.s.monetdb.30210
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 16:51:48 >  
-# 16:51:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-399" "--port=30210"
-# 16:51:48 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT bool 'f' AS false;
-ERROR = !incorrect boolean f in: "select bool 'f' as"
-        !syntax error, unexpected BOOL_FALSE in: "false"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT bool 't' or bool 'f' AS true;
-ERROR = !incorrect boolean t in: "select bool 't' or"
-        !syntax error, unexpected ALIAS in: "bool"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT bool 't' and bool 'f' AS false;
-ERROR = !incorrect boolean t in: "select bool 't' and"
-        !syntax error, unexpected ALIAS in: "bool"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT not bool 'f' AS true;
-ERROR = !incorrect boolean f in: "select not bool 'f' as"
-        !syntax error, unexpected BOOL_TRUE in: "true"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT bool 't' = bool 'f' AS false;
-ERROR = !incorrect boolean t in: "select bool 't' ="
-        !syntax error, unexpected ALIAS in: "bool"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT bool 't' <> bool 'f' AS true;
-ERROR = !incorrect boolean t in: "select bool 't' <>"
-        !syntax error, unexpected ALIAS in: "bool"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (bool 't');
-ERROR = !incorrect boolean t in: "insert into booltbl1 (f1) values (bool 't')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (bool 'True');
-ERROR = !incorrect boolean True in: "insert into booltbl1 (f1) values (bool 'True')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS t_3, BOOLTBL1.*;
-ERROR = !Column expression Table 'booltbl1' unknown
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS zero, BOOLTBL1.*
-           FROM BOOLTBL1
-           WHERE booleq(bool 'false', f1);
-ERROR = !SELECT: no such binary operator 'booleq(boolean,boolean)'
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (bool 'f');
-ERROR = !incorrect boolean f in: "insert into booltbl1 (f1) values (bool 'f')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL2 (f1) VALUES (bool 'f');
-ERROR = !incorrect boolean f in: "insert into booltbl2 (f1) values (bool 'f')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL2 (f1) VALUES (bool 'False');
-ERROR = !incorrect boolean False in: "insert into booltbl2 (f1) values (bool 'False')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL2 (f1) VALUES (bool 'FALSE');
-ERROR = !incorrect boolean FALSE in: "insert into booltbl2 (f1) values (bool 'FALSE')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = INSERT INTO BOOLTBL2 (f1) 
-           VALUES (bool 'XXX');  
-ERROR = !incorrect boolean XXX in: "insert into booltbl2 (f1) 
-        !   values (bool 'XXX')"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS f_4, BOOLTBL2.*;
-ERROR = !Column expression Table 'booltbl2' unknown
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
-           WHERE BOOLTBL2.f1 <> BOOLTBL1.f1;
-ERROR = !SELECT: no such column 'booltbl2.f1'
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
-           WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);
-ERROR = !SELECT: no such column 'booltbl2.f1'
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
-           WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = bool 'false';
-ERROR = !SELECT: no such column 'booltbl2.f1'
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
-           WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = bool 'true'
-           ORDER BY BOOLTBL1.f1, BOOLTBL2.f1;
-ERROR = !relational query without result
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "True", f1
-           FROM BOOLTBL1
-           WHERE f1 IS TRUE;
-ERROR = !syntax error, unexpected BOOL_TRUE, expecting sqlNULL or NOT in: "select '' as "True", f1
-        !   from booltbl1
-        !   where f1 is true"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "Not False", f1
-           FROM BOOLTBL1
-           WHERE f1 IS NOT FALSE;
-ERROR = !syntax error, unexpected BOOL_FALSE, expecting sqlNULL in: "select '' as "Not False", f1
-        !   from booltbl1
-        !   where f1 is not false"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "False", f1
-           FROM BOOLTBL1
-           WHERE f1 IS FALSE;
-ERROR = !syntax error, unexpected BOOL_FALSE, expecting sqlNULL or NOT in: "select '' as "False", f1
-        !   from booltbl1
-        !   where f1 is false"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "Not True", f1
-           FROM BOOLTBL1
-           WHERE f1 IS NOT TRUE;
-ERROR = !syntax error, unexpected BOOL_TRUE, expecting sqlNULL in: "select '' as "Not True", f1
-        !   from booltbl1
-        !   where f1 is not true"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "True", f1
-           FROM BOOLTBL2
-           WHERE f1 IS TRUE;
-ERROR = !syntax error, unexpected BOOL_TRUE, expecting sqlNULL or NOT in: "select '' as "True", f1
-        !   from booltbl2
-        !   where f1 is true"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "Not False", f1
-           FROM BOOLTBL2
-           WHERE f1 IS NOT FALSE;
-ERROR = !syntax error, unexpected BOOL_FALSE, expecting sqlNULL in: "select '' as "Not False", f1
-        !   from booltbl2
-        !   where f1 is not false"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "False", f1
-           FROM BOOLTBL2
-           WHERE f1 IS FALSE;
-ERROR = !syntax error, unexpected BOOL_FALSE, expecting sqlNULL or NOT in: "select '' as "False", f1
-        !   from booltbl2
-        !   where f1 is false"
-MAPI  = (monetdb) /var/tmp/mtest-399/.s.monetdb.30210
-QUERY = SELECT '' AS "Not True", f1
-           FROM BOOLTBL2
-           WHERE f1 IS NOT TRUE;
-ERROR = !syntax error, unexpected BOOL_TRUE, expecting sqlNULL in: "select '' as "Not True", f1
-        !   from booltbl2
-        !   where f1 is not true"
 
-# 16:51:48 >  
-# 16:51:48 >  "Done."
-# 16:51:48 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

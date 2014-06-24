@@ -1,9 +1,9 @@
 stderr of test 'select_implicit` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:21 >  
-# 17:11:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:21 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,108 +25,12 @@ stderr of test 'select_implicit` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:22 >  
-# 17:11:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:22 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(*) FROM test_missing_target GROUP BY a ORDER BY b;
-ERROR = !SELECT: identifier 'b' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT c, count(*) FROM test_missing_target GROUP BY 1 ORDER BY 1;
-ERROR = !syntax error, unexpected sqlINT in: "select c, count(*) from test_missing_target group by 1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT c, count(*) FROM test_missing_target GROUP BY 3;
-ERROR = !syntax error, unexpected sqlINT in: "select c, count(*) from test_missing_target group by 3"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(*) FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY b ORDER BY b;
-ERROR = !SELECT: identifier 'b' ambiguous
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT a, a FROM test_missing_target
-        	ORDER BY a;
-ERROR = !SELECT: identifier 'a' ambiguous
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT a/2, a/2 FROM test_missing_target
-        	GROUP BY a/2 ORDER BY a/2;
-ERROR = !syntax error, unexpected '/', expecting SCOLON in: "select a/2, a/2 from test_missing_target
-        !	group by a/"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(*) INTO TABLE test_missing_target2 
-        FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY x.b ORDER BY x.b;
-ERROR = !syntax error, unexpected TABLE in: "select count(*) into table"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM test_missing_target2;
-ERROR = !SELECT: no such table 'test_missing_target2'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT a%2, count(b) FROM test_missing_target
-        GROUP BY test_missing_target.a%2
-        ORDER BY test_missing_target.a%2;
-ERROR = !syntax error, unexpected '%', expecting SCOLON in: "select a%2, count(b) from test_missing_target
-        !group by test_missing_target.a%"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(c) FROM test_missing_target
-        GROUP BY lower(test_missing_target.c)
-        ORDER BY lower(test_missing_target.c);
-ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select count(c) from test_missing_target
-        !group by lower("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(a) FROM test_missing_target GROUP BY a ORDER BY b;
-ERROR = !SELECT: identifier 'b' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(b) FROM test_missing_target GROUP BY b/2 ORDER BY b/2;
-ERROR = !syntax error, unexpected '/', expecting SCOLON in: "select count(b) from test_missing_target group by b/"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT lower(test_missing_target.c), count(c)
-          FROM test_missing_target GROUP BY lower(c) ORDER BY lower(c);
-ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select lower(test_missing_target.c), count(c)
-        !  from test_missing_target group by lower("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(b) FROM test_missing_target
-        	GROUP BY (b + 1) / 2 ORDER BY (b + 1) / 2 desc;
-ERROR = !syntax error, unexpected '(' in: "select count(b) from test_missing_target
-        !	group by ("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(x.a) FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY b/2 ORDER BY b/2;
-ERROR = !syntax error, unexpected '/', expecting SCOLON in: "select count(x.a) from test_missing_target x, test_missing_target y 
-        !	where x.a = y.a
-        !	group by b/"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT x.b/2, count(x.b) FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY x.b/2 ORDER BY x.b/2;
-ERROR = !syntax error, unexpected '/', expecting SCOLON in: "select x.b/2, count(x.b) from test_missing_target x, test_missing_target y 
-        !	where x.a = y.a
-        !	group by x.b/"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(b) FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY x.b/2;
-ERROR = !syntax error, unexpected '/', expecting SCOLON in: "select count(b) from test_missing_target x, test_missing_target y 
-        !	where x.a = y.a
-        !	group by x.b/"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(x.b) INTO TABLE test_missing_target3 
-        FROM test_missing_target x, test_missing_target y 
-        	WHERE x.a = y.a
-        	GROUP BY x.b/2 ORDER BY x.b/2;
-ERROR = !syntax error, unexpected TABLE in: "select count(x.b) into table"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM test_missing_target3;
-ERROR = !SELECT: no such table 'test_missing_target3'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP TABLE test_missing_target2;
-ERROR = !DROP TABLE: no such table 'test_missing_target2'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP TABLE test_missing_target3;
-ERROR = !DROP TABLE: no such table 'test_missing_target3'
 
-# 17:11:22 >  
-# 17:11:22 >  "Done."
-# 17:11:22 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

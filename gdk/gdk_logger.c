@@ -1654,7 +1654,7 @@ logger_cleanup(logger *lg)
 	return LOG_OK;
 }
 
-size_t
+lng
 logger_changes(logger *lg)
 {
 	return lg->changes;
@@ -1782,7 +1782,7 @@ log_delta(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(b) - BUNfirst(b));
-	lg->changes += (size_t)l.nr;
+	lg->changes += l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1824,7 +1824,7 @@ log_bat(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(b) - b->batInserted);
-	lg->changes += (size_t)l.nr;
+	lg->changes += l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1857,7 +1857,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	l.nr = (b->batFirst - b->batDeleted);
-	lg->changes += (size_t)l.nr;
+	lg->changes += l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
 		BATiter bi = bat_iterator(b);
@@ -1897,7 +1897,7 @@ log_bat_clear(logger *lg, char *name)
 
 	l.nr = 1;
 	l.tid = lg->tid;
-	lg->changes += (size_t)l.nr;
+	lg->changes += l.nr;
 
 	l.flag = LOG_CLEAR;
 	if (log_write_format(lg, &l) == LOG_ERR ||

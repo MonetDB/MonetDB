@@ -27,6 +27,11 @@
  * This implementation has a logarithmic complexity that only depends on the
  * sample size.
  *
+ * There is a pathological case when the sample size is almost the size of the BAT.
+ * Then, many collisions occur and performance degrades. To catch this, we 
+ * switch to antiset semantics when the sample size is larger than half the BAT
+ * size. Then, we generate the values that should be omitted from the sample.
+ *
  */
 
 #include "monetdb_config.h"
@@ -92,6 +97,22 @@ static void OIDTreeToBAT(struct oidtreenode* node, BAT *bat) {
 		OIDTreeToBAT(node->right, bat);
 }
 
+/* Antiset traversal, give us all values but the ones in the tree */
+static void OIDTreeToBATAntiset(struct oidtreenode* node, BAT *bat, BUN start, BUN stop) {
+	BUN noid;
+	if (node->left != NULL)
+        	OIDTreeToBATAntiset(node->left, bat, start, node->oid);
+	else 
+		for (noid = start+1; noid < node->oid; noid++)
+			((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;			
+	
+        if (node->right != NULL)
+ 		OIDTreeToBATAntiset(node->right, bat, node->oid, stop);
+	else
+		for (noid = node->oid+1; noid < stop; noid++)
+                        ((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
+}
+
 static void OIDTreeDestroy(struct oidtreenode* node) {
 	if (node == NULL) {
 		return;
@@ -110,7 +131,7 @@ static void OIDTreeDestroy(struct oidtreenode* node) {
 BAT *
 BATsample(BAT *b, BUN n) {
 	BAT *bn;
-	BUN cnt;
+	BUN cnt, slen;
 	BUN rescnt = 0;
 	struct oidtreenode* tree = NULL;
 
@@ -128,7 +149,7 @@ BATsample(BAT *b, BUN n) {
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
 		/* sample size is larger than the input BAT, return all oids */
-	} else if (cnt <= n) {
+	} else if (n >= cnt) {
 		bn = BATnew(TYPE_void, TYPE_void, cnt);
 		BATsetcount(bn, cnt);
 		BATseqbase(bn, 0);
@@ -136,9 +157,13 @@ BATsample(BAT *b, BUN n) {
 	} else {
 		BUN minoid = b->hseqbase;
 		BUN maxoid = b->hseqbase + cnt;
-		//oid *o;
-		bn = BATnew(TYPE_void, TYPE_oid, n);
-
+		/* if someone samples more than half of our tree, we do the antiset */
+		bit antiset = n > cnt/2;
+		slen = n;
+		if (antiset) 
+			n = cnt - n;
+		
+		bn = BATnew(TYPE_void, TYPE_oid, slen);
 		if (bn == NULL ) {
 			GDKerror("#BATsample: memory allocation error");
 			return NULL;
@@ -162,10 +187,14 @@ BATsample(BAT *b, BUN n) {
 			tree = ttree;
 			rescnt++;
 		}
-		OIDTreeToBAT(tree, bn);
+		if (!antiset) {
+			OIDTreeToBAT(tree, bn);
+		} else {
+			OIDTreeToBATAntiset(tree, bn, minoid-1, maxoid+1);
+		}
 		OIDTreeDestroy(tree);
 
-		BATsetcount(bn, n);
+		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;
 		bn->tsorted = 1;
 		bn->tkey = 1;

@@ -1,9 +1,9 @@
 stderr of test 'prepare` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:02 >  
-# 17:11:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:02 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,76 +25,12 @@ stderr of test 'prepare` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:02 >  
-# 17:11:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:02 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q1 AS SELECT 1;
-ERROR = !syntax error, unexpected IDENT in: "prepare q1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q1;
-ERROR = !constant (q1) unknown in: "execute q1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q1 AS SELECT 2;
-ERROR = !syntax error, unexpected IDENT in: "prepare q1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DEALLOCATE q1;
-ERROR = !syntax error, unexpected IDENT in: "deallocate"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q1 AS SELECT 2;
-ERROR = !syntax error, unexpected IDENT in: "prepare q1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q1;
-ERROR = !constant (q1) unknown in: "execute q1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DEALLOCATE PREPARE q1;
-ERROR = !syntax error, unexpected IDENT in: "deallocate"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q2(text) AS
-        	SELECT datname, datistemplate, datallowconn
-        	FROM pg_database WHERE datname = $1;
-ERROR = !syntax error, unexpected IDENT in: "prepare q2"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q2('regression');
-ERROR = !constant (q2) unknown in: "execute q2"
-        !syntax error, unexpected STRING, expecting SELECT or '(' in: "('regression'"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q3(text, int, float, boolean, oid, smallint) AS
-        	SELECT * FROM tenk1 WHERE string4 = $1 AND (four = $2 OR
-        	ten = $3::bigint OR true = $4 OR oid = $5 OR odd = $6::int);
-ERROR = !syntax error, unexpected IDENT in: "prepare q3"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q3('AAAAxx', 5::smallint, 10.5::float, false, 500::oid, 4::bigint);
-ERROR = !constant (q3) unknown in: "execute q3"
-        !syntax error, unexpected STRING, expecting SELECT or '(' in: "('AAAAxx'"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q3('bool');
-ERROR = !constant (q3) unknown in: "execute q3"
-        !syntax error, unexpected STRING, expecting SELECT or '(' in: "('bool'"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q3('bytea', 5::smallint, 10.5::float, false, 500::oid, 4::bigint, true);
-ERROR = !constant (q3) unknown in: "execute q3"
-        !syntax error, unexpected STRING, expecting SELECT or '(' in: "('bytea'"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = EXECUTE q3(5::smallint, 10.5::float, false, 500::oid, 4::bigint, 'bytea');
-ERROR = !constant (q3) unknown in: "execute q3"
-        !syntax error, unexpected sqlINT, expecting SELECT or '(' in: "(5"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q4(nonexistenttype) AS SELECT $1;
-ERROR = !syntax error, unexpected IDENT in: "prepare q4"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = PREPARE q5(int, text) AS
-        	SELECT * FROM tenk1 WHERE unique1 = $1 OR stringu1 = $2;
-ERROR = !syntax error, unexpected IDENT in: "prepare q5"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TEMPORARY TABLE q5_prep_results AS EXECUTE q5(200, 'DTAAAA');
-ERROR = !syntax error, unexpected EXECUTE, expecting SELECT or '(' in: "create temporary table q5_prep_results as execute"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM q5_prep_results;
-ERROR = !SELECT: no such table 'q5_prep_results'
 
-# 17:11:03 >  
-# 17:11:03 >  "Done."
-# 17:11:03 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
