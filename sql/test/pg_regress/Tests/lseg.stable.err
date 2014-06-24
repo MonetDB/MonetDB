@@ -1,9 +1,9 @@
 stderr of test 'lseg` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:45 >  
-# 17:10:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:45 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,51 +25,12 @@ stderr of test 'lseg` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:46 >  
-# 17:10:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:46 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TABLE LSEG_TBL (s lseg);
-ERROR = !type (lseg) unknown in: "create table lseg_tbl (s lseg)"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('[(1,2),(3,4)]');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('(0,0),(6,6)');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('10,-10 ,-3,-4');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('[-1e6,2e2,3e5, -4e1]');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('(11,22,33,44)');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('(3asdf,2 ,3,4r2)');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('[1,2,3, 4');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('[(,2),(3,4)]');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO LSEG_TBL VALUES ('[(1,2),(3,4)');
-ERROR = !INSERT INTO: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = select * from LSEG_TBL;
-ERROR = !SELECT: no such table 'lseg_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM LSEG_TBL WHERE s <= lseg '[(1,2),(3,4)]';
-ERROR = !type (lseg) unknown in: "select * from lseg_tbl where s <= lseg '[(1,2),(3,4)]';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM LSEG_TBL WHERE (s <-> lseg '[(1,2),(3,4)]') < 10;
-ERROR = !syntax error, unexpected COMPARISON in: "select * from lseg_tbl where (s <->"
 
-# 17:10:46 >  
-# 17:10:46 >  "Done."
-# 17:10:46 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

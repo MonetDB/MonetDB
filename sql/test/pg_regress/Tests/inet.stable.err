@@ -1,9 +1,9 @@
 stderr of test 'inet` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:36 >  
-# 17:10:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:36 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,141 +25,12 @@ stderr of test 'inet` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:37 >  
-# 17:10:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:37 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP TABLE INET_TBL;
-ERROR = !DROP TABLE: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TABLE INET_TBL (c cidr, i inet);
-ERROR = !type (cidr) unknown in: "create table inet_tbl (c cidr,"
-        !syntax error, unexpected IDENT in: "i"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.226/24');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.0/26', '192.168.1.226');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.0/24');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.0/25');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.255/24');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.255/25');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10', '10.1.2.3/8');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10.0.0.0', '10.1.2.3/8');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10.1.2.3', '10.1.2.3/32');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10.1.2', '10.1.2.3/24');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10.1', '10.1.2.3/16');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10', '10.1.2.3/8');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10', '11.1.2.3/8');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10', '9.1.2.3/8');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10:23::f1', '10:23::f1/64');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10:23::8000/113', '10:23::ffff');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('::ffff:1.2.3.4', '::4.3.2.1/24');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.2/30', '192.168.1.226');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES ('1234::1234::1234', '::1.2.3.4');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES (cidr('192.168.1.2/30'), '192.168.1.226');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INET_TBL (c, i) VALUES (cidr('ffff:ffff:ffff:ffff::/24'), '::192.168.1.226');
-ERROR = !INSERT INTO: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, c AS cidr, i AS inet FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, i AS inet, host(i), text(i), family(i) FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, c AS cidr, broadcast(c),
-          i AS inet, broadcast(i) FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, c AS cidr, network(c) AS "network(cidr)",
-          i AS inet, network(i) AS "network(inet)" FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, c AS cidr, masklen(c) AS "masklen(cidr)",
-          i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS four, c AS cidr, masklen(c) AS "masklen(cidr)",
-          i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL
-          WHERE masklen(c) <= 8;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS six, c AS cidr, i AS inet FROM INET_TBL
-          WHERE c = i;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, i, c,
-          i < c AS lt, i <= c AS le, i = c AS eq, 
-          i >= c AS ge, i > c AS gt, i <> c AS ne,
-          i << c AS sb, i <<= c AS sbe,
-          i >> c AS sup, i >>= c AS spe
-          FROM INET_TBL;
-ERROR = !syntax error, unexpected '=' in: "select '' as ten, i, c,
-        !  i < c as lt, i <= c as le, i = c as eq, 
-        !  i >= c as ge, i > c as gt, i <> c as ne,
-        !  i << c as sb, i <<="
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, set_masklen(inet(text(i)), 24) FROM INET_TBL;
-ERROR = !SELECT: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX inet_idx1 ON inet_tbl(i);
-ERROR = !CREATE INDEX: no such table 'inet_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET enable_seqscan TO off;
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set enable_seqscan to"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM inet_tbl WHERE i<<'192.168.1.0/24'::cidr;
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM inet_tbl WHERE i<<='192.168.1.0/24'::cidr;
-ERROR = !syntax error, unexpected '=' in: "select * from inet_tbl where i<<="
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET enable_seqscan TO on;
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set enable_seqscan to"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP INDEX inet_idx1;
-ERROR = !DROP INDEX: no such index 'inet_idx1'
 
-# 17:10:37 >  
-# 17:10:37 >  "Done."
-# 17:10:37 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

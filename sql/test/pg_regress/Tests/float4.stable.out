@@ -1,9 +1,9 @@
 stdout of test 'float4` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:24 >  
-# 17:10:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:24 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,128 +20,233 @@ stdout of test 'float4` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:25 >  
-# 17:10:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:25 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE FLOAT4_TBL (f1  float);
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('    0.0');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e+20');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e-20');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('10e40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('10e-40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
-[ 1	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	1	]
-[ "",	1e+41	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
-% .L,	sys.f # table_name
-% one,	f1 # name
-% char,	double # type
-% 0,	24 # length
-#SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1;
-% .L,	sys.f # table_name
-% three,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
-% .L,	sys.f # table_name
-% three,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	-1	]
-[ "",	1,	-1	]
-[ "",	1e+41,	-1e+42	]
-[ "",	9,	-9	]
-#SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	1	]
-[ "",	1,	-10	]
-[ "",	1e+41,	1e+41	]
-[ "",	9,	-10	]
-#SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	-1	]
-[ "",	1,	-1	]
-[ "",	1e+41,	-1e+40	]
-[ "",	9,	-9	]
-#SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	1	]
-[ "",	1,	10	]
-[ "",	1e+41,	1e+41	]
-[ "",	9,	10	]
-#UPDATE FLOAT4_TBL
-#   SET f1 = FLOAT4_TBL.f1 * '-1'
-#   WHERE FLOAT4_TBL.f1 > '0.0';
-[ 4	]
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:25 >  
-# 17:10:25 >  "Done."
-# 17:10:25 >  
+--
+-- FLOAT4
+--
+CREATE TABLE FLOAT4_TBL (f1  float4);
+INSERT INTO FLOAT4_TBL(f1) VALUES ('    0.0');
+INSERT INTO FLOAT4_TBL(f1) VALUES ('1004.30   ');
+INSERT INTO FLOAT4_TBL(f1) VALUES ('     -34.84    ');
+INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e+20');
+INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e-20');
+-- test for over and under flow 
+INSERT INTO FLOAT4_TBL(f1) VALUES ('10e40');
+ERROR:  type "real" value out of range: overflow
+INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e40');
+ERROR:  type "real" value out of range: overflow
+INSERT INTO FLOAT4_TBL(f1) VALUES ('10e-40');
+ERROR:  type "real" value out of range: underflow
+INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
+ERROR:  type "real" value out of range: underflow
+-- bad input
+INSERT INTO FLOAT4_TBL(f1) VALUES ('       ');
+ERROR:  invalid input syntax for type real: "       "
+INSERT INTO FLOAT4_TBL(f1) VALUES ('xyz');
+ERROR:  invalid input syntax for type real: "xyz"
+INSERT INTO FLOAT4_TBL(f1) VALUES ('5.0.0');
+ERROR:  invalid input syntax for type real: "5.0.0"
+INSERT INTO FLOAT4_TBL(f1) VALUES ('5 . 0');
+ERROR:  invalid input syntax for type real: "5 . 0"
+INSERT INTO FLOAT4_TBL(f1) VALUES ('5.   0');
+ERROR:  invalid input syntax for type real: "5.   0"
+INSERT INTO FLOAT4_TBL(f1) VALUES ('     - 3.0');
+ERROR:  invalid input syntax for type real: "     - 3.0"
+INSERT INTO FLOAT4_TBL(f1) VALUES ('123            5');
+ERROR:  invalid input syntax for type real: "123            5"
+-- special inputs
+SELECT 'NaN'::float4;
+ float4 
+--------
+    NaN
+(1 row)
+
+SELECT 'nan'::float4;
+ float4 
+--------
+    NaN
+(1 row)
+
+SELECT '   NAN  '::float4;
+ float4 
+--------
+    NaN
+(1 row)
+
+SELECT 'infinity'::float4;
+  float4  
+----------
+ Infinity
+(1 row)
+
+SELECT '          -INFINiTY   '::float4;
+  float4   
+-----------
+ -Infinity
+(1 row)
+
+-- bad special inputs
+SELECT 'N A N'::float4;
+ERROR:  invalid input syntax for type real: "N A N"
+SELECT 'NaN x'::float4;
+ERROR:  invalid input syntax for type real: "NaN x"
+SELECT ' INFINITY    x'::float4;
+ERROR:  invalid input syntax for type real: " INFINITY    x"
+SELECT 'Infinity'::float4 + 100.0;
+ERROR:  type "double precision" value out of range: overflow
+SELECT 'Infinity'::float4 / 'Infinity'::float4;
+ ?column? 
+----------
+      NaN
+(1 row)
+
+SELECT 'nan'::float4 / 'nan'::float4;
+ ?column? 
+----------
+      NaN
+(1 row)
+
+SELECT '' AS five, FLOAT4_TBL.*;
+ five |     f1      
+------+-------------
+      |           0
+      |      1004.3
+      |      -34.84
+      | 1.23457e+20
+      | 1.23457e-20
+(5 rows)
+
+SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
+ four |     f1      
+------+-------------
+      |           0
+      |      -34.84
+      | 1.23457e+20
+      | 1.23457e-20
+(4 rows)
+
+SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
+ one |   f1   
+-----+--------
+     | 1004.3
+(1 row)
+
+SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1;
+ three |     f1      
+-------+-------------
+       |           0
+       |      -34.84
+       | 1.23457e-20
+(3 rows)
+
+SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
+ three |     f1      
+-------+-------------
+       |           0
+       |      -34.84
+       | 1.23457e-20
+(3 rows)
+
+SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
+ four |     f1      
+------+-------------
+      |           0
+      |      1004.3
+      |      -34.84
+      | 1.23457e-20
+(4 rows)
+
+SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
+ four |     f1      
+------+-------------
+      |           0
+      |      1004.3
+      |      -34.84
+      | 1.23457e-20
+(4 rows)
+
+SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
+   WHERE f.f1 > '0.0';
+ three |     f1      |      x       
+-------+-------------+--------------
+       |      1004.3 |       -10043
+       | 1.23457e+20 | -1.23457e+21
+       | 1.23457e-20 | -1.23457e-19
+(3 rows)
+
+SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
+   WHERE f.f1 > '0.0';
+ three |     f1      |      x      
+-------+-------------+-------------
+       |      1004.3 |       994.3
+       | 1.23457e+20 | 1.23457e+20
+       | 1.23457e-20 |         -10
+(3 rows)
+
+SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
+   WHERE f.f1 > '0.0';
+ three |     f1      |      x       
+-------+-------------+--------------
+       |      1004.3 |      -100.43
+       | 1.23457e+20 | -1.23457e+19
+       | 1.23457e-20 | -1.23457e-21
+(3 rows)
+
+SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
+   WHERE f.f1 > '0.0';
+ three |     f1      |      x      
+-------+-------------+-------------
+       |      1004.3 |      1014.3
+       | 1.23457e+20 | 1.23457e+20
+       | 1.23457e-20 |          10
+(3 rows)
+
+-- test divide by zero
+SELECT '' AS bad, f.f1 / '0.0' from FLOAT4_TBL f;
+ERROR:  division by zero
+SELECT '' AS five, FLOAT4_TBL.*;
+ five |     f1      
+------+-------------
+      |           0
+      |      1004.3
+      |      -34.84
+      | 1.23457e+20
+      | 1.23457e-20
+(5 rows)
+
+-- test the unary float4abs operator 
+SELECT '' AS five, f.f1, @f.f1 AS abs_f1 FROM FLOAT4_TBL f;
+ five |     f1      |   abs_f1    
+------+-------------+-------------
+      |           0 |           0
+      |      1004.3 |      1004.3
+      |      -34.84 |       34.84
+      | 1.23457e+20 | 1.23457e+20
+      | 1.23457e-20 | 1.23457e-20
+(5 rows)
+
+UPDATE FLOAT4_TBL
+   SET f1 = FLOAT4_TBL.f1 * '-1'
+   WHERE FLOAT4_TBL.f1 > '0.0';
+SELECT '' AS five, FLOAT4_TBL.*;
+ five |      f1      
+------+--------------
+      |            0
+      |       -34.84
+      |      -1004.3
+      | -1.23457e+20
+      | -1.23457e-20
+(5 rows)
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

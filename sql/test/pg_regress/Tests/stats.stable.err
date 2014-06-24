@@ -1,9 +1,9 @@
 stderr of test 'stats` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:28 >  
-# 17:11:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:28 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,74 +25,12 @@ stderr of test 'stats` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:29 >  
-# 17:11:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:29 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SHOW stats_start_collector;  -- must be on
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TEMP TABLE prevstats AS
-        SELECT t.seq_scan, t.seq_tup_read, t.idx_scan, t.idx_tup_fetch,
-               (b.heap_blks_read + b.heap_blks_hit) AS heap_blks,
-               (b.idx_blks_read + b.idx_blks_hit) AS idx_blks
-          FROM pg_catalog.pg_stat_user_tables AS t,
-               pg_catalog.pg_statio_user_tables AS b
-         WHERE t.relname='tenk2' AND b.relname='tenk2';
-ERROR = !syntax error, unexpected SCOLON, expecting WITH in: "create temp table prevstats as
-        !select t.seq_scan, t.seq_tup_read, t.idx_scan, t.idx_tup_fetch,
-        !       (b.heap_blks_read + b.heap_blks_hit) as heap_blks,
-        !       (b.idx_blks_read + b.idx_blks_hit) as idx_blks
-        !  from pg_catalog.pg_stat_user_tables as t,
-        !       pg_catalog.pg_statio_user_tables as b
-        ! where t.relname='tenk2' and b.relname='tenk2';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET stats_block_level = on;
-ERROR = !syntax error, unexpected ON in: "set stats_block_level = on"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET stats_row_level = on;
-ERROR = !syntax error, unexpected ON in: "set stats_row_level = on"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE FUNCTION sleep(interval) RETURNS integer AS '
-        DECLARE
-          endtime timestamp;
-        BEGIN
-          endtime := timeofday()::timestamp + $1;
-          WHILE timeofday()::timestamp < endtime LOOP
-          END LOOP;
-          RETURN 0;
-        COMMIT;
-        ' LANGUAGE 'plpgsql';
-ERROR = !syntax error, unexpected ')' in: "create function sleep(interval)"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(*) FROM tenk2;
-ERROR = !SELECT: no such table 'tenk2'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT count(*) FROM tenk2 WHERE unique1 = 1;
-ERROR = !SELECT: no such table 'tenk2'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT sleep('0:0:2'::interval);
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT st.seq_scan >= pr.seq_scan + 1,
-               st.seq_tup_read >= pr.seq_tup_read + cl.reltuples,
-               st.idx_scan >= pr.idx_scan + 1,
-               st.idx_tup_fetch >= pr.idx_tup_fetch + 1
-          FROM pg_stat_user_tables AS st, pg_class AS cl, prevstats AS pr
-         WHERE st.relname='tenk2' AND cl.relname='tenk2';
-ERROR = !SELECT: no such table 'pg_stat_user_tables'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT st.heap_blks_read + st.heap_blks_hit >= pr.heap_blks + cl.relpages,
-               st.idx_blks_read + st.idx_blks_hit >= pr.idx_blks + 1
-          FROM pg_statio_user_tables AS st, pg_class AS cl, prevstats AS pr
-         WHERE st.relname='tenk2' AND cl.relname='tenk2';
-ERROR = !SELECT: no such table 'pg_statio_user_tables'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP FUNCTION sleep(interval);
-ERROR = !syntax error, unexpected ')' in: "drop function sleep(interval)"
 
-# 17:11:29 >  
-# 17:11:29 >  "Done."
-# 17:11:29 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

@@ -428,7 +428,7 @@ int log_sequence(logger *lg, int seq, lng id);
 int log_tend(logger *lg);
 int log_tstart(logger *lg);
 log_bid logger_add_bat(logger *lg, BAT *b, char *name);
-size_t logger_changes(logger *lg);
+lng logger_changes(logger *lg);
 int logger_cleanup(logger *lg);
 logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 void logger_del_bat(logger *lg, log_bid bid);

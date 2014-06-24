@@ -1093,12 +1093,12 @@ SQLinitClient(Client c)
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
 	} else {		/* handle upgrades */
+		sql_subtype tp;
+		char *err;
+        
 #ifdef _SQL_SCENARIO_DEBUG
 		fprintf(stdout, "# SQL catalog found, handling upgrades\n");
 #endif
-
-		sql_subtype tp;
-		char *err;
 
 		if (!m->sa)
 			m->sa = sa_create();

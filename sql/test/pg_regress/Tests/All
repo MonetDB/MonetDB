@@ -1,14 +1,14 @@
-#load
-#
-## these need to go here, later tests depend on their tables to exist
-#char
-#varchar
-#text
-#
-#strings_concat
-#strings_cast
-#strings_like
-#
+load
+
+# these need to go here, later tests depend on their tables to exist
+char
+varchar
+text
+
+strings_concat
+strings_cast
+strings_like
+
 #pgregress set
 # abstime NOT supported ABSTIME, deprecated in Postgresql
 aggregates
@@ -19,7 +19,7 @@ boolean
 box
 btree_index
 case
-char
+##char
 circle
 cluster
 comments
@@ -86,13 +86,13 @@ select_views
 sequence
 sql_ascii
 stats
-strings_cast
-strings_concat
-strings_like
+##strings_cast
+##strings_concat
+##strings_like
 strings
 subselect
 temp
-text
+##text
 time
 timestamp
 timestamptz
@@ -105,5 +105,5 @@ type_sanity
 union
 update
 vacuum
-varchar
+##varchar
 without_oid
