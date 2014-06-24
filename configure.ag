@@ -2389,7 +2389,7 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 #proj only used in geom module
-have_proj=''
+have_proj="auto" 
 PROJ_INCS=''
 PROJ_LIBS=''
 AC_ARG_WITH(proj,
@@ -2398,20 +2398,41 @@ AC_ARG_WITH(proj,
 	have_proj="$withval")
 case "$enable_geom" in
 yes|auto)
-	if test "x$have_proj" != xno; then
+	case "$have_proj" in
+	auto|yes)
+		;;
+	*)
 		PROJ_INCS="-I$have_proj/include"
 		PROJ_LIBS="-L$have_proj/lib -lproj"
-	fi
-	if test "x$have_proj" = xno; then
-		if test "x$enable_geon" = xyes; then
-			AC_MSG_ERROR([proj library required for geom module])
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $PROJ_CFLAGS"
+	LDFLAGS="$LDFLAGS $PROJ_LIBS"
+	AC_CHECK_HEADER(proj_api.h,
+		AC_CHECK_LIB(proj, pj_init_plus, ,
+			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
+			  have_proj=no; why_have_proj="(proj library not found)" ], ),
+		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
+		  have_proj=no; why_have_proj="(proj_api.h header not found)" ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	case "$have_proj" in
+	no)
+		if test "x$enable_geom" = xyes; then
+			AC_MSG_ERROR([$why_have_proj])
 		fi
 		# no proj, so don't compile geom
 		enable_geom=no
 		if test "x$disable_geom" = x; then
-			disable_geom="(proj library required for geom module)"
+			disable_geom="$why_have_proj"
 		fi
-	fi
+		;;
+	auto|yes)
+		PROJ_LIBS="-lproj"
+		;;
+	esac
 	;;
 esac
 AC_SUBST(PROJ_INCS)
