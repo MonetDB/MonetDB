@@ -15,18 +15,127 @@ stdout of test 'varchar` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module v2.31.0 loaded
 
 Ready.
-
-# 17:12:08 >  
-# 17:12:08 >  "./varchar.SQL.sh" "varchar"
-# 17:12:08 >  
-
-
-# 17:12:08 >  
-# 17:12:08 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/varchar.sql
-# 17:12:08 >  
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 
-# 17:12:08 >  
-# 17:12:08 >  "Done."
-# 17:12:08 >  
+# 22:22:59 >  
+# 22:22:59 >  ./varchar.SQL.sh varchar 
+# 22:22:59 >  
+
+
+# 22:22:59 >  
+# 22:22:59 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=30462  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/varchar.sql
+# 22:22:59 >  
+
+#--
+#-- VARCHAR
+#--
+#CREATE TABLE VARCHAR_TBL(f1 varchar(1));
+[ 1	]
+[ 1	]
+#-- any of the following three input formats are acceptable 
+[ 1	]
+[ 1	]
+[ 1	]
+#-- zero-length char 
+[ 1	]
+#-- try varchar's of greater than 1 length 
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('cd');
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ');
+#SELECT '' AS seven, VARCHAR_TBL.* FROM VARCHAR_TBL;
+% .L,	sys.varchar_tbl # table_name
+% seven,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"a"	]
+[ "",	"A"	]
+[ "",	"1"	]
+[ "",	"2"	]
+[ "",	"3"	]
+[ "",	""	]
+#SELECT '' AS six, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 <> 'a';
+% .L,	sys.c # table_name
+% six,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"A"	]
+[ "",	"1"	]
+[ "",	"2"	]
+[ "",	"3"	]
+[ "",	""	]
+#SELECT '' AS one, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 = 'a';
+% .L,	sys.c # table_name
+% one,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"a"	]
+#SELECT '' AS five, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 < 'a';
+% .L,	sys.c # table_name
+% five,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"A"	]
+[ "",	"1"	]
+[ "",	"2"	]
+[ "",	"3"	]
+[ "",	""	]
+#SELECT '' AS six, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 <= 'a';
+% .L,	sys.c # table_name
+% six,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"a"	]
+[ "",	"A"	]
+[ "",	"1"	]
+[ "",	"2"	]
+[ "",	"3"	]
+[ "",	""	]
+#SELECT '' AS one, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 > 'a';
+% .L,	sys.c # table_name
+% one,	f1 # name
+% char,	varchar # type
+% 0,	0 # length
+#SELECT '' AS two, c.*
+#   FROM VARCHAR_TBL c
+#   WHERE c.f1 >= 'a';
+% .L,	sys.c # table_name
+% two,	f1 # name
+% char,	varchar # type
+% 0,	1 # length
+[ "",	"a"	]
+#DROP TABLE VARCHAR_TBL;
+#--
+#-- Now test longer arrays of char
+#--
+#CREATE TABLE VARCHAR_TBL(f1 varchar(4));
+[ 1	]
+[ 1	]
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('abcde');
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd    ');
+#SELECT '' AS four, VARCHAR_TBL.* FROM VARCHAR_TBL;
+% .L,	sys.varchar_tbl # table_name
+% four,	f1 # name
+% char,	varchar # type
+% 0,	4 # length
+[ "",	"a"	]
+[ "",	"ab"	]
+[ "",	"abcd"	]
+#DROP TABLE VARCHAR_TBL;
+
+# 22:22:59 >  
+# 22:22:59 >  Done.
+# 22:22:59 >  
 

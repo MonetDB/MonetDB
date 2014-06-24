@@ -65,17 +65,37 @@ stderr of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 #warning: please don't forget to set your vault key!
 #(see /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf)
 
-# 17:11:31 >  
-# 17:11:31 >  "./strings_cast.SQL.sh" "strings_cast"
-# 17:11:31 >  
+# 22:34:06 >  
+# 22:34:06 >  ./strings_cast.SQL.sh strings_cast 
+# 22:34:06 >  
 
 
-# 17:11:31 >  
-# 17:11:31 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-1142 --port=38959 -e < /ufs/dinther/dev/dev/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
-# 17:11:31 >  
+# 19:52:32 >  
+# 19:52:32 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-15695 --port=36739 -e < /home/niels/data/rc/clean/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
+# 19:52:32 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+ERROR = !SELECT: no such table 'char_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(name 'namefield' AS text) AS "text(name)";
+ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
+ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
+ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select cast(f1 as varchar)"
+        !syntax error, unexpected AS in: "as"
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
+ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select cast(f1 as varchar)"
+        !syntax error, unexpected AS in: "as"
+MAPI  = (monetdb) /var/tmp/mtest-15695/.s.monetdb.36739
+QUERY = SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
+ERROR = !syntax error, unexpected STRING, expecting AS in: "select cast(name 'namefield'"
 
-# 17:11:31 >  
-# 17:11:31 >  "Done."
-# 17:11:31 >  
+# 22:34:06 >  
+# 22:34:06 >  Done.
+# 22:34:06 >  
 
