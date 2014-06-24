@@ -17,7 +17,11 @@
 
 MTSAFE
 INCLUDES = ../lib \
-		   $(GEOS_INCS) $(PROJ_INCS)
+           ../../gdk \
+           ../../common/stream \
+           ../../common/options \
+           ../../monetdb5/mal \
+           $(GEOS_INCS) $(PROJ_INCS)
 
 lib__geom = {
 	MODULE
