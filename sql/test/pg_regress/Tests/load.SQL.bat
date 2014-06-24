@@ -1,7 +1,7 @@
 @prompt # $t $g
 @echo on
 
-%SQL_CLIENT% < "create_table.sql"
+%SQL_CLIENT% < "%TSTSRCDIR%/create_table.sql"
 
 %SQL_CLIENT% < "%TSTTRGDIR%/load.copy.source"
 
