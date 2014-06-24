@@ -1771,7 +1771,6 @@ log_delta(logger *lg, BAT *b, char *name)
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
-	lng nr;
 
 	if (lg->debug & 128) {
 		/* logging is switched off */
@@ -1779,10 +1778,8 @@ log_delta(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	nr = (BUNlast(b) - BUNfirst(b));
-	assert(nr <= GDK_lng_max);
-	l.nr = nr;
-	lg->changes += l.nr;
+	l.nr = (BUNlast(b) - BUNfirst(b));
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1824,7 +1821,7 @@ log_bat(logger *lg, BAT *b, char *name)
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(b) - b->batInserted);
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -1857,7 +1854,7 @@ log_bat(logger *lg, BAT *b, char *name)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	l.nr = (b->batFirst - b->batDeleted);
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	if (l.nr && ok == GDK_SUCCEED) {
 		BATiter bi = bat_iterator(b);
@@ -1897,7 +1894,7 @@ log_bat_clear(logger *lg, char *name)
 
 	l.nr = 1;
 	l.tid = lg->tid;
-	lg->changes += l.nr;
+	lg->changes += (size_t)l.nr;
 
 	l.flag = LOG_CLEAR;
 	if (log_write_format(lg, &l) == LOG_ERR ||
