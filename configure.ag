@@ -196,7 +196,7 @@ no-auto)
 	;;
 esac
 
-dft_geom=auto
+dft_geom=yes
 AC_ARG_ENABLE(geom,
 	AS_HELP_STRING([--enable-geom],
 		[enable support for geom module (default=auto)]),
