@@ -1,9 +1,9 @@
 stdout of test 'update` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:59 >  
-# 17:11:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:59 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,35 +20,16 @@ stdout of test 'update` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:59 >  
-# 17:11:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:59 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE update_test (
-#    a   INT DEFAULT 10,
-#    b   INT
-#);
-#INSERT INTO update_test VALUES (5, 10);
-[ 1	]
-#INSERT INTO update_test VALUES (10, 15);
-[ 1	]
-#SELECT * FROM update_test;
-% sys.update_test,	sys.update_test # table_name
-% a,	b # name
-% int,	int # type
-% 2,	2 # length
-[ 5,	10	]
-[ 10,	15	]
-#SELECT * FROM update_test;
-% sys.update_test,	sys.update_test # table_name
-% a,	b # name
-% int,	int # type
-% 2,	2 # length
-[ 5,	10	]
-[ 10,	15	]
-#DROP TABLE update_test;
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:11:59 >  
-# 17:11:59 >  "Done."
-# 17:11:59 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

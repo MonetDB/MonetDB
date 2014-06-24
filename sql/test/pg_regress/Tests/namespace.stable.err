@@ -1,9 +1,9 @@
 stderr of test 'namespace` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:48 >  
-# 17:10:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:48 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,50 +25,12 @@ stderr of test 'namespace` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:49 >  
-# 17:10:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:49 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE SCHEMA test_schema_1
-               CREATE UNIQUE INDEX abc_a_idx ON abc (a)
-        
-               CREATE VIEW abc_view AS
-                      SELECT a+1 AS a, b+1 AS b FROM abc
-        
-               CREATE TABLE abc (
-                      a serial,
-                      b int UNIQUE
-               );
-ERROR = !CREATE INDEX: no such table 'abc'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT COUNT(*) FROM pg_class WHERE relnamespace =
-            (SELECT oid FROM pg_namespace WHERE nspname = 'test_schema_1');
-ERROR = !SELECT: no such table 'pg_class'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO test_schema_1.abc DEFAULT VALUES;
-ERROR = !INSERT INTO: no such schema 'test_schema_1'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO test_schema_1.abc DEFAULT VALUES;
-ERROR = !INSERT INTO: no such schema 'test_schema_1'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO test_schema_1.abc DEFAULT VALUES;
-ERROR = !INSERT INTO: no such schema 'test_schema_1'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM test_schema_1.abc;
-ERROR = !SELECT: no such schema 'test_schema_1'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM test_schema_1.abc_view;
-ERROR = !SELECT: no such schema 'test_schema_1'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP SCHEMA test_schema_1 CASCADE;
-ERROR = !DROP SCHEMA: name test_schema_1 does not exist
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT COUNT(*) FROM pg_class WHERE relnamespace =
-            (SELECT oid FROM pg_namespace WHERE nspname = 'test_schema_1');
-ERROR = !SELECT: no such table 'pg_class'
 
-# 17:10:49 >  
-# 17:10:49 >  "Done."
-# 17:10:49 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

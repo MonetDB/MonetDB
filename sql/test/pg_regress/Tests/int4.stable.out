@@ -1,9 +1,9 @@
 stdout of test 'int4` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:40 >  
-# 17:10:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:40 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,61 +20,16 @@ stdout of test 'int4` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:41 >  
-# 17:10:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:41 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE INT4_TBL(f1 integer);
-#INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
-[ 1	]
-#INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
-[ 1	]
-#INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
-[ 1	]
-#SELECT -2+3 AS one;
-% .L # table_name
-% one # name
-% smallint # type
-% 1 # length
-[ 1	]
-#SELECT 4-2 AS two;
-% .L # table_name
-% two # name
-% smallint # type
-% 1 # length
-[ 2	]
-#SELECT 2- -1 AS three;
-% .L # table_name
-% three # name
-% smallint # type
-% 1 # length
-[ 3	]
-#SELECT 2 - -2 AS four;
-% .L # table_name
-% four # name
-% smallint # type
-% 1 # length
-[ 4	]
-#SELECT 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 AS ten;
-% .L # table_name
-% ten # name
-% bigint # type
-% 2 # length
-[ 10	]
-#SELECT 2 + 2 / 2 AS three;
-% .L # table_name
-% three # name
-% smallint # type
-% 1 # length
-[ 3	]
-#SELECT (2 + 2) / 2 AS two;
-% .L # table_name
-% two # name
-% smallint # type
-% 1 # length
-[ 2	]
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:41 >  
-# 17:10:41 >  "Done."
-# 17:10:41 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

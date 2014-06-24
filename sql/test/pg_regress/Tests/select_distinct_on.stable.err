@@ -29,21 +29,6 @@ stderr of test 'select_distinct_on` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT ON (string4) string4, two, ten
-           FROM tmp
-           ORDER BY string4 using <, two using >, ten using <;
-ERROR = !syntax error, unexpected ON in: "select distinct on"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT ON (string4, ten) string4, two, ten
-           FROM tmp
-           ORDER BY string4 using <, two using <, ten using <;
-ERROR = !syntax error, unexpected ON in: "select distinct on"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT ON (string4, ten) string4, ten, two
-           FROM tmp
-           ORDER BY string4 using <, ten using >, two using <;
-ERROR = !syntax error, unexpected ON in: "select distinct on"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

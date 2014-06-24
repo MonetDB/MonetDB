@@ -1,9 +1,9 @@
 stdout of test 'truncate` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:54 >  
-# 17:11:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:54 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,58 +20,16 @@ stdout of test 'truncate` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:56 >  
-# 17:11:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:56 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE truncate_a (col1 integer primary key);
-#INSERT INTO truncate_a VALUES (1);
-[ 1	]
-#INSERT INTO truncate_a VALUES (2);
-[ 1	]
-#SELECT * FROM truncate_a;
-% sys.truncate_a # table_name
-% col1 # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#START TRANSACTION;
-#ROLLBACK;
-#SELECT * FROM truncate_a;
-% sys.truncate_a # table_name
-% col1 # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#START TRANSACTION;
-#SELECT * FROM truncate_a;
-% sys.truncate_a # table_name
-% col1 # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#CREATE TABLE truncate_b(col1 integer references truncate_a);
-#SELECT * FROM truncate_a;
-% sys.truncate_a # table_name
-% col1 # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#SELECT * FROM truncate_a;
-% sys.truncate_a # table_name
-% col1 # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#DROP TABLE truncate_b;
-#DROP TABLE truncate_a;
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:11:56 >  
-# 17:11:56 >  "Done."
-# 17:11:56 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

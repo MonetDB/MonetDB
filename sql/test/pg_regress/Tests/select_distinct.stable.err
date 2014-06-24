@@ -1,9 +1,9 @@
 stderr of test 'select_distinct` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:19 >  
-# 17:11:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:19 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,55 +25,12 @@ stderr of test 'select_distinct` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:20 >  
-# 17:11:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:20 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT two FROM tmp;
-ERROR = !SELECT: identifier 'two' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT ten FROM tmp;
-ERROR = !SELECT: identifier 'ten' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT string4 FROM tmp;
-ERROR = !SELECT: identifier 'string4' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT two, string4, ten
-           FROM tmp
-           ORDER BY two using <, string4 using <, ten using <;
-ERROR = !syntax error, unexpected USING, expecting SCOLON in: "select distinct two, string4, ten
-        !   from tmp
-        !   order by two using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT DISTINCT p.age FROM person* p ORDER BY age using >;
-ERROR = !syntax error, unexpected '*', expecting SCOLON in: "select distinct p.age from person*"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT f1, f1 IS DISTINCT FROM 2 as "not 2" FROM disttable;
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select f1, f1 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT f1, f1 IS DISTINCT FROM NULL as "not null" FROM disttable;
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select f1, f1 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT f1, f1 IS DISTINCT FROM f1 as "false" FROM disttable;
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select f1, f1 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT f1, f1 IS DISTINCT FROM f1+1 as "not null" FROM disttable;
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select f1, f1 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT 1 IS DISTINCT FROM 2 as "yes";
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select 1 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT 2 IS DISTINCT FROM 2 as "no";
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select 2 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT 2 IS DISTINCT FROM null as "yes";
-ERROR = !syntax error, unexpected DISTINCT, expecting sqlNULL or NOT in: "select 2 is distinct"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT null IS DISTINCT FROM null as "no";
-ERROR = !syntax error, unexpected IS, expecting SCOLON in: "select null is"
 
-# 17:11:20 >  
-# 17:11:20 >  "Done."
-# 17:11:20 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

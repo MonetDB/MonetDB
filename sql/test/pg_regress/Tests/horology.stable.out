@@ -1,9 +1,9 @@
 stdout of test 'horology` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:35 >  
-# 17:10:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:35 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,97 +20,16 @@ stdout of test 'horology` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:36 >  
-# 17:10:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:36 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#SELECT timestamp with time zone '2001-12-27 04:05:06.789-08';
-% .L # table_name
-% single_value # name
-% timestamptz # type
-% 32 # length
-[ 2001-12-27 06:05:06.789000+02:00	]
-#SELECT timestamp with time zone '2001/12/27 04:05:06.789-08';
-% .L # table_name
-% single_value # name
-% timestamptz # type
-% 32 # length
-[ 2001-12-27 06:05:06.789000+02:00	]
-#SELECT date '1981-02-03' + time '04:05:06' AS "Date + Time";
-% .L # table_name
-% Date + Time # name
-% date # type
-% 10 # length
-[ 1981-02-03	]
-#SELECT date '1991-02-03' + time with time zone '04:05:06 PST' AS "Date + Time PST";
-% .L # table_name
-% Date + Time PST # name
-% date # type
-% 10 # length
-[ 1991-02-03	]
-#SELECT date '2001-02-03' + time with time zone '04:05:06 UTC' AS "Date + Time UTC";
-% .L # table_name
-% Date + Time UTC # name
-% date # type
-% 10 # length
-[ 2001-02-03	]
-#SELECT date '1991-02-03' - time '04:05:06' AS "Subtract Time";
-% .L # table_name
-% Subtract Time # name
-% date # type
-% 10 # length
-[ 1991-02-03	]
-#SELECT date '1991-02-03' - time with time zone '04:05:06 UTC' AS "Subtract Time UTC";
-% .L # table_name
-% Subtract Time UTC # name
-% date # type
-% 10 # length
-[ 1991-02-03	]
-#SELECT date '1994-01-01' + time '11:00' AS "Jan_01_1994_11am";
-% .L # table_name
-% Jan_01_1994_11am # name
-% date # type
-% 10 # length
-[ 1994-01-01	]
-#SELECT date '1994-01-01' + time '10:00' AS "Jan_01_1994_10am";
-% .L # table_name
-% Jan_01_1994_10am # name
-% date # type
-% 10 # length
-[ 1994-01-01	]
-#SELECT date '1994-01-01' + timetz '11:00-5' AS "Jan_01_1994_8am";
-% .L # table_name
-% Jan_01_1994_8am # name
-% date # type
-% 10 # length
-[ 1994-01-01	]
-#CREATE TABLE TEMP_TIMESTAMP (f1 timestamp with time zone);
-#SELECT '' AS "16", f1 AS "timestamp"
-#  FROM TEMP_TIMESTAMP
-#  ORDER BY "timestamp";
-% .L,	sys.L # table_name
-% 16,	timestamp # name
-% char,	timestamptz # type
-% 0,	32 # length
-#SELECT '' AS "16", d.f1 AS "timestamp",
-#   timestamp with time zone '1980-01-06 00:00 GMT' AS gpstime_zero,
-#   d.f1 - timestamp with time zone '1980-01-06 00:00 GMT' AS difference
-#  FROM TEMP_TIMESTAMP d
-#  ORDER BY difference;
-% .L,	sys.L,	.L,	sys.L # table_name
-% 16,	timestamp,	gpstime_zero,	difference # name
-% char,	timestamptz,	timestamptz,	bigint # type
-% 0,	32,	32,	1 # length
-#SELECT '' AS "226", d1.f1 AS timestamp1, d2.f1 AS timestamp2, d1.f1 - d2.f1 AS difference
-#  FROM TEMP_TIMESTAMP d1, TEMP_TIMESTAMP d2
-#  ORDER BY timestamp1, timestamp2, difference;
-% .L,	sys.L,	sys.L,	sys.L # table_name
-% 226,	timestamp1,	timestamp2,	difference # name
-% char,	timestamptz,	timestamptz,	bigint # type
-% 0,	32,	32,	1 # length
-#DROP TABLE TEMP_TIMESTAMP;
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:36 >  
-# 17:10:36 >  "Done."
-# 17:10:36 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

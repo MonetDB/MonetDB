@@ -1,9 +1,9 @@
 stdout of test 'float4` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:24 >  
-# 17:10:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:24 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,128 +20,16 @@ stdout of test 'float4` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:25 >  
-# 17:10:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:25 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE FLOAT4_TBL (f1  float);
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('    0.0');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e+20');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e-20');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('10e40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('10e-40');
-[ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
-[ 1	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	1	]
-[ "",	1e+41	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
-% .L,	sys.f # table_name
-% one,	f1 # name
-% char,	double # type
-% 0,	24 # length
-#SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1;
-% .L,	sys.f # table_name
-% three,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
-% .L,	sys.f # table_name
-% three,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
-% .L,	sys.f # table_name
-% four,	f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	0	]
-[ "",	1	]
-[ "",	-1e+41	]
-[ "",	9	]
-[ "",	-9	]
-#SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	-1	]
-[ "",	1,	-1	]
-[ "",	1e+41,	-1e+42	]
-[ "",	9,	-9	]
-#SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	1	]
-[ "",	1,	-10	]
-[ "",	1e+41,	1e+41	]
-[ "",	9,	-10	]
-#SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	-1	]
-[ "",	1,	-1	]
-[ "",	1e+41,	-1e+40	]
-[ "",	9,	-9	]
-#SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
-#   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
-% three,	f1,	x # name
-% char,	double,	double # type
-% 0,	24,	24 # length
-[ "",	1,	1	]
-[ "",	1,	10	]
-[ "",	1e+41,	1e+41	]
-[ "",	9,	10	]
-#UPDATE FLOAT4_TBL
-#   SET f1 = FLOAT4_TBL.f1 * '-1'
-#   WHERE FLOAT4_TBL.f1 > '0.0';
-[ 4	]
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:25 >  
-# 17:10:25 >  "Done."
-# 17:10:25 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

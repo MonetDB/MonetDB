@@ -1,9 +1,9 @@
 stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:43 >  
-# 17:11:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:43 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,177 +20,16 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:43 >  
-# 17:11:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:43 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone);
-#DELETE FROM TIMESTAMPTZ_TBL;
-[ 0	]
-#START TRANSACTION;
-#DELETE FROM TIMESTAMPTZ_TBL;
-[ 0	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-01-02');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-01-02 03:04:05');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01-08');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01-0800');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01 -08:00');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-06-10 17:32:01 -07:00');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2001-09-22T18:19:20');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2000-03-15 08:14:01 GMT+8');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2000-03-15 13:14:02 GMT-1');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2000-03-15 12:14:03 GMT -2');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2000-03-15 03:14:04 EST+3');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('2000-03-15 02:14:05 EST +2:00');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997/02/10 17:32:01-0800');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01 PST');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('97/02/10 17:32:01 UTC');
-[ 1	]
-#INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-06-10 18:32:01 PDT');
-[ 1	]
-#SELECT '' AS "64", d1 FROM TIMESTAMPTZ_TBL; 
-% .L,	sys.timestamptz_tbl # table_name
-% 64,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	1997-01-02 02:00:00.00+02:00	]
-[ "",	1997-01-02 05:04:05.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-06-11 02:32:01.00+02:00	]
-[ "",	2001-09-22 20:19:20.00+02:00	]
-[ "",	2000-03-15 10:14:01.00+02:00	]
-[ "",	2000-03-15 15:14:02.00+02:00	]
-[ "",	2000-03-15 14:14:03.00+02:00	]
-[ "",	2000-03-15 05:14:04.00+02:00	]
-[ "",	2000-03-15 04:14:05.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	97-02-10 19:32:01.00+02:00	]
-[ "",	1997-06-10 20:32:01.00+02:00	]
-#SELECT '' AS "48", d1 FROM TIMESTAMPTZ_TBL
-#   WHERE d1 > timestamp with time zone '1997-01-02';
-% .L,	sys.timestamptz_tbl # table_name
-% 48,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	1997-01-02 05:04:05.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-06-11 02:32:01.00+02:00	]
-[ "",	2001-09-22 20:19:20.00+02:00	]
-[ "",	2000-03-15 10:14:01.00+02:00	]
-[ "",	2000-03-15 15:14:02.00+02:00	]
-[ "",	2000-03-15 14:14:03.00+02:00	]
-[ "",	2000-03-15 05:14:04.00+02:00	]
-[ "",	2000-03-15 04:14:05.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	1997-06-10 20:32:01.00+02:00	]
-#SELECT '' AS "15", d1 FROM TIMESTAMPTZ_TBL
-#   WHERE d1 < timestamp with time zone '1997-01-02';
-% .L,	sys.timestamptz_tbl # table_name
-% 15,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	97-02-10 19:32:01.00+02:00	]
-#SELECT '' AS one, d1 FROM TIMESTAMPTZ_TBL
-#   WHERE d1 = timestamp with time zone '1997-01-02';
-% .L,	sys.timestamptz_tbl # table_name
-% one,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	1997-01-02 02:00:00.00+02:00	]
-#SELECT '' AS "16", d1 FROM TIMESTAMPTZ_TBL
-#   WHERE d1 <= timestamp with time zone '1997-01-02';
-% .L,	sys.timestamptz_tbl # table_name
-% 16,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	1997-01-02 02:00:00.00+02:00	]
-[ "",	97-02-10 19:32:01.00+02:00	]
-#SELECT '' AS "49", d1 FROM TIMESTAMPTZ_TBL
-#   WHERE d1 >= timestamp with time zone '1997-01-02';
-% .L,	sys.timestamptz_tbl # table_name
-% 49,	d1 # name
-% char,	timestamptz # type
-% 0,	28 # length
-[ "",	1997-01-02 02:00:00.00+02:00	]
-[ "",	1997-01-02 05:04:05.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-06-11 02:32:01.00+02:00	]
-[ "",	2001-09-22 20:19:20.00+02:00	]
-[ "",	2000-03-15 10:14:01.00+02:00	]
-[ "",	2000-03-15 15:14:02.00+02:00	]
-[ "",	2000-03-15 14:14:03.00+02:00	]
-[ "",	2000-03-15 05:14:04.00+02:00	]
-[ "",	2000-03-15 04:14:05.00+02:00	]
-[ "",	1997-02-11 03:32:01.00+02:00	]
-[ "",	1997-02-10 19:32:01.00+02:00	]
-[ "",	1997-06-10 20:32:01.00+02:00	]
-#SELECT '' AS "54", d1 - timestamp with time zone '1997-01-02' AS diff
-#   FROM TIMESTAMPTZ_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
-% .L,	sys.L # table_name
-% 54,	diff # name
-% char,	bigint # type
-% 0,	12 # length
-[ "",	0	]
-[ "",	11045000	]
-[ "",	3432721000	]
-[ "",	3461521000	]
-[ "",	3461521000	]
-[ "",	13825921000	]
-[ "",	149019560000	]
-[ "",	100944841000	]
-[ "",	100962842000	]
-[ "",	100959243000	]
-[ "",	100926844000	]
-[ "",	100923245000	]
-[ "",	3461521000	]
-[ "",	3432721000	]
-[ "",	13804321000	]
-#SELECT '' AS "54", d1 - timestamp with time zone '1997-01-02' AS diff
-#  FROM TIMESTAMPTZ_TBL
-#  WHERE d1 BETWEEN timestamp with time zone '1902-01-01' AND timestamp with time zone '2038-01-01';
-% .L,	sys.L # table_name
-% 54,	diff # name
-% char,	bigint # type
-% 0,	12 # length
-[ "",	0	]
-[ "",	11045000	]
-[ "",	3432721000	]
-[ "",	3461521000	]
-[ "",	3461521000	]
-[ "",	13825921000	]
-[ "",	149019560000	]
-[ "",	100944841000	]
-[ "",	100962842000	]
-[ "",	100959243000	]
-[ "",	100926844000	]
-[ "",	100923245000	]
-[ "",	3461521000	]
-[ "",	3432721000	]
-[ "",	13804321000	]
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:11:44 >  
-# 17:11:44 >  "Done."
-# 17:11:44 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

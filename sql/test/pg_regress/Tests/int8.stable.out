@@ -1,9 +1,9 @@
 stdout of test 'int8` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:41 >  
-# 17:10:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:41 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,82 +20,16 @@ stdout of test 'int8` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:42 >  
-# 17:10:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:42 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE INT8_TBL(q1 bigint, q2 bigint);
-#INSERT INTO INT8_TBL VALUES('4567890123456789','123');
-[ 1	]
-#INSERT INTO INT8_TBL VALUES('4567890123456789','4567890123456789');
-[ 1	]
-#INSERT INTO INT8_TBL VALUES('4567890123456789','-4567890123456789');
-[ 1	]
-#SELECT * FROM INT8_TBL;
-% sys.int8_tbl,	sys.int8_tbl # table_name
-% q1,	q2 # name
-% bigint,	bigint # type
-% 16,	17 # length
-[ 4567890123456789,	123	]
-[ 4567890123456789,	4567890123456789	]
-[ 4567890123456789,	-4567890123456789	]
-#SELECT '' AS five, q1 AS plus, -q1 AS minus FROM INT8_TBL;
-% .L,	sys.L,	sys.L # table_name
-% five,	plus,	minus # name
-% char,	bigint,	bigint # type
-% 0,	16,	17 # length
-[ "",	4567890123456789,	-4567890123456789	]
-[ "",	4567890123456789,	-4567890123456789	]
-[ "",	4567890123456789,	-4567890123456789	]
-#SELECT '' AS five, q1, q2, q1 + q2 AS plus FROM INT8_TBL;
-% .L,	sys.int8_tbl,	sys.int8_tbl,	sys.L # table_name
-% five,	q1,	q2,	plus # name
-% char,	bigint,	bigint,	bigint # type
-% 0,	16,	17,	16 # length
-[ "",	4567890123456789,	123,	4567890123456912	]
-[ "",	4567890123456789,	4567890123456789,	9135780246913578	]
-[ "",	4567890123456789,	-4567890123456789,	0	]
-#SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL;
-% .L,	sys.int8_tbl,	sys.int8_tbl,	sys.L # table_name
-% five,	q1,	q2,	minus # name
-% char,	bigint,	bigint,	bigint # type
-% 0,	16,	17,	16 # length
-[ "",	4567890123456789,	123,	4567890123456666	]
-[ "",	4567890123456789,	4567890123456789,	0	]
-[ "",	4567890123456789,	-4567890123456789,	9135780246913578	]
-#SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
-# WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
-% .L,	sys.int8_tbl,	sys.int8_tbl,	sys.L # table_name
-% three,	q1,	q2,	multiply # name
-% char,	bigint,	bigint,	bigint # type
-% 0,	16,	3,	18 # length
-[ "",	4567890123456789,	123,	561850485185185047	]
-#SELECT '' AS five, q1, q2, q1 / q2 AS divide FROM INT8_TBL;
-% .L,	sys.int8_tbl,	sys.int8_tbl,	sys.L # table_name
-% five,	q1,	q2,	divide # name
-% char,	bigint,	bigint,	bigint # type
-% 0,	16,	17,	14 # length
-[ "",	4567890123456789,	123,	37137318076884	]
-[ "",	4567890123456789,	4567890123456789,	1	]
-[ "",	4567890123456789,	-4567890123456789,	-1	]
-#SELECT '' AS five, 2 * q1 AS "twice integer" FROM INT8_TBL;
-% .L,	.L # table_name
-% five,	twice integer # name
-% char,	bigint # type
-% 0,	16 # length
-[ "",	9135780246913578	]
-[ "",	9135780246913578	]
-[ "",	9135780246913578	]
-#SELECT '' AS five, q1 * 2 AS "twice integer" FROM INT8_TBL;
-% .L,	sys.L # table_name
-% five,	twice integer # name
-% char,	bigint # type
-% 0,	16 # length
-[ "",	9135780246913578	]
-[ "",	9135780246913578	]
-[ "",	9135780246913578	]
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:42 >  
-# 17:10:42 >  "Done."
-# 17:10:42 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

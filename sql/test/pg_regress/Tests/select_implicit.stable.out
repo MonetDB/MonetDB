@@ -1,9 +1,9 @@
 stdout of test 'select_implicit` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:21 >  
-# 17:11:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:21 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,158 +20,16 @@ stdout of test 'select_implicit` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:22 >  
-# 17:11:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:22 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE test_missing_target (a int, b int, c char(8), d char);
-#INSERT INTO test_missing_target VALUES (0, 1, 'XXXX', 'A');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (1, 2, 'AAAA', 'b');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (2, 2, 'AAAA', 'c');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (3, 3, 'BBBB', 'D');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (4, 3, 'BBBB', 'e');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (5, 3, 'bbbb', 'F');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (6, 4, 'cccc', 'g');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (7, 4, 'cccc', 'h');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (8, 4, 'CCCC', 'I');
-[ 1	]
-#INSERT INTO test_missing_target VALUES (9, 4, 'CCCC', 'j');
-[ 1	]
-#SELECT c, count(*) FROM test_missing_target GROUP BY test_missing_target.c ORDER BY c;
-% sys.test_missing_target,	sys.L1 # table_name
-% c,	L1 # name
-% char,	wrd # type
-% 8,	1 # length
-[ "AAAA",	2	]
-[ "BBBB",	2	]
-[ "CCCC",	2	]
-[ "XXXX",	1	]
-[ "bbbb",	1	]
-[ "cccc",	2	]
-#SELECT count(*) FROM test_missing_target GROUP BY test_missing_target.c ORDER BY c;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 1 # length
-[ 2	]
-[ 2	]
-[ 2	]
-[ 1	]
-[ 1	]
-[ 2	]
-#SELECT count(*) FROM test_missing_target GROUP BY b ORDER BY b;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-#SELECT test_missing_target.b, count(*)
-#  FROM test_missing_target GROUP BY b ORDER BY b;
-% sys.test_missing_target,	sys.L1 # table_name
-% b,	L1 # name
-% int,	wrd # type
-% 1,	1 # length
-[ 1,	1	]
-[ 2,	2	]
-[ 3,	3	]
-[ 4,	4	]
-#SELECT c FROM test_missing_target ORDER BY a;
-% sys.test_missing_target # table_name
-% c # name
-% char # type
-% 8 # length
-[ "XXXX"	]
-[ "AAAA"	]
-[ "AAAA"	]
-[ "BBBB"	]
-[ "BBBB"	]
-[ "bbbb"	]
-[ "cccc"	]
-[ "cccc"	]
-[ "CCCC"	]
-[ "CCCC"	]
-#SELECT count(*) FROM test_missing_target GROUP BY b ORDER BY b desc;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 1 # length
-[ 4	]
-[ 3	]
-[ 2	]
-[ 1	]
-#SELECT count(*) FROM test_missing_target ORDER BY 1 desc;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 2 # length
-[ 10	]
-#SELECT a/2, a/2 FROM test_missing_target
-#	ORDER BY a/2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
-% int,	int # type
-% 1,	1 # length
-[ 0,	0	]
-[ 0,	0	]
-[ 1,	1	]
-[ 1,	1	]
-[ 2,	2	]
-[ 2,	2	]
-[ 3,	3	]
-[ 3,	3	]
-[ 4,	4	]
-[ 4,	4	]
-#SELECT x.b, count(*) FROM test_missing_target x, test_missing_target y 
-#	WHERE x.a = y.a
-#	GROUP BY x.b ORDER BY x.b;
-% sys.x,	sys.L1 # table_name
-% b,	L1 # name
-% int,	wrd # type
-% 1,	1 # length
-[ 1,	1	]
-[ 2,	2	]
-[ 3,	3	]
-[ 4,	4	]
-#SELECT count(*) FROM test_missing_target x, test_missing_target y 
-#	WHERE x.a = y.a
-#	GROUP BY x.b ORDER BY x.b;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-#SELECT a FROM test_missing_target ORDER BY upper(d);
-% sys.test_missing_target # table_name
-% a # name
-% int # type
-% 1 # length
-[ 0	]
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-[ 6	]
-[ 7	]
-[ 8	]
-[ 9	]
-#DROP TABLE test_missing_target;
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:11:22 >  
-# 17:11:22 >  "Done."
-# 17:11:22 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

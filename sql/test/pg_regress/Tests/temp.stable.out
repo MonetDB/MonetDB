@@ -1,9 +1,9 @@
 stdout of test 'temp` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:36 >  
-# 17:11:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:36 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,103 +20,16 @@ stdout of test 'temp` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:38 >  
-# 17:11:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:38 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE temptest(col int);
-#CREATE INDEX i_temptest ON temptest(col);
-#CREATE TEMP TABLE temptest(tcol int);
-#SELECT * FROM temptest;
-% sys.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-#DROP INDEX i_temptest;
-#DROP TABLE temptest;
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% tcol # name
-% int # type
-% 1 # length
-#DROP TABLE temptest;
-#CREATE TABLE temptest(col int);
-#INSERT INTO temptest VALUES (1);
-[ 1	]
-#CREATE TEMP TABLE temptest(tcol float);
-#INSERT INTO temptest VALUES (2.1);
-[ 1	]
-#SELECT * FROM temptest;
-% sys.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#DROP TABLE temptest;
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% tcol # name
-% double # type
-% 24 # length
-#DROP TABLE temptest;
-#CREATE TEMP TABLE temptest(col int);
-\?      - show this message
-\<file  - read input from file
-\>file  - save response in file, or stdout if no file is given
-\|cmd   - pipe result to process, or stop when no command is given
-\h      - show the readline history
-\D table- dumps the table, or the complete database if none given.
-\d[Stvsfn]+ [obj] - list database objects, or describe if obj given
-\A      - enable auto commit
-\a      - disable auto commit
-\e      - echo the query in sql formatting mode
-\f      - format using a built-in renderer {csv,tab,raw,sql,xml}
-\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)
-\r#     - set maximum rows per page (-1=raw)
-\L file - save client/server interaction
-\X      - trace mclient code
-\q      - terminate session
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-#START TRANSACTION;
-#INSERT INTO temptest VALUES (1);
-[ 1	]
-#INSERT INTO temptest VALUES (2);
-[ 1	]
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#COMMIT;
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-#DROP TABLE temptest;
-#START TRANSACTION;
-#CREATE TEMP TABLE temptest(col int) ON COMMIT DROP;
-#INSERT INTO temptest VALUES (1);
-[ 1	]
-#INSERT INTO temptest VALUES (2);
-[ 1	]
-#SELECT * FROM temptest;
-% tmp.temptest # table_name
-% col # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-#COMMIT;
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:11:39 >  
-# 17:11:39 >  "Done."
-# 17:11:39 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

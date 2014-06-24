@@ -1,9 +1,9 @@
 stdout of test 'create_table` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:05 >  
-# 17:10:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:05 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,203 +20,16 @@ stdout of test 'create_table` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:06 >  
-# 17:10:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:06 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-#CREATE TABLE hobbies_r (
-#	name		text, 
-#	person 		text
-#);
-#CREATE TABLE equipment_r (
-#	name 		text,
-#	hobby		text
-#);
-#CREATE TABLE onek (
-#	unique1		integer,
-#	unique2		integer,
-#	two			integer,
-#	four		integer,
-#	ten			integer,
-#	twenty		integer,
-#	hundred		integer,
-#	thousand	integer,
-#	twothousand	integer,
-#	fivethous	integer,
-#	tenthous	integer,
-#	odd			integer,
-#	even		integer,
-#	stringu1	string,
-#	stringu2	string,
-#	string4		string
-#);
-#CREATE TABLE tenk1 (
-#	unique1		integer,
-#	unique2		integer,
-#	two			integer,
-#	four		integer,
-#	ten			integer,
-#	twenty		integer,
-#	hundred		integer,
-#	thousand	integer,
-#	twothousand	integer,
-#	fivethous	integer,
-#	tenthous	integer,
-#	odd			integer,
-#	even		integer,
-#	stringu1	string,
-#	stringu2	string,
-#	string4		string
-#);
-#CREATE TABLE tenk2 (
-#	unique1 	integer,
-#	unique2 	integer,
-#	two 	 	integer,
-#	four 		integer,
-#	ten			integer,
-#	twenty 		integer,
-#	hundred 	integer,
-#	thousand 	integer,
-#	twothousand integer,
-#	fivethous 	integer,
-#	tenthous	integer,
-#	odd			integer,
-#	even		integer,
-#	stringu1	string,
-#	stringu2	string,
-#	string4		string
-#);
-#CREATE TABLE person (
-#	name 		text,
-#	age			integer,
-#	location 	string
-#);
-#CREATE TABLE emp (
-#	name 		text,
-#	age			integer,
-#	location 	string,
-#	salary 		integer,
-#	manager 	string
-#);
-#CREATE TABLE student (
-#	name 		text,
-#	age			integer,
-#	location 	string,
-#	gpa 		double
-#);
-#CREATE TABLE stud_emp (
-#	name 		text,
-#	age			integer,
-#	location 	string,
-#	salary 		integer,
-#	manager 	string,
-#	gpa 		double,
-#	percent 	integer
-#);
-#CREATE TABLE city (
-#	name		string,
-#	location 	string,
-#	budget 		decimal(7,2)
-#);
-#CREATE TABLE dept (
-#	dname		string,
-#	mgrname 	text
-#);
-#CREATE TABLE slow_emp4000 (
-#	home_base	 string
-#);
-#CREATE TABLE fast_emp4000 (
-#	home_base	 string
-#);
-#CREATE TABLE road (
-#	name		text,
-#	thepath 	string
-#);
-#CREATE TABLE ihighway (
-#	name		text,
-#	thepath 	string
-#);
-#CREATE TABLE shighway (
-#	name		text,
-#	thepath 	string,
-#	surface		text
-#);
-#CREATE TABLE real_city (
-#	pop			integer,
-#	cname		text,
-#	outline 	string
-#);
-#CREATE TABLE a_star (
-#	class		char, 
-#	a 			integer
-#);
-#CREATE TABLE b_star (
-#	class		char, 
-#	a 			integer,
-#	b 			text
-#);
-#CREATE TABLE c_star (
-#	class		char, 
-#	a 			integer,
-#	c 			string
-#);
-#CREATE TABLE d_star (
-#	class		char, 
-#	a 			integer,
-#	c 			string,
-#	d 			double
-#);
-#CREATE TABLE e_star (
-#	class		char, 
-#	a 			integer,
-#	c 			string,
-#	e 			smallint
-#);
-#CREATE TABLE f_star (
-#	class		char, 
-#	a 			integer,
-#	c 			string,
-#	e 			smallint,
-#	f 			string
-#);
-#CREATE TABLE aggtest (
-#	a 			smallint,
-#	b			float
-#);
-#CREATE TABLE hash_i4_heap (
-#	seqno 		integer,
-#	random 		integer
-#);
-#CREATE TABLE hash_name_heap (
-#	seqno 		integer,
-#	random 		string
-#);
-#CREATE TABLE hash_txt_heap (
-#	seqno 		integer,
-#	random 		text
-#);
-#CREATE TABLE hash_f8_heap (
-#	seqno		integer,
-#	random 		double
-#);
-#CREATE TABLE bt_i4_heap (
-#	seqno 		integer,
-#	random 		integer
-#);
-#CREATE TABLE bt_name_heap (
-#	seqno 		string,
-#	random 		integer
-#);
-#CREATE TABLE bt_txt_heap (
-#	seqno 		text,
-#	random 		integer
-#);
-#CREATE TABLE bt_f8_heap (
-#	seqno 		double, 
-#	random 		integer
-#);
+= ! Correct / expected output still needs to be provided / verified / approved ! =
 
-# 17:10:06 >  
-# 17:10:06 >  "Done."
-# 17:10:06 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
