@@ -5456,7 +5456,7 @@ int find_subgeometry_type(char* geoSubType) {
 	else if(strcmp(geoSubType, "geometrycollection") == 0)
 		subType = (8 << 2);
 	else {
-		int strLength = strlen(geoSubType);
+		size_t strLength = strlen(geoSubType);
 		if(strLength > 0 ) {
 			char typeSubStr[strLength];
 			char flag = geoSubType[strLength-1]; 
