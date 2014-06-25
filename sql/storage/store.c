@@ -2851,7 +2851,7 @@ rollforward_trans(sql_trans *tr, int mode)
 				schema_number++;
 		}
 		//tr->wtime = tr->rtime = 0;
-		assert(gtrans->wstime == gtrans->wtime);
+	//	assert(gtrans->wstime == gtrans->wtime);
 	}
 	return ok;
 }
