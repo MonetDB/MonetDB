@@ -1,9 +1,9 @@
 stderr of test 'create_index` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:03 >  
-# 17:10:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:03 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,117 +25,12 @@ stderr of test 'create_index` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:03 >  
-# 17:10:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:03 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek_unique1 ON onek USING btree(unique1 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek_unique1 on onek using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek_unique2 ON onek USING btree(unique2 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek_unique2 on onek using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek_hundred ON onek USING btree(hundred int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek_hundred on onek using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek_stringu1 ON onek USING btree(stringu1 name_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek_stringu1 on onek using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk1_unique1 ON tenk1 USING btree(unique1 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk1_unique1 on tenk1 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk1_unique2 ON tenk1 USING btree(unique2 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk1_unique2 on tenk1 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk1_hundred ON tenk1 USING btree(hundred int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk1_hundred on tenk1 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk2_unique1 ON tenk2 USING btree(unique1 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk2_unique1 on tenk2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk2_unique2 ON tenk2 USING btree(unique2 int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk2_unique2 on tenk2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX tenk2_hundred ON tenk2 USING btree(hundred int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index tenk2_hundred on tenk2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX rix ON road USING btree (name text_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index rix on road using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX iix ON ihighway USING btree (name text_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index iix on ihighway using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX six ON shighway USING btree (name text_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index six on shighway using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX bt_i4_index ON bt_i4_heap USING btree (seqno int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index bt_i4_index on bt_i4_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX bt_name_index ON bt_name_heap USING btree (seqno name_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index bt_name_index on bt_name_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX bt_txt_index ON bt_txt_heap USING btree (seqno text_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index bt_txt_index on bt_txt_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX bt_f8_index ON bt_f8_heap USING btree (seqno float8_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index bt_f8_index on bt_f8_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek2_u1_prtl ON onek2 USING btree(unique1 int4_ops)
-        	where unique1 < 20 or unique1 > 980;
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek2_u1_prtl on onek2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek2_u2_prtl ON onek2 USING btree(unique2 int4_ops)
-        	where stringu1 < 'B';
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek2_u2_prtl on onek2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX onek2_stu1_prtl ON onek2 USING btree(stringu1 name_ops)
-        	where onek2.stringu1 >= 'J' and onek2.stringu1 < 'K';
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index onek2_stu1_prtl on onek2 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX rect2ind ON fast_emp4000 USING rtree (home_base);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index rect2ind on fast_emp4000 using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT * FROM fast_emp4000
-            WHERE home_base @ '(200,200),(2000,1000)'::string
-            ORDER BY home_base USING <<;
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select * from fast_emp4000
-        !    where home_base @"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX hash_i4_index ON hash_i4_heap USING hash (random int4_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index hash_i4_index on hash_i4_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX hash_name_index ON hash_name_heap USING hash (random name_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index hash_name_index on hash_name_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX hash_txt_index ON hash_txt_heap USING hash (random text_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index hash_txt_index on hash_txt_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE INDEX hash_f8_index ON hash_f8_heap USING hash (random float8_ops);
-ERROR = !syntax error, unexpected USING, expecting '(' in: "create index hash_f8_index on hash_f8_heap using"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE UNIQUE INDEX func_index_index on func_index_heap (textcat(f1,f2));
-ERROR = !syntax error, unexpected '(', expecting ')' or ',' in: "create unique index func_index_index on func_index_heap (textcat("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO func_index_heap VALUES('QWERTY');
-ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'func_index_heap'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE UNIQUE INDEX func_index_index on func_index_heap ((f1 || f2) text_ops);
-ERROR = !syntax error, unexpected '(' in: "create unique index func_index_index on func_index_heap (("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO func_index_heap VALUES('QWERTY');
-ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'func_index_heap'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = create unique index hash_f8_index_1 on hash_f8_heap(abs(random));
-ERROR = !syntax error, unexpected '(', expecting ')' or ',' in: "create unique index hash_f8_index_1 on hash_f8_heap(abs("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = create unique index hash_f8_index_2 on hash_f8_heap((seqno + 1), random);
-ERROR = !syntax error, unexpected '(' in: "create unique index hash_f8_index_2 on hash_f8_heap(("
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = create unique index hash_f8_index_3 on hash_f8_heap(random) where seqno > 1000;
-ERROR = !syntax error, unexpected WHERE, expecting SCOLON in: "create unique index hash_f8_index_3 on hash_f8_heap(random) where"
 
-# 17:10:03 >  
-# 17:10:03 >  "Done."
-# 17:10:03 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

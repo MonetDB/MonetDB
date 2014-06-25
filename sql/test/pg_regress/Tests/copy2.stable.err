@@ -1,9 +1,9 @@
 stderr of test 'copy2` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:01 >  
-# 17:10:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:01 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,180 +25,12 @@ stderr of test 'copy2` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:01 >  
-# 17:10:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:01 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE FUNCTION fn_x_before () RETURNS TRIGGER AS '
-          BEGIN
-        		NEW.e := ''before trigger fired''::text;
-        		return NEW;
-        	COMMIT;
-        ' language 'plpgsql';
-ERROR = !syntax error, unexpected TRIGGER in: "create function fn_x_before () returns trigger"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE FUNCTION fn_x_after () RETURNS TRIGGER AS '
-          BEGIN
-        		UPDATE x set e=''after trigger fired'' where c=''stuff'';
-        		return NULL;
-        	COMMIT;
-        ' language 'plpgsql';
-ERROR = !syntax error, unexpected TRIGGER in: "create function fn_x_after () returns trigger"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TRIGGER trg_x_after AFTER INSERT ON x
-        FOR EACH ROW EXECUTE PROCEDURE fn_x_after();
-ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger trg_x_after after insert on x
-        !for each row execute procedure"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TRIGGER trg_x_before BEFORE INSERT ON x
-        FOR EACH ROW EXECUTE PROCEDURE fn_x_before();
-ERROR = !syntax error, unexpected PROCEDURE, expecting ':' in: "create trigger trg_x_before before insert on x
-        !for each row execute procedure"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x (a, b, c, d, e) from stdin;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 9999	\N	\\N	\NN	\N
-        10000	21	31	41	51
-        \.
-        
-        COPY x (b, d) from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "9999"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 1	test_1
-        \.
-        
-        COPY x (b, d) from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "1"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 2	test_2
-        3	test_3
-        4	test_4
-        5	test_5
-        \.
-        
-        COPY x (a, b, c, d, e) from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "2"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 10001	22	32	42	52
-        10002	23	33	43	53
-        10003	24	34	44	54
-        10004	25	35	45	55
-        10005	26	36	46	56
-        \.
-        
-        -- non-existent column in column list: should fail
-        COPY x (xyz) from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "10001"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x (a, b, c, d, e, d, c) from stdin;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x from stdin;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x from stdin;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 2000	230	23	23
-        \.
-        COPY x from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "2000"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 2001	231	\N	\N
-        \.
-        
-        -- extra data: should fail
-        COPY x from stdin;
-ERROR = !syntax error, unexpected sqlINT in: "2001"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 2002	232	40	50	60	70	80
-        \.
-        
-        -- various COPY options: delimiters, oids, NULL string
-        COPY x (b, c, d, e) from stdin with oids delimiter ',' null 'x';
-ERROR = !syntax error, unexpected sqlINT in: "2002"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 500000,x,45,80,90
-        500001,x,\x,\\x,\\\x
-        500002,x,\,,\\\,,\\
-        \.
-        
-        COPY x from stdin WITH DELIMITER AS ';' NULL AS '';
-ERROR = !syntax error, unexpected sqlINT in: "500000"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 3000;;c;;
-ERROR = !syntax error, unexpected sqlINT in: "3000"
-        !syntax error, unexpected IDENT in: "c"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x from stdin WITH DELIMITER AS ':' NULL AS '\\X';
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = 4000:\X:C:\X:\X
-        4001:1:empty::
-        4002:2:null:\X:\X
-        4003:3:Backslash:\\:\\
-        4004:4:BackslashX:\\X:\\X
-        4005:5:N:\N:\N
-        4006:6:BackslashN:\\N:\\N
-        4007:7:XX:\XX:\XX
-        4008:8:Delimiter:\::\:
-        \.
-        
-        -- check results of copy in
-        SELECT * FROM x;
-ERROR = !syntax error, unexpected sqlINT in: "4000"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TABLE no_oids (
-        	a	int,
-        	b	int
-        ) WITHOUT OIDS;
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create table no_oids (
-        !	a	int,
-        !	b	int
-        !) without"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO no_oids (a, b) VALUES (5, 10);
-ERROR = !INSERT INTO: no such table 'no_oids'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO no_oids (a, b) VALUES (20, 30);
-ERROR = !INSERT INTO: no such table 'no_oids'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY no_oids FROM stdin WITH OIDS;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy no_oids"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY no_oids TO stdout WITH OIDS;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy no_oids"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x TO stdout;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x (c, e) TO stdout;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY x (b, e) TO stdout WITH NULL 'I''m null';
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy x"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY y TO stdout WITH CSV;
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy y"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY y TO stdout WITH CSV QUOTE '''' DELIMITER '|';
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy y"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = COPY y TO stdout WITH CSV FORCE QUOTE col2 ESCAPE '\\';
-ERROR = !syntax error, unexpected IDENT, expecting BINARY or INTO in: "copy y"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP TABLE x, y;
-ERROR = !syntax error, unexpected ',', expecting SCOLON in: "drop table x,"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP FUNCTION fn_x_before();
-ERROR = !DROP FUNCTION: no such function 'fn_x_before' ()
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = DROP FUNCTION fn_x_after();
-ERROR = !DROP FUNCTION: no such function 'fn_x_after' ()
 
-# 17:10:01 >  
-# 17:10:01 >  "Done."
-# 17:10:01 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

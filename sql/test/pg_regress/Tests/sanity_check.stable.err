@@ -1,9 +1,9 @@
 stderr of test 'sanity_check` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:15 >  
-# 17:11:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:15 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,32 +25,12 @@ stderr of test 'sanity_check` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:18 >  
-# 17:11:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:18 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = VACUUM;
-ERROR = !syntax error, unexpected IDENT in: "vacuum"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT relname, relhasindex
-           FROM pg_class
-           WHERE relhasindex AND relkind != 't'
-           ORDER BY relname;
-ERROR = !unexpected symbol (!)
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT relname, nspname
-        FROM pg_class c LEFT JOIN pg_namespace n ON n.oid = relnamespace
-        WHERE relhasoids
-            AND ((nspname ~ '^pg_') IS NOT FALSE)
-            AND NOT EXISTS (SELECT 1 FROM pg_index i WHERE indrelid = c.oid
-                            AND indkey[0] = -2 AND indnatts = 1 AND indisunique);
-ERROR = !syntax error, unexpected '~', expecting ')' in: "select relname, nspname
-        !from pg_class c left join pg_namespace n on n.oid = relnamespace
-        !where relhasoids
-        !    and ((nspname ~"
 
-# 17:11:18 >  
-# 17:11:18 >  "Done."
-# 17:11:18 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

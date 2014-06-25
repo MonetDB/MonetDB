@@ -1,9 +1,9 @@
 stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:42 >  
-# 17:10:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:42 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -25,123 +25,12 @@ stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:10:43 >  
-# 17:10:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:43 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET DATESTYLE = 'ISO';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '01:00' AS "One hour";
-ERROR = !syntax error, unexpected AS in: "select interval '01:00' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '+02:00' AS "Two hours";
-ERROR = !syntax error, unexpected AS in: "select interval '+02:00' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '-08:00' AS "Eight hours";
-ERROR = !syntax error, unexpected AS in: "select interval '-08:00' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '-05' AS "Five hours";
-ERROR = !syntax error, unexpected AS in: "select interval '-05' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '-1 +02:03' AS "22 hours ago...";
-ERROR = !syntax error, unexpected AS in: "select interval '-1 +02:03' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '-1 days +02:03' AS "22 hours ago...";
-ERROR = !syntax error, unexpected AS in: "select interval '-1 days +02:03' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT INTERVAL '10 years -11 month -12 days +13:14' AS "9 years...";
-ERROR = !syntax error, unexpected AS in: "select interval '10 years -11 month -12 days +13:14' as"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = CREATE TABLE INTERVAL_TBL (f1 interval);
-ERROR = !syntax error, unexpected ')' in: "create table interval_tbl (f1 interval)"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 1 minute');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 5 hour');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 10 day');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 34 year');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 3 months');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 14 seconds ago');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('1 day 2 hours 3 minutes 4 seconds');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('6 years');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months 12 hours');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('badly formatted interval');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 30 eons ago');
-ERROR = !INSERT INTO: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, INTERVAL_TBL.*;
-ERROR = !Column expression Table 'interval_tbl' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS nine, INTERVAL_TBL.*
-           WHERE INTERVAL_TBL.f1 <> interval '@ 10 days';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as nine, interval_tbl.*
-        !   where interval_tbl.f1 <> interval '@ 10 days';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS three, INTERVAL_TBL.*
-           WHERE INTERVAL_TBL.f1 <= interval '@ 5 hours';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as three, interval_tbl.*
-        !   where interval_tbl.f1 <= interval '@ 5 hours';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS three, INTERVAL_TBL.*
-           WHERE INTERVAL_TBL.f1 < interval '@ 1 day';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as three, interval_tbl.*
-        !   where interval_tbl.f1 < interval '@ 1 day';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS one, INTERVAL_TBL.*
-           WHERE INTERVAL_TBL.f1 = interval '@ 34 years';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as one, interval_tbl.*
-        !   where interval_tbl.f1 = interval '@ 34 years';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS five, INTERVAL_TBL.* 
-           WHERE INTERVAL_TBL.f1 >= interval '@ 1 month';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as five, interval_tbl.* 
-        !   where interval_tbl.f1 >= interval '@ 1 month';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS nine, INTERVAL_TBL.*
-           WHERE INTERVAL_TBL.f1 > interval '@ 3 seconds ago';
-ERROR = !syntax error, unexpected SCOLON in: "select '' as nine, interval_tbl.*
-        !   where interval_tbl.f1 > interval '@ 3 seconds ago';"
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS fortyfive, r1.*, r2.*
-           FROM INTERVAL_TBL r1, INTERVAL_TBL r2
-           WHERE r1.f1 > r2.f1
-           ORDER BY r1.f1, r2.f1;
-ERROR = !SELECT: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SET DATESTYLE = 'postgres';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = SELECT '' AS ten, INTERVAL_TBL.*;
-ERROR = !Column expression Table 'interval_tbl' unknown
-MAPI  = (monetdb) /var/tmp/mtest-1142/.s.monetdb.38959
-QUERY = select avg(f1) from interval_tbl;
-ERROR = !SELECT: no such table 'interval_tbl'
 
-# 17:10:43 >  
-# 17:10:43 >  "Done."
-# 17:10:43 >  
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
