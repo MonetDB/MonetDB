@@ -2,9 +2,9 @@
 -- Test inheritance features
 --
 CREATE TABLE a (aa TEXT);
-CREATE TABLE b (bb TEXT) 
-CREATE TABLE c (cc TEXT) 
-CREATE TABLE d (dd TEXT) 
+CREATE TABLE b (bb TEXT) ;
+CREATE TABLE c (cc TEXT) ;
+CREATE TABLE d (dd TEXT) ;
 
 INSERT INTO a(aa) VALUES('aaa');
 INSERT INTO a(aa) VALUES('aaaa');
