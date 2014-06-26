@@ -2,9 +2,9 @@
 -- Test inheritance features
 --
 CREATE TABLE a (aa TEXT);
-CREATE TABLE b (bb TEXT) ;
-CREATE TABLE c (cc TEXT) ;
-CREATE TABLE d (dd TEXT) ;
+CREATE TABLE b (bb TEXT); -- INHERITS (a)
+CREATE TABLE c (cc TEXT); -- INHERITS (a)
+CREATE TABLE d (dd TEXT); -- INHERITS (b,c,a)
 
 INSERT INTO a(aa) VALUES('aaa');
 INSERT INTO a(aa) VALUES('aaaa');
@@ -94,14 +94,14 @@ SELECT relname, c.*  FROM c, pg_class where c.tableoid = pg_class.oid;
 SELECT relname, d.*  FROM d, pg_class where d.tableoid = pg_class.oid;
 
 -- Confirm PRIMARY KEY adds NOT NULL constraint to child table
-CREATE TEMP TABLE z (b TEXT, PRIMARY KEY(aa, b));
+CREATE TEMP TABLE z (b TEXT, PRIMARY KEY(aa, b)); -- inherits (a)
 INSERT INTO z VALUES (NULL, 'text'); -- should fail
 
 -- Check UPDATE with inherited target and an inherited source table
 create temp table foo(f1 int, f2 int);
-create temp table foo2(f3 int);
+create temp table foo2(f3 int); -- inherits (foo)
 create temp table bar(f1 int, f2 int);
-create temp table bar2(f3 int);
+create temp table bar2(f3 int); -- inherits (bar)
 
 insert into foo values(1,1);
 insert into foo values(3,3);
@@ -131,7 +131,7 @@ CREATE TABLE inhx (xx text DEFAULT 'text');
  * Ensure that defaults are NOT included unless
  * INCLUDING DEFAULTS is specified 
  */
-CREATE TABLE inhe (ee text, LIKE inhx);
+CREATE TABLE inhe (ee text, LIKE inhx); -- inherits (b)
 INSERT INTO inhe VALUES ('ee-col1', 'ee-col2', DEFAULT, 'ee-col4');
 SELECT * FROM inhe; /* Columns aa, bb, xx value NULL, ee */
 SELECT * FROM inhx; /* Empty set since LIKE inherits structure only */
@@ -152,7 +152,7 @@ select * from d;
 -- Tests for casting between the rowtypes of parent and child
 -- tables. See the pgsql-hackers thread beginning Dec. 4/04
 create table base (i integer);
-create table derived ();
+create table derived (); -- inherits (base)
 insert into derived (i) values (0);
 select derived::base from derived;
 drop table derived;
@@ -161,7 +161,7 @@ drop table base;
 create table p1(ff1 int);
 create table p2(f1 text);
 create function p2text(p2) returns text as 'select $1.f1' language sql;
-create table c1(f3 int);
+create table c1(f3 int); -- inherits(p1,p2)
 insert into c1 values(123456789, 'hi', 42);
 select p2text(c1.*) from c1;
 drop function p2text(p2);

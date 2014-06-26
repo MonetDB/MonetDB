@@ -5,19 +5,14 @@
 --
 -- sanity check - if this fails go insane!
 --
-SELECT 1.0 AS one;
+SELECT 1 AS one;
+
 
 -- ******************testing built-in type bool********************
 
 -- check bool type-casting as well as and, or, not in qualifications--
 
-SELECT true as "true";
-
-SELECT false as "false";
-
-SELECT true as true_val;
-
-SELECT false as false_val;
+SELECT bool 't' AS true;
 
 SELECT bool 'f' AS false;
 
