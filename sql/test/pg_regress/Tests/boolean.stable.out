@@ -26,285 +26,317 @@ Ready.
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 
---
--- BOOLEAN
---
---
--- sanity check - if this fails go insane!
---
-SELECT 1 AS one;
- one 
------
-   1
-(1 row)
+#--
+#-- BOOLEAN
+#--
+#--
+#-- sanity check - if this fails go insane!
+#--
+#SELECT 1 AS one;
+% sys.L0 # table_name
+% one # name
+% ? # type
+% ? # length
+[ 1 ]
 
--- ******************testing built-in type bool********************
--- check bool type-casting as well as and, or, not in qualifications--
-SELECT bool 't' AS true;
- true 
-------
- t
-(1 row)
+#-- ******************testing built-in type bool********************
+#-- check bool type-casting as well as and, or, not in qualifications--
+#SELECT bool 't' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
 
-SELECT bool 'f' AS false;
- false 
--------
- f
-(1 row)
+#SELECT bool 'f' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
 
-SELECT bool 't' or bool 'f' AS true;
- true 
-------
- t
-(1 row)
+#SELECT bool 't' or bool 'f' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
 
-SELECT bool 't' and bool 'f' AS false;
- false 
--------
- f
-(1 row)
+#SELECT bool 't' and bool 'f' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
 
-SELECT not bool 'f' AS true;
- true 
-------
- t
-(1 row)
+#SELECT not bool 'f' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
 
-SELECT bool 't' = bool 'f' AS false;
- false 
--------
- f
-(1 row)
+#SELECT bool 't' = bool 'f' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
 
-SELECT bool 't' <> bool 'f' AS true;
- true 
-------
- t
-(1 row)
+#SELECT bool 't' <> bool 'f' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
 
-CREATE TABLE BOOLTBL1 (f1 bool);
-INSERT INTO BOOLTBL1 (f1) VALUES (bool 't');
-INSERT INTO BOOLTBL1 (f1) VALUES (bool 'True');
-INSERT INTO BOOLTBL1 (f1) VALUES (bool 'true');
--- BOOLTBL1 should be full of true's at this point 
-SELECT '' AS t_3, BOOLTBL1.*;
- t_3 | f1 
------+----
-     | t
-     | t
-     | t
-(3 rows)
+#CREATE TABLE BOOLTBL1 (f1 bool);
+#INSERT INTO BOOLTBL1 (f1) VALUES (bool 't');
+[ 1 ]
+#INSERT INTO BOOLTBL1 (f1) VALUES (bool 'True');
+[ 1 ]
+#INSERT INTO BOOLTBL1 (f1) VALUES (bool 'true');
+[ 1 ]
+#-- BOOLTBL1 should be full of true's at this string 
+#SELECT '' AS t_3, BOOLTBL1.*;
+% sys.L0,	sys.L0 # table_name
+% t_3,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"t" ]
+[ "",	"t" ]
+[ "",	"t" ]
 
-SELECT '' AS t_3, BOOLTBL1.*
-   FROM BOOLTBL1
-   WHERE f1 = bool 'true';
- t_3 | f1 
------+----
-     | t
-     | t
-     | t
-(3 rows)
+#SELECT '' AS t_3, BOOLTBL1.*
+#   FROM BOOLTBL1
+#   WHERE f1 = bool 'true';
+% sys.L0,	sys.L0 # table_name
+% t_3,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"t" ]
+[ "",	"t" ]
+[ "",	"t" ]
 
-SELECT '' AS t_3, BOOLTBL1.* 
-   FROM BOOLTBL1
-   WHERE f1 <> bool 'false';
- t_3 | f1 
------+----
-     | t
-     | t
-     | t
-(3 rows)
+#SELECT '' AS t_3, BOOLTBL1.* 
+#   FROM BOOLTBL1
+#   WHERE f1 <> bool 'false';
+% sys.L0,	sys.L0 # table_name
+% t_3,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"t" ]
+[ "",	"t" ]
+[ "",	"t" ]
 
-SELECT '' AS zero, BOOLTBL1.*
-   FROM BOOLTBL1
-   WHERE booleq(bool 'false', f1);
- zero | f1 
-------+----
-(0 rows)
+#SELECT '' AS zero, BOOLTBL1.*
+#   FROM BOOLTBL1
+#   WHERE booleq(bool 'false', f1);
+% sys.L0,	sys.L0 # table_name
+% zero,	f1 # name
+% ?,	? # type
+% ?,	? # length
 
-INSERT INTO BOOLTBL1 (f1) VALUES (bool 'f');
-SELECT '' AS f_1, BOOLTBL1.* 
-   FROM BOOLTBL1
-   WHERE f1 = bool 'false';
- f_1 | f1 
------+----
-     | f
-(1 row)
+#INSERT INTO BOOLTBL1 (f1) VALUES (bool 'f');
+[ 1 ]
+#SELECT '' AS f_1, BOOLTBL1.* 
+#   FROM BOOLTBL1
+#   WHERE f1 = bool 'false';
+% sys.L0,	sys.L0 # table_name
+% f_1,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
 
-CREATE TABLE BOOLTBL2 (f1 bool);
-INSERT INTO BOOLTBL2 (f1) VALUES (bool 'f');
-INSERT INTO BOOLTBL2 (f1) VALUES (bool 'false');
-INSERT INTO BOOLTBL2 (f1) VALUES (bool 'False');
-INSERT INTO BOOLTBL2 (f1) VALUES (bool 'FALSE');
--- This is now an invalid expression
--- For pre-v6.3 this evaluated to false - thomas 1997-10-23
-INSERT INTO BOOLTBL2 (f1) 
-   VALUES (bool 'XXX');  
-ERROR:  invalid input syntax for type boolean: "XXX"
--- BOOLTBL2 should be full of false's at this point 
-SELECT '' AS f_4, BOOLTBL2.*;
- f_4 | f1 
------+----
-     | f
-     | f
-     | f
-     | f
-(4 rows)
+#CREATE TABLE BOOLTBL2 (f1 bool);
+#INSERT INTO BOOLTBL2 (f1) VALUES (bool 'f');
+[ 1 ]
+#INSERT INTO BOOLTBL2 (f1) VALUES (bool 'false');
+[ 1 ]
+#INSERT INTO BOOLTBL2 (f1) VALUES (bool 'False');
+[ 1 ]
+#INSERT INTO BOOLTBL2 (f1) VALUES (bool 'FALSE');
+[ 1 ]
+#-- This is now an invalid expression
+#-- For pre-v6.3 this evaluated to false - thomas 1997-10-23
+#
+#-- BOOLTBL2 should be full of false's at this string 
+#SELECT '' AS f_4, BOOLTBL2.*;
+% sys.L0,	sys.L0 # table_name
+% f_4,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
 
-SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
-   WHERE BOOLTBL2.f1 <> BOOLTBL1.f1;
- tf_12 | f1 | f1 
--------+----+----
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-(12 rows)
+#SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
+#   WHERE BOOLTBL2.f1 <> BOOLTBL1.f1;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% tf_12,	f1,	f1 # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
 
-SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
-   WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);
- tf_12 | f1 | f1 
--------+----+----
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-       | t  | f
-(12 rows)
+#SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
+#   WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% tf_12,	f1,	f1 # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
 
-SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
-   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = bool 'false';
- ff_4 | f1 | f1 
-------+----+----
-      | f  | f
-      | f  | f
-      | f  | f
-      | f  | f
-(4 rows)
+#SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
+#   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = bool 'false';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ff_4,	f1,	f1 # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
 
-SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
-   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = bool 'true'
-   ORDER BY BOOLTBL1.f1, BOOLTBL2.f1;
- tf_12_ff_4 | f1 | f1 
-------------+----+----
-            | f  | f
-            | f  | f
-            | f  | f
-            | f  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-            | t  | f
-(16 rows)
+#SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
+#   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = bool 'true'
+#   ORDER BY BOOLTBL1.f1, BOOLTBL2.f1;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% tf_12_ff_4,	f1,	f1 # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
+[ "",	"f",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
+[ "",	"t",	"f" ]
 
---
--- SQL92 syntax
--- Try all combinations to ensure that we get nothing when we expect nothing
--- - thomas 2000-01-04
---
-SELECT '' AS "True", f1
-   FROM BOOLTBL1
-   WHERE f1 IS TRUE;
- True | f1 
-------+----
-      | t
-      | t
-      | t
-(3 rows)
+#--
+#-- SQL92 syntax
+#-- Try all combinations to ensure that we get nothing when we expect nothing
+#-- - thomas 2000-01-04
+#--
+#SELECT '' AS "True", f1
+#   FROM BOOLTBL1
+#   WHERE f1 IS TRUE;
+% sys.L0,	sys.L0 # table_name
+% True,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"t" ]
+[ "",	"t" ]
+[ "",	"t" ]
 
-SELECT '' AS "Not False", f1
-   FROM BOOLTBL1
-   WHERE f1 IS NOT FALSE;
- Not False | f1 
------------+----
-           | t
-           | t
-           | t
-(3 rows)
+#SELECT '' AS "Not False", f1
+#   FROM BOOLTBL1
+#   WHERE f1 IS NOT FALSE;
+% sys.L0,	sys.L0 # table_name
+% Not False,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"t" ]
+[ "",	"t" ]
+[ "",	"t" ]
 
-SELECT '' AS "False", f1
-   FROM BOOLTBL1
-   WHERE f1 IS FALSE;
- False | f1 
--------+----
-       | f
-(1 row)
+#SELECT '' AS "False", f1
+#   FROM BOOLTBL1
+#   WHERE f1 IS FALSE;
+% sys.L0,	sys.L0 # table_name
+% False,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
 
-SELECT '' AS "Not True", f1
-   FROM BOOLTBL1
-   WHERE f1 IS NOT TRUE;
- Not True | f1 
-----------+----
-          | f
-(1 row)
+#SELECT '' AS "Not True", f1
+#   FROM BOOLTBL1
+#   WHERE f1 IS NOT TRUE;
+% sys.L0,	sys.L0 # table_name
+% Not True,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
 
-SELECT '' AS "True", f1
-   FROM BOOLTBL2
-   WHERE f1 IS TRUE;
- True | f1 
-------+----
-(0 rows)
+#SELECT '' AS "True", f1
+#   FROM BOOLTBL2
+#   WHERE f1 IS TRUE;
+% sys.L0,	sys.L0 # table_name
+% True,	f1 # name
+% ?,	? # type
+% ?,	? # length
 
-SELECT '' AS "Not False", f1
-   FROM BOOLTBL2
-   WHERE f1 IS NOT FALSE;
- Not False | f1 
------------+----
-(0 rows)
+#SELECT '' AS "Not False", f1
+#   FROM BOOLTBL2
+#   WHERE f1 IS NOT FALSE;
+% sys.L0,	sys.L0 # table_name
+% Not False,	f1 # name
+% ?,	? # type
+% ?,	? # length
 
-SELECT '' AS "False", f1
-   FROM BOOLTBL2
-   WHERE f1 IS FALSE;
- False | f1 
--------+----
-       | f
-       | f
-       | f
-       | f
-(4 rows)
+#SELECT '' AS "False", f1
+#   FROM BOOLTBL2
+#   WHERE f1 IS FALSE;
+% sys.L0,	sys.L0 # table_name
+% False,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
 
-SELECT '' AS "Not True", f1
-   FROM BOOLTBL2
-   WHERE f1 IS NOT TRUE;
- Not True | f1 
-----------+----
-          | f
-          | f
-          | f
-          | f
-(4 rows)
+#SELECT '' AS "Not True", f1
+#   FROM BOOLTBL2
+#   WHERE f1 IS NOT TRUE;
+% sys.L0,	sys.L0 # table_name
+% Not True,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
+[ "",	"f" ]
 
---
--- Clean up
--- Many tables are retained by the regression test, but these do not seem
---  particularly useful so just get rid of them for now.
---  - thomas 1997-11-30
---
-DROP TABLE  BOOLTBL1;
-DROP TABLE  BOOLTBL2;
+#--
+#-- Clean up
+#-- Many tables are retained by the regression test, but these do not seem
+#--  particularly useful so just get rid of them for now.
+#--  - thomas 1997-11-30
+#--
+#DROP TABLE  BOOLTBL1;
+#DROP TABLE  BOOLTBL2;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 

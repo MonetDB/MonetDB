@@ -29,6 +29,27 @@ stderr of test 'point` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- string
+#--
+#-- bad format points 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO POINT_TBL(f1) VALUES ('asdfasdf');
+ERROR = invalid input syntax for type string: "asdfasdf"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10.0 10.0)');
+ERROR = invalid input syntax for type string: "(10.0 10.0)"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10.0,10.0');
+ERROR = invalid input syntax for type string: "(10.0,10.0"
+#-- left of 
+#-- right of 
+#-- above 
+#-- below 
+#-- equal 
+#-- string in string 
+#-- put distance result into output to allow sorting with GEQ optimizer - tgl 97/05/10
+#-- put distance result into output to allow sorting with GEQ optimizer - tgl 97/05/10
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

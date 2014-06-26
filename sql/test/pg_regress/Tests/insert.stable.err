@@ -29,6 +29,27 @@ stderr of test 'insert` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- insert with DEFAULT in the target_list
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
+ERROR = null value in column "col2" violates not-null constraint
+#--
+#-- insert with similar expression / target_list values (all fail)
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT);
+ERROR = INSERT has more target columns than expressions
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into inserttest (col1, col2, col3) values (1, 2);
+ERROR = INSERT has more target columns than expressions
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into inserttest (col1) values (1, 2);
+ERROR = INSERT has more expressions than target columns
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into inserttest (col1) values (DEFAULT, DEFAULT);
+ERROR = INSERT has more expressions than target columns
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

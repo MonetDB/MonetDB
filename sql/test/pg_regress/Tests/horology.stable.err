@@ -29,6 +29,73 @@ stderr of test 'horology` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- HOROLOGY
+#--
+#-- needed so tests pass even in Australia
+#--
+#-- Test various input formats
+#--
+#-- should fail in mdy mode:
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT timestamp with time zone '27/12/2001 04:05:06.789-08';
+ERROR = date/time field value out of range: "27/12/2001 04:05:06.789-08"
+#-- German/European-style dates with periods as delimiters
+#-- As of 7.4, allow time without time zone having a time zone specified
+#--
+#-- date, time arithmetic
+#--
+#-- subtract time from date should not make sense; use interval instead
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1991-02-03' - time with time zone '04:05:06 UTC' AS "Subtract Time UTC";
+ERROR = operator does not exist: date - time with time zone
+#--
+#-- timestamp, interval arithmetic
+#--
+#-- Shorthand values
+#-- Not directly usable for regression testing since these are not constants.
+#-- So, just try to test parser and hope for the best - thomas 97/04/26
+#-- Convert from date and time to timestamp
+#-- This test used to be timestamp(date,time) but no longer allowed by grammar
+#-- to enable support for SQL99 timestamp type syntax.
+#--
+#-- time, interval arithmetic
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT CAST(time with time zone '01:02-08' AS interval) AS "+00:01";
+ERROR = cannot cast type time with time zone to interval
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT CAST(interval '02:03' AS time with time zone) AS "02:03:00-08";
+ERROR = cannot cast type interval to time with time zone
+#-- These two tests cannot be used because they default to current timezone,
+#-- which may be either -08 or -07 depending on the time of year.
+#-- SELECT time with time zone '01:30' + interval '02:01' AS "03:31:00-08";
+#-- SELECT time with time zone '03:30' + interval '1 month 04:01' AS "07:31:00-08";
+#-- Try the following two tests instead, as a poor substitute
+#-- SQL9x OVERLAPS operator
+#-- test with time zone
+#-- test without time zone
+#-- test time and interval
+#-- SQL99 seems to want this to be false (and we conform to the spec).
+#-- istm that this *should* return true, on the theory that time
+#-- intervals can wrap around the day boundary - thomas 2001-09-25
+#-- get some candidate input values
+#--
+#-- abstime, reltime arithmetic
+#--
+#-- these four queries should return the same answer
+#-- the "infinity" and "-infinity" tuples in ABSTIME_TBL cannot be added and
+#-- therefore, should not show up in the results.
+#--
+#-- Conversions
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS three, f1 as abstime, cast(f1 as timestamp) AS "timestamp"
+  FROM ABSTIME_TBL WHERE NOT isfinite(f1);
+ERROR = cannot convert abstime "invalid" to timestamp
+#--
+#-- Formats
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

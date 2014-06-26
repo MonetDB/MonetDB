@@ -29,6 +29,30 @@ stderr of test 'create_view` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- CREATE_VIEW
+#-- Virtual class definitions
+#--	(this also tests the query rewrite system)
+#--
+#-- Test comments
+#--
+#-- CREATE OR REPLACE VIEW
+#--
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE OR REPLACE VIEW viewtest AS
+	SELECT a FROM viewtest_tbl WHERE a <> 20;
+ERROR = cannot change number of columns in view
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE OR REPLACE VIEW viewtest AS
+	SELECT 1, * FROM viewtest_tbl;
+ERROR = cannot change number of columns in view
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE OR REPLACE VIEW viewtest AS
+	SELECT a, b::numeric FROM viewtest_tbl;
+ERROR = cannot change data type of view column "b"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

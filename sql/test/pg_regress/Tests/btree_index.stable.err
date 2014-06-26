@@ -29,6 +29,10 @@ stderr of test 'btree_index` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- BTREE_INDEX
+#-- test retrieval of min/max keys for each index
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

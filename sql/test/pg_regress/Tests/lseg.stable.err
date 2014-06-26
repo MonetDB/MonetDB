@@ -29,6 +29,24 @@ stderr of test 'lseg` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- LSEG
+#-- Line segments
+#--
+#--DROP TABLE LSEG_TBL;
+#-- bad values for parser testing
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO LSEG_TBL VALUES ('(3asdf,2 ,3,4r2)');
+ERROR = invalid input syntax for type lseg: "(3asdf,2 ,3,4r2)"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO LSEG_TBL VALUES ('[1,2,3, 4');
+ERROR = invalid input syntax for type lseg: "[1,2,3, 4"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO LSEG_TBL VALUES ('[(,2),(3,4)]');
+ERROR = invalid input syntax for type lseg: "[(,2),(3,4)]"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO LSEG_TBL VALUES ('[(1,2),(3,4)');
+ERROR = invalid input syntax for type lseg: "[(1,2),(3,4)"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

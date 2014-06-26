@@ -29,6 +29,29 @@ stderr of test 'create_table` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- CREATE_TABLE
+#--
+#--
+#-- CLASS DEFINITIONS
+#--
+#--
+#-- test the "star" operators a bit more thoroughly -- this time,
+#-- throw in lots of NULL fields...
+#--
+#-- a is the type root
+#-- b and c inherit from a (one-level single inheritance)
+#-- d inherits from b and c (two-level multiple inheritance)
+#-- e inherits from c (two-level single inheritance)
+#-- f inherits from e (three-level single inheritance)
+#--
+#-- don't include the hash_ovfl_heap stuff in the distribution
+#-- the data set is too large for what it's worth
+#-- 
+#-- CREATE TABLE hash_ovfl_heap (
+#--	x			integer,
+#--	y			integer
+#-- );
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

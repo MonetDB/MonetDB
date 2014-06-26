@@ -29,6 +29,48 @@ stderr of test 'int2` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- smallint
+#-- NOTE: smallint operators never check for over/underflow!
+#-- Some of these answers are consequently numerically incorrect.
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('34.5');
+ERROR = invalid input syntax for integer: "34.5"
+#-- largest and smallest values
+#-- bad input values -- should give errors
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('100000');
+ERROR = value "100000" is out of range for type smallint
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('asdf');
+ERROR = invalid input syntax for integer: "asdf"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('    ');
+ERROR = invalid input syntax for integer: "    "
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('- 1234');
+ERROR = invalid input syntax for integer: "- 1234"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('4 444');
+ERROR = invalid input syntax for integer: "4 444"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('123 dt');
+ERROR = invalid input syntax for integer: "123 dt"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT2_TBL(f1) VALUES ('');
+ERROR = invalid input syntax for integer: ""
+#-- positive odds 
+#-- any evens 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT2_TBL i;
+ERROR = smallint out of range
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT2_TBL i;
+ERROR = smallint out of range
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT2_TBL i;
+ERROR = smallint out of range
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

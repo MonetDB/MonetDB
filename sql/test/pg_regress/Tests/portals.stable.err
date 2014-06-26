@@ -29,6 +29,23 @@ stderr of test 'portals` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- Cursor regression tests
+#--
+#-- leave some cursors open, to test that auto-close works.
+#--
+#-- NO SCROLL disallows backward fetching
+#--
+#--
+#-- Cursors outside transaction blocks
+#--
+#--
+#-- ROLLBACK should close holdable cursors
+#--
+#-- should fail
+#--
+#-- Parameterized DECLARE needs to insert param values into the cursor portal
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

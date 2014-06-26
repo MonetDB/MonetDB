@@ -29,6 +29,25 @@ stderr of test 'temp` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- TEMP
+#-- Test temp relations and indexes
+#--
+#-- test temp table/index masking
+#-- test temp table selects
+#-- test temp table deletion
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM temptest;
+ERROR = relation "temptest" does not exist
+#-- Test ON COMMIT DELETE ROWS
+#-- Test ON COMMIT DROP
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM temptest;
+ERROR = relation "temptest" does not exist
+#-- ON COMMIT is only allowed for TEMP
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE temptest(col int) ON COMMIT DELETE ROWS;
+ERROR = ON COMMIT can only be used on temporary tables
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

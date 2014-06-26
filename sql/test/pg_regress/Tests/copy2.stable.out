@@ -26,41 +26,41 @@ Ready.
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 
-CREATE TABLE x (
-	a serial,
-	b int,
-	c text not null default 'stuff',
-	d text,
-	e text
-);
+#CREATE TABLE x (
+#	a serial,
+#	b int,
+#	c text not null default 'stuff',
+#	d text,
+#	e text
+#);
 NOTICE:  CREATE TABLE will create implicit sequence "x_a_seq" for serial column "x.a"
-CREATE FUNCTION fn_x_before () RETURNS TRIGGER AS '
-  BEGIN
-		NEW.e := ''before trigger fired''::text;
+#CREATE FUNCTION fn_x_before () RETURNS TRIGGER AS '
+#  BEGIN
+#		NEW.e := ''before trigger fired''::text;
 		return NEW;
-	END;
+	COMMIT;
 ' language 'plpgsql';
-CREATE FUNCTION fn_x_after () RETURNS TRIGGER AS '
-  BEGIN
-		UPDATE x set e=''after trigger fired'' where c=''stuff'';
+#CREATE FUNCTION fn_x_after () RETURNS TRIGGER AS '
+#  BEGIN
+#		UPDATE x set e=''after trigger fired'' where c=''stuff'';
 		return NULL;
-	END;
+	COMMIT;
 ' language 'plpgsql';
-CREATE TRIGGER trg_x_after AFTER INSERT ON x
-FOR EACH ROW EXECUTE PROCEDURE fn_x_after();
-CREATE TRIGGER trg_x_before BEFORE INSERT ON x
-FOR EACH ROW EXECUTE PROCEDURE fn_x_before();
+#CREATE TRIGGER trg_x_after AFTER INSERT ON x
+#FOR EACH ROW EXECUTE PROCEDURE fn_x_after();
+#CREATE TRIGGER trg_x_before BEFORE INSERT ON x
+#FOR EACH ROW EXECUTE PROCEDURE fn_x_before();
 COPY x (a, b, c, d, e) from stdin;
 COPY x (b, d) from stdin;
 COPY x (b, d) from stdin;
 COPY x (a, b, c, d, e) from stdin;
--- non-existent column in column list: should fail
+#-- non-existent column in column list: should fail
 COPY x (xyz) from stdin;
 ERROR:  column "xyz" of relation "x" does not exist
--- too many columns in column list: should fail
+#-- too many columns in column list: should fail
 COPY x (a, b, c, d, e, d, c) from stdin;
 ERROR:  column "d" specified more than once
--- missing data: should fail
+#-- missing data: should fail
 COPY x from stdin;
 ERROR:  invalid input syntax for integer: ""
 CONTEXT:  COPY x, line 1, column a: ""
@@ -70,58 +70,61 @@ CONTEXT:  COPY x, line 1: "2000	230	23	23"
 COPY x from stdin;
 ERROR:  missing data for column "e"
 CONTEXT:  COPY x, line 1: "2001	231	\N	\N"
--- extra data: should fail
+#-- extra data: should fail
 COPY x from stdin;
 ERROR:  extra data after last expected column
 CONTEXT:  COPY x, line 1: "2002	232	40	50	60	70	80"
--- various COPY options: delimiters, oids, NULL string
+#-- various COPY options: delimiters, oids, NULL string
 COPY x (b, c, d, e) from stdin with oids delimiter ',' null 'x';
 COPY x from stdin WITH DELIMITER AS ';' NULL AS '';
 COPY x from stdin WITH DELIMITER AS ':' NULL AS '\\X';
--- check results of copy in
-SELECT * FROM x;
-   a   | b  |     c      |   d    |          e           
--------+----+------------+--------+----------------------
-  9999 |    | \N         | NN     | before trigger fired
- 10000 | 21 | 31         | 41     | before trigger fired
- 10001 | 22 | 32         | 42     | before trigger fired
- 10002 | 23 | 33         | 43     | before trigger fired
- 10003 | 24 | 34         | 44     | before trigger fired
- 10004 | 25 | 35         | 45     | before trigger fired
- 10005 | 26 | 36         | 46     | before trigger fired
-     6 |    | 45         | 80     | before trigger fired
-     7 |    | x          | \x     | before trigger fired
-     8 |    | ,          | \,     | before trigger fired
-  3000 |    | c          |        | before trigger fired
-  4000 |    | C          |        | before trigger fired
-  4001 |  1 | empty      |        | before trigger fired
-  4002 |  2 | null       |        | before trigger fired
-  4003 |  3 | Backslash  | \      | before trigger fired
-  4004 |  4 | BackslashX | \X     | before trigger fired
-  4005 |  5 | N          | N      | before trigger fired
-  4006 |  6 | BackslashN | \N     | before trigger fired
-  4007 |  7 | XX         | XX     | before trigger fired
-  4008 |  8 | Delimiter  | :      | before trigger fired
-     1 |  1 | stuff      | test_1 | after trigger fired
-     2 |  2 | stuff      | test_2 | after trigger fired
-     3 |  3 | stuff      | test_3 | after trigger fired
-     4 |  4 | stuff      | test_4 | after trigger fired
-     5 |  5 | stuff      | test_5 | after trigger fired
-(25 rows)
+#-- check results of copy in
+#SELECT * FROM x;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% a,	b,	c,	d,	e # name
+% ?,	?,	?,	?,	? # type
+% ?,	?,	?,	?,	? # length
+[ 9999,	"",	"\N",	"NN",	"before trigger fired" ]
+[ 10000,	21,	31,	41,	"before trigger fired" ]
+[ 10001,	22,	32,	42,	"before trigger fired" ]
+[ 10002,	23,	33,	43,	"before trigger fired" ]
+[ 10003,	24,	34,	44,	"before trigger fired" ]
+[ 10004,	25,	35,	45,	"before trigger fired" ]
+[ 10005,	26,	36,	46,	"before trigger fired" ]
+[ 6,	"",	45,	80,	"before trigger fired" ]
+[ 7,	"",	"x",	"\x",	"before trigger fired" ]
+[ 8,	"",	",",	"\,",	"before trigger fired" ]
+[ 3000,	"",	"c",	"",	"before trigger fired" ]
+[ 4000,	"",	"C",	"",	"before trigger fired" ]
+[ 4001,	1,	"empty",	"",	"before trigger fired" ]
+[ 4002,	2,	"null",	"",	"before trigger fired" ]
+[ 4003,	3,	"Backslash",	"\",	"before trigger fired" ]
+[ 4004,	4,	"BackslashX",	"\X",	"before trigger fired" ]
+[ 4005,	5,	"N",	"N",	"before trigger fired" ]
+[ 4006,	6,	"BackslashN",	"\N",	"before trigger fired" ]
+[ 4007,	7,	"XX",	"XX",	"before trigger fired" ]
+[ 4008,	8,	"Delimiter",	":",	"before trigger fired" ]
+[ 1,	1,	"stuff",	"test_1",	"after trigger fired" ]
+[ 2,	2,	"stuff",	"test_2",	"after trigger fired" ]
+[ 3,	3,	"stuff",	"test_3",	"after trigger fired" ]
+[ 4,	4,	"stuff",	"test_4",	"after trigger fired" ]
+[ 5,	5,	"stuff",	"test_5",	"after trigger fired" ]
 
--- COPY w/ oids on a table w/o oids should fail
-CREATE TABLE no_oids (
-	a	int,
-	b	int
-) WITHOUT OIDS;
-INSERT INTO no_oids (a, b) VALUES (5, 10);
-INSERT INTO no_oids (a, b) VALUES (20, 30);
--- should fail
+#-- COPY w/ oids on a table w/o oids should fail
+#CREATE TABLE no_oids (
+#	a	int,
+#	b	int
+#) WITHOUT OIDS;
+#INSERT INTO no_oids (a, b) VALUES (5, 10);
+[ 1 ]
+#INSERT INTO no_oids (a, b) VALUES (20, 30);
+[ 1 ]
+#-- should fail
 COPY no_oids FROM stdin WITH OIDS;
 ERROR:  table "no_oids" does not have OIDs
 COPY no_oids TO stdout WITH OIDS;
 ERROR:  table "no_oids" does not have OIDs
--- check copy out
+#-- check copy out
 COPY x TO stdout;
 9999	\N	\\N	NN	before trigger fired
 10000	21	31	41	before trigger fired
@@ -200,13 +203,16 @@ I'm null	before trigger fired
 3	after trigger fired
 4	after trigger fired
 5	after trigger fired
-CREATE TABLE y (
-	col1 text,
-	col2 text
-);
-INSERT INTO y VALUES ('Jackson, Sam', '\\h');
-INSERT INTO y VALUES ('It is "perfect".','\t');
-INSERT INTO y VALUES ('', NULL);
+#CREATE TABLE y (
+#	col1 text,
+#	col2 text
+#);
+#INSERT INTO y VALUES ('Jackson, Sam', '\\h');
+[ 1 ]
+#INSERT INTO y VALUES ('It is "perfect".','\t');
+[ 1 ]
+#INSERT INTO y VALUES ('', NULL);
+[ 1 ]
 COPY y TO stdout WITH CSV;
 "Jackson, Sam",\h
 "It is ""perfect"".",	
@@ -219,9 +225,9 @@ COPY y TO stdout WITH CSV FORCE QUOTE col2 ESCAPE '\\';
 "Jackson, Sam","\\h"
 "It is \"perfect\".","	"
 "",
-DROP TABLE x, y;
-DROP FUNCTION fn_x_before();
-DROP FUNCTION fn_x_after();
+#DROP TABLE x, y;
+#DROP FUNCTION fn_x_before();
+#DROP FUNCTION fn_x_after();
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 

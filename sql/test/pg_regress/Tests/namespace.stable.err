@@ -29,6 +29,11 @@ stderr of test 'namespace` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- Regression tests for schemas (namespaces)
+#--
+#-- verify that the objects were created
+#-- verify that the objects were dropped
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

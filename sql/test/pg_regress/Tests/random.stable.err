@@ -29,6 +29,17 @@ stderr of test 'random` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- RANDOM
+#-- Test the random function
+#--
+#-- count the number of tuples originally, should be 1000
+#-- pick three random rows, they shouldn't match
+#-- count roughly 1/10 of the tuples
+#-- select again, the count should be different
+#-- select again, the count should be different
+#-- select again, the count should be different
+#-- now test that they are different counts
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

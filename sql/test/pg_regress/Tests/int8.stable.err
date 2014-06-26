@@ -29,6 +29,37 @@ stderr of test 'int8` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- bigint
+#-- Test bigint 64-bit integers.
+#--
+#-- bad inputs
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('      ');
+ERROR = invalid input syntax for integer: "      "
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('xxx');
+ERROR = invalid input syntax for integer: "xxx"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('3908203590239580293850293850329485');
+ERROR = value "3908203590239580293850293850329485" is out of range for type bigint
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('-1204982019841029840928340329840934');
+ERROR = value "-1204982019841029840928340329840934" is out of range for type bigint
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('- 123');
+ERROR = invalid input syntax for integer: "- 123"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('  345     5');
+ERROR = invalid input syntax for integer: "  345     5"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INT8_TBL(q1) VALUES ('');
+ERROR = invalid input syntax for integer: ""
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL;
+ERROR = bigint out of range
+#-- TO_CHAR()
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
