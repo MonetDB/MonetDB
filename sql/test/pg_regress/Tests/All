@@ -5,7 +5,8 @@ load
 
 boolean
 char
-name
+#name This is a special PostgresSQL datatype NOT supported in MonetDB.
+# See also: http://www.postgresql.org/docs/9.3/static/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
 varchar
 text
 
