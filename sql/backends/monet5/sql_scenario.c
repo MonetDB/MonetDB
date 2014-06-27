@@ -126,12 +126,13 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static str SQLinit(void);
+static str SQLinit(int readonly);
 
 str
 SQLprelude(void)
 {
 	str tmp;
+	int readonly = GDKgetenv_isyes("gdk_readonly");
 	Client c;
 
 	Scenario ms, s = getFreeScenario();
@@ -165,16 +166,19 @@ SQLprelude(void)
 	ms->engine = "MALengine";
 
 	/* init the SQL store */
-	tmp = SQLinit();
+
+	tmp = SQLinit(readonly);
 	if (tmp != MAL_SUCCEED) {
 		return (tmp);
 	}
 
-	/* init the client as well */
-	c = mal_clients; /* run as admin in SQL mode*/
-	tmp = SQLinitClient(c);
-	if (tmp != MAL_SUCCEED) {
-		return (tmp);
+	/* init the client as well if this is not a read-only DB*/
+	if (!readonly) {
+		c = mal_clients; /* run as admin in SQL mode*/
+		tmp = SQLinitClient(c);
+		if (tmp != MAL_SUCCEED) {
+			return (tmp);
+		}
 	}
 
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
@@ -211,10 +215,9 @@ SQLepilogue(void)
 MT_Id sqllogthread, minmaxthread;
 
 static str
-SQLinit(void)
+SQLinit(int readonly)
 {
 	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
-	int readonly = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
 	tzone tz;
