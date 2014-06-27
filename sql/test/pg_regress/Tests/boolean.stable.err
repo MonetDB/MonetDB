@@ -29,33 +29,48 @@ stderr of test 'boolean` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- BOOLEAN
-#--
-#--
-#-- sanity check - if this fails go insane!
-#--
-#-- ******************testing built-in type bool********************
-#-- check bool type-casting as well as and, or, not in qualifications--
-#-- BOOLTBL1 should be full of true's at this string 
-#-- This is now an invalid expression
-#-- For pre-v6.3 this evaluated to false - thomas 1997-10-23
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS zero, BOOLTBL1.*
+           FROM BOOLTBL1
+           WHERE booleq(false, f1);
+ERROR = !SELECT: no such binary operator 'booleq(boolean,boolean)'
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
 QUERY = INSERT INTO BOOLTBL2 (f1) 
-   VALUES (bool 'XXX');  
-ERROR = invalid input syntax for type boolean: "XXX"
-#-- BOOLTBL2 should be full of false's at this string 
-#--
-#-- SQL92 syntax
-#-- Try all combinations to ensure that we get nothing when we expect nothing
-#-- - thomas 2000-01-04
-#--
-#--
-#-- Clean up
-#-- Many tables are retained by the regression test, but these do not seem
-#--  particularly useful so just get rid of them for now.
-#--  - thomas 1997-11-30
-#--
+           VALUES ('XXX');  
+ERROR = !conversion of string 'XXX' to type bit failed.
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
+           FROM BOOLTBL1, BOOLTBL2
+           WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);
+ERROR = !SELECT: no such binary operator 'boolne(boolean,boolean)'
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS "Not False", f1
+           FROM BOOLTBL1
+           WHERE f1 = NOT FALSE;
+ERROR = !syntax error, unexpected NOT in: "select '' as "Not False", f1
+        !   from booltbl1
+        !   where f1 = not"
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS "Not True", f1
+           FROM BOOLTBL1
+           WHERE f1 = NOT TRUE;
+ERROR = !syntax error, unexpected NOT in: "select '' as "Not True", f1
+        !   from booltbl1
+        !   where f1 = not"
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS "Not False", f1
+           FROM BOOLTBL2
+           WHERE f1 = NOT FALSE;
+ERROR = !syntax error, unexpected NOT in: "select '' as "Not False", f1
+        !   from booltbl2
+        !   where f1 = not"
+MAPI  = (monetdb) /var/tmp/mtest-20094/.s.monetdb.30268
+QUERY = SELECT '' AS "Not True", f1
+           FROM BOOLTBL2
+           WHERE f1 = NOT TRUE;
+ERROR = !syntax error, unexpected NOT in: "select '' as "Not True", f1
+        !   from booltbl2
+        !   where f1 = not"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
