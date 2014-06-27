@@ -117,7 +117,7 @@ gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg, int keep_persisted_log_files);
 gdk_export lng logger_changes(logger *lg);
-gdk_export int logger_read_last_transaction_id(logger *lg);
+gdk_export lng logger_read_last_transaction_id(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 gdk_export int logger_reload(logger *lg);
 

@@ -779,6 +779,9 @@ logger_readlog(logger *lg, char *filename)
 	struct stat sb;
 	lng fpos;
 
+	if (lg->debug & 1) {
+			fprintf(stderr, "#logger_readlog opening %s\n", filename);
+	}
 	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
@@ -907,15 +910,21 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	int res = 0;
 	char id[BUFSIZ];
 
-	if (lg->debug & 1)
+	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlogs %s\n", filename);
+		fprintf(stderr, "#logger_readlogs logger id=%lld\n", lg->id);
+	}
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
 		char buf[BUFSIZ];
 		lng lid = strtoll(id, NULL, 10);
 
-		if (lid >= lg->id) {
-			lg->id = lid;
+		if (lg->debug & 1) {
+			fprintf(stderr, "#logger_readlogs lid=%lld\n", lid);
+		}
+
+		while(lid > lg->id) {
+			lg->id++;
 			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, lg->id);
 
 			if ((res = logger_readlog(lg, buf)) != 0) {
@@ -1341,9 +1350,12 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		lg->seqs_val = BATdescriptor(seqs_val);
 		if (lg->seqs_val == 0)
 			logger_fatal("logger_load: inconsistent database, seqs_val does not exist", 0, 0, 0);
-		if (BATcount(lg->seqs_id)) {
+		if (BATcount(lg->seqs_id) && !lg->readonly) {
 			BUN p = BUNfndT(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
+			if (lg->debug & 1) {
+				fprintf(stderr, "#logger_load setting new logger id=%lld\n", lg->id);
+			}
 		} else {
 			BUNappend(lg->seqs_id, &id, FALSE);
 			BUNappend(lg->seqs_val, &lg->id, FALSE);
@@ -1733,7 +1745,7 @@ logger_changes(logger *lg)
 }
 
 /* Read the last recorded transactions id from the LOGFILE */
-int
+lng
 logger_read_last_transaction_id(logger *lg)
 {
 	char filename[BUFSIZ];

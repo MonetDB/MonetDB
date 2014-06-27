@@ -1604,7 +1604,7 @@ store_manager(void)
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
-		int shared_transactions_drift = -1;
+		lng shared_transactions_drift = -1;
 
 		for (t = 30000; t > 0; t -= 50) {
 			MT_sleep_ms(50);
@@ -1615,12 +1615,12 @@ store_manager(void)
 		if (create_shared_logger) {
 			/* get the shared transactions drift */
 			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
-			if (shared_transactions_drift == LOG_ERR) {
-				GDKfatal("shared write-ahead log last transaction read failure");
-			}
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_manager shared_transactions_drift=%d\n", shared_transactions_drift);
 #endif
+			if (shared_transactions_drift == LOG_ERR) {
+				GDKfatal("shared write-ahead log last transaction read failure");
+			}
 		}
 
 		MT_lock_set(&bs_lock, "store_manager");

@@ -256,8 +256,8 @@ typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
-typedef int (*logger_read_last_transaction_id_fptr)(void);
-typedef int (*logger_get_transaction_drift_fptr)(void);
+typedef lng (*logger_read_last_transaction_id_fptr)(void);
+typedef lng (*logger_get_transaction_drift_fptr)(void);
 
 typedef int (*logger_reload_fptr) (void);
 

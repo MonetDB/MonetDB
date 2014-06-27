@@ -402,18 +402,18 @@ bl_changes(void)
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
-static int
+static lng
 bl_read_last_transaction_id_shared(void)
 {
 	return logger_read_last_transaction_id(bat_logger_shared);
 }
 
-static int
+static lng
 bl_get_transaction_drift_shared(void)
 {
-	int res = logger_read_last_transaction_id(bat_logger_shared);
+	lng res = logger_read_last_transaction_id(bat_logger_shared);
 	if (res != LOG_ERR) {
-		return (int) (MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max));
+		return MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max);
 	}
 	return res;
 }
