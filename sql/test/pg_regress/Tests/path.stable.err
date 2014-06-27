@@ -29,6 +29,17 @@ stderr of test 'path` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- string
+#--
+#--DROP TABLE PATH_TBL;
+#-- bad values for parser testing
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO PATH_TBL VALUES ('[(,2),(3,4)]');
+ERROR = invalid input syntax for type string: "[(,2),(3,4)]"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO PATH_TBL VALUES ('[(1,2),(3,4)');
+ERROR = invalid input syntax for type string: "[(1,2),(3,4)"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

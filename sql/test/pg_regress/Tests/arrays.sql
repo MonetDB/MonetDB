@@ -170,7 +170,7 @@ select 33 * any ('{1,2,3}');
 select 33 * any (44);
 
 -- test indexes on arrays
-create temp table arr_tbl (f1 int[] unique);
+CREATE temp table arr_tbl (f1 int[] unique);
 insert into arr_tbl values ('{1,2,3}');
 insert into arr_tbl values ('{1,2}');
 -- failure expected:
@@ -217,3 +217,12 @@ select '{
            @ 1 hour @ 42 minutes @ 20 seconds
          }'::interval[];
 -- all of the above should be accepted
+
+
+
+-- cleanup created tables
+DROP TABLE arrtest;
+DROP TABLE arrtest2;
+DROP TABLE arrtest_f;
+DROP TABLE arrtest_i;
+DROP table arr_tbl;

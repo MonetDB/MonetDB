@@ -1032,7 +1032,7 @@ begin
 	    retval := ''Phone line '' || trim(rec.phonenumber);
 	    if rec.comment != '''' then
 	        retval := retval || '' ('';
-		retval := retval || rec.
+		retval := retval || rec.comment;
 		retval := retval || '')'';
 	    end if;
 	    return retval;
@@ -1109,7 +1109,7 @@ begin
 	retval := ''Phone '' || trim(rec.slotname);
 	if rec.comment != '''' then
 	    retval := retval || '' ('';
-	    retval := retval || rec.
+	    retval := retval || rec.comment;
 	    retval := retval || '')'';
 	end if;
 	return retval;
@@ -1125,7 +1125,7 @@ begin
 	    retval := retval || ifrow.ifname;
 	    if syrow.comment != '''' then
 	        retval := retval || '' ('';
-		retval := retval || syrow.
+		retval := retval || syrow.comment;
 		retval := retval || '')'';
 	    end if;
 	    return retval;

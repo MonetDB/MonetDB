@@ -29,6 +29,30 @@ stderr of test 'tinterval` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- TINTERVAL
+#--
+#-- Should accept any abstime,
+#-- so do not bother with extensive testing of values
+#-- badly formatted tintervals 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TINTERVAL_TBL (f1)
+   VALUES ('["bad time specifications" ""]');
+ERROR = invalid input syntax for type abstime: "bad time specifications"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TINTERVAL_TBL (f1)
+   VALUES ('["" "infinity"]');
+ERROR = invalid input syntax for type abstime: ""
+#-- test tinterval operators
+#-- length ==
+#-- length <>
+#-- length <
+#-- length <=
+#-- length >
+#-- length >=
+#-- overlaps
+#-- contains
+#-- make time interval
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

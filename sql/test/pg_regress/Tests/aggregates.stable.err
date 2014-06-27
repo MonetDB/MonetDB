@@ -29,6 +29,29 @@ stderr of test 'aggregates` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- AGGREGATES
+#--
+#-- In 7.1, avg(float) is computed using double arithmetic.
+#-- Round the result to 3 digits to avoid platform-specific results.
+#-- test for outer-level aggregates
+#-- this should work
+#-- this should fail because subquery has an agg of its own in WHERE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select ten, sum(distinct four) from onek a
+group by ten
+having exists (select 1 from onek b
+               where sum(distinct a.four + b.four) = b.four);
+ERROR = aggregates not allowed in WHERE clause
+#--
+#-- test for bitwise integer aggregates
+#--
+#-- empty case
+#--
+#-- test boolean aggregates
+#--
+#-- first test all possible transition and final states
+#-- empty case
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

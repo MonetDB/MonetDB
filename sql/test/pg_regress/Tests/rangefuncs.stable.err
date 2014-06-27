@@ -29,6 +29,27 @@ stderr of test 'rangefuncs` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#-- supposed to fail with ERROR
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select * from foo2, foot(foo2.fooid) z where foo2.f2 = z.f2;
+ERROR = function expression in FROM may not refer to other relations of same query level
+#-- function in subselect
+#-- function in subselect
+#-- function in subselect
+#-- nested functions
+#-- sql, proretset = f, prorettype = b
+#-- sql, proretset = t, prorettype = b
+#-- sql, proretset = t, prorettype = b
+#-- sql, proretset = f, prorettype = c
+#-- sql, proretset = t, prorettype = c
+#-- sql, proretset = f, prorettype = record
+#-- sql, proretset = t, prorettype = record
+#-- plpgsql, proretset = f, prorettype = b
+#-- plpgsql, proretset = f, prorettype = c
+#-- Rescan tests --
+#--invokes ExecFunctionReScan
+#--invokes ExecFunctionReScan
+#--invokes ExecFunctionReScan with chgParam != NULL
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
