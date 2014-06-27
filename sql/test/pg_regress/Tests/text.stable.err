@@ -74,12 +74,9 @@ stderr of test 'text` in directory 'sql/test/pg_regress` itself:
 # 22:26:27 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=35864  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/text.sql
 # 22:26:27 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = SELECT text 'this is a text string' = text 'this is a text string' AS true;
-ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'this is a text string'"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = SELECT text 'this is a text string' = text 'this is a text strin' AS false;
-ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'this is a text string'"
+# 17:59:44 >  
+# 17:59:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5665" "--port=31854"
+# 17:59:44 >  
 
 = ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/text.out) ! =
 
