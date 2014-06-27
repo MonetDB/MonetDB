@@ -12,37 +12,44 @@ SELECT 1 AS one;
 
 -- check bool type-casting as well as and, or, not in qualifications--
 
---SELECT bool 't' AS true;
-SELECT true AS "true";
+SELECT cast('t' AS boolean) AS true;
+SELECT cast('true' AS boolean) AS true;
+SELECT cast('true' AS boolean) AS "true";
 
---SELECT bool 'f' AS false;
-SELECT false AS "false";
+SELECT cast('f' AS boolean) AS false;
+SELECT cast('false' AS boolean) AS false;
+SELECT cast('false' AS boolean) AS "false";
 
---SELECT bool 't' or bool 'f' AS true;
-SELECT true or false AS "true";
+SELECT cast('t' AS boolean) or cast('f' AS boolean) AS true;
+SELECT cast('true' AS boolean) or cast('false' AS boolean) AS true;
+SELECT cast('true' AS boolean) or cast('false' AS boolean) AS "true";
 
---SELECT bool 't' and bool 'f' AS false;
-SELECT true and false AS "false";
+SELECT cast('t' AS boolean) and cast('f' AS boolean) AS false;
+SELECT cast('true' AS boolean) and cast('false' AS boolean) AS false;
+SELECT cast('true' AS boolean) and cast('false' AS boolean) AS "false";
 
---SELECT not bool 'f' AS true;
-SELECT not true AS "true";
+SELECT not cast('f' AS boolean) AS true;
+SELECT not cast('false' AS boolean) AS true;
+SELECT not cast('false' AS boolean) AS "true";
+SELECT not cast('true' AS boolean) AS "false";
 
---SELECT bool 't' = bool 'f' AS false;
-SELECT true = false AS "false";
+SELECT cast('t' AS boolean) = cast('f' AS boolean) AS false;
+SELECT cast('true' AS boolean) = cast('false' AS boolean) AS false;
+SELECT cast('true' AS boolean) = cast('false' AS boolean) AS "false";
 
---SELECT bool 't' <> bool 'f' AS true;
-SELECT true <> false AS "true";
+SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS true;
+SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS true;
+SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS "true";
 
 
 CREATE TABLE BOOLTBL1 (f1 bool);
 
---INSERT INTO BOOLTBL1 (f1) VALUES (bool 't');
-INSERT INTO BOOLTBL1 (f1) VALUES (true);
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('t' AS boolean));
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('true' AS boolean));
 
---INSERT INTO BOOLTBL1 (f1) VALUES (bool 'True');
-INSERT INTO BOOLTBL1 (f1) VALUES (True);
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('True' AS boolean));
+INSERT INTO BOOLTBL1 (f1) VALUES (cast(lower('True') AS boolean));
 
---INSERT INTO BOOLTBL1 (f1) VALUES (bool 'true');
 INSERT INTO BOOLTBL1 (f1) VALUES ('true');
 
 
@@ -51,37 +58,36 @@ SELECT '' AS f_3, * FROM BOOLTBL1;
 
 SELECT '' AS t_3, BOOLTBL1.*
    FROM BOOLTBL1
-   WHERE f1 = true;
+   WHERE f1 = cast('true' AS boolean);
 
 
-SELECT '' AS t_3, BOOLTBL1.* 
+SELECT '' AS t_3, BOOLTBL1.*
    FROM BOOLTBL1
-   WHERE f1 <> false;
+   WHERE f1 <> cast('false' AS boolean);
 
 SELECT '' AS zero, BOOLTBL1.*
    FROM BOOLTBL1
-   WHERE booleq(false, f1);
+   WHERE booleq(cast('false' AS boolean), f1);
 
-INSERT INTO BOOLTBL1 (f1) VALUES (false);
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('f' AS boolean));
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('false' AS boolean));
 
-SELECT '' AS f_1, BOOLTBL1.* 
+SELECT '' AS f_1, BOOLTBL1.*
    FROM BOOLTBL1
-   WHERE f1 = false;
+   WHERE f1 = cast('false' AS boolean);
 
 
 CREATE TABLE BOOLTBL2 (f1 bool);
 
---INSERT INTO BOOLTBL2 (f1) VALUES (bool 'f');
-INSERT INTO BOOLTBL2 (f1) VALUES (false);
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('f' AS boolean));
 
---INSERT INTO BOOLTBL2 (f1) VALUES (bool 'false');
-INSERT INTO BOOLTBL2 (f1) VALUES ('false');
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('false' AS boolean));
 
---INSERT INTO BOOLTBL2 (f1) VALUES (bool 'False');
-INSERT INTO BOOLTBL2 (f1) VALUES (False);
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('False' AS boolean));
+INSERT INTO BOOLTBL2 (f1) VALUES (cast(lower('False') AS boolean));
 
---INSERT INTO BOOLTBL2 (f1) VALUES (bool 'FALSE');
-INSERT INTO BOOLTBL2 (f1) VALUES (FALSE);
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('FALSE' AS boolean));
+INSERT INTO BOOLTBL2 (f1) VALUES (cast(lower('FALSE') AS boolean));
 
 -- This is now an invalid expression
 -- For pre-v6.3 this evaluated to false - thomas 1997-10-23
@@ -104,12 +110,12 @@ SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
 
 SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
    FROM BOOLTBL1, BOOLTBL2
-   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = 'false';
+   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = cast('false' AS boolean);
 
 
 SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
    FROM BOOLTBL1, BOOLTBL2
-   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = 'true'
+   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = cast('true' AS boolean)
    ORDER BY BOOLTBL1.f1, BOOLTBL2.f1;
 
 --
@@ -126,6 +132,14 @@ SELECT '' AS "Not False", f1
    FROM BOOLTBL1
    WHERE f1 = NOT FALSE;
 
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL1
+   WHERE NOT FALSE = f1;
+
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL1
+   WHERE f1 = (NOT FALSE);
+
 SELECT '' AS "False", f1
    FROM BOOLTBL1
    WHERE f1 = FALSE;
@@ -133,6 +147,14 @@ SELECT '' AS "False", f1
 SELECT '' AS "Not True", f1
    FROM BOOLTBL1
    WHERE f1 = NOT TRUE;
+
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL1
+   WHERE NOT TRUE = f1;
+
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL1
+   WHERE f1 = (NOT TRUE);
 
 SELECT '' AS "True", f1
    FROM BOOLTBL2
@@ -142,6 +164,14 @@ SELECT '' AS "Not False", f1
    FROM BOOLTBL2
    WHERE f1 = NOT FALSE;
 
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL2
+   WHERE NOT FALSE = f1;
+
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL2
+   WHERE f1 = (NOT FALSE);
+
 SELECT '' AS "False", f1
    FROM BOOLTBL2
    WHERE f1 = FALSE;
@@ -149,6 +179,14 @@ SELECT '' AS "False", f1
 SELECT '' AS "Not True", f1
    FROM BOOLTBL2
    WHERE f1 = NOT TRUE;
+
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL2
+   WHERE NOT TRUE = f1;
+
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL2
+   WHERE f1 = (NOT TRUE);
 
 --
 -- Clean up
