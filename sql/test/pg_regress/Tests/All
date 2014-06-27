@@ -14,12 +14,11 @@ strings_like
 aggregates
 alter_table
 arrays
-bit
+# bit NOT supported in MonetDB. BIT is also not standard SQL so exclude this test
 boolean
 box
 btree_index
 case
-##char
 circle
 cluster
 comments
@@ -86,13 +85,9 @@ select_views
 sequence
 sql_ascii
 stats
-##strings_cast
-##strings_concat
-##strings_like
 strings
 subselect
 temp
-##text
 time
 timestamp
 timestamptz
@@ -105,5 +100,4 @@ type_sanity
 union
 update
 vacuum
-##varchar
 without_oid
