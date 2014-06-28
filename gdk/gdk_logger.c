@@ -1699,21 +1699,22 @@ logger_restart(logger *lg)
 
 /* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
  * Update the LOGFILE and delete all bak- files as well.
- * If the keep_persisted_log_files, no clean-up happens.
+ * If the keep_persisted_log_files, only the bak- files are deleted.
  */
 int
 logger_cleanup(logger *lg, int keep_persisted_log_files)
 {
+	char buf[BUFSIZ];
+	char id[BUFSIZ];
+	FILE *fp = NULL;
+
+	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
+
+	if (lg->debug & 1) {
+		fprintf(stderr, "#logger_cleanup %s\n", buf);
+	}
+
 	if (!keep_persisted_log_files) {
-		char buf[BUFSIZ];
-		char id[BUFSIZ];
-		FILE *fp = NULL;
-
-		snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
-
-		if (lg->debug & 1)
-			fprintf(stderr, "#logger_cleanup %s\n", buf);
-
 		if ((fp = fopen(buf, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
@@ -1731,10 +1732,10 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 			GDKunlink(lg->dir, LOGFILE, id);
 		}
 		fclose(fp);
-		snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
-
-		GDKunlink(lg->dir, LOGFILE, buf);
 	}
+	snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
+
+	GDKunlink(lg->dir, LOGFILE, buf);
 	return LOG_OK;
 }
 
