@@ -342,7 +342,7 @@ bl_create_shared(int debug, char *logdir, int cat_version)
 {
 	if (bat_logger_shared)
 		return LOG_ERR;
-	bat_logger_shared = logger_create_ro(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	bat_logger_shared = logger_create_shared(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger_shared)
 		return LOG_OK;
 	return LOG_ERR;

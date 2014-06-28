@@ -1297,9 +1297,9 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	/* this is intentional - even if catalog_bid, but the logger is read-only,
+	/* this is intentional - even if catalog_bid, but the logger is shared,
 	 * force it to find the persistent catalog */
-	if (catalog_bid == 0 &&	!lg->readonly) {
+	if (catalog_bid == 0 &&	!lg->shared) {
 		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
 			goto error;
 		}
@@ -1350,7 +1350,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		lg->seqs_val = BATdescriptor(seqs_val);
 		if (lg->seqs_val == 0)
 			logger_fatal("logger_load: inconsistent database, seqs_val does not exist", 0, 0, 0);
-		if (BATcount(lg->seqs_id) && !lg->readonly) {
+		if (BATcount(lg->seqs_id) && !lg->shared) {
 			BUN p = BUNfndT(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
 			if (lg->debug & 1) {
@@ -1408,8 +1408,8 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
-		/* Do not do conversion logger is readonly */
-		if (!lg->readonly) {
+		/* Do not do conversion logger is shared/read-only */
+		if (!lg->shared) {
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 			{
@@ -1469,7 +1469,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		fclose(fp);
 		fp = NULL;
 #if SIZEOF_OID == 8
-		if (lg->read32bitoid && !lg->readonly) {
+		if (lg->read32bitoid && !lg->shared) {
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			unlink(cvfile);
@@ -1492,7 +1492,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int readonly)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
@@ -1503,7 +1503,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 
 	lg->debug = debug;
-	lg->readonly = readonly;
+	lg->shared = shared;
 
 	lg->changes = 0;
 	lg->version = version;
@@ -1582,10 +1582,10 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 	return lg;
 }
 
-/* Create a new read-only logger
- * Usually reserved for shared log directories */
+/* Create a new shared logger, that is for slaves reading the master log directory.
+ * Assumed to be read-only */
 logger *
-logger_create_ro(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create_shared(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = NULL;
 
