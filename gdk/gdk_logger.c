@@ -747,12 +747,15 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 	FILE *fp;
 	char filename[BUFSIZ];
 	char bak_filename[BUFSIZ];
+	int bak_exists;
 
 	snprintf(filename, BUFSIZ, "%s%s", dir, log_filename);
 	snprintf(bak_filename, BUFSIZ, "%s.%s", filename, "bak");
 
+	bak_exists = 0;
 	/* check if an older file exists and move bak it up */
 	if (access(filename, F_OK) != -1) {
+		bak_exists = 1;
 		if (GDKmove(dir, filename, NULL, dir, filename, "bak") < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
 			return LOG_ERR;
@@ -771,7 +774,7 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 		}
 
 		/* cleanup the bak file, if it exists*/
-		if (access(bak_filename, F_OK) != -1) {
+		if (bak_exists) {
 			GDKunlink(dir, filename, "bak");
 		}
 	} else {
