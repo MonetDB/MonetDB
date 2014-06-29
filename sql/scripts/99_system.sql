@@ -26,4 +26,5 @@ update _tables
 -- so far only system schemas
 update schemas set system = true;
 
+-- make sure all gets commited
 COMMIT;
