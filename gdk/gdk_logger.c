@@ -741,6 +741,8 @@ tr_abort(logger *lg, trans *tr)
 	return tr_destroy(tr);
 }
 
+/* Update the last transaction id written in the catalog file.
+ * Mostly used by the shared logger. */
 static int
 logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 {
@@ -1346,7 +1348,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
 
-	/* this is intentional - even if catalog_bid, but the logger is shared,
+	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
 	 * force it to find the persistent catalog */
 	if (catalog_bid == 0 &&	!lg->shared) {
 		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
