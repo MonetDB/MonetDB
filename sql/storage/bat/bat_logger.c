@@ -405,13 +405,13 @@ bl_changes(void)
 static lng
 bl_read_last_transaction_id_shared(void)
 {
-	return logger_read_last_transaction_id(bat_logger_shared);
+	return logger_read_last_transaction_id(bat_logger_shared, bat_logger_shared->dir, LOGFILE);
 }
 
 static lng
 bl_get_transaction_drift_shared(void)
 {
-	lng res = logger_read_last_transaction_id(bat_logger_shared);
+	lng res = bl_read_last_transaction_id_shared();
 	if (res != LOG_ERR) {
 		return MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max);
 	}

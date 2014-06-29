@@ -111,9 +111,6 @@ typedef struct logformat_t {
 	lng nr;
 } logformat;
 
-#define LOGFILE "log"
-#define LOGFILE_SHARED "log_shared"
-
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
@@ -1576,14 +1573,14 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		return NULL;
 	}
 	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_new dir=%s\n", lg->dir);
+		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
 
 	if (shared) {
 		logger_set_logdir_path(filename, fn, local_logdir);
-		/* set the slave logdir as well */
+		/* set the local logdir as well */
 		if ((lg->fn = GDKstrdup(fn)) == NULL ||
-				(lg->local_dir = GDKstrdup(filename)) == NULL) {
+			(lg->local_dir = GDKstrdup(filename)) == NULL) {
 			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 			GDKfree(lg->fn);
 			GDKfree(lg->dir);
@@ -1592,7 +1589,33 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 			return NULL;
 		}
 		if (lg->debug & 1) {
-			fprintf(stderr, "#logger_new slave_dir=%s\n", lg->dir);
+			fprintf(stderr, "#logger_new local_dir set to %s\n", lg->local_dir);
+		}
+
+		/* get last shared logger id from the local log dir,
+		 * but first check if the file exists */
+		char shared_log_filename[BUFSIZ];
+		snprintf(shared_log_filename, BUFSIZ, "%s%s", lg->local_dir, LOGFILE_SHARED);
+
+		if (access(shared_log_filename, F_OK) != -1) {
+			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED);
+			if (res == LOG_ERR) {
+				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
+				GDKfree(lg->fn);
+				GDKfree(lg->dir);
+				GDKfree(lg->local_dir);
+				GDKfree(lg);
+				return NULL;
+			}
+
+			lg->id = res;
+			if (lg->debug & 1) {
+				fprintf(stderr, "#logger_new last shared transactions is read form %s is %lld\n", shared_log_filename, lg->id);
+			}
+		} else {
+			if (lg->debug & 1) {
+				fprintf(stderr, "#logger_new no previous %s found\n", LOGFILE_SHARED);
+			}
 		}
 	}
 
@@ -1814,15 +1837,15 @@ logger_changes(logger *lg)
 	return lg->changes;
 }
 
-/* Read the last recorded transactions id from the LOGFILE */
+/* Read the last recorded transactions id from a logfile */
 lng
-logger_read_last_transaction_id(logger *lg)
+logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file)
 {
 	char filename[BUFSIZ];
 	FILE *fp;
 	int id;
 
-	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	snprintf(filename, BUFSIZ, "%s%s", dir, logger_file);
 	if ((fp = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
