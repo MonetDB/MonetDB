@@ -60,6 +60,7 @@ typedef struct logger {
 #endif
 	char *fn;
 	char *dir;
+	char *local_dir; /* the directory in which the non-shared log is written */
 	int shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
@@ -111,7 +112,7 @@ typedef int log_bid;
 #define OBJ_SID	1
 
 gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
-gdk_export logger *logger_create_shared(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create_shared(int debug, char *fn, char *logdir, char *slave_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);

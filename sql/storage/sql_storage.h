@@ -248,7 +248,7 @@ typedef struct store_functions {
 extern store_functions store_funcs;
 
 typedef int (*logger_create_fptr) (int debug, char *logdir, int catalog_version);
-typedef int (*logger_create_shared_fptr) (int debug, char *logdir, int catalog_version);
+typedef int (*logger_create_shared_fptr) (int debug, char *logdir, int catalog_version, char *slave_logdir);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
@@ -268,6 +268,7 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 
 typedef struct logger_functions {
 	logger_create_fptr create;
+	logger_create_shared_fptr create_shared;
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;

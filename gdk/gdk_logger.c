@@ -112,6 +112,7 @@ typedef struct logformat_t {
 } logformat;
 
 #define LOGFILE "log"
+#define LOGFILE_SHARED "log_shared"
 
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
@@ -741,6 +742,47 @@ tr_abort(logger *lg, trans *tr)
 }
 
 static int
+logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
+{
+	FILE *fp;
+	char filename[BUFSIZ];
+	char bak_filename[BUFSIZ];
+
+	snprintf(filename, BUFSIZ, "%s%s", dir, log_filename);
+	snprintf(bak_filename, BUFSIZ, "%s.%s", filename, "bak");
+
+	/* check if an older file exists and move bak it up */
+	if (access(filename, F_OK) != -1) {
+		if (GDKmove(dir, filename, NULL, dir, filename, "bak") < 0) {
+			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
+			return LOG_ERR;
+		}
+	}
+
+	if ((fp = fopen(filename, "w")) != NULL) {
+		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
+			fprintf(stderr, "!ERROR: logger_update_catalog_file: write to %s failed\n", filename);
+			return LOG_ERR;
+		}
+
+		if (fprintf(fp, LLFMT "\n", lg->id) < 0 || fclose(fp) < 0) {
+			fprintf(stderr, "!ERROR: logger_update_catalog_file: write/flush to %s failed\n", filename);
+			return LOG_ERR;
+		}
+
+		/* cleanup the bak file, if it exists*/
+		if (access(bak_filename, F_OK) != -1) {
+			GDKunlink(dir, filename, "bak");
+		}
+	} else {
+		fprintf(stderr, "!ERROR: logger_update_catalog_file: could not create %s\n", filename);
+		GDKerror("logger_update_catalog_file: could not open %s\n", filename);
+		return LOG_ERR;
+	}
+	return LOG_OK;
+}
+
+static int
 logger_open(logger *lg)
 {
 	char filename[BUFSIZ];
@@ -935,6 +977,10 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 				 * next log file */
 				(void) res;
 			}
+		}
+		/* if this is a shared logger, write the id in the shared file */
+		if (lg->shared) {
+			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED);
 		}
 	}
 	return res;
@@ -1492,7 +1538,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
@@ -1527,6 +1573,24 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir=%s\n", lg->dir);
 	}
+
+	if (shared) {
+		logger_set_logdir_path(filename, fn, local_logdir);
+		/* set the slave logdir as well */
+		if ((lg->fn = GDKstrdup(fn)) == NULL ||
+				(lg->local_dir = GDKstrdup(filename)) == NULL) {
+			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
+			GDKfree(lg->fn);
+			GDKfree(lg->dir);
+			GDKfree(lg->local_dir);
+			GDKfree(lg);
+			return NULL;
+		}
+		if (lg->debug & 1) {
+			fprintf(stderr, "#logger_new slave_dir=%s\n", lg->dir);
+		}
+	}
+
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
 	lg->log = NULL;
@@ -1563,7 +1627,7 @@ logger_reload(logger *lg)
 logger *
 logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
 
 	if (!lg)
 		return NULL;
@@ -1585,11 +1649,11 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 /* Create a new shared logger, that is for slaves reading the master log directory.
  * Assumed to be read-only */
 logger *
-logger_create_shared(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create_shared(int debug, char *fn, char *logdir, char *local_logdir,int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = NULL;
 
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, local_logdir);
 
 	return lg;
 }

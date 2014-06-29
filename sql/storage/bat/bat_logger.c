@@ -338,11 +338,11 @@ bl_create(int debug, char *logdir, int cat_version)
 }
 
 static int
-bl_create_shared(int debug, char *logdir, int cat_version)
+bl_create_shared(int debug, char *logdir, int cat_version, char *local_logdir)
 {
 	if (bat_logger_shared)
 		return LOG_ERR;
-	bat_logger_shared = logger_create_shared(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	bat_logger_shared = logger_create_shared(debug, "sql", logdir, local_logdir, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger_shared)
 		return LOG_OK;
 	return LOG_ERR;
@@ -485,7 +485,7 @@ bat_logger_init( logger_functions *lf )
 int
 bat_logger_init_shared( logger_functions *lf )
 {
-	lf->create = bl_create_shared;
+	lf->create_shared = bl_create_shared;
 	lf->destroy = bl_destroy_shared;
 	lf->cleanup = bl_cleanup_shared;
 	lf->read_last_transaction_id = bl_read_last_transaction_id_shared;
