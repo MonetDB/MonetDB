@@ -25,3 +25,5 @@ update _tables
 
 -- so far only system schemas
 update schemas set system = true;
+
+COMMIT;
