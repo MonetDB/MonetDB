@@ -150,19 +150,35 @@ geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum); 
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 
-geom_export str wkbTransform(wkb**, wkb*, int*, char**, char**);
+geom_export str wkbTransform(wkb**, wkb**, int*, char**, char**);
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
-str wkbTransform(wkb** transformedWKB, wkb* geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
+str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
 	projPJ proj4_src, proj4_dst;
-	double x=10, y=10, z=10;
-
-
-if(geomWKB == NULL) 
-	fprintf(stderr, "NULL wkb\n");
-*transformedWKB = wkb_nil;
+	GEOSGeom geosGeometry;
+//	int geoCoordinatesNum = 0;
+	const GEOSCoordSeq gcs;	
+	unsigned int pointsNum =0;
+double x=10, y=10, z=10;
 
 fprintf(stderr, "SRID=%d SRC=%s DEST=%s\n", *srid, *proj4_src_str, *proj4_dst_str);
+
+
+	if(*geomWKB == NULL) {
+		*transformedWKB = wkb_nil;
+		throw(MAL, "geom.Transform", "wkb is null");
+	}
+
+	/* get the geosGeometry from the wkb */
+	geosGeometry = wkb2geos(*geomWKB);
+	/* get the number of coordinates the geometry has */
+//	geoCoordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);//get GEOSGeometry
+	/* get the coordinates of the points comprising the geometry */
+	gcs = GEOSGeom_getCoordSeq(geosGeometry);
+	/* get the number of points in the geomtry */
+	GEOSCoordSeq_getSize(gcs, &pointsNum);
+
+	fprintf(stderr, "Number of points = %d\n", pointsNum);
 
 proj4_src = pj_init_plus(*proj4_src_str);
 proj4_dst = pj_init_plus(*proj4_dst_str);
