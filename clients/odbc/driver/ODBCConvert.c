@@ -2880,6 +2880,13 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_C_WCHAR:
 		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
+		if (sval == NULL) {
+			sval = strdup("");
+			if (sval == NULL) {
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+		}
 		slen = strlen(sval);
 		break;
 	case SQL_C_BIT:
