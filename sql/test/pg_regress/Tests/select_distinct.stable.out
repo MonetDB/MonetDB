@@ -1,9 +1,9 @@
 stdout of test 'select_distinct` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:19 >  
-# 17:11:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:19 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,21 +20,230 @@ stdout of test 'select_distinct` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:20 >  
-# 17:11:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:20 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- SELECT_DISTINCT
+#--
+#--
+#-- awk '{print $3;}' onek.data | sort -n | uniq
+#--
+#SELECT DISTINCT two FROM tmp;
+% sys.L0 # table_name
+% two # name
+% ? # type
+% ? # length
+[ 0 ]
+[ 1 ]
+
+#--
+#-- awk '{print $5;}' onek.data | sort -n | uniq
+#--
+#SELECT DISTINCT ten FROM tmp;
+% sys.L0 # table_name
+% ten # name
+% ? # type
+% ? # length
+[ 0 ]
+[ 1 ]
+[ 2 ]
+[ 3 ]
+[ 4 ]
+[ 5 ]
+[ 6 ]
+[ 7 ]
+[ 8 ]
+[ 9 ]
+
+#--
+#-- awk '{print $16;}' onek.data | sort -d | uniq
+#--
+#SELECT DISTINCT string4 FROM tmp;
+% sys.L0 # table_name
+% string4 # name
+% ? # type
+% ? # length
+[ "AAAAxx" ]
+[ "HHHHxx" ]
+[ "OOOOxx" ]
+[ "VVVVxx" ]
+
+#--
+#-- awk '{print $3,$16,$5;}' onek.data | sort -d | uniq |
+#-- sort +0n -1 +1d -2 +2n -3
+#--
+#SELECT DISTINCT two, string4, ten
+#   FROM tmp
+#   ORDER BY two using <, string4 using <, ten using <;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% two,	string4,	ten # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ 0,	"AAAAxx",	0 ]
+[ 0,	"AAAAxx",	2 ]
+[ 0,	"AAAAxx",	4 ]
+[ 0,	"AAAAxx",	6 ]
+[ 0,	"AAAAxx",	8 ]
+[ 0,	"HHHHxx",	0 ]
+[ 0,	"HHHHxx",	2 ]
+[ 0,	"HHHHxx",	4 ]
+[ 0,	"HHHHxx",	6 ]
+[ 0,	"HHHHxx",	8 ]
+[ 0,	"OOOOxx",	0 ]
+[ 0,	"OOOOxx",	2 ]
+[ 0,	"OOOOxx",	4 ]
+[ 0,	"OOOOxx",	6 ]
+[ 0,	"OOOOxx",	8 ]
+[ 0,	"VVVVxx",	0 ]
+[ 0,	"VVVVxx",	2 ]
+[ 0,	"VVVVxx",	4 ]
+[ 0,	"VVVVxx",	6 ]
+[ 0,	"VVVVxx",	8 ]
+[ 1,	"AAAAxx",	1 ]
+[ 1,	"AAAAxx",	3 ]
+[ 1,	"AAAAxx",	5 ]
+[ 1,	"AAAAxx",	7 ]
+[ 1,	"AAAAxx",	9 ]
+[ 1,	"HHHHxx",	1 ]
+[ 1,	"HHHHxx",	3 ]
+[ 1,	"HHHHxx",	5 ]
+[ 1,	"HHHHxx",	7 ]
+[ 1,	"HHHHxx",	9 ]
+[ 1,	"OOOOxx",	1 ]
+[ 1,	"OOOOxx",	3 ]
+[ 1,	"OOOOxx",	5 ]
+[ 1,	"OOOOxx",	7 ]
+[ 1,	"OOOOxx",	9 ]
+[ 1,	"VVVVxx",	1 ]
+[ 1,	"VVVVxx",	3 ]
+[ 1,	"VVVVxx",	5 ]
+[ 1,	"VVVVxx",	7 ]
+[ 1,	"VVVVxx",	9 ]
+
+#--
+#-- awk '{print $2;}' person.data |
+#-- awk '{if(NF!=1){print $2;}else{print;}}' - emp.data |
+#-- awk '{if(NF!=1){print $2;}else{print;}}' - student.data |
+#-- awk 'BEGIN{FS="      ";}{if(NF!=1){print $5;}else{print;}}' - stud_emp.data |
+#-- sort -n -r | uniq
+#--
+#SELECT DISTINCT p.age FROM person* p ORDER BY age using >;
+% sys.L0 # table_name
+% age # name
+% ? # type
+% ? # length
+[ 98 ]
+[ 88 ]
+[ 78 ]
+[ 68 ]
+[ 60 ]
+[ 58 ]
+[ 50 ]
+[ 48 ]
+[ 40 ]
+[ 38 ]
+[ 34 ]
+[ 30 ]
+[ 28 ]
+[ 25 ]
+[ 24 ]
+[ 23 ]
+[ 20 ]
+[ 19 ]
+[ 18 ]
+[ 8 ]
+
+#--
+#-- Also, some tests of IS DISTINCT FROM, which doesn't quite deserve its
+#-- very own regression file.
+#--
 #CREATE TEMP TABLE disttable (f1 integer);
 #INSERT INTO DISTTABLE VALUES(1);
-[ 1	]
+[ 1 ]
 #INSERT INTO DISTTABLE VALUES(2);
-[ 1	]
+[ 1 ]
 #INSERT INTO DISTTABLE VALUES(3);
-[ 1	]
+[ 1 ]
 #INSERT INTO DISTTABLE VALUES(NULL);
-[ 1	]
+[ 1 ]
+#-- basic cases
+#SELECT f1, f1 IS DISTINCT FROM 2 as "not 2" FROM disttable;
+% sys.L0,	sys.L0 # table_name
+% f1,	not 2 # name
+% ?,	? # type
+% ?,	? # length
+[ 1,	"t" ]
+[ 2,	"f" ]
+[ 3,	"t" ]
+[ "",	"t" ]
 
-# 17:11:20 >  
-# 17:11:20 >  "Done."
-# 17:11:20 >  
+#SELECT f1, f1 IS DISTINCT FROM NULL as "not null" FROM disttable;
+% sys.L0,	sys.L0 # table_name
+% f1,	not null # name
+% ?,	? # type
+% ?,	? # length
+[ 1,	"t" ]
+[ 2,	"t" ]
+[ 3,	"t" ]
+[ "",	"f" ]
+
+#SELECT f1, f1 IS DISTINCT FROM f1 as "false" FROM disttable;
+% sys.L0,	sys.L0 # table_name
+% f1,	false # name
+% ?,	? # type
+% ?,	? # length
+[ 1,	"f" ]
+[ 2,	"f" ]
+[ 3,	"f" ]
+[ "",	"f" ]
+
+#SELECT f1, f1 IS DISTINCT FROM f1+1 as "not null" FROM disttable;
+% sys.L0,	sys.L0 # table_name
+% f1,	not null # name
+% ?,	? # type
+% ?,	? # length
+[ 1,	"t" ]
+[ 2,	"t" ]
+[ 3,	"t" ]
+[ "",	"f" ]
+
+#-- check that optimizer constant-folds it properly
+#SELECT 1 IS DISTINCT FROM 2 as "yes";
+% sys.L0 # table_name
+% yes # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT 2 IS DISTINCT FROM 2 as "no";
+% sys.L0 # table_name
+% no # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#SELECT 2 IS DISTINCT FROM null as "yes";
+% sys.L0 # table_name
+% yes # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT null IS DISTINCT FROM null as "no";
+% sys.L0 # table_name
+% no # name
+% ? # type
+% ? # length
+[ "f" ]
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

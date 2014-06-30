@@ -86,7 +86,7 @@ CREATE TABLE emp (
 	location 	string,
 	salary 		integer,
 	manager 	string
-);
+); -- INHERITS (person)
 
 
 CREATE TABLE student (
@@ -94,7 +94,7 @@ CREATE TABLE student (
 	age			integer,
 	location 	string,
 	gpa 		double
-);
+); -- INHERITS (person)
 
 
 CREATE TABLE stud_emp (
@@ -105,7 +105,7 @@ CREATE TABLE stud_emp (
 	manager 	string,
 	gpa 		double,
 	percent 	integer
-);
+); -- INHERITS (emp, student)
 
 
 CREATE TABLE city (
@@ -135,13 +135,13 @@ CREATE TABLE road (
 CREATE TABLE ihighway (
 	name		text,
 	thepath 	string
-);
+); -- INHERITS (road)
 
 CREATE TABLE shighway (
 	name		text,
 	thepath 	string,
 	surface		text
-);
+); -- INHERITS (road)
 
 CREATE TABLE real_city (
 	pop			integer,
@@ -168,27 +168,27 @@ CREATE TABLE b_star (
 	class		char, 
 	a 			integer,
 	b 			text
-);
+); -- INHERITS (a_star)
 
 CREATE TABLE c_star (
 	class		char, 
 	a 			integer,
 	c 			string
-);
+); -- INHERITS (a_star)
 
 CREATE TABLE d_star (
 	class		char, 
 	a 			integer,
 	c 			string,
 	d 			double
-);
+); -- INHERITS (b_star, c_star)
 
 CREATE TABLE e_star (
 	class		char, 
 	a 			integer,
 	c 			string,
 	e 			smallint
-);
+); -- INHERITS (c_star)
 
 CREATE TABLE f_star (
 	class		char, 
@@ -196,7 +196,7 @@ CREATE TABLE f_star (
 	c 			string,
 	e 			smallint,
 	f 			string
-);
+); -- INHERITS (e_star)
 
 CREATE TABLE aggtest (
 	a 			smallint,

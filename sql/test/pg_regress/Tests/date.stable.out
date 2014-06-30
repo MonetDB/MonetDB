@@ -1,9 +1,9 @@
 stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:12 >  
-# 17:10:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:12 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,412 +20,1218 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:16 >  
-# 17:10:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:16 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- DATE
+#--
 #CREATE TABLE DATE_TBL (f1 date);
 #INSERT INTO DATE_TBL VALUES ('1957-04-09');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1957-06-13');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1996-02-28');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1996-02-29');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1996-03-01');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1996-03-02');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1997-02-28');
-[ 1	]
+[ 1 ]
+#
 #INSERT INTO DATE_TBL VALUES ('1997-03-01');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('1997-03-02');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2000-04-01');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2000-04-02');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2000-04-03');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2038-04-08');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2039-04-09');
-[ 1	]
+[ 1 ]
 #INSERT INTO DATE_TBL VALUES ('2040-04-10');
-[ 1	]
+[ 1 ]
 #SELECT f1 AS "Fifteen" FROM DATE_TBL;
-% sys.L # table_name
+% sys.L0 # table_name
 % Fifteen # name
-% date # type
-% 10 # length
-[ 1957-04-09	]
-[ 1957-06-13	]
-[ 1996-02-28	]
-[ 1996-02-29	]
-[ 1996-03-01	]
-[ 1996-03-02	]
-[ 1997-02-28	]
-[ 1997-03-01	]
-[ 1997-03-02	]
-[ 2000-04-01	]
-[ 2000-04-02	]
-[ 2000-04-03	]
-[ 2038-04-08	]
-[ 2039-04-09	]
-[ 2040-04-10	]
+% ? # type
+% ? # length
+[ "04-09-1957" ]
+[ "06-13-1957" ]
+[ "02-28-1996" ]
+[ "02-29-1996" ]
+[ "03-01-1996" ]
+[ "03-02-1996" ]
+[ "02-28-1997" ]
+[ "03-01-1997" ]
+[ "03-02-1997" ]
+[ "04-01-2000" ]
+[ "04-02-2000" ]
+[ "04-03-2000" ]
+[ "04-08-2038" ]
+[ "04-09-2039" ]
+[ "04-10-2040" ]
+
 #SELECT f1 AS "Nine" FROM DATE_TBL WHERE f1 < '2000-01-01';
-% sys.L # table_name
+% sys.L0 # table_name
 % Nine # name
-% date # type
-% 10 # length
-[ 1957-04-09	]
-[ 1957-06-13	]
-[ 1996-02-28	]
-[ 1996-02-29	]
-[ 1996-03-01	]
-[ 1996-03-02	]
-[ 1997-02-28	]
-[ 1997-03-01	]
-[ 1997-03-02	]
+% ? # type
+% ? # length
+[ "04-09-1957" ]
+[ "06-13-1957" ]
+[ "02-28-1996" ]
+[ "02-29-1996" ]
+[ "03-01-1996" ]
+[ "03-02-1996" ]
+[ "02-28-1997" ]
+[ "03-01-1997" ]
+[ "03-02-1997" ]
+
 #SELECT f1 AS "Three" FROM DATE_TBL
 #  WHERE f1 BETWEEN '2000-01-01' AND '2001-01-01';
-% sys.L # table_name
+% sys.L0 # table_name
 % Three # name
-% date # type
-% 10 # length
-[ 2000-04-01	]
-[ 2000-04-02	]
-[ 2000-04-03	]
-#SELECT date 'January 8, 1999';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-18';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-18	]
-#SELECT date '01/02/03';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1-02-03	]
-#SELECT date 'January 8, 99 BC';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '99-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT date '99 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT date 'January 8, 1999';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-18';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-18	]
-#SELECT date '01/02/03';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1-02-03	]
-#SELECT date 'January 8, 99 BC';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '99-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT date '99 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT date 'January 8, 1999';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '1999-01-18';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-18	]
-#SELECT date '01/02/03';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1-02-03	]
-#SELECT date 'January 8, 99 BC';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '99-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-Jan-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 Jan 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999-01-08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999-08-01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT date '99 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-01-08	]
-#SELECT date '1999 01 08';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-01-08	]
-#SELECT date '99 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 99-08-01	]
-#SELECT date '1999 08 01';
-% .L # table_name
-% single_value # name
-% date # type
-% 10 # length
-[ 1999-08-01	]
-#SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
-% sys.L # table_name
-% Days From 2K # name
-% int # type
-% 6 # length
-[ -15607	]
-[ -15542	]
-[ -1403	]
-[ -1402	]
-[ -1401	]
-[ -1400	]
-[ -1037	]
-[ -1036	]
-[ -1035	]
-[ 91	]
-[ 92	]
-[ 93	]
-[ 13977	]
-[ 14343	]
-[ 14710	]
+% ? # type
+% ? # length
+[ "04-01-2000" ]
+[ "04-02-2000" ]
+[ "04-03-2000" ]
 
-# 17:10:16 >  
-# 17:10:16 >  "Done."
-# 17:10:16 >  
+#--
+#-- Check all the documented input formats
+#--
+SET datestyle TO iso;  -- display results in ISO
+SET datestyle TO ymd;
+#SELECT date 'January 8, 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-18';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-18" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '01/02/03';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "2001-02-03" ]
+
+#SELECT date '19990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999.008';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'J2451187';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '99-Jan-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-Jan-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '08-Jan-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date 'Jan-08-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+#
+#SELECT date '99 Jan 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999 Jan 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '08 Jan 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date 'Jan 08 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '99 08 Jan';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999 08 Jan';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '99-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '99-08-01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '1999-08-01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '99 01 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999 01 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '99 08 01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '1999 08 01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+SET datestyle TO dmy;
+#SELECT date 'January 8, 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-18';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-18" ]
+
+#SELECT date '1/8/1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '18/1/1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-18" ]
+
+#SELECT date '01/02/03';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "2003-02-01" ]
+
+#SELECT date '19990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999.008';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'J2451187';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'January 8, 99 BC';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "0099-01-08 BC" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-Jan-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-Jan-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-Jan-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan-08-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan-08-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+#
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999 Jan 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 Jan 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 Jan 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan 08 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan 08 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+#SELECT date '1999 08 Jan';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-01-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-01-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '01-08-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '01-08-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-08-01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999 01 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 01 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 01 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '01 08 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '01 08 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999 08 01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+SET datestyle TO mdy;
+#SELECT date 'January 8, 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999-01-18';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-18" ]
+
+#SELECT date '1/8/1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1/18/1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-18" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '01/02/03';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "2003-01-02" ]
+
+#SELECT date '19990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '990108';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '1999.008';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'J2451187';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'January 8, 99 BC';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "0099-01-08 BC" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-Jan-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-Jan-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-Jan-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan-08-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan-08-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+#
+#
+#SELECT date '1999 Jan 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 Jan 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 Jan 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan 08 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date 'Jan 08 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+#SELECT date '1999 08 Jan';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-01-08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08-01-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '08-01-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '01-08-99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '01-08-1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999-08-01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999 01 08';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '08 01 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '08 01 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+#SELECT date '01 08 99';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#SELECT date '01 08 1999';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-01-08" ]
+
+#
+HINT:  Perhaps you need a different "datestyle" setting.
+#SELECT date '1999 08 01';
+% sys.L0 # table_name
+% date # name
+% ? # type
+% ? # length
+[ "1999-08-01" ]
+
+RESET datestyle;
+#--
+#-- Simple math
+#-- Leave most of it for the horology tests
+#--
+#SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
+% sys.L0 # table_name
+% Days From 2K # name
+% ? # type
+% ? # length
+[ -15607 ]
+[ -15542 ]
+[ -1403 ]
+[ -1402 ]
+[ -1401 ]
+[ -1400 ]
+[ -1037 ]
+[ -1036 ]
+[ -1035 ]
+[ 91 ]
+[ 92 ]
+[ 93 ]
+[ 13977 ]
+[ 14343 ]
+[ 14710 ]
+
+#SELECT f1 - date 'epoch' AS "Days From Epoch" FROM DATE_TBL;
+% sys.L0 # table_name
+% Days From Epoch # name
+% ? # type
+% ? # length
+[ -4650 ]
+[ -4585 ]
+[ 9554 ]
+[ 9555 ]
+[ 9556 ]
+[ 9557 ]
+[ 9920 ]
+[ 9921 ]
+[ 9922 ]
+[ 11048 ]
+[ 11049 ]
+[ 11050 ]
+[ 24934 ]
+[ 25300 ]
+[ 25667 ]
+
+#SELECT date 'yesterday' - date 'today' AS "One day";
+% sys.L0 # table_name
+% One day # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT date 'today' - date 'tomorrow' AS "One day";
+% sys.L0 # table_name
+% One day # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT date 'yesterday' - date 'tomorrow' AS "Two days";
+% sys.L0 # table_name
+% Two days # name
+% ? # type
+% ? # length
+[ -2 ]
+
+#SELECT date 'tomorrow' - date 'today' AS "One day";
+% sys.L0 # table_name
+% One day # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT date 'today' - date 'yesterday' AS "One day";
+% sys.L0 # table_name
+% One day # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT date 'tomorrow' - date 'yesterday' AS "Two days";
+% sys.L0 # table_name
+% Two days # name
+% ? # type
+% ? # length
+[ 2 ]
+
+#--
+#-- test extract!
+#--
+#-- century
+#--
+#SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC'); -- -2
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -2 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '0100-12-31 BC'); -- -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '0001-12-31 BC'); -- -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '0001-01-01');    --  1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '0001-01-01 AD'); --  1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '1900-12-31');    -- 19
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 19 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '1901-01-01');    -- 20
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 20 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '2000-12-31');    -- 20
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 20 ]
+
+#SELECT EXTRACT(CENTURY FROM DATE '2001-01-01');    -- 21
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 21 ]
+
+#SELECT EXTRACT(CENTURY FROM CURRENT_DATE)>=21 AS True;     -- true
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#--
+#-- millennium
+#--
+#SELECT EXTRACT(MILLENNIUM FROM DATE '0001-12-31 BC'); -- -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT EXTRACT(MILLENNIUM FROM DATE '0001-01-01 AD'); --  1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(MILLENNIUM FROM DATE '1000-12-31');    --  1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(MILLENNIUM FROM DATE '1001-01-01');    --  2
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 2 ]
+
+#SELECT EXTRACT(MILLENNIUM FROM DATE '2000-12-31');    --  2
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 2 ]
+
+#SELECT EXTRACT(MILLENNIUM FROM DATE '2001-01-01');    --  3
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 3 ]
+
+#-- next test to be fixed on the turn of the next millennium;-)
+#SELECT EXTRACT(MILLENNIUM FROM CURRENT_DATE);         --  3
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 3 ]
+
+#--
+#-- decade
+#--
+#SELECT EXTRACT(DECADE FROM DATE '1994-12-25');    -- 199
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 199 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0010-01-01');    --   1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0009-12-31');    --   0
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 0 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0001-01-01 BC'); --   0
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 0 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0002-12-31 BC'); --  -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0011-01-01 BC'); --  -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#SELECT EXTRACT(DECADE FROM DATE '0012-12-31 BC'); --  -2
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -2 ]
+
+#--
+#-- some other types:
+#--
+#-- on a timestamp.
+#SELECT EXTRACT(CENTURY FROM NOW())>=21 AS True;       -- true
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT EXTRACT(CENTURY FROM TIMESTAMP '1970-03-20 04:30:00.00000'); -- 20
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 20 ]
+
+#-- on an interval
+#SELECT EXTRACT(CENTURY FROM INTERVAL '100 y');  -- 1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 1 ]
+
+#SELECT EXTRACT(CENTURY FROM INTERVAL '99 y');   -- 0
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 0 ]
+
+#SELECT EXTRACT(CENTURY FROM INTERVAL '-99 y');  -- 0
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ 0 ]
+
+#SELECT EXTRACT(CENTURY FROM INTERVAL '-100 y'); -- -1
+% sys.L0 # table_name
+% date_part # name
+% ? # type
+% ? # length
+[ -1 ]
+
+#--
+#-- test trunc function!
+#--
+#SELECT DATE_TRUNC('MILLENNIUM', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1001
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Thu Jan 01 00:00:00 1001" ]
+
+#SELECT DATE_TRUNC('MILLENNIUM', DATE '1970-03-20'); -- 1001-01-01
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Thu Jan 01 00:00:00 1001 PST" ]
+
+#SELECT DATE_TRUNC('CENTURY', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1901
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Tue Jan 01 00:00:00 1901" ]
+
+#SELECT DATE_TRUNC('CENTURY', DATE '1970-03-20'); -- 1901
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Tue Jan 01 00:00:00 1901 PST" ]
+
+#SELECT DATE_TRUNC('CENTURY', DATE '2004-08-10'); -- 2001-01-01
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Mon Jan 01 00:00:00 2001 PST" ]
+
+#SELECT DATE_TRUNC('CENTURY', DATE '0002-02-04'); -- 0001-01-01
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Mon Jan 01 00:00:00 0001 PST" ]
+
+#SELECT DATE_TRUNC('CENTURY', DATE '0055-08-10 BC'); -- 0100-01-01 BC
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Tue Jan 01 00:00:00 0100 PST BC" ]
+
+#SELECT DATE_TRUNC('DECADE', DATE '1993-12-25'); -- 1990-01-01
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Mon Jan 01 00:00:00 1990 PST" ]
+
+#SELECT DATE_TRUNC('DECADE', DATE '0004-12-25'); -- 0001-01-01 BC
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Sat Jan 01 00:00:00 0001 PST BC" ]
+
+#SELECT DATE_TRUNC('DECADE', DATE '0002-12-31 BC'); -- 0011-01-01 BC
+% sys.L0 # table_name
+% date_trunc # name
+% ? # type
+% ? # length
+[ "Mon Jan 01 00:00:00 0011 PST BC" ]
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

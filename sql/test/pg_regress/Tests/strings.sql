@@ -14,7 +14,7 @@ SELECT 'first line'
 SELECT 'first line'
 ' - next line' /* this comment is not allowed here */
 ' - third line'
-	AS "Illegal 
+	AS "Illegal comment within continuation";
 
 --
 -- test conversions between various string types

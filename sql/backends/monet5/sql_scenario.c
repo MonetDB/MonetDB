@@ -600,11 +600,7 @@ sql_update_feb2013_sp3(Client c)
 
 /*
  * TODO
- * 	rewrite args table, ie add vararg and inout columns
  * 	update all table functions, ie make them type F_UNION
- *	update columns view, ie change storage_type-int into storage - varchar
- *	remove table return types (#..), ie tt_generated from _tables
- *	drop declared schema.
  */
 static str
 sql_update_jan2014(Client c)
@@ -617,7 +613,12 @@ sql_update_jan2014(Client c)
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 
+	
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+ 	/* remove table return types (#..), ie tt_generated from _tables/_columns */
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select id from _tables where name like '#%%');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _tables where name like '#%%';\n");
 
 	/* replaced 15_history.sql by 15_querylog.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.resetHistory;\n");
@@ -849,10 +850,13 @@ sql_update_default(Client c)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(((backend *) c->sqlcontext)->mvc, "current_schema");
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 	char *fullname;
 	FILE *fp;
+	sql_table *t;
+	sql_schema *s;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
@@ -891,6 +895,13 @@ sql_update_default(Client c)
 	}
 
 	/* change to 75_storage functions */
+	s = mvc_bind_schema(sql, "sys");
+	if (s && (t = mvc_bind_table(sql, s, "storage")) != NULL)
+		t->system = 0;
+	if (s && (t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
+		t->system = 0;
+	if (s && (t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+		t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = false where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
@@ -900,6 +911,11 @@ sql_update_default(Client c)
 
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storage as select * from sys.storage();\n");
+
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.hashsize(b boolean, i bigint) returns bigint begin if  b = true then return 8 * i; end if; return 0; end;");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int'	or nme = 'bigint'	or nme = 'decimal'	or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast( i * 0.12 as bigint); end if ; return 0; end;");
 
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.storagemodel() returns table ("
 "    \"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint,"
@@ -920,7 +936,7 @@ sql_update_default(Client c)
 "    sum(hashes) as hashes,"
 "    sum(imprints) as imprints,"
 "    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
-"from sys.storagemodel() group by \"schema\",\"table\";\n");
+" from sys.storagemodel() group by \"schema\",\"table\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 

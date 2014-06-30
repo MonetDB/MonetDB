@@ -25,7 +25,7 @@
 
 typedef struct logaction {
 	int type;		/* type of change */
-	int nr;
+	lng nr;
 	int ht;			/* vid(-1),void etc */
 	int tt;
 	lng id;
@@ -49,7 +49,7 @@ typedef void (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
-	size_t changes;
+	lng changes;
 	int version;
 	lng id;
 	int tid;
@@ -104,7 +104,7 @@ gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg);
-gdk_export size_t logger_changes(logger *lg);
+gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */

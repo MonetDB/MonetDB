@@ -501,7 +501,7 @@ ptest3) REFERENCES pktable);
 -- Now some cases with inheritance
 -- Basic 2 table case: 1 column of matching types.
 create table pktable_base (base1 int not null);
-create table pktable (ptest1 int, primary key(base1), unique(base1, ptest1));
+create table pktable (ptest1 int, primary key(base1), unique(base1, ptest1)); -- inherits (pktable_base)
 create table fktable (ftest1 int references pktable(base1));
 -- now some ins, upd, del
 insert into pktable(base1) values (1);
@@ -551,7 +551,7 @@ drop table pktable_base;
 -- Now we'll do one all in 1 table with 2 columns of matching types
 create table pktable_base(base1 int not null, base2 int);
 create table pktable(ptest1 int, ptest2 int, primary key(base1, ptest1), foreign key(base2, ptest2) references
-                                             pktable(base1, ptest1));
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
 insert into pktable (base1, ptest1, base2, ptest2) values (1, 1, 1, 1);
 insert into pktable (base1, ptest1, base2, ptest2) values (2, 1, 1, 1);
 insert into pktable (base1, ptest1, base2, ptest2) values (2, 2, 2, 1);
@@ -570,7 +570,7 @@ drop table pktable_base;
 
 -- 2 columns (2 tables), mismatched types
 create table pktable_base(base1 int not null);
-create table pktable(ptest1 inet, primary key(base1, ptest1));
+create table pktable(ptest1 inet, primary key(base1, ptest1)); -- inherits (pktable_base)
 -- just generally bad types (with and without column references on the referenced table)
 create table fktable(ftest1 cidr, ftest2 int[], foreign key (ftest1, ftest2) references pktable);
 create table fktable(ftest1 cidr, ftest2 int[], foreign key (ftest1, ftest2) references pktable(base1, ptest1));
@@ -584,13 +584,13 @@ drop table pktable_base;
 -- 2 columns (1 table), mismatched types
 create table pktable_base(base1 int not null, base2 int);
 create table pktable(ptest1 inet, ptest2 inet[], primary key(base1, ptest1), foreign key(base2, ptest2) references
-                                             pktable(base1, ptest1));
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
 create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(base2, ptest2) references
-                                             pktable(ptest1, base1));
+                                             pktable(ptest1, base1)); -- inherits (pktable_base)
 create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
-                                             pktable(base1, ptest1));
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
 create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
-                                             pktable(base1, ptest1));
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
 drop table pktable;
 drop table pktable_base;
 

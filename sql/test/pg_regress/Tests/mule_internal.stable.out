@@ -1,9 +1,9 @@
 stdout of test 'mule_internal` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:47 >  
-# 17:10:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:47 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,15 +20,399 @@ stdout of test 'mule_internal` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:48 >  
-# 17:10:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:48 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#
+#create table ×’Ñ’ (Ñ’ text, Ê¬ varchar, 1A char(16));
+#create index ×’Ñ’index1 on ×’Ñ’ using btree (Ñ’);
+#create index ×’Ñ’index2 on ×’Ñ’ using hash (Ê¬);
+#insert into ×’Ñ’ values('Ô’å’¡Ç’×’ì’¥','A01');
+[ 1 ]
+#insert into ×’Ñ’ values('Ô’å’¡é’¥Õ’Ã’','Ê¬B10');
+[ 1 ]
+#insert into ×’Ñ’ values('Ô’å’¡×’í’¥é’¥Þ’','Z01');
+[ 1 ]
+vacuum ’·×’»»’µ¡’ÍÑ’¸ì;
+#select * from ×’Ñ’;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"" ]
+
+#select * from ×’Ñ’ where Ê¬ = 'Z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"" ]
+
+#select * from ×’Ñ’ where Ê¬ ~* 'z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"" ]
+
+#select * from ×’Ñ’ where Ê¬ like '_Z01_';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"" ]
+
+#select * from ×’Ñ’ where Ê¬ like '_Z%';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"" ]
+
+#select * from ×’Ñ’ where Ñ’ ~ 'Ô’å’¡[Ç’]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"" ]
+
+#select * from ×’Ñ’ where Ñ’ ~* 'Ô’å’¡[Ç’]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"" ]
+
+#select *,character_length(Ñ’) from ×’Ñ’;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è,	char_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"",	12 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"",	13 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"",	12 ]
+
+#select *,octet_length(Ñ’) from ×’Ñ’;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è,	octet_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"",	36 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"",	39 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"",	36 ]
+
+#select *,position('' in Ñ’) from ×’Ñ’;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è,	strpos # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"",	7 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"",	0 ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"",	0 ]
+
+#select *,substring(Ñ’ from 10 for 4) from ×’Ñ’;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ’ÍÑ’¸ì,	’Ê¬’Îà’¥³’¡¼’¥É,	’È÷’¹Í1a’¤À’¤è,	substr # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥Ç’¥£’¥¹’¥×’¥ì’¥¤",	"’µ¡A01’¾å",	"",	"’¥×’¥ì’¥¤" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥°’¥é’¥Õ’¥£’¥Ã’¥¯’¥¹",	"’Ê¬B10’Ãæ",	"",	"’¥£’¥Ã’¥¯’¥¹" ]
+[ "’¥³’¥ó’¥Ô’¥å’¡¼’¥¿’¥×’¥í’¥°’¥é’¥Þ’¡¼",	"’¿ÍZ01’²¼",	"",	"’¥é’¥Þ’¡¼" ]
+
+#
+#create table Æ‘ã‘»( text, Ö‘ varchar, ×¢1A char(16));
+#create index Æ‘ã‘»index1 on Æ‘ã‘» using btree();
+#create index Æ‘ã‘»index2 on Æ‘ã‘» using btree(Ö‘);
+#insert into Æ‘ã‘» values('Ô‘Ô‘Ê¾','A01');
+[ 1 ]
+#insert into Æ‘ã‘» values('Ô‘Í¼','B01');
+[ 1 ]
+#insert into Æ‘ã‘» values('Ô‘Ì‘Ô±','Z01');
+[ 1 ]
+vacuum ‘¼Æ‘Ëã‘»ú‘Êõ‘Óï;
+#select * from Æ‘ã‘»;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"" ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"" ]
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"" ]
+
+#select * from Æ‘ã‘» where Ö‘ = 'Z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"" ]
+
+#select * from Æ‘ã‘» where Ö‘ ~* 'z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"" ]
+
+#select * from Æ‘ã‘» where Ö‘ like '_Z01_';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"" ]
+
+#select * from Æ‘ã‘» where Ö‘ like '_Z%';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"" ]
+
+#select * from Æ‘ã‘» where  ~ '[Ô‘Í¼]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"" ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"" ]
+
+#select * from Æ‘ã‘» where  ~* '[Ô‘Í¼]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"" ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"" ]
+
+#select *,character_length() from Æ‘ã‘»;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a,	char_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"",	5 ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"",	4 ]
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"",	5 ]
+
+#select *,octet_length() from Æ‘ã‘»;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a,	octet_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"",	15 ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"",	12 ]
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"",	15 ]
+
+#select *,position('' in ) from Æ‘ã‘»;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a,	strpos # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"",	3 ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"",	0 ]
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"",	0 ]
+
+#select *,substring( from 3 for 4) from Æ‘ã‘»;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% ‘Êõ‘Óï,	‘·Ö‘Àà‘ºÅ,	‘±¸‘×¢1a,	substr # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "‘µç‘ÄÔ‘ÏÔ‘Ê¾‘ÆÁ",	"‘»úA01‘ÉÏ",	"",	"‘ÏÔ‘Ê¾‘ÆÁ" ]
+[ "‘µç‘ÄÔ‘Í¼‘ÐÎ",	"‘·ÖB01‘ÖÐ",	"",	"‘Í¼‘ÐÎ" ]
+[ "‘µç‘ÄÔ‘³Ì‘Ðò‘Ô±",	"‘ÈËZ01‘ÏÂ",	"",	"‘³Ì‘Ðò‘Ô±" ]
+
+#
+#create table Íªß©Ñ¦ë“¾ (ë“¾ text, Â“×¾Ú“ varchar, 1Aó“±¸ char(16));
+#create index Íªß©Ñ¦ë“¾index1 on Íªß©Ñ¦ë“¾ using btree (ë“¾);
+#create index Íªß©Ñ¦ë“¾index2 on Íªß©Ñ¦ë“¾ using hash (Â“×¾Ú“);
+#insert into Íªß©Ñ¦ë“¾ values('Ä“Ç»Í“ð“½ºÃ“', 'Ñ¦A01ß¾');
+[ 1 ]
+#insert into Íªß©Ñ¦ë“¾ values('Ä“Ç»Í“×“È“', 'B10');
+[ 1 ]
+#insert into Íªß©Ñ¦ë“¾ values('Ä“Ç»Í“Î“×“', 'Z01');
+[ 1 ]
+vacuum “Íª“ß©“Ñ¦“¿ë“¾î;
+#select * from Íªß©Ñ¦ë“¾;
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"" ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"" ]
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where Â“×¾Ú“ = 'Z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where Â“×¾Ú“ ~* 'z01';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where Â“×¾Ú“ like '_Z01_';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where Â“×¾Ú“ like '_Z%';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where ë“¾ ~ 'Ä“Ç»[]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"" ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"" ]
+
+#select * from Íªß©Ñ¦ë“¾ where ë“¾ ~* 'Ä“Ç»[]';
+% sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸ # name
+% ?,	?,	? # type
+% ?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"" ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"" ]
+
+#select *,character_length(ë“¾) from Íªß©Ñ¦ë“¾;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸,	char_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"",	8 ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"",	7 ]
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"",	8 ]
+
+#select *,octet_length(ë“¾) from Íªß©Ñ¦ë“¾;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸,	octet_length # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"",	24 ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"",	21 ]
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"",	24 ]
+
+#select *,position('' in ë“¾) from Íªß©Ñ¦ë“¾;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸,	strpos # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"",	4 ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"",	0 ]
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"",	0 ]
+
+#select *,substring(ë“¾ from 3 for 4) from Íªß©Ñ¦ë“¾;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% “¿ë“¾î,	“ÝÂ“×¾“ÄÚ“µå,	“ºñ“°í1a“¶ó“±¸,	substr # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "“ÄÄ“Ç»“ÅÍ“µð“½º“ÇÃ“·¹“ÀÌ",	"“Ñ¦A01“ß¾",	"",	"“ÅÍ“µð“½º“ÇÃ" ]
+[ "“ÄÄ“Ç»“ÅÍ“±×“·¡“ÇÈ“½º",	"“ÝÂB10“ñé",	"",	"“ÅÍ“±×“·¡“ÇÈ" ]
+[ "“ÄÄ“Ç»“ÅÍ“ÇÁ“·Î“±×“·¡“¸Ó",	"“ìÑZ01“ù»",	"",	"“ÅÍ“ÇÁ“·Î“±×" ]
+
+#
 #create table test (t text);
 #insert into test values('ENGLISH');
-[ 1	]
+[ 1 ]
+#insert into test values('FRANAIS');
+[ 1 ]
+#insert into test values('ESPAOL');
+[ 1 ]
+#insert into test values('SLENSKA');
+[ 1 ]
+#insert into test values('ENGLISH FRANAIS ESPAOL SLENSKA');
+[ 1 ]
+vacuum test;
+#select * from test;
+% sys.L0 # table_name
+% t # name
+% ? # type
+% ? # length
+[ "ENGLISH" ]
+[ "FRANÇAIS" ]
+[ "ESPAÑOL" ]
+[ "ÍSLENSKA" ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA" ]
 
-# 17:10:48 >  
-# 17:10:48 >  "Done."
-# 17:10:48 >  
+#select * from test where t = 'ESPAOL';
+% sys.L0 # table_name
+% t # name
+% ? # type
+% ? # length
+[ "ESPAÑOL" ]
+
+#select * from test where t ~* 'espaol';
+% sys.L0 # table_name
+% t # name
+% ? # type
+% ? # length
+[ "ESPAÑOL" ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA" ]
+
+#select *,character_length(t) from test;
+% sys.L0,	sys.L0 # table_name
+% t,	char_length # name
+% ?,	? # type
+% ?,	? # length
+[ "ENGLISH",	7 ]
+[ "FRANÇAIS",	8 ]
+[ "ESPAÑOL",	7 ]
+[ "ÍSLENSKA",	8 ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA",	33 ]
+
+#select *,octet_length(t) from test;
+% sys.L0,	sys.L0 # table_name
+% t,	octet_length # name
+% ?,	? # type
+% ?,	? # length
+[ "ENGLISH",	7 ]
+[ "FRANÇAIS",	9 ]
+[ "ESPAÑOL",	8 ]
+[ "ÍSLENSKA",	9 ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA",	36 ]
+
+#select *,position('L' in t) from test;
+% sys.L0,	sys.L0 # table_name
+% t,	strpos # name
+% ?,	? # type
+% ?,	? # length
+[ "ENGLISH",	4 ]
+[ "FRANÇAIS",	0 ]
+[ "ESPAÑOL",	7 ]
+[ "ÍSLENSKA",	3 ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA",	4 ]
+
+#select *,substring(t from 3 for 4) from test;
+% sys.L0,	sys.L0 # table_name
+% t,	substr # name
+% ?,	? # type
+% ?,	? # length
+[ "ENGLISH",	"GLIS" ]
+[ "FRANÇAIS",	"ANÇA" ]
+[ "ESPAÑOL",	"PAÑO" ]
+[ "ÍSLENSKA",	"LENS" ]
+[ "ENGLISH FRANÇAIS ESPAÑOL ÍSLENSKA",	"GLIS" ]
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
