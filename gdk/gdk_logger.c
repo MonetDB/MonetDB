@@ -967,9 +967,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		}
 
 		while(lid > lg->id) {
-			lg->id++;
 			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, lg->id);
-
 			if ((res = logger_readlog(lg, buf)) != 0) {
 				/* we cannot distinguish errors from
 				 * incomplete transactions (even if we
@@ -978,6 +976,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 				 * next log file */
 				(void) res;
 			}
+			lg->id++;
 		}
 		/* if this is a shared logger, write the id in the shared file */
 		if (lg->shared) {
