@@ -154,14 +154,16 @@ geom_export str wkbTransform(wkb**, wkb**, int*, char**, char**);
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
 str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
-	projPJ proj4_src, proj4_dst;
-	GEOSGeom geosGeometry;
-//	int geoCoordinatesNum = 0;
-	const GEOSCoordSeq gcs;	
-	unsigned int pointsNum =0;
-double x=10, y=10, z=10;
-
-fprintf(stderr, "SRID=%d SRC=%s DEST=%s\n", *srid, *proj4_src_str, *proj4_dst_str);
+	projPJ proj4_src = pj_init_plus(*proj4_src_str);
+	projPJ proj4_dst = pj_init_plus(*proj4_dst_str);
+	
+	GEOSGeom geosGeometry, transformedGeosGeometry;
+//	int geometriesNum = 0;
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;
+	unsigned int pointsNum =0, i=0;
+	double x=0, y=0, z=0;
 
 
 	if(*geomWKB == NULL) {
@@ -171,24 +173,50 @@ fprintf(stderr, "SRID=%d SRC=%s DEST=%s\n", *srid, *proj4_src_str, *proj4_dst_st
 
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*geomWKB);
+//	/*get the number of geometries */
+//	geometriesNum = GEOSGetNumGeometries(geosGeometry);	
 	/* get the number of coordinates the geometry has */
-//	geoCoordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);//get GEOSGeometry
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
 	/* get the coordinates of the points comprising the geometry */
-	gcs = GEOSGeom_getCoordSeq(geosGeometry);
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	if(gcs_old == NULL) {
+		*transformedWKB = wkb_nil;
+		throw(MAL, "geom.wkbTransform", "GEOSGeom_getCoordSeq failed");
+	}
 	/* get the number of points in the geomtry */
-	GEOSCoordSeq_getSize(gcs, &pointsNum);
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
 
-	fprintf(stderr, "Number of points = %d\n", pointsNum);
+	/* create the coordinates sequence for the transformed geometry */
+	gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
+	
+	//iterate over the points
+	for(i=0; i<pointsNum; i++) {
+		GEOSCoordSeq_getX(gcs_old, i, &x);
+		GEOSCoordSeq_getY(gcs_old, i, &y);
+				
+		if(coordinatesNum > 2) 
+			GEOSCoordSeq_getZ(gcs_old, i, &z);
+		
+		pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
 
-proj4_src = pj_init_plus(*proj4_src_str);
-proj4_dst = pj_init_plus(*proj4_dst_str);
+		GEOSCoordSeq_setX(gcs_new, i, x);
+		GEOSCoordSeq_setY(gcs_new, i, y);
+	
+		if(coordinatesNum > 2) 
+			GEOSCoordSeq_setZ(gcs_new, i, z);
+	}
 
-fprintf(stderr, "BEFORE: (%f, %f, %f)\n", x, y, z);
-pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
-fprintf(stderr, "AFTER: (%f, %f, %f)\n", x, y, z);
+	if(pointsNum == 1)
+		transformedGeosGeometry = GEOSGeom_createPoint(gcs_new);
+	else
+		transformedGeosGeometry = GEOSGeom_createLineString(gcs_new);
 
-pj_free(proj4_src);
-pj_free(proj4_dst);
+	GEOSSetSRID(transformedGeosGeometry, *srid);
+
+	*transformedWKB = geos2wkb(transformedGeosGeometry);
+
+	pj_free(proj4_src);
+	pj_free(proj4_dst);
 
 //for each geometry in a multigeometry
 //for each point in the geometry
