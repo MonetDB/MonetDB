@@ -1343,7 +1343,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	if (create_shared_logger) {
 		/* create a read-only logger for the shared directory */
 #ifdef STORE_DEBUG
-	fprintf(stderr, "#store_init creating read-only logger\n");
+	fprintf(stderr, "#store_init creating shared logger\n");
 #endif
 		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
 			MT_lock_unset(&bs_lock, "store_init");
@@ -1616,7 +1616,7 @@ store_manager(void)
 			/* get the shared transactions drift */
 			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
 #ifdef STORE_DEBUG
-	fprintf(stderr, "#store_manager shared_transactions_drift=%d\n", shared_transactions_drift);
+	fprintf(stderr, "#store_manager shared_transactions_drift is " LLFMT "\n", shared_transactions_drift);
 #endif
 			if (shared_transactions_drift == LOG_ERR) {
 				GDKfatal("shared write-ahead log last transaction read failure");

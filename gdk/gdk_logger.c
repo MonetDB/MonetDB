@@ -955,8 +955,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	char id[BUFSIZ];
 
 	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_readlogs %s\n", filename);
-		fprintf(stderr, "#logger_readlogs logger id=%lld\n", lg->id);
+		fprintf(stderr, "#logger_readlogs logger id is " LLFMT "\n", lg->id);
 	}
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
@@ -964,7 +963,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
-			fprintf(stderr, "#logger_readlogs lid=%lld\n", lid);
+			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
 		while(lid > lg->id) {
@@ -1309,7 +1308,7 @@ logger_set_logdir_path(char *filename, char *fn, char *logdir)
 }
 
 /* Load data from the logger logdir
- * Initialize new directories and catalog files if none are present,  unless running in read-only mode
+ * Initialize new directories and catalog files if none are present, unless running in read-only mode
  * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
@@ -1402,7 +1401,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 			BUN p = BUNfndT(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
 			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_load setting new logger id=%lld\n", lg->id);
+				fprintf(stderr, "#logger_load setting new logger id to " LLFMT "\n", lg->id);
 			}
 		} else {
 			BUNappend(lg->seqs_id, &id, FALSE);
@@ -1610,7 +1609,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 			lg->id = res;
 			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_new last shared transactions is read form %s is %lld\n", shared_log_filename, lg->id);
+				fprintf(stderr, "#logger_new last shared transactions is read form %s is " LLFMT "\n", shared_log_filename, lg->id);
 			}
 		} else {
 			if (lg->debug & 1) {
@@ -1843,31 +1842,29 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file)
 {
 	char filename[BUFSIZ];
 	FILE *fp;
-	int id;
+	char id[BUFSIZ];
+	lng lid = LOG_ERR;
 
 	snprintf(filename, BUFSIZ, "%s%s", dir, logger_file);
 	if ((fp = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}
-	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_read_last_transaction_id reading file %s\n", filename);
-	}
+
 	if (check_version(lg, fp)) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
 		goto error;
 	}
 
 	/* read the last id */
-	if(fscanf(fp, "%d", &id) != 1) {
-		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to read last transaction from file %s\n", filename);
-		goto error;
-	}
-	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_read_last_transaction_id %d\n", id);
+	while (fgets(id, BUFSIZ, fp) != NULL) {
+		lid = strtoll(id, NULL, 10);
+		if (lg->debug & 1) {
+			fprintf(stderr, "#logger_read_last_transaction_id last logger id written in %s is " LLFMT "\n", filename, lid);
+		}
 	}
 
-	return id;
+	return lid;
 
 	error:
 	if (fp)
