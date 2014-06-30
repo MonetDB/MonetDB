@@ -236,6 +236,14 @@ command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int]
 address ALGhistogram;
 comment Produce a BAT containing the histogram over the tail values.
 
+command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
+address JSONgroupStr;
+comment Aggregate the double values to array.
+
+command aggr.jsonaggr(val:bat[:oid,:str]):str 
+address JSONgroupStr;
+comment Aggregate the string values to array.
+
 function aggr.median(b:bat[:oid,:any_1]):any_1;
 command aggr.median(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1] 
 address AGGRmedian3;
@@ -773,6 +781,22 @@ function aggr.quantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl]):any_1;
 command aggr.quantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:bat[:oid,:dbl]):bat[:oid,:any_1] 
 address AGGRquantile3;
 comment Grouped quantile aggregate
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubquantilecand;
@@ -39436,14 +39460,6 @@ command iterator.new(b:bat[:oid,:any_2],size:lng) (X_3:lng,X_4:bat[:oid,:any_2])
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
-command json.aggr(val:bat[:oid,:dbl]):str 
-address JSONgroupStr;
-comment Aggregate the double values to array.
-
-command json.aggr(val:bat[:oid,:str]):str 
-address JSONgroupStr;
-comment Aggregate the string values to array.
-
 command json.dump(j:json):void 
 address JSONdump;
 pattern json.fold(k:bat[:oid,:any]):json 
@@ -39546,22 +39562,6 @@ pattern json.renderarray(val:any...):json
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
 address JSONrenderobject;
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
-
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
-
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
-
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
-
 command json.suboutput(b:bat[:oid,:any_1],gid:bat[:oid,:oid],ext:bat[:oid,:wrd],flg:bit):bat[:oid,:str] 
 address JSONtextGrouped;
 comment Pack the values into a json structure
