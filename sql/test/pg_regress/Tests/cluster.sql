@@ -23,7 +23,7 @@ INSERT INTO clstr_tst_s (b) SELECT b FROM clstr_tst_s;
 INSERT INTO clstr_tst_s (b) SELECT b FROM clstr_tst_s;
 INSERT INTO clstr_tst_s (b) SELECT b FROM clstr_tst_s;
 
-CREATE TABLE clstr_tst_inh () 
+CREATE TABLE clstr_tst_inh (); -- INHERITS (clstr_tst)
 
 INSERT INTO clstr_tst (b, c) VALUES (11, 'once');
 INSERT INTO clstr_tst (b, c) VALUES (10, 'diez');

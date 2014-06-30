@@ -1,0 +1,79 @@
+stdout of test 'copy_into_mbr.3492` in directory 'geom/BugTracker` itself:
+
+
+# 15:46:48 >  
+# 15:46:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38234" "--set" "mapi_usock=/var/tmp/mtest-5384/.s.monetdb.38234" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/kostis/INSTALL/MonetDB/var/MonetDB/mTests_geom_BugTracker" "--set" "mal_listing=0"
+# 15:46:48 >  
+
+# MonetDB 5 server v11.17.18
+# This is an unreleased version
+# Serving database 'mTests_geom_BugTracker', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.497 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://leninovo:38234/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5384/.s.monetdb.38234
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#Bulk operator required for geom.mbr
+#Bulk operator required for geom.mbr
+#Bulk operator required for geom.mbr
+#Bulk operator required for geom.mbr
+
+# 15:46:48 >  
+# 15:46:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5384" "--port=38234"
+# 15:46:48 >  
+
+#CREATE TABLE geom (id INTEGER, g GEOMETRY, b MBR);
+#INSERT INTO geom values (1, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', NULL);
+[ 1	]
+#INSERT INTO geom values (2, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', 'BOX(1 2,3 4)');
+[ 1	]
+#INSERT INTO geom values (3, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', 'BOX (1 2,3 4)');
+[ 1	]
+#INSERT INTO geom values (4, NULL, NULL);
+[ 1	]
+#SELECT * FROM geom ORDER BY id;
+% sys.geom,	sys.geom,	sys.geom # table_name
+% id,	g,	b # name
+% int,	geometry,	mbr # type
+% 1,	0,	0 # length
+[ 1,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	NULL	]
+[ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 4,	NULL,	NULL	]
+#UPDATE geom SET b = MBR(g);
+[ 4	]
+#SELECT * FROM geom ORDER BY id;
+% sys.geom,	sys.geom,	sys.geom # table_name
+% id,	g,	b # name
+% int,	geometry,	mbr # type
+% 1,	0,	0 # length
+[ 1,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 4,	NULL,	NULL	]
+#CREATE TABLE newgeom (id INTEGER, g GEOMETRY, b MBR);
+#INSERT INTO newgeom SELECT * FROM geom ORDER BY id;
+[ 4	]
+#SELECT * FROM newgeom ORDER BY id;
+% sys.newgeom,	sys.newgeom,	sys.newgeom # table_name
+% id,	g,	b # name
+% int,	geometry,	mbr # type
+% 1,	0,	0 # length
+[ 1,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
+[ 4,	NULL,	NULL	]
+#DROP TABLE geom;
+#DROP TABLE newgeom;
+
+# 15:46:48 >  
+# 15:46:48 >  "Done."
+# 15:46:48 >  
+

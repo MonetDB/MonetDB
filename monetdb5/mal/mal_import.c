@@ -262,8 +262,8 @@ evalFile(Client c, str fname, int listing)
 	while ((p = strchr(filename, PATH_SEP)) != NULL) {
 		*p = '\0';
 		fd = malOpenSource(filename);
-		if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-			mnstr_destroy(fd);
+		if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+			if(fd) mnstr_destroy(fd);
 			mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
 					filename);
 		} else {
@@ -277,10 +277,9 @@ evalFile(Client c, str fname, int listing)
 		filename = p + 1;
 	}
 	fd = malOpenSource(filename);
-	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
-		mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
-				filename);
+	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+		if( fd == 0) mnstr_destroy(fd);
+		msg = createException(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
 	} else {
 		c->srcFile = filename;
 		c->yycur = 0;

@@ -1,9 +1,9 @@
 stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:33 >  
-# 17:11:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:33 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,427 +20,956 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:33 >  
-# 17:11:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:33 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- STRINGS
+#-- Test various data entry syntaxes.
+#--
+#-- SQL92 string continuation syntax
+#-- E021-03 character string literals
 #SELECT 'first line'
 #' - next line'
 #	' - third line'
 #	AS "Three lines to one";
-% .L # table_name
+% sys.L0 # table_name
 % Three lines to one # name
-% char # type
-% 35 # length
-[ "first line - next line - third line"	]
+% ? # type
+% ? # length
+[ "first line - next line - third line" ]
+
+#-- illegal string continuation syntax
+#
+LINE 3: ' - third line'
+        ^
+#--
+#-- test conversions between various string types
+#-- E021-10 implicit casting among the character data types
+#--
+#SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+% sys.L0 # table_name
+% text(char) # name
+% ? # type
+% ? # length
+[ "a" ]
+[ "ab" ]
+[ "abcd" ]
+[ "abcd" ]
+
+#SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
+% sys.L0 # table_name
+% text(varchar) # name
+% ? # type
+% ? # length
+[ "a" ]
+[ "ab" ]
+[ "abcd" ]
+[ "abcd" ]
+
+#SELECT CAST(name 'namefield' AS text) AS "text(name)";
+% sys.L0 # table_name
+% text(name) # name
+% ? # type
+% ? # length
+[ "namefield" ]
+
+#-- since this is an explicit cast, it should truncate w/o error:
+#SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
+% sys.L0 # table_name
+% char(text) # name
+% ? # type
+% ? # length
+[ "doh!" ]
+[ "hi de ho n" ]
+
+#-- note: implicit-cast case is tested in char.sql
+#SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
+% sys.L0 # table_name
+% char(text) # name
+% ? # type
+% ? # length
+[ "doh!" ]
+[ "hi de ho neighbor" ]
+
+#SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
+% sys.L0 # table_name
+% char(varchar) # name
+% ? # type
+% ? # length
+[ "a" ]
+[ "ab" ]
+[ "abcd" ]
+[ "abcd" ]
+
+#SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
+% sys.L0 # table_name
+% char(name) # name
+% ? # type
+% ? # length
+[ "namefield" ]
+
+#SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
+% sys.L0 # table_name
+% varchar(text) # name
+% ? # type
+% ? # length
+[ "doh!" ]
+[ "hi de ho neighbor" ]
+
+#SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
+% sys.L0 # table_name
+% varchar(char) # name
+% ? # type
+% ? # length
+[ "a" ]
+[ "ab" ]
+[ "abcd" ]
+[ "abcd" ]
+
+#SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
+% sys.L0 # table_name
+% varchar(name) # name
+% ? # type
+% ? # length
+[ "namefield" ]
+
+#--
+#-- test SQL92 string functions
+#-- E### and T### are feature reference numbers from SQL99
+#--
+#-- E021-09 trim function
+#SELECT TRIM(BOTH FROM '  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
+% sys.L0 # table_name
+% bunch o blanks # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT TRIM(LEADING FROM '  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
+% sys.L0 # table_name
+% bunch o blanks # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT TRIM(TRAILING FROM '  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
+% sys.L0 # table_name
+% bunch o blanks # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT TRIM(BOTH 'x' FROM 'xxxxxsome Xsxxxxx') = 'some Xs' AS "some Xs";
+% sys.L0 # table_name
+% some Xs # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- E021-06 substring expression
+#SELECT SUBSTRING('1234567890' FROM 3) = '34567890' AS "34567890";
+% sys.L0 # table_name
+% 34567890 # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT SUBSTRING('1234567890' FROM 4 FOR 3) = '456' AS "456";
+% sys.L0 # table_name
+% 456 # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- T581 regular expression substring (with SQL99's bizarre regexp syntax)
+#SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd";
+% sys.L0 # table_name
+% bcd # name
+% ? # type
+% ? # length
+[ "bcd" ]
+
+#-- No match should return NULL
+#SELECT SUBSTRING('abcdefg' FROM '#"(b_d)#"%' FOR '#') IS NULL AS "True";
+% sys.L0 # table_name
+% True # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- Null inputs should return NULL
+#SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True";
+% sys.L0 # table_name
+% True # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True";
+% sys.L0 # table_name
+% True # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True";
+% sys.L0 # table_name
+% True # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- PostgreSQL extension to allow omitting the escape character;
+#-- here the regexp is taken as Posix syntax
+#SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde";
+% sys.L0 # table_name
+% cde # name
+% ? # type
+% ? # length
+[ "cde" ]
+
+#-- With a parenthesized subexpression, return only what matches the subexpr
+#SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde";
+% sys.L0 # table_name
+% cde # name
+% ? # type
+% ? # length
+[ "cde" ]
+
+#-- E021-11 position expression
 #SELECT POSITION('4' IN '1234567890') = '4' AS "4";
-% .L # table_name
+% sys.L0 # table_name
 % 4 # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT POSITION(5 IN '1234567890') = '5' AS "5";
-% .L # table_name
+% sys.L0 # table_name
 % 5 # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- T312 character overlay function
+#SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f";
+% sys.L0 # table_name
+% abc45f # name
+% ? # type
+% ? # length
+[ "abc45f" ]
+
+#SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5) AS "yabadaba";
+% sys.L0 # table_name
+% yabadaba # name
+% ? # type
+% ? # length
+[ "yabadaba" ]
+
+#SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo";
+% sys.L0 # table_name
+% yabadabadoo # name
+% ? # type
+% ? # length
+[ "yabadabadoo" ]
+
+#SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba";
+% sys.L0 # table_name
+% bubba # name
+% ? # type
+% ? # length
+[ "bubba" ]
+
+#--
+#-- test LIKE
+#-- Be sure to form every test as a LIKE/NOT LIKE pair.
+#--
+#-- simplest examples
+#-- E061-04 like predicate
 #SELECT 'hawkeye' LIKE 'h%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT LIKE 'h%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'hawkeye' LIKE 'H%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'hawkeye' NOT LIKE 'H%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' LIKE 'indio%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'hawkeye' NOT LIKE 'indio%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' LIKE 'h%eye' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT LIKE 'h%eye' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' LIKE '_ndio' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'indio' NOT LIKE '_ndio' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' LIKE 'in__o' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'indio' NOT LIKE 'in__o' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' LIKE 'in_o' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' NOT LIKE 'in_o' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- unused escape character
 #SELECT 'hawkeye' LIKE 'h%' ESCAPE '#' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT LIKE 'h%' ESCAPE '#' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' LIKE 'ind_o' ESCAPE '$' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'indio' NOT LIKE 'ind_o' ESCAPE '$' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- escape character
+#-- E061-05 like predicate with escape clause
 #SELECT 'h%' LIKE 'h#%' ESCAPE '#' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'h%' NOT LIKE 'h#%' ESCAPE '#' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'h%wkeye' LIKE 'h#%' ESCAPE '#' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'h%wkeye' NOT LIKE 'h#%' ESCAPE '#' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'h%wkeye' LIKE 'h#%%' ESCAPE '#' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'h%wkeye' NOT LIKE 'h#%%' ESCAPE '#' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'h%awkeye' LIKE 'h#%a%k%e' ESCAPE '#' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'h%awkeye' NOT LIKE 'h#%a%k%e' ESCAPE '#' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'indio' LIKE '_ndio' ESCAPE '$' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'indio' NOT LIKE '_ndio' ESCAPE '$' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'i_dio' LIKE 'i$_d_o' ESCAPE '$' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'i_dio' NOT LIKE 'i$_d_o' ESCAPE '$' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'i_dio' LIKE 'i$_nd_o' ESCAPE '$' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'i_dio' NOT LIKE 'i$_nd_o' ESCAPE '$' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'i_dio' LIKE 'i$_d%o' ESCAPE '$' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'i_dio' NOT LIKE 'i$_d%o' ESCAPE '$' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- escape character same as pattern character
 #SELECT 'maca' LIKE 'm%aca' ESCAPE '%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'ma%a' LIKE 'm%a%%a' ESCAPE '%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'bear' LIKE 'b_ear' ESCAPE '_' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'be_r' LIKE 'b_e__r' ESCAPE '_' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'be_r' LIKE '__e__r' ESCAPE '_' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'be_r' NOT LIKE '__e__r' ESCAPE '_' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
+#--
+#-- test ILIKE (case-insensitive LIKE)
+#-- Be sure to form every test as an ILIKE/NOT ILIKE pair.
+#--
 #SELECT 'hawkeye' ILIKE 'h%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT ILIKE 'h%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'hawkeye' ILIKE 'H%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT ILIKE 'H%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'hawkeye' ILIKE 'H%Eye' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'hawkeye' NOT ILIKE 'H%Eye' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
 #SELECT 'Hawkeye' ILIKE 'h%' AS "true";
-% .L # table_name
+% sys.L0 # table_name
 % true # name
-% boolean # type
-% 5 # length
-[ true	]
+% ? # type
+% ? # length
+[ "t" ]
+
 #SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false";
-% .L # table_name
+% sys.L0 # table_name
 % false # name
-% boolean # type
-% 5 # length
-[ false	]
+% ? # type
+% ? # length
+[ "f" ]
+
+#--
+#-- test implicit type conversion
+#--
+#-- E021-07 character concatenation
 #SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
-% .L # table_name
+% sys.L0 # table_name
 % Concat unknown types # name
-% char # type
-% 0 # length
-[ "unknown and unknown"	]
+% ? # type
+% ? # length
+[ "unknown and unknown" ]
+
+#SELECT text 'text' || ' and unknown' AS "Concat text to unknown type";
+% sys.L0 # table_name
+% Concat text to unknown type # name
+% ? # type
+% ? # length
+[ "text and unknown" ]
+
+#SELECT char(20) 'characters' || ' and text' AS "Concat char to unknown type";
+% sys.L0 # table_name
+% Concat char to unknown type # name
+% ? # type
+% ? # length
+[ "characters and text" ]
+
+#SELECT text 'text' || char(20) ' and characters' AS "Concat text to char";
+% sys.L0 # table_name
+% Concat text to char # name
+% ? # type
+% ? # length
+[ "text and characters" ]
+
+#SELECT text 'text' || varchar ' and varchar' AS "Concat text to varchar";
+% sys.L0 # table_name
+% Concat text to varchar # name
+% ? # type
+% ? # length
+[ "text and varchar" ]
+
+#--
+#-- test substr with toasted text values
+#--
 #CREATE TABLE toasttest(f1 text);
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
+#--
+#-- Ensure that some values are uncompressed, to test the faster substring
+#-- operation used in that case
+#--
+#alter table toasttest alter column f1 set storage external;
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
-#DROP TABLE toasttest;
-#SELECT length('abcdef') AS "length_6";
-% .L # table_name
-% length_6 # name
-% int # type
-% 1 # length
-[ 6	]
-#SELECT replace('abcdef', 'de', '45') AS "abc45f";
-% .L # table_name
-% abc45f # name
-% char # type
-% 0 # length
-[ "abc45f"	]
-#SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
-% .L # table_name
-% ya123da123doo # name
-% char # type
-% 0 # length
-[ "ya123da123doo"	]
-#SELECT replace('yabadoo', 'bad', '') AS "yaoo";
-% .L # table_name
-% yaoo # name
-% char # type
-% 0 # length
-[ "yaoo"	]
-#select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('a') = '0cc175b9c0f1b6a831c399e269772661' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('abc') = '900150983cd24fb0d6963f7d28e17f72' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('message digest') = 'f96b697d7cb7938d525a2f31aaf161d0' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('abcdefghijklmnopqrstuvwxyz') = 'c3fcd3d76192e4007dfb496cca67e13b' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = 'd174ab98d277d9f5a5611c2c9f419d9f' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
-#select md5('12345678901234567890123456789012345678901234567890123456789012345678901234567890') = '57edf4a22be3c955ac49da2e2107b67a' AS "TRUE";
-% .L # table_name
-% TRUE # name
-% boolean # type
-% 5 # length
-[ true	]
+[ 1 ]
+#-- If the starting position is zero or less, then return from the start of the string
+#-- adjusting the length to be consistent with the "negative start" per SQL92.
+#SELECT substr(f1, -1, 5) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 123 ]
+[ 123 ]
+[ 123 ]
+[ 123 ]
 
-# 17:11:34 >  
-# 17:11:34 >  "Done."
-# 17:11:34 >  
+#-- If the length is less than zero, an ERROR is thrown.
+#
+#-- If no third argument (length) is provided, the length to the end of the
+#-- string is assumed.
+#SELECT substr(f1, 99995) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+
+#-- If start plus length is > string length, the result is truncated to
+#-- string length
+#SELECT substr(f1, 99995, 10) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+
+#DROP TABLE toasttest;
+#--
+#-- test substr with toasted bytea values
+#--
+#CREATE TABLE toasttest(f1 bytea);
+#insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+[ 1 ]
+#insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+[ 1 ]
+#--
+#-- Ensure that some values are uncompressed, to test the faster substring
+#-- operation used in that case
+#--
+#alter table toasttest alter column f1 set storage external;
+#insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+[ 1 ]
+#insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+[ 1 ]
+#-- If the starting position is zero or less, then return from the start of the string
+#-- adjusting the length to be consistent with the "negative start" per SQL92.
+#SELECT substr(f1, -1, 5) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 123 ]
+[ 123 ]
+[ 123 ]
+[ 123 ]
+
+#-- If the length is less than zero, an ERROR is thrown.
+#
+#-- If no third argument (length) is provided, the length to the end of the
+#-- string is assumed.
+#SELECT substr(f1, 99995) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+
+#-- If start plus length is > string length, the result is truncated to
+#-- string length
+#SELECT substr(f1, 99995, 10) from toasttest;
+% sys.L0 # table_name
+% substr # name
+% ? # type
+% ? # length
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+[ 567890 ]
+
+#DROP TABLE toasttest;
+#--
+#-- test length
+#--
+#SELECT length('abcdef') AS "length_6";
+% sys.L0 # table_name
+% length_6 # name
+% ? # type
+% ? # length
+[ 6 ]
+
+#--
+#-- test strpos
+#--
+#SELECT strpos('abcdef', 'cd') AS "pos_3";
+% sys.L0 # table_name
+% pos_3 # name
+% ? # type
+% ? # length
+[ 3 ]
+
+#SELECT strpos('abcdef', 'xy') AS "pos_0";
+% sys.L0 # table_name
+% pos_0 # name
+% ? # type
+% ? # length
+[ 0 ]
+
+#--
+#-- test replace
+#--
+#SELECT replace('abcdef', 'de', '45') AS "abc45f";
+% sys.L0 # table_name
+% abc45f # name
+% ? # type
+% ? # length
+[ "abc45f" ]
+
+#SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
+% sys.L0 # table_name
+% ya123da123doo # name
+% ? # type
+% ? # length
+[ "ya123da123doo" ]
+
+#SELECT replace('yabadoo', 'bad', '') AS "yaoo";
+% sys.L0 # table_name
+% yaoo # name
+% ? # type
+% ? # length
+[ "yaoo" ]
+
+#--
+#-- test split_part
+#--
+#
+#select split_part('joeuser@mydatabase','@',1) AS "joeuser";
+% sys.L0 # table_name
+% joeuser # name
+% ? # type
+% ? # length
+[ "joeuser" ]
+
+#select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
+% sys.L0 # table_name
+% mydatabase # name
+% ? # type
+% ? # length
+[ "mydatabase" ]
+
+#select split_part('joeuser@mydatabase','@',3) AS "empty string";
+% sys.L0 # table_name
+% empty string # name
+% ? # type
+% ? # length
+[ "" ]
+
+#select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
+% sys.L0 # table_name
+% joeuser # name
+% ? # type
+% ? # length
+[ "joeuser" ]
+
+#--
+#-- test to_hex
+#--
+#select to_hex(256*256*256 - 1) AS "ffffff";
+% sys.L0 # table_name
+% ffffff # name
+% ? # type
+% ? # length
+[ "ffffff" ]
+
+#select to_hex(256::bigint*256::bigint*256::bigint*256::bigint - 1) AS "ffffffff";
+% sys.L0 # table_name
+% ffffffff # name
+% ? # type
+% ? # length
+[ "ffffffff" ]
+
+#--
+#-- MD5 test suite - from IETF RFC 1321
+#-- (see: ftp://ftp.rfc-editor.org/in-notes/rfc1321.txt)
+#--
+#select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('a') = '0cc175b9c0f1b6a831c399e269772661' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('abc') = '900150983cd24fb0d6963f7d28e17f72' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('message digest') = 'f96b697d7cb7938d525a2f31aaf161d0' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('abcdefghijklmnopqrstuvwxyz') = 'c3fcd3d76192e4007dfb496cca67e13b' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = 'd174ab98d277d9f5a5611c2c9f419d9f' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#select md5('12345678901234567890123456789012345678901234567890123456789012345678901234567890') = '57edf4a22be3c955ac49da2e2107b67a' AS "TRUE";
+% sys.L0 # table_name
+% TRUE # name
+% ? # type
+% ? # length
+[ "t" ]
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
