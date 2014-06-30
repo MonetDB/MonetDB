@@ -1367,10 +1367,10 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 
-	/* treat read-only with shared logger as already initialized */
-	if (logger_funcs.log_isnew() && !create_shared_logger) {
-		/* cannot initialize database in readonly mode */
-		if (readonly) {
+	if (logger_funcs.log_isnew()) {
+		/* cannot initialize database in readonly mode
+		 * unless this is a slave instance with a read-only/shared logger */
+		if (readonly && !create_shared_logger) {
 			return -1;
 		}
 		tr = sql_trans_create(stk, NULL, NULL);
