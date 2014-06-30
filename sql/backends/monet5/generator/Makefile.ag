@@ -18,7 +18,7 @@
 INCLUDES = ../../../include \
 		   ../../../common \
 		   ../../../storage \
-		   ../../../server ../.. \
+		   ../../../server \
 		   ../../../../monetdb5/modules/atoms \
 		   ../../../../monetdb5/modules/kernel \
 		   ../../../../monetdb5/mal \
@@ -28,16 +28,14 @@ INCLUDES = ../../../include \
 		   ../../../../clients/mapilib \
 		   ../../../../common/options \
 		   ../../../../common/stream \
-		   ../../../../common/utils \
-		   ../../../../gdk \
-		   $(READLINE_INCS) $(MSEED_CFLAGS) $(curl_CFLAGS)
+		   ../../../../gdk
 
 lib__generator = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = generator.c  generator.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../gdk/libbat $(curl_LIBS)
+		   ../../../../gdk/libbat
 }
 
 headers_mal = {
