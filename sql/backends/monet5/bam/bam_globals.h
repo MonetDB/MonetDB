@@ -47,46 +47,46 @@
  */
 static inline char *
 prepare_for_log(const char *str, bit first_line_hash) {
-    int l = strlen(str);
-    char *prepared = (char *)GDKmalloc(3 * l * sizeof(char)); /* Worst case: every character is newline */
-    int i, j = 0;
-    
-    if(prepared == NULL) return NULL;
-    
-    if(first_line_hash) {
-        prepared[j++] = '#';
-        prepared[j++] = ' ';
-    }
-    for(i=0; i<l; ++i) {
-        prepared[j++] = str[i];
-        if(str[i] == '\n') {
-            prepared[j++] = '#';
-            prepared[j++] = ' ';
-        }
-    }
-    prepared[j] = '\0';
-    return prepared;
+	int l = strlen(str);
+	char *prepared = (char *)GDKmalloc(3 * l * sizeof(char)); /* Worst case: every character is newline */
+	int i, j = 0;
+
+	if(prepared == NULL) return NULL;
+
+	if(first_line_hash) {
+		prepared[j++] = '#';
+		prepared[j++] = ' ';
+	}
+	for(i=0; i<l; ++i) {
+		prepared[j++] = str[i];
+		if(str[i] == '\n') {
+			prepared[j++] = '#';
+			prepared[j++] = ' ';
+		}
+	}
+	prepared[j] = '\0';
+	return prepared;
 }
 
 /* Function that adds a hash before every printed line, so Mtest.py will not notice a difference in whether or not we are debugging. Arguments to this function should  */
-static inline int 
+static inline int
 hash_fprintf(FILE *f, const char *format, ...) __attribute__ ((format (printf, 2, 3) ));
 
 static inline int
 hash_fprintf(FILE *f, const char *format, ...) {
-    va_list arg;
-    int done;
-    
-    char *format_prepared = prepare_for_log(format, TRUE);
-    
-    if(format_prepared == NULL) return -1;
-    
-    va_start(arg, format);
-    done = vfprintf(f, format_prepared, arg);
-    va_end(arg);
+	va_list arg;
+	int done;
 
-    GDKfree(format_prepared);
-    return done;
+	char *format_prepared = prepare_for_log(format, TRUE);
+
+	if(format_prepared == NULL) return -1;
+
+	va_start(arg, format);
+	done = vfprintf(f, format_prepared, arg);
+	va_end(arg);
+
+	GDKfree(format_prepared);
+	return done;
 }
 
 
@@ -110,12 +110,12 @@ hash_fprintf(FILE *f, const char *format, ...) {
 		GDKfree(msg);						\
 		msg = msg_tmp;						\
 	} while (0)
-    
-    
-    
+
+
+
 #define BSTREAM_CHUNK_SIZE BUFSIZ
-    
-    
+
+
 stream *
 bsopen(str filepath);
 

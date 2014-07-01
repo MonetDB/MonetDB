@@ -28,172 +28,172 @@
 #include "bam_db_interface.h"
 
 #define SQL_CREATE_STORAGE_0 \
-    "CREATE TABLE bam.alignments_"LLFMT" ( \n\
-        virtual_offset                BIGINT      NOT NULL, \n\
-        qname                         STRING      NOT NULL, \n\
-        flag                          SMALLINT    NOT NULL, \n\
-        rname                         STRING      NOT NULL, \n\
-        pos                           INT         NOT NULL, \n\
-        mapq                          SMALLINT    NOT NULL, \n\
-        cigar                         STRING      NOT NULL, \n\
-        rnext                         STRING      NOT NULL, \n\
-        pnext                         INT         NOT NULL, \n\
-        tlen                          INT         NOT NULL, \n\
-        seq                           STRING      NOT NULL, \n\
-        qual                          STRING      NOT NULL, \n\
-        CONSTRAINT alignments_"LLFMT"_pkey_virtual_offset PRIMARY KEY (virtual_offset) \n\
-    ); \n\
-    \n\
-    CREATE TABLE bam.alignments_extra_"LLFMT" ( \n\
-        tag                           CHAR(2)     NOT NULL, \n\
-        virtual_offset                BIGINT      NOT NULL, \n\
-        type                          CHAR(1)     NOT NULL, \n\
-        value                         STRING, \n\
-        CONSTRAINT alignments_extra_"LLFMT"_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), \n\
-        CONSTRAINT alignments_extra_"LLFMT"_fkey_virtual_offset FOREIGN KEY (virtual_offset) \n\
-            REFERENCES bam.alignments_"LLFMT" (virtual_offset) \n\
-    );"
+	"CREATE TABLE bam.alignments_"LLFMT" ( \n\
+		virtual_offset				BIGINT	  NOT NULL, \n\
+		qname						 STRING	  NOT NULL, \n\
+		flag						  SMALLINT	NOT NULL, \n\
+		rname						 STRING	  NOT NULL, \n\
+		pos						   INT		 NOT NULL, \n\
+		mapq						  SMALLINT	NOT NULL, \n\
+		cigar						 STRING	  NOT NULL, \n\
+		rnext						 STRING	  NOT NULL, \n\
+		pnext						 INT		 NOT NULL, \n\
+		tlen						  INT		 NOT NULL, \n\
+		seq						   STRING	  NOT NULL, \n\
+		qual						  STRING	  NOT NULL, \n\
+		CONSTRAINT alignments_"LLFMT"_pkey_virtual_offset PRIMARY KEY (virtual_offset) \n\
+	); \n\
+	\n\
+	CREATE TABLE bam.alignments_extra_"LLFMT" ( \n\
+		tag						   CHAR(2)	 NOT NULL, \n\
+		virtual_offset				BIGINT	  NOT NULL, \n\
+		type						  CHAR(1)	 NOT NULL, \n\
+		value						 STRING, \n\
+		CONSTRAINT alignments_extra_"LLFMT"_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), \n\
+		CONSTRAINT alignments_extra_"LLFMT"_fkey_virtual_offset FOREIGN KEY (virtual_offset) \n\
+			REFERENCES bam.alignments_"LLFMT" (virtual_offset) \n\
+	);"
 
 #define SQL_CREATE_STORAGE_1 \
-    "CREATE TABLE bam.paired_primary_alignments_"LLFMT" ( \n\
-        l_virtual_offset              BIGINT      NOT NULL, \n\
-        r_virtual_offset              BIGINT      NOT NULL, \n\
-        qname                         STRING      NOT NULL, \n\
-        l_flag                        SMALLINT    NOT NULL, \n\
-        l_rname                       STRING      NOT NULL, \n\
-        l_pos                         INT         NOT NULL, \n\
-        l_mapq                        SMALLINT    NOT NULL, \n\
-        l_cigar                       STRING      NOT NULL, \n\
-        l_rnext                       STRING      NOT NULL, \n\
-        l_pnext                       INT         NOT NULL, \n\
-        l_tlen                        INT         NOT NULL, \n\
-        l_seq                         STRING      NOT NULL, \n\
-        l_qual                        STRING      NOT NULL, \n\
-        r_flag                        SMALLINT    NOT NULL, \n\
-        r_rname                       STRING      NOT NULL, \n\
-        r_pos                         INT         NOT NULL, \n\
-        r_mapq                        SMALLINT    NOT NULL, \n\
-        r_cigar                       STRING      NOT NULL, \n\
-        r_rnext                       STRING      NOT NULL, \n\
-        r_pnext                       INT         NOT NULL, \n\
-        r_tlen                        INT         NOT NULL, \n\
-        r_seq                         STRING      NOT NULL, \n\
-        r_qual                        STRING      NOT NULL, \n\
-        CONSTRAINT paired_primary_alignments_"LLFMT"_pkey_l_virtual_offset_r_virtual_offset \n\
-            PRIMARY KEY (l_virtual_offset, r_virtual_offset) \n\
-    ); \n\
-    \n\
-    CREATE TABLE bam.paired_secondary_alignments_"LLFMT" ( \n\
-        l_virtual_offset              BIGINT      NOT NULL, \n\
-        r_virtual_offset              BIGINT      NOT NULL, \n\
-        qname                         STRING      NOT NULL, \n\
-        l_flag                        SMALLINT    NOT NULL, \n\
-        l_rname                       STRING      NOT NULL, \n\
-        l_pos                         INT         NOT NULL, \n\
-        l_mapq                        SMALLINT    NOT NULL, \n\
-        l_cigar                       STRING      NOT NULL, \n\
-        l_rnext                       STRING      NOT NULL, \n\
-        l_pnext                       INT         NOT NULL, \n\
-        l_tlen                        INT         NOT NULL, \n\
-        l_seq                         STRING      NOT NULL, \n\
-        l_qual                        STRING      NOT NULL, \n\
-        r_flag                        SMALLINT    NOT NULL, \n\
-        r_rname                       STRING      NOT NULL, \n\
-        r_pos                         INT         NOT NULL, \n\
-        r_mapq                        SMALLINT    NOT NULL, \n\
-        r_cigar                       STRING      NOT NULL, \n\
-        r_rnext                       STRING      NOT NULL, \n\
-        r_pnext                       INT         NOT NULL, \n\
-        r_tlen                        INT         NOT NULL, \n\
-        r_seq                         STRING      NOT NULL, \n\
-        r_qual                        STRING      NOT NULL, \n\
-        CONSTRAINT paired_secondary_alignments_"LLFMT"_pkey_l_virtual_offset_r_virtual_offset \n\
-            PRIMARY KEY (l_virtual_offset, r_virtual_offset) \n\
-    ); \n\
-    \n\
-    CREATE TABLE bam.unpaired_alignments_"LLFMT" ( \n\
-        virtual_offset                BIGINT      NOT NULL, \n\
-        qname                         STRING      NOT NULL, \n\
-        flag                          SMALLINT    NOT NULL, \n\
-        rname                         STRING      NOT NULL, \n\
-        pos                           INT         NOT NULL, \n\
-        mapq                          SMALLINT    NOT NULL, \n\
-        cigar                         STRING      NOT NULL, \n\
-        rnext                         STRING      NOT NULL, \n\
-        pnext                         INT         NOT NULL, \n\
-        tlen                          INT         NOT NULL, \n\
-        seq                           STRING      NOT NULL, \n\
-        qual                          STRING      NOT NULL, \n\
-        CONSTRAINT unpaired_alignments_"LLFMT"_pkey_virtual_offset PRIMARY KEY (virtual_offset) \n\
-    ); \n\
-    \n\
-    CREATE TABLE bam.alignments_extra_"LLFMT" ( \n\
-    tag                           CHAR(2)     NOT NULL, \n\
-    virtual_offset                BIGINT      NOT NULL, \n\
-    type                          CHAR(1)     NOT NULL, \n\
-    value                         STRING, \n\
-    CONSTRAINT alignments_extra_"LLFMT"_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset) \n\
-    ); \n\
-    \n\
-    CREATE VIEW bam.unpaired_primary_alignments_"LLFMT" AS \n\
-        SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, \n\
-            l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual \n\
-        FROM bam.paired_primary_alignments_"LLFMT" \n\
-        UNION ALL \n\
-        SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, \n\
-            r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual \n\
-        FROM bam.paired_primary_alignments_"LLFMT"; \n\
-    \n\
-    CREATE VIEW bam.unpaired_secondary_alignments_"LLFMT" AS \n\
-        SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, \n\
-            l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual \n\
-        FROM bam.paired_secondary_alignments_"LLFMT" \n\
-        UNION ALL \n\
-        SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, \n\
-            r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual \n\
-        FROM bam.paired_secondary_alignments_"LLFMT"; \n\
-    \n\
-    CREATE VIEW bam.unpaired_all_alignments_"LLFMT" AS \n\
-    SELECT * \n\
-    FROM bam.unpaired_primary_alignments_"LLFMT" \n\
-    UNION ALL \n\
-    SELECT * \n\
-    FROM bam.unpaired_secondary_alignments_"LLFMT" \n\
-    UNION ALL \n\
-    SELECT * \n\
-    FROM bam.unpaired_alignments_"LLFMT";"
+	"CREATE TABLE bam.paired_primary_alignments_"LLFMT" ( \n\
+		l_virtual_offset			  BIGINT	  NOT NULL, \n\
+		r_virtual_offset			  BIGINT	  NOT NULL, \n\
+		qname						 STRING	  NOT NULL, \n\
+		l_flag						SMALLINT	NOT NULL, \n\
+		l_rname					   STRING	  NOT NULL, \n\
+		l_pos						 INT		 NOT NULL, \n\
+		l_mapq						SMALLINT	NOT NULL, \n\
+		l_cigar					   STRING	  NOT NULL, \n\
+		l_rnext					   STRING	  NOT NULL, \n\
+		l_pnext					   INT		 NOT NULL, \n\
+		l_tlen						INT		 NOT NULL, \n\
+		l_seq						 STRING	  NOT NULL, \n\
+		l_qual						STRING	  NOT NULL, \n\
+		r_flag						SMALLINT	NOT NULL, \n\
+		r_rname					   STRING	  NOT NULL, \n\
+		r_pos						 INT		 NOT NULL, \n\
+		r_mapq						SMALLINT	NOT NULL, \n\
+		r_cigar					   STRING	  NOT NULL, \n\
+		r_rnext					   STRING	  NOT NULL, \n\
+		r_pnext					   INT		 NOT NULL, \n\
+		r_tlen						INT		 NOT NULL, \n\
+		r_seq						 STRING	  NOT NULL, \n\
+		r_qual						STRING	  NOT NULL, \n\
+		CONSTRAINT paired_primary_alignments_"LLFMT"_pkey_l_virtual_offset_r_virtual_offset \n\
+			PRIMARY KEY (l_virtual_offset, r_virtual_offset) \n\
+	); \n\
+	\n\
+	CREATE TABLE bam.paired_secondary_alignments_"LLFMT" ( \n\
+		l_virtual_offset			  BIGINT	  NOT NULL, \n\
+		r_virtual_offset			  BIGINT	  NOT NULL, \n\
+		qname						 STRING	  NOT NULL, \n\
+		l_flag						SMALLINT	NOT NULL, \n\
+		l_rname					   STRING	  NOT NULL, \n\
+		l_pos						 INT		 NOT NULL, \n\
+		l_mapq						SMALLINT	NOT NULL, \n\
+		l_cigar					   STRING	  NOT NULL, \n\
+		l_rnext					   STRING	  NOT NULL, \n\
+		l_pnext					   INT		 NOT NULL, \n\
+		l_tlen						INT		 NOT NULL, \n\
+		l_seq						 STRING	  NOT NULL, \n\
+		l_qual						STRING	  NOT NULL, \n\
+		r_flag						SMALLINT	NOT NULL, \n\
+		r_rname					   STRING	  NOT NULL, \n\
+		r_pos						 INT		 NOT NULL, \n\
+		r_mapq						SMALLINT	NOT NULL, \n\
+		r_cigar					   STRING	  NOT NULL, \n\
+		r_rnext					   STRING	  NOT NULL, \n\
+		r_pnext					   INT		 NOT NULL, \n\
+		r_tlen						INT		 NOT NULL, \n\
+		r_seq						 STRING	  NOT NULL, \n\
+		r_qual						STRING	  NOT NULL, \n\
+		CONSTRAINT paired_secondary_alignments_"LLFMT"_pkey_l_virtual_offset_r_virtual_offset \n\
+			PRIMARY KEY (l_virtual_offset, r_virtual_offset) \n\
+	); \n\
+	\n\
+	CREATE TABLE bam.unpaired_alignments_"LLFMT" ( \n\
+		virtual_offset				BIGINT	  NOT NULL, \n\
+		qname						 STRING	  NOT NULL, \n\
+		flag						  SMALLINT	NOT NULL, \n\
+		rname						 STRING	  NOT NULL, \n\
+		pos						   INT		 NOT NULL, \n\
+		mapq						  SMALLINT	NOT NULL, \n\
+		cigar						 STRING	  NOT NULL, \n\
+		rnext						 STRING	  NOT NULL, \n\
+		pnext						 INT		 NOT NULL, \n\
+		tlen						  INT		 NOT NULL, \n\
+		seq						   STRING	  NOT NULL, \n\
+		qual						  STRING	  NOT NULL, \n\
+		CONSTRAINT unpaired_alignments_"LLFMT"_pkey_virtual_offset PRIMARY KEY (virtual_offset) \n\
+	); \n\
+	\n\
+	CREATE TABLE bam.alignments_extra_"LLFMT" ( \n\
+	tag						   CHAR(2)	 NOT NULL, \n\
+	virtual_offset				BIGINT	  NOT NULL, \n\
+	type						  CHAR(1)	 NOT NULL, \n\
+	value						 STRING, \n\
+	CONSTRAINT alignments_extra_"LLFMT"_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset) \n\
+	); \n\
+	\n\
+	CREATE VIEW bam.unpaired_primary_alignments_"LLFMT" AS \n\
+		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, \n\
+			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual \n\
+		FROM bam.paired_primary_alignments_"LLFMT" \n\
+		UNION ALL \n\
+		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, \n\
+			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual \n\
+		FROM bam.paired_primary_alignments_"LLFMT"; \n\
+	\n\
+	CREATE VIEW bam.unpaired_secondary_alignments_"LLFMT" AS \n\
+		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, \n\
+			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual \n\
+		FROM bam.paired_secondary_alignments_"LLFMT" \n\
+		UNION ALL \n\
+		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, \n\
+			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual \n\
+		FROM bam.paired_secondary_alignments_"LLFMT"; \n\
+	\n\
+	CREATE VIEW bam.unpaired_all_alignments_"LLFMT" AS \n\
+	SELECT * \n\
+	FROM bam.unpaired_primary_alignments_"LLFMT" \n\
+	UNION ALL \n\
+	SELECT * \n\
+	FROM bam.unpaired_secondary_alignments_"LLFMT" \n\
+	UNION ALL \n\
+	SELECT * \n\
+	FROM bam.unpaired_alignments_"LLFMT";"
 
 #define SQL_DROP_HEADER \
-    "DELETE FROM bam.pg WHERE file_id = "LLFMT";\n" \
-    "DELETE FROM bam.rg WHERE file_id = "LLFMT";\n" \
-    "DELETE FROM bam.sq WHERE file_id = "LLFMT";\n" \
-    "DELETE FROM bam.files WHERE file_id = "LLFMT";\n"
+	"DELETE FROM bam.pg WHERE file_id = "LLFMT";\n" \
+	"DELETE FROM bam.rg WHERE file_id = "LLFMT";\n" \
+	"DELETE FROM bam.sq WHERE file_id = "LLFMT";\n" \
+	"DELETE FROM bam.files WHERE file_id = "LLFMT";\n"
 
 #define SQL_DROP_STORAGE_0 \
-    "DROP TABLE bam.alignments_extra_"LLFMT";\n" \
-    "DROP TABLE bam.alignments_"LLFMT";\n"
+	"DROP TABLE bam.alignments_extra_"LLFMT";\n" \
+	"DROP TABLE bam.alignments_"LLFMT";\n"
 
 #define SQL_DROP_STORAGE_1 \
-    "DROP TABLE bam.alignments_extra_"LLFMT";\n" \
-    "DROP VIEW bam.unpaired_all_alignments_"LLFMT";\n"\
-    "DROP VIEW bam.unpaired_secondary_alignments_"LLFMT";\n"\
-    "DROP VIEW bam.unpaired_primary_alignments_"LLFMT";\n"\
-    "DROP TABLE bam.paired_primary_alignments_"LLFMT";\n" \
-    "DROP TABLE bam.paired_secondary_alignments_"LLFMT";\n" \
-    "DROP TABLE bam.unpaired_alignments_"LLFMT";\n"
+	"DROP TABLE bam.alignments_extra_"LLFMT";\n" \
+	"DROP VIEW bam.unpaired_all_alignments_"LLFMT";\n"\
+	"DROP VIEW bam.unpaired_secondary_alignments_"LLFMT";\n"\
+	"DROP VIEW bam.unpaired_primary_alignments_"LLFMT";\n"\
+	"DROP TABLE bam.paired_primary_alignments_"LLFMT";\n" \
+	"DROP TABLE bam.paired_secondary_alignments_"LLFMT";\n" \
+	"DROP TABLE bam.unpaired_alignments_"LLFMT";\n"
 
 
 
 #define SQL_COPY_INTO_FILES "COPY BINARY INTO bam.files FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_SQ    "COPY BINARY INTO bam.sq    FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_RG    "COPY BINARY INTO bam.rg    FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_PG    "COPY BINARY INTO bam.pg    FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_SQ	"COPY BINARY INTO bam.sq	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_RG	"COPY BINARY INTO bam.rg	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_PG	"COPY BINARY INTO bam.pg	FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
 
-#define SQL_COPY_INTO_ALIGNMENTS    "COPY BINARY INTO bam.%salignments_"LLFMT" FROM \
-    ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_ALIGNMENTS	"COPY BINARY INTO bam.%salignments_"LLFMT" FROM \
+	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
 #define SQL_COPY_INTO_PAIRED_ALIGNMENTS "COPY BINARY INTO bam.paired_%s_alignments_"LLFMT" FROM \
-    ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', \
-     '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', \
+	 '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
 
 #define SQL_COPY_INTO_ALIGNMENTS_EXTRA "COPY BINARY INTO bam.alignments_extra_"LLFMT" FROM ('%s', '%s', '%s', '%s');\n"
 
@@ -215,7 +215,7 @@ static char buf_sql_copy_into[BUF_SIZE_COPY_INTO];
 
 str
 create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname, str descr,
-			    sql_schema ** ret)
+				sql_schema ** ret)
 {
 	sql_schema *result;
 
@@ -238,7 +238,7 @@ create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname, str descr,
 		}
 		if ((result = mvc_bind_schema(m, schemaname)) == NULL) {
 			throw(MAL, "create_schema_if_not_exists",
-			      "Could not create bam schema");
+				  "Could not create bam schema");
 		}
 	}
 	if (ret)
@@ -275,7 +275,7 @@ create_table_if_not_exists(Client cntxt, mvc * m, sql_schema * s,
 		}
 		if ((result = mvc_bind_table(m, s, tablename)) == NULL) {
 			throw(MAL, "create_table_if_not_exists",
-			      "Could not create table '%s'", tablename);
+				  "Could not create table '%s'", tablename);
 		}
 	}
 	if (ret)
@@ -299,8 +299,8 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 	BATiter li;
 	BUN p = 0, q = 0;
 	lng max_file_id = 0;
-    
-    sht i;
+
+	sht i;
 
 	assert(m != NULL);
 	assert(files != NULL);
@@ -308,21 +308,21 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 	/* Try to bind the file_id column of the bam.files table */
 	if ((c = mvc_bind_column(m, files, "file_id")) == NULL) {
 		throw(MAL, "next_file_id",
-		      "Could not retrieve the next file id: Error binding file_id column of 'files' table");
+			  "Could not retrieve the next file id: Error binding file_id column of 'files' table");
 	}
 
 	/* Loop through BATs for this column and find the maximum file_id */
-    for(i=0; i<3; ++i) {
-        b = store_funcs.bind_col(m->session->tr, c, i);
+	for(i=0; i<3; ++i) {
+		b = store_funcs.bind_col(m->session->tr, c, i);
 
-        li = bat_iterator(b);
-        BATloop(b, p, q) {
-            lng t = *(lng *) BUNtail(li, p);
-            max_file_id = MAX(max_file_id, t);
-        }
-        BBPreleaseref(b->batCacheid);
-    }
-        
+		li = bat_iterator(b);
+		BATloop(b, p, q) {
+			lng t = *(lng *) BUNtail(li, p);
+			max_file_id = MAX(max_file_id, t);
+		}
+		BBPreleaseref(b->batCacheid);
+	}
+
 	*next_file_id = max_file_id + 1;
 	return MAL_SUCCEED;
 }
@@ -372,10 +372,10 @@ create_alignment_storage_1(Client cntxt, str descr, bam_wrapper * bw)
 /* Macro only used by copy_into_db to increase len by step only if it
  * is positive and throw an exception otherwise */
 #define CHECK_STEP(len, step, table) {\
-    if(step < 0) { \
-        throw(MAL, "copy_into_db", "Could not construct SQL string for copying data to '"table"' table"); \
-    } \
-    len += step; \
+	if(step < 0) { \
+		throw(MAL, "copy_into_db", "Could not construct SQL string for copying data to '"table"' table"); \
+	} \
+	len += step; \
 }
 
 /**
@@ -584,15 +584,15 @@ drop_file(Client cntxt, str descr, lng file_id, sht dbschema)
 
 	if (dbschema == 0) {
 		len = snprintf(sql_drop_file, BUF_SIZE_DROP_FILE,
-			       SQL_DROP_STORAGE_0, file_id, file_id);
+				   SQL_DROP_STORAGE_0, file_id, file_id);
 	} else {
 		len = snprintf(sql_drop_file, BUF_SIZE_DROP_FILE,
-			       SQL_DROP_STORAGE_1, file_id, file_id, file_id,
-			       file_id, file_id, file_id, file_id);
+				   SQL_DROP_STORAGE_1, file_id, file_id, file_id,
+				   file_id, file_id, file_id, file_id);
 	}
 	if (len < -1) {
 		throw(MAL, "drop_file",
-		      "Could not construct SQL string for dropping file");
+			  "Could not construct SQL string for dropping file");
 	}
 	snprintf(sql_drop_file + len, BUF_SIZE_DROP_FILE - len,
 		 SQL_DROP_HEADER, file_id, file_id, file_id, file_id);

@@ -24,14 +24,14 @@
  * After exporting data, the exporting functions will automatically
  * empty the bam.export table.
  */
- 
+
 #ifndef _BAM_EXPORT_H
 #define _BAM_EXPORT_H
- 
+
 #include "sql_scenario.h"
 #include "sql_mvc.h"
- 
- 
+
+
 /* Note: Unlike in the other BAM source files, we use bam_exp instead of
  * bam_export here, since bam_export is a used function name in this file */
 #ifdef WIN32
@@ -49,7 +49,7 @@ bam_exp str sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr pci);
 bam_exp str bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr pci);
- 
- 
- 
+
+
+
 #endif

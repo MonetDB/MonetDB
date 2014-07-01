@@ -37,30 +37,30 @@ typedef sht ordering;
 typedef enum {SAM, BAM} filetype;
 
 typedef struct sam_data {
-    stream *input;
-    str header;
+	stream *input;
+	str header;
 } sam_data;
 
 typedef struct bam_data {
-    bamFile input;
-    bam_header_t *header;
+	bamFile input;
+	bam_header_t *header;
 } bam_data;
 
 typedef struct bam_wrapper {
-    /* Type */
+	/* Type */
 	filetype type;
-	
+
 	union {
-	    sam_data sam;
-	    bam_data bam;
-    };
-	
+		sam_data sam;
+		bam_data bam;
+	};
+
 	/* General */
-    ordering ord;
+	ordering ord;
 	lng file_id;
 	str file_location;
 	sht dbschema;
-	
+
 	/* Counters for encountered data */
 	unsigned int cnt_sq;
 	unsigned int cnt_rg;
@@ -69,7 +69,7 @@ typedef struct bam_wrapper {
 	lng cnt_alignments_extra;
 	lng cnt_alignments_paired_primary;
 	lng cnt_alignments_paired_secondary;
-    lng cnt_alignments_total;
+	lng cnt_alignments_total;
 
 	/* File paths to binary files */
 	char fp_files[6][BW_FP_BUF_SIZE];
@@ -95,8 +95,8 @@ typedef struct bam_wrapper {
 
 
 str ordering_str(ordering ord);
-str init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location, 
-             lng file_id, sht dbschema);
+str init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
+			 lng file_id, sht dbschema);
 void prepare_for_copy(bam_wrapper * bw);
 void clear_bam_wrapper(bam_wrapper * bw);
 str process_header(bam_wrapper * bw);
@@ -108,7 +108,7 @@ str process_alignments(bam_wrapper *bw, bit *some_thread_failed);	/* (*some_thre
 #define ORDERING_UNSORTED   0
 #define ORDERING_QUERYNAME  1
 #define ORDERING_COORDINATE 2
-#define ORDERING_UNKNOWN    9
+#define ORDERING_UNKNOWN	9
 
 
 #endif

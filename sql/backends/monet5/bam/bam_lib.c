@@ -31,10 +31,10 @@
 	 (strcmp(flag_str, "prop_alig") == 0 ? 1 :			\
 	  (strcmp(flag_str, "segm_unma") == 0 ? 2 :			\
 	   (strcmp(flag_str, "next_unma") == 0 ? 3 :			\
-	    (strcmp(flag_str, "segm_reve") == 0 ? 4 :			\
-	     (strcmp(flag_str, "next_reve") == 0 ? 5 :			\
-	      (strcmp(flag_str, "firs_segm") == 0 ? 6 :			\
-	       (strcmp(flag_str, "last_segm") == 0 ? 7 :		\
+		(strcmp(flag_str, "segm_reve") == 0 ? 4 :			\
+		 (strcmp(flag_str, "next_reve") == 0 ? 5 :			\
+		  (strcmp(flag_str, "firs_segm") == 0 ? 6 :			\
+		   (strcmp(flag_str, "last_segm") == 0 ? 7 :		\
 		(strcmp(flag_str, "seco_alig") == 0 ? 8 :		\
 		 (strcmp(flag_str, "qual_cont") == 0 ? 9 :		\
 		  (strcmp(flag_str, "opti_dupl") == 0 ? 10 :		\
@@ -49,7 +49,7 @@ bam_flag(bit * ret, sht * flag, str * name)
 
 	if (k < 0)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
-		      *name);
+			  *name);
 	*ret = kth_bit(*flag, k);
 	return MAL_SUCCEED;
 }
@@ -112,10 +112,10 @@ reverse_seq(str * ret, str * seq)
 			result[len - i - 1] = 'N';
 			break;
 		default:
-            GDKfree(result);
+			GDKfree(result);
 			throw(MAL, "reverse_seq",
-			      "Invalid character found in sequence: '%c'\n",
-			      (*seq)[i]);
+				  "Invalid character found in sequence: '%c'\n",
+				  (*seq)[i]);
 		}
 	}
 	result[len] = '\0';
@@ -156,12 +156,12 @@ seq_length(int *ret, str * cigar)
 		int nr_chars_read;
 
 		if (sscanf
-		    (cigar_consumable, "%d%c%n", &cnt, &op,
-		     &nr_chars_read) != 2)
+			(cigar_consumable, "%d%c%n", &cnt, &op,
+			 &nr_chars_read) != 2)
 			throw(MAL, "seq_length",
-			      "Error parsing CIGAR string '%s'\n", *cigar);
+				  "Error parsing CIGAR string '%s'\n", *cigar);
 		if (op == 'M' || op == 'D' || op == 'N' || op == '='
-		    || op == 'X')
+			|| op == 'X')
 			result += cnt;
 		cigar_consumable += nr_chars_read;
 	}
@@ -184,7 +184,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	k = flag_str2sht(*name);
 	if (k < 0)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
-		      *name);
+			  *name);
 
 	if ((flags = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
@@ -242,7 +242,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-        BUNappend(result, (ptr) r, FALSE);
+		BUNappend(result, (ptr) r, FALSE);
 		GDKfree(r);
 	}
 
@@ -283,7 +283,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-        BUNappend(result, (ptr) r, FALSE);
+		BUNappend(result, (ptr) r, FALSE);
 		GDKfree(r);
 	}
 
@@ -325,7 +325,7 @@ seq_length_bat(bat * ret, bat * bid)
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-        BUNappend(result, (ptr) &r, FALSE);
+		BUNappend(result, (ptr) &r, FALSE);
 	}
 
 	/* release input BAT-descriptor */

@@ -46,9 +46,9 @@ bam_export str bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 bam_export str bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr pci);
 bam_export str bam_loader_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-			       InstrPtr pci);
+				   InstrPtr pci);
 bam_export str bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-			     InstrPtr pci);
+				 InstrPtr pci);
 /* TODO Consider drop on file_location/repos bases */
 
 
