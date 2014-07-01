@@ -53,6 +53,7 @@
 
 #define GEOMETRY_HAS_Z(info)(info & 0x02)
 #define GEOMETRY_HAS_M(info)(info & 0x01)
+#define PI 3.14159265358979323846
 
 /* the first argument in the functions is the return variable */
 
@@ -152,94 +153,285 @@ geom_export str wkbNumGeometries(int* out, wkb** geom);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, char**, char**);
 
-/* It gets a geometry and transforms its coordinates to the provided srid */
-str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
-	projPJ proj4_src = pj_init_plus(*proj4_src_str);
-	projPJ proj4_dst = pj_init_plus(*proj4_dst_str);
+/** convert degrees to radians */
+static void degrees2radians(double *x, double *y, double *z) {
+	(*x) *= PI/180.0;
+	(*y) *= PI/180.0;
+	(*z) *= PI/180.0;
+}
+
+/** convert radians to degrees */
+static void radians2degrees(double *x, double *y, double *z) {
+	(*x) *= 180.0/PI;
+	(*y) *= 180.0/PI;
+	(*z) *= 180.0/PI;
+}
+
+
+static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
+	double x=0, y=0, z=0;
+
+	GEOSCoordSeq_getX(gcs_old, idx, &x);
+	GEOSCoordSeq_getY(gcs_old, idx, &y);
+				
+	//fprintf(stderr, "transforming POINT(%f %f) from '%s' to '%s'\n", x, y, pj_get_def(proj4_src,0), pj_get_def(proj4_dst,0));
+
+	if(coordinatesNum > 2) 
+		GEOSCoordSeq_getZ(gcs_old, idx, &z);
+
+	/* check if the passed reference system is geographic (proj=latlong) 
+ 	* and change the degrees to radians because pj_transform works with radians*/
+	if (pj_is_latlong(proj4_src)) degrees2radians(&x, &y, &z) ;
+
+		
+	pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
+
+	/* check if the destination reference system is geographic and change
+ 	* the destination coordinates from radians to degrees */
+	if (pj_is_latlong(proj4_dst)) radians2degrees(&x, &y, &z);
+
+
+	//fprintf(stderr, "transformed to POINT(%f %f)\n", x, y);
+
+	GEOSCoordSeq_setX(*gcs_new, idx, x);
+	GEOSCoordSeq_setY(*gcs_new, idx, y);
 	
-	GEOSGeom geosGeometry, transformedGeosGeometry;
-//	int geometriesNum = 0;
+	if(coordinatesNum > 2) 
+		GEOSCoordSeq_setZ(*gcs_new, idx, z);
+
+
+
+	return MAL_SUCCEED;
+}
+
+static str transformPoint(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst) {
 	int coordinatesNum = 0;
 	const GEOSCoordSequence* gcs_old;	
 	GEOSCoordSeq gcs_new;
-	unsigned int pointsNum =0, i=0;
-	double x=0, y=0, z=0;
 
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL) {
+		*transformedGeometry = NULL;
+		return createException(MAL, "geom.wkbTransform", "GEOSGeom_getCoordSeq failed");
+	}
+
+	/* create the coordinates sequence for the transformed geometry */
+	gcs_new = GEOSCoordSeq_create(1, coordinatesNum);
+
+	/* create the transformed coordinates */
+	transformCoordSeq(0, coordinatesNum, proj4_src, proj4_dst, gcs_old, &gcs_new);
+	
+	/* create the geometry from the coordinates seqience */
+	*transformedGeometry = GEOSGeom_createPoint(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	unsigned int pointsNum =0, i=0;
+	
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL)
+		return createException(MAL, "geom.wkbTransform", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
+
+	/* create the coordinates sequence for the transformed geometry */
+	*gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
+	
+	/* create the transformed coordinates */
+	for(i=0; i<pointsNum; i++)
+		transformCoordSeq(i, coordinatesNum, proj4_src, proj4_dst, gcs_old, gcs_new);
+		
+	return MAL_SUCCEED;
+}
+
+static str transformLineString(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst) {
+	GEOSCoordSeq coordSeq;
+	str ret = MAL_SUCCEED;
+
+	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
+
+	if(ret != MAL_SUCCEED) {
+		*transformedGeometry = NULL;
+		return ret;
+	}
+	
+	/* create the geometry from the coordinates sequence */
+	*transformedGeometry = GEOSGeom_createLineString(coordSeq);
+	
+	return ret;
+}
+
+static str transformLinearRing(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst) {
+	GEOSCoordSeq coordSeq;
+	str ret = MAL_SUCCEED;
+
+	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
+
+	if(ret != MAL_SUCCEED) {
+		*transformedGeometry = NULL;
+		return ret;
+	}
+	
+	/* create the geometry from the coordinates sequence */
+	*transformedGeometry = GEOSGeom_createLinearRing(coordSeq);
+	
+	return ret;
+}
+
+static str transformPolygon(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid) {
+	const GEOSGeometry* exteriorRingGeometry;
+	GEOSGeometry* transformedExteriorRingGeometry = NULL;
+	GEOSGeometry** transformedInteriorRingGeometries = NULL;
+	int numInteriorRings=0, i=0;
+
+	/* get the exterior ring of the polygon */
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	if(!exteriorRingGeometry) {
+		*transformedGeometry = NULL;
+		return createException(MAL, "geom.wkbTransform","GEOSGetExteriorRing failed");
+	}	
+
+	transformLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, proj4_src, proj4_dst);
+	GEOSSetSRID(transformedExteriorRingGeometry, srid);
+
+	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
+	if (numInteriorRings == -1 ) {
+		*transformedGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		return createException(MAL, "geom.wkbTransform", "GEOSGetInteriorRingN failed.");
+	}
+
+	/* iterate over the interiorRing and transform each one of them */
+	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings*sizeof(GEOSGeometry*));
+	for(i=0; i<numInteriorRings; i++) {
+		transformLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
+		GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+	}
+
+	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+	return MAL_SUCCEED;
+}
+
+/* the following function is used in postgis to get projPJ from str.
+ * it is necessary to do it ina detailed way like that because pj_init_plus 
+ * does not set all parameters correctly and I cannot test whether the 
+ * coordinate reference systems are geographic or not */
+ static projPJ projFromStr(char* projStr) {
+	int t;
+	char *params[1024];  // one for each parameter
+	char *loc;
+	char *str;
+	size_t slen;
+	projPJ result;
+
+
+	if (projStr == NULL) return NULL;
+
+	slen = strlen(projStr);
+
+	if (slen == 0) return NULL;
+
+	str = GDKmalloc(slen+1);
+	strcpy(str, projStr);
+
+	// first we split the string into a bunch of smaller strings,
+	// based on the " " separator
+
+	params[0] = str; // 1st param, we'll null terminate at the " " soon
+
+	loc = str;
+	t = 1;
+	while  ((loc != NULL) && (*loc != 0) )
+	{
+		loc = strchr(loc, ' ');
+		if (loc != NULL)
+		{
+			*loc = 0; // null terminate
+			params[t] = loc+1;
+			loc++; // next char
+			t++; //next param
+		}
+	}
+
+	if (!(result=pj_init(t, params)))
+	{
+		GDKfree(str);
+		return NULL;
+	}
+	GDKfree(str);
+	return result;
+
+}
+
+/* It gets a geometry and transforms its coordinates to the provided srid */
+str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid, char** proj4_src_str, char** proj4_dst_str) {
+	projPJ proj4_src = /*pj_init_plus*/projFromStr(*proj4_src_str);
+	projPJ proj4_dst = /*pj_init_plus*/projFromStr(*proj4_dst_str);
+	
+	GEOSGeom geosGeometry, transformedGeosGeometry;
+	int geometryType = -1;
+
+	str ret = MAL_SUCCEED;
+
+//fprintf(stderr, "source:\t%s\n", *proj4_src_str);
+//fprintf(stderr, "destination:\t%s\n", *proj4_dst_str);
 
 	if(*geomWKB == NULL) {
 		*transformedWKB = wkb_nil;
+		pj_free(proj4_src);
+		pj_free(proj4_dst);
 		throw(MAL, "geom.Transform", "wkb is null");
 	}
 
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*geomWKB);
-//	/*get the number of geometries */
-//	geometriesNum = GEOSGetNumGeometries(geosGeometry);	
-	/* get the number of coordinates the geometry has */
-	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
-	/* get the coordinates of the points comprising the geometry */
-	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
-	if(gcs_old == NULL) {
+	/* get the type of the geometry */
+	geometryType = GEOSGeomTypeId(geosGeometry)+1;
+
+	switch(geometryType) {
+		case wkbPoint:
+			ret = transformPoint(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+			break;
+		case wkbLineString:
+			ret = transformLineString(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+			break;
+		case wkbLinearRing:
+			ret = transformLinearRing(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+			break;
+		case wkbPolygon:
+			ret = transformPolygon(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid);
+			break; 
+		default:
+			ret = createException(MAL, "geom.Transform", "Unknown geometry type");
+	}
+
+	if(transformedGeosGeometry) {
+		/* set the new srid */
+		GEOSSetSRID(transformedGeosGeometry, *srid);
+		/* get the wkb */
+		*transformedWKB = geos2wkb(transformedGeosGeometry);
+		/* destroy the geos geometries */
+		GEOSGeom_destroy(transformedGeosGeometry);
+	} else
 		*transformedWKB = wkb_nil;
-		throw(MAL, "geom.wkbTransform", "GEOSGeom_getCoordSeq failed");
-	}
-	/* get the number of points in the geomtry */
-	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
-
-	/* create the coordinates sequence for the transformed geometry */
-	gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
 	
-	//iterate over the points
-	for(i=0; i<pointsNum; i++) {
-		GEOSCoordSeq_getX(gcs_old, i, &x);
-		GEOSCoordSeq_getY(gcs_old, i, &y);
-				
-		if(coordinatesNum > 2) 
-			GEOSCoordSeq_getZ(gcs_old, i, &z);
-		
-		pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
-
-		GEOSCoordSeq_setX(gcs_new, i, x);
-		GEOSCoordSeq_setY(gcs_new, i, y);
-	
-		if(coordinatesNum > 2) 
-			GEOSCoordSeq_setZ(gcs_new, i, z);
-	}
-
-	if(pointsNum == 1)
-		transformedGeosGeometry = GEOSGeom_createPoint(gcs_new);
-	else
-		transformedGeosGeometry = GEOSGeom_createLineString(gcs_new);
-
-	GEOSSetSRID(transformedGeosGeometry, *srid);
-
-	*transformedWKB = geos2wkb(transformedGeosGeometry);
-
 	pj_free(proj4_src);
 	pj_free(proj4_dst);
+	GEOSGeom_destroy(geosGeometry);
 
-//for each geometry in a multigeometry
-//for each point in the geometry
-//pj_transform(proj_src, proj_dst, 1, 0, x, y, z)
-
-
-//	str qmsg = MAL_SUCCEED;
-
-	//check if the new srid is the same with the old one
-//	if(geomWKB->srid == *srid)
-//		fprintf(stderr, "New and old srids are the same\n");
-//
-//	//get GEOSGeometry from WKB	
-//	geosGeometry = wkb2geos(geomWKB);
-//	if(geosGeometry == NULL)
-//		throw(MAL, "geom.Transform", "wkb2geos failed");
-//	
-//	//read the projection information from spatial_ref_sys	
-//
-	return MAL_SUCCEED;
+	return ret;
 }
-
-
 
 geom_export str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
@@ -265,12 +457,9 @@ str A_2_B(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) {
 	if(valueSRID != *columnSRID || valueType != *columnType)
 		throw(MAL, "geom.A_2_B", "column needs geometry(%d, %d) and value is geometry(%d, %d)\n", *columnType, *columnSRID, valueType, valueSRID);
 
-	//*SRID = valueSRID;
-	//*Type = valueType;
-
 	/* get the wkb from the geosGeometry */
 	*resWKB = geos2wkb(geosGeometry);
-	
+	GEOSGeom_destroy(geosGeometry);
 	return MAL_SUCCEED;
 }
 
@@ -345,7 +534,7 @@ wkb *wkbNULL(void) {
 
 /* create the WKB out of the GEOSGeometry 
  * It makes sure to make all checks before returning 
- * Hte input should geosGeometry should not be altered by this function*/
+ * the input geosGeometry should not be altered by this function*/
 wkb* geos2wkb(const GEOSGeometry* geosGeometry) {
 	size_t wkbLen = 0;
 	unsigned char *w = NULL;
@@ -916,117 +1105,72 @@ str wkbPointN(wkb **out, wkb **geom, int *n) {
 	throw(MAL, "geom.PointN", "GEOSGeomGetPointN failed");
 }
 
-/* function to handle static geometry returned by GEOSGetExteriorRing */
-static const GEOSGeometry* handleConstExteriorRing(GEOSGeom* geosGeometry, wkb** geom) {
-	*geosGeometry = wkb2geos(*geom);
-
-	if (!*geosGeometry) 
-		return NULL;
-
-	if (GEOSGeomTypeId(*geosGeometry) != GEOS_POLYGON) 
-		return NULL;
-
-	return GEOSGetExteriorRing(*geosGeometry);
-
-}
-
 /* Returns the exterior ring of the polygon*/
-str wkbExteriorRing(wkb **out, wkb **geom) {
+str wkbExteriorRing(wkb **exteriorRingWKB, wkb **geom) {
 	GEOSGeom geosGeometry = NULL;
-	const GEOSGeometry* exteriorRingGeometry = handleConstExteriorRing(&geosGeometry, geom);
-	size_t wkbLen = 0;
-	unsigned char *w = NULL;
+	const GEOSGeometry* exteriorRingGeometry;
 
-	if (!exteriorRingGeometry) {
-		*out = wkb_nil;
+	geosGeometry = wkb2geos(*geom);
 
-		if(!geosGeometry) {
-			throw(MAL, "geom.exteriorRing", "wkb2geos failed");
-		} else {
-			GEOSGeom_destroy(geosGeometry);
-			throw(MAL, "geom.exteriorRing", "Geometry not a Polygon");
-		}
+	if (!geosGeometry) { 
+		*exteriorRingWKB = wkb_nil;
+		throw(MAL, "geom.exteriorRing", "wkb2geos failed");
 	}
-	w = GEOSGeomToWKB_buf(exteriorRingGeometry, &wkbLen);
-	GEOSGeom_destroy(geosGeometry);
 
-	*out = GDKmalloc(wkb_size(wkbLen));
-	if (!(*out)) {
-		*out = wkb_nil;
-		GEOSFree(w);
-		throw(MAL, "geom.exteriorRing", "GDKmalloc failed");
-	}
-		
-	assert(wkbLen <= GDK_int_max);
-	(*out)->len = (int) wkbLen;
-	memcpy(&(*out)->data, w, wkbLen);
-	GEOSFree(w);
+	if (GEOSGeomTypeId(geosGeometry) != GEOS_POLYGON) {
+		*exteriorRingWKB = wkb_nil;
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.exteriorRing", "Geometry not a Polygon");
+
+	} 
+	/* get the exterior ring of the geometry */	
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	/* get the wkb representation of it */
+	*exteriorRingWKB = geos2wkb(exteriorRingGeometry);
 	
 	return MAL_SUCCEED;
 }
 
-/* function to handle static geometry returned by GEOSGetInteriorRingN */
-static const GEOSGeometry* handleConstInteriorRing(GEOSGeom* geosGeometry, wkb** geom, int ringIdx, int* reason) {
-	int rN = -1;
-	*geosGeometry = wkb2geos(*geom);
-
-	if (!*geosGeometry) {
-		*reason=1;
-		return NULL;
-	}
-	
-	//check number of internal
-	rN = GEOSGetNumInteriorRings(*geosGeometry);
-	if (rN == -1 ) {
-		*reason=2;
-		return NULL;
-	}
-	if(rN <= ringIdx || ringIdx<0) {
-		*reason=3; 
-		return NULL;
-	}
-
-	return GEOSGetInteriorRingN(*geosGeometry, ringIdx);
-}
-
-
 /* Returns the n-th interior ring of a polygon */
-str wkbInteriorRingN(wkb **out, wkb **geom, short* ringNum) {
+str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 	GEOSGeom geosGeometry = NULL;
-	int reason =0;
-	const GEOSGeometry* interiorRingGeometry = handleConstInteriorRing(&geosGeometry, geom, *ringNum-1, &reason);
-	size_t wkbLen = 0;
-	unsigned char *w = NULL;
+	const GEOSGeometry* interiorRingGeometry;
+	int rN = -1;
 
-	if (interiorRingGeometry == NULL) { 
-		*out = wkb_nil;
+	geosGeometry = wkb2geos(*geom);
 
-		if(!geosGeometry) {
-			throw(MAL, "geom.interiorRingN", "wkb2geos failed");
-		} else {
-			GEOSGeom_destroy(geosGeometry);
-			if(reason == 3)
-			throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
-			else if(reason == 2)
-				throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed.");
-		}
+	if (!geosGeometry) { 
+		*interiorRingWKB = wkb_nil;
+		throw(MAL, "geom.interiorRing", "wkb2geos failed");
 	}
 
-	w = GEOSGeomToWKB_buf(interiorRingGeometry, &wkbLen);
-	GEOSGeom_destroy(geosGeometry);
+	if (GEOSGeomTypeId(geosGeometry) != GEOS_POLYGON) {
+		*interiorRingWKB = wkb_nil;
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.interiorRing", "Geometry not a Polygon");
 
-	*out = GDKmalloc(wkb_size(wkbLen));
-	if (!(*out)) {
-		*out = wkb_nil;
-		GEOSFree(w);
-		throw(MAL, "geom.interiorRing", "GDKmalloc failed");
 	}
-		
-	assert(wkbLen <= GDK_int_max);
-	(*out)->len = (int) wkbLen;
-	memcpy(&(*out)->data, w, wkbLen);
-	GEOSFree(w);
+
+	//check number of internal rings
+	rN = GEOSGetNumInteriorRings(geosGeometry);
+	if (rN == -1 ) {
+		*interiorRingWKB = wkb_nil;
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed.");
+	}
+	if(rN <= *ringNum || *ringNum<0) {
+		*interiorRingWKB = wkb_nil;
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
+	}
+
+	/* get the exterior ring of the geometry */	
+	interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, *ringNum);
+	/* get the wkb representation of it */
+	*interiorRingWKB = geos2wkb(interiorRingGeometry);
 	
+	return MAL_SUCCEED;
+
 	return MAL_SUCCEED;
 }
 
