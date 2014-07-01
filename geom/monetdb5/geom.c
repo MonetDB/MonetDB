@@ -323,6 +323,51 @@ static str transformPolygon(GEOSGeometry** transformedGeometry, const GEOSGeomet
 	return MAL_SUCCEED;
 }
 
+static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid, int geometryType) {
+	int geometriesNum, subGeometryType, i;
+	GEOSGeometry** transformedMultiGeometries = NULL;
+	const GEOSGeometry* multiGeometry = NULL;
+	str ret = MAL_SUCCEED;
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	transformedMultiGeometries = GDKmalloc(geometriesNum*sizeof(GEOSGeometry*));
+
+	for(i=0; i<geometriesNum; i++) {
+		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
+
+		subGeometryType = GEOSGeomTypeId(multiGeometry)+1;
+
+		switch(subGeometryType) {
+			case wkbPoint:
+				ret = transformPoint(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+				break;
+			case wkbLineString:
+				ret = transformLineString(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+				break;
+			case wkbLinearRing:
+				ret = transformLinearRing(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+				break;
+			case wkbPolygon:
+				ret = transformPolygon(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst, srid);
+				break; 
+			default:
+				transformedMultiGeometries[i] = NULL;
+				ret = createException(MAL, "geom.Transform", "Unknown geometry type");
+		}
+		if(transformedMultiGeometries[i] != NULL )
+			GEOSSetSRID(transformedMultiGeometries[i], srid);
+	}
+
+	if(ret != MAL_SUCCEED) {
+		GDKfree(*transformedMultiGeometries);
+		*transformedGeometry = NULL;
+		return ret;
+	}
+		*transformedGeometry = GEOSGeom_createCollection(geometryType-1, transformedMultiGeometries, geometriesNum);
+
+	return ret;
+}
+
 /* the following function is used in postgis to get projPJ from str.
  * it is necessary to do it ina detailed way like that because pj_init_plus 
  * does not set all parameters correctly and I cannot test whether the 
@@ -412,7 +457,13 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid, char** proj4_sr
 		case wkbPolygon:
 			ret = transformPolygon(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid);
 			break; 
+		case wkbMultiPoint:
+		case wkbMultiLineString:
+		case wkbMultiPolygon:
+			ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid, geometryType);
+			break;
 		default:
+			transformedGeosGeometry = NULL;
 			ret = createException(MAL, "geom.Transform", "Unknown geometry type");
 	}
 
