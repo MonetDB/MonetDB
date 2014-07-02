@@ -1542,6 +1542,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
+	char shared_log_filename[BUFSIZ];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -1592,7 +1593,6 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 
 		/* get last shared logger id from the local log dir,
 		 * but first check if the file exists */
-		char shared_log_filename[BUFSIZ];
 		snprintf(shared_log_filename, BUFSIZ, "%s%s", lg->local_dir, LOGFILE_SHARED);
 
 		if (access(shared_log_filename, 0) != -1) {
