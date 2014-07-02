@@ -166,7 +166,6 @@ SQLprelude(void)
 	ms->engine = "MALengine";
 
 	/* init the SQL store */
-
 	tmp = SQLinit(readonly);
 	if (tmp != MAL_SUCCEED) {
 		return (tmp);
@@ -644,7 +643,7 @@ sql_update_jan2014(Client c)
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
-	
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
  	/* remove table return types (#..), ie tt_generated from _tables/_columns */
@@ -884,8 +883,6 @@ sql_update_default(Client c)
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
-	char *fullname;
-	FILE *fp;
 	sql_table *t;
 	sql_schema *s;
 
@@ -898,19 +895,91 @@ sql_update_default(Client c)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+ 	/* remove table return types (#..), ie tt_generated from
+	 * _tables/_columns */
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select id from _tables where name like '#%%');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _tables where name like '#%%';\n");
+
 	/* change in 25_debug.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;\n");
 
 	/* new file 40_json.sql */
-	snprintf(buf + pos, bufsize - pos, "createdb%c40_json", DIR_SEP);
-	if ((fullname = MSP_locate_sqlscript(buf + pos, 1)) != NULL) {
-		if ((fp = fopen(fullname, "r")) != NULL) {
-			pos += fread(buf + pos, 1, bufsize - pos, fp);
-			fclose(fp);
-		}
-		GDKfree(fullname);
-	}
+	pos += snprintf(buf + pos, bufsize - pos, "\
+create schema json;\n\
+\n\
+create type json external name json;\n\
+\n\
+create function json.filter(js json, pathexpr string)\n\
+returns json external name json.filter;\n\
+\n\
+create function json.filter(js json, name tinyint)\n\
+returns json external name json.filter;\n\
+\n\
+create function json.filter(js json, name integer)\n\
+returns json external name json.filter;\n\
+\n\
+create function json.filter(js json, name bigint)\n\
+returns json external name json.filter;\n\
+\n\
+create function json.text(js json, e string)\n\
+returns string external name json.text;\n\
+\n\
+create function json.number(js json)\n\
+returns float external name json.number;\n\
+\n\
+create function json.\"integer\"(js json)\n\
+returns bigint external name json.\"integer\";\n\
+\n\
+create function json.isvalid(js string)\n\
+returns bool external name json.isvalid;\n\
+\n\
+create function json.isobject(js string)\n\
+returns bool external name json.isobject;\n\
+\n\
+create function json.isarray(js string)\n\
+returns bool external name json.isarray;\n\
+\n\
+create function json.isvalid(js json)\n\
+returns bool external name json.isvalid;\n\
+\n\
+create function json.isobject(js json)\n\
+returns bool external name json.isobject;\n\
+\n\
+create function json.isarray(js json)\n\
+returns bool external name json.isarray;\n\
+\n\
+create function json.length(js json)\n\
+returns integer external name json.length;\n\
+\n\
+create function json.keyarray(js json)\n\
+returns json external name json.keyarray;\n\
+\n\
+create function json.valuearray(js json)\n\
+returns  json external name json.valuearray;\n\
+\n\
+create function json.text(js json)\n\
+returns string external name json.text;\n\
+create function json.text(js string)\n\
+returns string external name json.text;\n\
+create function json.text(js int)\n\
+returns string external name json.text;\n\
+\n\
+\n\
+create aggregate json.output(js json)\n\
+returns string external name json.output;\n\
+\n\
+create aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;\n\
+create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.schemas set system = true where name = 'json';\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('filter', 'text', 'number', 'integer', 'isvalid', 'isobject', 'isarray', 'length', 'keyarray', 'valuearray') and f.type = %d and f.schema_id = s.id and s.name = 'json');\n",
+			F_FUNC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('output', 'tojsonarray') and f.type = %d and f.schema_id = s.id and s.name = 'json');\n",
+			F_AGGR);
 
 	/* new file 41_jsonstore.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
@@ -919,15 +988,6 @@ sql_update_default(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create type uuid external name uuid;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.uuid() returns uuid external name uuid.\"new\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.isaUUID(u uuid) returns uuid external name uuid.\"isaUUID\";\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('isauuid', 'md5', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
-			F_FUNC);
-
-	if (schema) {
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	/* change to 75_storage functions */
 	s = mvc_bind_schema(sql, "sys");
@@ -974,6 +1034,19 @@ sql_update_default(Client c)
 " from sys.storagemodel() group by \"schema\",\"table\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('hashsize', 'imprintsize', 'isauuid', 'md5', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_FUNC);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_UNION);
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
 
 	assert(pos < bufsize);
 
