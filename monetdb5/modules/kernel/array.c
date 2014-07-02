@@ -103,7 +103,7 @@ grid_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 		return GDK_FAIL;
 	}
 	new_bat(*out, (i * (n - o) * r), int);
-	if (out == NULL) {
+	if (*out == NULL) {
 		GDKerror("grid: cannot create the bat (%d BUNs)\n", (i * (n - o) * r));
 		return GDK_FAIL;
 	}
