@@ -30,8 +30,7 @@ INCLUDES = .. \
 	../../../../common/stream \
 	../../../../gdk \
 	../../../../tools/merovingian \
-	../../../../tools/merovingian/daemon \
-	$(SAMTOOLS_CFLAGS)
+	../../../../tools/merovingian/daemon
 
 lib__bam = {
 	MODULE
@@ -44,7 +43,7 @@ lib__bam = {
 			  bam_export.c bam_export.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat \
-		   $(SAMTOOLS_LIBS)
+		   -lhts
 }
 
 headers_mal = {

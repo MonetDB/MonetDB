@@ -29,7 +29,7 @@
 
 #include "gdk.h"
 
-#include <samtools/sam.h>
+#include <htslib/sam.h>
 
 #define BW_FP_BUF_SIZE 128
 
@@ -42,8 +42,8 @@ typedef struct sam_data {
 } sam_data;
 
 typedef struct bam_data {
-	bamFile input;
-	bam_header_t *header;
+	samFile *input;
+	bam_hdr_t *header;
 } bam_data;
 
 typedef struct bam_wrapper {
