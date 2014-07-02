@@ -36,8 +36,8 @@
 %define with_geos 1
 %endif
 
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
-%define with_samtools 1
+%if %{?_with_hts:1}%{!?_with_hts:0}
+%define with_hts 1
 %endif
 
 Name: %{name}
@@ -82,8 +82,8 @@ BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
-%if %{?with_samtools:1}%{!?with_samtools:0}
-BuildRequires: samtools-devel
+%if %{?with_hts:1}%{!?with_hts:0}
+BuildRequires: hts-devel
 %endif
 
 # need to define python_sitelib on RHEL 5 and older
@@ -456,7 +456,7 @@ numerical analysis (gsl).
 %{_libdir}/monetdb5/gsl.mal
 %{_libdir}/monetdb5/lib_gsl.so
 
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?_with_hts:1}%{!?_with_hts:0}
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
@@ -542,7 +542,7 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?_with_hts:1}%{!?_with_hts:0}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
 %exclude %{_libdir}/monetdb5/lib_bam.so
@@ -640,7 +640,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?_with_hts:1}%{!?_with_hts:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
@@ -800,7 +800,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-readline=yes \
 	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
 	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
-	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
+	--with-hts=%{?with_hts:yes}%{!?with_hts:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
