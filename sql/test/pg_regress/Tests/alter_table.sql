@@ -318,7 +318,7 @@ drop table atacc1;
 -- inheritance related tests
 create table atacc1 (test int);
 create table atacc2 (test2 int);
-create table atacc3 (test3 int);
+create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
 alter table atacc2 add constraint foo check (test2>0);
 -- fail and then succeed on atacc2
 insert into atacc2 (test2) values (-3);
@@ -334,7 +334,7 @@ drop table atacc1;
 
 create table atacc1 (test int);
 create table atacc2 (test2 int);
-create table atacc3 (test3 int);
+create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
 alter table only atacc2 add constraint foo check (test2>0);
 -- fail and then succeed on atacc2
 insert into atacc2 (test2) values (-3);
@@ -513,7 +513,7 @@ drop table atacc1;
 
 -- test inheritance
 create table parent (a int);
-create table child (b varchar(255));
+create table child (b varchar(255)); -- inherits (parent)
 
 alter table parent alter a set not null;
 insert into parent values (NULL);
@@ -701,7 +701,7 @@ drop table atacc1;
 create table parent (a int, b int, c int);
 insert into parent values (1, 2, 3);
 alter table parent drop a;
-create table child (d varchar(255));
+create table child (d varchar(255)); -- inherits (parent)
 insert into child values (12, 13, 'testing');
 
 select * from parent;
@@ -739,8 +739,8 @@ drop table test;
 -- test inheritance
 
 create table dropColumn (a int, b int, e int);
-create table dropColumnChild (c int);
-create table dropColumnAnother (d int);
+create table dropColumnChild (c int); -- inherits (dropColumn)
+create table dropColumnAnother (d int); -- inherits (dropColumnChild)
 
 -- these two should fail
 alter table dropColumnchild drop column a;
@@ -752,8 +752,8 @@ alter table dropColumnChild drop column c;
 alter table dropColumn drop column a;
 
 create table renameColumn (a int);
-create table renameColumnChild (b int);
-create table renameColumnAnother (c int);
+create table renameColumnChild (b int); -- inherits (renameColumn)
+create table renameColumnAnother (c int); -- inherits (renameColumnChild)
 
 -- these three should fail
 alter table renameColumnChild rename column a to d;
@@ -774,7 +774,7 @@ alter table only renameColumn add column x int;
 -- Test corner cases in dropping of inherited columns
 
 create table p1 (f1 int, f2 int);
-create table c1 (f1 int not null);
+create table c1 (f1 int not null); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -788,7 +788,7 @@ select f1 from c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 ();
+create table c1 (); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -799,7 +799,7 @@ select f1 from c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 ();
+create table c1 (); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -810,7 +810,7 @@ alter table c1 drop column f1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 (f1 int not null);
+create table c1 (f1 int not null); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -822,8 +822,8 @@ drop table p1 cascade;
 
 create table p1(id int, name text);
 create table p2(id2 int, name text, height int);
-create table c1(age int);
-create table gc1();
+create table c1(age int); -- inherits(p1,p2)
+create table gc1(); -- inherits (c1)
 
 select relname, attname, attinhcount, attislocal
 from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
@@ -868,7 +868,7 @@ select * from altstartwith;
 create table altwithoid (col integer) with oids;
 
 -- Inherits parents oid column
-create table altinhoid ();
+create table altinhoid (); -- inherits (altwithoid) without oids
 
 insert into altinhoid values (1);
 
@@ -886,7 +886,7 @@ select * from altinhoid;
 -- test renumbering of child-table columns in inherited operations
 
 create table p1 (f1 int);
-create table c1 (f2 text, f3 int);
+create table c1 (f2 text, f3 int); -- inherits (p1)
 
 alter table p1 add column a1 int check (a1 > 0);
 alter table p1 add column f2 text;

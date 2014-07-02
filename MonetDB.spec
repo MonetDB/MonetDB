@@ -531,11 +531,13 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
-# %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_lsst.mal
-%{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
-%{_libdir}/monetdb5/autoload/*_udf.mal
-%{_libdir}/monetdb5/autoload/*_vault.mal
+%if %{?with_geos:1}%{!?with_geos:0}
+%exclude %{_libdir}/monetdb5/autoload/*_geom.mal
+%endif
+%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+# %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
+%exclude %{_libdir}/monetdb5/autoload/*_sql.mal
+%{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif

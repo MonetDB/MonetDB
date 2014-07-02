@@ -96,6 +96,15 @@ BATsubunique(BAT *b, BAT *s)
 		return bn;
 	}
 
+	if (cand && BATcount(b) > 16 * BATcount(s)) {
+		BAT *nb = BATproject(s, b); 
+		BAT *r = BATsubunique(nb, 0);
+		BAT *nr = BATproject(r, s);
+		BBPunfix(nb->batCacheid);
+		BBPunfix(r->batCacheid);
+		return nr;
+	}
+
 	assert(b->ttype != TYPE_void);
 
 	bn = BATnew(TYPE_void, TYPE_oid, 1024);

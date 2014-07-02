@@ -1,9 +1,9 @@
-stdout of test 'polygon` in directory 'sql/test/pg_regress` itself:
+stdout of test 'string` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:58 >  
-# 17:10:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:58 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,31 +20,219 @@ stdout of test 'polygon` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:58 >  
-# 17:10:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:58 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- string
+#--
+#-- string logic
+#--
+#-- 3	      o
+#--	      |
+#-- 2	    + |
+#--	   /  |
+#-- 1	  # o +
+#--       /    |
+#-- 0	#-----o-+
+#--
+#--	0 1 2 3 4
+#--
 #CREATE TABLE POLYGON_TBL(f1 string);
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(2.0,0.0),(2.0,4.0),(0.0,0.0)');
-[ 1	]
+[ 1 ]
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(3.0,1.0),(3.0,3.0),(1.0,0.0)');
-[ 1	]
+[ 1 ]
+#-- degenerate polygons 
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0,0.0)');
-[ 1	]
+[ 1 ]
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0,1.0),(0.0,1.0)');
-[ 1	]
-#INSERT INTO POLYGON_TBL(f1) VALUES ('0.0');
-[ 1	]
-#INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0 0.0');
-[ 1	]
-#INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2)');
-[ 1	]
-#INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2,3');
-[ 1	]
-#INSERT INTO POLYGON_TBL(f1) VALUES ('asdf');
-[ 1	]
+[ 1 ]
+#-- bad string input strings 
+#
+#
+#
+#
+#
+#SELECT '' AS four, POLYGON_TBL.*;
+% sys.L0,	sys.L0 # table_name
+% four,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((2,0),(2,4),(0,0))" ]
+[ "",	"((3,1),(3,3),(1,0))" ]
+[ "",	"((0,0))" ]
+[ "",	"((0,1),(0,1))" ]
 
-# 17:10:59 >  
-# 17:10:59 >  "Done."
-# 17:10:59 >  
+#-- overlap 
+#SELECT '' AS three, p.*
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 && '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% three,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((2,0),(2,4),(0,0))" ]
+[ "",	"((3,1),(3,3),(1,0))" ]
+
+#-- left overlap 
+#SELECT '' AS four, p.* 
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 &< '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% four,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((2,0),(2,4),(0,0))" ]
+[ "",	"((3,1),(3,3),(1,0))" ]
+[ "",	"((0,0))" ]
+[ "",	"((0,1),(0,1))" ]
+
+#-- right overlap 
+#SELECT '' AS two, p.* 
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 &> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% two,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((2,0),(2,4),(0,0))" ]
+[ "",	"((3,1),(3,3),(1,0))" ]
+
+#-- left of 
+#SELECT '' AS one, p.*
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 << '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% one,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((0,0))" ]
+[ "",	"((0,1),(0,1))" ]
+
+#-- right of 
+#SELECT '' AS zero, p.*
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 >> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% zero,	f1 # name
+% ?,	? # type
+% ?,	? # length
+
+#-- contained 
+#SELECT '' AS one, p.* 
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% one,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((3,1),(3,3),(1,0))" ]
+
+#-- same 
+#SELECT '' AS one, p.*
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% one,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((3,1),(3,3),(1,0))" ]
+
+#-- contains 
+#SELECT '' AS one, p.*
+#   FROM POLYGON_TBL p
+#   WHERE p.f1 ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+% sys.L0,	sys.L0 # table_name
+% one,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"((3,1),(3,3),(1,0))" ]
+
+#--
+#-- string logic
+#--
+#-- 3	      o
+#--	      |
+#-- 2	    + |
+#--	   /  |
+#-- 1	  / o +
+#--       /    |
+#-- 0	+-----o-+
+#--
+#--	0 1 2 3 4
+#--
+#-- left of 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- left overlap 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- right overlap 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' &> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
+
+#-- right of 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' >> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- contained in 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- contains 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- same 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS false;
+% sys.L0 # table_name
+% false # name
+% ? # type
+% ? # length
+[ "f" ]
+
+#-- overlap 
+#SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' && string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS true;
+% sys.L0 # table_name
+% true # name
+% ? # type
+% ? # length
+[ "t" ]
+
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 
