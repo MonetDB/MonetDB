@@ -1030,11 +1030,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Windows.Installer.2.0"
-                    {
-                    "Name" = "8:Windows Installer 2.0"
-                    "ProductCode" = "8:Microsoft.Windows.Installer.2.0"
-                    }
                 }
             }
         }
