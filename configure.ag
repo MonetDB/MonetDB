@@ -2363,7 +2363,7 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # samtools, only used by sql
-org_have_samtools="auto"
+org_have_samtools="yes"
 have_samtools=$org_have_samtools
 AC_ARG_WITH(samtools,
 	AS_HELP_STRING([--with-samtools=DIR],
