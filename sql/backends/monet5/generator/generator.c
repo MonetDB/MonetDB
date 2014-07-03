@@ -574,6 +574,22 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define PREVVALUEbte(x) ((x) - 1)
+#define PREVVALUEsht(x) ((x) - 1)
+#define PREVVALUEint(x) ((x) - 1)
+#define PREVVALUElng(x) ((x) - 1)
+#define PREVVALUEoid(x) ((x) - 1)
+#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
+#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
+
+#define NEXTVALUEbte(x) ((x) + 1)
+#define NEXTVALUEsht(x) ((x) + 1)
+#define NEXTVALUEint(x) ((x) + 1)
+#define NEXTVALUElng(x) ((x) + 1)
+#define NEXTVALUEoid(x) ((x) + 1)
+#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
+#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
+
 
 #define VLTthetasubselect(TPE,ABS) {\
 	TPE f,l,s, low, hgh;\
@@ -591,12 +607,14 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	v = (oid*) Tloc(bn,BUNfirst(bn));\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) getArgReference(stk,pci,idx);\
+		hgh = PREVVALUE##TPE(hgh);\
 	} else\
 	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) getArgReference(stk,pci,idx) +1;\
+		hgh= *(TPE*) getArgReference(stk,pci,idx);\
 	} else\
 	if ( strcmp(oper,">") == 0){\
-		low= *(TPE*) getArgReference(stk,pci,idx)+1;\
+		low= *(TPE*) getArgReference(stk,pci,idx);\
+		low = NEXTVALUE##TPE(low);\
 	} else\
 	if ( strcmp(oper,">=") == 0){\
 		low= *(TPE*) getArgReference(stk,pci,idx);\
@@ -609,10 +627,13 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		hgh= low= *(TPE*) getArgReference(stk,pci,idx);\
 	} else\
 		throw(MAL,"generator.thetasubselect","Unknown operator");\
+	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
 	for(j=0;j<cap;j++, f+=s, o++)\
 		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
-			if(cl){ while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; if ( *cl == o){ *v++= o; c++;} }\
-			else {*v++ = o; c++;}\
+			if(cand){ \
+				if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
+				else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
+			} else {*v++ = o; c++;}\
 		} \
 }
 
@@ -621,8 +642,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 {
 	int idx, cndid =0, c= 0, anti =0,tpe;
 	BAT *cand = 0, *bn = NULL;
-	BUN cap,cn= 0;
-	oid o = 0, *cl = 0;
+	BUN cap;
+	lng cn= 0;
+	oid o = 0, oc = 0,  *cl = 0;
 	InstrPtr p;
 	str oper, msg= MAL_SUCCEED;
 
@@ -652,6 +674,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	case TYPE_lng: VLTthetasubselect(lng,llabs);break;
 	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
+	break;
 	default:
 		if ( tpe == TYPE_timestamp){
 			timestamp f,l, low, hgh;
@@ -697,12 +720,13 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
 			v = (oid*) Tloc(bn,BUNfirst(bn));
 
+			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
 				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++){
 					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
-						if(cl){
-							while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; 
-							if ( *cl == o){ *v++= o; c++;}
+						if(cand){
+							if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
+							else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
 						} else {*v++ = o; c++;}
 					}
 					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
@@ -712,9 +736,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( (f.days > l.days || (f.days = l.days && f.msecs >l.msecs)) && s < 0){
 				for(; f.days>l.days || (f.days == l.days && f.msecs >l.msecs); o++){
 					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
-						if(cl){
-							while(cn < BATcount(cand) && *cl < o) {cl++; cn++;}; 
-							if ( *cl == o){ *v++= o; c++;}
+						if(cand){
+							if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
+							else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
 						} else {*v++ = o; c++;}
 					}
 					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
