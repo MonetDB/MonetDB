@@ -3426,6 +3426,7 @@ echo
 echo "* Available features/extensions:"
 for comp in \
 	'atomic_ops   ' \
+	'bam          ' \
 	'bz2          ' \
 	'cfitsio      ' \
 	'curl         ' \
@@ -3449,7 +3450,6 @@ for comp in \
 	'raptor       ' \
 	'readline     ' \
 	'rubygem      ' \
-	'bam          ' \
 	'setsockopt   ' \
 	'sphinxclient ' \
 	'unixodbc     ' \
