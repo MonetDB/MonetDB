@@ -294,11 +294,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) DOCTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF ENABLE_BAM
-	$(ECHO) ENABLE_BAM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) ENABLE_BAM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF ENABLE_CRACKERS
 	$(ECHO) ENABLE_CRACKERS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

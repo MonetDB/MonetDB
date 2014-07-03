@@ -305,7 +305,6 @@ CONDITIONALS = {
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
-    'ENABLE_BAM'           " :@ENABLE_BAM@",
     'ENABLE_CRACKERS'      : "@ENABLE_CRACKERS_FALSE@",
     'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
