@@ -27,11 +27,10 @@
 
 #include "monetdb_config.h"
 
-#include <htslib/sam.h>
-#include <htslib/kstring.h>
+#include <samtools/bam.h>
 
 #include "bam_globals.h"
-//#include "bam_db_interface.h"
+#include "bam_db_interface.h"
 #include "bam_export.h"
 
 
@@ -42,6 +41,189 @@ typedef struct bam_field {
 	BATiter iter;
 	BUN cur;
 } bam_field;
+
+
+/**
+ * Copied directly from bam.h/bam_import.c for use by fill_bam_alig
+ * Can not change the calls to realloc to GDKrealloc, since
+ * bam_destroy1 does not use GDKfree...
+ */
+#ifndef kroundup32
+/*! @function
+  @abstract  Round an integer to the next closest power-2 integer.
+  @param  x  integer to be rounded (in place)
+  @discussion x will be modified.
+ */
+#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+#endif
+static inline uint8_t *
+alloc_data(bam1_t *b, int size)
+{
+	if (b->m_data < size) {
+		b->m_data = size;
+		kroundup32(b->m_data);
+		b->data = (uint8_t*)realloc(b->data, b->m_data);
+	}
+	return b->data;
+}
+
+/* Error macro */
+#define FILL_BAM_ALIG_ERR "Error processing alignment '%d': "
+
+/**
+ * I had to write this function, which contains much low level
+ * function calls to the Samtools library, since the sam_read1 function
+ * contained in bam.h/bam_import.c only works on files. This function is
+ * an adjusted variant of the sam_read1 function that gets its fields
+ * directly instead of reads it from a tamFile.
+ * I wrote this function since I did not feel like first writing everything
+ * to a SAM file and then applying sam_read1 since that is just a waste of I/O.
+ * Note that I did do a write to/read from SAM for the BAM header, but headers are
+ * insignificant compared to alignment data.
+ *
+ * I also added realloc checking, since this was not done in the Samtools code
+ * and i properly throw a MAL_MALLOC_FAIL whenever applicable.
+ */
+static str
+fill_bam_alig(str qname, sht flag, str rname, int pos,
+	sht mapq, str cigar, str rnext, int pnext,
+	int tlen, str seq, str qual,
+	bam_header_t *header, bam1_t *b, int alignment_nr)
+{
+	int doff = 0;
+	bam1_core_t *c = &b->core;
+
+	/* Note: in sam_read1, str->s is often used. This string is not NULL terminated! */
+	{ // qname
+		c->l_qname = strlen(qname) + 1;
+		if(alloc_data(b, doff + c->l_qname) == NULL) {
+			throw(MAL, "fill_bam_alig",
+				FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+		}
+		memcpy(b->data + doff, qname, c->l_qname);
+		doff += c->l_qname;
+	}
+	{ // flag
+		c->flag = flag;
+	}
+	{ // rname, pos, mapq
+		c->tid = bam_get_tid(header, rname);
+		if (c->tid < 0 && strcmp(rname, "*") != 0) {
+			/* Should not happen, since we built the header structure ourselves */
+			throw(MAL, "fill_bam_alig",
+				FILL_BAM_ALIG_ERR "SQ entry '%s' not found in header table",
+				alignment_nr, rname);
+		}
+		c->pos = pos - 1;
+		c->qual = mapq;
+	}
+	{ // cigar
+		str s, t;
+		int i, op;
+		long x;
+		c->n_cigar = 0;
+		if (cigar[0] != '*') {
+			uint32_t *cigar_enc;
+			for (s = cigar; *s != '\0'; ++s) {
+				if ((isalpha(*s)) || (*s=='=')) {
+					++c->n_cigar;
+				}
+				else if (!isdigit(*s)) {
+					throw(MAL, "fill_bam_alig",
+						FILL_BAM_ALIG_ERR "Parse error while parsing CIGAR string '%s'",
+						alignment_nr, cigar);
+				}
+			}
+			if (alloc_data(b, doff + c->n_cigar * 4) == NULL) {
+				throw(MAL, "fill_bam_alig",
+					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+			}
+			cigar_enc = bam1_cigar(b);
+			for (i = 0, s = cigar; i != c->n_cigar; ++i) {
+				x = strtol(s, &t, 10);
+				op = toupper(*t);
+				if (op == 'M') op = BAM_CMATCH;
+				else if (op == 'I') op = BAM_CINS;
+				else if (op == 'D') op = BAM_CDEL;
+				else if (op == 'N') op = BAM_CREF_SKIP;
+				else if (op == 'S') op = BAM_CSOFT_CLIP;
+				else if (op == 'H') op = BAM_CHARD_CLIP;
+				else if (op == 'P') op = BAM_CPAD;
+				else if (op == '=') op = BAM_CEQUAL;
+				else if (op == 'X') op = BAM_CDIFF;
+				else if (op == 'B') op = BAM_CBACK;
+				else throw(MAL, "fill_bam_alig",
+					FILL_BAM_ALIG_ERR "invalid CIGAR operation found in CIGAR string '%s': '%c'",
+					alignment_nr, cigar, op);
+				s = t + 1;
+				cigar_enc[i] = bam_cigar_gen(x, op);
+			}
+			if (*s) throw(MAL, "fill_bam_alig",
+				FILL_BAM_ALIG_ERR "Unmatched CIGAR operation in CIGAR string '%s'",
+				alignment_nr, cigar);
+			c->bin = bam_reg2bin(c->pos, bam_calend(c, cigar_enc));
+			doff += c->n_cigar * 4;
+		} else {
+			if (!(c->flag&BAM_FUNMAP)) {
+				c->flag |= BAM_FUNMAP;
+			}
+			c->bin = bam_reg2bin(c->pos, c->pos + 1);
+		}
+	}
+	{ // rnext, pnext, tlen
+		c->mtid = strcmp(rnext, "=") != 0 ? bam_get_tid(header, rnext) : c->tid;
+		c->mpos = pnext - 1;
+		c->isize = tlen;
+	}
+	{ // seq and qual
+		int i;
+		uint8_t *p = 0;
+		if (strcmp(seq, "*") != 0) {
+			c->l_qseq = strlen(seq);
+			if (c->n_cigar && c->l_qseq != (int32_t)bam_cigar2qlen(c, bam1_cigar(b))) {
+				throw(MAL, "fill_bam_alig",
+					FILL_BAM_ALIG_ERR "CIGAR and sequence length inconsistency: %d (SEQ) vs %d (CIGAR)",
+					alignment_nr, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
+			}
+			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;
+			if(p == NULL) {
+				throw(MAL, "fill_bam_alig",
+					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+			}
+			memset(p, 0, (c->l_qseq+1)/2);
+			for (i = 0; i < c->l_qseq; ++i)
+				p[i/2] |= bam_nt16_table[(int)seq[i]] << 4*(1-i%2);
+		} else {
+			c->l_qseq = 0;
+		}
+		if (strcmp(qual, "*") != 0 && (size_t)c->l_qseq != strlen(qual)) {
+			throw(MAL, "fill_bam_alig",
+				FILL_BAM_ALIG_ERR "SEQ and QUAL are inconsistent",
+				alignment_nr);
+		}
+		p += (c->l_qseq+1)/2;
+		if (strcmp(qual, "*") == 0) {
+			for (i = 0; i < c->l_qseq; ++i) {
+				p[i] = 0xff;
+			}
+		} else {
+			for (i = 0; i < c->l_qseq; ++i) {
+				p[i] = qual[i] - 33;
+			}
+		}
+		doff += c->l_qseq + (c->l_qseq+1)/2;
+	}
+
+	b->data_len = doff;
+	if (bam_no_B) {
+		bam_remove_B(b);
+	}
+
+	return MAL_SUCCEED;
+}
+
+
+
 
 
 static str
@@ -190,7 +372,7 @@ write_header(stream *output, bam_field fields[11])
 		//mnstr_printf(output, "%s\t0\n", sq_table[i]);
 	}
 
-	mnstr_printf(output, "@CO\tSAM file generated by MonetDB BAM library\n");
+	mnstr_printf(output, "@CO\tSAM file generated by MonetDB\n");
 
 cleanup:
 	if (sq_table) {
@@ -229,7 +411,7 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tuple_count = 0;
 
 	int i;
-	//str sql;
+	str sql;
 	str msg = MAL_SUCCEED;
 
 	memset(fields, 0, 11 * sizeof(bam_field));
@@ -255,11 +437,11 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* If we got here, we succesfully exported the result. Drop all data in export table */
-	/*sql = "DELETE FROM bam.export;";
+	sql = "DELETE FROM bam.export;";
 	RUN_SQL(cntxt, &sql, "bam.drop_export", msg);
 	if (msg != MAL_SUCCEED) {
 		REUSE_EXCEPTION(msg, MAL, "sam_export", "Could not clear the export table after exporting: %s", msg);
-	}*/
+	}
 
 	(void)stk;
 	(void)pci;
@@ -274,43 +456,38 @@ cleanup:
 }
 
 
-/**
- * bam_export uses htslib functionality to write the export table to an actual bam file
- * It does this by first writing the SAM header to a temporary SAM file, since the htslib provides 
- * convenient header parsing functionality on files. 
- * We could do a similar thing for the alignments, but this would add a whole lot of I/O. So we took
- * some extra effort to write the alignments to bam1_t structs ourselves (of course with help of
- * htslib )
- */
+
 str
-bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	/* arg 1: path to desired output file */
 	str output_path = *(str *) getArgReference(stk, pci, pci->retc);
 
-	/* Stuff necessary for writing header to BAM */
-	char header_path[1024] = "";
-	stream *output_header = NULL;
-	samFile *sam_header = NULL;
-	bam_hdr_t *header = NULL;
-
-	/* Actual BAM output file and vars to write alignments */
-	samFile *output = NULL;
-	kstring_t sam_line;
-	bam1_t *alig = NULL;
-	char parse_err_buf[2048];
-	FILE *original_stderr;
-
-	/* Others */
+	bamFile output = NULL;
 	bam_field fields[11];
 	int tuple_count = 0;
+
+	char output_header_path[1024] = "";
+	stream *output_header = NULL;
+	tamFile sam_header = NULL;
+	bam_header_t *header = NULL;
+
+	bam1_t *alig = NULL;
+
 	int i;
-	//str sql;
+	str sql;
 	str msg = MAL_SUCCEED;
 
-	/* First, open sam file to write header to */
-	snprintf(header_path, 1024, "%s_hdr.sam", output_path);
-	if ((output_header = bsopen(header_path)) == NULL) {
-		msg = createException(MAL, "bam_export", "Could not open temporary output file '%s' for writing", header_path);
+	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+
+	if ((output = bam_open(output_path, "wb")) == NULL) {
+		msg = createException(MAL, "bam_export", "Could not open output file '%s' for writing", output_path);
+		goto cleanup;
+	}
+
+	snprintf(output_header_path, 1024, "%s_tmp.sam", output_path);
+	if ((output_header = bsopen(output_header_path)) == NULL) {
+		msg = createException(MAL, "bam_export", "Could not open temporary output file '%s' for writing", output_header_path);
 		goto cleanup;
 	}
 
@@ -318,88 +495,72 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		goto cleanup;
 	}
 
-	/* And write header */
 	write_header(output_header, fields);
 	close_stream(output_header);
 	output_header = NULL;
 
-	
-	/* Header has been written, now let htslib parse it into a bam_hdr_t struct for us */
-	if ((sam_header = sam_open(header_path, "r")) == 0) {
-		msg = createException(MAL, "bam_export", "Could not open temporary header file '%s' for reading", header_path);
+	if((sam_header = sam_open(output_header_path)) == NULL) {
+		msg = createException(MAL, "bam_export", "Could not open temporarily written SAM header file '%s'", output_header_path);
 		goto cleanup;
 	}
 
-	if ((header = sam_hdr_read(sam_header)) == 0) {
-		msg = createException(MAL, "bam_export", "Could not read header from temporary file '%s'", header_path);
+	if((header = sam_header_read(sam_header)) == NULL) {
+		msg = createException(MAL, "bam_export", "Could not parse the temporarily written SAM header in file '%s'", output_header_path);
 		goto cleanup;
 	}
 
+	bam_header_write(output, header);
 
-	/* Open the BAM file to which we are going to write everything */
-	if ((output = sam_open(output_path, "wb")) == NULL) {
-		msg = createException(MAL, "bam_export", "Could not open output file '%s' for writing", output_path);
-		goto cleanup;
+
+	if((alig = bam_init1()) == NULL) {
+		throw(MAL, "bam_export", MAL_MALLOC_FAIL);
 	}
 
-
-	/* Now write the header and the alignments to the BAM file */
-	sam_hdr_write(output, header); //always returns 0, so we have to assume that it will work
-
-	alig = bam_init1();
-	original_stderr = stderr;
-	stderr = fmemopen(parse_err_buf, 2048, "w"); /* Used to redirect error messages from htslib into parse_err_buf */
 	for (i=0; i<tuple_count; ++i) {
-		sam_line.l = sam_line.m = 0;
-		sam_line.s = NULL;
-		ksprintf(&sam_line, "%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s",
-				CUR_STR(fields[0], i), CUR_SHT(fields[1], i), CUR_STR(fields[2], i),
-				CUR_INT(fields[3], i), CUR_SHT(fields[4], i), CUR_STR(fields[5], i),
-				CUR_STR(fields[6], i), CUR_INT(fields[7], i), CUR_INT(fields[8], i),
-				CUR_STR(fields[9], i), CUR_STR(fields[10], i));
+		msg = fill_bam_alig(
+			CUR_STR(fields[0], i), CUR_SHT(fields[1], i), CUR_STR(fields[2], i),
+			CUR_INT(fields[3], i), CUR_SHT(fields[4], i), CUR_STR(fields[5], i),
+			CUR_STR(fields[6], i), CUR_INT(fields[7], i), CUR_INT(fields[8], i),
+			CUR_STR(fields[9], i), CUR_STR(fields[10], i),
+			header, alig, i+1);
 
-		if(sam_parse1(&sam_line, header, alig) != 0) {
-			fclose(stderr);
-			stderr = original_stderr;
-			msg = createException(MAL, "bam_export", "Could not create BAM alignment for alignment number '%d': %s", i, parse_err_buf);
+		if(msg != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		free(sam_line.s);
-		sam_line.s = NULL;
 
-		/* And write the alignment! */
-		sam_write1(output, header, alig);
+		bam_write1(output, alig);
 	}
 
-	fclose(stderr);
-	stderr = original_stderr;
+	/* If we got here, we succesfully exported the result. Drop all data in export table */
+	sql = "DELETE FROM bam.export;";
+	RUN_SQL(cntxt, &sql, "bam.drop_export", msg);
+	if (msg != MAL_SUCCEED) {
+		REUSE_EXCEPTION(msg, MAL, "sam_export", "Could not clear the export table after exporting: %s", msg);
+	}
+
+	(void)stk;
+	(void)pci;
 
 cleanup:
-	if(strcmp(header_path, "") != 0) {
-		unlink(header_path);
+	cleanup_fields(fields);
+	if (output) {
+		bam_close(output);
 	}
 	if(output_header) {
 		close_stream(output_header);
 	}
-	if(sam_header) {
-		sam_close(sam_header);
-	}
+	//if(sam_header) {
+	//	sam_close(sam_header);
+	//}
 	if(header) {
-		bam_hdr_destroy(header);
-	}
-
-	if(output) {
-		sam_close(output);
-	}
-	if(sam_line.s != NULL) {
-		free(sam_line.s);
+		bam_header_destroy(header);
 	}
 	if(alig) {
 		bam_destroy1(alig);
 	}
-
-	cleanup_fields(fields);
-
+	if (strcmp(output_header_path, "") != 0) {
+		unlink(output_header_path);
+	}
 	return msg;
 }
 

@@ -26,22 +26,15 @@
 #include "stream.h"
 #include "bam_globals.h"
 
-/*
+#include <samtools/sam.h>
 #ifdef HAVE_SAMTOOLS_KSTRING_H
 #include <samtools/kstring.h>
-#else*/
+#else
 /* Ubuntu doesn't distribute samtools/kstring.h, so we need our own
  * version */
-/*#include "mykstring.h"
-#endif*/
-#include <htslib/kstring.h>
-#include <htslib/bgzf.h>
+#include "mykstring.h"
+#endif
 #include "bam_wrapper.h"
-
-/* In htslib, data_len is called l_data in the bam1_t struct */
-#define data_len l_data
-#define bam_nt16_table seq_nt16_table
-#define bam_nt16_rev_table seq_nt16_str
 
 str
 ordering_str(ordering ord)
@@ -108,12 +101,12 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 
 	if (type == BAM) {
 		/* Open BAM file and read its header */
-		if ((bw->bam.input = sam_open(file_location, "r")) == NULL) {
+		if ((bw->bam.input = bam_open(file_location, "r")) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER "BAM file could not be opened",
 				  file_location);
 		}
-		if ((bw->bam.header = sam_hdr_read(bw->bam.input)) == NULL) {
+		if ((bw->bam.header = bam_header_read(bw->bam.input)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				ERR_INIT_BAM_WRAPPER "Unable to read header from file",
 				file_location);
@@ -376,10 +369,10 @@ clear_bam_wrapper(bam_wrapper * bw)
 	/* Clear bam/sam specific fields */
 	if (bw->type == BAM) {
 		if (bw->bam.header) {
-			bam_hdr_destroy(bw->bam.header);
+			bam_header_destroy(bw->bam.header);
 		}
 		if (bw->bam.input) {
-			sam_close(bw->bam.input);
+			bam_close(bw->bam.input);
 		}
 	} else {
 		if (bw->sam.input) {
@@ -1533,11 +1526,11 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 		 * since we have (type == BAM && dbschema == 0)
 		 * So, no space is allocated for qname since we will point
 		 * directly into the bam1_t struct */
-		a_out->qname = bam_get_qname(a_in);
+		a_out->qname = bam1_qname(a_in);
 	} else {
 		/* Copy for pairwise schema, since we then want to keep it
 		 * alive after we finish processing this alignment */
-		strcpy(a_out->qname, bam_get_qname(a_in));
+		strcpy(a_out->qname, bam1_qname(a_in));
 	}
 
 	/* flag */
@@ -1562,7 +1555,7 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 		a_out->cigar[0] = '*';
 		a_out->cigar[1] = '\0';
 	} else {
-		uint32_t *cigar_bin = bam_get_cigar(a_in);
+		uint32_t *cigar_bin = bam1_cigar(a_in);
 		int index = 0;
 
 		for (i = 0; i < a_in->core.n_cigar; ++i) {
@@ -1592,13 +1585,13 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 
 	/* seq and qual */
 	if (a_in->core.l_qseq) {
-		s = bam_get_seq(a_in);
+		s = bam1_seq(a_in);
 		for (i = 0; i < a_in->core.l_qseq; ++i) {
-			a_out->seq[i] = bam_nt16_rev_table[bam_seqi(s, i)];
+			a_out->seq[i] = bam_nt16_rev_table[bam1_seqi(s, i)];
 		}
 		a_out->seq[a_in->core.l_qseq] = '\0';
 
-		s = bam_get_qual(a_in);
+		s = bam1_qual(a_in);
 		if (s[0] == 0xff) {
 			a_out->seq[0] = '*';
 			a_out->seq[1] = '*';
@@ -1668,7 +1661,7 @@ write_aux_str(bam_wrapper * bw, str aux, int aux_len, lng virtual_offset) {
 static str
 write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 	int i;
-	uint8_t *s = bam_get_aux(alig);
+	uint8_t *s = bam1_aux(alig);
 	str msg;
 	while (s < alig->data + alig->data_len) {
 		char tag_str[3] = { (char) s[0], (char) s[1], '\0' };
@@ -1976,7 +1969,7 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 	return MAL_SUCCEED;
 }
 
-#define BAMSAM_TELL(bw) (bw->type == BAM && bw->bam.input->is_bin ? bgzf_utell(bw->bam.input->fp.bgzf) : (bw->cnt_alignments_total + 1))
+#define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : (bw->cnt_alignments_total + 1))
 
 str
 process_alignments(bam_wrapper * bw, bit * some_thread_failed)
@@ -2044,8 +2037,8 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 
 		/* First retrieve the next alignment */
 		a = aligs[alig_index];
-		if (bw->type == BAM && bw->bam.input->is_bin) {
-			if (bam_read1(bw->bam.input->fp.bgzf, alig) < 0) {
+		if (bw->type == BAM) {
+			if (bam_read1(bw->bam.input, alig) < 0) {
 				break;
 			}
 		} else {
@@ -2060,7 +2053,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		++bw->cnt_alignments_total;
 
 		if (bw->dbschema == 1 && alig_index > 0
-			&& strcmp((bw->type == BAM ? bam_get_qname(alig) : a->qname),
+			&& strcmp((bw->type == BAM ? bam1_qname(alig) : a->qname),
 				  aligs[alig_index - 1]->qname) != 0) {
 			/* Qnames do not match, so the previous
 			 * alignments can be considered complete. Use
