@@ -2363,7 +2363,7 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # hts (required by BAM library), only used by sql
-org_have_bam="yes"
+org_have_bam="auto"
 have_bam=$org_have_bam
 AC_ARG_WITH(hts,
 	AS_HELP_STRING([--with-hts=DIR],
