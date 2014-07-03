@@ -2368,7 +2368,7 @@ have_bam=$org_have_bam
 AC_ARG_WITH(hts,
 	AS_HELP_STRING([--with-hts=DIR],
 		[hts (providing bam library) are installed in DIR]),
-	[have_bam="$withval"])
+	[have_bam="$withval"], [have_bam="auto"])
 if test "x$have_bam" != xno; then
 	case "$have_bam" in
 	auto|yes)
