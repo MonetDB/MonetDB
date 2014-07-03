@@ -20,7 +20,7 @@
 
 CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
 CREATE FUNCTION Has_M(info integer) RETURNS integer EXTERNAL NAME geom."hasM";
-CREATE FUNCTION get_type(info integer) RETURNS string EXTERNAL NAME geom."getType";
+CREATE FUNCTION get_type(info integer, format integer) RETURNS string EXTERNAL NAME geom."getType";
 
 
 
@@ -42,7 +42,7 @@ create view geometry_columns as
 			t.name as f_table_name,
 			x.name as f_geometry_column,
 			has_z(info)+has_m(info)+2 as coord_dimension,
-			srid, get_type(info) as type
+			srid, get_type(info, 0) as type
 		from tables t, (
 			select name, table_id, type_digits AS info, type_scale AS srid
 			from columns
@@ -56,25 +56,6 @@ create view geometry_columns as
 copy into spatial_ref_sys from '/export/scratch1/alvanaki/DEV/MonetDB/geom/sql/postgis_spatial_ref_sys.csv' using delimiters ',';
 
 
---CREATE TYPE Curve EXTERNAL NAME wkb;
-----CREATE TYPE Surface EXTERNAL NAME wkb;
---CREATE TYPE Polygon EXTERNAL NAME wkb;
---CREATE TYPE MultiPoint EXTERNAL NAME wkb;
---CREATE TYPE MultiCurve EXTERNAL NAME wkb;
---CREATE TYPE MultiLineString EXTERNAL NAME wkb;
---CREATE TYPE MultiSurface EXTERNAL NAME wkb;
---CREATE TYPE MultiPolygon EXTERNAL NAME wkb;
-
---CREATE TYPE Geometry EXTERNAL NAME wkb;
---CREATE TYPE GeometrySubtype EXTERNAL NAME wkb;
-
---CREATE TYPE Point EXTERNAL NAME wkb;
---UPDATE types SET digits=4 WHERE name='point';
-
---CREATE TYPE LineString EXTERNAL NAME wkb;
-
---CREATE TYPE GeomCollection EXTERNAL NAME wkb;
-
 CREATE TYPE mbr EXTERNAL NAME mbr;
 
 
@@ -82,11 +63,35 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 -- Envelope():Geometry
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
---//CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
+CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
 
 --//CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
 
+
+-------------------------------------------------------------------------
+------------------------- Management Functions- -------------------------
+-------------------------------------------------------------------------
+--CREATE PROCEDURE AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer) 
+--BEGIN
+	--DECLARE column_type string;
+	--SET column_type = concat('geometry( ', geometryType);
+	--SET column_type = concat(column_type, ', ');
+	--SET column_type = concat(column_type, srid);
+	--SET column_type = concat(column_type, ')'); 
+	--ALTER TABLE table_name ADD column_name
+--END;
+
+--CREATE PROCEDURE t(table_name string, column_name string, column_type string)
+--BEGIN
+--	ALTER TABLE table_name ADD column_name;
+--END;
+
+--CREATE FUNCTION t(table_name string, column_name string, srid integer, type string, dimension integer) RETURNS string 
+--BEGIN
+--	EXECUTE PROCEDURE AddGeometryColumn(table_name, column_name, srid, type, dimension);
+--	RETURN '';
+--END;
 
 -------------------------------------------------------------------------
 ------------------------- Geometry Constructors -------------------------
@@ -198,11 +203,15 @@ CREATE FUNCTION ST_SRID(geom Geometry) RETURNS integer EXTERNAL NAME geom."getSR
 CREATE FUNCTION ST_StartPoint(geom Geometry) RETURNS geometry EXTERNAL NAME geom."StartPoint";
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
 CREATE FUNCTION ST_X(geom Geometry) RETURNS double EXTERNAL NAME geom."X"; --gets point
---CREATE FUNCTION ST_XMax(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
---CREATE FUNCTION ST_XMin(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
+CREATE FUNCTION ST_XMax(geom Geometry) RETURNS double EXTERNAL NAME geom."XMaxFromWKB";
+CREATE FUNCTION ST_XMax(box mbr) RETURNS double EXTERNAL NAME geom."XMaxFromMBR";
+CREATE FUNCTION ST_XMin(geom Geometry) RETURNS double EXTERNAL NAME geom."XMinFromWKB";
+CREATE FUNCTION ST_XMin(box mbr) RETURNS double EXTERNAL NAME geom."XMinFromMBR";
 CREATE FUNCTION ST_Y(geom Geometry) RETURNS double EXTERNAL NAME geom."Y"; --gets point
---CREATE FUNCTION ST_YMan(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
---CREATE FUNCTION ST_YMin(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
+CREATE FUNCTION ST_YMax(geom Geometry) RETURNS double EXTERNAL NAME geom."YMaxFromWKB";
+CREATE FUNCTION ST_YMax(box mbr) RETURNS double EXTERNAL NAME geom."YMaxFromMBR";
+CREATE FUNCTION ST_YMin(geom Geometry) RETURNS double EXTERNAL NAME geom."YMinFromWKB";
+CREATE FUNCTION ST_YMin(box mbr) RETURNS double EXTERNAL NAME geom."YMinFromMBR";
 CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z"; --gets point
 --CREATE FUNCTION ST_ZMax(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
 --CREATE FUNCTION ST_Zmflag(geom Geometry) RETURNS smallint EXTERNAL NAME --0=2d, 1=3dm, 2=3dz, 4=4d
@@ -240,7 +249,7 @@ CREATE FUNCTION getProj4(srid_in integer) RETURNS string
 BEGIN
 	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; 
 END;
-CREATE FUNCTION InternalTransform(geom Geometry, srid integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom."Transform";
+CREATE FUNCTION InternalTransform(geom Geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom."Transform";
 CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry
 BEGIN
 	DECLARE srid_src integer;
@@ -251,7 +260,15 @@ BEGIN
 	SELECT getProj4(srid_src) INTO proj4_src;
 	SELECT getProj4(srid) INTO proj4_dest;
 
-	RETURN SELECT InternalTransform(geom, srid, proj4_src, proj4_dest);	
+	IF proj4_src IS NULL THEN
+		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest); 
+	ELSE
+		IF proj4_dest IS NULL THEN
+			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null'); 
+		ELSE
+			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
+		END IF;	
+	END IF;
 END;
 
 --CREATE FUNCTION ST_Translate RETURNS EXTERNAL NAME

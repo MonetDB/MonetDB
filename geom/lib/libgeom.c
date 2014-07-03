@@ -29,24 +29,18 @@
 
 #include <math.h>
 
-void
-libgeom_init(void)
-{
+void libgeom_init(void) {
 	initGEOS((GEOSMessageHandler) GDKerror, (GEOSMessageHandler) GDKerror);
 	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 }
 
-void
-libgeom_exit(void)
-{
+void libgeom_exit(void) {
 	finishGEOS();
 }
 
-int
-wkb_isnil(wkb *w)
-{
+int wkb_isnil(wkb *w) {
 	if (!w ||w->len == ~0)
 		return 1;
 	return 0;
@@ -57,14 +51,16 @@ wkb_isnil(wkb *w)
  * Creates an mbr holding the lower left and upper right coordinates
  * of a GEOSGeom.
  */
-int
-getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
-{
+/*int getMbrGeos(mbr *res, const GEOSGeom geosGeometry) {
 	GEOSGeom envelope;
-	double xmin, ymin, xmax, ymax;
+	//int coordinatesNum  = 0; 
+	double xmin=0, ymin=0, xmax=0, ymax=0;
 
 	if (!geosGeometry || (envelope = GEOSEnvelope(geosGeometry)) == NULL)
 		return 0;
+
+	// get the number of coordinates the geometry has
+	//coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
 
 	if (GEOSGeomTypeId(envelope) == GEOS_POINT) {
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
@@ -80,7 +76,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 		res->ymin = (float) ymin;
 		res->xmax = (float) xmin;
 		res->ymax = (float) ymin;
-	} else {		/* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
+	} else {		// GEOSGeomTypeId(envelope) == GEOS_POLYGON
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSGeometry *ring = GEOSGetExteriorRing(envelope);
 #else
@@ -108,7 +104,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 	}
 	GEOSGeom_destroy(envelope);
 	return 1;
-}
+}*/
 
 GEOSGeom wkb2geos(wkb* geomWKB) {
 	GEOSGeom geosGeometry;
@@ -127,7 +123,7 @@ GEOSGeom wkb2geos(wkb* geomWKB) {
 /* Function getMbrGeom
  * A wrapper for getMbrGeos on a geom_geometry.
  */
-int
+/*int
 getMbrGeom(mbr *res, wkb *geom)
 {
 	GEOSGeom geosGeometry = wkb2geos(geom);
@@ -138,7 +134,7 @@ getMbrGeom(mbr *res, wkb *geom)
 		return r;
 	}
 	return 0;
-}
+}*/
 
 const char* geom_type2str(int t, int flag){
 	if(flag == 0) {
@@ -149,6 +145,8 @@ const char* geom_type2str(int t, int flag){
 			return "POINT";
 		case wkbLineString:
 			return "LINESTRING";
+		case wkbLinearRing:
+			return "LINEARRING";
 		case wkbPolygon:
 			return "POLYGON";
 		case wkbMultiPoint:
@@ -168,7 +166,9 @@ const char* geom_type2str(int t, int flag){
 		case wkbPoint:
 			return "ST_Point";
 		case wkbLineString:
-			return "ST_Linestring";
+			return "ST_LineString";
+		case wkbLinearRing:
+			return "ST_LinearRing";
 		case wkbPolygon:
 			return "ST_Polygon";
 		case wkbMultiPoint:

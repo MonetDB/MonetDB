@@ -24,21 +24,17 @@ stderr of test 'transform` in directory 'geom/sql` itself:
 # cmdline opt 	gdk_dbpath = /ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
-transforming POINT(743238.000000 2967416.000000) from ' +proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs' to ' +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
-transformed to POINT(-71.177685 42.390290)
-transforming POINT(743238.000000 2967450.000000) from ' +proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs' to ' +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
-transformed to POINT(-71.177684 42.390383)
-transforming POINT(743265.000000 2967450.000000) from ' +proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs' to ' +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
-transformed to POINT(-71.177584 42.390383)
-transforming POINT(743265.625000 2967416.000000) from ' +proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs' to ' +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
-transformed to POINT(-71.177583 42.390289)
-transforming POINT(743238.000000 2967416.000000) from ' +proj=lcc +lat_1=42.68333333333333 +lat_2=41.71666666666667 +lat_0=41 +lon_0=-71.5 +x_0=200000.0001016002 +y_0=750000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs' to ' +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
-transformed to POINT(-71.177685 42.390290)
 
 # 16:46:55 >  
 # 16:46:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9738" "--port=38205"
 # 16:46:55 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-1282/.s.monetdb.34209
+QUERY = SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 2329));
+ERROR = !Couldn't transform point (-1.237718 0.734787): latitude or longitude exceeded limits
+MAPI  = (monetdb) /var/tmp/mtest-1282/.s.monetdb.34209
+QUERY = SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 4329));
+ERROR = !Could not find in spatial_ref_sys srid 4329
 
 # 16:46:56 >  
 # 16:46:56 >  "Done."

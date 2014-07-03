@@ -5458,7 +5458,7 @@ int find_subgeometry_type(char* geoSubType) {
 	else {
 		int strLength = strlen(geoSubType);
 		if(strLength > 0 ) {
-			char typeSubStr[strLength];
+			char *typeSubStr = malloc(strLength);
 			char flag = geoSubType[strLength-1]; 
 			
 			memcpy(typeSubStr, geoSubType, strLength-1);
@@ -5472,6 +5472,7 @@ int find_subgeometry_type(char* geoSubType) {
 				if(flag == 'm')
 					SET_M(subType);
 			}
+			free(typeSubStr);
 		}
 
 	}

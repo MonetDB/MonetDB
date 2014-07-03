@@ -192,9 +192,7 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	return NULL;
 }
 
-bte
-ATOMelmshift(int sz)
-{
+bte ATOMelmshift(int sz) {
 	bte sh;
 	int i = sz >> 1;
 

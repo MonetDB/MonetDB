@@ -6,3 +6,9 @@ select st_astext(st_transform(st_geomfromtext('multipoint(1234 125, 30 420)', 23
 
 select st_astext(st_transform(ST_MLineFromText('MULTILINESTRING((10 20, 30 40), (40 50, 60 70))', 2128), 4326));
 
+SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 2329));
+
+SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 4329));
+
+SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((1 2, 2 3, 3 4, 1 2), (10 20, 20 30, 30 40, 10 20)), ((100 200, 200 300, 300 400, 100 200)))',2329), 4326));
+

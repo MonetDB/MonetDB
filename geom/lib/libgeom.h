@@ -40,14 +40,18 @@
 #include <geos_c.h>
 #include "proj_api.h" //it is needed to transform from one srid to another
 
+/* geos does not support 3d envelope */
 typedef struct mbr {
 	float xmin;
 	float ymin;
+//	float zmin;
+//	float mmin;
+	
 	float xmax;
 	float ymax;
-	//mserver could not start with z coordinate
-	//float zmin;
-	//float zmax;
+//	float zmax;
+//	float mmax;
+	
 } mbr;
 
 /*
@@ -134,6 +138,7 @@ libgeom_export void libgeom_exit(void);
  */
 //#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define wkb_nil geos2wkb(NULL);
+#define mbr_nil mbrFromGeos(NULL); 
 
 libgeom_export int wkb_isnil(wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);

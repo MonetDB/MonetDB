@@ -28,7 +28,7 @@ command cmp() :int		address mbrCOMP;
 command read()			address mbrREAD;
 command write()			address mbrWRITE;
 
-command mbr(v:str) :mbr address mbrFromString;
+#command mbr(v:str) :mbr address mbrFromString;
 
 atom wkb;
 
@@ -53,7 +53,7 @@ command hasZ{unsafe}(flags:int) :int address geoHasZ
 comment "returns 1 if the geometry has z coordinate";
 command hasM{unsafe}(flags:int) :int address geoHasM
 comment "returns 1 if the geometry has m coordinate";
-command getType{unsafe}(flags:int) :str address geoGetType
+command getType{unsafe}(flags:int, format:int) :str address geoGetType
 comment "returns the str representation of the geometry type";
 
 
@@ -255,8 +255,50 @@ comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTIO
 command NumGeometries(g:wkb) :int address wkbNumGeometries
 comment "Returns the number of geometries";
 
-command Transform(g:wkb, srid:int, proj_src:str, proj_dest:str) :wkb address wkbTransform
+command Transform(g:wkb, srid_src:int, srid_dst:int, proj_src:str, proj_dest:str) :wkb address wkbTransform
 comment "Transforms a geometry from one srid to another";
+
+
+
+command mbr(:wkb) :mbr address wkbMBR
+comment "Creates the mbr for the given wkb.";
+command coordinateFromWKB(:wkb, :int) :dbl address wkbCoordinateFromWKB
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";
+command coordinateFromMBR(:mbr, :int) :dbl address wkbCoordinateFromMBR
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
+
+function XMinFromWKB(g:wkb) :dbl;
+	x := coordinateFromWKB(g, 1);
+	return x;
+end XMinFromWKB;
+function YMinFromWKB(g:wkb) :dbl;
+	x := coordinateFromWKB(g, 2);
+	return x;
+end YMinFromWKB;
+function XMaxFromWKB(g:wkb) :dbl;
+	x := coordinateFromWKB(g, 3);
+	return x;
+end XMaxFromWKB;
+function YMaxFromWKB(g:wkb) :dbl;
+	x := coordinateFromWKB(g, 4);
+	return x;
+end YMaxFromWKB;
+function XMinFromMBR(b:mbr) :dbl;
+	x := coordinateFromMBR(b, 1);
+	return x;
+end XMinFromMBR;
+function YMinFromMBR(b:mbr) :dbl;
+	x := coordinateFromMBR(b, 2);
+	return x;
+end YMinFromMBR;
+function XMaxFromMBR(b:mbr) :dbl;
+	x := coordinateFromMBR(b, 3);
+	return x;
+end XMaxFromMBR;
+function YMaxFromMBR(b:mbr) :dbl;
+	x := coordinateFromMBR(b, 4);
+	return x;
+end YMaxFromMBR;
 
 
 
@@ -292,9 +334,6 @@ comment "Transforms a geometry from one srid to another";
 #address ordinatesMBR
 #comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
 
-#command mbr(:wkb) :mbr
-#address wkbMBR
-#comment "Creates the mbr for the given wkb.";
 
 
 
@@ -321,12 +360,13 @@ geom.prelude();
 
 module calc;
 
-command mbr{unsafe}(v:str) :mbr address mbrFromString;
-command mbr(v:mbr) :mbr address mbrFromMBR;
-command wkb{unsafe}(v:str) :wkb address wkbFromString;
+#command mbr{unsafe}(v:str) :mbr address mbrFromString;
+#command mbr(v:mbr) :mbr address mbrFromMBR;
+#command wkb{unsafe}(v:str) :wkb address wkbFromString;
+#It is needed to add a new geometry column to an existing table
 command wkb(v:wkb) :wkb address wkbFromWKB;
 
-command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address A_2_B
+command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address geom_2_geom
 comment "Called when iserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition"
 #function point{unsafe}( wkt:str ) :wkb;
 #	x := wkb.FromText(wkt,1);
