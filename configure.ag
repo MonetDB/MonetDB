@@ -2368,7 +2368,7 @@ have_samtools=$org_have_samtools
 AC_ARG_WITH(samtools,
 	AS_HELP_STRING([--with-samtools=DIR],
 		[samtools (providing bam library) are installed in DIR]),
-	[have_samtools="$withval"], [have_samtools="auto"])
+	[have_samtools="$withval"])
 if test "x$have_samtools" != xno; then
 	case "$have_samtools" in
 	auto|yes)
