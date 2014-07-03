@@ -103,6 +103,28 @@ pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oi
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
+pattern thetasubselect(b:bat[:oid,:bte], cnd:bat[:oid,:oid], low:bte, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:sht], cnd:bat[:oid,:oid], low:sht, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:int], cnd:bat[:oid,:oid], low:int, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:lng], cnd:bat[:oid,:oid], low:lng, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:flt], cnd:bat[:oid,:oid], low:flt, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:dbl], cnd:bat[:oid,:oid], low:dbl, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect
+comment "Overloaded selection routine";
+
 pattern subselect(b:bat[:oid,:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address VLTgenerator_subselect;
 
@@ -169,6 +191,20 @@ pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:ti
 address VLTgenerator_leftfetchjoin
 comment "Overloaded leftfetchjoin operation";
 
-pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:oid,:bte], gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join;
+pattern join(b:bat[:oid,:sht], gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join;
+pattern join(b:bat[:oid,:int], gen:bat[:oid,:int]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join;
+pattern join(b:bat[:oid,:lng], gen:bat[:oid,:lng]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join;
+pattern join(b:bat[:oid,:flt], gen:bat[:oid,:flt]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join;
+pattern join(b:bat[:oid,:dbl], gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address VLTgenerator_join
 comment "Overloaded join operation";
+
+#pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+#address VLTgenerator_join
+#comment "Overloaded join operation";
