@@ -820,6 +820,11 @@ retryRead:
 			/* search the symbol */
 			i = findVariable(mb, b);
 			if (i < 0) {
+				// deal with temporary
+				if( *b == 'X' ) b++;
+				i = findVariable(mb, b);
+			}
+			if (i < 0) {
 				i = BBPindex(b);
 				if (i != 0) {
 					printBATelm(out, i, size, first);
