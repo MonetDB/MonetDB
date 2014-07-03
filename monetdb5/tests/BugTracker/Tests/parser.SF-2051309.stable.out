@@ -14,7 +14,6 @@ stdout of test 'parser.SF-2051309` in directory 'monetdb5/tests/BugTracker` itse
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37910/
 !SyntaxException:convertConstant:integer parse error
 !TypeException:user.main[3]:'calc.:' undefined in: l:any := calc.:(s:str, lng:any)
-!TypeException:user.main[3]:'lng' may not be used before being initialized
 function user.main():void;
     s := "89437487923647823647862387462378468723634":str;
     io.print(s);

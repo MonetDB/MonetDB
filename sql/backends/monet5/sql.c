@@ -608,7 +608,8 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			for (n = t->keys.dset->h; n; n = n->next) {
 				sql_key *k = n->data;
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
-				mvc_drop_key(sql, s, nk, k->drop_action);
+				if (nk)
+					mvc_drop_key(sql, s, nk, k->drop_action);
 			}
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
@@ -958,7 +959,8 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
-	if (s && !schema_privs(sql->role_id, s))
+	assert(s);
+	if (!schema_privs(sql->role_id, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
@@ -1731,7 +1733,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
+	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) ins)) == NULL)
 		throw(SQL, "sql.append", "Cannot access descriptor");
@@ -1935,8 +1937,12 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 	}
 
 	c = BATdescriptor(*col);
-	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL)
+	if (c == NULL)
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL){
+		BBPunfix(c->batCacheid);
 		throw(MAL, "sql.delta", OPERATION_FAILED);
+	}
 	BBPunfix(c->batCacheid);
 
 	if ((u_val = BATdescriptor(*uval)) == NULL)
@@ -1988,7 +1994,13 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 	res = c;
 	if (BATcount(u_id)) {
 		u_id = BATdescriptor(*uid);
+		if (!u_id)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		if (!cminu) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		BBPunfix(c->batCacheid);
 		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
@@ -2001,12 +2013,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		if (BATcount(u)) {	/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
 
+			if (!c_ids){
+				BBPunfix(c->batCacheid);
+				BBPunfix(u->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
 			BBPunfix(c_ids->batCacheid);
 			BBPunfix(u->batCacheid);
+			if (!cminu) {
+				BBPunfix(c->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			u = BATmirror(cminu);
 		}
 		res = BATappend(c, u, TRUE);
@@ -2014,17 +2039,25 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) {
+			BBPunfix(c->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
 
 	if (i) {
 		i = BATdescriptor(*ins);
+		if (!i)
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
 			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
 			BBPunfix(i->batCacheid);
 			BBPunfix(u_id->batCacheid);
+			if (!cminu) 
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			i = BATmirror(BATmark(cminu, 0));
 			BBPunfix(cminu->batCacheid);
 		}
@@ -2033,6 +2066,8 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 
 		u = BATsort(BATmirror(res));
 		BBPunfix(res->batCacheid);
+		if (!u) 
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = BATmirror(BATmark(u, 0));
 		BBPunfix(u->batCacheid);
 	}
@@ -2670,9 +2705,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	s = bstream_create(ss, 0x2000000);
 #endif
-	if (s != NULL)
+	if (s != NULL) {
 		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
-	bstream_destroy(s);
+		bstream_destroy(s);
+	}
 	GDKfree(filename);
 	GDKfree(tsep);
 	GDKfree(rsep);
@@ -2806,6 +2842,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", "failed to re-open file %s", *(str *) getArgReference(stk, pci, i));
 
 			buf = GDKmalloc(bufsiz);
+			if (!buf) {
+				fclose(f);
+				throw(SQL, "sql", "failed to create buffer");
+			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
 				if (t)
@@ -3392,10 +3432,13 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (k) {
 	case iday:
 		r *= 24;
+		/* fall through */
 	case ihour:
 		r *= 60;
+		/* fall through */
 	case imin:
 		r *= 60;
+		/* fall through */
 	case isec:
 		r *= 1000;
 		break;
@@ -4044,8 +4087,10 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */
 
-		store_funcs.append_col(tr, c, ins, TYPE_bat);
-		BBPreleaseref(ins->batCacheid);
+		if( ins){
+			store_funcs.append_col(tr, c, ins, TYPE_bat);
+			BBPreleaseref(ins->batCacheid);
+		}
 		BBPdecref(bids[i], TRUE);
 	}
 	/* TODO indices */
@@ -4454,7 +4499,6 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldvtop = cntxt->curprg->def->vtop;
 		int oldstop = cntxt->curprg->def->stop;
 		stmt *s;
-		char *msg;
 		MalStkPtr oldglb = cntxt->glb;
 
 		if (*opt)
@@ -4472,8 +4516,9 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!msg) {
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
+			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		}
-		assert(cntxt->glb == 0 || cntxt->glb == oldglb);	/* detect leak */
 		cntxt->glb = oldglb;
 	}
 	return msg;
@@ -4505,4 +4550,192 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 	}
 	mb->ptop = j;
+}
+
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
+
+str
+STRindex_int(int *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_int(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		int v;
+
+		r = BATnew(TYPE_void, TYPE_int, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (int) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_int;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_sht(sht *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_sht(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		sht v;
+
+		r = BATnew(TYPE_void, TYPE_sht, 1024);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (sht) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_sht;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRindex_bte(bte *i, str src, bit *u)
+{
+	(void)src; (void)u;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRindex_bte(bat *res, bat *src, bit *u)
+{
+	BAT *s, *r;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.index", "Cannot access descriptor");
+	
+	if (*u) {
+		Heap *h = s->T->vheap;
+		size_t pad, pos;
+		const size_t extralen = h->hashash ? EXTRALEN : 0;
+		bte v;
+
+		r = BATnew(TYPE_void, TYPE_bte, 64);
+		BATseqbase(r, 0);
+		pos = GDK_STRHASHSIZE;
+		while (pos < h->free) {
+			const char *s;
+
+			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+			pos += pad + extralen;
+			s = h->base + pos;
+			v = (bte) (pos - GDK_STRHASHSIZE);
+			BUNappend(r, &v, FALSE);
+			pos += GDK_STRLEN(s);
+		}
+	} else {
+		r = VIEWcreate(s, s);
+		r->ttype = TYPE_bte;
+		r->tvarsized = 0;
+		r->T->vheap = NULL;
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
+}
+
+str
+STRstrings(str *i, str src)
+{
+	(void)src;
+	*i = 0;
+	return MAL_SUCCEED;
+}
+
+str
+BATSTRstrings(bat *res, bat *src)
+{
+	BAT *s, *r;
+	Heap *h;
+	size_t pad, pos;
+	size_t extralen;
+
+	if ((s = BATdescriptor(*src)) == NULL)
+		throw(SQL, "calc.strings", "Cannot access descriptor");
+	
+       	h = s->T->vheap;
+       	extralen = h->hashash ? EXTRALEN : 0;
+	r = BATnew(TYPE_void, TYPE_str, 1024);
+	BATseqbase(r, 0);
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *s;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad + extralen;
+		s = h->base + pos;
+		BUNappend(r, s, FALSE);
+		pos += GDK_STRLEN(s);
+	}
+	BBPunfix(s->batCacheid);
+	BBPkeepref((*res = r->batCacheid));
+	return MAL_SUCCEED;
 }

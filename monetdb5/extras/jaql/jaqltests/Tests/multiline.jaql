@@ -1,8 +1,0 @@
-[
-	{
-		"key": "value",
-		"otherkey": "othervalue"
-	}
-]
-	-> transform $.key
-;

@@ -163,13 +163,12 @@ typedef struct CLIENT {
 	int exception_buf_initialized;
 
 	/*
-	 * These are pointers to scenario backends contexts.  For the time
-	 * being just SQL and JAQL.  We need a pointer for each of them,
-	 * since they have to be able to interoperate with each other, e.g.
-	 * both contexts at the same time are in use.
+	 * Here are pointers to scenario backends contexts.  For the time
+	 * being just SQL.  We need a pointer for each of them, since they
+	 * have to be able to interoperate with each other, e.g.  both
+	 * contexts at the same time are in use.
 	 */
 	void *sqlcontext;
-	void *jaqlcontext;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

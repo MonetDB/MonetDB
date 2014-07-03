@@ -226,6 +226,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
+		GDKfree(dep);
 		return 0;
 	}
 	

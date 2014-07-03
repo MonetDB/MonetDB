@@ -111,17 +111,15 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = NULL;
 						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
 						nils = BATcount(br);
-						BBPunfix(br->batCacheid);
-						if (bn->tkey)
+						if (br->tkey)
 							uniq = sz;
 						else {
-							br = BATkunique(BATmirror(bsample));
-							uniq = BATcount(br);
-							BBPunfix(br->batCacheid);
+							br = BATkunique(BATmirror(br));
+							uniq = br? BATcount(br):0;
 						}
-						if (samplesize > 0) {
+						BBPunfix(br->batCacheid);
+						if( bsample)
 							BBPunfix(bsample->batCacheid);
-						}
 						sorted = BATtordered(bn);
 
 						// Gather the min/max value for builtin types
@@ -165,6 +163,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (sz)
 								width = (int) (sum / sz);
 						}
+							/* fall through */
 
 						default:
 							snprintf(maxval, 8192, "nil");

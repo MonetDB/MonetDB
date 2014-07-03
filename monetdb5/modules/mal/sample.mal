@@ -27,6 +27,11 @@ command uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid]
 address SAMPLEuniform
 comment "Returns the oids of a uniform sample of size s";
 
+command subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid]
+address SAMPLEuniform
+comment "Returns the oids of a uniform sample of size s";
+
 command uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid]
 address SAMPLEuniform_dbl
 comment "Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0";
+

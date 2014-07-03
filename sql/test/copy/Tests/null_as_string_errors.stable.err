@@ -87,37 +87,31 @@ stderr of test 'null_as_string_errors` in directory 'sql/test/copy` itself:
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,NULL,NULL
-        
 ERROR = !value 'NULL' from line 1 field 1 not inserted, expecting type int
         !failed to import table
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,zero,0
-        
 ERROR = !value 'NULL' from line 1 field 1 not inserted, expecting type int
         !failed to import table
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         2,two,NULL
-        
 ERROR = !value 'NULL' from line 1 field 3 not inserted, expecting type decimal(5,2)
         !failed to import table
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         ,,
-        
 ERROR = !value '' from line 1 field 1 not inserted, expecting type int
         !failed to import table
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         ,zero,0
-        
 ERROR = !value '' from line 1 field 1 not inserted, expecting type int
         !failed to import table
 MAPI  = monetdb@sofia:38256
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         2,two,
-        
 ERROR = !value '' from line 1 field 3 not inserted, expecting type decimal(5,2)
         !failed to import table
 

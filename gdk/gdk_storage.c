@@ -129,9 +129,9 @@ GDKremovedir(const char *dirname)
 	return ret;
 }
 
-#define _FUNBUF         0x040000
-#define _FWRTHR         0x080000
-#define _FRDSEQ         0x100000
+#define _FUNBUF		0x040000
+#define _FWRTHR		0x080000
+#define _FRDSEQ		0x100000
 
 int
 GDKfdlocate(const char *nme, const char *mode, const char *extension)
@@ -239,11 +239,7 @@ GDKextendf(int fd, size_t size)
 	}
 	/* if necessary, extend the underlying file */
 	if (stb.st_size < (off_t) size) {
-#ifdef WIN32
-		return -(_chsize_s(fd, (__int64) size) != 0);
-#else
 		return ftruncate(fd, (off_t) size);
-#endif
 	}
 	return 0;
 }
@@ -686,14 +682,20 @@ BATload_intern(bat i, int lock)
 		}
 		if (b->batCapacity != (b->T->heap.size >> b->T->shift)) {
 			BUN cap = b->batCapacity;
+			int h;
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
-				HEAPextend(&b->H->heap, headsize(b, cap), b->batRestricted == BAT_READ);
+				h = HEAPextend(&b->H->heap, headsize(b, cap), b->batRestricted == BAT_READ);
 				b->batCapacity = cap;
 			} else {
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
-				HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
+				h = HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
+			}
+			if (h < 0) {
+				HEAPfree(&b->H->heap);
+				HEAPfree(&b->T->heap);
+				return NULL;
 			}
 		}
 	} else {

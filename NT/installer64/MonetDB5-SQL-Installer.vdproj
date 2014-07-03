@@ -153,18 +153,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1F84594549F24A96A4EF15ED9EC7184F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1FE6775741C5492FA9A67BAF75C9F430"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_1FE7B02CBBA5493DA5E90CC441A198FC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -669,12 +657,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_A5CCC27A6B2340FBB90FEB21070FCA24"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_A7F05B4CF16E4015B830AAD23130BCCC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -742,12 +724,6 @@
         "Entry"
         {
         "MsmKey" = "8:_B9080C15689242A38725E549D0123C45"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_BA07EF9B9C544A88A8581D25BBDC6675"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -855,12 +831,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D97860156B224184BAB2241D9EBA94D1"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_D986512B4FEA496091D4629A748B641D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -904,12 +874,6 @@
         "Entry"
         {
         "MsmKey" = "8:_E32DC74EFE9948E1B45DE1BE5087E828"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E3D3A6E532B2461D9F86BB1492BC66C6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1533,46 +1497,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1F84594549F24A96A4EF15ED9EC7184F"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\lib_json_jaql.dll"
-            "TargetName" = "8:lib_json_jaql.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1FE6775741C5492FA9A67BAF75C9F430"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\json_jaql.mal"
-            "TargetName" = "8:json_jaql.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1FE7B02CBBA5493DA5E90CC441A198FC"
             {
             "SourcePath" = "8:banner.bmp"
@@ -1835,7 +1759,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E0FEE7726DA47369758C263666F3DB1"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win64-vs10\\lib\\libeay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\lib\\libeay32.lib"
             "TargetName" = "8:libeay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2095,7 +2019,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_45C820B6483D494EBFE6F9A28A30760C"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win64-vs10\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2455,7 +2379,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_732094CE07974147A084EDD6A5F43C6F"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win64-vs10\\lib\\ssleay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\lib\\ssleay32.lib"
             "TargetName" = "8:ssleay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3233,26 +3157,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A5CCC27A6B2340FBB90FEB21070FCA24"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\autoload\\30_jaql.mal"
-            "TargetName" = "8:30_jaql.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A7F05B4CF16E4015B830AAD23130BCCC"
             {
             "SourcePath" = "8:stethoscope.bat"
@@ -3477,26 +3381,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\sql_aggr_lng.mal"
             "TargetName" = "8:sql_aggr_lng.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BA07EF9B9C544A88A8581D25BBDC6675"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\lib_jaql.dll"
-            "TargetName" = "8:lib_jaql.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3853,26 +3737,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D97860156B224184BAB2241D9EBA94D1"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\jaql.mal"
-            "TargetName" = "8:jaql.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D986512B4FEA496091D4629A748B641D"
             {
             "SourcePath" = "8:lib\\monetdb5\\sql.mal"
@@ -4033,26 +3897,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E3D3A6E532B2461D9F86BB1492BC66C6"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\jaqlfunc.mal"
-            "TargetName" = "8:jaqlfunc.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E6785DD8A5FF4C3EB096C7A547EB3EFC"
             {
             "SourcePath" = "8:lib\\monetdb5\\createdb\\15_querylog.sql"
@@ -4095,7 +3939,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E80B0549492B4D76B7EB93941A6BF89D"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win64-vs10\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"

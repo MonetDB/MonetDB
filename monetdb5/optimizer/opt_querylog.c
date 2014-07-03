@@ -92,7 +92,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = pushReturn(mb,q,iowait);
 	q = newAssignment(mb);
 	tuples= getArg(q,0) = newVariable(mb,GDKstrdup("tuples"),TYPE_wrd);
-	q= pushWrd(mb,q,1);
+	(void) pushWrd(mb,q,1);
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];

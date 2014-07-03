@@ -1,4 +1,5 @@
 library(monet.frame)
+options(monetdb.debug.query=T)
 
 con <- dbConnect(dbDriver("MonetDB"), "monetdb://localhost:50000/monetdbrtest", "monetdb", "monetdb",timeout=100)
 

@@ -1,8 +1,0 @@
-# this works on UNIX, on Windows we likely need an extra / after file://
-a = shred("file://$TSTSRCDIR/imenu.json");
-
-a;
-
-a -> expand unroll $.menu.items -> filter $.menu.items.id == "OpenNew";
-
-a -> expand unroll $.menu.items -> count();

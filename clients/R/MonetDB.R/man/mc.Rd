@@ -32,5 +32,5 @@ mc(dbname="demo", user="monetdb", password="monetdb", host="localhost", port=500
 }
 \examples{
 \dontrun{
-	con <- mc(dbname="demo",hostname="localhost")
+  con <- mc(dbname="demo",hostname="localhost")
 }}

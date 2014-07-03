@@ -378,6 +378,13 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
     if verbose:
         sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
+    for i in range(len(args)):
+        if args[i] == '--set' and i+1 < len(args):
+            s = args[i+1].partition('=')[0]
+            for j in range(len(cmd)):
+                if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
+                    del cmd[i:i+2]
+                    break
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
         cmdstr = ' '.join(cmd +  args)

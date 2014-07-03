@@ -1,0 +1,115 @@
+stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+--
+-- TIMETZ
+--
+CREATE TABLE TIMETZ_TBL (f1 time(2) with time zone);
+INSERT INTO TIMETZ_TBL VALUES ('00:01 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('01:00 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('02:03 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('07:07 PST');
+INSERT INTO TIMETZ_TBL VALUES ('08:08 EDT');
+INSERT INTO TIMETZ_TBL VALUES ('11:59 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('12:00 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('12:01 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('23:59 PDT');
+INSERT INTO TIMETZ_TBL VALUES ('11:59:59.99 PM PDT');
+SELECT f1 AS "Time TZ" FROM TIMETZ_TBL;
+    Time TZ     
+----------------
+ 00:01:00-07
+ 01:00:00-07
+ 02:03:00-07
+ 07:07:00-08
+ 08:08:00-04
+ 11:59:00-07
+ 12:00:00-07
+ 12:01:00-07
+ 23:59:00-07
+ 23:59:59.99-07
+(10 rows)
+
+SELECT f1 AS "Three" FROM TIMETZ_TBL WHERE f1 < '05:06:07-07';
+    Three    
+-------------
+ 00:01:00-07
+ 01:00:00-07
+ 02:03:00-07
+(3 rows)
+
+SELECT f1 AS "Seven" FROM TIMETZ_TBL WHERE f1 > '05:06:07-07';
+     Seven      
+----------------
+ 07:07:00-08
+ 08:08:00-04
+ 11:59:00-07
+ 12:00:00-07
+ 12:01:00-07
+ 23:59:00-07
+ 23:59:59.99-07
+(7 rows)
+
+SELECT f1 AS "None" FROM TIMETZ_TBL WHERE f1 < '00:00-07';
+ None 
+------
+(0 rows)
+
+SELECT f1 AS "Ten" FROM TIMETZ_TBL WHERE f1 >= '00:00-07';
+      Ten       
+----------------
+ 00:01:00-07
+ 01:00:00-07
+ 02:03:00-07
+ 07:07:00-08
+ 08:08:00-04
+ 11:59:00-07
+ 12:00:00-07
+ 12:01:00-07
+ 23:59:00-07
+ 23:59:59.99-07
+(10 rows)
+
+--
+-- TIME simple math
+--
+-- We now make a distinction between time and intervals,
+-- and adding two times together makes no sense at all.
+-- Leave in one query to show that it is rejected,
+-- and do the rest of the testing in horology.sql
+-- where we do mixed-type arithmetic. - thomas 2000-12-02
+SELECT f1 + time with time zone '00:01' AS "Illegal" FROM TIMETZ_TBL;
+ERROR:  operator does not exist: time with time zone + time with time zone
+HINT:  No operator matches the given name and argument type(s). You may need to add explicit type casts.
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

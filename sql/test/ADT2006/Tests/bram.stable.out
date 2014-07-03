@@ -476,7 +476,7 @@ Ready.
 % .L6,	.L6 # table_name
 % L1,	average_height # name
 % char,	char # type
-% 6,	0 # length
+% 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]
 #SELECT name as victim FROM victim WHERE date_of_birth is null or date_of_birth = 'unknown';

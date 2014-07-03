@@ -208,7 +208,7 @@ hash_delete(sql_hash *h, void *data)
 	sql_hash_e *e, *p = h->buckets[key&(h->size-1)];
 	
 	e = p;
-	for (; p->value != data ; p = p->chain) 
+	for (;  p && p->value != data ; p = p->chain) 
 		e = p;
 	if (p && p->value == data) {
 		if (p == e)
@@ -230,7 +230,7 @@ list_remove_node(list *l, node *n)
 	if (p == n) {
 		l->h = n->next;
 		p = NULL;
-	} else {
+	} else if ( p != NULL)  {
 		p->next = n->next;
 	}
 	if (n == l->t)

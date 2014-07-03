@@ -90,6 +90,7 @@ handle_get_request(str *retval, str *url)
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
 	/* we want the body be written to this file handle instead of stdout */
+	/* coverity[bad_sizeof] */
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 
 	/* get it! */
@@ -155,6 +156,7 @@ handle_put_request(str *retval, str *url)
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
 	/* we want the body be written to this file handle instead of stdout */
+	/* coverity[bad_sizeof] */
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 
 	/* get it! */
@@ -220,6 +222,7 @@ handle_post_request(str *retval, str *url)
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
 	/* we want the body be written to this file handle instead of stdout */
+	/* coverity[bad_sizeof] */
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 
 	/* get it! */
@@ -286,6 +289,7 @@ handle_delete_request(str *retval, str *url)
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
 	/* we want the body be written to this file handle instead of stdout */
+	/* coverity[bad_sizeof] */
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 
 	/* get it! */

@@ -64,6 +64,11 @@ SQLNativeSql_(ODBCDbc *dbc,
 
 	query = ODBCTranslateSQL(dbc, InStatementText, (size_t) TextLength1,
 				 SQL_NOSCAN_OFF);
+	if (query == NULL) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	copyString(query, strlen(query), OutStatementText, BufferLength,
 		   TextLength2Ptr, SQLINTEGER, addDbcError, dbc,
 		   free(query); return SQL_ERROR);
@@ -147,6 +152,11 @@ SQLNativeSqlW(SQLHDBC ConnectionHandle,
 	clearDbcErrors(dbc);
 	n++;			/* account for NUL byte */
 	sqlout = malloc(n);
+	if (sqlout == NULL) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
 	rc = SQLNativeSql_(dbc, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
 	if (SQL_SUCCEEDED(rc)) {

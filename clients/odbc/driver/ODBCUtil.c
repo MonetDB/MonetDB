@@ -73,7 +73,8 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 {
 	char *tmp = (char *) malloc((length + 1) * sizeof(char));
 
-	assert(tmp);
+	if (tmp == NULL)
+		return NULL;
 	strncpy(tmp, (const char *) inStr, length);
 	tmp[length] = '\0';	/* make it null terminated */
 	return tmp;
@@ -124,7 +125,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 	e = s + length;
 	/* count necessary length */
 	l = 1;			/* space for NULL byte */
-	for (s1 = s; s1 < e; s1++) {
+	for (s1 = s; s1 < e && *s1; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate, must be followed by low surrogate */
@@ -159,7 +160,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 			*errmsg = "Memory allocation error";
 		return NULL;
 	}
-	for (s1 = s, p = buf; s1 < e; s1++) {
+	for (s1 = s, p = buf; s1 < e && *s1; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate followed by low surrogate */
@@ -289,7 +290,7 @@ static struct scalars {
 } scalars[] = {
 	{"ascii", 1, "\"ascii\"(\1)", },
 	{"bit_length", 1, NULL, },
-	{"char", 1, NULL, },
+	{"char", 1, "\"code\"(\1)", },
 	{"char_length", 1, "\"char_length\"(\1)", },
 	{"character_length", 1, "\"character_length\"(\1)", },
 	{"concat", 2, "\"concat\"(\1,\2)", },
@@ -355,6 +356,7 @@ static struct scalars {
 	{"now", 0, "\"now\"()", },
 	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
 	{"second", 1, "\"second\"(\1)", },
+	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
 	{"week", 1, "\"week\"(\1)", },
 	{"year", 1, "\"year\"(\1)", },
@@ -401,7 +403,7 @@ static struct convert {
 	{ "SQL_TIMESTAMP", "timestamp", },
 	{ "SQL_TINYINT", "tinyint", },
 	{ "SQL_VARBINARY", "binary large object", },
-	{ "SQL_VARCHAR", "character large object", },
+	{ "SQL_VARCHAR", "character varying", },
 	{ "SQL_WCHAR", "character", },
 	{ "SQL_WLONGVARCHAR", "character large object", },
 	{ "SQL_WVARCHAR", "character large object", },
@@ -420,6 +422,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 	int n, pr;
 
 	nquery = dupODBCstring(query, length);
+	if (nquery == NULL)
+		return NULL;
 	if (noscan == SQL_NOSCAN_ON)
 		return nquery;
 	/* scan from the back in preparation for dealing with nested escapes */
@@ -465,6 +469,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
@@ -501,6 +509,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
@@ -517,6 +529,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
@@ -535,6 +551,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + intvl + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
 			sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
 			free(nquery);
 			nquery = q;
@@ -546,7 +566,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			proc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == proc ||
 			    (isascii(*proc) && !isalpha(*proc)))
@@ -578,6 +598,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + (procend - proc) + 6);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
 			sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
 			free(nquery);
 			nquery = q;
@@ -596,7 +620,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 			while (*p == ' ')
 				p++;
 			scalarfunc = p;
-			while (*p && isascii(*p) && isalnum(*p))
+			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
 				p++;
 			if (p == scalarfunc ||
 			    (isascii(*scalarfunc) && !isalpha(*scalarfunc)))
@@ -664,8 +688,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 					if (func->repl) {
 						const char *r;
 						q = malloc(length - pr + strlen(func->repl) - nargs + (nargs > 0 ? args[0].arglen : 0) + (nargs > 1 ? args[1].arglen : 0) + (nargs > 2 ? args[2].arglen : 0) + 1);
-						if (q == NULL)
-							break;
+						if (q == NULL) {
+							free(nquery);
+							return NULL;
+						}
 						pr = n;
 						strncpy(q, nquery, pr);
 						for (r = func->repl; *r; r++) {
@@ -682,16 +708,20 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 						q += n;
 					} else if (strcmp(func->name, "user") == 0) {
 						q = malloc(length - pr + (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3);
-						if (q == NULL)
-							break;
+						if (q == NULL) {
+							free(nquery);
+							return NULL;
+						}
 						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
 					} else if (strcmp(func->name, "database") == 0) {
 						q = malloc(length - pr + (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3);
-						if (q == NULL)
-							break;
+						if (q == NULL) {
+							free(nquery);
+							return NULL;
+						}
 						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
 						free(nquery);
 						nquery = q;
@@ -702,8 +732,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER 
 							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
 							    c->odbc[args[1].arglen] == 0) {
 								q = malloc(length - pr + 11 + args[0].arglen + strlen(c->server));
-								if (q == NULL)
-									break;
+								if (q == NULL) {
+									free(nquery);
+									return NULL;
+								}
 								sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
@@ -733,6 +765,8 @@ ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len)
 	}
 	i += strlen(tab) + strlen(col) + 10; /* ""."" = '' */
 	res = malloc(i + 1);
+	if (res == NULL)
+		return NULL;
 	snprintf(res, i, "\"%s\".\"%s\" = '", tab, col);
 	for (i = strlen(res), s = arg; s < arg + len; s++) {
 		if (*s == '\'' || *s == '\\')
@@ -758,6 +792,8 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
 	}
 	i += strlen(tab) + strlen(col) + 25; /* ""."" like '' escape '\\' */
 	res = malloc(i + 1);
+	if (res == NULL)
+		return NULL;
 	snprintf(res, i, "\"%s\".\"%s\" like '", tab, col);
 	for (i = strlen(res), s = arg; s < arg + len; s++) {
 		if (*s == '\'' || *s == '\\')
@@ -795,6 +831,8 @@ ODBCParseID(const char *tab, const char *col, const char *arg, size_t len)
 	if (fold)
 		i += 14;	/* 2 times upper() */
 	res = malloc(i + 1);
+	if (res == NULL)
+		return NULL;
 	if (fold)
 		snprintf(res, i, "upper(\"%s\".\"%s\") = upper('", tab, col);
 	else

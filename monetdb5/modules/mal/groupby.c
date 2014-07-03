@@ -98,19 +98,22 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
 				BBPreleaseref(a->cols[a->last]->batCacheid);
+			GDKfree(a);
 			return NULL;
 		}
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
 			bh = BATsubunique(b, bs);
-			a->unique[a->last] = BATcount(bh);
-			if ( bh ) BBPreleaseref(bh->batCacheid);
+			if (bh) {
+				a->unique[a->last] = BATcount(bh);
+				BBPreleaseref(bh->batCacheid);
+			}
+			BBPreleaseref(bs->batCacheid);
 		}
 		if ( b->tsorted)
 			a->unique[a->last] = 1000; /* sorting helps grouping */
 		a->size = BATcount(b);
-		if ( bs ) BBPreleaseref(bs->batCacheid);
 	}
 
 #ifdef _DEBUG_GROUPBY_

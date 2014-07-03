@@ -224,6 +224,10 @@ public final class MapiSocket {
 	public int getSoTimeout() throws SocketException {
 		return con.getSoTimeout();
 	}
+	
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
 
 	/**
 	 * Connects to the given host and port, logging in as the given
@@ -271,7 +275,6 @@ public final class MapiSocket {
 			writer.registerReader(reader);
 		}
 
-		// do the login ritual, read challenge, send response
 		String c = reader.readLine();
 		reader.waitForPrompt();
 		writer.writeLine(

@@ -824,7 +824,7 @@ JSONparse(char *j, int silent)
 	skipblancs(j);
 	if( *j ){
 		if( !silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error");
+			jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
 	}
 	return jt;
 }
@@ -1578,3 +1578,488 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONfoldKeyValue(ret, id, key, val);
 }
 
+str
+JSONtextString(str *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	throw(MAL,"json.text","tobeimplemented");
+}
+
+
+str
+JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg)
+{
+	(void) ret;
+	(void) bid;
+	(void) gid;
+	(void) ext;
+	(void) flg;
+	throw(MAL,"json.text","tobeimplemented");
+}
+
+str
+JSONgroupStr(str *ret, const bat *bid)
+{
+	BAT *b;
+	BUN p, q;
+	const char *t = NULL;
+	size_t len, size = BUFSIZ, offset;
+	str buf = GDKmalloc(size);
+	BATiter bi;
+	const char *err = NULL;
+	char temp[128] = "";
+	const double * val = NULL;
+
+	if (buf == NULL)
+		throw(MAL, "json.group",MAL_MALLOC_FAIL);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		GDKfree(buf);
+		throw(MAL, "json.agg", RUNTIME_OBJECT_MISSING);
+	}
+
+	strcpy(buf, str_nil);
+	offset = 0;
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		int n = 0;
+
+		switch (b->ttype) {
+		case TYPE_str:
+			t = (const char *) BUNtail(bi, p);
+			break;
+		case TYPE_dbl:
+		        val = (const double *) BUNtail(bi, p);
+			snprintf(temp, sizeof(temp), "%f", *val);
+			t = (const char *)temp;
+			break;
+		}
+
+		//t = (const char *) BUNtail(bi, p);
+
+		if (strNil(t))
+			continue;
+		len = strlen(t) + 1;
+		if (len >= size - offset) {
+			size += len + 128;
+			buf = GDKrealloc(buf, size);
+			if (buf == NULL) {
+				err= MAL_MALLOC_FAIL;
+				goto failed;
+			}
+		}
+		switch (b->ttype) {
+		case TYPE_str:
+			if (offset == 0) {
+				if (BATcount(b) == 1) {
+					n = snprintf(buf, size, "[ \"%s\" ]", t);
+				} else {
+					n = snprintf(buf, size, "[ \"%s\"", t);
+				}
+			} else {
+				if (p == BUNlast(b) - 1) {
+					n = snprintf(buf + offset, size - offset, ", \"%s\" ]", t);
+	        		} else {
+		       			n = snprintf(buf + offset, size - offset, ", \"%s\"", t);
+				}
+			}
+			break;
+		case TYPE_dbl:
+			if (offset == 0) {
+				if (BATcount(b) == 1) {
+					n = snprintf(buf, size, "[ %s ]", t);
+				} else {
+					n = snprintf(buf, size, "[ %s", t);
+				}
+			} else {
+				if (p == BUNlast(b) - 1) {
+					n = snprintf(buf + offset, size - offset, ", %s ]", t);
+	        		} else {
+		       			n = snprintf(buf + offset, size - offset, ", %s", t);
+				}
+			}
+			break;
+		}
+		offset += n;
+	}
+	BBPreleaseref(b->batCacheid);
+	*ret = buf;
+	return MAL_SUCCEED;
+  failed:
+	BBPreleaseref(b->batCacheid);
+	if (buf != NULL)
+		GDKfree(buf);
+	throw(MAL, "json.agg", "%s", err);
+}
+
+static const char *
+JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
+{
+	BAT *bn = NULL, *t1, *t2 = NULL;
+	BATiter bi;
+	oid min, max;
+	BUN ngrp, start, end, cnt;
+	BUN nils = 0;
+	int isnil;
+	const oid *cand = NULL, *candend = NULL;
+	const char *v = NULL;
+	const oid *grps, *map;
+	oid mapoff = 0;
+	oid prev;
+	BUN p, q;
+	int freeb = 0, freeg = 0;
+	char *buf = NULL;
+	size_t buflen, maxlen, len;
+	const char *err;
+	char temp[128] = "";
+	const double * val = NULL;
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		return err;
+	}
+	assert(b->ttype == TYPE_str||b->ttype == TYPE_dbl);
+	if (BATcount(b) == 0 || ngrp == 0) {
+		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp);
+		if (bn == NULL)
+			return MAL_MALLOC_FAIL;
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		*bnp = bn;
+		return NULL;
+	}
+	if (s) {
+		b = BATleftjoin(s, b, BATcount(s));
+		if (b == NULL) {
+			err = "internal leftjoin failed";
+			goto out;
+		}
+		freeb = 1;
+		if (b->htype != TYPE_void) {
+			t1 = BATmirror(BATmark(BATmirror(b), 0));
+			if (t1 == NULL) {
+				err = "internal mark failed";
+				goto out;
+			}
+			BBPunfix(b->batCacheid);
+			b = t1;
+		}
+		if (g) {
+			g = BATleftjoin(s, g, BATcount(s));
+			if (g == NULL) {
+				err = "internal leftjoin failed";
+				goto out;
+			}
+			freeg = 1;
+			if (g->htype != TYPE_void) {
+				t1 = BATmirror(BATmark(BATmirror(g), 0));
+				if (t1 == NULL) {
+					err = "internal mark failed";
+					goto out;
+				}
+				BBPunfix(g->batCacheid);
+				g = t1;
+			}
+		}
+	}
+
+	maxlen = BUFSIZ;
+	if ((buf = GDKmalloc(maxlen)) == NULL) {
+		err = MAL_MALLOC_FAIL;
+		goto out;
+	}
+	buflen = 0;
+	bn = BATnew(TYPE_void, TYPE_str, ngrp);
+	if (bn == NULL) {
+		err = MAL_MALLOC_FAIL;
+		goto out;
+	}
+	bi = bat_iterator(b);
+	if (g) {
+		/* stable sort g */
+		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) == GDK_FAIL){
+			BBPreclaim(bn);
+			bn = NULL;
+			err = "internal sort failed";
+			goto out;
+		}
+		if (freeg)
+			BBPunfix(g->batCacheid);
+		g = t1;
+		freeg = 1;
+		if (t2->ttype == TYPE_void) {
+			map = NULL;
+			mapoff = b->tseqbase;
+		} else {
+			map = (const oid *) Tloc(t2, BUNfirst(t2));
+		}
+		if (g && BATtdense(g)) {
+			for (p = 0, q = BATcount(g); p < q; p++) {
+				switch(b->ttype) {
+				case  TYPE_str:
+					v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					break;
+				case TYPE_dbl:
+					val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					if (*val != dbl_nil) {
+						snprintf(temp, sizeof(temp), "%f", *val);
+						v = (const char *)temp;
+					} else {
+						v =  NULL;
+					}
+					break;
+				}
+				if (!v||strNil(v)) {
+					if (skip_nils)
+						continue;
+					strncpy(buf, str_nil, buflen);
+					isnil = 1;
+				} else {
+					len = strlen(v);
+					if (len >= maxlen - buflen) {
+						maxlen += len + BUFSIZ;
+						buf = GDKrealloc(buf, maxlen);
+						if (buf == NULL) {
+							err = MAL_MALLOC_FAIL;
+							goto bunins_failed;
+						}
+					}
+					switch (b->ttype) {
+					case TYPE_str:
+						len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\" ]", v);
+						buflen += len;
+						break;
+					case TYPE_dbl:
+						len = snprintf(buf + buflen, maxlen - buflen, "[ %s ]", v);
+						buflen += len;
+						break;
+					}
+				}
+				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				buflen = 0;
+			}
+			BATseqbase(bn, min);
+			bn->T->nil = nils != 0;
+			bn->T->nonil = nils == 0;
+			bn->T->sorted = BATcount(bn) <= 1;
+			bn->T->revsorted = BATcount(bn) <= 1;
+			bn->T->key = BATcount(bn) <= 1;
+			goto out;
+		}
+		grps = (const oid *) Tloc(g, BUNfirst(g));
+		prev = grps[0];
+		isnil = 0;
+		for (p = 0, q = BATcount(g); p <= q; p++) {
+			if (p == 0) {
+  				strncpy(buf + buflen, "[ ", maxlen - buflen);
+				buflen += 2;
+			}
+			if (p == q || grps[p] != prev) {
+  				strncpy(buf + buflen, " ]", maxlen - buflen);
+				buflen += 2;
+				while (BATcount(bn) < prev - min) {
+					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
+					nils++;
+				}
+				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				nils += strNil(buf);
+				strncpy(buf + buflen, str_nil, maxlen - buflen);
+				buflen = 0;
+				if (p == q)
+					break;
+				prev = grps[p];
+  				strncpy(buf + buflen, "[ ", maxlen - buflen);
+				buflen += 2;
+				isnil = 0;
+			}
+			if (isnil)
+				continue;
+			switch(b->ttype) {
+				case  TYPE_str:
+				v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				break;
+			case TYPE_dbl:
+				val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				if (*val != dbl_nil) {
+					snprintf(temp, sizeof(temp), "%f", *val);
+					v = (const char *)temp;
+			  	} else {
+                                	v =  NULL;
+				} 
+				break;
+			}
+			if (!v||strNil(v)) {
+				if (skip_nils)
+					continue;
+				strncpy(buf, str_nil, buflen);
+				isnil = 1;
+			} else {
+				len = strlen(v);
+				if (len >= maxlen - buflen) {
+					maxlen += len + BUFSIZ;
+					buf = GDKrealloc(buf, maxlen);
+					if (buf == NULL) {
+						err = MAL_MALLOC_FAIL;
+						goto bunins_failed;
+					}
+				}
+				switch (b->ttype) {
+				case TYPE_str:
+					if (buflen == 2) {
+						len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
+						buflen += len;
+					} else {
+						len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
+						buflen += len;
+					}
+					break;
+				case TYPE_dbl:
+					if (buflen == 2) {
+						len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
+						buflen += len;
+					} else {
+						len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
+						buflen += len;
+					}
+					 break;
+				}
+			}
+		}
+		BBPunfix(t2->batCacheid);
+		t2 = NULL;
+	} else {
+		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+			switch(b->ttype) {
+				case  TYPE_str:
+				  v = (const char *) BUNtail(bi, p);
+				break;
+			case TYPE_dbl:
+				val = (const double *) BUNtail(bi, p);
+				if (*val != dbl_nil) {
+					snprintf(temp, sizeof(temp), "%f", *val);
+					v = (const char *)temp;
+			  	} else {
+                                	v =  NULL;
+				}
+				break;
+			}
+
+			if (!v||strNil(v)) {
+				if (skip_nils)
+					continue;
+				strncpy(buf, str_nil, buflen);
+				nils++;
+				break;
+			}
+			len = strlen(v);
+			if (len >= maxlen - buflen) {
+				maxlen += len + BUFSIZ;
+				buf = GDKrealloc(buf, maxlen);
+				if (buf == NULL) {
+					err = MAL_MALLOC_FAIL;
+					goto bunins_failed;
+				}
+			}
+			switch (b->ttype) {
+			case TYPE_str:
+			  if (buflen == 2) {
+			    len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
+			    buflen += len;
+			  } else {
+			    len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
+			    buflen += len;
+			  }
+			  break;
+			case TYPE_dbl:
+			  if (buflen == 2) {
+			    len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
+			    buflen += len;
+			  } else {
+			    len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
+			    buflen += len;
+			  }
+			  break;
+			}
+		}
+		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+	}
+	BATseqbase(bn, min);
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	bn->T->sorted = BATcount(bn) <= 1;
+	bn->T->revsorted = BATcount(bn) <= 1;
+	bn->T->key = BATcount(bn) <= 1;
+
+  out:
+	if (t2)
+		BBPunfix(t2->batCacheid);
+	if (freeb && b)
+		BBPunfix(b->batCacheid);
+	if (freeg && g)
+		BBPunfix(g->batCacheid);
+	if (buf)
+		GDKfree(buf);
+	*bnp = bn;
+	return err;
+
+  bunins_failed:
+	if (bn)
+		BBPreclaim(bn);
+	bn = NULL;
+	if (err == NULL)
+		err = MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
+	goto out;
+}
+
+str
+JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
+{
+	BAT *b, *g, *e, *s, *bn = NULL;
+	const char *err;
+
+	b = BATdescriptor(*bid);
+	g = gid ? BATdescriptor(*gid) : NULL;
+	e = eid ? BATdescriptor(*eid) : NULL;
+	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
+
+		if (b)
+			BBPreleaseref(b->batCacheid);
+		if (g)
+			BBPreleaseref(g->batCacheid);
+		if (e)
+			BBPreleaseref(e->batCacheid);
+		throw(MAL, "aggr.subjson", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid) {
+		s = BATdescriptor(*sid);
+		if (s == NULL) {
+			BBPreleaseref(b->batCacheid);
+			if (g)
+				BBPreleaseref(g->batCacheid);
+			if (e)
+				BBPreleaseref(e->batCacheid);
+			throw(MAL, "aggr.subjson", RUNTIME_OBJECT_MISSING);
+		}
+	} else {
+		s = NULL;
+	}
+	err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
+	BBPreleaseref(b->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
+	if (e)
+		BBPreleaseref(e->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (err != NULL)
+		throw(MAL, "aggr.subjson", "%s", err);
+
+	*retval = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
+{
+	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
+}

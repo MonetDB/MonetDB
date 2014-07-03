@@ -39,9 +39,10 @@ has_remote_or_replica( sql_rel *rel )
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isReplicaTable(t) || isRemote(t)) 
+		if (t && (isReplicaTable(t) || isRemote(t))) 
 			return 1;
-	} 	
+		break;
+	}
 	case op_table:
 		break;
 	case op_join: 
@@ -71,6 +72,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_ddl: 
 		if (has_remote_or_replica( rel->l )) 
 			return 1;
+		/* fall through */
 	case op_insert:
 	case op_update:
 	case op_delete:
@@ -119,7 +121,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isReplicaTable(t)) {
+		if (t && isReplicaTable(t)) {
 			node *n;
 
 			if (uri) {
@@ -143,6 +145,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 				}
 			}
 		}
+		break;
 	}
 	case op_table:
 		break;
@@ -209,12 +212,13 @@ distribute(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		/* set_remote() */
-		if (isRemote(t)) {
+		if (t && isRemote(t)) {
 			char *uri = t->query;
 
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p); 
 			p->value = uri;
 		}
+		break;
 	}
 	case op_table:
 		break;
@@ -234,9 +238,9 @@ distribute(mvc *sql, sql_rel *rel)
 		r = rel->r = distribute(sql, rel->r);
 
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
-		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) == NULL) {
+		    r && find_prop(r->p, PROP_REMOTE) == NULL) {
 			r = rel->r = distribute(sql, replica(sql, rel->r, pl->value));
-		} else if (l && (pl = find_prop(l->p, PROP_REMOTE)) == NULL &&
+		} else if (l && find_prop(l->p, PROP_REMOTE) == NULL &&
 		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			l = rel->l = distribute(sql, replica(sql, rel->l, pr->value));
 		}

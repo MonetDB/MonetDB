@@ -18,8 +18,6 @@ command user.f(a:any_1,b:any_2,c:any_1):bat[:any_1,:any_2] address f;
 #a:= f(1,2,1);
 #
 !TypeException:user.main[2]:'user.f' undefined in: b:any := user.f(_3:int, _4:int, _5:str)
-!TypeException:user.main[3]:object code for command user.f missing
-!TypeException:user.main[3]:'user.f' undefined in: a:bat[:int,:int] := user.f(_3:int, _4:int, _3:int)
 function user.main():void;
 # check in-compatible polmorphic types 
     b := user.f(1,2,"help");

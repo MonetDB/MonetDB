@@ -49,6 +49,7 @@
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
 #define unlink _unlink
+#define fdopen _fdopen
 #endif
 
 #define PATHLENGTH 4096
@@ -291,15 +292,17 @@ msab_retreatScenario(const char *lang)
 				unlink(path);
 				return(NULL);
 			}
-		} else if (len == 0) {
+		} else {
+			if (ferror(f)) {
+				/* some error */
+				snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
+					 strerror(errno), path);
+				(void)fclose(f);
+				return strdup(buf);
+			} else
+				unlink(path);  /* empty file? try to remove */
 			(void)fclose(f);
-			unlink(path);  /* empty file? try to remove */
 			return(NULL);
-		} else { /* some error */
-			(void)fclose(f);
-			snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-					strerror(errno), path);
-			return(strdup(buf));
 		}
 	}
 	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
@@ -418,13 +421,15 @@ msab_registerStarting(void)
 
 	/* we treat errors here (albeit being quite unlikely) as non-fatal,
 	 * since they will cause wrong state information in the worst case
-	 * lateron */
+	 * later on */
 	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL) {
 		free(tmp);
 		return(NULL);
 	}
-	fclose(fopen(path, "w"));
-	
+	f = fopen(path, "w");
+	if (f)
+		fclose(f);
+
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
@@ -445,11 +450,16 @@ msab_registerStarted(void)
 	char pathbuf[PATHLENGTH];
 	char *path = pathbuf;
 	char *tmp;
+	FILE *fp;
 
 	/* flag this database as started up */
 	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
-	fclose(fopen(path, "w"));
+	fp = fopen(path, "w");
+	if (fp)
+		fclose(fp);
+	else
+		return strdup("sabaoth cannot create " STARTEDFILE);
 
 	return(NULL);
 }
@@ -674,7 +684,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 		} else {
 			/* locking succeed, check for a crash in the uplog */
 			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);
-			if ((f = fopen(log, "r")) != NULL) {
+			if ((f = fdopen(fd, "r+")) != NULL) {
 				(void)fseek(f, -1, SEEK_END);
 				if (fread(data, 1, 1, f) != 1) {
 					/* the log is empty, assume no crash */
@@ -684,11 +694,13 @@ msab_getStatus(sabdb** ret, char *dbname)
 				} else { /* should be \t */
 					sdb->state = SABdbCrashed;
 				}
+				/* release the lock */
+				MT_lockf(buf, F_ULOCK, 4, 1);
 				(void)fclose(f);
-			} /* cannot happen, we checked it before */
-
-			/* release the lock */
-			close(fd);
+			} else {
+				/* shouldn't happen */
+				close(fd);
+			}
 		}
 		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name,
 				MAINTENANCEFILE);
@@ -1131,8 +1143,8 @@ msab_deserialise(sabdb **ret, char *sdb)
 	if ((p = strchr(p, ',')) != NULL) {
 		free(u);
 		snprintf(buf, sizeof(buf), 
-				"string does contain additional garbage after crashavg30: %s",
-				lasts);
+				"string contains additional garbage after crashavg30: %s",
+				p);
 		return(strdup(buf));
 	}
 	u->crashavg30 = atof(lasts);

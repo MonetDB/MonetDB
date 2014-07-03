@@ -49,8 +49,10 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
-	if ( newMalBlkStmt(mb,mb->stop) < 0)
+	if ( newMalBlkStmt(mb,mb->stop) < 0){
+		GDKfree(span);
 		return 0;
+	}
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 

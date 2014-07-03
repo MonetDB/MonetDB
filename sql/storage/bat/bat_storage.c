@@ -22,6 +22,7 @@
 #include "bat_utils.h"
 #include <sql_string.h>
 #include <algebra.h>
+#include <gdk_atoms.h>
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
@@ -777,6 +778,31 @@ sorted_col(sql_trans *tr, sql_column *col)
 }
 
 static int
+double_elim_col(sql_trans *tr, sql_column *col)
+{
+	int de = 0;
+
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data) {
+		col = find_col(tr->parent, 
+			col->t->s->base.name, 
+			col->t->base.name,
+			col->base.name);
+	}
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b && b->tvarsized) /* check double elimination */
+			de = GDK_ELIMDOUBLES(b->T->vheap);
+		if (de)
+			de = b->T->width;
+	}
+	return de;
+}
+
+
+static int
 load_delta(sql_delta *bat, int bid, int type)
 {
 	BAT *b;
@@ -1171,11 +1197,12 @@ destroy_delta(sql_delta *b)
 static int
 destroy_bat(sql_trans *tr, sql_delta *b)
 {
-	sql_delta *n = b->next;
+	sql_delta *n;
 
 	(void)tr;
 	if (!b)
 		return LOG_OK;
+	n = b->next;
 	destroy_delta(b);
 	_DELETE(b);
 	if (n)
@@ -1849,7 +1876,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 
 	(void)tr;
 	assert(tr->parent == gtrans);
-	if (cbat->name && cleared) 
+	if (cleared) 
 		log_bat_clear(bat_logger, cbat->name);
 
 	ins = temp_descriptor(cbat->ibid);
@@ -1998,7 +2025,8 @@ bat_storage_init( store_functions *sf)
 	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
-	sf->sorted_col = (sorted_col_fptr)&sorted_col;
+	sf->sorted_col = (prop_col_fptr)&sorted_col;
+	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;

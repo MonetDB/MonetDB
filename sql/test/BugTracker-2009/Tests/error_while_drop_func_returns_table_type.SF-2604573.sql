@@ -1,3 +1,5 @@
+start transaction;
+
 create function test_002() returns table(i int)
 begin
 declare table tbl(i int);

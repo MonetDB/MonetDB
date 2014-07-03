@@ -51,16 +51,13 @@ algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *lo
 algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
 algebra_export str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
-algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
 algebra_export str ALGthetauselect(int *result, int *bid, ptr value, str *op);
 algebra_export str ALGantiuselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGthetaselect(int *result, int *bid, ptr low, str *op);
-algebra_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 

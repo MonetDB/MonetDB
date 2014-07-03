@@ -419,8 +419,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
 			if ((t = rest[i]) != NULL &&
-			    utf8strlen(t, NULL) > (size_t) len[i])
-			{
+			    utf8strlen(t, NULL) > (size_t) len[i]) {
 				/* eat leading whitespace */
 				while (*t != 0 && isascii((int) *t) && isspace((int) *t))
 					t++;
@@ -443,9 +442,12 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 				ulen = utf8strlen(rest[i], NULL);
 
 				if (first && trim == 2) {
-					/* calculate the height of this field according to
-					 * the golden ratio, with a correction for a
-					 * terminal screen (1.62 * 2 -> 3 : 9.72~10) */
+					/* calculate the height of
+					 * this field according to the
+					 * golden ratio, with a
+					 * correction for a terminal
+					 * screen (1.62 * 2 -> 3 :
+					 * 9.72~10) */
 					if (ulen > (size_t) len[i])
 						cutafter[i] = 3 * len[i] / 10;
 				}
@@ -476,8 +478,11 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							     "");
 
 					if (!numeric[i]) {
-						/* replace tabs with a single space to avoid
-						 * screwup the width calculations */
+						/* replace tabs with a
+						 * single space to
+						 * avoid screwup the
+						 * width
+						 * calculations */
 						for (s = rest[i]; *s != *t; s++)
 							if (*s == '\t')
 								*s = ' ';
@@ -507,8 +512,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						croppedfields++;
 					} else {
 						mnstr_printf(toConsole, " %.*s ",
-								  (int) (t - rest[i]),
-								  rest[i]);
+							     (int) (t - rest[i]),
+							     rest[i]);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
 								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
@@ -516,8 +521,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					}
 					rest[i] = *s ? s : 0;
 					if (rest[i] == NULL) {
-						/* avoid > as border marker if everything
-						 * actually just fits */
+						/* avoid > as border
+						 * marker if
+						 * everything actually
+						 * just fits */
 						cutafter[i] = -1;
 					}
 					if (cutafter[i] == 0)
@@ -529,27 +536,31 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i]) {
 						mnstr_printf(toConsole, "%*s",
-							      (int) (len[i] - ulen),
-							      "");
+							     (int) (len[i] - ulen),
+							     "");
 						mnstr_printf(toConsole, " %s ",
-								  rest[i]);
+							     rest[i]);
 					}
 					if (!numeric[i]) {
 						char *p;
-						/* replace tabs with a single space to avoid
-						 * screwup the width calculations */
+						/* replace tabs with a
+						 * single space to
+						 * avoid screwup the
+						 * width
+						 * calculations */
 						for (p = rest[i]; *p != '\0'; p++)
 							if (*p == '\t')
 								*p = ' ';
 						mnstr_printf(toConsole, " %s ",
-								  rest[i]);
+							     rest[i]);
 						mnstr_printf(toConsole, "%*s",
-							      (int) (len[i] - ulen),
-							      "");
+							     (int) (len[i] - ulen),
+							     "");
 					}
 					rest[i] = 0;
-					/* avoid > as border marker if everything
-					 * actually just fits */
+					/* avoid > as border marker if
+					 * everything actually just
+					 * fits */
 					if (cutafter[i] == 0)
 						cutafter[i] = -1;
 				}
@@ -617,13 +628,13 @@ XMLrenderer(MapiHdl hdl)
 	mnstr_flush(toConsole);
 	mnstr_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
 	mnstr_printf(toConsole_raw,
-		      "<!DOCTYPE table [\n"
-		      " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
-		      " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
-		      " <!ELEMENT column (#PCDATA)>\n"
-		      " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
-		      " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
-		      "                  isnull (true|false) 'false'>]>\n");
+		     "<!DOCTYPE table [\n"
+		     " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
+		     " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
+		     " <!ELEMENT column (#PCDATA)>\n"
+		     " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
+		     " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
+		     "                  isnull (true|false) 'false'>]>\n");
 	mnstr_printf(toConsole_raw, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
@@ -668,8 +679,7 @@ CSVrenderer(MapiHdl hdl)
 			s = mapi_get_name(hdl, i);
 			if (s == NULL)
 				s = "";
-			mnstr_printf(toConsole, "%s%s",
-				     i == 0 ? "" : sep, s ? s : "");
+			mnstr_printf(toConsole, "%s%s", i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}
@@ -682,7 +692,7 @@ CSVrenderer(MapiHdl hdl)
 			    strchr(s, '\n') != NULL ||
 			    strchr(s, '"') != NULL) {
 				mnstr_printf(toConsole, "%s\"",
-					      i == 0 ? "" : sep);
+					     i == 0 ? "" : sep);
 				while (*s) {
 					switch (*s) {
 					case '\n':
@@ -709,7 +719,7 @@ CSVrenderer(MapiHdl hdl)
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else
 				mnstr_printf(toConsole, "%s%s",
-					      i == 0 ? "" : sep, s ? s : "");
+					     i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}
@@ -769,20 +779,20 @@ static char *
 classify(const char *s, size_t l)
 {
 	/* state is the current state of the state machine:
-	   0 - initial state, no input seen
-	   1 - initial sign
-	   2 - valid integer (with optionally a sign)
-	   3 - valid integer, followed by a decimal point
-	   4 - fixed point number of the form [sign] digits period digits
-	   5 - exponent marker after integer or fixed point number
-	   6 - sign after exponent marker
-	   7 - valid floating point number with exponent
-	   8 - integer followed by single 'L'
-	   9 - integer followed by 'LL' (lng)
-	   10 - fixed or floating point number followed by single 'L'
-	   11 - fixed or floating point number followed by 'LL' (dbl)
-	   12 - integer followed by '@'
-	   13 - valid OID (integer followed by '@0')
+	 * 0 - initial state, no input seen
+	 * 1 - initial sign
+	 * 2 - valid integer (with optionally a sign)
+	 * 3 - valid integer, followed by a decimal point
+	 * 4 - fixed point number of the form [sign] digits period digits
+	 * 5 - exponent marker after integer or fixed point number
+	 * 6 - sign after exponent marker
+	 * 7 - valid floating point number with exponent
+	 * 8 - integer followed by single 'L'
+	 * 9 - integer followed by 'LL' (lng)
+	 * 10 - fixed or floating point number followed by single 'L'
+	 * 11 - fixed or floating point number followed by 'LL' (dbl)
+	 * 12 - integer followed by '@'
+	 * 13 - valid OID (integer followed by '@0')
 	 */
 	int state = 0;
 
@@ -972,8 +982,8 @@ TESTrenderer(MapiHdl hdl)
 					default:
 						if ((unsigned char) *s < ' ')
 							mnstr_printf(toConsole,
-								      "\\%03o",
-								      (int) (unsigned char) *s);
+								     "\\%03o",
+								     (int) (unsigned char) *s);
 						else
 							mnstr_write(toConsole, s, 1, 1);
 						break;
@@ -1187,9 +1197,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		/* do a very pessimistic calculation to determine if more
 		 * columns would actually fit on the screen */
 		if (pagewidth > 0 &&
-				((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
-				(total - vartotal) + minvartotal > pagewidth)
-		{
+		    ((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
+		    (total - vartotal) + minvartotal > pagewidth) {
 			/* this last column was too much */
 			total -= len[i];
 			if (!numeric[i])
@@ -1481,6 +1490,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		}
 
+		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
@@ -1491,73 +1501,75 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+			else if (formatter == TIMERformatter)
+				printf("%s\n", timerHuman());
 			else {
-				timerHumanStop();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
+				mnstr_printf(toConsole,
+					     LLFMT " affected row%s",
+					     aff,
+					     aff == 1 ? "s" : "");
 				if (lid != -1) {
 					mnstr_printf(toConsole,
-							LLFMT " affected row%s, "
-							"last generated key: " LLFMT "%s%s%s\n",
-							aff,
-							(aff == 1 ? "" : "s"),
-							lid,
-							singleinstr ? " (" : "",
-							singleinstr && formatter != TESTformatter ? timerHuman() : "",
-							singleinstr ? ")" : "");
-				} else {
-					mnstr_printf(toConsole,
-							LLFMT " affected row%s%s%s%s\n",
-							aff,
-							(aff == 1 ? "" : "s"),
-							singleinstr ? " (" : "",
-							singleinstr && formatter != TESTformatter ? timerHuman() : "",
-							singleinstr ? ")" : "");
+						     ", last generated key: "
+						     LLFMT,
+						     lid);
 				}
+				if (singleinstr && formatter != TESTformatter)
+					mnstr_printf(toConsole, " (%s)",
+						     timerHuman());
+				mnstr_printf(toConsole, "\n");
 			}
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
-			timerHumanStop();
-			if (formatter == TABLEformatter)
-				mnstr_printf(toConsole,
-					      "operation successful%s%s%s\n",
-					      singleinstr ? " (" : "",
-					      singleinstr && formatter != TESTformatter ? timerHuman() : "",
-					      singleinstr ? ")" : "");
+			if (formatter == TABLEformatter) {
+				mnstr_printf(toConsole, "operation successful");
+				if (singleinstr)
+					mnstr_printf(toConsole, " (%s)",
+						     timerHuman());
+				mnstr_printf(toConsole, "\n");
+			} else if (formatter == TIMERformatter)
+				printf("%s\n", timerHuman());
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
-					      "auto commit mode: %s\n",
-					      mapi_get_autocommit(mid) ? "on" : "off");
+					     "auto commit mode: %s\n",
+					     mapi_get_autocommit(mid) ? "on" : "off");
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
-					      "execute prepared statement "
-					      "using: EXEC %d(...)\n",
-					      mapi_get_tableid(hdl));
+					     "execute prepared statement "
+					     "using: EXEC %d(...)\n",
+					     mapi_get_tableid(hdl));
+			/* fall through */
 		case Q_TABLE:
-			timerHumanStop();
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
 				int i;
 				mnstr_printf(stderr_stream,
-						"invalid/unknown response from server, "
-						"ignoring output\n");
+					     "invalid/unknown response from server, "
+					     "ignoring output\n");
 				for (i = 0; i < 5 && (reply = fetch_line(hdl)) != 0; i++)
 					mnstr_printf(stderr_stream, "? %s\n", reply);
 				if (i == 5 && fetch_line(hdl) != 0) {
-					mnstr_printf(stderr_stream, "(remaining output omitted, "
-							"use \\fraw to examine in detail)\n");
-					/* skip over the unknown/invalid stuff, otherwise
-					 * mapi_next_result call will assert in close_result
-					 * because the logic there doesn't expect random unread
-					 * garbage somehow */
+					mnstr_printf(stderr_stream,
+						     "(remaining output omitted, "
+						     "use \\fraw to examine in detail)\n");
+					/* skip over the
+					 * unknown/invalid stuff,
+					 * otherwise mapi_next_result
+					 * call will assert in
+					 * close_result because the
+					 * logic there doesn't expect
+					 * random unread garbage
+					 * somehow */
 					while (fetch_line(hdl) != 0)
 						;
 				}
@@ -1643,18 +1655,19 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, break_or_continue)			\
+#define CHECK_RESULT(mid, hdl, buf, break_or_continue, freebuf)		\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
 			break;						\
 		case MERROR:						\
 			/* some error, but try to continue */		\
-			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
-				mapi_noexplain(mid, ""); \
-			} else { \
-				mapi_noexplain(mid, NULL); \
-			} \
+			if (formatter == TABLEformatter ||		\
+			    formatter == CLEANformatter) {		\
+				mapi_noexplain(mid, "");		\
+			} else {					\
+				mapi_noexplain(mid, NULL);		\
+			}						\
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -1665,11 +1678,12 @@ doRequest(Mapi mid, const char *buf)
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
-			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
-				mapi_noexplain(mid, ""); \
-			} else { \
-				mapi_noexplain(mid, NULL); \
-			} \
+			if (formatter == TABLEformatter ||		\
+			    formatter == CLEANformatter) {		\
+				mapi_noexplain(mid, "");		\
+			} else {					\
+				mapi_noexplain(mid, NULL);		\
+			}						\
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -1678,7 +1692,8 @@ doRequest(Mapi mid, const char *buf)
 				mapi_explain(mid, stderr);		\
 			errseen = 1;					\
 			timerEnd();					\
-			free(buf);					\
+			if (freebuf)					\
+				free(freebuf);				\
 			return 1;					\
 		}
 
@@ -1725,7 +1740,7 @@ doFileBulk(Mapi mid, FILE *fp)
 
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		if (first &&
@@ -1739,7 +1754,7 @@ doFileBulk(Mapi mid, FILE *fp)
 			assert(hdl != NULL);
 
 			mapi_query_part(hdl, buf + skip, length - skip);
-			CHECK_RESULT(mid, hdl, buf + skip, continue);
+			CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 			/*  make sure there is a newline in the buffer */
 			if (strchr(buf + skip, '\n') == NULL)
@@ -1748,24 +1763,24 @@ doFileBulk(Mapi mid, FILE *fp)
 
 		assert(hdl != NULL);
 		/* If the server wants more but we're at the end of
-		   file (length == 0), notify the server that we
-		   don't have anything more.  If the server still
-		   wants more (shouldn't happen according to the
-		   protocol) we break out of the loop (via the
-		   continue).  The assertion at the end will then go
-		   off. */
+		 * file (length == 0), notify the server that we
+		 * don't have anything more.  If the server still
+		 * wants more (shouldn't happen according to the
+		 * protocol) we break out of the loop (via the
+		 * continue).  The assertion at the end will then go
+		 * off. */
 		if (mapi_query_done(hdl) == MMORE &&
 				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue);
+		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue);
+		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -1893,7 +1908,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 			if (hdl)
 				continue_completion(func);
 			/* add a newline to the end since that makes
-			   further processing easier */
+			 * further processing easier */
 			/* don't store shortcut command in the history */
 			if (buf) {
 				length = strlen(buf);
@@ -2019,21 +2034,20 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		} else
 			length = strlen(line);
 		/* the fp == stdin test is so that we don't treat '\\'
-		   special for files that were passed on the command
-		   line with -e in effect (see near the bottom of
-		   main()) */
+		 * special for files that were passed on the command
+		 * line with -e in effect (see near the bottom of
+		 * main()) */
 		if (hdl == NULL && length > 0 && line[length - 1] == '\n' && interactive) {
 			/* test for special commands */
 			if (mode != MAL)
 				while (length > 0 &&
-				       (*line & ~0x7F) == 0 &&
 				       isascii((int) *line) &&
 				       isspace((int) *line)) {
 					line++;
 					length--;
 				}
 			/* in the switch, use continue if the line was
-			   processed, use break to send to server */
+			 * processed, use break to send to server */
 			switch (*line) {
 			case '\n':
 			case '\0':
@@ -2096,8 +2110,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					while (isascii((int) line[length - 1]) &&
 					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && !(isascii((int) *line) && isspace((int) *line)); line++)
-					{
+					for (line += 2;
+					     *line && !(isascii((int) *line) && isspace((int) *line));
+					     line++) {
 						switch (*line) {
 							case 't':
 								x |= MD_TABLE;
@@ -2321,7 +2336,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							   "" :
 							   "AND system = false"));
 						hdl = mapi_query(mid, q);
-						CHECK_RESULT(mid, hdl, buf, continue);
+						CHECK_RESULT(mid, hdl, buf, continue, buf);
 						while (fetch_row(hdl) == 5) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
@@ -2509,7 +2524,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
 			timerResume();
 
@@ -2518,16 +2533,16 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (length > 0) {
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, buf, continue);
+			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		/* If the server wants more but we're at the
-		   end of file (line == NULL), notify the
-		   server that we don't have anything more.
-		   If the server still wants more (shouldn't
-		   happen according to the protocol) we break
-		   out of the loop (via the continue).  The
-		   assertion at the end will then go off. */
+		 * end of file (line == NULL), notify the
+		 * server that we don't have anything more.
+		 * If the server still wants more (shouldn't
+		 * happen according to the protocol) we break
+		 * out of the loop (via the continue).  The
+		 * assertion at the end will then go off. */
 		if (mapi_query_done(hdl) == MMORE) {
 			if (line != NULL) {
 				continue;	/* get more data */
@@ -2536,7 +2551,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 				continue;	/* done */
 			}
 		}
-		CHECK_RESULT(mid, hdl, buf, continue);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
@@ -2548,7 +2563,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf, continue);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		timerEnd();
 		mapi_close_handle(hdl);
@@ -2784,8 +2799,7 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 ||
-				strcmp(optarg, "s") == 0)
-			{
+			    strcmp(optarg, "s") == 0) {
 				free(language);
 				language = strdup(optarg);
 				mode = SQL;
@@ -2795,10 +2809,9 @@ main(int argc, char **argv)
 				language = strdup("mal");
 				mode = MAL;
 			} else if (strcmp(optarg, "jaql") == 0 ||
-					strcmp(optarg, "jaq") == 0 ||
-					strcmp(optarg, "ja") == 0 ||
-					strcmp(optarg, "j") == 0)
-			{
+				   strcmp(optarg, "jaq") == 0 ||
+				   strcmp(optarg, "ja") == 0 ||
+				   strcmp(optarg, "j") == 0) {
 				free(language);
 				language = strdup("jaql");
 				mode = JAQL;
@@ -2903,8 +2916,8 @@ main(int argc, char **argv)
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
-			   current `c' is based on and see if we recognize
-			   it: if -? or --help, exit with 0, else with -1 */
+			 * current `c' is based on and see if we recognize
+			 * it: if -? or --help, exit with 0, else with -1 */
 			usage(argv[0], strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 			/* not reached */
 		default:
@@ -3025,9 +3038,9 @@ main(int argc, char **argv)
 		}
 
 		mnstr_printf(toConsole,
-			      "Welcome to mclient, the MonetDB%s "
-			      "interactive terminal (%s)\n",
-			      lang, MONETDB_RELEASE);
+			     "Welcome to mclient, the MonetDB%s "
+			     "interactive terminal (%s)\n",
+			     lang, MONETDB_RELEASE);
 
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");

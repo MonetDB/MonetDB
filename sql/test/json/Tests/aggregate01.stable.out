@@ -1,0 +1,174 @@
+stdout of test 'aggregate01` in directory 'sql/test/json` itself:
+
+
+# 12:36:42 >  
+# 12:36:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34481" "--set" "mapi_usock=/var/tmp/mtest-26015/.s.monetdb.34481" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/rijke/monetdb/default/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0"
+# 12:36:42 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rotterdam.ins.cwi.nl:34481/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26015/.s.monetdb.34481
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 12:36:42 >  
+# 12:36:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26015" "--port=34481"
+# 12:36:42 >  
+
+#create table aggrtest1 ( col1 double, col2 integer );
+#select json.tojsonarray(col1) from aggrtest1;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#insert into aggrtest1 values (0.1234, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest1;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 12 # length
+[ "[ 0.123400 ]"	]
+#insert into aggrtest1 values (5.6789, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest1;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 22 # length
+[ "[ 0.123400, 5.678900 ]"	]
+#select json.tojsonarray(col1) from aggrtest1 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 22 # length
+[ "[ 0.123400, 5.678900 ]"	]
+#insert into aggrtest1 values (0.516273849, 2);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest1;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 32 # length
+[ "[ 0.123400, 5.678900, 0.516274 ]"	]
+#select json.tojsonarray(col1) from aggrtest1 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 22 # length
+[ "[ 0.123400, 5.678900 ]"	]
+[ "[ 0.516274 ]"	]
+#delete from aggrtest01;
+[ 3	]
+#insert into aggrtest01 values (NULL, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest01;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#insert into aggrtest01 values (NULL, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest01;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#select json.tojsonarray(col1) from aggrtest01 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 4 # length
+[ "[  ]"	]
+#insert into aggrtest01 values (0.1234, 1);
+[ 1	]
+#select json.tojsonarray(col1) from aggrtest01;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 12 # length
+[ "[ 0.123400 ]"	]
+#insert into aggrtest01 values (0.516273849, 2);
+[ 1	]
+#select * from aggrtest01;
+% sys.aggrtest01,	sys.aggrtest01 # table_name
+% col1,	col2 # name
+% double,	int # type
+% 24,	1 # length
+[ NULL,	1	]
+[ NULL,	1	]
+[ 0.1234,	1	]
+[ 0.516273849,	2	]
+#select json.tojsonarray(col1) from aggrtest01;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 22 # length
+[ "[ 0.123400, 0.516274 ]"	]
+#select json.tojsonarray(col1) from aggrtest01 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 12 # length
+[ "[ 0.123400 ]"	]
+[ "[ 0.516274 ]"	]
+#delete from aggrtest01 where col1 is null;
+[ 2	]
+#select json.tojsonarray(col1) from aggrtest01;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 22 # length
+[ "[ 0.123400, 0.516274 ]"	]
+#select json.tojsonarray(col1) from aggrtest01 group by col2;
+% sys.L1 # table_name
+% L1 # name
+% clob # type
+% 12 # length
+[ "[ 0.123400 ]"	]
+[ "[ 0.516274 ]"	]
+#drop table aggrtest01;
+
+# 12:36:43 >  
+# 12:36:43 >  "Done."
+# 12:36:43 >  
+
