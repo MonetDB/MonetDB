@@ -2197,7 +2197,7 @@ org_have_sphinxclient="auto"
 have_sphinxclient=$org_have_sphinxclient
 AC_ARG_WITH(sphinxclient,
     AS_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
-    [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
+    [have_sphinxclient="$withval"])
 if test "x$have_sphinxclient" != xno; then
 	case "$have_sphinxclient" in
 	auto|yes)
@@ -2328,7 +2328,7 @@ org_have_mseed="auto"
 have_mseed=$org_have_mseed
 AC_ARG_WITH(mseed,
     AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
-    [have_mseed="$withval"], [have_mseed="auto"])
+    [have_mseed="$withval"])
 if test "x$have_mseed" != xno; then
 
 	case "$have_mseed" in
