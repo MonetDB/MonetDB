@@ -806,12 +806,12 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			if ( s == 0 ||
 				(s< 0 &&	(f.days<= l.days || (f.days == l.days && f.msecs < l.msecs))) ||
 				(s> 0 &&	(l.days<= f.days || (l.days == f.days && l.msecs < f.msecs))) )
-				throw(MAL,"generator.thetasubselect","Illegal range");
+				throw(MAL,"generator.leftfetchjoin","Illegal range");
 
-			bn = BATnew(TYPE_void, tpe, cnt);
+			bn = BATnew(TYPE_void, TYPE_timestamp, cnt);
 			if( bn == NULL){
 				BBPreleaseref(bid);
-				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
+				throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);
 			}
 
 			v = (timestamp*) Tloc(bn,BUNfirst(bn));
@@ -937,30 +937,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng: VLTjoin(lng); break;
 	case TYPE_flt: VLTjoin(flt); break;
 	case TYPE_dbl: VLTjoin(dbl); break;
-/* to be fixed
 	default:
-	if( tpe == TYPE_timestamp){ 
-		timestamp f,l,val;
-		timestamp *v,w;
-		lng s,offset;
-
-		f = *(timestamp*) getArgReference(stk,p, 1);
-		l = *(timestamp*) getArgReference(stk,p, 2);
-		s = *(lng*) getArgReference(stk,p, 3);
-		v = (timestamp*) Tloc(bl,BUNfirst(bl));
-		for( ; cnt >0; cnt--,o++, v++){
-			offset = ((lng)*o) * s;
-			if( (msg = MTIMEtimestamp_add(&val, &f, &offset)) != MAL_SUCCEED)
-				return msg;
-
-			if ( w * s == *v && (oid) w < lo){
-				*or++ = (oid) w;
-				*ol++ = *o;
-				c++;
+		if( tpe == TYPE_timestamp){ 
+			// it is easier to produce the timestamp series
+			// then to estimate the possible index
 			}
-		}
-		}
-*/
 	}
 
 	BATsetcount(bln,c);
