@@ -239,7 +239,11 @@ GDKextendf(int fd, size_t size)
 	}
 	/* if necessary, extend the underlying file */
 	if (stb.st_size < (off_t) size) {
+#ifdef HAVE_POSIX_FALLOCATE
+		return posix_fallocate(fd, 0, (off_t) size);
+#else
 		return ftruncate(fd, (off_t) size);
+#endif
 	}
 	return 0;
 }

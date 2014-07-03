@@ -537,9 +537,21 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					}
 					if (write(fd, old_address,
 						  old_size) < 0 ||
-					    ftruncate(fd, *new_size) < 0) {
+#ifdef HAVE_POSIX_FALLOCATE
+					    posix_fallocate(fd, 0, (off_t) *new_size) < 0
+#else
+					    ftruncate(fd, (off_t) *new_size) < 0
+#endif
+						) {
 						close(fd);
-						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or ftruncate() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
+						fprintf(stderr,
+							"= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or "
+#ifdef HAVE_POSIX_FALLOCATE
+							"posix_fallocate()"
+#else
+							"ftruncate()"
+#endif
+							" failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,
