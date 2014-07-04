@@ -985,7 +985,6 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		/* if this is a shared logger, write the id in the shared file */
 		if (lg->shared) {
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED);
-
 		}
 	}
 	return res;
