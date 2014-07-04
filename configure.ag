@@ -2835,6 +2835,7 @@ AC_CHECK_FUNCS([\
 				pipe \
 				popen \
 				posix_fadvise \
+				posix_fallocate \
 				posix_madvise \
 				putenv \
 				round \
