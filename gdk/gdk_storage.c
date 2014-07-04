@@ -243,15 +243,20 @@ GDKextendf(int fd, size_t size, const char *fn)
 	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_POSIX_FALLOCATE
-               rt = posix_fallocate(fd, 0, (off_t) size);
-#else
-               rt = ftruncate(fd, (off_t) size);
+		/* posix_fallocate returns error number on failure,
+		 * not -1 :-( */
+		if ((rt = posix_fallocate(fd, 0, (off_t) size)) == EINVAL)
+			/* on Solaris/OpenIndiana, this may mean that
+			 * the underlying file system doesn't support
+			 * the operation, so just resize the file */
 #endif
+		rt = ftruncate(fd, (off_t) size);
 	}
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
 			fn, stb.st_size, size,
 			GDKms() - t0, rt < 0 ? " (failed)" : "");
-	return rt;
+	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
+	return -(rt != 0);
 }
 
 int

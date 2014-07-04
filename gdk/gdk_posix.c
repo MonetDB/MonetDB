@@ -522,6 +522,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* if it failed, try alternative */
 				}
 				if (p == MAP_FAILED && path != NULL) {
+#ifdef HAVE_POSIX_FALLOCATE
+					int rt;
+#endif
 					/* write data to disk, then
 					 * mmap it to new address */
 					if (fd >= 0)
@@ -538,7 +541,16 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					if (write(fd, old_address,
 						  old_size) < 0 ||
 #ifdef HAVE_POSIX_FALLOCATE
-					    posix_fallocate(fd, 0, (off_t) *new_size) < 0
+					    /* posix_fallocate returns
+					     * error number on
+					     * failure, not -1, and if
+					     * it returns EINVAL, the
+					     * underlying file system
+					     * may not support the
+					     * operation, so we then
+					     * need to try
+					     * ftruncate */
+					    ((rt = posix_fallocate(fd, 0, (off_t) *new_size)) == EINVAL ? ftruncate(fd, (off_t) *new_size) < 0 : rt != 0)
 #else
 					    ftruncate(fd, (off_t) *new_size) < 0
 #endif
