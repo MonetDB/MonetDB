@@ -318,7 +318,7 @@ static str transformLineString(GEOSGeometry** transformedGeometry, const GEOSGeo
 }
 
 static str transformLinearRing(GEOSGeometry** transformedGeometry, const GEOSGeometry* geosGeometry, projPJ proj4_src, projPJ proj4_dst) {
-	GEOSCoordSeq coordSeq;
+	GEOSCoordSeq coordSeq = NULL;
 	str ret = MAL_SUCCEED;
 
 	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
