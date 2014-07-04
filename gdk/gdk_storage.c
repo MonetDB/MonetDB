@@ -229,39 +229,41 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 }
 
 int
-GDKextendf(int fd, size_t size)
+GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
+	int rt = 0;
+	int t0 = 0;
 
 	if (fstat(fd, &stb) < 0) {
 		/* shouldn't happen */
 		return -1;
 	}
 	/* if necessary, extend the underlying file */
+	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_POSIX_FALLOCATE
-		return posix_fallocate(fd, 0, (off_t) size);
+               rt = posix_fallocate(fd, 0, (off_t) size);
 #else
-		return ftruncate(fd, (off_t) size);
+               rt = ftruncate(fd, (off_t) size);
 #endif
 	}
-	return 0;
+	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
+			fn, stb.st_size, size,
+			GDKms() - t0, rt < 0 ? " (failed)" : "");
+	return rt;
 }
 
 int
 GDKextend(const char *fn, size_t size)
 {
-	int t0 = 0;
 	int rt = -1, fd;
 
-	IODEBUG t0 = GDKms();
 	rt = -1;
 	if ((fd = open(fn, O_RDWR)) >= 0) {
-		rt = GDKextendf(fd, size);
+		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	}
-	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms%s\n", fn, size,
-			GDKms() - t0, rt < 0 ? " (failed)" : "");
 	return rt;
 }
 
