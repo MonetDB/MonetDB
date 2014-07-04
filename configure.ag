@@ -2402,6 +2402,8 @@ yes|auto)
 		if test "x$disable_geom" = x; then
 			disable_geom="$why_have_proj"
 		fi
+		PROJ_INCS=""
+		PROJ_LIBS=""
 		;;
 	auto|yes)
 		PROJ_LIBS="-lproj"
