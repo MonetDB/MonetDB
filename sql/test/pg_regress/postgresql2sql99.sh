@@ -27,6 +27,7 @@ sed -r \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/ig' \
 	-e 's/\bbool '*'\b/cast('\1' as boolean)/ig' \
+	-e 's/\char 'c'/cast('c' as char)/ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/ig' \
 	-e 's/\bint2 '1'/cast('1' as smallint)/ig' \
 	-e 's/\bint2 '2'/cast('2' as smallint)/ig' \
