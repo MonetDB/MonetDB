@@ -2382,14 +2382,14 @@ yes|auto)
 	esac
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $PROJ_CFLAGS"
+	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
 	LDFLAGS="$LDFLAGS $PROJ_LIBS"
 	AC_CHECK_HEADER(proj_api.h,
 		AC_CHECK_LIB(proj, pj_init_plus, ,
 			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
-			  have_proj=no; why_have_proj="(proj library not found)" ], ),
+			have_proj=no; why_have_proj="(proj library not found)" ], ),
 		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
-		  have_proj=no; why_have_proj="(proj_api.h header not found)" ])
+		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 	case "$have_proj" in

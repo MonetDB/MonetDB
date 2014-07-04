@@ -598,7 +598,7 @@ BATclear(BAT *b, int force)
 	}
 
 	if (force)
-                b->batFirst = b->batDeleted = b->batInserted = 0;
+		b->batFirst = b->batDeleted = b->batInserted = 0;
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
@@ -1439,6 +1439,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
 
+			/* coverity[result_independent_of_operands] */
 			acc_move(last,p,idx2,idx1);
 			/* If a column was sorted before the BUN was
 			   deleted, check whether it is still sorted
@@ -1806,9 +1807,9 @@ BUNfnd(BAT *b, const void *v)
 		bi.b = b = BATmirror(b);			\
 	} while (0)
 
-#define dohash(hp)        (ATOMstorage(hp->type) != TYPE_bte &&		\
-			   (ATOMstorage(hp->type) != TYPE_str ||	\
-			    !GDK_ELIMDOUBLES(hp->vheap)))
+#define dohash(hp)	(ATOMstorage(hp->type) != TYPE_bte &&	\
+			 (ATOMstorage(hp->type) != TYPE_str ||	\
+			  !GDK_ELIMDOUBLES(hp->vheap)))
 
 static BUN
 BUNlocate(BAT *b, const void *x, const void *y)
@@ -2305,23 +2306,6 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 	b->batMaptheap = thp;
 	HEAPnewstorage(b, force);
 	b->batDirtydesc = 1;
-	return 0;
-}
-
-/*
- * @- BATmadvise
- * deprecated
- */
-int
-BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
-{
-	(void) b;
-	(void) hb;
-	(void) tb;
-	(void) hhp;
-	(void) thp;
-	BATcheck(b, "BATmadvise");
-
 	return 0;
 }
 
