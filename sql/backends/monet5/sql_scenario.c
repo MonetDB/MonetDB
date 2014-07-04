@@ -1138,7 +1138,9 @@ SQLinitClient(Client c)
 		if (fullname) {
 			str filename = fullname;
 			str p, n;
+#ifdef _SQL_SCENARIO_DEBUG
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
+#endif
 			do {
 				p = strchr(filename, PATH_SEP);
 				if (p)
@@ -1148,7 +1150,9 @@ SQLinitClient(Client c)
 				} else {
 					n++;
 				}
+#ifdef _SQL_SCENARIO_DEBUG
 				fprintf(stdout, "# loading sql script: %s\n", n);
+#endif
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;
