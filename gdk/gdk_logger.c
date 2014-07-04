@@ -753,7 +753,11 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 
 	bak_exists = 0;
 	/* check if an older file exists and move bak it up */
+#ifdef WIN32
+	if (_access(filename, 0) != -1) {
+#else
 	if (access(filename, 0) != -1) {
+#endif
 		bak_exists = 1;
 		if (GDKmove(dir, filename, NULL, dir, filename, "bak") < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
@@ -981,6 +985,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		/* if this is a shared logger, write the id in the shared file */
 		if (lg->shared) {
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED);
+
 		}
 	}
 	return res;
@@ -1594,8 +1599,11 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		/* get last shared logger id from the local log dir,
 		 * but first check if the file exists */
 		snprintf(shared_log_filename, BUFSIZ, "%s%s", lg->local_dir, LOGFILE_SHARED);
-
+#ifdef WIN32
+		if (_access(shared_log_filename, 0) != -1) {
+#else
 		if (access(shared_log_filename, 0) != -1) {
+#endif
 			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED);
 			if (res == LOG_ERR) {
 				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
