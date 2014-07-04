@@ -11,10 +11,10 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
 INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 
 -- test for underflow and overflow handling
-SELECT '10e400'::double;
-SELECT '-10e400'::double;
-SELECT '10e-400'::double;
-SELECT '-10e-400'::double;
+SELECT cast('10e400' as double);
+SELECT cast('-10e400' as double);
+SELECT cast('10e-400' as double);
+SELECT cast('-10e-400' as double);
 
 -- bad input
 INSERT INTO FLOAT8_TBL(f1) VALUES ('     ');
@@ -26,21 +26,22 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('    - 3');
 INSERT INTO FLOAT8_TBL(f1) VALUES ('123           5');
 
 -- special inputs
-SELECT 'NaN'::double;
-SELECT 'nan'::double;
-SELECT '   NAN  '::double;
-SELECT 'infinity'::double;
-SELECT '          -INFINiTY   '::double;
+SELECT cast('NaN' as double);
+SELECT cast('nan' as double);
+SELECT cast('   NAN  ' as double);
+SELECT cast('infinity' as double);
+SELECT cast('          -INFINiTY   ' as double);
 -- bad special inputs
-SELECT 'N A N'::double;
-SELECT 'NaN x'::double;
-SELECT ' INFINITY    x'::double;
+SELECT cast('N A N' as double);
+SELECT cast('NaN x' as double);
+SELECT cast(' INFINITY    x' as double);
 
-SELECT 'Infinity'::double + 100.0;
-SELECT 'Infinity'::double / 'Infinity'::double;
-SELECT 'nan'::double / 'nan'::double;
+SELECT cast('Infinity' as double) + 100.0;
+SELECT cast('Infinity' as double) / cast('Infinity' as double);
+SELECT cast('nan' as double) / cast('nan' as double);
 
 SELECT '' AS five, FLOAT8_TBL.*;
+SELECT '' AS five, * FROM FLOAT8_TBL;
 
 SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
 
@@ -74,15 +75,15 @@ SELECT '' AS one, f.f1 ^ '2.0' AS square_f1
    FROM FLOAT8_TBL f where f.f1 = '1004.3';
 
 -- absolute value 
-SELECT '' AS five, f.f1, @f.f1 AS abs_f1 
+SELECT '' AS five, f.f1, abs(f1) AS abs_f1 
    FROM FLOAT8_TBL f;
 
 -- truncate 
-SELECT '' AS five, f.f1, %f.f1 AS trunc_f1
+SELECT '' AS five, f.f1, truncate(f1) AS trunc_f1
    FROM FLOAT8_TBL f;
 
 -- round 
-SELECT '' AS five, f.f1, f.f1 % AS round_f1
+SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
    FROM FLOAT8_TBL f;
 
 -- ceil / ceiling
@@ -118,7 +119,7 @@ SELECT ||/ double '27' AS three;
 SELECT '' AS five, f.f1, ||/f.f1 AS cbrt_f1 FROM FLOAT8_TBL f;
 
 
-SELECT '' AS five, FLOAT8_TBL.*;
+SELECT '' AS five, * FROM FLOAT8_TBL;
 
 UPDATE FLOAT8_TBL
    SET f1 = FLOAT8_TBL.f1 * '-1'
@@ -136,7 +137,7 @@ SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
 
 SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
 
-SELECT '' AS five, FLOAT8_TBL.*;
+SELECT '' AS five, * FROM FLOAT8_TBL;
 
 -- test for over- and underflow 
 INSERT INTO FLOAT8_TBL(f1) VALUES ('10e400');
@@ -162,5 +163,7 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e+200');
 
 INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e-200');
 
-SELECT '' AS five, FLOAT8_TBL.*;
+SELECT '' AS five, * FROM FLOAT8_TBL;
 
+-- cleanup created table
+DROP TABLE FLOAT8_TBL;

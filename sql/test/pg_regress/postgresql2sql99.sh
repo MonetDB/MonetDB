@@ -63,4 +63,7 @@ sed -r \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
 	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/ig' \
+	-e 's/\s+([^\s]+)::float4\b/ cast(\1 as real)/ig' \
+	-e 's/\s+([^\s]+)::float8\b/ cast(\1 as double)/ig' \
+	-e 's/\s+([^\s]+)::text\b/ cast(\1 as string)/ig' \
 	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/ig'
