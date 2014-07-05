@@ -573,6 +573,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
+#ifdef _MSC_VER
+#define nextafter   _nextafter
+float nextafterf(float x, float y);
+#endif
 
 #define PREVVALUEbte(x) ((x) - 1)
 #define PREVVALUEsht(x) ((x) - 1)
