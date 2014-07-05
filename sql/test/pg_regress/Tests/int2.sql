@@ -28,61 +28,64 @@ INSERT INTO INT2_TBL(f1) VALUES ('4 444');
 INSERT INTO INT2_TBL(f1) VALUES ('123 dt');
 INSERT INTO INT2_TBL(f1) VALUES ('');
 
-
+-- postgress syntax, will give error in MonetDB
 SELECT '' AS five, INT2_TBL.*;
 
-SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> smallint '0';
+SELECT '' AS five, * FROM INT2_TBL;
 
-SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> integer '0';
+SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as smallint);
 
-SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = smallint '0';
+SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as integer);
 
-SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = integer '0';
+SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as smallint);
 
-SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < smallint '0';
+SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as integer);
 
-SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < integer '0';
+SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as smallint);
 
-SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= smallint '0';
+SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as integer);
 
-SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= integer '0';
+SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as smallint);
 
-SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > smallint '0';
+SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as integer);
 
-SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > integer '0';
+SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as smallint);
 
-SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= smallint '0';
+SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as integer);
 
-SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= integer '0';
+SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as smallint);
+
+SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as integer);
 
 -- positive odds 
-SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % smallint '2') = smallint '1';
+SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
 
 -- any evens 
-SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % integer '2') = smallint '0';
+SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
 
-SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT2_TBL i
+SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
 WHERE abs(f1) < 16384;
 
-SELECT '' AS five, i.f1, i.f1 * integer '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT2_TBL i
+SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
 WHERE f1 < 32766;
 
-SELECT '' AS five, i.f1, i.f1 + integer '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT2_TBL i
+SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
 WHERE f1 > -32767;
 
-SELECT '' AS five, i.f1, i.f1 - integer '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 / smallint '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT2_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 / integer '2' AS x FROM INT2_TBL i;
+SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT2_TBL i;
 
+-- cleanup created table INT2_DBL is done in numerology.sql

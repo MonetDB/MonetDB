@@ -5,7 +5,7 @@
 -- fixed-length by value
 -- internally passed by value if <= 4 bytes in storage
 
-SELECT char 'c' = char 'c' AS true;
+SELECT cast('c' as char) = cast('c' as char) AS "true";
 
 --
 -- Build a table for testing
