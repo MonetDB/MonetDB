@@ -64,8 +64,7 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
 CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
-
---//CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
+CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
 
 
