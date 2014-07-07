@@ -25,8 +25,9 @@ class TestMonetize(unittest.TestCase):
         class StrSubClass(str):
             pass
         x = StrSubClass('test')
-        func = convert(x)
-        self.assertEqual(func, monet_escape)
+        csub = convert(x)
+        cstr = convert('test')
+        self.assertEqual(csub, cstr)
 
     def test_unknown_type(self):
         class Unknown:

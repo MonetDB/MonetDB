@@ -30,14 +30,14 @@ SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
  WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
 SELECT '' AS five, q1, q2, q1 / q2 AS divide FROM INT8_TBL;
 
-SELECT '' AS five, q1, double(q1) FROM INT8_TBL;
-SELECT '' AS five, q2, double(q2) FROM INT8_TBL;
+SELECT '' AS five, q1, cast(q1 as double) FROM INT8_TBL;
+SELECT '' AS five, q2, cast(q2 as double) FROM INT8_TBL;
 
 SELECT '' AS five, 2 * q1 AS "twice integer" FROM INT8_TBL;
 SELECT '' AS five, q1 * 2 AS "twice integer" FROM INT8_TBL;
 
 -- TO_CHAR()
---
+-- Note: this PostgreSQL (and Oracle) function is NOT supported by MonetDB, so all to_char(<expr>, '<format>') queries will fail with Error: SELECT: no such binary operator 'to_char(bigint,char)'
 SELECT '' AS to_char_1, to_char(q1, '9G999G999G999G999G999'), to_char(q2, '9,999,999,999,999,999') 
 	FROM INT8_TBL;
 
@@ -63,3 +63,6 @@ SELECT '' AS to_char_14, to_char(q2, 'FM9999999999999999.999') FROM INT8_TBL;
 SELECT '' AS to_char_15, to_char(q2, 'S 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 . 9 9 9') FROM INT8_TBL;
 SELECT '' AS to_char_16, to_char(q2, '99999 "text" 9999 "9999" 999 "\\"text between quote marks\\"" 9999') FROM INT8_TBL;
 SELECT '' AS to_char_17, to_char(q2, '999999SG9999999999')     FROM INT8_TBL;
+
+-- cleanup created table
+DROP TABLE INT8_TBL;

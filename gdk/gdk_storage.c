@@ -254,35 +254,46 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 }
 
 int
-GDKextendf(int fd, size_t size)
+GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
+	int rt = 0;
+	int t0 = 0;
 
 	if (fstat(fd, &stb) < 0) {
 		/* shouldn't happen */
 		return -1;
 	}
 	/* if necessary, extend the underlying file */
+	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
-		return ftruncate(fd, (off_t) size);
+#ifdef HAVE_POSIX_FALLOCATE
+		/* posix_fallocate returns error number on failure,
+		 * not -1 :-( */
+		if ((rt = posix_fallocate(fd, 0, (off_t) size)) == EINVAL)
+			/* on Solaris/OpenIndiana, this may mean that
+			 * the underlying file system doesn't support
+			 * the operation, so just resize the file */
+#endif
+		rt = ftruncate(fd, (off_t) size);
 	}
-	return 0;
+	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
+			fn, (size_t) stb.st_size, size,
+			GDKms() - t0, rt < 0 ? " (failed)" : "");
+	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
+	return -(rt != 0);
 }
 
 int
 GDKextend(const char *fn, size_t size)
 {
-	int t0 = 0;
 	int rt = -1, fd;
 
-	IODEBUG t0 = GDKms();
 	rt = -1;
 	if ((fd = open(fn, O_RDWR)) >= 0) {
-		rt = GDKextendf(fd, size);
+		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	}
-	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " %dms%s\n", fn, size,
-			GDKms() - t0, rt < 0 ? " (failed)" : "");
 	return rt;
 }
 

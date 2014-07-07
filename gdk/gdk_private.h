@@ -108,7 +108,7 @@ void GDKclrerr(void)
 	__attribute__((__visibility__("hidden")));
 int GDKextend(const char *fn, size_t size)
 	__attribute__((__visibility__("hidden")));
-int GDKextendf(int fd, size_t size)
+int GDKextendf(int fd, size_t size, const char *fn)
 	__attribute__((__visibility__("hidden")));
 int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
