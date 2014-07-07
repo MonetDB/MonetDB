@@ -253,7 +253,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 		rt = ftruncate(fd, (off_t) size);
 	}
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
-			fn, stb.st_size, size,
+			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt < 0 ? " (failed)" : "");
 	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
 	return -(rt != 0);
