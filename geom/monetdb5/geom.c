@@ -170,6 +170,7 @@ geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
+geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
 geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 
@@ -2118,6 +2119,15 @@ str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 	return MAL_SUCCEED;	
 }
 
+/*checks whether two mbrs overlap */
+str mbroverlaps(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = !((*b2)->ymax < (*b1)->ymin || (*b2)->ymin > (*b1)->ymax || (*b2)->xmax < (*b1)->xmin || (*b2)->xmin > (*b1)->xmax);
+	return MAL_SUCCEED;
+}
+
 /* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
 str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx) {
 	switch(*coordinateIdx) {
@@ -2169,7 +2179,6 @@ geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *ma
 
 geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
 geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
-geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 
 
 
@@ -2409,15 +2418,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	return MAL_SUCCEED;
 }
 
-str
-mbroverlaps(bit *out, mbr **b1, mbr **b2)
-{
-	if (mbr_isnil(*b1) || mbr_isnil(*b2))
-		*out = 0;
-	else
-		*out = !((*b2)->ymax < (*b1)->ymin || (*b2)->ymin > (*b1)->ymax || (*b2)->xmax < (*b1)->xmin || (*b2)->xmin > (*b1)->xmax);
-	return MAL_SUCCEED;
-}
+
 
 
 
