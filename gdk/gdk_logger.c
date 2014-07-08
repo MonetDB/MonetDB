@@ -754,7 +754,7 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 
 	bak_exists = 0;
 	/* check if an older file exists and move bak it up */
-#ifdef WIN32
+#if defined(_MSC_VER)
 	if (_access(filename, 0) != -1) {
 #else
 	if (access(filename, 0) != -1) {
@@ -1608,7 +1608,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 		/* get last shared logger id from the local log dir,
 		 * but first check if the file exists */
 		snprintf(shared_log_filename, BUFSIZ, "%s%s", lg->local_dir, LOGFILE_SHARED);
-#ifdef WIN32
+#if defined(_MSC_VER)
 		if (_access(shared_log_filename, 0) != -1) {
 #else
 		if (access(shared_log_filename, 0) != -1) {
