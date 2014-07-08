@@ -838,13 +838,15 @@ logger_readlog(logger *lg, char *filename)
 		if (lg->log)
 			mnstr_destroy(lg->log);
 		lg->log = NULL;
-		return 0;
+		return LOG_ERR;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
-		return 0;
+		/* If we can't read the files, it might simply be empty.
+		 * In that case we can't return LOG_ERR, since it's actually fine */
+		return 1;
 	}
 	t0 = time(NULL);
 	while (!err && log_read_format(lg, &l)) {
@@ -946,17 +948,17 @@ logger_readlog(logger *lg, char *filename)
 	/* remaining transactions are not committed, ie abort */
 	while (tr)
 		tr = tr_abort(lg, tr);
-	return 0;
+	return LOG_OK;
 }
 
 /*
- * The log files are incrementally numbered. They are processed in the
+ * The log files are incrementally numbered, starting from 2. They are processed in the
  * same sequence.
  */
 static int
 logger_readlogs(logger *lg, FILE *fp, char *filename)
 {
-	int res = 0;
+	int res = LOG_OK;
 	char id[BUFSIZ];
 
 	if (lg->debug & 1) {
@@ -971,16 +973,24 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
-		while(lid > lg->id) {
+		while(lid > lg->id && res != LOG_ERR) {
 			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, lg->id);
-			if ((res = logger_readlog(lg, buf)) != 0) {
+			if ((logger_readlog(lg, buf)) == LOG_ERR && lg->shared && lg->id > 1) {
 				/* we cannot distinguish errors from
 				 * incomplete transactions (even if we
 				 * would log aborts in the logs). So
 				 * we simply abort and move to the
-				 * next log file */
-				(void) res;
+				 * next log file.
+				 * The only special case is if the files is missing altogether
+				 * and the logger is a shared one,
+				 * then we have missing transactions and we should abort.
+				 * Yeah, and we also ignore the 1st files it most likely never exists. */
+				res = LOG_ERR;
+				fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", buf);
 			}
+			/* Increment the id only at the end, since we want to re-read the last file.
+			 * That is because last time we read it, it was empty, since the logger create empty files
+			 * and fills them in later. */
 			lg->id++;
 		}
 		/* if this is a shared logger, write the id in the shared file */
@@ -1525,7 +1535,9 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		}
 #endif
 		lg->changes++;
-		logger_readlogs(lg, fp, filename);
+		if (logger_readlogs(lg, fp, filename) == LOG_ERR) {
+			goto error;
+		}
 		fclose(fp);
 		fp = NULL;
 #if SIZEOF_OID == 8
