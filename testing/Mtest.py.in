@@ -2089,6 +2089,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             errcode = F_SEGV
         elif tres == 'abort':
             errcode = F_ABRT
+        elif tres == 'socket':
+            errcode = F_SOCK
         elif tres == 'error':
             errcode = F_WARN
         elif tres is not None:
@@ -2110,6 +2112,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         ##fi
         ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
+
+        if tres == 'socket':
+            if quiet:
+                STDOUT.write("\n%s : Socket!\n" % TST)
+            elif verbose:
+                STDOUT.write("(Socket!) ")
 
         if tres == 'timeout':
             if quiet:
@@ -2349,7 +2357,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                                      FailedOut, FailedErr)
 
         if not verbose and not quiet:
-            if tres == 'timeout':
+            if tres == 'socket':
+                STDOUT.write("%sSOCKET%s" % (PURPLE, BLACK))
+            elif tres == 'timeout':
                 STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
             elif tres == 'recursion':
                 STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
@@ -2982,22 +2992,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         return None
 
     # Try to detect segfaults and the like
-    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
-    # FIXME: this begs for a much nicer solution (100% copy of below)
-    for f in (TestErrFile, TestOutFile):
-        if os.path.isfile(f):
-            for l in open(f):
-                if TO.search(l):
-                    return 'segfault'
-
     # Try to detect aborts due to too deep recursion
-    TO = re.compile("aborted too deep recursion", re.MULTILINE)
-    # FIXME: this begs for a much nicer solution (100% copy of above)
-    for f in (TestErrFile, TestOutFile):
-        if os.path.isfile(f):
-            for l in open(f):
-                if TO.search(l):
-                    return 'recursion'
+    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))",
+                           'segfault'),
+                          ("aborted too deep recursion",
+                           'recursion'),
+                          ("mal_mapi\.listen:operation failed: bind to stream socket port",
+                           'socket')]:
+        TO = re.compile(regexp, re.MULTILINE)
+        # FIXME: this begs for a much nicer solution (100% copy of below)
+        for f in (TestErrFile, TestOutFile):
+            if os.path.isfile(f):
+                for l in open(f):
+                    if TO.search(l):
+                        return msg
 
     return None
 
