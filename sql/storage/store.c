@@ -224,8 +224,10 @@ destroy_spare_transactions(void)
 	int i, s = spares;
 
 	spares = MAX_SPARES; /* ie now there not spared anymore */
-	for (i = 0; i < s; i++) 
+	for (i = 0; i < s; i++) {
 		sql_trans_destroy(spare_trans[i]);
+	}
+	spares = 0;
 }
 
 static int
@@ -1598,6 +1600,208 @@ store_apply_deltas(void)
 	logging = 0;
 }
 
+static void
+store_load(backend_stack stk) {
+	lng lng_store_oid;
+	sqlid id = 0;
+
+	int first = 1;
+	sql_schema *s, *p = NULL;
+	sql_table *t, *types, *funcs, *args;
+	sql_trans *tr;
+	sql_allocator *sa;
+
+	/* destroy all global transactions
+	 * we will re-load the new */
+	sql_trans_destroy(gtrans);
+	destroy_spare_transactions();
+
+	sa = sa_create();
+	types_init(sa, 1);
+
+#define FUNC_OIDS 2000
+//	assert( store_oid <= FUNC_OIDS );
+	/* we store some spare oids */
+	store_oid = FUNC_OIDS;
+
+	sequences_init();
+	gtrans = tr = create_trans(sa, stk);
+	active_transactions = sa_list(sa);
+
+	fprintf(stderr, "################# store_load\n");
+
+	if (shared_logger_funcs.log_isnew()) {
+		fprintf(stderr, "################# sql_trans_create\n");
+		tr = sql_trans_create(stk, NULL, NULL);
+	} else {
+		first = 0;
+	}
+
+	fprintf(stderr, "################# first=%d\n", first);
+
+
+	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
+	if (!first)
+		s->base.flag = TR_OLD;
+
+	t = bootstrap_create_table(tr, s, "schemas");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "name", "varchar", 1024);
+	bootstrap_create_column(tr, t, "authorization", "int", 32);
+	bootstrap_create_column(tr, t, "owner", "int", 32);
+	bootstrap_create_column(tr, t, "system", "boolean", 1);
+
+	types = t = bootstrap_create_table(tr, s, "types");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "systemname", "varchar", 256);
+	bootstrap_create_column(tr, t, "sqlname", "varchar", 1024);
+	bootstrap_create_column(tr, t, "digits", "int", 32);
+	bootstrap_create_column(tr, t, "scale", "int", 32);
+	bootstrap_create_column(tr, t, "radix", "int", 32);
+	bootstrap_create_column(tr, t, "eclass", "int", 32);
+	bootstrap_create_column(tr, t, "schema_id", "int", 32);
+
+	funcs = t = bootstrap_create_table(tr, s, "functions");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "name", "varchar", 256);
+	bootstrap_create_column(tr, t, "func", "varchar", 8196);
+	bootstrap_create_column(tr, t, "mod", "varchar", 8196);
+	/* sql or database internal */
+	bootstrap_create_column(tr, t, "sql", "boolean", 1);
+	/* func, proc, aggr or filter */
+	bootstrap_create_column(tr, t, "type", "int", 32);
+	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
+	bootstrap_create_column(tr, t, "varres", "boolean", 1);
+	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
+	bootstrap_create_column(tr, t, "schema_id", "int", 32);
+
+	args = t = bootstrap_create_table(tr, s, "args");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "func_id", "int", 32);
+	bootstrap_create_column(tr, t, "name", "varchar", 256);
+	bootstrap_create_column(tr, t, "type", "varchar", 1024);
+	bootstrap_create_column(tr, t, "type_digits", "int", 32);
+	bootstrap_create_column(tr, t, "type_scale", "int", 32);
+	bootstrap_create_column(tr, t, "inout", "tinyint", 8);
+	bootstrap_create_column(tr, t, "number", "int", 32);
+
+	t = bootstrap_create_table(tr, s, "sequences");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "schema_id", "int", 32);
+	bootstrap_create_column(tr, t, "name", "varchar", 256);
+	bootstrap_create_column(tr, t, "start", "bigint", 64);
+	bootstrap_create_column(tr, t, "minvalue", "bigint", 64);
+	bootstrap_create_column(tr, t, "maxvalue", "bigint", 64);
+	bootstrap_create_column(tr, t, "increment", "bigint", 64);
+	bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
+	bootstrap_create_column(tr, t, "cycle", "boolean", 1);
+
+	t = bootstrap_create_table(tr, s, "dependencies");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "depend_id", "int", 32);
+	bootstrap_create_column(tr, t, "depend_type", "smallint", 16);
+
+	t = bootstrap_create_table(tr, s, "connections");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "server", "char", 1024);
+	bootstrap_create_column(tr, t, "port", "int", 32);
+	bootstrap_create_column(tr, t, "db", "char", 64);
+	bootstrap_create_column(tr, t, "db_alias", "char", 1024);
+	bootstrap_create_column(tr, t, "user", "char", 1024);
+	bootstrap_create_column(tr, t, "password", "char", 1024);
+	bootstrap_create_column(tr, t, "language", "char", 1024);
+
+	while(s) {
+		t = bootstrap_create_table(tr, s, "_tables");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "schema_id", "int", 32);
+		bootstrap_create_column(tr, t, "query", "varchar", 2048);
+		bootstrap_create_column(tr, t, "type", "smallint", 16);
+		bootstrap_create_column(tr, t, "system", "boolean", 1);
+		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
+		bootstrap_create_column(tr, t, "readonly", "boolean", 1);
+
+		t = bootstrap_create_table(tr, s, "_columns");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type_digits", "int", 32);
+		bootstrap_create_column(tr, t, "type_scale", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "default", "varchar", 2048);
+		bootstrap_create_column(tr, t, "null", "boolean", 1);
+		bootstrap_create_column(tr, t, "number", "int", 32);
+		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "keys");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "type", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "rkey", "int", 32);
+		bootstrap_create_column(tr, t, "action", "int", 32);
+
+		t = bootstrap_create_table(tr, s, "idxs");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "type", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+
+		t = bootstrap_create_table(tr, s, "triggers");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "time", "smallint", 16);
+		bootstrap_create_column(tr, t, "orientation", "smallint", 16);
+		bootstrap_create_column(tr, t, "event", "smallint", 16);
+		bootstrap_create_column(tr, t, "old_name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "new_name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "condition", "varchar", 2048);
+		bootstrap_create_column(tr, t, "statement", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "objects");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "nr", "int", 32);
+
+		if (!p) {
+			p = s;
+
+			/* now the same tables for temporaries */
+			s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN, USER_MONETDB);
+		} else {
+			s = NULL;
+		}
+	}
+
+	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
+
+	if (first) {
+		insert_types(tr, types);
+		insert_functions(tr, funcs, args);
+		insert_aggrs(tr, funcs, args);
+		insert_schemas(tr);
+
+		if (sql_trans_commit(tr) != SQL_OK)
+			fprintf(stderr, "cannot commit initial transaction\n");
+		sql_trans_destroy(tr);
+	}
+
+	id = store_oid; /* db objects up till id are already created */
+	if (!create_shared_logger) {
+		logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	} else {
+		shared_logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	}
+	prev_oid = store_oid = (sqlid)lng_store_oid;
+
+	/* load remaining schemas, tables, columns etc */
+//	if (!first)
+		load_trans(gtrans, id);
+	return;
+}
+
 void
 store_manager(void)
 {
@@ -1637,20 +1841,27 @@ store_manager(void)
 				MT_lock_unset(&bs_lock, "store_manager");
 				GDKfatal("shared write-ahead log loading failure");
 			}
+			MT_lock_unset(&bs_lock, "store_manager");
+			store_load(0);
 		}
 
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
-		if (store_funcs.gtrans_update)
+		if (store_funcs.gtrans_update) {
+			fprintf(stderr, "#store_manager gtrans_update\n");
 			store_funcs.gtrans_update(gtrans);
+		}
+		fprintf(stderr, "#store_manager restart\n");
 		res = logger_funcs.restart();
 		MT_lock_unset(&bs_lock, "store_manager");
 		if (logging && res == LOG_OK)
 			res = logger_funcs.cleanup(keep_persisted_log_files);
+
 		MT_lock_set(&bs_lock, "store_manager");
 		logging = 0;
 		MT_lock_unset(&bs_lock, "store_manager");
+
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
 	}

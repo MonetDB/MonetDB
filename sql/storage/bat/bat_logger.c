@@ -425,6 +425,12 @@ bl_get_sequence(int seq, lng *id)
 }
 
 static int
+bl_get_sequence_shared(int seq, lng *id)
+{
+	return logger_sequence(bat_logger_shared, seq, id);
+}
+
+static int
 bl_log_isnew(void)
 {
 	if (BATcount(bat_logger->catalog_bid) > 10) {
@@ -488,6 +494,7 @@ bat_logger_init_shared( logger_functions *lf )
 	lf->create_shared = bl_create_shared;
 	lf->destroy = bl_destroy_shared;
 	lf->cleanup = bl_cleanup_shared;
+	lf->get_sequence = bl_get_sequence_shared;
 	lf->read_last_transaction_id = bl_read_last_transaction_id_shared;
 	lf->get_transaction_drift = bl_get_transaction_drift_shared;
 	lf->log_isnew = bl_log_isnew_shared;
