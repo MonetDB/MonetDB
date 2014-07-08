@@ -94,11 +94,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Windows.Installer.2.0"
-                    {
-                    "Name" = "8:Windows Installer 2.0"
-                    "ProductCode" = "8:Microsoft.Windows.Installer.2.0"
-                    }
                 }
             }
         }
@@ -428,6 +423,7 @@
         "ProductCode" = "8:{66BABD32-D69D-4A89-A7F3-2655D4CD0641}"
         "PackageCode" = "8:{D9B2D386-1461-43BC-9A63-93F1BA0D7921}"
         "UpgradeCode" = "8:{92C89C36-0E86-45E1-B3D8-0D6C91108F30}"
+        "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"

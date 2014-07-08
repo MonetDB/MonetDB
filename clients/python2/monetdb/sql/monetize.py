@@ -88,7 +88,7 @@ def convert(data):
     else:
         for type_, func in mapping:
             if issubclass(type(data), type_):
-                return func
+                return func(data)
         #if hasattr(data, '__str__'):
         #    return monet_escape
     raise ProgrammingError("type %s not supported as value" % type(data))

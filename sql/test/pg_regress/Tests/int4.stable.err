@@ -29,61 +29,45 @@ stderr of test 'int4` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- integer
-#-- WARNING: integer operators never check for over/underflow!
-#-- Some of these answers are consequently numerically incorrect.
-#--
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
+QUERY = INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
+ERROR = !conversion of string '   0  ' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
+QUERY = INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
+ERROR = !conversion of string '123456     ' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('34.5');
-ERROR = invalid input syntax for integer: "34.5"
-#-- largest and smallest values
-#-- bad input values -- should give errors
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '34.5' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('1000000000000');
-ERROR = value "1000000000000" is out of range for type integer
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '1000000000000' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('asdf');
-ERROR = invalid input syntax for integer: "asdf"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string 'asdf' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('     ');
-ERROR = invalid input syntax for integer: "     "
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '     ' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('   asdf   ');
-ERROR = invalid input syntax for integer: "   asdf   "
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '   asdf   ' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('- 1234');
-ERROR = invalid input syntax for integer: "- 1234"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '- 1234' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('123       5');
-ERROR = invalid input syntax for integer: "123       5"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+ERROR = !conversion of string '123       5' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('');
-ERROR = invalid input syntax for integer: ""
-#-- positive odds
-#-- any evens
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 * integer '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 + integer '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT '' AS five, i.f1, i.f1 - integer '2' AS x FROM INT4_TBL i;
-ERROR = integer out of range
-#--
-#-- more complex expressions
-#--
-#-- variations on unary minus parsing
+ERROR = !conversion of string '' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
+QUERY = SELECT '' AS five, INT4_TBL.*;
+ERROR = !Column expression Table 'int4_tbl' unknown
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
+QUERY = SELECT 4! AS twenty_four;
+ERROR = !unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-13408/.s.monetdb.33417
+QUERY = SELECT !!3 AS six;
+ERROR = !unexpected symbol (!)
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

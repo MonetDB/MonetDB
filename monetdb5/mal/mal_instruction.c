@@ -1577,13 +1577,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		InstrPtr pn;
 		int pc = 0, pclimit;
 		int space = p->maxarg * sizeof(p->argv[0]) + sizeof(InstrRecord);
-		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
-		if (pn == NULL) {
-			freeInstruction(p);
-			return NULL;
-		}
-		memcpy((char *) pn, (char *) p, space);
-		pn->maxarg += MAXARG;
+
 		/* instructions are either created in isolation or are stored
 		 * on the program instruction stack already. In the latter
 		 * case, we may have to adjust their reference. It does not
@@ -1599,15 +1593,25 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		pclimit = mb->stop - 8;
 		pclimit = pclimit < 0 ? 0 : pclimit;
 		for (pc = mb->stop - 1; pc >= pclimit; pc--)
-			if (mb->stmt[pc] == p) {
-				mb->stmt[pc] = pn;
+			if (mb->stmt[pc] == p) 
 				break;
-			}
+
+		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
+		if (pn == NULL) {
+			freeInstruction(p);
+			return NULL;
+		}
+		memcpy((char *) pn, (char *) p, space);
+		GDKfree(p);
+		pn->maxarg += MAXARG;
 		/* we have to keep track on the maximal arguments/block
 		 * because it is needed by the interpreter */
 		if (mb->maxarg < pn->maxarg)
 			mb->maxarg = pn->maxarg;
-		GDKfree(p);
+		if( pc >= pclimit)
+			mb->stmt[pc] = pn;
+		//else 
+			// Keep it referenced from the block, assert(0);
 		p = pn;
 	}
 	p->argv[p->argc++] = varid;

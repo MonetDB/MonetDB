@@ -31,69 +31,69 @@ INSERT INTO INT4_TBL(f1) VALUES ('');
 
 SELECT '' AS five, INT4_TBL.*;
 
-SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> smallint '0';
+SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as smallint);
 
-SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> integer '0';
+SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as integer);
 
-SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = smallint '0';
+SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as smallint);
 
-SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = integer '0';
+SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as integer);
 
-SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < smallint '0';
+SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as smallint);
 
-SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < integer '0';
+SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as integer);
 
-SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= smallint '0';
+SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as smallint);
 
-SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= integer '0';
+SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as integer);
 
-SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > smallint '0';
+SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as smallint);
 
-SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > integer '0';
+SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as integer);
 
-SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= smallint '0';
+SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as smallint);
 
-SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= integer '0';
+SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as integer);
 
 -- positive odds
-SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % smallint '2') = smallint '1';
+SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
 
 -- any evens
-SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % integer '2') = smallint '0';
+SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
 
-SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 * smallint '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i
 WHERE abs(f1) < 1073741824;
 
-SELECT '' AS five, i.f1, i.f1 * integer '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 * integer '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i
 WHERE abs(f1) < 1073741824;
 
-SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 + smallint '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i
 WHERE f1 < 2147483646;
 
-SELECT '' AS five, i.f1, i.f1 + integer '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 + integer '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i
 WHERE f1 < 2147483646;
 
-SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 - smallint '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i
 WHERE f1 > -2147483647;
 
-SELECT '' AS five, i.f1, i.f1 - integer '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 - integer '2' AS x FROM INT4_TBL i
+SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i
 WHERE f1 > -2147483647;
 
-SELECT '' AS five, i.f1, i.f1 / smallint '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT4_TBL i;
 
-SELECT '' AS five, i.f1, i.f1 / integer '2' AS x FROM INT4_TBL i;
+SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT4_TBL i;
 
 --
 -- more complex expressions
@@ -108,13 +108,13 @@ SELECT 2- -1 AS three;
 
 SELECT 2 - -2 AS four;
 
-SELECT smallint '2' * smallint '2' = smallint '16' / smallint '4' AS true;
+SELECT cast('2' as smallint) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as smallint) AS "true";
 
-SELECT integer '2' * smallint '2' = smallint '16' / integer '4' AS true;
+SELECT cast('2' as integer) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as integer) AS "true";
 
-SELECT smallint '2' * integer '2' = integer '16' / smallint '4' AS true;
+SELECT cast('2' as smallint) * cast('2' as integer) = cast('16' as integer) / cast('4' as smallint) AS "true";
 
-SELECT integer '1000' < integer '999' AS false;
+SELECT cast('1000' as integer)  < cast('999' as integer) AS "false";
 
 SELECT 4! AS twenty_four;
 
@@ -125,3 +125,5 @@ SELECT 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 AS ten;
 SELECT 2 + 2 / 2 AS three;
 
 SELECT (2 + 2) / 2 AS two;
+
+-- cleanup created table INT4_DBL is done in numerology.sql
