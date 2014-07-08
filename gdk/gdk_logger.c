@@ -1440,9 +1440,18 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 				fclose(fp1);
 				/* first create a versioned file using
 				 * the current log id */
-				fp1 = fopen(cvfile, "w");
-				fprintf(fp1, "%d\n", curid);
-				fclose(fp1);
+				if ((fp1 = fopen(cvfile, "w")) == NULL ||
+				    fprintf(fp1, "%d\n", curid) < 2 ||
+				    fflush(fp1) != 0 || /* make sure it's save on disk */
+#if defined(_MSC_VER)
+				    _commit(_fileno(fp1)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+				    fdatasync(fileno(fp1)) < 0 ||
+#elif defined(HAVE_FSYNC)
+				    fsync(fileno(fp1)) < 0 ||
+#endif
+				    fclose(fp1) != 0)
+					logger_fatal("Logger_new: failed to write %s\n", cvfile, 0, 0);
 				/* then remove the unversioned file
 				 * that gdk_bbp created (in this
 				 * order!) */
