@@ -258,10 +258,11 @@ la_bat_clear(logger *lg, logaction *la)
 static int
 log_read_seq(logger *lg, logformat *l)
 {
-	lng seq = l->nr;
+	int seq = (int) l->nr;
 	lng val;
 	BUN p;
 
+	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->log, &val) != 1) {
 		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
 		return LOG_ERR;
@@ -1474,28 +1475,37 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 					curid = -1; /* shouldn't happen? */
 				fseek(fp, off, SEEK_SET);
 
-				if ((fp1 = fopen(bak, "r")) != NULL) {
-					/* file indicating that we need to do
-					 * a 32->64 bit OID conversion exists;
-					 * record the fact in case we get
-					 * interrupted, and set the flag so
-					 * that we actually do what's asked */
-					fclose(fp1);
-					/* first create a versioned file using
-					 * the current log id */
-					fp1 = fopen(cvfile, "w");
-					fprintf(fp1, "%d\n", curid);
-					fclose(fp1);
-					/* then remove the unversioned file
-					 * that gdk_bbp created (in this
-					 * order!) */
-					unlink(bak);
-					/* set the flag that we need to convert */
-					lg->read32bitoid = 1;
-				} else if ((fp1 = fopen(cvfile, "r")) != NULL) {
-					/* the versioned conversion file
-					 * exists: check version */
-					int newid;
+			if ((fp1 = fopen(bak, "r")) != NULL) {
+				/* file indicating that we need to do
+				 * a 32->64 bit OID conversion exists;
+				 * record the fact in case we get
+				 * interrupted, and set the flag so
+				 * that we actually do what's asked */
+				fclose(fp1);
+				/* first create a versioned file using
+				 * the current log id */
+				if ((fp1 = fopen(cvfile, "w")) == NULL ||
+				    fprintf(fp1, "%d\n", curid) < 2 ||
+				    fflush(fp1) != 0 || /* make sure it's save on disk */
+#if defined(_MSC_VER)
+				    _commit(_fileno(fp1)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+				    fdatasync(fileno(fp1)) < 0 ||
+#elif defined(HAVE_FSYNC)
+				    fsync(fileno(fp1)) < 0 ||
+#endif
+				    fclose(fp1) != 0)
+					logger_fatal("Logger_new: failed to write %s\n", cvfile, 0, 0);
+				/* then remove the unversioned file
+				 * that gdk_bbp created (in this
+				 * order!) */
+				unlink(bak);
+				/* set the flag that we need to convert */
+				lg->read32bitoid = 1;
+			} else if ((fp1 = fopen(cvfile, "r")) != NULL) {
+				/* the versioned conversion file
+				 * exists: check version */
+				int newid;
 
 					if (fscanf(fp1, "%d", &newid) == 1 &&
 						newid == curid) {
