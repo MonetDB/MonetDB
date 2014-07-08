@@ -260,10 +260,11 @@ la_bat_clear(logger *lg, logaction *la)
 static int
 log_read_seq(logger *lg, logformat *l)
 {
-	lng seq = l->nr;
+	int seq = (int) l->nr;
 	lng val;
 	BUN p;
 
+	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->log, &val) != 1) {
 		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
 		return LOG_ERR;
