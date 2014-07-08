@@ -49,6 +49,8 @@ int keep_persisted_log_files = 0;
 int create_shared_logger = 0;
 int shared_drift_threshold = -1;
 
+backend_stack backend_stk;
+
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
@@ -57,6 +59,7 @@ logger_functions shared_logger_funcs;
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
 static int bs_debug = 0;
+static int logger_debug = 0;
 
 #define MAX_SPARES 32
 static sql_trans *spare_trans[MAX_SPARES];
@@ -1294,68 +1297,21 @@ store_schema_number(void)
 	return schema_number;
 }
 
-int
-store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
-{
-	sqlid id = 0;
-	lng lng_store_oid;
+static int
+store_load() {
 	int first = 1;
-	sql_schema *s, *p = NULL;
-	sql_table *t, *types, *funcs, *args;
-	sql_trans *tr;
-	int v = 1;
+
 	sql_allocator *sa;
+	sql_trans *tr;
+	sql_table *t, *types, *funcs, *args;
+	sql_schema *s, *p = NULL;
 
-	bs_debug = debug&2;
-	/* get the set shared_drift_threshold
-	 * we will need it later in store_manager */
-	shared_drift_threshold = log_settings->shared_drift_threshold;
-	/* get the set shared_drift_threshold
-	 * we will need it later when calling logger_cleanup */
-	keep_persisted_log_files = log_settings->keep_persisted_log_files;
-
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
-#endif
-	MT_lock_set(&bs_lock, "store_init");
-
-	/* check if all parameters for a shared log are set */
-	if (readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
-		create_shared_logger = 1;
-	}
-
-	/* initialize empty bats */
-	if (store == store_bat) 
-		bat_utils_init();
-	if (store == store_bat) {
-		bat_storage_init(&store_funcs);
-		bat_table_init(&table_funcs);
-		bat_logger_init(&logger_funcs);
-		if (create_shared_logger) {
-			bat_logger_init_shared(&shared_logger_funcs);
-		}
-	}
-	active_store_type = store;
-	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v) == LOG_ERR) {
-		MT_lock_unset(&bs_lock, "store_init");
-		return -1;
-	}
-
-	if (create_shared_logger) {
-		/* create a read-only logger for the shared directory */
-#ifdef STORE_DEBUG
-	fprintf(stderr, "#store_init creating shared logger\n");
-#endif
-		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
-			MT_lock_unset(&bs_lock, "store_init");
-			return -1;
-		}
-	}
+	lng lng_store_oid;
+	sqlid id = 0;
 
 	sa = sa_create();
-	MT_lock_unset(&bs_lock, "store_init");
-	types_init(sa, debug);
+	MT_lock_unset(&bs_lock, "store_load");
+	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
 	assert( store_oid <= FUNC_OIDS );
@@ -1363,286 +1319,24 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	store_oid = FUNC_OIDS;
 
 	sequences_init();
-	gtrans = tr = create_trans(sa, stk);
-	active_transactions = sa_list(sa); 
-
-	store_readonly = readonly;
-	store_singleuser = singleuser;
+	gtrans = tr = create_trans(sa, backend_stk);
+	active_transactions = sa_list(sa);
 
 	if (logger_funcs.log_isnew()) {
 		/* cannot initialize database in readonly mode
 		 * unless this is a slave instance with a read-only/shared logger */
-		if (readonly && !create_shared_logger) {
+		if (store_readonly && !create_shared_logger) {
 			return -1;
 		}
-		tr = sql_trans_create(stk, NULL, NULL);
+		tr = sql_trans_create(backend_stk, NULL, NULL);
 	} else {
 		first = 0;
 	}
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
-	if (!first) 
+	if (!first) {
 		s->base.flag = TR_OLD;
-
-	t = bootstrap_create_table(tr, s, "schemas");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "name", "varchar", 1024);
-	bootstrap_create_column(tr, t, "authorization", "int", 32);
-	bootstrap_create_column(tr, t, "owner", "int", 32);
-	bootstrap_create_column(tr, t, "system", "boolean", 1);
-
-	types = t = bootstrap_create_table(tr, s, "types");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "systemname", "varchar", 256);
-	bootstrap_create_column(tr, t, "sqlname", "varchar", 1024);
-	bootstrap_create_column(tr, t, "digits", "int", 32);
-	bootstrap_create_column(tr, t, "scale", "int", 32);
-	bootstrap_create_column(tr, t, "radix", "int", 32);
-	bootstrap_create_column(tr, t, "eclass", "int", 32);
-	bootstrap_create_column(tr, t, "schema_id", "int", 32);
-
-	funcs = t = bootstrap_create_table(tr, s, "functions");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "name", "varchar", 256);
-	bootstrap_create_column(tr, t, "func", "varchar", 8196);
-	bootstrap_create_column(tr, t, "mod", "varchar", 8196);
-	/* sql or database internal */
-	bootstrap_create_column(tr, t, "sql", "boolean", 1);
-	/* func, proc, aggr or filter */
-	bootstrap_create_column(tr, t, "type", "int", 32);
-	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
-	bootstrap_create_column(tr, t, "varres", "boolean", 1);
-	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
-	bootstrap_create_column(tr, t, "schema_id", "int", 32);
-
-	args = t = bootstrap_create_table(tr, s, "args");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "func_id", "int", 32);
-	bootstrap_create_column(tr, t, "name", "varchar", 256);
-	bootstrap_create_column(tr, t, "type", "varchar", 1024);
-	bootstrap_create_column(tr, t, "type_digits", "int", 32);
-	bootstrap_create_column(tr, t, "type_scale", "int", 32);
-	bootstrap_create_column(tr, t, "inout", "tinyint", 8);
-	bootstrap_create_column(tr, t, "number", "int", 32);
-
-	t = bootstrap_create_table(tr, s, "sequences");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "schema_id", "int", 32);
-	bootstrap_create_column(tr, t, "name", "varchar", 256);
-	bootstrap_create_column(tr, t, "start", "bigint", 64);
-	bootstrap_create_column(tr, t, "minvalue", "bigint", 64);
-	bootstrap_create_column(tr, t, "maxvalue", "bigint", 64);
-	bootstrap_create_column(tr, t, "increment", "bigint", 64);
-	bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
-	bootstrap_create_column(tr, t, "cycle", "boolean", 1);
-
-	t = bootstrap_create_table(tr, s, "dependencies");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "depend_id", "int", 32);
-	bootstrap_create_column(tr, t, "depend_type", "smallint", 16);
-
-	t = bootstrap_create_table(tr, s, "connections");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "server", "char", 1024);
-	bootstrap_create_column(tr, t, "port", "int", 32);
-	bootstrap_create_column(tr, t, "db", "char", 64);
-	bootstrap_create_column(tr, t, "db_alias", "char", 1024);
-	bootstrap_create_column(tr, t, "user", "char", 1024);
-	bootstrap_create_column(tr, t, "password", "char", 1024);
-	bootstrap_create_column(tr, t, "language", "char", 1024);
-
-	while(s) {
-		t = bootstrap_create_table(tr, s, "_tables");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "schema_id", "int", 32);
-		bootstrap_create_column(tr, t, "query", "varchar", 2048);
-		bootstrap_create_column(tr, t, "type", "smallint", 16);
-		bootstrap_create_column(tr, t, "system", "boolean", 1);
-		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
-		bootstrap_create_column(tr, t, "readonly", "boolean", 1);
-
-		t = bootstrap_create_table(tr, s, "_columns");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "type", "varchar", 1024);
-		bootstrap_create_column(tr, t, "type_digits", "int", 32);
-		bootstrap_create_column(tr, t, "type_scale", "int", 32);
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "default", "varchar", 2048);
-		bootstrap_create_column(tr, t, "null", "boolean", 1);
-		bootstrap_create_column(tr, t, "number", "int", 32);
-		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
-
-		t = bootstrap_create_table(tr, s, "keys");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "type", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "rkey", "int", 32);
-		bootstrap_create_column(tr, t, "action", "int", 32);
-
-		t = bootstrap_create_table(tr, s, "idxs");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "type", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-
-		t = bootstrap_create_table(tr, s, "triggers");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "time", "smallint", 16);
-		bootstrap_create_column(tr, t, "orientation", "smallint", 16);
-		bootstrap_create_column(tr, t, "event", "smallint", 16);
-		bootstrap_create_column(tr, t, "old_name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "new_name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "condition", "varchar", 2048);
-		bootstrap_create_column(tr, t, "statement", "varchar", 2048);
-
-		t = bootstrap_create_table(tr, s, "objects");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "nr", "int", 32);
-
-		if (!p) {
-			p = s; 
-
-			/* now the same tables for temporaries */
-			s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN, USER_MONETDB);
-		} else {
-			s = NULL;
-		}
 	}
-
-	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
-
-	if (first) {
-		insert_types(tr, types);
-		insert_functions(tr, funcs, args);
-		insert_aggrs(tr, funcs, args);
-		insert_schemas(tr);
-
-		if (sql_trans_commit(tr) != SQL_OK)
-			fprintf(stderr, "cannot commit initial transaction\n");
-		sql_trans_destroy(tr);
-	}
-
-	id = store_oid; /* db objects up till id are already created */
-	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
-	prev_oid = store_oid = (sqlid)lng_store_oid;
-
-	/* load remaining schemas, tables, columns etc */
-	if (!first)
-		load_trans(gtrans, id);
-	return first;
-}
-
-static int logging = 0;
-
-void
-store_exit(void)
-{
-	MT_lock_set(&bs_lock, "store_exit");
-
-#ifdef STORE_DEBUG
-	fprintf(stderr, "#store exit locked\n");
-#endif
-	/* busy wait till the logmanager is ready */
-	while (logging) {
-		MT_lock_unset(&bs_lock, "store_exit");
-		MT_sleep_ms(100);
-		MT_lock_set(&bs_lock, "store_exit");
-	}
-
-	if (gtrans) {
-		MT_lock_unset(&bs_lock, "store_exit");
-		sequences_exit();
-		MT_lock_set(&bs_lock, "store_exit");
-	}
-	if (spares > 0) 
-		destroy_spare_transactions();
-
-	logger_funcs.destroy();
-	if (create_shared_logger) {
-		shared_logger_funcs.destroy();
-	}
-
-	/* Open transactions have a link to the global transaction therefore
-	   we need busy waiting until all transactions have ended or
-	   (current implementation) simply keep the gtrans alive and simply
-	   exit (but leak memory).
-	 */ 
-	if (!transactions) { 
-		sql_trans_destroy(gtrans);
-		gtrans = NULL;
-	}
-#ifdef STORE_DEBUG
-	fprintf(stderr, "#store exit unlocked\n");
-#endif
-	MT_lock_unset(&bs_lock, "store_exit");
-}
-
-/* call locked ! */
-void
-store_apply_deltas(void)
-{
-	int res = LOG_OK;
-
-	logging = 1;
-	/* make sure we reset all transactions on re-activation */
-	gtrans->wstime = timestamp();
-	if (store_funcs.gtrans_update)
-		store_funcs.gtrans_update(gtrans);
-	res = logger_funcs.restart();
-	if (logging && res == LOG_OK)
-		res = logger_funcs.cleanup(keep_persisted_log_files);
-	logging = 0;
-}
-
-static void
-store_load(backend_stack stk) {
-	lng lng_store_oid;
-	sqlid id = 0;
-
-	int first = 1;
-	sql_schema *s, *p = NULL;
-	sql_table *t, *types, *funcs, *args;
-	sql_trans *tr;
-	sql_allocator *sa;
-
-	/* destroy all global transactions
-	 * we will re-load the new */
-	sql_trans_destroy(gtrans);
-	destroy_spare_transactions();
-
-	sa = sa_create();
-	types_init(sa, 1);
-
-#define FUNC_OIDS 2000
-//	assert( store_oid <= FUNC_OIDS );
-	/* we store some spare oids */
-	store_oid = FUNC_OIDS;
-
-	sequences_init();
-	gtrans = tr = create_trans(sa, stk);
-	active_transactions = sa_list(sa);
-
-	fprintf(stderr, "################# store_load\n");
-
-	if (shared_logger_funcs.log_isnew()) {
-		fprintf(stderr, "################# sql_trans_create\n");
-		tr = sql_trans_create(stk, NULL, NULL);
-	} else {
-		first = 0;
-	}
-
-	fprintf(stderr, "################# first=%d\n", first);
-
-
-	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
-	if (!first)
-		s->base.flag = TR_OLD;
 
 	t = bootstrap_create_table(tr, s, "schemas");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1767,7 +1461,6 @@ store_load(backend_stack stk) {
 
 		if (!p) {
 			p = s;
-
 			/* now the same tables for temporaries */
 			s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN, USER_MONETDB);
 		} else {
@@ -1783,8 +1476,9 @@ store_load(backend_stack stk) {
 		insert_aggrs(tr, funcs, args);
 		insert_schemas(tr);
 
-		if (sql_trans_commit(tr) != SQL_OK)
+		if (sql_trans_commit(tr) != SQL_OK) {
 			fprintf(stderr, "cannot commit initial transaction\n");
+		}
 		sql_trans_destroy(tr);
 	}
 
@@ -1797,9 +1491,131 @@ store_load(backend_stack stk) {
 	prev_oid = store_oid = (sqlid)lng_store_oid;
 
 	/* load remaining schemas, tables, columns etc */
-//	if (!first)
+	if (!first)
 		load_trans(gtrans, id);
-	return;
+	return first;
+}
+
+int
+store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
+{
+	int v = 1;
+
+	backend_stk = stk;
+	logger_debug = debug;
+	bs_debug = debug&2;
+	store_readonly = readonly;
+	store_singleuser = singleuser;
+	/* get the set shared_drift_threshold
+	 * we will need it later in store_manager */
+	shared_drift_threshold = log_settings->shared_drift_threshold;
+	/* get the set shared_drift_threshold
+	 * we will need it later when calling logger_cleanup */
+	keep_persisted_log_files = log_settings->keep_persisted_log_files;
+
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&bs_lock, "SQL_bs_lock");
+#endif
+	MT_lock_set(&bs_lock, "store_init");
+
+	/* check if all parameters for a shared log are set */
+	if (store_readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+		create_shared_logger = 1;
+	}
+
+	/* initialize empty bats */
+	if (store == store_bat)
+		bat_utils_init();
+	if (store == store_bat) {
+		bat_storage_init(&store_funcs);
+		bat_table_init(&table_funcs);
+		bat_logger_init(&logger_funcs);
+		if (create_shared_logger) {
+			bat_logger_init_shared(&shared_logger_funcs);
+		}
+	}
+	active_store_type = store;
+	if (!logger_funcs.create ||
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v) == LOG_ERR) {
+		MT_lock_unset(&bs_lock, "store_init");
+		return -1;
+	}
+
+	if (create_shared_logger) {
+		/* create a read-only logger for the shared directory */
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store_init creating shared logger\n");
+#endif
+		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
+			MT_lock_unset(&bs_lock, "store_init");
+			return -1;
+		}
+	}
+
+	/* create the initial store structure or re-load previous data */
+	return store_load();
+}
+
+static int logging = 0;
+
+void
+store_exit(void)
+{
+	MT_lock_set(&bs_lock, "store_exit");
+
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store exit locked\n");
+#endif
+	/* busy wait till the logmanager is ready */
+	while (logging) {
+		MT_lock_unset(&bs_lock, "store_exit");
+		MT_sleep_ms(100);
+		MT_lock_set(&bs_lock, "store_exit");
+	}
+
+	if (gtrans) {
+		MT_lock_unset(&bs_lock, "store_exit");
+		sequences_exit();
+		MT_lock_set(&bs_lock, "store_exit");
+	}
+	if (spares > 0)
+		destroy_spare_transactions();
+
+	logger_funcs.destroy();
+	if (create_shared_logger) {
+		shared_logger_funcs.destroy();
+	}
+
+	/* Open transactions have a link to the global transaction therefore
+	   we need busy waiting until all transactions have ended or
+	   (current implementation) simply keep the gtrans alive and simply
+	   exit (but leak memory).
+	 */
+	if (!transactions) {
+		sql_trans_destroy(gtrans);
+		gtrans = NULL;
+	}
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store exit unlocked\n");
+#endif
+	MT_lock_unset(&bs_lock, "store_exit");
+}
+
+/* call locked ! */
+void
+store_apply_deltas(void)
+{
+	int res = LOG_OK;
+
+	logging = 1;
+	/* make sure we reset all transactions on re-activation */
+	gtrans->wstime = timestamp();
+	if (store_funcs.gtrans_update)
+		store_funcs.gtrans_update(gtrans);
+	res = logger_funcs.restart();
+	if (logging && res == LOG_OK)
+		res = logger_funcs.cleanup(keep_persisted_log_files);
+	logging = 0;
 }
 
 void
@@ -1841,22 +1657,34 @@ store_manager(void)
 				MT_lock_unset(&bs_lock, "store_manager");
 				GDKfatal("shared write-ahead log loading failure");
 			}
-			MT_lock_unset(&bs_lock, "store_manager");
-			store_load(0);
+			/* destroy all global transactions
+			 * we will re-load the new later */
+			sql_trans_destroy(gtrans);
+			destroy_spare_transactions();
+
+			/* re-set the store_oid */
+			store_oid = 0;
+			/* reload the store and the global transactions */
+			res = store_load();
+			if (res < 0) {
+				MT_lock_unset(&bs_lock, "store_manager");
+				GDKfatal("shared write-ahead log store re-load failure");
+			}
+			MT_lock_set(&bs_lock, "store_manager");
 		}
 
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
 		if (store_funcs.gtrans_update) {
-			fprintf(stderr, "#store_manager gtrans_update\n");
 			store_funcs.gtrans_update(gtrans);
 		}
-		fprintf(stderr, "#store_manager restart\n");
 		res = logger_funcs.restart();
+
 		MT_lock_unset(&bs_lock, "store_manager");
-		if (logging && res == LOG_OK)
+		if (logging && res == LOG_OK) {
 			res = logger_funcs.cleanup(keep_persisted_log_files);
+		}
 
 		MT_lock_set(&bs_lock, "store_manager");
 		logging = 0;
