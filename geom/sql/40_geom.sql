@@ -331,7 +331,7 @@ CREATE FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) RETURNS boolean EX
 --CREATE FUNCTION ST_Intersects(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."Intersects";
 CREATE FUNCTION ST_Length(geom Geometry) RETURNS double EXTERNAL NAME geom."Length";
 --CREATE FUNCTION ST_Length(geog Geography, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Length";
---CREATE FUNCTION ST_Length2D RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Length";
 --CREATE FUNCTION ST_3DLength RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Length_Spheroid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Length2D_Spheroid RETURNS EXTERNAL NAME

@@ -1178,8 +1178,6 @@ str wkbGeometryType(char** out, wkb** geomWKB, int* flag) {
 }
 
 /* returns the number of dimensions of the geometry */
-/* geos does not know the number of dimensions as long as a wkb has been created 
- * more precisely it descards all dimensions but x and y*/
 str wkbCoordDim(int *out, wkb **geom) {
 	return wkbBasicInt(out, *geom, GEOSGeom_getCoordinateDimension, "geom.CoordDim");
 }
