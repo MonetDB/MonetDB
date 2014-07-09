@@ -29,6 +29,53 @@ stderr of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- TIMESTAMP
+#--
+#-- needed so tests pass even in Australia
+#-- Shorthand values
+#-- Not directly usable for regression testing since these are not constants.
+#-- So, just try to test parser and hope for the best - thomas 97/04/26
+#-- NB: could get a failure if local midnight passes during the next few
+#-- statements.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('current');
+ERROR = date/time value "current" is no longer supported
+#-- verify uniform transaction time within transaction block
+#-- Special values
+#-- Obsolete special values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('invalid');
+ERROR = date/time value "invalid" is no longer supported
+#-- Postgres v6.0 standard output format
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Invalid Abstime');
+ERROR = date/time value "Invalid Abstime" is no longer supported
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Undefined Abstime');
+ERROR = date/time value "Undefined Abstime" is no longer supported
+#-- Variations on Postgres v6.1 standard output format
+#-- ISO 8601 format
+#-- POSIX format
+#-- Variations for acceptable input formats
+#-- Check date conversion and date arithmetic
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Feb 29 17:32:01 1997');
+ERROR = date/time field value out of range: "Feb 29 17:32:01 1997"
+#-- Currently unsupported syntax and ranges
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 -0097');
+ERROR = time zone displacement out of range: "Feb 16 17:32:01 -0097"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 5097 BC');
+ERROR = timestamp out of range: "Feb 16 17:32:01 5097 BC"
+#-- Demonstrate functions and operators
+#-- Test casting within a BETWEEN qualifier
+#-- TO_CHAR()
+#-- TO_TIMESTAMP()
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS to_timestamp_9, to_timestamp('97/Feb/16', 'YYMonDD');
+ERROR = invalid value for MON/Mon/mon
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

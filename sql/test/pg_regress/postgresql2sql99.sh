@@ -20,11 +20,33 @@
 # converts PostgreSQL specific SQL into SQL99 equivalent (if possible)
 
 sed -r \
-	-e 's/\bint8\b/bigint/ig' \
-	-e 's/\bint4\b/integer/ig' \
+	-e 's/\bAS true/AS "true"/ig' \
+	-e 's/\bAS false/AS "false"/ig' \
+	-e 's/\bIS TRUE/= TRUE/ig' \
+	-e 's/\bIS FALSE/= FALSE/ig' \
+	-e 's/\bIS NOT TRUE/= NOT TRUE/ig' \
+	-e 's/\bIS NOT FALSE/= NOT FALSE/ig' \
+	-e 's/\bbool '*'\b/cast('\1' as boolean)/ig' \
+	-e 's/\char 'c'/cast('c' as char)/ig' \
+	-e 's/\bint2 '0'/cast('0' as smallint)/ig' \
+	-e 's/\bint2 '1'/cast('1' as smallint)/ig' \
+	-e 's/\bint2 '2'/cast('2' as smallint)/ig' \
+	-e 's/\bint2 '4'/cast('4' as smallint)/ig' \
+	-e 's/\bint2 '16'/cast('16' as smallint)/ig' \
+	-e 's/\bint4 '0'/cast('0' as integer)/ig' \
+	-e 's/\bint4 '1'/cast('1' as integer)/ig' \
+	-e 's/\bint4 '2'/cast('2' as integer)/ig' \
+	-e 's/\bint4 '4'/cast('4' as integer)/ig' \
+	-e 's/\bint4 '16'/cast('16' as integer)/ig' \
+	-e 's/\bint4 '999'/cast('999' as integer)/ig' \
+	-e 's/\bint4 '1000'/cast('1000' as integer)/ig' \
+	-e 's/\bint8 '0'/cast('0' as bigint)/ig' \
 	-e 's/\bint2\b/smallint/ig' \
-	-e 's/\bfloat4\b/float/ig' \
+	-e 's/\bint4\b/integer/ig' \
+	-e 's/\bint8\b/bigint/ig' \
+	-e 's/\bfloat4\b/real/ig' \
 	-e 's/\bfloat8\b/double/ig' \
+	-e 's/\bfloat8 (*)/cast(\1 as double)/ig' \
 	-e 's/\bpath\b/string/ig' \
 	-e 's/\bpoint\b/string/ig' \
 	-e 's/\bbox\b/string/ig' \
@@ -35,11 +57,13 @@ sed -r \
 	-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/ig' \
 	-e 's/BEGIN;/START TRANSACTION;/ig' \
 	-e 's/END;/COMMIT;/ig' \
-	-e 's/COMMENT.*;//ig' \
-	-e '/CREATE TABLE.*INHERITS.*;/s/INHERITS (.*)//' \
-	-e 's/\) INHERITS.*;/\);/ig' \
+	-e 's/^COMMENT.*;$//ig' \
+	-e 's/\) (INHERITS.*);/\); -- \1/ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
 	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/ig' \
+	-e 's/\s+([^\s]+)::float4\b/ cast(\1 as real)/ig' \
+	-e 's/\s+([^\s]+)::float8\b/ cast(\1 as double)/ig' \
+	-e 's/\s+([^\s]+)::text\b/ cast(\1 as string)/ig' \
 	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/ig'

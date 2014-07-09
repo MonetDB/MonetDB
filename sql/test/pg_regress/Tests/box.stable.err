@@ -29,6 +29,47 @@ stderr of test 'box` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- string
+#--
+#--
+#-- string logic
+#--	     o
+#-- 3	  o--|X
+#--	  |  o|
+#-- 2	+-+-+ |
+#--	| | | |
+#-- 1	| o-+-o
+#--	|   |
+#-- 0	+---+
+#--
+#--	0 1 2 3
+#--
+#-- boxes are specified by two points, given by four floats x1,y1,x2,y2
+#-- degenerate cases where the string is a line or a string 
+#-- note that lines and points boxes all have zero area 
+#-- badly formatted string inputs 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO BOX_TBL (f1) VALUES ('(2.3, 4.5)');
+ERROR = invalid input syntax for type string: "(2.3, 4.5)"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO BOX_TBL (f1) VALUES ('asdfasdf(ad');
+ERROR = invalid input syntax for type string: "asdfasdf(ad"
+#-- overlap 
+#-- left-or-overlap (x only) 
+#-- right-or-overlap (x only) 
+#-- left of 
+#-- area <= 
+#-- area < 
+#-- area = 
+#-- area > 
+#-- area >= 
+#-- right of 
+#-- contained in 
+#-- contains 
+#-- string equality 
+#-- center of string, left unary operator 
+#-- wholly-contained 
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

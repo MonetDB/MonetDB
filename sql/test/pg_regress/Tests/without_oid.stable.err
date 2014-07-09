@@ -29,6 +29,26 @@ stderr of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- WITHOUT OID
+#--
+#--
+#-- This test tries to verify that WITHOUT OIDS actually saves space.
+#-- On machines where MAXALIGN is 8, WITHOUT OIDS may or may not save any
+#-- space, depending on the size of the tuple header + null bitmap.
+#-- As of 8.0 we need a 9-bit null bitmap to force the difference to appear.
+#--
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(oid) FROM wo;
+ERROR = column "oid" does not exist
+#--
+#-- WITH / WITHOUT OIDS in CREATE TABLE AS
+#--
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(oid) FROM create_table_test3;
+ERROR = column "oid" does not exist
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

@@ -477,7 +477,7 @@ case "$host_os" in
 	if test -s /etc/os-release; then
 		# this is the new way of getting release information
 		# works for Fedora >= 17, Ubuntu >= 12.04 (Precise Pangolin)
-		LINUX_DIST=`source /etc/os-release; echo ${NAME}:${VERSION_ID}`
+		LINUX_DIST=`source /etc/os-release; echo ${ID}:${VERSION_ID}`
 	elif test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
 			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
@@ -2197,7 +2197,7 @@ org_have_sphinxclient="auto"
 have_sphinxclient=$org_have_sphinxclient
 AC_ARG_WITH(sphinxclient,
     AS_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
-    [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
+    [have_sphinxclient="$withval"])
 if test "x$have_sphinxclient" != xno; then
 	case "$have_sphinxclient" in
 	auto|yes)
@@ -2328,7 +2328,7 @@ org_have_mseed="auto"
 have_mseed=$org_have_mseed
 AC_ARG_WITH(mseed,
     AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
-    [have_mseed="$withval"], [have_mseed="auto"])
+    [have_mseed="$withval"])
 if test "x$have_mseed" != xno; then
 
 	case "$have_mseed" in
@@ -2888,6 +2888,7 @@ AC_CHECK_FUNCS([\
 				pipe \
 				popen \
 				posix_fadvise \
+				posix_fallocate \
 				posix_madvise \
 				putenv \
 				round \

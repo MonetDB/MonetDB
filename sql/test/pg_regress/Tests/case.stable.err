@@ -29,6 +29,31 @@ stderr of test 'case` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- CASE
+#-- Test the case statement
+#--
+#--
+#-- Simplest examples without tables
+#--
+#-- Test for cases involving untyped literals in test expression
+#--
+#-- Examples of targets involving tables
+#--
+#--
+#-- Examples of qualifications involving tables
+#--
+#--
+#-- NULLIF() and COALESCE()
+#-- Shorthand forms for typical CASE constructs
+#--  defined in the SQL92 standard.
+#--
+#--
+#-- Examples of updates involving tables
+#--
+#--
+#-- Clean up
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

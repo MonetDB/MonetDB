@@ -26,450 +26,310 @@ Ready.
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 
---
--- ERRORS
---
--- bad in postquel, but ok in postsql
-select 1;
- ?column? 
-----------
-        1
-(1 row)
+#--
+#-- ERRORS
+#--
+#-- bad in postquel, but ok in postsql
+#select 1;
+% sys.L0 # table_name
+% ?column? # name
+% ? # type
+% ? # length
+[ 1 ]
 
---
--- UNSUPPORTED STUFF
+#--
+#-- UNSUPPORTED STUFF
  
--- doesn't work 
--- attachas nonesuch
---
--- doesn't work 
--- notify pg_class
---
---
--- SELECT
+#-- doesn't work 
+#-- attachas nonesuch
+#--
+#-- doesn't work 
+#-- notify pg_class
+#--
+#--
+#-- SELECT
  
--- missing relation name 
-select;
-ERROR:  syntax error at or near ";" at character 7
+#-- missing relation name 
+#
 LINE 1: select;
               ^
--- no such relation 
-select * from nonesuch;
-ERROR:  relation "nonesuch" does not exist
--- missing target list
-select from pg_database;
-ERROR:  syntax error at or near "from" at character 8
+#-- no such relation 
+#
+#-- missing target list
+#
 LINE 1: select from pg_database;
                ^
--- bad name in target list
-select nonesuch from pg_database;
-ERROR:  column "nonesuch" does not exist
--- bad attribute name on lhs of operator
-select * from pg_database where nonesuch = pg_database.datname;
-ERROR:  column "nonesuch" does not exist
--- bad attribute name on rhs of operator
-select * from pg_database where pg_database.datname = nonesuch;
-ERROR:  column "nonesuch" does not exist
--- bad select distinct on syntax, distinct attribute missing
-select distinct on (foobar) from pg_database;
-ERROR:  syntax error at or near "from" at character 29
+#-- bad name in target list
+#
+#-- bad attribute name on lhs of operator
+#
+#-- bad attribute name on rhs of operator
+#
+#-- bad select distinct on syntax, distinct attribute missing
+#
 LINE 1: select distinct on (foobar) from pg_database;
                                     ^
--- bad select distinct on syntax, distinct attribute not in target list
-select distinct on (foobar) * from pg_database;
-ERROR:  column "foobar" does not exist
---
--- DELETE
+#-- bad select distinct on syntax, distinct attribute not in target list
+#
+#--
+#-- DELETE
  
--- missing relation name (this had better not wildcard!) 
+#-- missing relation name (this had better not wildcard!) 
 delete from;
 ERROR:  syntax error at or near ";" at character 12
 LINE 1: delete from;
                    ^
--- no such relation 
+#-- no such relation 
 delete from nonesuch;
 ERROR:  relation "nonesuch" does not exist
---
--- DROP
+#--
+#-- DROP
  
--- missing relation name (this had better not wildcard!) 
-drop table;
-ERROR:  syntax error at or near ";" at character 11
+#-- missing relation name (this had better not wildcard!) 
+#
 LINE 1: drop table;
                   ^
--- no such relation 
-drop table nonesuch;
-ERROR:  table "nonesuch" does not exist
---
--- ALTER TABLE
+#-- no such relation 
+#
+#--
+#-- ALTER TABLE
  
--- relation renaming 
--- missing relation name 
-alter table rename;
-ERROR:  syntax error at or near ";" at character 19
+#-- relation renaming 
+#-- missing relation name 
+#
 LINE 1: alter table rename;
                           ^
--- no such relation 
-alter table nonesuch rename to newnonesuch;
-ERROR:  relation "nonesuch" does not exist
--- no such relation 
-alter table nonesuch rename to stud_emp;
-ERROR:  relation "nonesuch" does not exist
--- conflict 
-alter table stud_emp rename to aggtest;
-ERROR:  relation "aggtest" already exists
--- self-conflict 
-alter table stud_emp rename to stud_emp;
-ERROR:  relation "stud_emp" already exists
--- attribute renaming 
--- no such relation 
-alter table nonesuchrel rename column nonesuchatt to newnonesuchatt;
-ERROR:  relation "nonesuchrel" does not exist
--- no such attribute 
-alter table emp rename column nonesuchatt to newnonesuchatt;
-ERROR:  column "nonesuchatt" does not exist
--- conflict 
-alter table emp rename column salary to manager;
-ERROR:  column "manager" of relation "stud_emp" already exists
--- conflict 
-alter table emp rename column salary to oid;
-ERROR:  column "oid" of relation "stud_emp" already exists
---
--- TRANSACTION STUFF
+#-- no such relation 
+#
+#-- no such relation 
+#
+#-- conflict 
+#
+#-- self-conflict 
+#
+#-- attribute renaming 
+#-- no such relation 
+#
+#-- no such attribute 
+#
+#-- conflict 
+#
+#-- conflict 
+#
+#--
+#-- TRANSACTION STUFF
  
--- not in a xact 
+#-- not in a xact 
 abort;
 WARNING:  there is no transaction in progress
--- not in a xact 
-end;
+#-- not in a xact 
+COMMIT;
 WARNING:  there is no transaction in progress
---
--- CREATE AGGREGATE
--- sfunc/finalfunc type disagreement 
-create aggregate newavg2 (sfunc = int4pl,
-			  basetype = int4,
-			  stype = int4,
-			  finalfunc = int2um,
-			  initcond = '0');
-ERROR:  function int2um(integer) does not exist
--- left out basetype
-create aggregate newcnt1 (sfunc = int4inc,
-			  stype = int4,
-			  initcond = '0');
-ERROR:  aggregate basetype must be specified
---
--- DROP INDEX
+#--
+#-- CREATE AGGREGATE
+#-- sfunc/finalfunc type disagreement 
+#
+#-- left out basetype
+#
+#--
+#-- DROP INDEX
  
--- missing index name 
-drop index;
-ERROR:  syntax error at or near ";" at character 11
+#-- missing index name 
+#
 LINE 1: drop index;
                   ^
--- bad index name 
-drop index 314159;
-ERROR:  syntax error at or near "314159" at character 12
+#-- bad index name 
+#
 LINE 1: drop index 314159;
                    ^
--- no such index 
-drop index nonesuch;
-ERROR:  index "nonesuch" does not exist
---
--- DROP AGGREGATE
+#-- no such index 
+#
+#--
+#-- DROP AGGREGATE
  
--- missing aggregate name 
-drop aggregate;
-ERROR:  syntax error at or near ";" at character 15
+#-- missing aggregate name 
+#
 LINE 1: drop aggregate;
                       ^
--- missing aggregate type
-drop aggregate newcnt1;
-ERROR:  syntax error at or near ";" at character 23
+#-- missing aggregate type
+#
 LINE 1: drop aggregate newcnt1;
                               ^
--- bad aggregate name 
-drop aggregate 314159 (int);
-ERROR:  syntax error at or near "314159" at character 16
+#-- bad aggregate name 
+#
 LINE 1: drop aggregate 314159 (int);
                        ^
--- bad aggregate type
-drop aggregate newcnt (nonesuch);
-ERROR:  type "nonesuch" does not exist
--- no such aggregate 
-drop aggregate nonesuch (int4);
-ERROR:  aggregate nonesuch(integer) does not exist
--- no such aggregate for type
-drop aggregate newcnt (float4);
-ERROR:  aggregate newcnt(real) does not exist
---
--- DROP FUNCTION
+#-- bad aggregate type
+#
+#-- no such aggregate 
+#
+#-- no such aggregate for type
+#
+#--
+#-- DROP FUNCTION
  
--- missing function name 
-drop function ();
-ERROR:  syntax error at or near "(" at character 15
+#-- missing function name 
+#
 LINE 1: drop function ();
                       ^
--- bad function name 
-drop function 314159();
-ERROR:  syntax error at or near "314159" at character 15
+#-- bad function name 
+#
 LINE 1: drop function 314159();
                       ^
--- no such function 
-drop function nonesuch();
-ERROR:  function nonesuch() does not exist
---
--- DROP TYPE
+#-- no such function 
+#
+#--
+#-- DROP TYPE
  
--- missing type name 
-drop type;
-ERROR:  syntax error at or near ";" at character 10
+#-- missing type name 
+#
 LINE 1: drop type;
                  ^
--- bad type name 
-drop type 314159;
-ERROR:  syntax error at or near "314159" at character 11
+#-- bad type name 
+#
 LINE 1: drop type 314159;
                   ^
--- no such type 
-drop type nonesuch;
-ERROR:  type "nonesuch" does not exist
---
--- DROP OPERATOR
+#-- no such type 
+#
+#--
+#-- DROP OPERATOR
  
--- missing everything 
-drop operator;
-ERROR:  syntax error at or near ";" at character 14
+#-- missing everything 
+#
 LINE 1: drop operator;
                      ^
--- bad operator name 
-drop operator equals;
-ERROR:  syntax error at or near ";" at character 21
+#-- bad operator name 
+#
 LINE 1: drop operator equals;
                             ^
--- missing type list 
-drop operator ===;
-ERROR:  syntax error at or near ";" at character 18
+#-- missing type list 
+#
 LINE 1: drop operator ===;
                          ^
--- missing parentheses 
-drop operator int4, int4;
-ERROR:  syntax error at or near "," at character 19
-LINE 1: drop operator int4, int4;
+#-- missing parentheses 
+#
+LINE 1: drop operator integer, integer;
                           ^
--- missing operator name 
-drop operator (int4, int4);
-ERROR:  syntax error at or near "(" at character 15
-LINE 1: drop operator (int4, int4);
+#-- missing operator name 
+#
+LINE 1: drop operator (integer, integer);
                       ^
--- missing type list contents 
-drop operator === ();
-ERROR:  syntax error at or near ")" at character 20
+#-- missing type list contents 
+#
 LINE 1: drop operator === ();
                            ^
--- no such operator 
-drop operator === (int4);
-ERROR:  missing argument
+#-- no such operator 
+#
 HINT:  Use NONE to denote the missing argument of a unary operator.
--- no such operator by that name 
-drop operator === (int4, int4);
-ERROR:  operator does not exist: integer === integer
--- no such type1 
-drop operator = (nonesuch);
-ERROR:  missing argument
+#-- no such operator by that name 
+#
+#-- no such type1 
+#
 HINT:  Use NONE to denote the missing argument of a unary operator.
--- no such type1 
-drop operator = ( , int4);
-ERROR:  syntax error at or near "," at character 19
-LINE 1: drop operator = ( , int4);
+#-- no such type1 
+#
+LINE 1: drop operator = ( , integer);
                           ^
--- no such type1 
-drop operator = (nonesuch, int4);
-ERROR:  type nonesuch does not exist
--- no such type2 
-drop operator = (int4, nonesuch);
-ERROR:  type nonesuch does not exist
--- no such type2 
-drop operator = (int4, );
-ERROR:  syntax error at or near ")" at character 24
-LINE 1: drop operator = (int4, );
+#-- no such type1 
+#
+#-- no such type2 
+#
+#-- no such type2 
+#
+LINE 1: drop operator = (integer, );
                                ^
---
--- DROP RULE
+#--
+#-- DROP RULE
  
--- missing rule name 
-drop rule;
-ERROR:  syntax error at or near ";" at character 10
+#-- missing rule name 
+#
 LINE 1: drop rule;
                  ^
--- bad rule name 
-drop rule 314159;
-ERROR:  syntax error at or near "314159" at character 11
+#-- bad rule name 
+#
 LINE 1: drop rule 314159;
                   ^
--- no such rule 
-drop rule nonesuch on noplace;
-ERROR:  relation "noplace" does not exist
--- these postquel variants are no longer supported
-drop tuple rule nonesuch;
-ERROR:  syntax error at or near "tuple" at character 6
+#-- no such rule 
+#
+#-- these postquel variants are no longer supported
+#
 LINE 1: drop tuple rule nonesuch;
              ^
-drop instance rule nonesuch on noplace;
-ERROR:  syntax error at or near "instance" at character 6
+#
 LINE 1: drop instance rule nonesuch on noplace;
              ^
-drop rewrite rule nonesuch;
-ERROR:  syntax error at or near "rewrite" at character 6
+#
 LINE 1: drop rewrite rule nonesuch;
              ^
---
--- Check that division-by-zero is properly caught.
---
-select 1/0;
-ERROR:  division by zero
-select 1::int8/0;
-ERROR:  division by zero
-select 1/0::int8;
-ERROR:  division by zero
-select 1::int2/0;
-ERROR:  division by zero
-select 1/0::int2;
-ERROR:  division by zero
-select 1::numeric/0;
-ERROR:  division by zero
-select 1/0::numeric;
-ERROR:  division by zero
-select 1::float8/0;
-ERROR:  division by zero
-select 1/0::float8;
-ERROR:  division by zero
-select 1::float4/0;
-ERROR:  division by zero
-select 1/0::float4;
-ERROR:  division by zero
---
--- Test psql's reporting of syntax error location
---
+#--
+#-- Check that division-by-zero is properly caught.
+#--
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#--
+#-- Test psql's reporting of syntax error location
+#--
 xxx;
 ERROR:  syntax error at or near "xxx" at character 1
 LINE 1: xxx;
         ^
-CREATE foo;
-ERROR:  syntax error at or near "foo" at character 8
+#
 LINE 1: CREATE foo;
                ^
-CREATE TABLE ;
-ERROR:  syntax error at or near ";" at character 14
+#
 LINE 1: CREATE TABLE ;
                      ^
-CREATE TABLE
-\g
-ERROR:  syntax error at end of input at character 13
+#
 LINE 1: CREATE TABLE
                     ^
-INSERT INTO foo VALUES(123) foo;
-ERROR:  syntax error at or near "foo" at character 29
+#
 LINE 1: INSERT INTO foo VALUES(123) foo;
                                     ^
-INSERT INTO 123
-VALUES(123);
-ERROR:  syntax error at or near "123" at character 13
+#
 LINE 1: INSERT INTO 123
                     ^
-INSERT INTO foo 
-VALUES(123) 123
-;
-ERROR:  syntax error at or near "123" at character 30
+#
 LINE 2: VALUES(123) 123
                     ^
--- with a tab
-CREATE TABLE foo
-  (id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY,
-	id3 INTEGER NOT NUL,
-   id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
-ERROR:  syntax error at or near "NUL" at character 94
+#-- with a tab
+#
 LINE 3:  id3 INTEGER NOT NUL,
                          ^
--- long line to be truncated on the left
-CREATE TABLE foo(id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
-id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
-ERROR:  syntax error at or near "NUL" at character 90
+#-- long line to be truncated on the left
+#
 LINE 1: ...T NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
                                                                   ^
--- long line to be truncated on the right
-CREATE TABLE foo(
-id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY);
-ERROR:  syntax error at or near "NUL" at character 35
-LINE 2: id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQ...
+#-- long line to be truncated on the right
+#
+LINE 2: id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQ...
                         ^
--- long line to be truncated both ways
-CREATE TABLE foo(id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
-ERROR:  syntax error at or near "NUL" at character 90
+#-- long line to be truncated both ways
+#
 LINE 1: ...L, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 I...
                                                              ^
--- long line to be truncated on the left, many lines
-CREATE
-TEMPORARY
-TABLE 
-foo(id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
-id4 INT4 
-UNIQUE 
-NOT 
-NULL, 
-id5 TEXT 
-UNIQUE 
-NOT 
-NULL)
-;
-ERROR:  syntax error at or near "NUL" at character 101
+#-- long line to be truncated on the left, many lines
+#
 LINE 4: ...T NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
                                                                   ^
--- long line to be truncated on the right, many lines
-CREATE 
-TEMPORARY
-TABLE 
-foo(
-id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, id INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY)
-;
-ERROR:  syntax error at or near "NUL" at character 47
-LINE 5: id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQ...
+#-- long line to be truncated on the right, many lines
+#
+LINE 5: id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQ...
                         ^
--- long line to be truncated both ways, many lines
-CREATE 
-TEMPORARY
-TABLE 
-foo
-(id 
-INT4 
-UNIQUE NOT NULL, idx INT4 UNIQUE NOT NULL, idy INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, 
-idz INT4 UNIQUE NOT NULL, 
-idv INT4 UNIQUE NOT NULL);
-ERROR:  syntax error at or near "NUL" at character 157
+#-- long line to be truncated both ways, many lines
+#
 LINE 7: ...L, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 I...
                                                              ^
--- more than 10 lines...
-CREATE 
-TEMPORARY
-TABLE 
-foo
-(id 
-INT4 
-UNIQUE 
-NOT 
-NULL
-, 
-idm
-INT4 
-UNIQUE 
-NOT 
-NULL,
-idx INT4 UNIQUE NOT NULL, idy INT4 UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 INT4 UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, 
-idz INT4 UNIQUE NOT NULL, 
-idv 
-INT4 
-UNIQUE 
-NOT 
-NULL);
-ERROR:  syntax error at or near "NUL" at character 190
+#-- more than 10 lines...
+#
 LINE 16: ...L, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 I...
                                                               ^
 

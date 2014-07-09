@@ -29,6 +29,20 @@ stderr of test 'inherit` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- Test inheritance features
+#--
+#-- Confirm PRIMARY KEY adds NOT NULL constraint to child table
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO z VALUES (NULL, 'text'); -- should fail
+ERROR = null value in column "aa" violates not-null constraint
+#-- Check UPDATE with inherited target and an inherited source table
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE inhf (LIKE inhx, LIKE inhx); /* Throw error */
+ERROR = column "xx" duplicated
+#-- Test changing the type of inherited columns
+#-- Tests for casting between the rowtypes of parent and child
+#-- tables. See the pgsql-hackers thread beginning Dec. 4/04
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

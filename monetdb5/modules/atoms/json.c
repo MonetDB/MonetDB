@@ -1809,10 +1809,24 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					break;
 				}
 				if (!v||strNil(v)) {
-					if (skip_nils)
-						continue;
-					strncpy(buf, str_nil, buflen);
-					isnil = 1;
+					if (skip_nils) {
+						/*
+						 * if q is 1 and the value is
+						 * null, then we need to fill
+						 * in a value. Otherwise
+						 * BATproject will fail.
+						 */
+						if ((p == 0 ) && (q == 1)) {
+							strncpy(buf, "[ null ]", maxlen - buflen);
+							buflen += strlen("[ null ]");
+							isnil = 1;
+						} else {
+							continue;
+						}
+					} else {
+						strncpy(buf, str_nil, buflen);
+						isnil = 1;
+					}
 				} else {
 					len = strlen(v);
 					if (len >= maxlen - buflen) {

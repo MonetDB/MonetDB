@@ -29,6 +29,153 @@ stderr of test 'date` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- DATE
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO DATE_TBL VALUES ('1997-02-29');
+ERROR = date/time field value out of range: "1997-02-29"
+#--
+#-- Check all the documented input formats
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1/8/1999';
+ERROR = date/time field value out of range: "1/8/1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1/18/1999';
+ERROR = date/time field value out of range: "1/18/1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '18/1/1999';
+ERROR = date/time field value out of range: "18/1/1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date 'January 8, 99 BC';
+ERROR = date/time field value out of range: "January 8, 99 BC"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08-Jan-99';
+ERROR = date/time field value out of range: "08-Jan-99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date 'Jan-08-99';
+ERROR = date/time field value out of range: "Jan-08-99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-08-Jan';
+ERROR = invalid input syntax for type date: "99-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1999-08-Jan';
+ERROR = invalid input syntax for type date: "1999-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08 Jan 99';
+ERROR = date/time field value out of range: "08 Jan 99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date 'Jan 08 99';
+ERROR = date/time field value out of range: "Jan 08 99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08-01-99';
+ERROR = date/time field value out of range: "08-01-99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08-01-1999';
+ERROR = date/time field value out of range: "08-01-1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '01-08-99';
+ERROR = date/time field value out of range: "01-08-99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '01-08-1999';
+ERROR = date/time field value out of range: "01-08-1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08 01 99';
+ERROR = date/time field value out of range: "08 01 99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '08 01 1999';
+ERROR = date/time field value out of range: "08 01 1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '01 08 99';
+ERROR = date/time field value out of range: "01 08 99"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '01 08 1999';
+ERROR = date/time field value out of range: "01 08 1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1/18/1999';
+ERROR = date/time field value out of range: "1/18/1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-Jan-08';
+ERROR = date/time field value out of range: "99-Jan-08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-08-Jan';
+ERROR = invalid input syntax for type date: "99-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1999-08-Jan';
+ERROR = invalid input syntax for type date: "1999-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 Jan 08';
+ERROR = date/time field value out of range: "99 Jan 08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 08 Jan';
+ERROR = invalid input syntax for type date: "99 08 Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-01-08';
+ERROR = date/time field value out of range: "99-01-08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-08-01';
+ERROR = date/time field value out of range: "99-08-01"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 01 08';
+ERROR = date/time field value out of range: "99 01 08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 08 01';
+ERROR = date/time field value out of range: "99 08 01"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '18/1/1999';
+ERROR = date/time field value out of range: "18/1/1999"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-Jan-08';
+ERROR = date/time field value out of range: "99-Jan-08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-08-Jan';
+ERROR = invalid input syntax for type date: "99-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '1999-08-Jan';
+ERROR = invalid input syntax for type date: "1999-08-Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 Jan 08';
+ERROR = invalid input syntax for type date: "99 Jan 08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 08 Jan';
+ERROR = invalid input syntax for type date: "99 08 Jan"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-01-08';
+ERROR = date/time field value out of range: "99-01-08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99-08-01';
+ERROR = date/time field value out of range: "99-08-01"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 01 08';
+ERROR = date/time field value out of range: "99 01 08"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT date '99 08 01';
+ERROR = date/time field value out of range: "99 08 01"
+#--
+#-- Simple math
+#-- Leave most of it for the horology tests
+#--
+#--
+#-- test extract!
+#--
+#-- century
+#--
+#--
+#-- millennium
+#--
+#-- next test to be fixed on the turn of the next millennium;-)
+#--
+#-- decade
+#--
+#--
+#-- some other types:
+#--
+#-- on a timestamp.
+#-- on an interval
+#--
+#-- test trunc function!
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

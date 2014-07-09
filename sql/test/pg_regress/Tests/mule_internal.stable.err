@@ -29,6 +29,18 @@ stderr of test 'mule_internal` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table גђ;
+ERROR = Relation 'גђ' does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table Ƒ㑻;
+ERROR = Relation 'Ƒ㑻' does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table ͪߩѦ듾;
+ERROR = Relation 'ͪߩѦ듾' does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table test;
+ERROR = Relation 'test' does not exist
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

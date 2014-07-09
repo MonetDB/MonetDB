@@ -29,6 +29,65 @@ stderr of test 'hash_index` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- HASH_INDEX
+#-- grep 843938989 hash.data
+#--
+#--
+#-- hash index
+#-- grep 66766766 hash.data
+#--
+#--
+#-- hash index
+#-- grep 1505703298 hash.data
+#--
+#--
+#-- hash index
+#-- grep 7777777 hash.data
+#--
+#--
+#-- hash index
+#-- grep 1351610853 hash.data
+#--
+#--
+#-- hash index
+#-- grep 111111112222222233333333 hash.data
+#--
+#--
+#-- hash index
+#-- grep 444705537 hash.data
+#--
+#--
+#-- hash index
+#-- grep 88888888 hash.data
+#--
+#--
+#-- hash index
+#-- grep '^90[^0-9]' hashovfl.data
+#--
+#-- SELECT count(*) AS i988 FROM hash_ovfl_heap
+#--    WHERE x = 90;
+#--
+#-- hash index
+#-- grep '^1000[^0-9]' hashovfl.data
+#--
+#-- SELECT count(*) AS i0 FROM hash_ovfl_heap
+#--    WHERE x = 1000;
+#--
+#-- HASH
+#--
+#--
+#-- this is the row we just replaced; index scan should return zero rows 
+#--
+#-- UPDATE hash_ovfl_heap
+#--    SET x = 1000
+#--   WHERE x = 90;
+#-- this vacuums the index as well
+#-- VACUUM hash_ovfl_heap;
+#-- SELECT count(*) AS i0 FROM hash_ovfl_heap
+#--   WHERE x = 90;
+#-- SELECT count(*) AS i988 FROM hash_ovfl_heap
+#--  WHERE x = 1000;
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

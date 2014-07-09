@@ -29,6 +29,109 @@ stderr of test 'numeric` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- NUMERIC
+#--
+#-- ******************************
+#-- * The following EXPECTED results are computed by bc(1)
+#-- * with a scale of 200
+#-- ******************************
+#-- ******************************
+#-- * Create indices for faster checks
+#-- ******************************
+#-- ******************************
+#-- * Now check the behaviour of the NUMERIC type
+#-- ******************************
+#-- ******************************
+#-- * Addition check
+#-- ******************************
+#-- ******************************
+#-- * Subtraction check
+#-- ******************************
+#-- ******************************
+#-- * Multiply check
+#-- ******************************
+#-- ******************************
+#-- * Division check
+#-- ******************************
+#-- ******************************
+#-- * Square root check
+#-- ******************************
+#-- ******************************
+#-- * Natural logarithm check
+#-- ******************************
+#-- ******************************
+#-- * Logarithm base 10 check
+#-- ******************************
+#-- ******************************
+#-- * POWER(10, LN(value)) check
+#-- ******************************
+#-- ******************************
+#-- * miscellaneous checks for things that have been broken in the past...
+#-- ******************************
+#-- numeric AVG used to fail on some platforms
+#-- Check for appropriate rounding and overflow
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO fract_only VALUES (3, '1.0');	-- should fail
+ERROR = numeric field overflow
+DETAIL:  The absolute value is greater than or equal to 10^0 for field with precision 4, scale 4.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO fract_only VALUES (6, '0.99995');  -- should fail
+ERROR = numeric field overflow
+DETAIL:  The absolute value is greater than or equal to 10^0 for field with precision 4, scale 4.
+#-- Simple check that ceil(), floor(), and round() work correctly
+#-- Testing for width_bucket()
+#-- NULL result
+#-- errors
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT width_bucket(5.0, 3.0, 4.0, 0);
+ERROR = count must be greater than zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT width_bucket(5.0, 3.0, 4.0, -5);
+ERROR = count must be greater than zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT width_bucket(3.0, 3.0, 3.0, 888);
+ERROR = lower bound cannot equal upper bound
+#-- normal operation
+#-- TO_CHAR()
+#--
+#-- TO_NUMBER()
+#--
+#--
+#-- Input syntax
+#--
+#-- good inputs
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('NaN ');
+ERROR = invalid input syntax for type numeric: "NaN "
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('        nan');
+ERROR = invalid input syntax for type numeric: "        nan"
+#-- bad inputs
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('     ');
+ERROR = invalid input syntax for type numeric: "     "
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('   1234   %');
+ERROR = invalid input syntax for type numeric: "   1234   %"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('xyz');
+ERROR = invalid input syntax for type numeric: "xyz"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('- 1234');
+ERROR = invalid input syntax for type numeric: "- 1234"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('5 . 0');
+ERROR = invalid input syntax for type numeric: "5 . 0"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('5. 0   ');
+ERROR = invalid input syntax for type numeric: "5. 0   "
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES ('');
+ERROR = invalid input syntax for type numeric: ""
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO num_input_test(n1) VALUES (' N aN ');
+ERROR = invalid input syntax for type numeric: " N aN "
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

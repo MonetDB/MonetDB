@@ -26,58 +26,66 @@ Ready.
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 
--- Test basic TRUNCATE functionality.
-CREATE TABLE truncate_a (col1 integer primary key);
+#-- Test basic TRUNCATE functionality.
+#CREATE TABLE truncate_a (col1 integer primary key);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "truncate_a_pkey" for table "truncate_a"
-INSERT INTO truncate_a VALUES (1);
-INSERT INTO truncate_a VALUES (2);
-SELECT * FROM truncate_a;
- col1 
-------
-    1
-    2
-(2 rows)
+#INSERT INTO truncate_a VALUES (1);
+[ 1 ]
+#INSERT INTO truncate_a VALUES (2);
+[ 1 ]
+#SELECT * FROM truncate_a;
+% sys.L0 # table_name
+% col1 # name
+% ? # type
+% ? # length
+[ 1 ]
+[ 2 ]
 
--- Roll truncate back
-BEGIN;
+#-- Roll truncate back
+START TRANSACTION;
 TRUNCATE truncate_a;
 ROLLBACK;
-SELECT * FROM truncate_a;
- col1 
-------
-    1
-    2
-(2 rows)
+#SELECT * FROM truncate_a;
+% sys.L0 # table_name
+% col1 # name
+% ? # type
+% ? # length
+[ 1 ]
+[ 2 ]
 
--- Commit the truncate this time
-BEGIN;
+#-- Commit the truncate this time
+START TRANSACTION;
 TRUNCATE truncate_a;
 COMMIT;
-SELECT * FROM truncate_a;
- col1 
-------
-(0 rows)
+#SELECT * FROM truncate_a;
+% sys.L0 # table_name
+% col1 # name
+% ? # type
+% ? # length
 
--- Test foreign constraint check
-CREATE TABLE truncate_b(col1 integer references truncate_a);
-INSERT INTO truncate_a VALUES (1);
-SELECT * FROM truncate_a;
- col1 
-------
-    1
-(1 row)
+#-- Test foreign constraint check
+#CREATE TABLE truncate_b(col1 integer references truncate_a);
+#INSERT INTO truncate_a VALUES (1);
+[ 1 ]
+#SELECT * FROM truncate_a;
+% sys.L0 # table_name
+% col1 # name
+% ? # type
+% ? # length
+[ 1 ]
 
 TRUNCATE truncate_a;
 ERROR:  cannot truncate a table referenced in a foreign key constraint
 DETAIL:  Table "truncate_b" references "truncate_a" via foreign key constraint "truncate_b_col1_fkey".
-SELECT * FROM truncate_a;
- col1 
-------
-    1
-(1 row)
+#SELECT * FROM truncate_a;
+% sys.L0 # table_name
+% col1 # name
+% ? # type
+% ? # length
+[ 1 ]
 
-DROP TABLE truncate_b;
-DROP TABLE truncate_a;
+#DROP TABLE truncate_b;
+#DROP TABLE truncate_a;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 

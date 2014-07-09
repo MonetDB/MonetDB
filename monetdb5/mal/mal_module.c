@@ -633,8 +633,11 @@ showHelp(Module m, str txt, stream *fs){
 		mnstr_printf(fs,"%s\n",msg[i]);
 	if( i == 0){
 		msg = getHelp(m,txt,0);
-		for(i=0; msg[i]; i++)
+		for(i=0; msg[i]; i++){
 			mnstr_printf(fs,"%s\n",msg[i]);
+			GDKfree(msg[i]);
+		}
+		GDKfree(msg);
 	}
 }
 /*
