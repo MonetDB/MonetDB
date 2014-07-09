@@ -262,7 +262,7 @@ comment "Transforms a geometry from one srid to another";
 
 command mbr(:wkb) :mbr address wkbMBR
 comment "Creates the mbr for the given wkb.";
-command mbroverlaps(a:mbr, b:mbr) :bit address mbroverlaps
+command mbrOverlaps(a:mbr, b:mbr) :bit address mbrOverlaps
 comment "Returns true if the two mbrs overlap";
 command coordinateFromWKB(:wkb, :int) :dbl address wkbCoordinateFromWKB
 comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";

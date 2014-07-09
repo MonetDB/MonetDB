@@ -170,7 +170,7 @@ geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
-geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
 geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 
@@ -2118,7 +2118,7 @@ str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 }
 
 /*checks whether two mbrs overlap */
-str mbroverlaps(bit *out, mbr **b1, mbr **b2) {
+str mbrOverlaps(bit *out, mbr **b1, mbr **b2) {
 	if (mbr_isnil(*b1) || mbr_isnil(*b2))
 		*out = 0;
 	else
