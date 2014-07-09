@@ -2654,6 +2654,21 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 	}
 }
 
+#ifdef WIN32
+static void
+fix_windows_newline(unsigned char *s)
+{
+	char *p = NULL;
+	int c = '\r';
+
+	if (s && (p=strchr((char*)s, c)) != NULL && p[1] == '\n') {
+		for(; p[1]; p++) 
+			p[0] = p[1];
+		p[0] = 0;
+	}
+}
+#endif
+
 /* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2709,6 +2724,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = bstream_create(ss, 0x20000);
 #else
 	s = bstream_create(ss, 0x2000000);
+#endif
+#ifdef WIN32
+	fix_windows_newline(tsep);
+	fix_windows_newline(rsep);
+	fix_windows_newline(ssep);
 #endif
 	if (s != NULL) {
 		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
