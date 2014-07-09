@@ -1068,15 +1068,23 @@ static str geomMakePoint(wkb **geomWKB, GEOSGeom geosGeometry) {
 		*geomWKB = wkb_nil;
 		throw(MAL, "geomMakePoint", "Failed to crete WKB from GEOSGeometry");
 	}
+
 	return MAL_SUCCEED;
 }
 
 /* creates a point using the x, y coordinates */
 str geomMakePoint2D(wkb** out, double* x, double* y) {
 	GEOSGeom geosGeometry = NULL;
+	str ret = MAL_SUCCEED;
+	GEOSCoordSequence *seq = NULL;
+
+	if (*x == dbl_nil || *y == dbl_nil) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
 
 	//create the point from the coordinates
-	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 2);
+	seq = GEOSCoordSeq_create(1, 2);
 	GEOSCoordSeq_setX(seq, 0, *x);
 	GEOSCoordSeq_setY(seq, 0, *y);
 	geosGeometry = GEOSGeom_createPoint(seq);
@@ -1087,15 +1095,25 @@ str geomMakePoint2D(wkb** out, double* x, double* y) {
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
-	return geomMakePoint(out, geosGeometry);
+	ret = geomMakePoint(out, geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	return ret;
 }
 
 /* creates a point using the x, y, z coordinates */
 str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
 	GEOSGeom geosGeometry = NULL;
+	str ret = MAL_SUCCEED;
+	GEOSCoordSequence *seq = NULL;
+
+	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
 
 	//create the point from the coordinates
-	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 3);
+	seq = GEOSCoordSeq_create(1, 3);
 	GEOSCoordSeq_setX(seq, 0, *x);
 	GEOSCoordSeq_setY(seq, 0, *y);
 	GEOSCoordSeq_setZ(seq, 0, *z);
@@ -1106,15 +1124,25 @@ str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
-	return geomMakePoint(out, geosGeometry);
+	ret = geomMakePoint(out, geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	return ret;
 }
 
 /* creates a point using the x, y, z, m coordinates */
 str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
 	GEOSGeom geosGeometry = NULL;
+	str ret = MAL_SUCCEED;
+	GEOSCoordSequence *seq = NULL;
+
+	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil || *m == dbl_nil) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
 
 	//create the point from the coordinates
-	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 4);
+	seq = GEOSCoordSeq_create(1, 4);
 	GEOSCoordSeq_setX(seq, 0, *x);
 	GEOSCoordSeq_setY(seq, 0, *y);
 	GEOSCoordSeq_setZ(seq, 0, *z);
@@ -1126,15 +1154,25 @@ str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
-	return geomMakePoint(out, geosGeometry);
+	ret = geomMakePoint(out, geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	return ret;
 }
 
 /* creates a point using the x, y, m coordinates */
 str geomMakePointM(wkb** out, double* x, double* y, double* m) {
 	GEOSGeom geosGeometry = NULL;
+	str ret = MAL_SUCCEED;
+	GEOSCoordSequence *seq = NULL;
+
+	if (*x == dbl_nil || *y == dbl_nil || *m == dbl_nil) {
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
 
 	//create the point from the coordinates
-	GEOSCoordSequence *seq = GEOSCoordSeq_create(1, 3);
+	seq = GEOSCoordSeq_create(1, 3);
 	GEOSCoordSeq_setOrdinate(seq, 0, 0, *x);
 	GEOSCoordSeq_setOrdinate(seq, 0, 1, *y);
 	GEOSCoordSeq_setOrdinate(seq, 0, 2, *m);
@@ -1145,7 +1183,10 @@ str geomMakePointM(wkb** out, double* x, double* y, double* m) {
 		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
-	return geomMakePoint(out, geosGeometry);
+	ret = geomMakePoint(out, geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	return ret;
 }
 
 /* common code for functions that return integer */
@@ -2181,16 +2222,18 @@ str mbrContains(bit *out, mbr **b1, mbr **b2) {
 
 /* returns the Euclidean distance of the centroids of the boxes */
 str mbrDistance(double *out, mbr **b1, mbr **b2) {
+	double b1_Cx = 0.0, b1_Cy = 0.0, b2_Cx =0.0, b2_Cy=0.0;
+
 	if (mbr_isnil(*b1) || mbr_isnil(*b2)) {
 		*out = 0;
 		return MAL_SUCCEED;
 	}
 
 	//compute the centroids of the two polygons
-	double b1_Cx = ((*b1)->xmin+(*b1)->xmax)/2.0;
-	double b1_Cy = ((*b1)->ymin+(*b1)->ymax)/2.0;
-	double b2_Cx = ((*b2)->xmin+(*b2)->xmax)/2.0;
-	double b2_Cy = ((*b2)->ymin+(*b2)->ymax)/2.0;
+	b1_Cx = ((*b1)->xmin+(*b1)->xmax)/2.0;
+	b1_Cy = ((*b1)->ymin+(*b1)->ymax)/2.0;
+	b2_Cx = ((*b2)->xmin+(*b2)->xmax)/2.0;
+	b2_Cy = ((*b2)->ymin+(*b2)->ymax)/2.0;
 
 	//compute the euclidean distance
 	*out = sqrt( pow(b1_Cx*b2_Cx, 2.0) + pow(b1_Cy*b2_Cy, 2.0));
@@ -2304,8 +2347,7 @@ geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 
 
-geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
-geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
+//geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
 
 
 
@@ -2469,24 +2511,8 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 	return MAL_SUCCEED;
 }
 
-str
-wkbcreatepoint(wkb **out, dbl *x, dbl *y)
-{
-	GEOSCoordSeq pnt;
-	if (*x == dbl_nil || *y == dbl_nil) {
-		*out = wkb_nil;
-	} else {
-		pnt = GEOSCoordSeq_create(1, 2);
-		GEOSCoordSeq_setX(pnt, 0, *x);
-		GEOSCoordSeq_setY(pnt, 0, *y);
-		*out = geos2wkb(GEOSGeom_createPoint(pnt));
-		GEOSCoordSeq_destroy(pnt);
-	}
-	if (*out == NULL)
-		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
 
+/*
 str
 wkbcreatepoint_bat(int *out, int *ix, int *iy)
 {
@@ -2544,8 +2570,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	BBPkeepref(*out = bo->batCacheid);
 	return MAL_SUCCEED;
 }
-
-
+*/
 
 
 

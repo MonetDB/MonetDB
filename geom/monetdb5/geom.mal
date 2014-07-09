@@ -361,9 +361,6 @@ end YMaxFromMBR;
 
 
 # @+ ogc constructor functions
-#command point(x:dbl,y:dbl) :wkb
-#address wkbcreatepoint
-#comment "Construct a point from two geometries";
 
 #module batgeom;
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
