@@ -927,6 +927,67 @@ ALGsubthetajoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, int 
 				   NULL, BATsubthetajoin, "algebra.subthetajoin");
 }
 
+/* algebra.firstn(b:bat[:oid,:any],
+ *                [ s:bat[:oid,:oid],
+ *                [ g:bat[:oid,:oid], ] ]
+ *                n:wrd,
+ *                asc:bit)
+ * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
+ */
+str
+ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret1, *ret2 = NULL;
+	bat bid, sid, gid;
+	BAT *b, *s = NULL, *g = NULL;
+	BAT *bn, *gn;
+	wrd n;
+	bit asc;
+	gdk_return rc;
+
+	(void) cntxt;
+	(void) mb;
+
+	assert(pci->retc == 1 || pci->retc == 2);
+	assert(pci->argc - pci->retc >= 3 && pci->argc - pci->retc <= 5);
+
+	ret1 = getArgReference(stk, pci, 0);
+	if (pci->retc == 2)
+		ret2 = getArgReference(stk, pci, 1);
+	bid = * (bat *) getArgReference(stk, pci, pci->retc);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+	if (pci->argc - pci->retc > 3) {
+		sid = * (bat *) getArgReference(stk, pci, pci->retc + 1);
+		if ((s = BATdescriptor(sid)) == NULL) {
+			BBPreleaseref(bid);
+			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+		}
+		if (pci->argc - pci->retc > 4) {
+			gid = * (bat *) getArgReference(stk, pci, pci->retc + 2);
+			if ((g = BATdescriptor(gid)) == NULL) {
+				BBPreleaseref(bid);
+				BBPreleaseref(sid);
+				throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+			}
+		}
+	}
+	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
+	asc = * (bit *) getArgReference(stk, pci, pci->argc - 1);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, n, asc);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
+	if (rc == GDK_FAIL)
+		throw(MAL, "algebra.firstn", MAL_MALLOC_FAIL);
+	BBPkeepref(*ret1 = bn->batCacheid);
+	if (ret2)
+		BBPkeepref(*ret2 = gn->batCacheid);
+	return MAL_SUCCEED;
+}
+
 static str
 ALGunary(int *result, int *bid, BAT *(*func)(BAT *), const char *name)
 {
