@@ -832,7 +832,7 @@ int mbrFROMSTR(char *src, int *len, mbr **atom) {
 		l = strlen(src);
 		assert(l <= GDK_int_max);
 		nchars = (int) l;
-		size_t l = strlen(src);
+		l = strlen(src);
 		assert(l <= GDK_int_max);
 		nchars = (int) l;
 	}
