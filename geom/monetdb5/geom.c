@@ -170,7 +170,19 @@ geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
+geom_export str mbrAbove(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrBelow(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrContained(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrContains(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrDistance(double *out, mbr **b1, mbr **b2);
+geom_export str mbrEqual(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrLeft(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
+geom_export str mbrRight(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
 geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 
@@ -2117,14 +2129,131 @@ str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 	return MAL_SUCCEED;	
 }
 
-/*checks whether two mbrs overlap */
-str mbrOverlaps(bit *out, mbr **b1, mbr **b2) {
+/* returns true if b1 is above b2 */
+str mbrAbove(bit *out, mbr **b1, mbr **b2) {
 	if (mbr_isnil(*b1) || mbr_isnil(*b2))
 		*out = 0;
 	else
+		*out = ((*b1)->ymin >(*b2)->ymax); 
+	return MAL_SUCCEED;
+}
+
+/* returns true if b1 is below b2 */
+str mbrBelow(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ( (*b1)->ymax < (*b2)->ymin);
+	return MAL_SUCCEED;
+}
+
+/* returns true if box1 is left of box2 */
+str mbrLeft(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ( (*b1)->xmax < (*b2)->xmin );
+	return MAL_SUCCEED;
+}
+
+/* returns true if box1 is right of box2 */
+str mbrRight(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else 
+		*out = ( (*b1)->xmin > (*b2)->xmax );
+	return MAL_SUCCEED;
+}
+
+/* returns true if b1 is contained in b2 */
+str mbrContained(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ( ((*b1)->xmin > (*b2)->xmin) && ((*b1)->xmax < (*b2)->xmax) && ((*b1)->ymin > (*b2)->ymin) && ((*b1)->ymax < (*b2)->ymax));
+	return MAL_SUCCEED;
+}
+
+/*returns true if b1 contains b2 */
+str mbrContains(bit *out, mbr **b1, mbr **b2) {
+	return mbrContained(out, b2, b1);
+}
+
+/* returns the Euclidean distance of the centroids of the boxes */
+str mbrDistance(double *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2)) {
+		*out = 0;
+		return MAL_SUCCEED;
+	}
+
+	//compute the centroids of the two polygons
+	double b1_Cx = ((*b1)->xmin+(*b1)->xmax)/2.0;
+	double b1_Cy = ((*b1)->ymin+(*b1)->ymax)/2.0;
+	double b2_Cx = ((*b2)->xmin+(*b2)->xmax)/2.0;
+	double b2_Cy = ((*b2)->ymin+(*b2)->ymax)/2.0;
+
+	//compute the euclidean distance
+	*out = sqrt( pow(b1_Cx*b2_Cx, 2.0) + pow(b1_Cy*b2_Cy, 2.0));
+
+	return MAL_SUCCEED;
+}
+
+/* returns true if the boxes are the same */
+str mbrEqual(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) && mbr_isnil(*b2))
+		*out = 1;
+	else if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ( ((*b1)->xmin == (*b2)->xmin) && ((*b1)->xmax == (*b2)->xmax) && ((*b1)->ymin == (*b2)->ymin) && ((*b1)->ymax == (*b2)->ymax));
+	return MAL_SUCCEED;
+}
+
+/*returns true if the two mbrs overlap */
+str mbrOverlaps(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else //they cannot overlap if b2 is left, right, above or below b1
 		*out = !((*b2)->ymax < (*b1)->ymin || (*b2)->ymin > (*b1)->ymax || (*b2)->xmax < (*b1)->xmin || (*b2)->xmin > (*b1)->xmax);
 	return MAL_SUCCEED;
 }
+
+/* returns true if box1 overlaps or is above box2 when only the Y coordinate is considered*/
+str mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out =  ((*b1)->ymin >= (*b2)->ymin);
+	return MAL_SUCCEED;
+}
+
+/* returns true if box1 overlaps or is below box2 when only the Y coordinate is considered*/
+str mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ((*b1)->ymax <= (*b2)->ymax);
+	return MAL_SUCCEED;
+}
+
+/* returns true if box1 overlaps or is left of box2 when only the X coordinate is considered*/
+str mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ((*b1)->xmax <= (*b2)->xmax);
+	return MAL_SUCCEED;
+}
+
+/* returns true if box1 overlaps or is right of box2 when only the X coordinate is considered*/
+str mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2) {
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
+		*out = 0;
+	else
+		*out = ((*b1)->xmin >= (*b2)->xmin);
+	return MAL_SUCCEED;
+}
+
 
 /* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
 str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx) {
