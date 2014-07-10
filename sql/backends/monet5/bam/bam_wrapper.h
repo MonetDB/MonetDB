@@ -31,7 +31,7 @@
 
 #include <samtools/sam.h>
 
-#define BW_FP_BUF_SIZE 128
+#define BW_FP_BUF_SIZE 1024
 
 typedef sht ordering;
 typedef enum {SAM, BAM} filetype;

@@ -571,7 +571,8 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	char cur;
 	int line_size;
-	size_t line_buf_size = 128;
+	str line = NULL;
+	size_t line_buf_size = 0;
 	int nr_lines = 1;
 
 	str msg = MAL_SUCCEED;
@@ -607,39 +608,35 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 	/* Enables cleanup to check individual files */
-	memset(filenames, 0, sizeof(nr_lines * sizeof(str)));
-
-	/* malloc 128 chars for every file; this is safe since call to
-	 * getline automatically reallocs when buffer is too small */
-	for (i = 0; i < nr_lines; ++i) {
-		if ((filenames[i] =
-			 GDKmalloc(line_buf_size * sizeof(char))) == NULL) {
-			msg = createException(MAL, "bam_loader_files",
-						  MAL_MALLOC_FAIL);
-			goto cleanup;
-		}
-	}
+	memset(filenames, 0, nr_lines * sizeof(str));
 
 	/* Reset file pointer to beginning of file */
 	rewind(f);
 
 	/* Read BAM filenames into files array */
 	while ((line_size =
-		getline(&filenames[nr_files], &line_buf_size, f)) != -1) {
-		str l = filenames[nr_files];
+		getline(&line, &line_buf_size, f)) >= 0) {
 
-		if (l[0] == '\n' || l[0] == '#') {
+		if (line_size == 0 || line[0] == '\n' || line[0] == '\r' || line[0] == '#') {
 			/* Skip empty lines or lines that start with a hash */
+			free(line);
+			line = NULL;
+			/* We need to reset buf size to 0, since getline will have updated it */
+			line_buf_size = 0;
 			continue;
 		}
-		if (l[line_size - 1] == '\n') {
+		if (line[line_size - 1] == '\n') {
 			/* Newline character is not part of the filepath */
-			l[line_size - 1] = '\0';
+			line[line_size - 1] = '\0';
 		}
-		++nr_files;
-		/* We need to reset it to 128, since getline might
-		 * have changed its value */
-		line_buf_size = 128;
+		if(line_size > 1 && line[line_size - 2] == '\r') {
+			/* Return character is also not a part of the filepath */
+			line[line_size - 2] = '\0';
+		}
+		filenames[nr_files++] = line;
+		line = NULL;
+		/* We need to reset it to 0, since getline will have updated this val */
+		line_buf_size = 0;
 	}
 
 	if (ferror(f)) {
@@ -661,10 +658,16 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 nr_threads);
 
 	  cleanup:
+	if(line) {
+		//if line still contains anything, this is something that was put there
+		//by getline on the last, failed attempt to read a line
+		free(line);
+	}
+
 	if (filenames) {
 		for (i = 0; i < nr_files; ++i) {
 			if (filenames[i]) {
-				GDKfree(filenames[i]);
+				free(filenames[i]);
 			}
 		}
 		GDKfree(filenames);
