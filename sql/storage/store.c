@@ -1298,7 +1298,7 @@ store_schema_number(void)
 }
 
 static int
-store_load() {
+store_load(void) {
 	int first = 1;
 
 	sql_allocator *sa;
