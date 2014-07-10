@@ -1,71 +1,11 @@
 stdout of test 'test` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 16:03:13 >  
-# 16:03:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31808" "--set" "mapi_usock=/var/tmp/mtest-26892/.s.monetdb.31808" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 16:03:13 >  
 
-# MonetDB 5 server v11.18.0
-# This is an unreleased version
-# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.333 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:31808/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26892/.s.monetdb.31808
-# MonetDB/SQL module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_json.sql
-# loading sql script: 41_jsonstore.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 99_system.sql
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#Interpreting lng as wrd.
-#Interpreting lng as wrd.
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#Interpreting lng as wrd.
-#Interpreting lng as wrd.
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#Interpreting lng as wrd.
-#Interpreting lng as wrd.
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#Interpreting lng as wrd.
-#Interpreting lng as wrd.
 
-# 16:03:13 >  
-# 16:03:13 >  "/usr/bin/python2" "test.SQL.py" "test"
-# 16:03:13 >  
 
-#SELECT file_id, dbschema FROM bam.files;
 % bam.files,	bam.files # table_name
 % file_id,	dbschema # name
 % bigint,	smallint # type
@@ -82,38 +22,11 @@ Ready.
 [ 10,	0	]
 [ 11,	1	]
 [ 12,	1	]
-#SELECT COUNT(*) FROM bam.files;
 % bam.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 4	]
-#DECLARE rname_1_3 varchar(32);
-#SET rname_1_3='chr22';
-#DECLARE pos_1_3_1 integer;
-#SET pos_1_3_1=1000000;
-#DECLARE pos_1_3_2 integer;
-#SET pos_1_3_2=20000000;
-#DECLARE qname_1_4 varchar(32);
-#SET qname_1_4='sim_22_1_1';
-#DECLARE mapq_1_5 integer;
-#SET mapq_1_5=200;
-#DECLARE mapq_2_1 integer;
-#SET mapq_2_1=100;
-#DECLARE rname_2_9 varchar(32);
-#SET rname_2_9='chr22';
-#DECLARE pos_2_9 integer;
-#SET pos_2_9=39996433;
-#DECLARE rname_2_10 varchar(32);
-#SET rname_2_10='chr22';
-#DECLARE pos_2_10 integer;
-#SET pos_2_10=80000000;
-#DECLARE distance_2_12 integer;
-#SET distance_2_12=10000000;
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY qname;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -160,10 +73,6 @@ Ready.
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY rname, pos;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -210,12 +119,6 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE rname = rname_1_3
-#  AND pos >= pos_1_3_1
-#  AND pos <= pos_1_3_2
-#ORDER BY pos;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -227,10 +130,6 @@ Ready.
 [ "sim_22_1_9",	83,	"chr22",	15600266,	255,	"100=",	"=",	15600021,	0,	"TTTAAAATATTAAAAGATGAATTACTATCAATTGTTTTGAATTTTAAACTAAAAATCAGTAGTTACTATAAAATTATTATTAAATGTTCTAATAATTGTA",	"5<###E?##AB#E=DB#<==;#E#?=AFEE@C@AEA6GDGFFG?DE??::?=@BC#G>GB>GEEDA=G>ADEFDEGABEDDEBCGGEFFF7;=GEGGFGC"	]
 [ "sim_22_1_6",	99,	"chr22",	18665735,	255,	"14=1X10=1X74=",	"=",	18665943,	0,	"ATTATTCAGCCTCACATTTCAACATCGCAGAACAGGTCAGGGAGTGCAAGGTACCTCCTGCTCTTTCCAGCAGGTGCAAGGTGCACAGGGAGAAGCAGGT",	"CDDEFG;?DGEDFE+CECEEGFG>C,EG5?DGE87GBDFGCEDD=BGGDD?GDFGDD?DAGGC<G=GF@A@CE@>?>.6#F#FFDEE?@CE==<9?B?>;"	]
 [ "sim_22_1_6",	147,	"chr22",	18665943,	255,	"9=1X90=",	"=",	18665735,	0,	"CAGGCCGCCCGGGGCGGTTCCACCAAGAAAGTGACATCTGGGAGGGGCATTGAGGCAAAGGGGCCGCGAGAGGGTAGGTGCTCTAGAGGTGGCCCACGGG",	"?##??3G#9##=5B#>A#.#>#>CFBEC@:BGC>.A5@6-F4:5?;EGGAA>?6@D<?EAEDE6CGGDGGE@9F?GGGGDD5EDDGFD?:>?FED?DEBA"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname = qname_1_4
-#ORDER BY rname, pos;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -243,10 +142,6 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	163,	"chr22",	39996217,	255,	"100=",	"=",	39996429,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE mapq > mapq_1_5
-#ORDER BY mapq DESC;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -293,38 +188,10 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#WITH alig AS (
-#    SELECT qname, flag, seq, qual
-#    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND mapq < mapq_2_1
-#), alig_proj AS (
-#    SELECT qname, flag,
-#        CASE WHEN bam_flag(flag, 'segm_reve') THEN reverse_seq(seq)   ELSE seq  END AS seq,
-#        CASE WHEN bam_flag(flag, 'segm_reve') THEN reverse_qual(qual) ELSE qual END AS qual
-#    FROM alig
-#    WHERE qname IN (
-#        SELECT qname
-#        FROM alig
 % bam.L15,	bam.L15,	bam.L15,	bam.L15,	bam.L15 # table_name
 % qname,	l_seq,	qual1,	r_seq,	qual2 # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
-#WITH alig AS (
-#    SELECT qname, flag, rname, pos, cigar
-#    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND qname IN (
-#        SELECT qname
-#        FROM bam.alignments_1
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#          AND bam_flag(flag, 'seco_alig') = False
-#        GROUP BY qname
-#        HAVING COUNT(*) = 2
-#           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-#           AND SUM(bam_flag(flag, 'last_segm')) = 1
 % bam.L11,	bam.L12 # table_name
 % distance,	nr_alignments # name
 % bigint,	wrd # type
@@ -343,84 +210,19 @@ Ready.
 [ 135,	1	]
 [ 145,	1	]
 [ 114,	1	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname IN (
-#    SELECT qname
-#    FROM bam.alignments_1
-#    GROUP BY qname
-#    HAVING SUM(bam_flag(flag, 'firs_segm')) = 0
-#        OR SUM(bam_flag(flag, 'last_segm')) = 0
-#)
-#ORDER BY qname;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname IN (
-#    SELECT qname
-#    FROM (
-#        SELECT qname, bam_flag(flag, 'seco_alig') AS seco_alig, bam_flag(flag, 'segm_unma') AS segm_unma, 
-#            bam_flag(flag, 'firs_segm') AS firs_segm
-#        FROM bam.alignments_1
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#    ) AS qnames
-#    GROUP BY qname, firs_segm
-#    HAVING SUM(segm_unma) < COUNT(*)
-#       AND (COUNT(*) - SUM(seco_alig)) <> 1
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#WITH qnames1 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.alignments_1
-#), qnames2 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.alignments_1
-#)
-#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
-#FROM (
-#    SELECT COUNT(*) AS count_a_insct_b
-#    FROM (
-#        SELECT *
-#        FROM qnames1
-#        INTERSECT
-#        SELECT *
-#        FROM qnames2
-#    ) AS a_insct_b
-#) AS insct_sub, (
-#    SELECT COUNT(*) AS count_qnames1
-#    FROM qnames1
-#) AS qnames1_sub, (
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % wrd,	bigint,	bigint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
-#WITH qnames_insct AS (
-#    SELECT distinct qname
-#    FROM bam.alignments_1
-#    INTERSECT
-#    SELECT distinct qname
-#    FROM bam.alignments_1
-#)
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#UNION
-#SELECT 'f2', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#ORDER BY qname;
 % .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
 % L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -567,37 +369,14 @@ Ready.
 [ "f2",	"sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f2",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f1",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE qname IN (
-#    SELECT distinct qname
-#    FROM bam.alignments_1
-#    EXCEPT
-#    SELECT distinct qname
-#    FROM bam.alignments_1
-#)
-#ORDER BY qname;
 % .L2,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
-#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
-#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
-#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
-#FROM (
-#    SELECT *
-#    FROM bam.alignments_1
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_1
-#WHERE rname = rname_2_9
-#  AND pos_2_9 >= pos
-#  AND pos_2_9 < pos + seq_length(cigar)
-#ORDER BY pos;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -605,38 +384,10 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND rname = rname_2_10
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND qname IN (
-#        SELECT qname
-#        FROM bam.alignments_1
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#          AND bam_flag(flag, 'seco_alig') = False
-#        GROUP BY qname
-#        HAVING COUNT(*) = 2
-#           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-#           AND SUM(bam_flag(flag, 'last_segm')) = 1
 % bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	qual1,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	qual2 # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext <> '*'
-#      AND pnext > 0
-#)
-#SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#    l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                         r.flag AS r_flag, r.rname AS r_rname, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -646,40 +397,16 @@ Ready.
 [ "sim_22_1_14",	355,	"chr22",	37296079,	0,	"92=172D6=1X1=",	"=",	37296228,	0,	"TCGGGCCTAGAACACGGAGCCTGGAGACCCGCGCGCCGTTGACCACAGGGTTTGGCGCCAAACGAGGAGGGCGGGGCGAGGACCAAGGGGCCGGGGCGGG",	"FDFGECDG?GDF=2BGEGEGEE@GGG=EEG:GFF@>EADDAFEE?::FGEGB>F>E@6EGGAE#DG#=B?(#@BCDDAEEGGFBAFFE-D#:>#:#CD7#",	403,	"chr22",	37296228,	0,	"1=1X7=104D18=1X9=1X12=1X49=",	"=",	37296079,	0,	"GGCGAGGGGGCGGGGCGAGGGCTGAGGGGCGGAAAACTAAGAGGAGCCCCCGCGGGTGGCGAGCTGGGATGACGGAGGGAGGGAGGGAGGGGCGCTGTGG",	"E##G#A=CD:.E-E.DEDE71#-5EEAGC;5-=#EE5'?DDED?:CFDFG&=?ACFB=DFGG=EBFDGCAGFGG>FG>GFGFFDFGE=AG6DAGEFFEGA"	]
 [ "sim_22_1_7",	339,	"chr22",	45060375,	0,	"41=1X56=1I1=",	"=",	45060235,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E",	419,	"chr22",	45060235,	0,	"1=1I12=72I3=1X5=1X4=",	"=",	45060375,	0,	"TAGGAATTTTTTTTTTTTTTGAGACAGAGTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAATGGTGCGATTGGCTGGAATTTTTTTTCTTGGCTGTCATAA",	"FGFCEEEGDE?CB::GE=FADFCEABEGBF>D;FGGGFFCDFGDGABCCADCDDDC;EF=:ACGGCEC#C=?=>EG@9#A@?=E;=:#B##A##@%C#D#"	]
 [ "sim_22_1_a",	339,	"chr14",	18226024,	0,	"100=",	"=",	18225784,	0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA",	"####F#EFCGEC5BE?EF#F=@?DF658;DEDG=@FBG@?E=DE=F#FDB?CCGE1GFFEDEFFDGGFE>FFCGEGGG:;B@FFG@DDGGGFGB7FBC?F",	419,	"chr14",	18225784,	0,	"5=1X31=1X62=",	"=",	18226024,	0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext = '*'
-#      AND pnext = 0
-#)
-#SELECT *
-#FROM (
-#    SELECT l.qname AS qname, l.rname AS rname, l.flag AS l_flag, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#        l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                                                 r.flag AS r_flag, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined # table_name
 % qname,	rname,	l_flag,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual,	distance # name
 % clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	bigint # type
 % 0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1 # length
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_1);
 [ 71	]
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_1);
 [ 71	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_1
-#EXCEPT
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_13;
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY qname;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -726,10 +453,6 @@ Ready.
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY rname, pos;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -776,12 +499,6 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE rname = rname_1_3
-#  AND pos >= pos_1_3_1
-#  AND pos <= pos_1_3_2
-#ORDER BY pos;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -793,10 +510,6 @@ Ready.
 [ "sim_22_1_9",	83,	"chr22",	15600266,	255,	"100=",	"=",	15600021,	0,	"TTTAAAATATTAAAAGATGAATTACTATCAATTGTTTTGAATTTTAAACTAAAAATCAGTAGTTACTATAAAATTATTATTAAATGTTCTAATAATTGTA",	"5<###E?##AB#E=DB#<==;#E#?=AFEE@C@AEA6GDGFFG?DE??::?=@BC#G>GB>GEEDA=G>ADEFDEGABEDDEBCGGEFFF7;=GEGGFGC"	]
 [ "sim_22_1_6",	99,	"chr22",	18665735,	255,	"14=1X10=1X74=",	"=",	18665943,	0,	"ATTATTCAGCCTCACATTTCAACATCGCAGAACAGGTCAGGGAGTGCAAGGTACCTCCTGCTCTTTCCAGCAGGTGCAAGGTGCACAGGGAGAAGCAGGT",	"CDDEFG;?DGEDFE+CECEEGFG>C,EG5?DGE87GBDFGCEDD=BGGDD?GDFGDD?DAGGC<G=GF@A@CE@>?>.6#F#FFDEE?@CE==<9?B?>;"	]
 [ "sim_22_1_6",	147,	"chr22",	18665943,	255,	"9=1X90=",	"=",	18665735,	0,	"CAGGCCGCCCGGGGCGGTTCCACCAAGAAAGTGACATCTGGGAGGGGCATTGAGGCAAAGGGGCCGCGAGAGGGTAGGTGCTCTAGAGGTGGCCCACGGG",	"?##??3G#9##=5B#>A#.#>#>CFBEC@:BGC>.A5@6-F4:5?;EGGAA>?6@D<?EAEDE6CGGDGGE@9F?GGGGDD5EDDGFD?:>?FED?DEBA"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname = qname_1_4
-#ORDER BY rname, pos;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -809,10 +522,6 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	163,	"chr22",	39996217,	255,	"100=",	"=",	39996429,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE mapq > mapq_1_5
-#ORDER BY mapq DESC;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -859,38 +568,10 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#WITH alig AS (
-#    SELECT qname, flag, seq, qual
-#    FROM bam.alignments_2
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND mapq < mapq_2_1
-#), alig_proj AS (
-#    SELECT qname, flag,
-#        CASE WHEN bam_flag(flag, 'segm_reve') THEN reverse_seq(seq)   ELSE seq  END AS seq,
-#        CASE WHEN bam_flag(flag, 'segm_reve') THEN reverse_qual(qual) ELSE qual END AS qual
-#    FROM alig
-#    WHERE qname IN (
-#        SELECT qname
-#        FROM alig
 % bam.L15,	bam.L15,	bam.L15,	bam.L15,	bam.L15 # table_name
 % qname,	l_seq,	qual1,	r_seq,	qual2 # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
-#WITH alig AS (
-#    SELECT qname, flag, rname, pos, cigar
-#    FROM bam.alignments_2
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND qname IN (
-#        SELECT qname
-#        FROM bam.alignments_2
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#          AND bam_flag(flag, 'seco_alig') = False
-#        GROUP BY qname
-#        HAVING COUNT(*) = 2
-#           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-#           AND SUM(bam_flag(flag, 'last_segm')) = 1
 % bam.L11,	bam.L12 # table_name
 % distance,	nr_alignments # name
 % bigint,	wrd # type
@@ -909,84 +590,19 @@ Ready.
 [ 135,	1	]
 [ 145,	1	]
 [ 114,	1	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname IN (
-#    SELECT qname
-#    FROM bam.alignments_2
-#    GROUP BY qname
-#    HAVING SUM(bam_flag(flag, 'firs_segm')) = 0
-#        OR SUM(bam_flag(flag, 'last_segm')) = 0
-#)
-#ORDER BY qname;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname IN (
-#    SELECT qname
-#    FROM (
-#        SELECT qname, bam_flag(flag, 'seco_alig') AS seco_alig, bam_flag(flag, 'segm_unma') AS segm_unma, 
-#            bam_flag(flag, 'firs_segm') AS firs_segm
-#        FROM bam.alignments_2
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#    ) AS qnames
-#    GROUP BY qname, firs_segm
-#    HAVING SUM(segm_unma) < COUNT(*)
-#       AND (COUNT(*) - SUM(seco_alig)) <> 1
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#WITH qnames1 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.alignments_2
-#), qnames2 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.alignments_2
-#)
-#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
-#FROM (
-#    SELECT COUNT(*) AS count_a_insct_b
-#    FROM (
-#        SELECT *
-#        FROM qnames1
-#        INTERSECT
-#        SELECT *
-#        FROM qnames2
-#    ) AS a_insct_b
-#) AS insct_sub, (
-#    SELECT COUNT(*) AS count_qnames1
-#    FROM qnames1
-#) AS qnames1_sub, (
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % wrd,	bigint,	bigint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
-#WITH qnames_insct AS (
-#    SELECT distinct qname
-#    FROM bam.alignments_2
-#    INTERSECT
-#    SELECT distinct qname
-#    FROM bam.alignments_2
-#)
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#UNION
-#SELECT 'f2', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#ORDER BY qname;
 % .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
 % L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1133,37 +749,14 @@ Ready.
 [ "f2",	"sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f2",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f1",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE qname IN (
-#    SELECT distinct qname
-#    FROM bam.alignments_2
-#    EXCEPT
-#    SELECT distinct qname
-#    FROM bam.alignments_2
-#)
-#ORDER BY qname;
 % .L2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
-#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
-#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
-#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
-#FROM (
-#    SELECT *
-#    FROM bam.alignments_2
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_2
-#WHERE rname = rname_2_9
-#  AND pos_2_9 >= pos
-#  AND pos_2_9 < pos + seq_length(cigar)
-#ORDER BY pos;
 % bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1171,38 +764,10 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_2
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND rname = rname_2_10
-#      AND bam_flag(flag, 'seco_alig') = False
-#      AND qname IN (
-#        SELECT qname
-#        FROM bam.alignments_2
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#          AND bam_flag(flag, 'seco_alig') = False
-#        GROUP BY qname
-#        HAVING COUNT(*) = 2
-#           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-#           AND SUM(bam_flag(flag, 'last_segm')) = 1
 % bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11,	bam.L11 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	qual1,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	qual2 # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_2
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext <> '*'
-#      AND pnext > 0
-#)
-#SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#    l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                         r.flag AS r_flag, r.rname AS r_rname, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1212,43 +777,16 @@ Ready.
 [ "sim_22_1_14",	355,	"chr22",	37296079,	0,	"92=172D6=1X1=",	"=",	37296228,	0,	"TCGGGCCTAGAACACGGAGCCTGGAGACCCGCGCGCCGTTGACCACAGGGTTTGGCGCCAAACGAGGAGGGCGGGGCGAGGACCAAGGGGCCGGGGCGGG",	"FDFGECDG?GDF=2BGEGEGEE@GGG=EEG:GFF@>EADDAFEE?::FGEGB>F>E@6EGGAE#DG#=B?(#@BCDDAEEGGFBAFFE-D#:>#:#CD7#",	403,	"chr22",	37296228,	0,	"1=1X7=104D18=1X9=1X12=1X49=",	"=",	37296079,	0,	"GGCGAGGGGGCGGGGCGAGGGCTGAGGGGCGGAAAACTAAGAGGAGCCCCCGCGGGTGGCGAGCTGGGATGACGGAGGGAGGGAGGGAGGGGCGCTGTGG",	"E##G#A=CD:.E-E.DEDE71#-5EEAGC;5-=#EE5'?DDED?:CFDFG&=?ACFB=DFGG=EBFDGCAGFGG>FG>GFGFFDFGE=AG6DAGEFFEGA"	]
 [ "sim_22_1_7",	339,	"chr22",	45060375,	0,	"41=1X56=1I1=",	"=",	45060235,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E",	419,	"chr22",	45060235,	0,	"1=1I12=72I3=1X5=1X4=",	"=",	45060375,	0,	"TAGGAATTTTTTTTTTTTTTGAGACAGAGTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAATGGTGCGATTGGCTGGAATTTTTTTTCTTGGCTGTCATAA",	"FGFCEEEGDE?CB::GE=FADFCEABEGBF>D;FGGGFFCDFGDGABCCADCDDDC;EF=:ACGGCEC#C=?=>EG@9#A@?=E;=:#B##A##@%C#D#"	]
 [ "sim_22_1_a",	339,	"chr14",	18226024,	0,	"100=",	"=",	18225784,	0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA",	"####F#EFCGEC5BE?EF#F=@?DF658;DEDG=@FBG@?E=DE=F#FDB?CCGE1GFFEDEFFDGGFE>FFCGEGGG:;B@FFG@DDGGGFGB7FBC?F",	419,	"chr14",	18225784,	0,	"5=1X31=1X62=",	"=",	18226024,	0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.alignments_2
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext = '*'
-#      AND pnext = 0
-#)
-#SELECT *
-#FROM (
-#    SELECT l.qname AS qname, l.rname AS rname, l.flag AS l_flag, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#        l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                                                 r.flag AS r_flag, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined # table_name
 % qname,	rname,	l_flag,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual,	distance # name
 % clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	bigint # type
 % 0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1 # length
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_2);
 [ 71	]
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_2);
 [ 71	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_2
-#EXCEPT
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_14;
 % bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_primary_alignments_3
-#UNION
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_alignments_3
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY qname;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1295,13 +833,6 @@ Ready.
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_primary_alignments_3
-#UNION
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_alignments_3
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY rname, pos;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1348,12 +879,6 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE rname = rname_1_3
-#  AND pos >= pos_1_3_1
-#  AND pos <= pos_1_3_2
-#ORDER BY pos;
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1365,10 +890,6 @@ Ready.
 [ "sim_22_1_9",	83,	"chr22",	15600266,	255,	"100=",	"=",	15600021,	0,	"TTTAAAATATTAAAAGATGAATTACTATCAATTGTTTTGAATTTTAAACTAAAAATCAGTAGTTACTATAAAATTATTATTAAATGTTCTAATAATTGTA",	"5<###E?##AB#E=DB#<==;#E#?=AFEE@C@AEA6GDGFFG?DE??::?=@BC#G>GB>GEEDA=G>ADEFDEGABEDDEBCGGEFFF7;=GEGGFGC"	]
 [ "sim_22_1_6",	99,	"chr22",	18665735,	255,	"14=1X10=1X74=",	"=",	18665943,	0,	"ATTATTCAGCCTCACATTTCAACATCGCAGAACAGGTCAGGGAGTGCAAGGTACCTCCTGCTCTTTCCAGCAGGTGCAAGGTGCACAGGGAGAAGCAGGT",	"CDDEFG;?DGEDFE+CECEEGFG>C,EG5?DGE87GBDFGCEDD=BGGDD?GDFGDD?DAGGC<G=GF@A@CE@>?>.6#F#FFDEE?@CE==<9?B?>;"	]
 [ "sim_22_1_6",	147,	"chr22",	18665943,	255,	"9=1X90=",	"=",	18665735,	0,	"CAGGCCGCCCGGGGCGGTTCCACCAAGAAAGTGACATCTGGGAGGGGCATTGAGGCAAAGGGGCCGCGAGAGGGTAGGTGCTCTAGAGGTGGCCCACGGG",	"?##??3G#9##=5B#>A#.#>#>CFBEC@:BGC>.A5@6-F4:5?;EGGAA>?6@D<?EAEDE6CGGDGGE@9F?GGGGDD5EDDGFD?:>?FED?DEBA"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname = qname_1_4
-#ORDER BY rname, pos;
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1380,10 +901,6 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	163,	"chr22",	39996217,	255,	"100=",	"=",	39996429,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE mapq > mapq_1_5
-#ORDER BY mapq DESC;
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1430,29 +947,10 @@ Ready.
 [ "sim_22_1_d",	147,	"chr22",	24189415,	255,	"100=",	"=",	24189222,	0,	"CGGGGGGCGGAGCGCAGGCAGGTGAAACTGGAGGAAATTGGAGATACAGCGGGAGGGAGGGGGAAAAGGTAAAACCTCTCACCACCTCCTCAACGCTTAT",	"##??BG#C##5AB#D;=G#BF#E#:;@?#<(4BGCG-#EA@<G?FC*GDD@FD:BEBEGFGFDDBDEAD9GGD37DDFDCDFDGEFGFCGEE:?AE>EDG"	]
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT qname,
-#    CASE WHEN bam_flag(l_flag, 'segm_reve') THEN reverse_seq(l_seq)   ELSE l_seq  END AS l_seq,
-#    CASE WHEN bam_flag(l_flag, 'segm_reve') THEN reverse_qual(l_qual) ELSE l_qual END AS l_qual,
-#    CASE WHEN bam_flag(r_flag, 'segm_reve') THEN reverse_seq(r_seq)   ELSE r_seq  END AS r_seq,
-#    CASE WHEN bam_flag(r_flag, 'segm_reve') THEN reverse_qual(r_qual) ELSE r_qual END AS r_qual
-#FROM bam.paired_primary_alignments_3
-#WHERE l_mapq < mapq_2_1
-#  AND r_mapq < mapq_2_1
-#ORDER BY qname;
 % bam.paired_primary_alignments_3,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	l_seq,	l_qual,	r_seq,	r_qual # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
-#SELECT     
-#    CASE WHEN l_pos < r_pos 
-#         THEN r_pos - (l_pos + seq_length(l_cigar))
-#         ELSE l_pos - (r_pos + seq_length(r_cigar))
-#    END AS distance, 
-#    COUNT(*) AS nr_alignments
-#FROM bam.paired_primary_alignments_3
-#WHERE l_rname = r_rname
-#GROUP BY distance
-#ORDER BY nr_alignments DESC;
 % bam.L,	bam.L1 # table_name
 % distance,	nr_alignments # name
 % bigint,	wrd # type
@@ -1471,32 +969,10 @@ Ready.
 [ 124,	1	]
 [ 91,	1	]
 [ 135,	1	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname IN (
-#    SELECT qname
-#    FROM bam.unpaired_all_alignments_3
-#    GROUP BY qname
-#    HAVING SUM(bam_flag(flag, 'firs_segm')) = 0
-#        OR SUM(bam_flag(flag, 'last_segm')) = 0
-#)
-#ORDER BY qname;
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname IN (
-#    SELECT qname
-#    FROM (
-#        SELECT qname, bam_flag(flag, 'seco_alig') AS seco_alig, bam_flag(flag, 'segm_unma') AS segm_unma, 
-#            bam_flag(flag, 'firs_segm') AS firs_segm
-#        FROM bam.unpaired_all_alignments_3
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#    ) AS qnames
-#    GROUP BY qname, firs_segm
-#    HAVING SUM(segm_unma) < COUNT(*)
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1547,49 +1023,11 @@ Ready.
 [ "sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#WITH qnames1 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_3
-#), qnames2 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_3
-#)
-#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
-#FROM (
-#    SELECT COUNT(*) AS count_a_insct_b
-#    FROM (
-#        SELECT *
-#        FROM qnames1
-#        INTERSECT
-#        SELECT *
-#        FROM qnames2
-#    ) AS a_insct_b
-#) AS insct_sub, (
-#    SELECT COUNT(*) AS count_qnames1
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % wrd,	bigint,	bigint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
-#WITH qnames_insct AS (
-#    SELECT distinct qname
-#    FROM bam.unpaired_all_alignments_3
-#    INTERSECT
-#    SELECT distinct qname
-#    FROM bam.unpaired_all_alignments_3
-#)
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#UNION
-#SELECT 'f2', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
 % .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
 % L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1722,37 +1160,14 @@ Ready.
 [ "f1",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f1",	"sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
 [ "f2",	"sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE qname IN (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_3
-#    EXCEPT
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_3
-#)
-#ORDER BY qname;
 % .L2,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
-#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
-#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
-#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
-#FROM (
-#   SELECT *
-#   FROM bam.unpaired_primary_alignments_3
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_3
-#WHERE rname = rname_2_9
-#  AND pos_2_9 >= pos
-#  AND pos_2_9 < pos + seq_length(cigar)
-#ORDER BY pos;
 % .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1760,66 +1175,25 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, l_flag, l_rname, l_pos, l_mapq, l_cigar, l_rnext, l_pnext, l_tlen, l_seq, l_qual,
-#              r_flag, r_rname, r_pos, r_mapq, r_cigar, r_rnext, r_pnext, r_tlen, r_seq, r_qual
-#FROM bam.paired_primary_alignments_3
-#WHERE l_rname = rname_2_10
-#  AND r_rname = rname_2_10
-#  AND CASE WHEN l_pos < r_pos
-#           THEN (pos_2_10 >= l_pos + seq_length(l_cigar) AND pos_2_10 < r_pos)
-#           ELSE (pos_2_10 >= r_pos + seq_length(r_cigar) AND pos_2_10 < l_pos)
-#      END
-#ORDER BY l_pos;
 % bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3,	bam.paired_primary_alignments_3 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, l_flag, l_rname, l_pos, l_mapq, l_cigar, l_rnext, l_pnext, l_tlen, l_seq, l_qual,
-#              r_flag, r_rname, r_pos, r_mapq, r_cigar, r_rnext, r_pnext, r_tlen, r_seq, r_qual
-#FROM bam.paired_secondary_alignments_3
-#ORDER BY qname;
 % bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 10,	3,	5,	8,	1,	16,	1,	8,	1,	100,	100,	3,	5,	8,	1,	15,	1,	8,	1,	100,	100 # length
 [ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG",	419,	"chr22",	39994332,	0,	"5=1X11=1885D83=",	"=",	39995061,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.unpaired_alignments_3
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext = '*'
-#      AND pnext = 0
-#)
-#SELECT *
-#FROM (
-#    SELECT l.qname AS qname, l.rname AS rname, l.flag AS l_flag, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#        l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                                                 r.flag AS r_flag, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined # table_name
 % qname,	rname,	l_flag,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual,	distance # name
 % clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	bigint # type
 % 0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1 # length
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_3);
 [ 64	]
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_3);
 [ 64	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_3
-#EXCEPT
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_15;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_primary_alignments_4
-#UNION
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_alignments_4
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY qname;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1866,13 +1240,6 @@ Ready.
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_primary_alignments_4
-#UNION
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_alignments_4
-#WHERE bam_flag(flag, 'seco_alig') = False
-#ORDER BY rname, pos;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1919,12 +1286,6 @@ Ready.
 [ "sim_22_1_7",	83,	"chr22",	45060375,	255,	"41=1X56=1X1=",	"=",	45060162,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E"	]
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE rname = rname_1_3
-#  AND pos >= pos_1_3_1
-#  AND pos <= pos_1_3_2
-#ORDER BY pos;
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1936,10 +1297,6 @@ Ready.
 [ "sim_22_1_9",	83,	"chr22",	15600266,	255,	"100=",	"=",	15600021,	0,	"TTTAAAATATTAAAAGATGAATTACTATCAATTGTTTTGAATTTTAAACTAAAAATCAGTAGTTACTATAAAATTATTATTAAATGTTCTAATAATTGTA",	"5<###E?##AB#E=DB#<==;#E#?=AFEE@C@AEA6GDGFFG?DE??::?=@BC#G>GB>GEEDA=G>ADEFDEGABEDDEBCGGEFFF7;=GEGGFGC"	]
 [ "sim_22_1_6",	99,	"chr22",	18665735,	255,	"14=1X10=1X74=",	"=",	18665943,	0,	"ATTATTCAGCCTCACATTTCAACATCGCAGAACAGGTCAGGGAGTGCAAGGTACCTCCTGCTCTTTCCAGCAGGTGCAAGGTGCACAGGGAGAAGCAGGT",	"CDDEFG;?DGEDFE+CECEEGFG>C,EG5?DGE87GBDFGCEDD=BGGDD?GDFGDD?DAGGC<G=GF@A@CE@>?>.6#F#FFDEE?@CE==<9?B?>;"	]
 [ "sim_22_1_6",	147,	"chr22",	18665943,	255,	"9=1X90=",	"=",	18665735,	0,	"CAGGCCGCCCGGGGCGGTTCCACCAAGAAAGTGACATCTGGGAGGGGCATTGAGGCAAAGGGGCCGCGAGAGGGTAGGTGCTCTAGAGGTGGCCCACGGG",	"?##??3G#9##=5B#>A#.#>#>CFBEC@:BGC>.A5@6-F4:5?;EGGAA>?6@D<?EAEDE6CGGDGGE@9F?GGGGDD5EDDGFD?:>?FED?DEBA"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname = qname_1_4
-#ORDER BY rname, pos;
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -1952,10 +1309,6 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	163,	"chr22",	39996217,	255,	"100=",	"=",	39996429,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE mapq > mapq_1_5
-#ORDER BY mapq DESC;
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -2002,29 +1355,10 @@ Ready.
 [ "sim_22_1_d",	147,	"chr22",	24189415,	255,	"100=",	"=",	24189222,	0,	"CGGGGGGCGGAGCGCAGGCAGGTGAAACTGGAGGAAATTGGAGATACAGCGGGAGGGAGGGGGAAAAGGTAAAACCTCTCACCACCTCCTCAACGCTTAT",	"##??BG#C##5AB#D;=G#BF#E#:;@?#<(4BGCG-#EA@<G?FC*GDD@FD:BEBEGFGFDDBDEAD9GGD37DDFDCDFDGEFGFCGEE:?AE>EDG"	]
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#SELECT qname,
-#    CASE WHEN bam_flag(l_flag, 'segm_reve') THEN reverse_seq(l_seq)   ELSE l_seq  END AS l_seq,
-#    CASE WHEN bam_flag(l_flag, 'segm_reve') THEN reverse_qual(l_qual) ELSE l_qual END AS l_qual,
-#    CASE WHEN bam_flag(r_flag, 'segm_reve') THEN reverse_seq(r_seq)   ELSE r_seq  END AS r_seq,
-#    CASE WHEN bam_flag(r_flag, 'segm_reve') THEN reverse_qual(r_qual) ELSE r_qual END AS r_qual
-#FROM bam.paired_primary_alignments_4
-#WHERE l_mapq < mapq_2_1
-#  AND r_mapq < mapq_2_1
-#ORDER BY qname;
 % bam.paired_primary_alignments_4,	bam.L,	bam.L,	bam.L,	bam.L # table_name
 % qname,	l_seq,	l_qual,	r_seq,	r_qual # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
-#SELECT     
-#    CASE WHEN l_pos < r_pos 
-#         THEN r_pos - (l_pos + seq_length(l_cigar))
-#         ELSE l_pos - (r_pos + seq_length(r_cigar))
-#    END AS distance, 
-#    COUNT(*) AS nr_alignments
-#FROM bam.paired_primary_alignments_4
-#WHERE l_rname = r_rname
-#GROUP BY distance
-#ORDER BY nr_alignments DESC;
 % bam.L,	bam.L1 # table_name
 % distance,	nr_alignments # name
 % bigint,	wrd # type
@@ -2043,32 +1377,10 @@ Ready.
 [ 124,	1	]
 [ 91,	1	]
 [ 135,	1	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname IN (
-#    SELECT qname
-#    FROM bam.unpaired_all_alignments_4
-#    GROUP BY qname
-#    HAVING SUM(bam_flag(flag, 'firs_segm')) = 0
-#        OR SUM(bam_flag(flag, 'last_segm')) = 0
-#)
-#ORDER BY qname;
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname IN (
-#    SELECT qname
-#    FROM (
-#        SELECT qname, bam_flag(flag, 'seco_alig') AS seco_alig, bam_flag(flag, 'segm_unma') AS segm_unma, 
-#            bam_flag(flag, 'firs_segm') AS firs_segm
-#        FROM bam.unpaired_all_alignments_4
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#    ) AS qnames
-#    GROUP BY qname, firs_segm
-#    HAVING SUM(segm_unma) < COUNT(*)
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -2128,49 +1440,11 @@ Ready.
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
 [ "sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
-#WITH qnames1 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_4
-#), qnames2 AS (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_4
-#)
-#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
-#FROM (
-#    SELECT COUNT(*) AS count_a_insct_b
-#    FROM (
-#        SELECT *
-#        FROM qnames1
-#        INTERSECT
-#        SELECT *
-#        FROM qnames2
-#    ) AS a_insct_b
-#) AS insct_sub, (
-#    SELECT COUNT(*) AS count_qnames1
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % wrd,	bigint,	bigint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
-#WITH qnames_insct AS (
-#    SELECT distinct qname
-#    FROM bam.unpaired_all_alignments_4
-#    INTERSECT
-#    SELECT distinct qname
-#    FROM bam.unpaired_all_alignments_4
-#)
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
-#)
-#UNION
-#SELECT 'f2', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname IN (
-#    SELECT *
-#    FROM qnames_insct
 % .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
 % L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -2317,37 +1591,14 @@ Ready.
 [ "f1",	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f1",	"sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 [ "f1",	"sim_22_1_f",	99,	"chr22",	23113643,	255,	"100=",	"=",	23113851,	0,	"CTTTTCTATATAAAACAAATAATTTATAATACTGTATTTGTTTTCTATTACTATTGAAATTACTACAAATGTAGTAGCTAAAACAACACATATTTTTCAT",	"DE>FDG5FDGDGFDAGEFABDGGEGADG?BEDDFGGEDGA?GG=9FEDDGBD58=@AFDFD=CBD9GGD=DCC?EE?F#A6GC#>?F#F@2E?CDF?#B?"	]
-#SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE qname IN (
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_4
-#    EXCEPT
-#    SELECT DISTINCT qname
-#    FROM bam.unpaired_all_alignments_4
-#)
-#ORDER BY qname;
 % .L2,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
-#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
-#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
-#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
-#FROM (
-#   SELECT *
-#   FROM bam.unpaired_primary_alignments_4
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.unpaired_all_alignments_4
-#WHERE rname = rname_2_9
-#  AND pos_2_9 >= pos
-#  AND pos_2_9 < pos + seq_length(cigar)
-#ORDER BY pos;
 % .unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4,	.unpaired_all_alignments_4 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -2355,24 +1606,10 @@ Ready.
 [ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
 [ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
-#SELECT qname, l_flag, l_rname, l_pos, l_mapq, l_cigar, l_rnext, l_pnext, l_tlen, l_seq, l_qual,
-#              r_flag, r_rname, r_pos, r_mapq, r_cigar, r_rnext, r_pnext, r_tlen, r_seq, r_qual
-#FROM bam.paired_primary_alignments_4
-#WHERE l_rname = rname_2_10
-#  AND r_rname = rname_2_10
-#  AND CASE WHEN l_pos < r_pos
-#           THEN (pos_2_10 >= l_pos + seq_length(l_cigar) AND pos_2_10 < r_pos)
-#           ELSE (pos_2_10 >= r_pos + seq_length(r_cigar) AND pos_2_10 < l_pos)
-#      END
-#ORDER BY l_pos;
 % bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4,	bam.paired_primary_alignments_4 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
-#SELECT qname, l_flag, l_rname, l_pos, l_mapq, l_cigar, l_rnext, l_pnext, l_tlen, l_seq, l_qual,
-#              r_flag, r_rname, r_pos, r_mapq, r_cigar, r_rnext, r_pnext, r_tlen, r_seq, r_qual
-#FROM bam.paired_secondary_alignments_4
-#ORDER BY qname;
 % bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4,	bam.paired_secondary_alignments_4 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
@@ -2382,37 +1619,14 @@ Ready.
 [ "sim_22_1_14",	355,	"chr22",	37296079,	0,	"92=172D6=1X1=",	"=",	37296228,	0,	"TCGGGCCTAGAACACGGAGCCTGGAGACCCGCGCGCCGTTGACCACAGGGTTTGGCGCCAAACGAGGAGGGCGGGGCGAGGACCAAGGGGCCGGGGCGGG",	"FDFGECDG?GDF=2BGEGEGEE@GGG=EEG:GFF@>EADDAFEE?::FGEGB>F>E@6EGGAE#DG#=B?(#@BCDDAEEGGFBAFFE-D#:>#:#CD7#",	403,	"chr22",	37296228,	0,	"1=1X7=104D18=1X9=1X12=1X49=",	"=",	37296079,	0,	"GGCGAGGGGGCGGGGCGAGGGCTGAGGGGCGGAAAACTAAGAGGAGCCCCCGCGGGTGGCGAGCTGGGATGACGGAGGGAGGGAGGGAGGGGCGCTGTGG",	"E##G#A=CD:.E-E.DEDE71#-5EEAGC;5-=#EE5'?DDED?:CFDFG&=?ACFB=DFGG=EBFDGCAGFGG>FG>GFGFFDFGE=AG6DAGEFFEGA"	]
 [ "sim_22_1_7",	339,	"chr22",	45060375,	0,	"41=1X56=1I1=",	"=",	45060235,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E",	419,	"chr22",	45060235,	0,	"1=1I12=72I3=1X5=1X4=",	"=",	45060375,	0,	"TAGGAATTTTTTTTTTTTTTGAGACAGAGTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAATGGTGCGATTGGCTGGAATTTTTTTTCTTGGCTGTCATAA",	"FGFCEEEGDE?CB::GE=FADFCEABEGBF>D;FGGGFFCDFGDGABCCADCDDDC;EF=:ACGGCEC#C=?=>EG@9#A@?=E;=:#B##A##@%C#D#"	]
 [ "sim_22_1_a",	339,	"chr14",	18226024,	0,	"100=",	"=",	18225784,	0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA",	"####F#EFCGEC5BE?EF#F=@?DF658;DEDG=@FBG@?E=DE=F#FDB?CCGE1GFFEDEFFDGGFE>FFCGEGGG:;B@FFG@DDGGGFGB7FBC?F",	419,	"chr14",	18225784,	0,	"5=1X31=1X62=",	"=",	18226024,	0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
-#WITH alig AS (
-#    SELECT *
-#    FROM bam.unpaired_alignments_4
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = True
-#      AND rname <> '*'
-#      AND pos > 0
-#      AND rnext = '*'
-#      AND pnext = 0
-#)
-#SELECT *
-#FROM (
-#    SELECT l.qname AS qname, l.rname AS rname, l.flag AS l_flag, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
-#        l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
-#                                                 r.flag AS r_flag, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
 % bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined,	bam.alig_joined # table_name
 % qname,	rname,	l_flag,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual,	distance # name
 % clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	bigint # type
 % 0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1,	1,	1,	0,	0,	1,	1,	0,	0,	1 # length
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_4);
 [ 71	]
-#INSERT INTO bam.export (SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_4);
 [ 71	]
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.unpaired_all_alignments_4
-#EXCEPT
-#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual FROM bam.alignments_16;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 
-# 16:03:17 >  
-# 16:03:17 >  "Done."
-# 16:03:17 >  

@@ -177,7 +177,7 @@ for (file_id, dbschema) in to_query:
     # Insert both the SAM and BAM files into the database. Note that we always insert into
     # dbschema 0, since the outputted files aren't necessarily ordered by qname.
     c.stdin.write("CALL bam_loader_file('%s', 0);\n"% tmp_output(file_id))
-    c.stdin.write("CALL bam_loader_file('%s', 0);\n"% tmp_output(file_id, sam=False))
+    #c.stdin.write("CALL bam_loader_file('%s', 0);\n"% tmp_output(file_id, sam=False))
 
     # We now have the alignment data for this file in three different alignment tables. The ultimate
     # export/import test is now to see if the data in them is exactly the same (except for virtual_offset)
@@ -206,4 +206,4 @@ sys.stderr.write(err)
 # All that is left to do is delete the temporary SAM/BAM files
 for (file_id, dbschema) in to_query:
     os.remove(tmp_output(file_id))
-    os.remove(tmp_output(file_id, sam=False))
+    #os.remove(tmp_output(file_id, sam=False))
