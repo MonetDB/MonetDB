@@ -497,7 +497,7 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 
 	str ret = MAL_SUCCEED;
 
-#ifdef HAVE_PROJ 
+#ifndef HAVE_PROJ 
 return createException(MAL, "geom.Transform", "Function Not Implemented");
 #endif
 
