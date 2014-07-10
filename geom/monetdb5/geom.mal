@@ -389,54 +389,6 @@ command wkb(v:wkb) :wkb address wkbFromWKB;
 
 command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address geom_2_geom
 comment "Called when iserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition"
-#function point{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,1);
-#	return x;
-#end point;
-#function curve{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,2);
-#	return x;
-#end curve;
-#function linestring{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,2);
-#	return x;
-#end linestring;
-#function surface{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,3);
-#	return x;
-#end surface;
-#function polygon{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,3);
-#	return x;
-#end polygon;
-#function multipoint{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,4);
-#	return x;
-#end multipoint;
-#function multicurve{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,5);
-#	return x;
-#end multicurve;
-#function multilinestring{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,5);
-#	return x;
-#end multilinestring;
-#function multisurface{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,6);
-#	return x;
-#end multisurface;
-#function multipolygon{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,6);
-#	return x;
-#end multipolygon;
-#function geometry{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,7);
-#	return x;
-#end geometry;
-#function geomcollection{unsafe}( wkt:str ) :wkb;
-#	x := wkb.FromText(wkt,7);
-#	return x;
-#end geomcollection;
 
 module geom;
 command calc.isnil(v:wkb):bit

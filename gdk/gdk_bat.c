@@ -73,8 +73,8 @@ default_ident(char *s)
 void
 BATinit_idents(BAT *bn)
 {
-	bn->hident = (char *) BATstring_h;
-	bn->tident = (char *) BATstring_t;
+	bn->hident = (char *) BATstring_h; //="h"
+	bn->tident = (char *) BATstring_t; //="t"
 }
 
 BATstore *
