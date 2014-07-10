@@ -2385,7 +2385,7 @@ yes|auto)
 	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
 	LDFLAGS="$LDFLAGS $PROJ_LIBS"
 	AC_CHECK_HEADER(proj_api.h,
-		AC_CHECK_LIB(proj, pj_init_plus, :,
+		AC_CHECK_LIB(proj, pj_init_plus, AC_DEFINE(HAVE_PROJ, 1, [Define if you have the proj library]),
 			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
 			have_proj=no; why_have_proj="(proj library not found)" ], ),
 		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
@@ -2413,6 +2413,7 @@ yes|auto)
 esac
 AC_SUBST(PROJ_INCS)
 AC_SUBST(PROJ_LIBS)
+AM_CONDITIONAL(HAVE_PROJ, test x"$have_proj" != xno)
 
 
 # geos, only used in geom module

@@ -332,7 +332,10 @@ end YMaxFromMBR;
 #comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
 
 
+command prelude():void	address geom_prelude;
+command epilogue():void address geom_epilogue;
 
+geom.prelude();
 
 module batgeom;
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
@@ -354,10 +357,7 @@ comment "creates a 2D with m attribute points BAT using three double BATs";
 
 
 
-command prelude():void	address geom_prelude;
-command epilogue():void address geom_epilogue;
 
-geom.prelude();
 
 module calc;
 

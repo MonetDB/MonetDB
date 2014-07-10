@@ -212,8 +212,6 @@ static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, proj
 	GEOSCoordSeq_getX(gcs_old, idx, &x);
 	GEOSCoordSeq_getY(gcs_old, idx, &y);
 				
-	//fprintf(stderr, "transforming POINT(%f %f) from '%s' to '%s'\n", x, y, pj_get_def(proj4_src,0), pj_get_def(proj4_dst,0));
-
 	if(coordinatesNum > 2) 
 		GEOSCoordSeq_getZ(gcs_old, idx, &z);
 
@@ -237,8 +235,6 @@ static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, proj
  	* the destination coordinates from radians to degrees */
 	if (pj_is_latlong(proj4_dst)) radians2degrees(&x, &y, &z);
 
-
-	//fprintf(stderr, "transformed to POINT(%f %f)\n", x, y);
 
 	GEOSCoordSeq_setX(*gcs_new, idx, x);
 	GEOSCoordSeq_setY(*gcs_new, idx, y);
@@ -494,11 +490,16 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
 str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_dst, char** proj4_src_str, char** proj4_dst_str) {
+
 	projPJ proj4_src, proj4_dst;
 	GEOSGeom geosGeometry, transformedGeosGeometry;
 	int geometryType = -1;
 
 	str ret = MAL_SUCCEED;
+
+#ifndef HAVE_PROJ 
+return createException(MAL, "geom.Transform", "Function Not Implemented");
+#endif
 
 	if(!strcmp(*proj4_src_str, "null"))
 		throw(MAL, "geom.wkbTransform", "Could not find in spatial_ref_sys srid %d\n", *srid_src);
@@ -508,9 +509,6 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 	proj4_dst = /*pj_init_plus*/projFromStr(*proj4_dst_str);
 	
 	
-//fprintf(stderr, "source:\t%s\n", *proj4_src_str);
-//fprintf(stderr, "destination:\t%s\n", *proj4_dst_str);
-
 	if(*geomWKB == NULL) {
 		*transformedWKB = wkb_nil;
 		pj_free(proj4_src);

@@ -25,6 +25,7 @@ INCLUDES = ../lib \
 
 lib__geom = {
 	MODULE
+	COND = HAVE_PROJ
 	DIR = libdir/monetdb5
 	SOURCES = geom.c
 	LIBS = ../lib/libgeom \
@@ -46,4 +47,4 @@ headers_autoload = {
 	SOURCES = 30_geom.mal
 }
 
-EXTRA_DIST = 30_geom.mal geom.mal
+EXTRA_DIST = 30_geom.malQq geom.mal
