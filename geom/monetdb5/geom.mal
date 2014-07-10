@@ -327,32 +327,6 @@ function YMaxFromMBR(b:mbr) :dbl;
 end YMaxFromMBR;
 
 
-
-
-#function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-#	x := wkb.FromText(wkt,2);
-#	return x;
-#end CurveFromText;
-#function SurfaceFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-#	x := wkb.FromText(wkt,3);
-#	return x;
-#end SurfaceFromText;
-#function MultiCurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-#	x := wkb.FromText(wkt,5);
-#	return x;
-#end MultiCurveFromText;
-#function MultiSurfaceFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-#	x := wkb.FromText(wkt,6);
-#	return x;
-#end MultiSurfaceFromText;
-#function GeomFromText{unsafe}( wkt:str, srid:sht ) :wkb;
-#	x := wkb.FromText(wkt,7);
-#	return x;
-#end GeomFromText;
-
-
-
-
 #command mbr(:flt,:flt,:flt,:flt) :mbr
 #address ordinatesMBR
 #comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
@@ -360,13 +334,20 @@ end YMaxFromMBR;
 
 
 
-# @+ ogc constructor functions
-
-#module batgeom;
+module batgeom;
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
 #comment "Construct a point-BAT from two geometry-BATs";
-
+command MakePoint{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:wkb] address geomMakePoint2D_bat
+comment "creates a 2D points BAT using two double BATs";
+command MakePoint{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl]) :bat[:oid,:wkb] address geomMakePoint3D_bat
+comment "creates a 3D points BAT using three double BATs";
+#Gives error. I do not know how to create 4d point
+command MakePoint{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb] address geomMakePoint4D_bat
+comment "creates a 4D points BAT using four double BATs";
+command MakePointM{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb] address geomMakePointM_bat
+comment "creates a 2D with m attribute points BAT using three double BATs";
+ 
 
 
 

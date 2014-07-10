@@ -129,9 +129,13 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 //geom_export str wkbFromString(wkb**, str*); 
 
 geom_export str geomMakePoint2D(wkb**, double*, double*);
+geom_export str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id);
 geom_export str geomMakePoint3D(wkb**, double*, double*, double*);
+geom_export str geomMakePoint3D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id);
 geom_export str geomMakePoint4D(wkb**, double*, double*, double*, double*);
+geom_export str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id, int* mBAT_id);
 geom_export str geomMakePointM(wkb**, double*, double*, double*);
+geom_export str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* mBAT_id);
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);
@@ -1090,7 +1094,7 @@ static str geomMakePoint(wkb **geomWKB, GEOSGeom geosGeometry) {
 	
 	if(wkb_isnil(*geomWKB)) {
 		*geomWKB = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to crete WKB from GEOSGeometry");
+		throw(MAL, "geom.MakePoint", "Failed to crete WKB from GEOSGeometry");
 	}
 
 	return MAL_SUCCEED;
@@ -1116,13 +1120,75 @@ str geomMakePoint2D(wkb** out, double* x, double* y) {
 
 	if(geosGeometry == NULL){
 		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
 	ret = geomMakePoint(out, geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 
 	return ret;
+}
+
+/* the bat version of geomMakePoint2D */
+str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id) {
+	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL;
+	dbl *x = NULL, *y = NULL;
+	BUN i;
+	wkb *p = NULL;
+
+	//get the descriptors of the x and y BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
+		 yBAT->htype != TYPE_void || //header type of y BAT not void
+	    xBAT->hseqbase != yBAT->hseqbase || //the idxs of the headers of the x and y BATs are not the same
+	    BATcount(xBAT) != BATcount(yBAT)) { //the number of valid elements in the x and y BATs are not the same
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+
+	//pointers to the first valid elements of the x and y BATS
+	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
+	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
+	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+		str err = NULL;
+		if ((err = geomMakePoint2D(&p, &x[i], &y[i])) != MAL_SUCCEED) { //create point
+			str msg;
+			BBPreleaseref(xBAT->batCacheid);
+			BBPreleaseref(yBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "geom.MakePoint", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
+		GDKfree(p);
+		p = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(xBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
 }
 
 /* creates a point using the x, y, z coordinates */
@@ -1145,7 +1211,7 @@ str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
 
 	if(geosGeometry == NULL){
 		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
 	ret = geomMakePoint(out, geosGeometry);
@@ -1153,6 +1219,82 @@ str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
 
 	return ret;
 }
+
+/* the bat version og geomMakePoint3D */
+str geomMakePoint3D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id) {
+	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL;
+	dbl *x = NULL, *y = NULL, *z = NULL;
+	BUN i;
+	wkb *p = NULL;
+
+	//get the descriptors of the input BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((zBAT = BATdescriptor(*zBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
+		yBAT->htype != TYPE_void || //header type of y BAT not void
+		zBAT->htype != TYPE_void || //header type of z BAT not void
+		xBAT->hseqbase != yBAT->hseqbase || 
+			xBAT->hseqbase != zBAT->hseqbase || //the idxs of the headers of the BATs are not the same
+		BATcount(xBAT) != BATcount(yBAT) || 
+			BATcount(xBAT) != BATcount(zBAT)) { //the number of valid elements in the BATs are not the same
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(zBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(zBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+
+	//pointers to the first valid elements of the x and y BATS
+	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
+	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
+	z = (dbl *) Tloc(zBAT, BUNfirst(zBAT));
+	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+		str err = NULL;
+		if ((err = geomMakePoint3D(&p, &x[i], &y[i], &z[i])) != MAL_SUCCEED) { //create point
+			str msg;
+			BBPreleaseref(xBAT->batCacheid);
+			BBPreleaseref(yBAT->batCacheid);
+			BBPreleaseref(zBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "geom.MakePoint", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
+		GDKfree(p);
+		p = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(xBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPreleaseref(zBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+}
+
 
 /* creates a point using the x, y, z, m coordinates */
 str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
@@ -1183,6 +1325,170 @@ str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
 
 	return ret;
 }
+
+/* the bat version og geomMakePoint4D */
+str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id, int* mBAT_id) {
+	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL, *mBAT = NULL;
+	dbl *x = NULL, *y = NULL, *z = NULL, *m = NULL;
+	BUN i;
+	wkb *p = NULL;
+
+	//get the descriptors of the input BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((zBAT = BATdescriptor(*zBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((mBAT = BATdescriptor(*mBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(zBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
+		yBAT->htype != TYPE_void || //header type of y BAT not void
+		zBAT->htype != TYPE_void || //header type of z BAT not void
+		mBAT->htype != TYPE_void || //header type of z BAT not void
+		xBAT->hseqbase != yBAT->hseqbase || 
+			xBAT->hseqbase != zBAT->hseqbase || 
+			xBAT->hseqbase != mBAT->hseqbase || //the idxs of the headers of the BATs are not the same
+		BATcount(xBAT) != BATcount(yBAT) || 
+			BATcount(xBAT) != BATcount(zBAT) ||
+			BATcount(xBAT) != BATcount(mBAT)) { //the number of valid elements in the BATs are not the same
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(zBAT->batCacheid);
+		BBPreleaseref(mBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(zBAT->batCacheid);
+		BBPreleaseref(mBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+
+	//pointers to the first valid elements of the x and y BATS
+	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
+	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
+	z = (dbl *) Tloc(zBAT, BUNfirst(zBAT));
+	m = (dbl *) Tloc(mBAT, BUNfirst(mBAT));
+	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+		str err = NULL;
+		if ((err = geomMakePoint4D(&p, &x[i], &y[i], &z[i], &m[i])) != MAL_SUCCEED) { //create point
+			str msg;
+			BBPreleaseref(xBAT->batCacheid);
+			BBPreleaseref(yBAT->batCacheid);
+			BBPreleaseref(zBAT->batCacheid);
+			BBPreleaseref(mBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "geom.MakePoint", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
+		GDKfree(p);
+		p = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(xBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPreleaseref(zBAT->batCacheid);
+	BBPreleaseref(mBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* mBAT_id) {
+	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *mBAT = NULL;
+	dbl *x = NULL, *y = NULL, *m = NULL;
+	BUN i;
+	wkb *p = NULL;
+
+	//get the descriptors of the input BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ((mBAT = BATdescriptor(*mBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
+	}
+	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
+		yBAT->htype != TYPE_void || //header type of y BAT not void
+		mBAT->htype != TYPE_void || //header type of z BAT not void
+		xBAT->hseqbase != yBAT->hseqbase || 
+			xBAT->hseqbase != mBAT->hseqbase || //the idxs of the headers of the BATs are not the same
+		BATcount(xBAT) != BATcount(yBAT) || 
+			BATcount(xBAT) != BATcount(mBAT)) { //the number of valid elements in the BATs are not the same
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(mBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		BBPreleaseref(mBAT->batCacheid);
+		throw(MAL, "geom.MakePoint", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+
+	//pointers to the first valid elements of the x and y BATS
+	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
+	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
+	m = (dbl *) Tloc(mBAT, BUNfirst(mBAT));
+	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+		str err = NULL;
+		if ((err = geomMakePointM(&p, &x[i], &y[i], &m[i])) != MAL_SUCCEED) { //create point
+			str msg;
+			BBPreleaseref(xBAT->batCacheid);
+			BBPreleaseref(yBAT->batCacheid);
+			BBPreleaseref(mBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "geom.MakePoint", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
+		GDKfree(p);
+		p = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(xBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPreleaseref(mBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+}
+
 
 /* creates a point using the x, y, m coordinates */
 str geomMakePointM(wkb** out, double* x, double* y, double* m) {
@@ -2370,18 +2676,6 @@ geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 
-
-//geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
-
-
-
-
-
-
-
-
-
-
 /* HASH: compute a hash value. */
 /* returns a positive integer hash value */
 
@@ -2536,65 +2830,7 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 }
 
 
-/*
-str
-wkbcreatepoint_bat(int *out, int *ix, int *iy)
-{
-	BAT *bo = NULL, *bx = NULL, *by = NULL;
-	dbl *x = NULL, *y = NULL;
-	BUN i;
-	wkb *p = NULL;
 
-	if ((bx = BATdescriptor(*ix)) == NULL) {
-		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
-	}
-	if ((by = BATdescriptor(*iy)) == NULL) {
-		BBPreleaseref(bx->batCacheid);
-		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
-	}
-	if ( bx->htype != TYPE_void ||
-		 by->htype != TYPE_void ||
-	    bx->hseqbase != by->hseqbase ||
-	    BATcount(bx) != BATcount(by)) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
-		throw(MAL, "geom.point", "both arguments must have dense and aligned heads");
-	}
-
-	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx))) == NULL) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
-		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bo, bx->hseqbase);
-
-	x = (dbl *) Tloc(bx, BUNfirst(bx));
-	y = (dbl *) Tloc(by, BUNfirst(bx));
-	for (i = 0; i < BATcount(bx); i++) {
-		str err = NULL;
-		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(bx->batCacheid);
-			BBPreleaseref(by->batCacheid);
-			BBPreleaseref(bo->batCacheid);
-			msg = createException(MAL, "geom.point", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-		BUNappend(bo,p,TRUE);
-		GDKfree(p);
-		p = NULL;
-	}
-
-	BATsetcount(bo, BATcount(bx));
-    	BATsettrivprop(bo);
-    	BATderiveProps(bo,FALSE);
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(by->batCacheid);
-	BBPkeepref(*out = bo->batCacheid);
-	return MAL_SUCCEED;
-}
-*/
 
 
 
