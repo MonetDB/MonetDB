@@ -47,4 +47,4 @@ headers_autoload = {
 	SOURCES = 30_geom.mal
 }
 
-EXTRA_DIST = 30_geom.malQq geom.mal
+EXTRA_DIST = 30_geom.mal geom.mal

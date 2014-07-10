@@ -497,7 +497,7 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 
 	str ret = MAL_SUCCEED;
 
-#ifndef HAVE_PROJ 
+#ifdef HAVE_PROJ 
 return createException(MAL, "geom.Transform", "Function Not Implemented");
 #endif
 
@@ -1133,7 +1133,7 @@ str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id) {
 	dbl *x = NULL, *y = NULL;
 	BUN i;
 	wkb *p = NULL;
-
+	
 	//get the descriptors of the x and y BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
 		throw(MAL, "geom.MakePoint", RUNTIME_OBJECT_MISSING);
