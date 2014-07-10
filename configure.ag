@@ -477,7 +477,7 @@ case "$host_os" in
 	if test -s /etc/os-release; then
 		# this is the new way of getting release information
 		# works for Fedora >= 17, Ubuntu >= 12.04 (Precise Pangolin)
-		LINUX_DIST=`source /etc/os-release; echo ${NAME}:${VERSION_ID}`
+		LINUX_DIST=`source /etc/os-release; echo ${ID}:${VERSION_ID}`
 	elif test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
 			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
@@ -2879,6 +2879,7 @@ AC_CHECK_FUNCS([\
 				pipe \
 				popen \
 				posix_fadvise \
+				posix_fallocate \
 				posix_madvise \
 				putenv \
 				round \

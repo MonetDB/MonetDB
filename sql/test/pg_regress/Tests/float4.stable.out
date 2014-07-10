@@ -1,4 +1,4 @@
-stdout of test 'float` in directory 'sql/test/pg_regress` itself:
+stdout of test 'float4` in directory 'sql/test/pg_regress` itself:
 
 
 # 17:11:18 >  
@@ -40,223 +40,170 @@ Ready.
 [ 1 ]
 #INSERT INTO FLOAT4_TBL(f1) VALUES ('1.2345678901234e-20');
 [ 1 ]
-#-- test for over and under flow 
-#
-#
-#
-#
-#-- bad input
-#
-#
-#
-#
-#
-#
-#
-#-- special inputs
-#SELECT 'NaN'::float;
-% sys.L0 # table_name
-% float # name
-% ? # type
-% ? # length
-[ "NaN" ]
-
-#SELECT 'nan'::float;
-% sys.L0 # table_name
-% float # name
-% ? # type
-% ? # length
-[ "NaN" ]
-
-#SELECT '   NAN  '::float;
-% sys.L0 # table_name
-% float # name
-% ? # type
-% ? # length
-[ "NaN" ]
-
-#SELECT 'infinity'::float;
-% sys.L0 # table_name
-% float # name
-% ? # type
-% ? # length
-[ "Infinity" ]
-
-#SELECT '          -INFINiTY   '::float;
-% sys.L0 # table_name
-% float # name
-% ? # type
-% ? # length
-[ "-Infinity" ]
-
-#-- bad special inputs
-#
-#
-#
-#
-#SELECT 'Infinity'::float / 'Infinity'::float;
-% sys.L0 # table_name
-% ?column? # name
-% ? # type
-% ? # length
-[ "NaN" ]
-
-#SELECT 'nan'::float / 'nan'::float;
-% sys.L0 # table_name
-% ?column? # name
-% ? # type
-% ? # length
-[ "NaN" ]
-
-#SELECT '' AS five, FLOAT4_TBL.*;
-% sys.L0,	sys.L0 # table_name
+#INSERT INTO FLOAT4_TBL(f1) VALUES ('10e-40');
+[ 1	]
+#INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
+[ 1	]
+#SELECT cast('NaN' as real);
+% .L # table_name
+% single_value # name
+% real # type
+% 15 # length
+[ NULL	]
+#SELECT cast('nan' as real);
+% .L # table_name
+% single_value # name
+% real # type
+% 15 # length
+[ NULL	]
+#SELECT cast('nan' as real) / cast('nan' as real);
+% .L # table_name
+% sql_div_single_value # name
+% real # type
+% 15 # length
+[ NULL	]
+#SELECT '' AS five, * FROM FLOAT4_TBL;
+% .L,	sys.float4_tbl # table_name
 % five,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	1004.3 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e+20" ]
-[ "",	"1.23457e-20" ]
-
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % four,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e+20" ]
-[ "",	"1.23457e-20" ]
-
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % one,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	1004.3 ]
-
+% char,	real # type
+% 0,	15 # length
+[ "",	1004	]
 #SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1;
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % three,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e-20" ]
-
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % three,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e-20" ]
-
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % four,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	1004.3 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e-20" ]
-
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
-% sys.L0,	sys.L0 # table_name
+% .L,	sys.f # table_name
 % four,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	1004.3 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e-20" ]
-
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% .L,	sys.f,	sys.L # table_name
 % three,	f1,	x # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	1004.3,	-10043 ]
-[ "",	"1.23457e+20",	"-1.23457e+21" ]
-[ "",	"1.23457e-20",	"-1.23457e-19" ]
-
+% char,	real,	real # type
+% 0,	15,	15 # length
+[ "",	1004,	-10043	]
+[ "",	1,	-1	]
+[ "",	1,	-1	]
+[ "",	1,	-1	]
 #SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% .L,	sys.f,	sys.L # table_name
 % three,	f1,	x # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	1004.3,	994.3 ]
-[ "",	"1.23457e+20",	"1.23457e+20" ]
-[ "",	"1.23457e-20",	-10 ]
-
+% char,	real,	real # type
+% 0,	15,	15 # length
+[ "",	1004,	994	]
+[ "",	1,	1	]
+[ "",	1,	-10	]
+[ "",	1,	-10	]
 #SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% .L,	sys.f,	sys.L # table_name
 % three,	f1,	x # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	1004.3,	-100.43 ]
-[ "",	"1.23457e+20",	"-1.23457e+19" ]
-[ "",	"1.23457e-20",	"-1.23457e-21" ]
-
+% char,	real,	real # type
+% 0,	15,	15 # length
+[ "",	1004,	-100	]
+[ "",	1,	-1	]
+[ "",	1,	-1	]
+[ "",	1,	-9	]
 #SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% .L,	sys.f,	sys.L # table_name
 % three,	f1,	x # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	1004.3,	1014.3 ]
-[ "",	"1.23457e+20",	"1.23457e+20" ]
-[ "",	"1.23457e-20",	10 ]
-
-#-- test divide by zero
-#
-#SELECT '' AS five, FLOAT4_TBL.*;
-% sys.L0,	sys.L0 # table_name
+% char,	real,	real # type
+% 0,	15,	15 # length
+[ "",	1004,	1014	]
+[ "",	1,	1	]
+[ "",	1,	10	]
+[ "",	1,	10	]
+#SELECT '' AS five, * FROM FLOAT4_TBL;
+% .L,	sys.float4_tbl # table_name
 % five,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	1004.3 ]
-[ "",	-34.84 ]
-[ "",	"1.23457e+20" ]
-[ "",	"1.23457e-20" ]
-
-#-- test the unary float4abs operator 
-#SELECT '' AS five, f.f1, @f.f1 AS abs_f1 FROM FLOAT4_TBL f;
-% sys.L0,	sys.L0,	sys.L0 # table_name
-% five,	f1,	abs_f1 # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	0,	0 ]
-[ "",	1004.3,	1004.3 ]
-[ "",	-34.84,	34.84 ]
-[ "",	"1.23457e+20",	"1.23457e+20" ]
-[ "",	"1.23457e-20",	"1.23457e-20" ]
-
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
+[ "",	1	]
+[ "",	-1	]
 #UPDATE FLOAT4_TBL
 #   SET f1 = FLOAT4_TBL.f1 * '-1'
 #   WHERE FLOAT4_TBL.f1 > '0.0';
-#SELECT '' AS five, FLOAT4_TBL.*;
-% sys.L0,	sys.L0 # table_name
+[ 4	]
+#SELECT '' AS five, * FROM FLOAT4_TBL;
+% .L,	sys.float4_tbl # table_name
 % five,	f1 # name
-% ?,	? # type
-% ?,	? # length
+% char,	real # type
+% 0,	15 # length
 [ "",	0 ]
-[ "",	-34.84 ]
-[ "",	-1004.3 ]
-[ "",	"-1.23457e+20" ]
-[ "",	"-1.23457e-20" ]
+[ "",	-1004	]
+[ "",	-34	]
+[ "",	-1	]
+[ "",	-1	]
+[ "",	-1	]
+[ "",	-1	]
+#DROP TABLE FLOAT4_TBL;
 
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 18:17:19 >  
+# 18:17:19 >  "Done."
+# 18:17:19 >  
 
