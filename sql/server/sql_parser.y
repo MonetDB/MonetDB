@@ -4249,10 +4249,18 @@ literal:
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_bool(SA, &t, FALSE)); }
+ |  NOT BOOL_FALSE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(SA, &t, TRUE)); }
  |  BOOL_TRUE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_bool(SA, &t, TRUE)); }
+ |  NOT BOOL_TRUE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(SA, &t, FALSE)); }
  ;
 
 interval_expression:
