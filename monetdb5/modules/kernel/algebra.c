@@ -952,7 +952,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->argc - pci->retc >= 3 && pci->argc - pci->retc <= 5);
 
 	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
-	if (n < 0 || n >= BUN_MAX)
+	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference(stk, pci, 0);
 	if (pci->retc == 2)
