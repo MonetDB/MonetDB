@@ -51,9 +51,9 @@
 #endif
 
 
-#define GEOMETRY_HAS_Z(info)(info & 0x02)
-#define GEOMETRY_HAS_M(info)(info & 0x01)
-#define PI 3.14159265358979323846
+static inline int geometryHasZ(int info){return (info & 0x02);}
+static inline int geometryHasM(int info){return (info & 0x01);}
+const int pi=3.14159265358979323846;
 
 /* the first argument in the functions is the return variable */
 
@@ -193,16 +193,16 @@ geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 
 /** convert degrees to radians */
 static void degrees2radians(double *x, double *y, double *z) {
-	(*x) *= PI/180.0;
-	(*y) *= PI/180.0;
-	(*z) *= PI/180.0;
+	(*x) *= pi/180.0;
+	(*y) *= pi/180.0;
+	(*z) *= pi/180.0;
 }
 
 /** convert radians to degrees */
 static void radians2degrees(double *x, double *y, double *z) {
-	(*x) *= 180.0/PI;
-	(*y) *= 180.0/PI;
-	(*z) *= 180.0/PI;
+	(*x) *= 180.0/pi;
+	(*y) *= 180.0/pi;
+	(*z) *= 180.0/pi;
 }
 
 
@@ -660,13 +660,13 @@ inWKB = outWKB;
 
 /*check if the geometry has z coordinate*/
 void geoHasZ(int* res, int* info) {
-	if(GEOMETRY_HAS_Z(*info)) *res=1;
+	if(geometryHasZ(*info)) *res=1;
 	else *res=0;
 
 }
 /*check if the geometry has m coordinate*/
 void geoHasM(int* res, int* info) {
-	if(GEOMETRY_HAS_M(*info)) *res=1;
+	if(geometryHasM(*info)) *res=1;
 	else *res=0;
 }
 /*check the geometry subtype*/
