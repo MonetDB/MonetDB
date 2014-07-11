@@ -29,38 +29,39 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- OID
-#--
-#-- leading/trailing hard tab is also allowed
-#-- bad inputs 
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('-1040');
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('   10  ');
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('	  15 	  ');
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
-ERROR = invalid input syntax for type oid: "asdfasd"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('99asdfasd');
-ERROR = invalid input syntax for type oid: "99asdfasd"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    d');
-ERROR = invalid input syntax for type oid: "5    d"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('    5d');
-ERROR = invalid input syntax for type oid: "    5d"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    5');
-ERROR = invalid input syntax for type oid: "5    5"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = INSERT INTO OID_TBL(f1) VALUES ('    ');
-ERROR = invalid input syntax for type oid: "    "
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES (' - 500');
-ERROR = invalid input syntax for type oid: " - 500"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('32958209582039852935');
-ERROR = value "32958209582039852935" is out of range for type oid
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+
+MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
-ERROR = value "-23582358720398502385" is out of range for type oid
+
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
