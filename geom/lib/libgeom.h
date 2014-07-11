@@ -38,7 +38,10 @@
 #endif
 
 #include <geos_c.h>
+
+#ifdef HAVE_PROJ
 #include "proj_api.h" //it is needed to transform from one srid to another
+#endif
 
 /* geos does not support 3d envelope */
 typedef struct mbr {
