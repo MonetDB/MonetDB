@@ -951,6 +951,9 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1 || pci->retc == 2);
 	assert(pci->argc - pci->retc >= 3 && pci->argc - pci->retc <= 5);
 
+	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
+	if (n < 0 || n >= BUN_MAX)
+		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference(stk, pci, 0);
 	if (pci->retc == 2)
 		ret2 = getArgReference(stk, pci, 1);
@@ -972,9 +975,8 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
 	asc = * (bit *) getArgReference(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, n, asc);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc);
 	BBPreleaseref(b->batCacheid);
 	if (s)
 		BBPreleaseref(s->batCacheid);
