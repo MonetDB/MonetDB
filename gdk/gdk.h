@@ -928,9 +928,9 @@ typedef struct PROPrec PROPrec;
 typedef struct {
 	str id;				/* label for head/tail column */
 
-	unsigned short width;	/* byte-width of the atom array */
+	unsigned short width;	/* byte-width of the atom array, the width of the offsets */
 	bte type;			/* type id. */
-	bte shift;			/* log2 of bunwidth */
+	bte shift;			/* log2 of bun width */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
 	 key:2,				/* duplicates allowed? */
