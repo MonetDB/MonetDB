@@ -172,6 +172,7 @@ geom_export str wkbNumGeometries(int* out, wkb** geom);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
+geom_export str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
 geom_export str mbrAbove(bit *out, mbr **b1, mbr **b2);
@@ -590,6 +591,72 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 	return MAL_SUCCEED;
 }
 
+str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL, *outWKB = NULL;
+	BUN p = NULL, q = NULL;
+	BATiter inBAT_iter;
+
+	fprintf(stderr, "in geom_2_geom_bat\n");
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "calc.geom_2_geom", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "calc.geom_2_geom", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "calc.geom_2_geom", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	//for (i = 0; i < BATcount(inBAT); i++) { 
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+
+		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i + BUNfirst(inBAT));
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+/*
+if(columnType != NULL || columnSRID != NULL) {		
+char* outWKT = NULL;
+int len =0;
+outWKB = NULL;
+wkbTOSTR(&outWKT, &len, inWKB);
+if(strcmp(outWKT, "nil") == 0)
+	throw(MAL, "batcalc.geom_2_geom","Error");
+fprintf(stderr, "WKT: %s\n", outWKT);
+inWKB = outWKB;
+}*/
+		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) { //create point
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "calc.geom_2_geom", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
+		GDKfree(outWKB);
+		outWKB = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+
+}
 
 /*check if the geometry has z coordinate*/
 void geoHasZ(int* res, int* info) {
