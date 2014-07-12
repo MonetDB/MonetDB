@@ -53,7 +53,7 @@
 
 static inline int geometryHasZ(int info){return (info & 0x02);}
 static inline int geometryHasM(int info){return (info & 0x01);}
-const int pi=3.14159265358979323846;
+const double pi=3.14159265358979323846;
 
 /* the first argument in the functions is the return variable */
 
