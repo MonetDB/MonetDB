@@ -25,7 +25,6 @@ INCLUDES = ../lib \
 
 lib__geom = {
 	MODULE
-	COND = HAVE_PROJ
 	DIR = libdir/monetdb5
 	SOURCES = geom.c
 	LIBS = ../lib/libgeom \
