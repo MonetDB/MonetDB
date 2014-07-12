@@ -205,7 +205,7 @@ static void radians2degrees(double *x, double *y, double *z) {
 	(*z) *= 180.0/pi;
 }
 
-
+#ifdef HAVE_PROJ
 static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
 	double x=0, y=0, z=0;
 	int* errorNum =0 ;
@@ -488,19 +488,20 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 	return result;
 
 }
+#endif
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
 str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_dst, char** proj4_src_str, char** proj4_dst_str) {
-
+#ifndef HAVE_PROJ 
+return createException(MAL, "geom.Transform", "Function Not Implemented");
+#else
 	projPJ proj4_src, proj4_dst;
 	GEOSGeom geosGeometry, transformedGeosGeometry;
 	int geometryType = -1;
 
 	str ret = MAL_SUCCEED;
 
-#ifndef HAVE_PROJ 
-return createException(MAL, "geom.Transform", "Function Not Implemented");
-#endif
+
 
 	if(!strcmp(*proj4_src_str, "null"))
 		throw(MAL, "geom.wkbTransform", "Could not find in spatial_ref_sys srid %d\n", *srid_src);
@@ -560,6 +561,7 @@ return createException(MAL, "geom.Transform", "Function Not Implemented");
 	GEOSGeom_destroy(geosGeometry);
 
 	return ret;
+#endif
 }
 
 
@@ -569,7 +571,7 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 	int valueType = 0;
 	
 	int valueSRID = (*valueWKB)->srid;
-
+//fprintf(stderr, "in geom_2_geom\n");
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*valueWKB);
 	/* get the number of coordinates the geometry has */
@@ -1100,6 +1102,7 @@ str mbrFromMBR(mbr **w, mbr **src) {
 }
 
 str wkbFromWKB(wkb **w, wkb **src) {
+//fprintf(stderr, "in wkbFromWKB\n");
 	*w = (wkb *) GDKmalloc(wkb_size((*src)->len));
 
 	if (wkb_isnil(*src)) {
