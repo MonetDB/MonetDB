@@ -594,7 +594,7 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL, *outWKB = NULL;
-	BUN p = NULL, q = NULL;
+	BUN p =0, q =0;
 	BATiter inBAT_iter;
 
 	fprintf(stderr, "in geom_2_geom_bat\n");
