@@ -644,12 +644,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = BLOCKED;
 			}
 		} else
-		if ( getModuleId(p) == pqueueRef && getFunctionId(p) == utopn_minRef ){
-			if ( vars[getArg(p,1)] == PARTITION ){
-				status[i] = PIVOT;
-				vars[getArg(p,0)] = PIVOT;
-			}
-		} else
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subsortRef || getFunctionId(p) == sortRef || getFunctionId(p)== tinterRef) ) {
 			status[i] = BLOCKED;
 			for(j=0; j < p->retc; j++)
