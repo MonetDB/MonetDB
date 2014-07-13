@@ -48,7 +48,6 @@ include groupby;
 include group;
 include aggr;
 include array;
-include pqueue;
 include mkey;
 
 # Atom extensions
