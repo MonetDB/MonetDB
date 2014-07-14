@@ -19,3 +19,7 @@ numGeometries
 numPoints
 numRings
 transform
+contains
+equals
+
+
