@@ -3351,6 +3351,8 @@ gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
+gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc);
+
 #include "gdk_calc.h"
 
 /*

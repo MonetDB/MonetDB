@@ -46,6 +46,7 @@ sed -r \
 	-e 's/\bint8\b/bigint/ig' \
 	-e 's/\bfloat4\b/real/ig' \
 	-e 's/\bfloat8\b/double/ig' \
+	-e 's/\bnumeric(210,10)\b/numeric(18,10)/ig' \
 	-e 's/\bfloat8 (*)/cast(\1 as double)/ig' \
 	-e 's/\bpath\b/string/ig' \
 	-e 's/\bpoint\b/string/ig' \
@@ -54,9 +55,15 @@ sed -r \
 	-e 's/\bcity_budget\b/decimal(7,2)/ig' \
 	-e 's/\bname,/string,/ig' \
 	-e 's/\bname$/string/ig' \
+	-e 's/LOG(numeric '10',/LOG10(/ig' \
+	-e 's/LN(/LOG(/ig' \
+	-e 's/\bnumeric '10'/cast('10.0' as numeric(2,0))/ig' \
+	-e 's/\b!= /<> /ig' \
 	-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/ig' \
+	-e 's/BEGIN TRANSACTION;/START TRANSACTION;/ig' \
 	-e 's/BEGIN;/START TRANSACTION;/ig' \
 	-e 's/END;/COMMIT;/ig' \
+	-e 's/COMMIT TRANSACTION;/COMMIT;/ig' \
 	-e 's/^COMMENT.*;$//ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
