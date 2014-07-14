@@ -1,18 +1,18 @@
 WITH alig AS (
     SELECT *
     FROM bam.alignments_1
-    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
+    WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
       AND rname = 'chr22'
-      AND bam_flag(flag, 'seco_alig') = False
+      AND bam.bam_flag(flag, 'seco_alig') = False
       AND qname IN (
         SELECT qname
         FROM bam.alignments_1
-        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-          AND bam_flag(flag, 'seco_alig') = False
+        WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+          AND bam.bam_flag(flag, 'seco_alig') = False
         GROUP BY qname
         HAVING COUNT(*) = 2
-           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-           AND SUM(bam_flag(flag, 'last_segm')) = 1
+           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
+           AND SUM(bam.bam_flag(flag, 'last_segm')) = 1
      )
 )
 SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
@@ -22,15 +22,15 @@ SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l
 FROM (
     SELECT *
     FROM alig
-    WHERE bam_flag(flag, 'firs_segm') = True
+    WHERE bam.bam_flag(flag, 'firs_segm') = True
 ) AS l JOIN (
     SELECT *
     FROM alig
-    WHERE bam_flag(flag, 'last_segm') = True
+    WHERE bam.bam_flag(flag, 'last_segm') = True
 ) AS r ON l.qname = r.qname
        AND CASE WHEN l.pos < r.pos
-                THEN (80000000 >= l.pos + seq_length(l.cigar) AND 80000000 < r.pos)
-                ELSE (80000000 >= r.pos + seq_length(r.cigar) AND 80000000 < l.pos)
+                THEN (80000000 >= l.pos + bam.seq_length(l.cigar) AND 80000000 < r.pos)
+                ELSE (80000000 >= r.pos + bam.seq_length(r.cigar) AND 80000000 < l.pos)
            END
 ORDER BY l_pos;
 
@@ -40,7 +40,7 @@ FROM bam.paired_primary_alignments_3
 WHERE l_rname = 'chr22'
   AND r_rname = 'chr22'
   AND CASE WHEN l_pos < r_pos
-           THEN (80000000 >= l_pos + seq_length(l_cigar) AND 80000000 < r_pos)
-           ELSE (80000000 >= r_pos + seq_length(r_cigar) AND 80000000 < l_pos)
+           THEN (80000000 >= l_pos + bam.seq_length(l_cigar) AND 80000000 < r_pos)
+           ELSE (80000000 >= r_pos + bam.seq_length(r_cigar) AND 80000000 < l_pos)
       END
 ORDER BY l_pos;

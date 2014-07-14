@@ -1,8 +1,8 @@
 WITH alig AS (
     SELECT *
     FROM bam.alignments_1
-    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-      AND bam_flag(flag, 'seco_alig') = True
+    WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+      AND bam.bam_flag(flag, 'seco_alig') = True
       AND rname <> '*'
       AND pos > 0
       AND rnext <> '*'
@@ -15,11 +15,11 @@ SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l
 FROM (
     SELECT *
     FROM alig
-    WHERE bam_flag(flag, 'firs_segm') = True
+    WHERE bam.bam_flag(flag, 'firs_segm') = True
 ) AS l JOIN (
     SELECT *
     FROM alig
-    WHERE bam_flag(flag, 'last_segm') = True
+    WHERE bam.bam_flag(flag, 'last_segm') = True
 ) AS r
     ON l.qname = r.qname
    AND ((l.rnext = '=' AND l.rname = r.rname) OR l.rnext = r.rname)

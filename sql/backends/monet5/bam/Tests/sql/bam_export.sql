@@ -5,10 +5,10 @@ INSERT INTO bam.export (
 );
 
 # Export data to SAM file
-CALL bam_export('OUTPUT_1');
+CALL bam.bam_export('OUTPUT_1');
 
 # Load exported data back into a sequential table
-CALL bam_loader_file('OUTPUT_1', 0);
+CALL bam.bam_loader_file('OUTPUT_1', 0);
 
 # Data inside original table should be exactly the same as the newly imported file
 SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
@@ -29,10 +29,10 @@ INSERT INTO bam.export (
 );
 
 # Export data to SAM file
-CALL bam_export('OUTPUT_2');
+CALL bam.bam_export('OUTPUT_2');
 
 # Load exported data back into a sequential table
-CALL bam_loader_file('OUTPUT_2', 0);
+CALL bam.bam_loader_file('OUTPUT_2', 0);
 
 # Data inside original table should be exactly the same as the newly imported file
 SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
