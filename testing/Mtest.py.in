@@ -325,6 +325,7 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
+    'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
