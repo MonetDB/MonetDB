@@ -2450,7 +2450,7 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	wkb *aWKB = NULL, *bWKB = NULL;
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
-	BUN p_a=0, p_b=0, q_a=0, q_b=0;
+	BUN i=0;
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
@@ -2462,14 +2462,16 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	}
 	
 	if ( aBAT->htype != TYPE_void || //header type of aBAT not void
-		bBAT->htype != TYPE_void) { //header type of bBAT not void
+		 bBAT->htype != TYPE_void || //header type of bBAT not void
+	    aBAT->hseqbase != bBAT->hseqbase || //the idxs of the headers of the BATs are not the same
+	    BATcount(aBAT) != BATcount(bBAT)) { //the number of valid elements in the BATs are not the same
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.Contains", "the arguments must have dense and aligned heads");
 	}
 
-	//create a new BAT for the output (the size of it is the product of the sizes of the two input BATs)
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT)*BATcount(bBAT), TRANSIENT)) == NULL) {
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
@@ -2481,26 +2483,23 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	aBAT_iter = bat_iterator(aBAT);
 	bBAT_iter = bat_iterator(bBAT);
 
-	BATloop(aBAT, p_a, q_a) { //iterate over all valid elements of aBAT
-		aWKB = (wkb*) BUNtail(aBAT_iter, p_a); //get the geometry
+	for (i = 0; i < BATcount(aBAT); i++) { 
+		str err = NULL;
+		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		BATloop(bBAT, p_b, q_b) { //iterate over all valid elements of bBAT
-			str err = NULL;
-			bWKB = (wkb*) BUNtail(bBAT_iter, p_b); //get the geometry
+		//check first if the bounding box of geometry a contains the bounding box of geometry b
 
-			//check first if the bounding boxe of the geometry a contains the bounding box of geometry b
-
-			if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
-				str msg;
-				BBPreleaseref(aBAT->batCacheid);
-				BBPreleaseref(bBAT->batCacheid);
-				BBPreleaseref(outBAT->batCacheid);
-				msg = createException(MAL, "batgeom.Contains", "%s", err);
-				GDKfree(err);
-				return msg;
-			}
-			BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+			str msg;
+			BBPreleaseref(aBAT->batCacheid);
+			BBPreleaseref(bBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			return msg;
 		}
+		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
 	}
 
 	//set some properties of the new BAT
