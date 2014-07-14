@@ -48,7 +48,7 @@ float nextafterf(float x, float y);
 static BAT *
 newempty(void)
 {
-	BAT *bn = BATnew(TYPE_void, TYPE_void, 0);
+	BAT *bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 	BATseqbase(bn, 0);
 	BATseqbase(BATmirror(bn), 0);
 	return bn;
@@ -78,7 +78,7 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		return NULL;
 	}
 
-	bn = BATnew(TYPE_void, ATOMtype(b->htype), h1 - l1 + h2 - l2);
+	bn = BATnew(TYPE_void, ATOMtype(b->htype), h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
 		return bn;
 	for (p = (BUN) l1, q = (BUN) h1; p < q; p++) {
@@ -1078,7 +1078,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
 		if (s) {
-			return BATcopy(s, TYPE_void, s->ttype, 0);
+			return BATcopy(s, TYPE_void, s->ttype, 0, TRANSIENT);
 		} else {
 			return BATmirror(BATmark(b, 0));
 		}
@@ -1319,7 +1319,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* limit estimation by upper limit */
 	estimate = MIN(estimate, maximum);
 
-	bn = BATnew(TYPE_void, TYPE_oid, estimate);
+	bn = BATnew(TYPE_void, TYPE_oid, estimate, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 

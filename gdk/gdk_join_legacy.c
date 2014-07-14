@@ -42,9 +42,9 @@ BATsemijoin(BAT *l, BAT *r)
 	BAT *bn;
 
 	if (BATcount(l) == 0)
-		return BATcopy(l, l->htype, l->ttype, 0);
+		return BATcopy(l, l->htype, l->ttype, 0, TRANSIENT);
 	if (BATcount(r) == 0) {
-		bn = BATnew(l->htype, l->ttype, 0);
+		bn = BATnew(l->htype, l->ttype, 0, TRANSIENT);
 		if (BAThdense(l))
 			BATseqbase(bn, l->hseqbase);
 		if (BATtdense(l))

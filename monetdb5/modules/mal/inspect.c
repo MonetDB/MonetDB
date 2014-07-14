@@ -61,7 +61,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void) mb;
@@ -91,7 +91,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void) mb;
@@ -122,7 +122,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void)mb;
@@ -154,7 +154,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
@@ -186,7 +186,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
@@ -230,7 +230,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", RUNTIME_SIGNATURE_MISSING);
 
-	b = BATnew(TYPE_void, TYPE_str, 256);
+	b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
@@ -266,7 +266,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12);
+	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
@@ -309,7 +309,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12);
+	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
@@ -352,7 +352,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12);
+	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
@@ -427,7 +427,7 @@ str
 INSPECTatom_names(int *ret)
 {
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
@@ -446,10 +446,10 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 {
 	BAT *b, *bn;
 
-	b = BATcopy(GDKkey, TYPE_void, GDKkey->ttype, 0);
+	b = BATcopy(GDKkey, TYPE_void, GDKkey->ttype, 0, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0);
+	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
@@ -481,7 +481,7 @@ str
 INSPECTatom_sup_names(int *ret)
 {
 	int i, k;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
@@ -504,7 +504,7 @@ INSPECTatom_sizes(int *ret)
 {
 	int i;
 	int s;
-	BAT *b = BATnew(TYPE_void, TYPE_int, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);

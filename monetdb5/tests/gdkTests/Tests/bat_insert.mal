@@ -12,7 +12,7 @@ barrier errors:= overflow > 0:lng;
 exit errors;
 end check_cap;
 
-b := bat.new(:oid,:oid);
+b := bat.new_persistent(:oid,:oid);
 bat.setName(b,"b");
 bat.setPersistent(b,true);
 

@@ -495,7 +495,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	BUN nils = 0;
 	TPE *dst;
 
-	bn = BATnew(TYPE_void, TYPE_TPE, cnt);
+	bn = BATnew(TYPE_void, TYPE_TPE, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -546,7 +546,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		else
 			res = OP(b1->T->seq, b2->T->seq);
 
-		bn = BATconstant(TYPE_TPE, &res, cnt);
+		bn = BATconstant(TYPE_TPE, &res, cnt, TRANSIENT);
 		BATseqbase(bn, b1->hseqbase);
 		return bn;
 	}

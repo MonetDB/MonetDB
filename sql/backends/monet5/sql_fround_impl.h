@@ -83,7 +83,7 @@ bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt);
+	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -198,7 +198,7 @@ bat_round_wrap(bat *_res, bat *_v, bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt);
+	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);

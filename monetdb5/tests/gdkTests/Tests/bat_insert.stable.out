@@ -27,7 +27,7 @@ exit errors;
 end check_cap;
 function user.main():void;
     o := nil:oid;
-    b := bat.new(:oid,:oid);
+    b := bat.new_persistent(:oid,:oid);
     bat.setName(b,"b");
     bat.setPersistent(b,true);
     cap := bat.getCapacity(b);

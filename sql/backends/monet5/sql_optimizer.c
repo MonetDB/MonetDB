@@ -74,8 +74,15 @@ BATlocation(str *fnme, int *bid)
 	if (b == NULL || (!b->T->heap.filename && !b->H->heap.filename))
 		return 0;
 
-	snprintf(path, BUFSIZ, "%s%c", GDKgetenv("gdk_dbpath"), DIR_SEP);
-	GDKfilepath(path + strlen(path), BATDIR, (b->T->heap.filename ? b->T->heap.filename : b->H->heap.filename), 0);
+	s = GDKfilepath(b->T->heap.farmid, BATDIR,
+			(b->T->heap.filename ? b->T->heap.filename : b->H->heap.filename), 0);
+	if (!MT_path_absolute(s)) {
+		snprintf(path, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"),
+			 DIR_SEP, s);
+	} else {
+		snprintf(path, sizeof(path), "%s", s);
+	}
+	GDKfree(s);
 	s = strrchr(path, '.');
 	if (s)
 		*s = 0;
