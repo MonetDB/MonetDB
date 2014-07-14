@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# -*-shell-script-*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+usage() {
+    cat >&2 <<-EOF
+	$0: unknown option $1
+	Usage: $0 [options] [log message]
+	Valid options are:
+	--logfile=filename (-f filename)
+	--commit
+	If no log message, one will be prompted for.
+	EOF
+    exit 1
+}
+
+CL=
+nocommit=true
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --logfile=?*)
+	CL=${1#--logfile=}
+	shift
+	;;
+    --logfile|-f)
+	if [ $# -lt 2 ]; then
+	    usage
+	fi
+	CL=$2
+	shift
+	shift
+	;;
+    -f?*)
+	CL=${1#-f}
+	shift
+	;;
+    --commit)
+	nocommit=
+	shift
+	;;
+    --)
+	shift
+	break
+	;;
+    -*)
+	usage
+	;;
+    *)
+	break
+	;;
+    esac
+done
+
+if ! hg root >& /dev/null ; then
+    echo "Cannot use this script outside a Mercurial repository" >&2
+    exit -1
+fi
+
+tag=$(hg branch)
+
+case "$CL" in
+'')
+    d=.
+    while [ ! -f $d/vertoo.data -a ! -f $d/ChangeLog -a ! -f $d/ChangeLog.$tag ]; do
+	if [ $d -ef / ]; then
+	    echo "$0: cannot find top directory of package" >&2
+	    exit 1
+	fi
+	d=../$d
+    done
+    CL=$d/ChangeLog
+    case $tag in
+    default)
+	;;
+    *)
+	CL=$CL.${tag}
+	;;
+    esac
+    dir=$(cd $d && \pwd -P)
+    ;;
+*/*)
+    dir=$(cd "${CL%/*}"; \pwd -P)
+    ;;
+*)
+    dir=$(\pwd -P)
+    ;;
+esac
+
+PROJECT=${dir##*/}
+IDENTITY=$(hg showconfig ui.username)
+
+if [ $# -gt 0 ]; then
+    msg=$(echo "  $*" | fmt)
+    msg=${msg#  }
+else
+    nl=$'\n  '
+    echo "Log message (end with ^D or empty line):"
+    msg=
+    tmpmsg=
+    while read -r line && [ "$line" ]; do
+	case "$line" in
+	[a-zA-Z0-9_\'\"\#\$\(\)]*)
+	    case "$tmpmsg" in
+	    *[.!:])
+		s='  '
+		;;
+	    *)
+		s=' '
+		;;
+	    esac
+	    tmpmsg=$(echo "  ${tmpmsg}${tmpmsg:+$s}$line" | fmt)
+	    tmpmsg=${tmpmsg#  }
+	    ;;
+	*)
+	    if [ "$tmpmsg" ]; then
+		msg="${msg:+$msg$nl}$tmpmsg"
+		tmpmsg=
+	    fi
+	    msg="${msg:+$msg$nl}$line"
+	    ;;
+	esac
+    done
+    if [ "$tmpmsg" ]; then
+	msg="${msg:+$msg$nl}$tmpmsg"
+	tmpmsg=
+    fi
+fi
+
+file=ChangeLog.$RANDOM
+
+case "$CL" in
+*/*)
+    cd "${CL%/*}"
+    CL=${CL##*/}
+    ;;
+esac
+
+if [ -f "$CL" ]; then
+    sed 's/^/X/' "$CL" | {
+	date=
+	user=
+	first=true
+	while read -r line; do
+	    line=${line#X}
+	    case "$line" in
+	    '* '???\ ???\ [\ 0123][0-9]\ 20[0-9][0-9]\ *\<*@*\>)
+		if [ "$first" = true ]; then
+		    date=$(expr "$line" : '\* \(... ... .. ....\) .*')
+		    user=$(expr "$line" : '\* ... ... .. .... \(.*\)')
+		    if [ "$date" = "$(date +'%a %b %_d %Y')" -a "$user" = "$IDENTITY" ]; then
+			cat <<EOF
+$line
+- $msg
+EOF
+		    else
+			cat <<EOF
+* $(date +'%a %b %_d %Y') $IDENTITY
+- $msg
+
+$line
+EOF
+		    fi
+		    first=false
+		else
+		    cat <<EOF
+$line
+EOF
+		fi
+		;;
+	    *)
+		cat <<EOF
+$line
+EOF
+		;;
+	    esac
+	done
+	if [ "$first" = true ]; then
+	    cat <<EOF
+* $(date +'%a %b %_d %Y') $IDENTITY
+- $msg
+
+EOF
+	fi
+    }
+else
+    cat <<EOF
+# ChangeLog file for $PROJECT
+# This file is updated with Maddlog
+
+* $(date +'%a %b %_d %Y') $IDENTITY
+- $msg
+
+EOF
+fi > $file
+
+mv $file "$CL"
+
+hg add "$CL" >& /dev/null
+
+if [ ! "$nocommit" ]; then
+    hg commit -m "${msg//
+  /
+}" "$CL"
+else
+    hg diff "$CL"
+    echo "Don't forget to COMMIT."
+fi
+echo "Don't forget to PUSH."
