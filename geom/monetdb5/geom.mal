@@ -350,7 +350,9 @@ command MakePoint{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], 
 comment "creates a 4D points BAT using four double BATs";
 command MakePointM{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb] address geomMakePointM_bat
 comment "creates a 2D with m attribute points BAT using three double BATs";
- 
+command setSRID(w:bat[:oid,:wkb], srid:int) :bat[:oid,:wkb] address wkbSetSRID_bat
+comment "Sets the Reference System ID for this Geometry.";
+
 
 
 
@@ -360,18 +362,18 @@ module calc;
 #It is needed to add a new mbr colum to an existing table
 command mbr(v:mbr) :mbr address mbrFromMBR;
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;
-#It is needed to add a new geometry column to an existing table
-command wkb(v:wkb) :wkb address wkbFromWKB;
-
+command wkb(v:wkb) :wkb address wkbFromWKB
+comment "It is called when adding a new geometry column to an existing table";
 command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address geom_2_geom
-comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition"
+comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition";
 
 module batcalc;
 
 command wkb(geo:bat[:oid,:wkb], columnType:int, columnSRID:int) :bat[:oid,:wkb] address geom_2_geom_bat
-comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition"
-
+comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition";
+#Is it needed ???
 #command wkb(v:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFromWKB_bat;
+#comment "It is called when adding a new geometry column to an existing table";
 
 
 

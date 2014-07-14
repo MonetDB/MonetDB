@@ -73,6 +73,7 @@ geom_export mbr *mbrNULL(void);
 /* functions tha are used when a column is added to an existing table */
 geom_export str mbrFromMBR(mbr **w, mbr **src);
 geom_export str wkbFromWKB(wkb **w, wkb **src);
+//Is it needed?? geom_export str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id);
 
 /* The WKB we use is the EWKB used also in PostGIS 
  * because we decided that it is easire to carry around
@@ -139,6 +140,7 @@ geom_export str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, i
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);
+str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid);
 geom_export str wkbGetCoordX(double*, wkb**);
 geom_export str wkbGetCoordY(double*, wkb**);
 geom_export str wkbGetCoordZ(double*, wkb**);
@@ -585,7 +587,7 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 		(valueType) += 1;
 	
 	if(valueSRID != *columnSRID || valueType != *columnType)
-		throw(MAL, "geom.A_2_B", "column needs geometry(%d, %d) and value is geometry(%d, %d)\n", *columnType, *columnSRID, valueType, valueSRID);
+		throw(MAL, "calc.wkb", "column needs geometry(%d, %d) and value is geometry(%d, %d)\n", *columnType, *columnSRID, valueType, valueSRID);
 
 	/* get the wkb from the geosGeometry */
 	*resWKB = geos2wkb(geosGeometry);
@@ -599,21 +601,20 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 	BUN p =0, q =0;
 	BATiter inBAT_iter;
 
-	fprintf(stderr, "in geom_2_geom_bat\n");
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "calc.geom_2_geom", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.wkb", RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "calc.geom_2_geom", "both arguments must have dense and aligned heads");
+		throw(MAL, "batcalc.wkb", "the arguments must have dense and aligned heads");
 	}
 
 	//create a new BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "calc.geom_2_geom", MAL_MALLOC_FAIL);
+		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -626,22 +627,11 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 
 		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i + BUNfirst(inBAT));
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-/*
-if(columnType != NULL || columnSRID != NULL) {		
-char* outWKT = NULL;
-int len =0;
-outWKB = NULL;
-wkbTOSTR(&outWKT, &len, inWKB);
-if(strcmp(outWKT, "nil") == 0)
-	throw(MAL, "batcalc.geom_2_geom","Error");
-fprintf(stderr, "WKT: %s\n", outWKT);
-inWKB = outWKB;
-}*/
-		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) { //create point
+		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) { //check type
 			str msg;
 			BBPreleaseref(inBAT->batCacheid);
 			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "calc.geom_2_geom", "%s", err);
+			msg = createException(MAL, "batcalc.wkb", "%s", err);
 			GDKfree(err);
 			return msg;
 		}
@@ -977,7 +967,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 
 	*len = (int) wkb_size((*geomWKB)->len);
 
-	return strlen(geomWKT);
+	return (int)strlen(geomWKT);
 }
 
 /* Creates the string representation (WKT) of a WKB */
@@ -1102,7 +1092,6 @@ str mbrFromMBR(mbr **w, mbr **src) {
 }
 
 str wkbFromWKB(wkb **w, wkb **src) {
-//fprintf(stderr, "in wkbFromWKB\n");
 	*w = (wkb *) GDKmalloc(wkb_size((*src)->len));
 
 	if (wkb_isnil(*src)) {
@@ -1114,6 +1103,56 @@ str wkbFromWKB(wkb **w, wkb **src) {
 	}
 	return MAL_SUCCEED;
 }
+/*
+str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb **inWKB = NULL, *outWKB = NULL;
+	BUN i;
+	
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkb", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkb", "both arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkb", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//pointers to the first valid elements of the x and y BATS
+	inWKB = (wkb **) Tloc(inBAT, BUNfirst(inBAT));
+	for (i = 0; i < BATcount(inBAT); i++) { //iterate over all valid elements
+		str err = NULL;
+		if ((err = wkbFromWKB(&outWKB, &inWKB[i])) != MAL_SUCCEED) { 
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.wkb", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
+		GDKfree(outWKB);
+		outWKB = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+
+}*/
 
 /* creates a wkb from the given textual representation */
 /*int* tpe is needed to verify that the type of the FromText function used is the
@@ -1662,6 +1701,61 @@ str wkbSetSRID(wkb** resultGeomWKB, wkb **geomWKB, int* srid) {
 	return MAL_SUCCEED;
 }
 
+/* sets the srid of the geometry - BULK version*/
+str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL, *outWKB = NULL;
+	BUN p=0, q=0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.SetSRID", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.SetSRID", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.SetSRID", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the output BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	//for (i = 0; i < BATcount(inBAT); i++) { 
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+
+		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i + BUNfirst(inBAT));
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) { //set SRID
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.SetSRID", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
+		GDKfree(outWKB);
+		outWKB = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+
+}
 
 /* depending on the specific function it returns the X,Y or Z coordinate of a point */
 static str wkbGetCoord(double *out, wkb **geom, int dimNum, const char *name) {
