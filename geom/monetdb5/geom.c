@@ -613,7 +613,7 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 	}
 
 	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
 	}
@@ -1262,7 +1262,7 @@ str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id) {
 	}
 
 	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		throw(MAL, "batgeom.MakePoint", MAL_MALLOC_FAIL);
@@ -1361,8 +1361,8 @@ str geomMakePoint3D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id
 		throw(MAL, "batgeom.MakePoint", "both arguments must have dense and aligned heads");
 	}
 
-	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+	//create a new BAT. A BAT can be either PERSISTENT or TRANSIENT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		BBPreleaseref(zBAT->batCacheid);
@@ -1478,7 +1478,7 @@ str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id
 	}
 
 	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		BBPreleaseref(zBAT->batCacheid);
@@ -1556,7 +1556,7 @@ str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* mBAT_id)
 	}
 
 	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		BBPreleaseref(mBAT->batCacheid);
@@ -1720,7 +1720,7 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 	}
 
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
 		throw(MAL, "batgeom.SetSRID", MAL_MALLOC_FAIL);
 	}
@@ -2471,7 +2471,7 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	}
 	
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT))) == NULL) {
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
