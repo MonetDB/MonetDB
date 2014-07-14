@@ -75,7 +75,7 @@ TKNZRrdf2str(bat *res, bat *bid, bat *map)
 		BBPunfix(*map);
 		throw(MAL, "rdf.rdf2str", SEMANTIC_TYPE_ERROR " semantic error");
 	}
-	r = BATnew(TYPE_void, TYPE_str, BATcount(b));
+	r = BATnew(TYPE_void, TYPE_str, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(*bid);
 		BBPunfix(*map);

@@ -83,7 +83,44 @@ stopifnot(identical(dim(iris),dim(iris3)))
 stopifnot(identical(dbListFields(con,"monetdbtest"),c("sepal_length","sepal_width","petal_length","petal_width","species")))
 dbRemoveTable(con,"monetdbtest")
 stopifnot(identical(dbExistsTable(con,"monetdbtest"),FALSE))
+# test dbWriteTable
+conn <- con
+tname <- "mtcars"
 
+tsize <- function(conn,tname) 
+	as.integer(dbGetQuery(conn,paste0("SELECT COUNT(*) FROM ",tname))[[1]])
+
+# clean up
+if (dbExistsTable(conn,tname))
+	dbRemoveTable(conn,tname)
+
+# table does not exist, append=F, overwrite=F, this should work
+dbWriteTable(conn,tname,mtcars,append=F,overwrite=F)
+stopifnot(dbExistsTable(conn,tname))
+stopifnot(identical(nrow(mtcars),tsize(conn,tname)))
+
+# these should throw errors
+errorThrown <- F
+tryCatch(dbWriteTable(conn,tname,mtcars,append=F,overwrite=F),error=function(e){errorThrown <<- T})
+stopifnot(errorThrown)
+
+errorThrown <- F
+tryCatch(dbWriteTable(conn,tname,mtcars,overwrite=T,append=T),error=function(e){errorThrown <<- T})
+stopifnot(errorThrown)
+
+# this should be fine
+dbWriteTable(conn,tname,mtcars,append=F,overwrite=T)
+stopifnot(dbExistsTable(conn,tname))
+stopifnot(identical(nrow(mtcars),tsize(conn,tname)))
+
+# append to existing table
+dbWriteTable(conn,tname,mtcars,append=T,overwrite=F)
+stopifnot(identical(as.integer(2*nrow(mtcars)),tsize(conn,tname)))
+dbRemoveTable(conn,tname)
+
+dbRemoveTable(conn,tname)
+dbWriteTable(conn,tname,mtcars,append=F,overwrite=F,insert=T)
+dbRemoveTable(conn,tname)
 
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))

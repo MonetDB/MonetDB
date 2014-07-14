@@ -53,9 +53,9 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 
 	res = sphinx_query ( client, query, index, NULL );
 	if (!res || (res && res->num_matches == 0)) {
-		bn = BATnew(TYPE_void, TYPE_lng, 0);
+		bn = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	} else {
-		bn = BATnew(TYPE_void, TYPE_lng, res->num_matches);
+		bn = BATnew(TYPE_void, TYPE_lng, res->num_matches, TRANSIENT);
 		for ( i = 0; i < res->num_matches; i++ ) {
 			lng sphinx_id = sphinx_get_id ( res, i );
 			o++;

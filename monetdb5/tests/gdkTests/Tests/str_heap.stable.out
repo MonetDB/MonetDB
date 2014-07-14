@@ -14,7 +14,7 @@ stdout of test 'str_heap` in directory 'monetdb5/tests/gdkTests` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    b := bat.new(:oid,:str);
+    b := bat.new_persistent(:oid,:str);
     bat.setPersistent(b);
     bat.setName(b,"DRUID_sample");
     bat.append(b,"Medicina e salute Malattie , Medicina , Terapie ... Risorse Biblioteche , Dizionari ... Scienza e tecnologia Archeologia , Biologia , Astronomia ... Scienze umane e sociali Economia , Storia , Psicologia ... Società e culture A tavola , Religione , Ambiente ... Sport e tempo libero Calcio , Basket , Ciclismo , Viaggi ... Nelle notizie · Iraq, nuovi attacchi USA · Clandestini, sbarchi continui in Puglia · Kosovo: \"cruciale il supporto italiano\" · Europee, Paolo Rossi con AN · Terremoto in");
