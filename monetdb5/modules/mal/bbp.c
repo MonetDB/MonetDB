@@ -374,11 +374,12 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 	GDKfilepath(buf, BATDIR, buf2, "gz");
 	fp = open_gzrstream(buf);
 	if ( fp && !mnstr_errnr(fp)){
-		if ( HEAPextend(hn,h->size,0) < 0)
+		if ( HEAPextend(hn,h->size,0) < 0 ||
+			 /* skip header */
+			 (ssize_t) h->size != mnstr_read(fp, (void*) hn->base,1, h->size)) {
+			close_stream(fp);
 			return -999;
-		/* skip header */
-		if ((ssize_t) h->size != mnstr_read(fp, (void*) hn->base,1, h->size))
-			return -999;
+		}
 		hn->free = h->free;
 		if (h->parentid)
 			BBPkeepref( h->parentid);
