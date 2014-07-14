@@ -2,17 +2,17 @@
 -- NUMERIC
 --
 
-CREATE TABLE num_data (id integer, val numeric(210,10));
-CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_sqrt (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_ln (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_log10 (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(210,10));
+CREATE TABLE num_data (id integer, val numeric(18,10));
+CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_sqrt (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_ln (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_log10 (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(18,10));
 
-CREATE TABLE num_result (id1 integer, id2 integer, result numeric(210,10));
+CREATE TABLE num_result (id1 integer, id2 integer, result numeric(18,10));
 
 
 -- ******************************
@@ -20,7 +20,7 @@ CREATE TABLE num_result (id1 integer, id2 integer, result numeric(210,10));
 -- * with a scale of 200
 -- ******************************
 
-BEGIN TRANSACTION;
+START TRANSACTION;
 INSERT INTO num_exp_add VALUES (0,0,'0');
 INSERT INTO num_exp_sub VALUES (0,0,'0');
 INSERT INTO num_exp_mul VALUES (0,0,'0');
@@ -421,8 +421,8 @@ INSERT INTO num_exp_add VALUES (9,9,'-49853608.090094840');
 INSERT INTO num_exp_sub VALUES (9,9,'0');
 INSERT INTO num_exp_mul VALUES (9,9,'621345559900192.420120630048656400');
 INSERT INTO num_exp_div VALUES (9,9,'1.00000000000000000000');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+COMMIT;
+START TRANSACTION;
 INSERT INTO num_exp_sqrt VALUES (0,'0');
 INSERT INTO num_exp_sqrt VALUES (1,'0');
 INSERT INTO num_exp_sqrt VALUES (2,'5859.90547836712524903505');
@@ -433,8 +433,8 @@ INSERT INTO num_exp_sqrt VALUES (6,'306.43364311096782703406');
 INSERT INTO num_exp_sqrt VALUES (7,'9111.99676251039939975230');
 INSERT INTO num_exp_sqrt VALUES (8,'273.64392922189960397542');
 INSERT INTO num_exp_sqrt VALUES (9,'4992.67503899937593364766');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+COMMIT;
+START TRANSACTION;
 INSERT INTO num_exp_ln VALUES (0,'NaN');
 INSERT INTO num_exp_ln VALUES (1,'NaN');
 INSERT INTO num_exp_ln VALUES (2,'17.35177750493897715514');
@@ -445,8 +445,8 @@ INSERT INTO num_exp_ln VALUES (6,'11.45000246622944403127');
 INSERT INTO num_exp_ln VALUES (7,'18.23469429965478772991');
 INSERT INTO num_exp_ln VALUES (8,'11.22365546576315513668');
 INSERT INTO num_exp_ln VALUES (9,'17.03145425013166006962');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+COMMIT;
+START TRANSACTION;
 INSERT INTO num_exp_log10 VALUES (0,'NaN');
 INSERT INTO num_exp_log10 VALUES (1,'NaN');
 INSERT INTO num_exp_log10 VALUES (2,'7.53578122160797276459');
@@ -457,8 +457,8 @@ INSERT INTO num_exp_log10 VALUES (6,'4.97267288886207207671');
 INSERT INTO num_exp_log10 VALUES (7,'7.91922711353275546914');
 INSERT INTO num_exp_log10 VALUES (8,'4.87437163556421004138');
 INSERT INTO num_exp_log10 VALUES (9,'7.39666659961986567059');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+COMMIT;
+START TRANSACTION;
 INSERT INTO num_exp_power_10_ln VALUES (0,'NaN');
 INSERT INTO num_exp_power_10_ln VALUES (1,'NaN');
 INSERT INTO num_exp_power_10_ln VALUES (2,'224790267919917955.13261618583642653184');
@@ -469,8 +469,8 @@ INSERT INTO num_exp_power_10_ln VALUES (6,'281839893606.99372343357047819067');
 INSERT INTO num_exp_power_10_ln VALUES (7,'1716699575118597095.42330819910640247627');
 INSERT INTO num_exp_power_10_ln VALUES (8,'167361463828.07491320069016125952');
 INSERT INTO num_exp_power_10_ln VALUES (9,'107511333880052007.04141124673540337457');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+COMMIT;
+START TRANSACTION;
 INSERT INTO num_data VALUES (0, '0');
 INSERT INTO num_data VALUES (1, '0');
 INSERT INTO num_data VALUES (2, '-34338492.215397047');
@@ -481,7 +481,7 @@ INSERT INTO num_data VALUES (6, '93901.57763026');
 INSERT INTO num_data VALUES (7, '-83028485');
 INSERT INTO num_data VALUES (8, '74881');
 INSERT INTO num_data VALUES (9, '-24926804.045047420');
-COMMIT TRANSACTION;
+COMMIT;
 
 -- ******************************
 -- * Create indices for faster checks
@@ -518,7 +518,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val + t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 10)
@@ -526,7 +526,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 10)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 10) as expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 10);
+    AND t1.result <> round(t2.expected, 10);
 
 -- ******************************
 -- * Subtraction check
@@ -537,7 +537,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val - t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
@@ -545,7 +545,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40)
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 40);
+    AND t1.result <> round(t2.expected, 40);
 
 -- ******************************
 -- * Multiply check
@@ -556,7 +556,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val * t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val * t2.val, 30)
@@ -564,7 +564,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val * t2.val, 30)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 30);
+    AND t1.result <> round(t2.expected, 30);
 
 -- ******************************
 -- * Division check
@@ -572,20 +572,20 @@ SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, t1.val / t2.val
     FROM num_data t1, num_data t2
-    WHERE t2.val != '0.0';
+    WHERE t2.val <> '0.0';
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val / t2.val, 80)
     FROM num_data t1, num_data t2
-    WHERE t2.val != '0.0';
+    WHERE t2.val <> '0.0';
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 80);
+    AND t1.result <> round(t2.expected, 80);
 
 -- ******************************
 -- * Square root check
@@ -596,43 +596,43 @@ INSERT INTO num_result SELECT id, 0, SQRT(ABS(val))
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_sqrt t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * Natural logarithm check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, LN(ABS(val))
+INSERT INTO num_result SELECT id, 0, LOG(ABS(val))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_ln t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * Logarithm base 10 check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, LOG(numeric '10', ABS(val))
+INSERT INTO num_result SELECT id, 0, LOG10(ABS(val))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_log10 t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
--- * POWER(10, LN(value)) check
+-- * POWER(10, LOG(value)) check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, POWER(numeric '10', LN(ABS(round(val,200))))
+INSERT INTO num_result SELECT id, 0, POWER(cast('10.0' as numeric(3,0)), LOG(ABS(round(val,20))))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_power_10_ln t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * miscellaneous checks for things that have been broken in the past...

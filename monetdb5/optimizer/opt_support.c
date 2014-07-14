@@ -854,11 +854,8 @@ int isLikeOp(InstrPtr p){
 }
 
 int isTopn(InstrPtr p){
-	return ((getModuleId(p) == pqueueRef &&
-		(getFunctionId(p) == topn_minRef ||
-		 getFunctionId(p) == topn_maxRef ||
-		 getFunctionId(p) == utopn_minRef ||
-		 getFunctionId(p) == utopn_maxRef)) || isSlice(p));
+	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
+			isSlice(p));
 }
 
 int isSlice(InstrPtr p){

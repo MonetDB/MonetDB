@@ -3113,7 +3113,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = exp_compare(sql->sa,  e, r, cmp_equal);
 				rel = rel_select(sql->sa, rel, e);
 			}
-			if (l_is_value)
+			if (l_is_value && outer)
 				rel = rel_crossproduct(sql->sa, outer, rel, op_join);
 			rel = rel_project(sql->sa, rel, rel_projections(sql, outer, NULL, 1, 1));
 			set_processed(rel);

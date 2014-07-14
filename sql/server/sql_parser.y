@@ -2511,7 +2511,11 @@ opt_using:
 opt_nr:
     /* empty */			{ $$ = NULL; }
  |  poslng RECORDS		{ $$ = append_lng(append_lng(L(), $1), 0); }
- |  poslng OFFSET poslng RECORDS	{ $$ = append_lng(append_lng(L(), $1), $3); }
+ |  OFFSET poslng 		{ $$ = append_lng(append_lng(L(), -1), $2); }
+ |  poslng OFFSET poslng RECORDS	
+				{ $$ = append_lng(append_lng(L(), $1), $3); }
+ |  poslng RECORDS OFFSET poslng	
+				{ $$ = append_lng(append_lng(L(), $1), $4); }
  ;
 
 opt_null_string:
