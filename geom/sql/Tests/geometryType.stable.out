@@ -219,19 +219,19 @@ Ready.
 % st_linefromtext_single_value # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #select st_geometrytype(st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
 % .L # table_name
 % st_linefromtext_single_value # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #select st_geometrytype(st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
 % .L # table_name
 % st_linefromtext_single_value # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #select st_geometrytype(st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
 % .L # table_name
 % st_polygonfromtext_single_value # name
@@ -351,7 +351,7 @@ Ready.
 % st_geomfromtext_single_value # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #select st_geometrytype(st_geomfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
 % .L # table_name
 % st_geomfromtext_single_value # name
@@ -406,7 +406,7 @@ Ready.
 % st_geometrytype_g # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #drop table lines_tbl;
 #create table polygons_tbl(g geometry(polygon));
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
@@ -454,7 +454,7 @@ Ready.
 % st_geometrytype_g # name
 % clob # type
 % 13 # length
-[ "ST_Linestring"	]
+[ "ST_LineString"	]
 #drop table lines_tbl;
 #create table polygons_tbl(g geometry(polygonz));
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
