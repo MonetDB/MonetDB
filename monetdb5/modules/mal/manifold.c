@@ -279,7 +279,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	// prepare result variable
-	mat[0].b =BATnew(TYPE_void, getColumnType(getArgType(mb,pci,0)), cnt);
+	mat[0].b =BATnew(TYPE_void, getColumnType(getArgType(mb,pci,0)), cnt, TRANSIENT);
 	if ( mat[0].b == NULL){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;

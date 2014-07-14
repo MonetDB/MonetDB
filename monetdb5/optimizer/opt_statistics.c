@@ -46,7 +46,7 @@ QOT_create(str hnme, str tnme, int tt)
 	if (b)
 		return b;
 
-	b = BATnew(TYPE_void, tt, 256);
+	b = BATnew(TYPE_void, tt, 256, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
