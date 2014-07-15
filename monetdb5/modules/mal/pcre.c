@@ -1458,15 +1458,17 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 	char *ppat = NULL;
 	str res = sql2pcre(&ppat, *pat, *esc);
 
-	if (!res) {
+	if (res == MAL_SUCCEED) {
 		BAT *strs = BATdescriptor(*bid);
 		BATiter strsi;
 		BAT *r;
 		bit *br;
 		BUN p, q, i = 0;
 
-		if (strs == NULL)
+		if (strs == NULL) {
+			GDKfree(ppat);
 			throw(MAL, "batstr.like", OPERATION_FAILED);
+		}
 
 		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
 		br = (bit*)Tloc(r, BUNfirst(r));
@@ -1496,9 +1498,11 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL) {
 				BBPreleaseref(strs->batCacheid);
 				BBPreleaseref(r->batCacheid);
-				throw(MAL, "pcre.match", OPERATION_FAILED
+				res = createException(MAL, "pcre.match", OPERATION_FAILED
 						": compilation of regular expression (%s) failed "
 						"at %d with '%s'", ppat, errpos, err_p);
+				GDKfree(ppat);
+				return res;
 			}
 
 			BATloop(strs, p, q) {
@@ -1513,8 +1517,10 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				else {
 					BBPreleaseref(strs->batCacheid);
 					BBPreleaseref(r->batCacheid);
-					throw(MAL, "pcre.match", OPERATION_FAILED
+					res = createException(MAL, "pcre.match", OPERATION_FAILED
 							": matching of regular expression (%s) failed with %d", ppat, pos);
+					GDKfree(ppat);
+					return res;
 				}
 				i++;
 			}
@@ -1536,9 +1542,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		}
 		BBPkeepref(*ret = r->batCacheid);
 		BBPreleaseref(strs->batCacheid);
-	}
-	if (ppat)
 		GDKfree(ppat);
+	}
 	return res;
 }
 
