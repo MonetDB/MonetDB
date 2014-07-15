@@ -1729,7 +1729,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 
 	r = sql2pcre(&ppat, *pat, *esc);
 
-	if (!r && ppat) {
+	if (r == MAL_SUCCEED) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			/* there is no pattern or escape involved, fall back to
 			 * simple (no PCRE) match */
@@ -1737,8 +1737,8 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			 * insensitive match, so even though there is no pattern,
 			 * just fall back to PCRE for the moment.  If there is a
 			 * case insensitive BAT*select, we should use that instead */
+			GDKfree(ppat);
 			if (ignore) {
-				GDKfree(ppat);
 				ppat = GDKmalloc(sizeof(char) * (strlen(*pat) + 3));
 				if (ppat == NULL)
 					throw(MAL, "pcre.like", MAL_MALLOC_FAIL); /* likely to fail hard as well */
@@ -1769,10 +1769,9 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 				r = PCREuselect(ret, &ppat, b, &ignore);
 			else
 				r = PCREselect(ret, &ppat, b, &ignore);
+			GDKfree(ppat);
 		}
 	}
-	if (ppat)
-		GDKfree(ppat);
 	return r;
 }
 
