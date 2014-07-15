@@ -662,8 +662,11 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	*boxfile = boxFileName(box, 0);
 	*boxfilebak = boxFileName(box, "backup");
 
-	if (*boxfile == 0)
+	if (*boxfile == NULL || *boxfilebak == NULL) {
+		GDKfree(*boxfile); *boxfile = NULL;
+		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
+	}
 	if (rename(*boxfile, *boxfilebak) < 0 && errno != ENOENT) {
 #ifdef DEBUG_MAL_BOX
 		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
@@ -682,9 +685,8 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	if (f != NULL){
 		if( chmod(*boxfile, (S_IRUSR | S_IWUSR)) )
 			showException(GDKout, MAL,"box.saveBox", "can not change box file mode");
-	} else
+	} else {
 		showException(GDKout, MAL,"box.saveBox", "can not create box file");
-	if (f == NULL) {
 		GDKfree(*boxfile); *boxfile= NULL;
 		GDKfree(*boxfilebak); *boxfilebak= NULL;
 	}
@@ -708,8 +710,11 @@ saveBox(Box box, int flag)
 		return 0;
 	}
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);
-	if (f == NULL)
+	if (f == NULL) {
+		assert(boxfile == NULL);
+		assert(boxfilebak == NULL);
 		return 1;
+	}
 #ifdef DEBUG_MAL_BOX
 	mnstr_printf(GDKout, "saveBox:created %s\n", boxfile);
 #endif
