@@ -440,6 +440,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	if (port > 65535) {
 		GDKfree(psock);
+		if (usockfile)
+			GDKfree(usockfile);
 		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": port number should be between 1 and 65535");
 	}
 
@@ -447,6 +449,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock == INVALID_SOCKET) {
 			GDKfree(psock);
+			if (usockfile)
+				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": creation of stream socket failed: %s",
 					strerror(errno));
@@ -454,6 +458,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) ) {
 			GDKfree(psock);
+			if (usockfile)
+				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", strerror(errno));
 		}
 
@@ -484,6 +490,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				}
 				closesocket(sock);
 				GDKfree(psock);
+				if (usockfile)
+					GDKfree(usockfile);
 				throw(IO, "mal_mapi.listen",
 						OPERATION_FAILED ": bind to stream socket port %d "
 						"failed: %s", port, strerror(errno));
@@ -495,6 +503,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
 			closesocket(sock);
 			GDKfree(psock);
+			if (usockfile)
+				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": failed getting socket name: %s",
 					strerror(errno));
@@ -506,6 +516,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock == INVALID_SOCKET ) {
 			GDKfree(psock);
+			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": creation of UNIX socket failed: %s",
 					strerror(errno));
@@ -514,11 +525,14 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		/* prevent silent truncation, sun_path is typically around 108
 		 * chars long :/ */
 		if (strlen(usockfile) >= sizeof(userver.sun_path)) {
+			char *e;
 			closesocket(usock);
 			GDKfree(psock);
-			throw(MAL, "mal_mapi.listen",
+			e = createException(MAL, "mal_mapi.listen",
 					OPERATION_FAILED ": UNIX socket path too long: %s",
 					usockfile);
+			GDKfree(usockfile);
+			return e;
 		}
 
 		userver.sun_family = AF_UNIX;
@@ -528,12 +542,15 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
 		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
+			char *e;
 			closesocket(usock);
 			unlink(usockfile);
 			GDKfree(psock);
-			throw(IO, "mal_mapi.listen",
+			e = createException(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
 					usockfile, strerror(errno));
+			GDKfree(usockfile);
+			return e;
 		}
 		listen(usock, maxusers);
 	}
@@ -1630,13 +1647,16 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	accessTest(*key, "bind");
 	if( pci->argc == 6) {
+		char *tn;
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		col= (str*) getArgReference(stk,pci,pci->retc+3);
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
+		tn = getTypeName(getColumnType(getVarType(mb,getDestVar(pci))));
 		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
-			getTypeName(getColumnType(getVarType(mb,getDestVar(pci)))),
+			tn,
 			*nme, *tab,*col,i);
+		GDKfree(tn);
 	} else if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		i= *(int*) getArgReference(stk,pci,pci->retc+3);

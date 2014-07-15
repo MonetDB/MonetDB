@@ -483,7 +483,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				peers[i].nxt = r;
 			}
 			else
-				return msg;
+				break;
 		}
 	}
 

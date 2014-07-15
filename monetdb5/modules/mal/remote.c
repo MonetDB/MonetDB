@@ -489,10 +489,13 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
-	if (strcmp(ident + strlen(ident) - strlen(rt), rt))
-		throw(MAL, "remote.get", ILLEGAL_ARGUMENT
+	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
+		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 			": remote object type %s does not match expected type %s",
 			rt, ident);
+		GDKfree(rt);
+		return tmp;
+	}
 	GDKfree(rt);
 
 	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type ))
@@ -692,6 +695,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		bid = *(int *)value;
 		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
 			MT_lock_unset(&c->lock, "remote.put");
+			GDKfree(tail);
 			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
 		assert(b->htype == TYPE_void);
@@ -705,6 +709,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				"%s := remote.batload(:%s, " BUNFMT ");\n",
 				ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout);
+		GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
@@ -836,6 +841,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
+	GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
