@@ -490,10 +490,13 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
-	if (strcmp(ident + strlen(ident) - strlen(rt), rt))
-		throw(MAL, "remote.get", ILLEGAL_ARGUMENT
+	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
+		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 			": remote object type %s does not match expected type %s",
 			rt, ident);
+		GDKfree(rt);
+		return tmp;
+	}
 	GDKfree(rt);
 
 	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type || (ATOMvarsized(getHeadType(rtype)))))
