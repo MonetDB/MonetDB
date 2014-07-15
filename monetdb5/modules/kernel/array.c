@@ -51,7 +51,7 @@
 #define get_ptr(b,TYPE)   ((TYPE*)(Tloc(b,BUNfirst((b)))))
 
 static int
-fillgrid_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+fillgrid_int(BAT *out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
 {
 	register int *ptr;
 	int i = *groups;
@@ -64,7 +64,7 @@ fillgrid_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *offs
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	ptr = get_ptr(*out, int);
+	ptr = get_ptr(out, int);
 
 	while (i--) {
 		register int ni = o;
@@ -98,17 +98,14 @@ grid_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	if (out == NULL) {
-		GDKerror("grid: NULL BAT reference\n");
-		return GDK_FAIL;
-	}
+	assert(out != NULL);
 	new_bat(*out, (i * (n - o) * r), int);
-	if (out == NULL) {
+	if (*out == NULL) {
 		GDKerror("grid: cannot create the bat (%d BUNs)\n", (i * (n - o) * r));
 		return GDK_FAIL;
 	}
 	add_vals(*out, (i * (n - o) * r), int);
-	return fillgrid_int(out, groups, groupsize, clustersize, offset, &s);
+	return fillgrid_int(*out, groups, groupsize, clustersize, offset, &s);
 }
 
 static int
@@ -123,15 +120,16 @@ gridShift_int(BAT **out, int *groups, int *groupsize, int *clustersize, int *off
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
+	assert(out != NULL);
 	new_bat(*out, (i * (n - o) * r), int);
 	if (*out == 0)
 		return GDK_FAIL;
 	add_vals(*out, (i * (n - o) * r), int);
-	return fillgrid_int(out, groups, groupsize, clustersize, offset, shift);
+	return fillgrid_int(*out, groups, groupsize, clustersize, offset, shift);
 }
 
 static int
-fillgrid_lng(BAT **out, lng *groups, lng *groupsize, lng *clustersize, lng *offset, lng *shift)
+fillgrid_lng(BAT *out, lng *groups, lng *groupsize, lng *clustersize, lng *offset, lng *shift)
 {
 	register lng *ptr;
 	lng i = *groups;
@@ -144,7 +142,7 @@ fillgrid_lng(BAT **out, lng *groups, lng *groupsize, lng *clustersize, lng *offs
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	ptr = get_ptr(*out, lng);
+	ptr = get_ptr(out, lng);
 
 	while (i--) {
 		register lng ni = o;
@@ -178,17 +176,14 @@ grid_lng(BAT **out, lng *groups, lng *groupsize, lng *clustersize, lng *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	if (out == NULL) {
-		GDKerror("grid: NULL BAT reference\n");
-		return GDK_FAIL;
-	}
+	assert(out != NULL);
 	new_bat(*out, (i * (n - o) * r), lng);
 	if (out == NULL) {
 		GDKerror("grid: cannot create the bat (" LLFMT " BUNs)\n", (i * (n - o) * r));
 		return GDK_FAIL;
 	}
 	add_vals(*out, (i * (n - o) * r), lng);
-	return fillgrid_lng(out, groups, groupsize, clustersize, offset, &s);
+	return fillgrid_lng(*out, groups, groupsize, clustersize, offset, &s);
 }
 
 static int
@@ -203,11 +198,12 @@ gridShift_lng(BAT **out, lng *groups, lng *groupsize, lng *clustersize, lng *off
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
+	assert(out != NULL);
 	new_bat(*out, (i * (n - o) * r), lng);
 	if (*out == 0)
 		return GDK_FAIL;
 	add_vals(*out, (i * (n - o) * r), lng);
-	return fillgrid_lng(out, groups, groupsize, clustersize, offset, shift);
+	return fillgrid_lng(*out, groups, groupsize, clustersize, offset, shift);
 }
 
 str
@@ -246,7 +242,7 @@ ARRAYgridBAT_int(int *ret, int *bid, int *groups, int *groupsize, int *clustersi
 		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (fillgrid_int(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
+	if (fillgrid_int(bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
 		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
@@ -262,7 +258,7 @@ ARRAYgridBATshift_int(int *ret, int *bid, int *groups, int *groupsize, int *clus
 	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
 		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
-	if (fillgrid_int(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+	if (fillgrid_int(bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
@@ -306,7 +302,7 @@ ARRAYgridBAT_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clustersi
 		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (fillgrid_lng(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
+	if (fillgrid_lng(bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
 		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
@@ -322,7 +318,7 @@ ARRAYgridBATshift_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clus
 	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
 		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
-	if (fillgrid_lng(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+	if (fillgrid_lng(bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
