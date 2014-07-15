@@ -196,7 +196,7 @@ str RMTconnectScen(
 	}
 
 	if (mapi_reconnect(m) != MOK) {
-		mapi_disconnect(m);
+		mapi_destroy(m);
 		MT_lock_unset(&mal_remoteLock, "remote.connect");
 		throw(IO, "remote.connect", "unable to connect to '%s': %s",
 				*ouri, mapi_error_str(m));
@@ -204,11 +204,13 @@ str RMTconnectScen(
 
 	/* connection established, add to list */
 	c = GDKzalloc(sizeof(struct _connection));
-	if ( c == NULL){
+	if ( c == NULL || (c->name = GDKstrdup(conn)) == NULL) {
+		GDKfree(c);
+		mapi_destroy(m);
+		MT_lock_unset(&mal_remoteLock, "remote.connect");
 		throw(MAL,"remote.connect",MAL_MALLOC_FAIL);
 	}
 	c->mconn = m;
-	c->name = GDKstrdup(conn);
 	c->nextid = 0;
 	c->next = conns;
 	conns = c;
