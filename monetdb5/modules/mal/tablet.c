@@ -1557,12 +1557,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
   bailout:
 	if (task) {
-		for (i = 0; i < as->nr_attrs; i++) {
-			if (task->fields[i])
-				GDKfree(task->fields[i]);
-		}
-		if (task->fields)
+		if (task->fields) {
+			for (i = 0; i < as->nr_attrs; i++) {
+				if (task->fields[i])
+					GDKfree(task->fields[i]);
+			}
 			GDKfree(task->fields);
+		}
 		if (task->time)
 			GDKfree(task->time);
 		if (task->cols)
