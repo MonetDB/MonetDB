@@ -111,18 +111,22 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		now = QRYqueue[i].start * 1000;
 		msg = MTIMEunix_epoch(&ts);
 		if (msg)
-			return msg;
+			goto bailout;
 		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
 		if (msg)
-			return msg;
+			goto bailout;
 		BUNappend(started, &tsn, FALSE);
 
 		if ( QRYqueue[i].mb->runtime == 0)
 			BUNappend(estimate, timestamp_nil, FALSE);
 		else{
 			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
-			(void) MTIMEunix_epoch(&ts);
-			(void) MTIMEtimestamp_add(&tsn, &ts, &now);
+			msg = MTIMEunix_epoch(&ts);
+			if (msg)
+				goto bailout;
+			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
+			if (msg)
+				goto bailout;
 			BUNappend(estimate, &tsn, FALSE);
 		}
 		BUNappend(oids, &QRYqueue[i].mb->tag, FALSE);
@@ -138,6 +142,18 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref( *o =oids->batCacheid);
 	BBPkeepref( *q =query->batCacheid);
 	return MAL_SUCCEED;
+
+  bailout:
+	MT_lock_unset(&mal_delayLock, "sysmon");
+	BBPreleaseref(tag->batCacheid);
+	BBPreleaseref(user->batCacheid);
+	BBPreleaseref(query->batCacheid);
+	BBPreleaseref(activity->batCacheid);
+	BBPreleaseref(started->batCacheid);
+	BBPreleaseref(estimate->batCacheid);
+	BBPreleaseref(progress->batCacheid);
+	BBPreleaseref(oids->batCacheid);
+	return msg;
 }
 
 str
