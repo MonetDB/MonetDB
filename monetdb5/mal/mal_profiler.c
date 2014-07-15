@@ -1342,8 +1342,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
 		return -1;
 	buf[n] = 0;
-	for ( s= buf; *s; s++)
-	{
+	for ( s= buf; *s; s++) {
 		if ( strncmp(s,"cpu",3)== 0){
 			s +=3;
 			if ( *s == ' ') {
@@ -1355,7 +1354,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 					cpu = 255;
 			}
 			s= strchr(s,' ');
-			if ( s== 0 || cpu < 0 || cpu > 255) goto skip;
+			if (s == NULL)		/* unexpected format of file */
+				break;
+			if ( cpu < 0 || cpu > 255) goto skip;
 			
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
@@ -1370,7 +1371,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			corestat[cpu].idle = idle;
 			corestat[cpu].iowait = iowait;
 		} 
-		skip: if(s) while( *s && *s != '\n') s++;
+	  skip:
+		while (*s && *s != '\n')
+			s++;
 	}
 
 	s= cpuload;
