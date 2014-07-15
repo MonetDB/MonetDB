@@ -1707,8 +1707,10 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		BAT *bp = BATdescriptor(*b);
 		BAT *res = NULL;
 
-		if (bp == NULL)
+		if (bp == NULL) {
+			re_destroy(re);
 			throw(MAL, "pcre.like", OPERATION_FAILED);
+		}
 		if (us)
 			res = re_uselect(re, bp, ignore);
 		else
