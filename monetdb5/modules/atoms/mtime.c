@@ -2418,12 +2418,11 @@ MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year)
 str
 MTIMEtzone_tostr(str *s, const tzone *ret)
 {
-	char buf[128], *s1 = buf;
-	int len = 128;
+	char *s1 = NULL;
+	int len = 0;
 
-	*s1 = 0;
 	tzone_tostr(&s1, &len, ret);
-	*s = GDKstrdup(buf);
+	*s = s1;
 	return MAL_SUCCEED;
 }
 
