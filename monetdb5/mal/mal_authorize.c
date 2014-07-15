@@ -650,7 +650,7 @@ AUTHdecypherValue(str *ret, str *value) {
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
-	r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
+	w = r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
 	if( r == NULL)
 		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 
