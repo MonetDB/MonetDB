@@ -187,7 +187,7 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
-	str x;
+	str x, y;
 
 	prepareOperand(b, l, name);
 	prepareResult(bn, b, TYPE_str, name);
@@ -196,8 +196,8 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
-		str y = NULL;
 
+		y = NULL;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0)
 			(*func)(&y, x);
@@ -213,6 +213,8 @@ do_batstr_str(bat *ret, bat *l, const char *name, int (*func)(str *, str))
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
+	if (y != str_nil)
+		GDKfree(y);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, name, OPERATION_FAILED " During bulk operation");
@@ -646,6 +648,7 @@ bunins_failed:
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
+	GDKfree(v);
 	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
 }
 
@@ -675,6 +678,7 @@ str STRbatTailcst(bat *ret, bat *l, bat *cst)
 bunins_failed:
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(*ret);
+	GDKfree(v);
 	throw(MAL, "batstr.string", OPERATION_FAILED " During bulk operation");
 }
 
@@ -746,7 +750,8 @@ STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep)
 	BATiter bi;
 	BAT *bn, *b;
 	BUN p, q;
-	str x, *xp = &x;
+	str x;
+	str y;
 
 	prepareOperand(b, l, "subString");
 	prepareResult(bn, b, TYPE_int, "subString");
@@ -755,19 +760,21 @@ STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep)
 
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
-		str y = (str)str_nil, *yp = &y;
 
+		y = (str) str_nil;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0)
-			STRSubstitute(yp, xp, arg2, arg3, rep);
+			STRSubstitute(&y, &x, arg2, arg3, rep);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
-			GDKfree(yp);
+			GDKfree(y);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
+	if (y != str_nil)
+		GDKfree(y);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
