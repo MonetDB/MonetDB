@@ -2422,6 +2422,30 @@ command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B
+
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
 comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
@@ -41046,32 +41070,6 @@ comment Convert a SQL like pattern with the given escape character into a PCRE p
 command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
 address PCREselectDef;
 comment Select tuples based on the pattern
-
-function pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
-function pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
-pattern pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
-address PQtopn3_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
-address PQtopn3_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_max(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn2_minmax;
-comment Return unique top n withn groups
-
-pattern pqueue.topn_min(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn2_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_minmax;
-comment Return the top n elements using a max-pqueue
-
-pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_minmax;
-comment Return the top n elements using a min-pqueue
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;

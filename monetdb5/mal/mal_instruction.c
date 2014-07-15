@@ -142,8 +142,13 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->runtime = 0;
 	mb->calls = 0;
 	mb->optimize = 0;
-	if (newMalBlkStmt(mb, maxstmts) < 0)
+	mb->stmt = NULL;
+	if (newMalBlkStmt(mb, maxstmts) < 0) {
+		GDKfree(mb->var);
+		GDKfree(mb->stmt);
+		GDKfree(mb);
 		return NULL;
+	}
 	return mb;
 }
 

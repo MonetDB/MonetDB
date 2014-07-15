@@ -362,30 +362,127 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 	/**
 	 * Get a comma separated list of all a database's SQL keywords that
-	 * are NOT also SQL92 keywords.
+	 * are NOT also SQL:2003 keywords.
 	 * <br /><br />
-	 * Wasn't MonetDB fully standards compliant? So no extra keywords...
 	 *
-	 * @return a comma separated list of keywords we use (none)
+	 * @return a comma separated list of MonetDB keywords
 	 */
 	public String getSQLKeywords() {
-		return "";
+		/* return same list as returned in odbc/driver/SQLGetInfo.c case SQL_KEYWORDS: */
+		return  "ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC," +
+			"AUTO_INCREMENT,BEFORE,BIGINT,BIGSERIAL,BINARY,BLOB," +
+			"CALL,CHAIN,CLOB,COMMITTED,COPY,CORR,CUME_DIST," +
+			"CURRENT_ROLE,CYCLE,DATABASE,DELIMITERS,DENSE_RANK," +
+			"DO,EACH,ELSEIF,ENCRYPTED,EVERY,EXCLUDE,FOLLOWING," +
+			"FUNCTION,GENERATED,IF,ILIKE,INCREMENT,LAG,LAG,LEAD," +
+			"LEAD,LIMIT,LOCALTIME,LOCALTIMESTAMP,LOCKED,MAXVALUE," +
+			"MEDIAN,MEDIUMINT,MERGE,MINVALUE,NEW,NOCYCLE," +
+			"NOMAXVALUE,NOMINVALUE,NOW,OFFSET,OLD,OTHERS,OVER," +
+			"PARTITION,PERCENT_RANK,PLAN,PRECEDING,PROD,QUANTILE," +
+			"RANGE,RANK,RECORDS,REFERENCING,REMOTE,RENAME," +
+			"REPEATABLE,REPLICA,RESTART,RETURN,RETURNS," +
+			"ROW_NUMBER,ROWS,SAMPLE,SAVEPOINT,SCHEMA,SEQUENCE," +
+			"SERIAL,SERIALIZABLE,SIMPLE,START,STATEMENT,STDIN," +
+			"STDOUT,STREAM,STRING,SYMMETRIC,TIES,TINYINT,TRIGGER," +
+			"UNBOUNDED,UNCOMMITTED,UNENCRYPTED,WHILE,XMLAGG," +
+			"XMLATTRIBUTES,XMLCOMMENT,XMLCONCAT,XMLDOCUMENT," +
+			"XMLELEMENT,XMLFOREST,XMLNAMESPACES,XMLPARSE,XMLPI," +
+			"XMLQUERY,XMLSCHEMA,XMLTEXT,XMLVALIDATE";
+	}
+
+	/**
+	 * getMonetDBSysFunctions(int kind)
+	 * args: int kind, value must be 1 or 2 or 3 or 4.
+	 * internal utility method to query the MonetDB sys.functions table
+	 * to dynamically get the function names (for a specific kind) and
+	 * concatenate the function names into a comma separated list.
+	 */
+	private String getMonetDBSysFunctions(int kind) {
+		// where clause part (for num/str/timedate to match only functions whose 1 arg exists and is of a certain type
+		String part1 = "WHERE \"id\" IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1 AND \"name\" = 'arg_1' AND \"type\" IN ";
+		String whereClause = "";
+		switch (kind) {
+			case 1:	/* numeric functions */
+				whereClause = part1 +
+				"('tinyint', 'smallint', 'int', 'bigint', 'decimal', 'real', 'double') )" +
+				// exclude 2 functions which take an int as arg but returns a char or str
+				" AND \"name\" NOT IN ('code', 'space')";
+				break;
+			case 2:	/* string functions */
+				whereClause = part1 +
+				"('char', 'varchar', 'clob') )" +
+				// include 2 functions which take an int as arg but returns a char or str
+				" OR \"name\" IN ('code', 'space')";
+				break;
+			case 3:	/* system functions */
+				whereClause = "WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
+				" AND \"func\" NOT LIKE '%function%(% %)%'" +
+				" AND \"func\" NOT LIKE '%procedure%(% %)%'" +
+				" AND \"func\" NOT LIKE '%CREATE FUNCTION%RETURNS TABLE(% %)%'" +
+				// the next names are also not usable so exclude them
+				" AND \"name\" NOT LIKE 'querylog_%'" +
+				" AND \"name\" NOT IN ('analyze', 'count', 'count_no_nil', 'initializedictionary', 'times')";
+				break;
+			case 4:	/* time date functions */
+				whereClause = part1 +
+				"('date', 'time', 'timestamp', 'timetz', 'timestamptz', 'sec_interval', 'month_interval') )";
+				break;
+			default: /* internal function called with an invalid kind value */
+				return "";
+		}
+
+		StringBuilder sb = new StringBuilder(400);
+		Statement st = null;
+		ResultSet rs = null;
+		try {
+			String select = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" " + whereClause + " ORDER BY 1";
+			st = getStmt();
+			rs = st.executeQuery(select);
+			// Fetch the function names and concatenate them into a StringBuffer separated by comma's
+			boolean isfirst = true;
+			while (rs.next()) {
+				String name = rs.getString(1);
+				if (name != null) {
+					if (isfirst) {
+						isfirst = false;
+					} else {
+						sb.append(",");
+					}
+					sb.append(name);
+				}
+			}
+		} catch (SQLException e) {
+			// ignore
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) { /* ignore */ }
+			}
+			if (st != null) {
+				try {
+					 st.close();
+				} catch (SQLException e) { /* ignore */ }
+			}
+		}
+
+		return sb.toString();
 	}
 
 	public String getNumericFunctions() {
-		return "";
+		return getMonetDBSysFunctions(1);
 	}
 
 	public String getStringFunctions() {
-		return "";
+		return getMonetDBSysFunctions(2);
 	}
 
 	public String getSystemFunctions() {
-		return "";
+		return getMonetDBSysFunctions(3);
 	}
 
 	public String getTimeDateFunctions() {
-		return "";
+		return getMonetDBSysFunctions(4);
 	}
 
 	/**

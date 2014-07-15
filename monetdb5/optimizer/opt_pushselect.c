@@ -399,9 +399,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				if (subselect_find_subselect(&subselects, var) > 0) {
 					InstrPtr qq = newAssignment(mb);
+					/* TODO: check result */
 
 					getArg(qq, 0) = getArg(p, 0); 
-					qq = pushArgument(mb, qq, getArg(p, 1));
+					(void) pushArgument(mb, qq, getArg(p, 1));
 					actions++;
 					freeInstruction(p);
 					continue;

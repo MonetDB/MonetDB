@@ -16,12 +16,12 @@ stdout of test 'TMsubcommit` in directory 'monetdb5/tests/gdkTests` itself:
 function user.main():void;
 #turn the debugger on to see details 
 #mdb.setDebug(19); 
-    b := bat.new(:oid,:int);
+    b := bat.new_persistent(:oid,:int);
     bat.append(b,2);
     bat.setName(b,"b");
     bat.setPersistent(b,true);
     transaction.commit();
-    c := bat.new(:oid,:int);
+    c := bat.new_persistent(:oid,:int);
     bat.append(c,4);
     bat.setName(c,"a");
     bat.setPersistent(c,true);

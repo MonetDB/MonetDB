@@ -60,7 +60,7 @@ static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = BATnew(TYPE_void, adt, BATTINY);
+	BAT *b = BATnew(TYPE_void, adt, BATTINY, PERSISTENT);
 
 	/* check for correct structures */
 	if (b == NULL)
@@ -1557,12 +1557,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
   bailout:
 	if (task) {
-		for (i = 0; i < as->nr_attrs; i++) {
-			if (task->fields[i])
-				GDKfree(task->fields[i]);
-		}
-		if (task->fields)
+		if (task->fields) {
+			for (i = 0; i < as->nr_attrs; i++) {
+				if (task->fields[i])
+					GDKfree(task->fields[i]);
+			}
 			GDKfree(task->fields);
+		}
 		if (task->time)
 			GDKfree(task->time);
 		if (task->cols)

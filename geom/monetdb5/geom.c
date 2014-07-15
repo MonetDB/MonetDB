@@ -166,13 +166,13 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	if (!nil && strstr(src,"BOX") ==  src && (c = strstr(src,"(")) != NULL) {
 		/* Parse the mbr */
 		if ((c - src) != 3 && (c - src) != 4) {
-			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'");
+			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'\n");
 			return 0;
 		}
 
 		if (sscanf(c,"(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
+			GDKerror("ParseException: Not enough coordinates.\n");
 			return 0;
-			GDKerror("ParseException: Not enough coordinates.");
 		}
 	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
 		return 0;
@@ -791,7 +791,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 		throw(MAL, "geom.point", "both arguments must have dense and aligned heads");
 	}
 
-	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx))) == NULL) {
+	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx), TRANSIENT)) == NULL) {
 		BBPreleaseref(bx->batCacheid);
 		BBPreleaseref(by->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);

@@ -141,8 +141,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret=  (int *) getArgReference(stk,pci,0);
 	int *ret2=  (int *) getArgReference(stk,pci,0);
-	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	char s[26];
 
 	(void) mb;
@@ -182,8 +182,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTLogin(int *nme, int *ret)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
-	BAT *u = BATnew(TYPE_void, TYPE_oid, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
+	BAT *u = BATnew(TYPE_void, TYPE_oid, 12, TRANSIENT);
 	int i;
 	char s[26];
 
@@ -214,7 +214,7 @@ CLTLogin(int *nme, int *ret)
 str
 CLTLastCommand(int *ret)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	int i;
 	char s[26];
 
@@ -236,7 +236,7 @@ CLTLastCommand(int *ret)
 str
 CLTActions(int *ret)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_int, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_int, 12, TRANSIENT);
 	int i;
 
 	if (b == 0)
@@ -255,7 +255,7 @@ CLTActions(int *ret)
 str
 CLTTime(int *ret)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 12, TRANSIENT);
 	int i;
 
 	if (b == 0)
@@ -278,7 +278,7 @@ CLTTime(int *ret)
 str
 CLTusers(int *ret)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	int i;
 
 	if (b == 0)
@@ -597,23 +597,25 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;
 	lng clk,timeout;
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
 
-	user = BATnew(TYPE_void, TYPE_str, 0);
+	user = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 	BATseqbase(user,0);
-	login = BATnew(TYPE_void, TYPE_lng, 0);
+	login = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(login,0);
-	stimeout = BATnew(TYPE_void, TYPE_lng, 0);
+	stimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(stimeout,0);
-	last = BATnew(TYPE_void, TYPE_lng, 0);
+	last = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(last,0);
-	qtimeout = BATnew(TYPE_void, TYPE_lng, 0);
+	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(qtimeout,0);
-	active = BATnew(TYPE_void, TYPE_bit, 0);
+	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(active,0);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
+		if ( user) BBPreleaseref(user->batCacheid);
 		if ( login) BBPreleaseref(login->batCacheid);
 		if ( stimeout) BBPreleaseref(stimeout->batCacheid);
 		if ( qtimeout) BBPreleaseref(qtimeout->batCacheid);
@@ -627,15 +629,23 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     for (c = mal_clients + (GDKgetenv_isyes("monet_daemon")?1:0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
 		BUNappend(user, &usrname, FALSE);
-		(void) MTIMEunix_epoch(&ts);
+		msg = MTIMEunix_epoch(&ts);
+		if (msg)
+			goto bailout;
 		clk = c->login * 1000;
-		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		if (msg)
+			goto bailout;
 		BUNappend(login, &ret, FALSE);
 		timeout = c->stimeout / 1000000;
 		BUNappend(stimeout, &timeout, FALSE);
-		(void) MTIMEunix_epoch(&ts);
+		msg = MTIMEunix_epoch(&ts);
+		if (msg)
+			goto bailout;
 		clk = c->lastcmd * 1000;
-		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		if (msg)
+			goto bailout;
 		BUNappend(last, &ret, FALSE);
 		timeout = c->qtimeout / 1000000;
 		BUNappend(qtimeout, &timeout, FALSE);
@@ -649,4 +659,14 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*lastId = last->batCacheid);
 	BBPkeepref(*activeId = active->batCacheid);
 	return MAL_SUCCEED;
+
+  bailout:
+    MT_lock_unset(&mal_contextLock, "clients.sessions");
+	BBPreleaseref(user->batCacheid);
+	BBPreleaseref(login->batCacheid);
+	BBPreleaseref(stimeout->batCacheid);
+	BBPreleaseref(qtimeout->batCacheid);
+	BBPreleaseref(last->batCacheid);
+	BBPreleaseref(active->batCacheid);
+	return msg;
 }

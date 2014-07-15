@@ -30,8 +30,8 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));
-	bn1 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r));
-	bn2 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r));
+	bn1 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
+	bn2 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	if (bn1 == NULL || bn2 == NULL) {
 		if (bn1 != NULL)
 			BBPreclaim(bn1);

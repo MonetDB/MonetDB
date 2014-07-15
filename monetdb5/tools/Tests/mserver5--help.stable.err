@@ -12,6 +12,7 @@ stderr of test 'mserver5--help` in directory 'monetdb5/tools` itself:
 
 Usage: mserver5 [options] [scripts]
     --dbpath=<directory>      Specify database location
+    --dbextra=<directory>     Directory for transient BATs
     --dbinit=<stmt>           Execute statement at startup
     --config=<config_file>    Use config_file to read options from
     --daemon=yes|no           Do not read commands from standard input [no]

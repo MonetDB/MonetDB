@@ -1,0 +1,411 @@
+a := bat.new(:oid, :str);
+bat.append(a, "2");
+bat.append(a, "3");
+bat.append(a, "1");
+bat.append(a, "3");
+bat.append(a, "1");
+bat.append(a, "2");
+bat.append(a, "3");
+bat.append(a, "2");
+bat.append(a, "1");
+# ascending  2 4 8 0 5 7 1 3 6
+#            0 0 0 1 1 1 2 2 2
+# descending 1 3 6 0 5 7 2 4 8
+#            0 0 0 1 1 1 2 2 2
+b := bat.new(:oid, :str);
+bat.append(b, "1");
+bat.append(b, "3");
+bat.append(b, "2");
+bat.append(b, "1");
+bat.append(b, "3");
+bat.append(b, "3");
+bat.append(b, "2");
+bat.append(b, "2");
+bat.append(b, "1");
+# ascending  8 2 4 0 7 5 3 6 1
+# descending 1 6 3 5 7 0 4 2 8
+c := bat.new(:oid, :oid);
+bat.append(c, 0@0);
+bat.append(c, 1@0);
+bat.append(c, 2@0);
+bat.append(c, 3@0);
+bat.append(c, 4@0);
+bat.append(c, 5@0);
+bat.append(c, 6@0);
+bat.append(c, 7@0);
+bat.append(c, 8@0);
+
+x1 := algebra.firstn(a, 0:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 1:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 2:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 3:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 4:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 5:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 6:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 7:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 8:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 9:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 10:wrd, true);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 0:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 1:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 2:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 3:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 4:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 5:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 6:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 7:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 8:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 9:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+x1 := algebra.firstn(a, 10:wrd, false);
+io.print(x1);
+a1 := algebra.leftfetchjoin(x1, a);
+io.print(a1);
+
+(x1, x2) := algebra.firstn(a, 0:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 0:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 0:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 1:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 1:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 1:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 2:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 2:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 2:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 3:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 3:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 3:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 4:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 4:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 4:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 5:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 5:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 5:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 6:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 6:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 6:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 7:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 7:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 7:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 8:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 8:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 8:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 9:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 9:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 9:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 10:wrd, true);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 10:wrd, true);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 10:wrd, true);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 0:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 0:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 0:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 1:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 1:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 1:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 2:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 2:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 2:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 3:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 3:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 3:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 4:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 4:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 4:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 5:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 5:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 5:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 6:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 6:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 6:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 7:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 7:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 7:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 8:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 8:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 8:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 9:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 9:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 9:wrd, false);
+io.print(y1);
+io.print(y2);
+
+(x1, x2) := algebra.firstn(a, 10:wrd, false);
+io.print(x1);
+io.print(x2);
+y1 := algebra.firstn(b, x1, x2, 10:wrd, false);
+io.print(y1);
+a1 := algebra.leftfetchjoin(y1, a);
+b1 := algebra.leftfetchjoin(y1, b);
+io.print(a1, b1);
+(y1, y2) := algebra.firstn(b, x1, x2, 10:wrd, false);
+io.print(y1);
+io.print(y2);
+

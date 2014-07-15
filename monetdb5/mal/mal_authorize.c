@@ -136,7 +136,7 @@ AUTHinitTables(str *passwd) {
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
 	if (!bid) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
 		BATseqbase(b,0);
@@ -154,7 +154,7 @@ AUTHinitTables(str *passwd) {
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
 		BATseqbase(b,0);
@@ -559,7 +559,7 @@ AUTHgetUsers(BAT **ret, Client *c) {
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
-	*ret = BATcopy(user, user->htype, user->ttype, FALSE);
+	*ret = BATcopy(user, user->htype, user->ttype, FALSE, TRANSIENT);
 	return(NULL);
 }
 
@@ -593,7 +593,7 @@ AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	/* decypher the password */
 	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, &tmp));
 
-	*ret = GDKstrdup(passwd);
+	*ret = passwd;
 	return(NULL);
 }
 
@@ -645,8 +645,7 @@ AUTHdecypherValue(str *ret, str *value) {
 	 */
 
 	/* this is the XOR decypher implementation */
-	str r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
-	str w = r;
+	str r, w;
 	str s = *value;
 	char t = '\0';
 	int escaped = 0;
@@ -654,10 +653,11 @@ AUTHdecypherValue(str *ret, str *value) {
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
-	if( r == NULL)
-		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
+	w = r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
+	if( r == NULL)
+		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 
 	keylen = (int) strlen(vaultKey);
 
@@ -688,17 +688,17 @@ AUTHdecypherValue(str *ret, str *value) {
 static str
 AUTHcypherValue(str *ret, str *value) {
 	/* this is the XOR cypher implementation */
-	str r = GDKmalloc(sizeof(char) * (strlen(*value) * 2 + 1));
-	str w = r;
+	str r, w;
 	str s = *value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
-	if( r == NULL)
-		throw(MAL, "cypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
+	w = r = GDKmalloc(sizeof(char) * (strlen(*value) * 2 + 1));
+	if( r == NULL)
+		throw(MAL, "cypherValue", MAL_MALLOC_FAIL);
 
 	keylen = (int) strlen(vaultKey);
 
