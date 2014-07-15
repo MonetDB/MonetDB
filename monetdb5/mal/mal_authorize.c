@@ -588,7 +588,7 @@ AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	/* decypher the password */
 	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, &tmp));
 
-	*ret = GDKstrdup(passwd);
+	*ret = passwd;
 	return(NULL);
 }
 
