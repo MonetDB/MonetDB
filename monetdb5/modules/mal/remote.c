@@ -706,6 +706,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		bid = *(int *)value;
 		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
 			MT_lock_unset(&c->lock, "remote.put");
+			GDKfree(head);
+			GDKfree(tail);
 			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
 
@@ -718,6 +720,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				"%s := remote.batload(:%s, :%s, " BUNFMT ");\n",
 				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout);
+		GDKfree(head);
+		GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
