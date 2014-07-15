@@ -98,7 +98,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	}
 
 	/* allocate result BAT */
-	bn = BATnew(src->htype, TYPE_str, BATcount(src));
+	bn = BATnew(src->htype, TYPE_str, BATcount(src), TRANSIENT);
 	if (bn == NULL) {
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
@@ -235,13 +235,13 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 	/* allocate result BAT */
 	switch (bone->ttype) {
 	case TYPE_bte:
-		bres = BATnew(TYPE_void, TYPE_sht, n);
+		bres = BATnew(TYPE_void, TYPE_sht, n, TRANSIENT);
 		break;
 	case TYPE_sht:
-		bres = BATnew(TYPE_void, TYPE_int, n);
+		bres = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 		break;
 	case TYPE_int:
-		bres = BATnew(TYPE_void, TYPE_lng, n);
+		bres = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
 		break;
 	default:
 		throw(MAL, "batudf.fuse",

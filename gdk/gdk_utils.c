@@ -1077,7 +1077,6 @@ GDKinit(opt *set, int setlen)
 
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	GDKremovedir(DELDIR);
 	BBPinit();
 
 	n = (opt *) malloc(setlen * sizeof(opt));
@@ -1121,8 +1120,8 @@ GDKinit(opt *set, int setlen)
 		}
 	}
 
-	GDKkey = BATnew(TYPE_void, TYPE_str, 100);
-	GDKval = BATnew(TYPE_void, TYPE_str, 100);
+	GDKkey = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
+	GDKval = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
 	if (GDKkey == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
 	if (GDKval == NULL)
@@ -1130,12 +1129,10 @@ GDKinit(opt *set, int setlen)
 	BATseqbase(GDKkey,0);
 	BATkey(GDKkey, BOUND2BTRUE);
 	BATrename(GDKkey, "environment_key");
-	BATmode(GDKkey, TRANSIENT);
 
 	BATseqbase(GDKval,0);
 	BATkey(GDKval, BOUND2BTRUE);
 	BATrename(GDKval, "environment_val");
-	BATmode(GDKval, TRANSIENT);
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)

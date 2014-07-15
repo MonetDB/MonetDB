@@ -31,7 +31,7 @@
 #include "batmmath.h"
 
 #define voidresultBAT(X1,X2)\
-	bn = BATnew(TYPE_void, X1, BATcount(b));\
+	bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);\
 	BATseqbase(bn, b->hseqbase);\
 	if (bn == NULL) {\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\

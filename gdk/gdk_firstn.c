@@ -109,7 +109,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		}
 	} else if (n >= cnt) {
 		/* trivial: return everything */
-		bn = BATnew(TYPE_void, TYPE_void, cnt);
+		bn = BATnew(TYPE_void, TYPE_void, cnt, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, cnt);
@@ -133,7 +133,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			i = (BUN) (candend - (const oid *) Tloc(s, 0));
 			return BATslice(s, i - n, i);
 		}
-		bn = BATnew(TYPE_void, TYPE_void, n);
+		bn = BATnew(TYPE_void, TYPE_void, n, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, n);
@@ -150,7 +150,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 
 	assert(b->ttype != TYPE_void); /* tsorted above took care of this */
 
-	bn = BATnew(TYPE_void, TYPE_oid, n);
+	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
@@ -286,7 +286,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
 
-	bn = BATnew(TYPE_void, TYPE_oid, n);
+	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
@@ -542,10 +542,10 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt);
+		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt);
+		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -819,10 +819,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt);
+		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt);
+		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -929,13 +929,13 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
-		*topn = BATnew(TYPE_void, TYPE_void, 0);
+		*topn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		if (*topn == NULL)
 			return GDK_FAIL;
 		BATseqbase(*topn, 0);
 		BATseqbase(BATmirror(*topn), 0);
 		if (gids) {
-			*gids = BATnew(TYPE_void, TYPE_void, 0);
+			*gids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
 				return GDK_FAIL;

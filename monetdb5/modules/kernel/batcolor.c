@@ -45,7 +45,7 @@
 		throw(MAL, "batstr."Z, RUNTIME_OBJECT_MISSING);		\
 	}
 #define prepareResult(X,Y,T,Z)						\
-	X= BATnew(Y->htype,T,BATcount(Y));				\
+	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
 	if( X == NULL){									\
 		BBPreleaseref(Y->batCacheid);				\
 		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL);	\

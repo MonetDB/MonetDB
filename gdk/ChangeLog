@@ -1,3 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Jul 14 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Added "multifarm" capability.  It is now possible to separate persistent
+  and transient BATs into different directories (presumably on different
+  disks).  This can be done by using the --dbextra option of mserver5
+  (see the man page).
+

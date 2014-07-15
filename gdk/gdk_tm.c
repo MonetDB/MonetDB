@@ -75,6 +75,7 @@ prelude(int cnt, bat *subcommit)
 			}
 			if (b) {
 				assert(!isVIEW(b));
+				assert(b->batRole == PERSISTENT);
 				BATcommit(b);
 			}
 		}

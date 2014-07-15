@@ -20,12 +20,24 @@ address CMDBATnew
 comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
 
 pattern bat.new(ht:oid, tt:any_1, size:int) :bat[:oid,:any_1]
-address CMDBATnewint
+address CMDBATnew
 comment "Creates a new BAT with sufficient space.";
 
 pattern bat.new(ht:oid, tt:any_1, size:lng) :bat[:oid,:any_1]
 address CMDBATnew
 comment "Creates a new BAT and allocate space.";
+
+pattern bat.new_persistent(ht:oid, tt:any_1) :bat[:oid,:any_1]
+address CMDBATnew_persistent
+comment "Creates a new empty transient BAT in the persistent farm, with head- and tail-types as indicated.";
+
+pattern bat.new_persistent(ht:oid, tt:any_1, size:int) :bat[:oid,:any_1]
+address CMDBATnew_persistent
+comment "Creates a new BAT in the persistent farm with sufficient space.";
+
+pattern bat.new_persistent(ht:oid, tt:any_1, size:lng) :bat[:oid,:any_1]
+address CMDBATnew_persistent
+comment "Creates a new BAT in the persistent farm and allocate space.";
 
 pattern bat.new(b:bat[:oid,:any_1] ) :bat[:oid,:any_1]
 address CMDBATnewDerived;

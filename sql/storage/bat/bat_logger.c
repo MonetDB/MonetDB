@@ -90,7 +90,7 @@ bl_postversion( void *lg)
 		if (!b)
 			return;
 		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
         	BATseqbase(b1, b->hseqbase);
 		if (!b1)
 			return;
@@ -112,7 +112,7 @@ bl_postversion( void *lg)
 		if (!b)
 			return;
 		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
         	BATseqbase(b1, b->hseqbase);
 		if (!b1)
 			return;
@@ -135,8 +135,8 @@ bl_postversion( void *lg)
 		if (!b)
 			return;
 		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
-		b2 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
+		b2 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
         	BATseqbase(b1, b->hseqbase);
         	BATseqbase(b2, b->hseqbase);
 		if (!b1 || !b2)
@@ -171,7 +171,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, "D", s, "keycolumns")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -183,7 +183,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_id")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -195,7 +195,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_column")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -207,7 +207,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_nr")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -279,7 +279,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, s, t, i)));
 			if (!b) /* skip idxs without bats */
 				continue;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -302,7 +302,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_aggr")));
 			if (!b)
 				return;
-			b1 = BATnew(TYPE_void, TYPE_int, BATcount(b));
+			b1 = BATnew(TYPE_void, TYPE_int, BATcount(b), PERSISTENT);
 			if (!b1)
 				return;
         		BATseqbase(b1, b->hseqbase);

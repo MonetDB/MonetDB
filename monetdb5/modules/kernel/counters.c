@@ -3004,10 +3004,10 @@ counter2bat(BAT **key, BAT **val, counter *c)
 		return GDK_FAIL;
 	}
 	ms = c->usec / 1000;
-	*key = BATnew(TYPE_void, TYPE_str, 8);
+	*key = BATnew(TYPE_void, TYPE_str, 8, TRANSIENT);
 	if (*key == NULL)
 		return GDK_FAIL;
-	*val = BATnew(TYPE_void, TYPE_lng, 8);
+	*val = BATnew(TYPE_void, TYPE_lng, 8, TRANSIENT);
 	if (*val == NULL){
 		BBPreleaseref((*key)->batCacheid);
 		*key = NULL;
@@ -3071,7 +3071,7 @@ show_native_events(BAT **ret)
 	int i = 0;
 #endif
 
-	*ret = BATnew(TYPE_void, TYPE_str, NumEvents);
+	*ret = BATnew(TYPE_void, TYPE_str, NumEvents, TRANSIENT);
 	if (*ret == NULL)
 		return GDK_FAIL;
 	BATseqbase(*ret,0);
@@ -3092,7 +3092,7 @@ show_unified_events(BAT **ret)
 	int i = 0;
 #endif
 
-	*ret = BATnew(TYPE_oid, TYPE_str, NumEvents);
+	*ret = BATnew(TYPE_oid, TYPE_str, NumEvents, TRANSIENT);
 	if (*ret == NULL)
 		return GDK_FAIL;
 	BATseqbase(*ret,0);
