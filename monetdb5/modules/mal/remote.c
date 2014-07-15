@@ -855,6 +855,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
+	GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
