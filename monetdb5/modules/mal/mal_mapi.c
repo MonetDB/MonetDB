@@ -1650,13 +1650,16 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	accessTest(*key, "bind");
 	if( pci->argc == 6) {
+		char *tn;
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		col= (str*) getArgReference(stk,pci,pci->retc+3);
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
+		tn = getTypeName(getTailType(getVarType(mb,getDestVar(pci))));
 		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
-			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
+			tn,
 			*nme, *tab,*col,i);
+		GDKfree(tn);
 	} else if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		i= *(int*) getArgReference(stk,pci,pci->retc+3);
