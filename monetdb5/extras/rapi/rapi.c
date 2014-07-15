@@ -26,6 +26,7 @@
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "gdk_utils.h"
+#include "gdk.h"
 #include "sql_catalog.h"
 
 #include "rapi.h"
@@ -91,7 +92,7 @@
 }
 #define SXP_TO_BAT(tpe,access_fun,na_check) { \
 	tpe *p, prev = tpe##_nil; \
-	b = BATnew(TYPE_void, TYPE_##tpe, cnt);\
+	b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);\
 	BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;\
 	b->tsorted = 1; b->trevsorted = 1; \
 	p = (tpe*) Tloc(b, BUNfirst(b));\
@@ -336,7 +337,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = pci->retc + 2; i < pci->argc; i++) {
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
-			b = BATnew(TYPE_void, getArgType(mb, pci, i), 0);
+			b = BATnew(TYPE_void, getArgType(mb, pci, i), 0, TRANSIENT);
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -525,7 +526,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 								i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
-			b = BATnew(TYPE_void, TYPE_str, cnt);
+			b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
 			BATseqbase(b, 0);
 			b->T->nil = 0;
 			b->T->nonil = 1;
