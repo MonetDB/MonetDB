@@ -1,9 +1,9 @@
 stdout of test 'verify_load` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:50 >  
-# 13:29:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:50 >  
+# 10:22:38 >  
+# 10:22:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:38 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,15 +13,15 @@ stdout of test 'verify_load` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 13:29:50 >  
-# 13:29:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:50 >  
+# 10:22:39 >  
+# 10:22:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:39 >  
 
 #SELECT *
 #FROM bam.alignments_extra_1;
@@ -321,7 +321,7 @@ Ready.
 [ 34751799,	"sim_22_1_e",	337,	"chr22",	39609186,	0,	"1=1I1=2X9=27D86=",	"*",	0,	0,	"AATATAAATTAAAATCTCAGGCCTCCATCCCCTATCTACTGAATCAGAATCTGCATTTTAACAGATCTTTTGTGGTTCATATACAGTTGAGTTCTTTTTT",	"4D@6##D=>G#<E#F#?G#;BC:EE#DB:C#>DE>B>:#ED?CFAFDF>DDC<CG:FEGGF5GEE1EFBFDGDG=GDBFDEDFBEGGGFDEDEDFGC?FF"	]
 [ 34753142,	"sim_22_1_f",	401,	"chr22",	23113851,	0,	"14=1X77=1056D1=1X2=1D4=",	"*",	0,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 
-# 13:29:50 >  
-# 13:29:50 >  "Done."
-# 13:29:50 >  
+# 10:22:39 >  
+# 10:22:39 >  "Done."
+# 10:22:39 >  
 

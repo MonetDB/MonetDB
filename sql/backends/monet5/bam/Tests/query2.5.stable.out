@@ -1,9 +1,9 @@
 stdout of test 'query2.5` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:54 >  
-# 13:29:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:54 >  
+# 10:22:42 >  
+# 10:22:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:42 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,17 +13,17 @@ stdout of test 'query2.5` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 #WARNING To speedup calc.min a bulk operator implementation is needed
 #WARNING To speedup calc.min a bulk operator implementation is needed
 
-# 13:29:54 >  
-# 13:29:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:54 >  
+# 10:22:42 >  
+# 10:22:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:42 >  
 
 #WITH qnames1 AS (
 #    SELECT DISTINCT qname
@@ -76,7 +76,7 @@ Ready.
 % 2,	1,	1 # length
 [ 21,	0,	0	]
 
-# 13:29:55 >  
-# 13:29:55 >  "Done."
-# 13:29:55 >  
+# 10:22:43 >  
+# 10:22:43 >  "Done."
+# 10:22:43 >  
 

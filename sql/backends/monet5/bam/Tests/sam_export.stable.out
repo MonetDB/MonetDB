@@ -1,9 +1,9 @@
 stdout of test 'sam_export` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:51 >  
-# 13:29:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:51 >  
+# 10:22:39 >  
+# 10:22:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:39 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,17 +13,17 @@ stdout of test 'sam_export` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 #Interpreting lng as wrd.
 #Interpreting lng as wrd.
 
-# 13:29:51 >  
-# 13:29:51 >  "/usr/bin/python2" "sam_export.SQL.py" "sam_export"
-# 13:29:51 >  
+# 10:22:40 >  
+# 10:22:40 >  "/usr/bin/python2" "sam_export.SQL.py" "sam_export"
+# 10:22:40 >  
 
 #INSERT INTO bam.export (
 #	SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
@@ -64,7 +64,7 @@ Ready.
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 
-# 13:29:51 >  
-# 13:29:51 >  "Done."
-# 13:29:51 >  
+# 10:22:40 >  
+# 10:22:40 >  "Done."
+# 10:22:40 >  
 

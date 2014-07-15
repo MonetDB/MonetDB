@@ -1,9 +1,9 @@
 stdout of test 'query1.5` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:53 >  
-# 13:29:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:53 >  
+# 10:22:41 >  
+# 10:22:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:41 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,15 +13,15 @@ stdout of test 'query1.5` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 13:29:53 >  
-# 13:29:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:53 >  
+# 10:22:41 >  
+# 10:22:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:41 >  
 
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.alignments_1
@@ -124,7 +124,7 @@ Ready.
 [ "sim_22_1_e",	163,	"chr22",	39608988,	255,	"92=1X7=",	"=",	39609212,	0,	"CGTAGTGAGACCCCATCTCCAAAAAATAAATAAATTAAGGACAGGATGGGCATGGACCACTCTTCAAGATTACTGACCAGCTTCTTGATATTGGACAACT",	"BC-GDFADDFFFCG@FAF6GCFBD==@=ACG>=G>EC5<>B#E0<CG4,=GBB>DDGAGEDE7BBD6:G#55DD=EEF#B5#;#GEC#BE####A=C?A5"	]
 [ "sim_22_1_f",	147,	"chr22",	23113851,	255,	"14=1X85=",	"=",	23113643,	0,	"TGCCTTTTCCAGCTGATAGAGACAGCCATGTTTCATGGCTTGTAGCCCCTTCCTCCATCTTCAAAGCCAACAACAACTGGTCAAGTTGTCACATTGCATC",	"####FF-0AD#E>@#?#9??E##A>C=C>D7A,<G?D>=>DDD=F:?G=>CE?:CAFGEDGEFDAGGFEF7CGDCEDEEGA@DECFGE-?DEACD?DC=G"	]
 
-# 13:29:53 >  
-# 13:29:53 >  "Done."
-# 13:29:53 >  
+# 10:22:41 >  
+# 10:22:41 >  "Done."
+# 10:22:41 >  
 

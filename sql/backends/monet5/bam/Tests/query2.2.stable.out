@@ -1,9 +1,9 @@
 stdout of test 'query2.2` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:53 >  
-# 13:29:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:53 >  
+# 10:22:41 >  
+# 10:22:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:41 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,30 +13,29 @@ stdout of test 'query2.2` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 13:29:54 >  
-# 13:29:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:54 >  
+# 10:22:42 >  
+# 10:22:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:42 >  
 
 #WITH alig AS (
 #    SELECT qname, flag, rname, pos, cigar
 #    FROM bam.alignments_1
-#    WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#      AND bam_flag(flag, 'seco_alig') = False
+#    WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+#      AND bam.bam_flag(flag, 'seco_alig') = False
 #      AND qname IN (
 #        SELECT qname
 #        FROM bam.alignments_1
-#        WHERE bam_flag(flag, 'firs_segm') <> bam_flag(flag, 'last_segm')
-#          AND bam_flag(flag, 'seco_alig') = False
+#        WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+#          AND bam.bam_flag(flag, 'seco_alig') = False
 #        GROUP BY qname
 #        HAVING COUNT(*) = 2
-#           AND SUM(bam_flag(flag, 'firs_segm')) = 1
-#           AND SUM(bam_flag(flag, 'last_segm')) = 1
+#           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
 % bam.L11,	bam.L12 # table_name
 % distance,	nr_alignments # name
 % bigint,	wrd # type
@@ -57,8 +56,8 @@ Ready.
 [ 114,	1	]
 #SELECT     
 #    CASE WHEN l_pos < r_pos 
-#         THEN r_pos - (l_pos + seq_length(l_cigar))
-#         ELSE l_pos - (r_pos + seq_length(r_cigar))
+#         THEN r_pos - (l_pos + bam.seq_length(l_cigar))
+#         ELSE l_pos - (r_pos + bam.seq_length(r_cigar))
 #    END AS distance, 
 #    COUNT(*) AS nr_alignments
 #FROM bam.paired_primary_alignments_3
@@ -84,7 +83,7 @@ Ready.
 [ 91,	1	]
 [ 135,	1	]
 
-# 13:29:54 >  
-# 13:29:54 >  "Done."
-# 13:29:54 >  
+# 10:22:42 >  
+# 10:22:42 >  "Done."
+# 10:22:42 >  
 

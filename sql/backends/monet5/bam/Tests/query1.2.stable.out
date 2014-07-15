@@ -1,9 +1,9 @@
 stdout of test 'query1.2` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:52 >  
-# 13:29:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:52 >  
+# 10:22:40 >  
+# 10:22:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:40 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,19 +13,19 @@ stdout of test 'query1.2` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 13:29:52 >  
-# 13:29:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:52 >  
+# 10:22:40 >  
+# 10:22:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:40 >  
 
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.alignments_1
-#WHERE bam_flag(flag, 'seco_alig') = False
+#WHERE bam.bam_flag(flag, 'seco_alig') = False
 #ORDER BY rname, pos;
 % bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
@@ -78,7 +78,7 @@ Ready.
 #UNION
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.unpaired_alignments_3
-#WHERE bam_flag(flag, 'seco_alig') = False
+#WHERE bam.bam_flag(flag, 'seco_alig') = False
 #ORDER BY rname, pos;
 % .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
@@ -127,7 +127,7 @@ Ready.
 [ "sim_22_1_4",	99,	"chr22",	46558150,	255,	"100=",	"=",	46558385,	0,	"CCCTGGCTGGAGTACAAGTTACTGGGGCTCAGTTCTTAGGATTCCTACAAAGCCCAATTTGGGTCACCTGACTTGTTAAGTCAGGTGAAGGTGACTTACC",	"G6EG5GGGGDGGADFGEB?GFDGGAEGGCFFBECGGB*BEA9BFG6E=?=)C5FGAFE6G2FB=CFECF#DAEAG<AGD7F*44D:#B>+?F##;E;#DD"	]
 [ "sim_22_1_4",	147,	"chr22",	46558385,	255,	"1X49=1X9=1X39=",	"=",	46558150,	0,	"TGACTCCAGGGAAGTTAAATAAATGCCAAGAGGATTCACGTGGCAGGGCCATGGAGGTGGGGAGGAAGGAGCACAGGAGACACCAGGTGCTCACTGTCCA",	"#E###BF#?;;#>@=1#@=E=B#E-EDF?DBC#EDEF?;6FE>+GE@GDE.AEDE+DAF:4E>FF=EDA;DAEGEGAEFD?GD=DG=G=C5FEGDGGFAG"	]
 
-# 13:29:52 >  
-# 13:29:52 >  "Done."
-# 13:29:52 >  
+# 10:22:40 >  
+# 10:22:40 >  "Done."
+# 10:22:40 >  
 

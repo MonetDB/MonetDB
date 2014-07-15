@@ -1,9 +1,9 @@
 stdout of test 'check_files` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 13:29:49 >  
-# 13:29:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
-# 13:29:49 >  
+# 10:22:38 >  
+# 10:22:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:38 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -13,37 +13,37 @@ stdout of test 'check_files` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:37021/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 13:29:50 >  
-# 13:29:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21062" "--port=37021"
-# 13:29:50 >  
+# 10:22:38 >  
+# 10:22:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:38 >  
 
-#SELECT file_location, dbschema, format_version, sorting_order, comments
+#SELECT dbschema, format_version, sorting_order, comments
 #FROM bam.files
 #ORDER BY file_location;
-% bam.files,	bam.files,	bam.files,	bam.files,	bam.files # table_name
-% file_location,	dbschema,	format_version,	sorting_order,	comments # name
-% clob,	smallint,	varchar,	varchar,	clob # type
-% 82,	1,	3,	9,	0 # length
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file2.sam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file2.sam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file2.sam",	0,	"1.0",	"unsorted",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file1.bam",	1,	"1.0",	"queryname",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file1.bam",	1,	"1.0",	"queryname",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file1.bam",	1,	"1.0",	"queryname",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file2.sam",	1,	"1.0",	"queryname",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file2.sam",	1,	"1.0",	"queryname",	NULL	]
-[ "/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/queryname/file2.sam",	1,	"1.0",	"queryname",	NULL	]
+% bam.files,	bam.files,	bam.files,	bam.files # table_name
+% dbschema,	format_version,	sorting_order,	comments # name
+% smallint,	varchar,	varchar,	clob # type
+% 1,	3,	9,	0 # length
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
 
-# 13:29:50 >  
-# 13:29:50 >  "Done."
-# 13:29:50 >  
+# 10:22:38 >  
+# 10:22:38 >  "Done."
+# 10:22:38 >  
 
