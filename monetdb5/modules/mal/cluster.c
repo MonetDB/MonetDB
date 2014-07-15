@@ -615,8 +615,8 @@ CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -700,8 +700,8 @@ CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -785,8 +785,8 @@ CLS_create_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -870,8 +870,8 @@ CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -955,8 +955,8 @@ CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1040,8 +1040,8 @@ CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 str
@@ -1124,8 +1124,8 @@ CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1245,8 +1245,8 @@ CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1366,8 +1366,8 @@ CLS_create2_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	psum = BATsetaccess(psum, BAT_READ);
-	cmap = BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1487,8 +1487,8 @@ CLS_create2_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1608,8 +1608,8 @@ CLS_create2_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1729,8 +1729,8 @@ CLS_create2_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1850,8 +1850,8 @@ CLS_create2_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1971,8 +1971,8 @@ CLS_create2_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);
-	(void) BATsetaccess(psum, BAT_READ);
-	(void) BATsetaccess(cmap, BAT_READ);
+	BATsetaccess(psum, BAT_READ);
+	BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -1991,7 +1991,7 @@ CLS_map_bte(BAT *rb, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2010,7 +2010,7 @@ CLS_map_sht(BAT *rb, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2029,7 +2029,7 @@ CLS_map_int(BAT *rb, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2048,7 +2048,7 @@ CLS_map_lng(BAT *rb, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2069,7 +2069,7 @@ CLS_map2_bte (BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2089,7 +2089,7 @@ CLS_map2_sht(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2109,7 +2109,7 @@ CLS_map2_int(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
@@ -2129,7 +2129,7 @@ CLS_map2_lng(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 	BBPunfix(cmap->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(rb->batCacheid);
-	(void) BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	return MAL_SUCCEED;
 }
 
