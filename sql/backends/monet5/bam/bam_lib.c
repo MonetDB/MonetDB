@@ -190,7 +190,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags));
+	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags), TRANSIENT);
 	if (result == NULL) {
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
@@ -226,7 +226,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs));
+	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs), TRANSIENT);
 	if (result == NULL) {
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
 	}
@@ -267,7 +267,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 		throw(MAL, "reverse_qual_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(quals));
+	result = BATnew(TYPE_void, TYPE_str, BATcount(quals), TRANSIENT);
 	if (result == NULL) {
 		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
 	}
@@ -308,7 +308,7 @@ seq_length_bat(bat * ret, bat * bid)
 		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars));
+	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
