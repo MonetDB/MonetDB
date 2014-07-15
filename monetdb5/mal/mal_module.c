@@ -1083,12 +1083,20 @@ showHelp(Module m, str txt, stream *fs){
 	char **msg = getHelp(m,txt,TRUE);
 	if( msg == NULL)
 		return;
-	for(i=0; msg[i]; i++)
+	for(i=0; msg[i]; i++) {
 		mnstr_printf(fs,"%s\n",msg[i]);
+		GDKfree(msg[i]);
+	}
+	GDKfree(msg);
 	if( i == 0){
 		msg = getHelp(m,txt,0);
-		for(i=0; msg[i]; i++)
-			mnstr_printf(fs,"%s\n",msg[i]);
+		if (msg) {
+			for(i=0; msg[i]; i++) {
+				mnstr_printf(fs,"%s\n",msg[i]);
+				GDKfree(msg[i]);
+			}
+			GDKfree(msg);
+		}
 	}
 }
 /*
