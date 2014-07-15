@@ -501,11 +501,13 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
-# %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_lsst.mal
-%{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
-%{_libdir}/monetdb5/autoload/*_udf.mal
-%{_libdir}/monetdb5/autoload/*_vault.mal
+%if %{?with_geos:1}%{!?with_geos:0}
+%exclude %{_libdir}/monetdb5/autoload/*_geom.mal
+%endif
+%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+# %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
+%exclude %{_libdir}/monetdb5/autoload/*_sql.mal
+%{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
@@ -560,9 +562,9 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1}
-# for systemd-tmpfiles
-Requires: systemd-units
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+Requires: %{_bindir}/systemd-tmpfiles
 %endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
@@ -576,7 +578,7 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
@@ -586,11 +588,11 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
-%if %{?rhel:0}%{!?rhel:1}
-# Fedora 15 and newer
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %else
-# RedHat Enterprise Linux
+# RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif

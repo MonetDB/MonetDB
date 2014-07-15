@@ -29,6 +29,23 @@ stderr of test 'subselect` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- SUBSELECT
+#--
+#-- Set up some simple test tables
+#-- Uncorrelated subselects
+#-- Correlated subselects
+#--
+#-- Use some existing tables in the regression test
+#--
+#--
+#-- Test cases to catch unpleasant interactions between IN-join processing
+#-- and subquery pullup.
+#--
+#--
+#-- Test case to catch problems with multiply nested sub-SELECTs not getting
+#-- recalculated properly.  Per bug report from Didier Moens.
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

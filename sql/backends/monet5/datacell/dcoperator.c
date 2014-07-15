@@ -291,7 +291,7 @@ DCsliceStrict(int *ret, bat *bid, lng *start, lng *end)
 
 	assert(b->htype == TYPE_void);
 	if ((BUN) ((*end - *start) + 1) > BATcount(b)) {
-		bn = BATnew(TYPE_void, b->ttype, 0);
+		bn = BATnew(TYPE_void, b->ttype, 0, TRANSIENT);
 		if( bn == NULL){
 			throw(SQL,"datacell.slice",MAL_MALLOC_FAIL);
 		}

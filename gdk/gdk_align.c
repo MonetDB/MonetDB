@@ -208,7 +208,7 @@ VIEWhcreate(BAT *h)
 	bat hp;
 
 	BATcheck(h, "VIEWhcreate");
-	bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
+	bs = BATcreatedesc(h->htype, TYPE_void, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -229,7 +229,9 @@ VIEWhcreate(BAT *h)
 	bn->batCount = h->batCount;
 	bn->batCapacity = h->batCapacity;
 	if (bn->H->vheap) {
+		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
+		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -262,7 +264,7 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 
 	if (BATcount(h) != BATcount(t))
 		slice_view = 1;
-	bs = BATcreatedesc(h->htype, t->ttype, FALSE);
+	bs = BATcreatedesc(h->htype, t->ttype, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -310,11 +312,15 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (tp)
 		BBPshare(tp);
 	if (bn->H->vheap) {
+		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
+		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
+		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
+		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
@@ -610,6 +616,8 @@ VIEWreset(BAT *b)
 		assert(hp || !b->htype);
 		assert(tp || !b->ttype);
 
+		head.farmid = BBPselectfarm(n->batRole, n->htype, offheap);
+		tail.farmid = BBPselectfarm(n->batRole, n->ttype, offheap);
 		if (n->htype) {
 			head.filename = (str) GDKmalloc(nmelen + 12);
 			if (head.filename == NULL)
@@ -627,6 +635,7 @@ VIEWreset(BAT *b)
 				goto bailout;
 		}
 		if (n->H->vheap) {
+			hh.farmid = BBPselectfarm(n->batRole, n->htype, varheap);
 			hh.filename = (str) GDKmalloc(nmelen + 12);
 			if (hh.filename == NULL)
 				goto bailout;
@@ -635,6 +644,7 @@ VIEWreset(BAT *b)
 				goto bailout;
 		}
 		if (n->T->vheap) {
+			th.farmid = BBPselectfarm(n->batRole, n->ttype, varheap);
 			th.filename = (str) GDKmalloc(nmelen + 12);
 			if (th.filename == NULL)
 				goto bailout;

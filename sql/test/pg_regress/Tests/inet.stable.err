@@ -29,6 +29,33 @@ stderr of test 'inet` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- INET
+#--
+#-- prepare the table...
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE INET_TBL;
+ERROR = table "inet_tbl" does not exist
+#-- check that CIDR rejects invalid input:
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.2/30', '192.168.1.226');
+ERROR = invalid cidr value: "192.168.1.2/30"
+DETAIL:  Value has bits set to right of mask.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INET_TBL (c, i) VALUES ('1234::1234::1234', '::1.2.3.4');
+ERROR = invalid input syntax for type cidr: "1234::1234::1234"
+#-- check that CIDR rejects invalid input when converting from text:
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INET_TBL (c, i) VALUES (cidr('192.168.1.2/30'), '192.168.1.226');
+ERROR = invalid cidr value: "192.168.1.2/30"
+DETAIL:  Value has bits set to right of mask.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO INET_TBL (c, i) VALUES (cidr('ffff:ffff:ffff:ffff::/24'), '::192.168.1.226');
+ERROR = invalid cidr value: "ffff:ffff:ffff:ffff::/24"
+DETAIL:  Value has bits set to right of mask.
+#-- now test some support functions
+#-- check the conversion to/from text and set_netmask
+#-- check that index works correctly
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

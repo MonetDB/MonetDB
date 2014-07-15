@@ -78,6 +78,8 @@ algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat
 algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
 
+algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 algebra_export str ALGhistogram(int *result, int *bid);
 algebra_export str ALGcopy(int *result, int *bid);
 algebra_export str ALGkunique(int *result, int *bid);

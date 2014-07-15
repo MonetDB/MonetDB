@@ -29,6 +29,9 @@ stderr of test 'sql_ascii` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table computer_terms;
+ERROR = Relation 'computer_terms' does not exist
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

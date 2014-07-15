@@ -855,9 +855,9 @@ insert into rule_and_refint_t3 values (1, 13, 11, 'row8');
 
 create table id (id serial primary key, name text);
 -- currently, must respecify PKEY for each inherited subtable
-create table test_1 (id integer primary key);
-create table test_2 (id integer primary key);
-create table test_3 (id integer primary key);
+create table test_1 (id integer primary key); -- inherits (id)
+create table test_2 (id integer primary key); -- inherits (id)
+create table test_3 (id integer primary key); -- inherits (id)
 
 insert into test_1 (name) values ('Test 1');
 insert into test_1 (name) values ('Test 2');

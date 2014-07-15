@@ -144,13 +144,13 @@ BATsample(BAT *b, BUN n) {
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
-		bn = BATnew(TYPE_void, TYPE_void, 0);
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATsetcount(bn, 0);
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
 		/* sample size is larger than the input BAT, return all oids */
 	} else if (n >= cnt) {
-		bn = BATnew(TYPE_void, TYPE_void, cnt);
+		bn = BATnew(TYPE_void, TYPE_void, cnt, TRANSIENT);
 		BATsetcount(bn, cnt);
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), b->H->seq);
@@ -163,7 +163,7 @@ BATsample(BAT *b, BUN n) {
 		if (antiset) 
 			n = cnt - n;
 		
-		bn = BATnew(TYPE_void, TYPE_oid, slen);
+		bn = BATnew(TYPE_void, TYPE_oid, slen, TRANSIENT);
 		if (bn == NULL ) {
 			GDKerror("#BATsample: memory allocation error");
 			return NULL;

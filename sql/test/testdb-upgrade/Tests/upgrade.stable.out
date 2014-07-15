@@ -16,10 +16,105 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+delete from _columns where table_id in (select id from _tables where name like '#%');
+delete from _tables where name like '#%';
+drop function sys.bbp;
+create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;
+create schema json;
 
-# 21:49:41 >  
-# 21:49:41 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 21:49:41 >  
+create type json external name json;
+
+create function json.filter(js json, pathexpr string)
+returns json external name json.filter;
+
+create function json.filter(js json, name tinyint)
+returns json external name json.filter;
+
+create function json.filter(js json, name integer)
+returns json external name json.filter;
+
+create function json.filter(js json, name bigint)
+returns json external name json.filter;
+
+create function json.text(js json, e string)
+returns string external name json.text;
+
+create function json.number(js json)
+returns float external name json.number;
+
+create function json."integer"(js json)
+returns bigint external name json."integer";
+
+create function json.isvalid(js string)
+returns bool external name json.isvalid;
+
+create function json.isobject(js string)
+returns bool external name json.isobject;
+
+create function json.isarray(js string)
+returns bool external name json.isarray;
+
+create function json.isvalid(js json)
+returns bool external name json.isvalid;
+
+create function json.isobject(js json)
+returns bool external name json.isobject;
+
+create function json.isarray(js json)
+returns bool external name json.isarray;
+
+create function json.length(js json)
+returns integer external name json.length;
+
+create function json.keyarray(js json)
+returns json external name json.keyarray;
+
+create function json.valuearray(js json)
+returns  json external name json.valuearray;
+
+create function json.text(js json)
+returns string external name json.text;
+create function json.text(js string)
+returns string external name json.text;
+create function json.text(js int)
+returns string external name json.text;
+
+
+create aggregate json.output(js json)
+returns string external name json.output;
+
+create aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;
+create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;
+update sys.schemas set system = true where name = 'json';
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('filter', 'text', 'number', 'integer', 'isvalid', 'isobject', 'isarray', 'length', 'keyarray', 'valuearray') and f.type = 1 and f.schema_id = s.id and s.name = 'json');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('output', 'tojsonarray') and f.type = 3 and f.schema_id = s.id and s.name = 'json');
+create function sys.md5(v string) returns string external name clients.md5sum;
+create type uuid external name uuid;
+create function sys.uuid() returns uuid external name uuid."new";
+create function sys.isaUUID(u uuid) returns uuid external name uuid."isaUUID";
+update sys._tables set system = false where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+drop view sys.storage;
+drop function sys.storage();
+drop view sys.storagemodel;
+drop view sys.tablestoragemodel;
+drop function sys.storagemodel();
+create function sys.storage() returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) external name sql.storage;
+create view sys.storage as select * from sys.storage();
+create function sys.hashsize(b boolean, i bigint) returns bigint begin if  b = true then return 8 * i; end if; return 0; end;create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int'	or nme = 'bigint'	or nme = 'decimal'	or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast( i * 0.12 as bigint); end if ; return 0; end;create function sys.storagemodel() returns table (    "schema" string, "table" string, "column" string, "type" string, "count" bigint,    columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)	begin return select I."schema", I."table", I."column", I."type", I."count",		columnsize(I."type", I.count, I."distinct"),		heapsize(I."type", I."distinct", I."atomwidth"),		hashsize(I."reference", I."count"),		imprintsize(I."count",I."type"),		I.sorted		from sys.storagemodelinput I;	end;
+create view sys.tablestoragemodel as select "schema","table",max(count) as "count",    sum(columnsize) as columnsize,    sum(heapsize) as heapsize,    sum(hashes) as hashes,    sum(imprints) as imprints,    sum(case when sorted = false then 8 * count else 0 end) as auxillary from sys.storagemodel() group by "schema","table";
+create view sys.storagemodel as select * from sys.storagemodel();
+update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('hashsize', 'imprintsize', 'isauuid', 'md5', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+set schema "testschema";
+
+#Interpreting bte as bit.
+
+# 15:08:13 >  
+# 15:08:13 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 15:08:13 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

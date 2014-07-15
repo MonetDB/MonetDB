@@ -29,6 +29,19 @@ stderr of test 'circle` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- CIRCLE
+#--
+#-- bad values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO CIRCLE_TBL VALUES ('<(-100,0),-100>');
+ERROR = invalid input syntax for type circle: "<(-100,0),-100>"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO CIRCLE_TBL VALUES ('1abc,3,5');
+ERROR = invalid input syntax for type circle: "1abc,3,5"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO CIRCLE_TBL VALUES ('(3,(1,2),3)');
+ERROR = invalid input syntax for type circle: "(3,(1,2),3)"
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

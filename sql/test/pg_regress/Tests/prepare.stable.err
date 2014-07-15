@@ -29,6 +29,16 @@ stderr of test 'prepare` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#-- Regression tests for prepareable statements
+#-- should fail
+#-- should succeed
+#-- sql92 syntax
+#-- parameterized queries
+#-- too few params
+#-- too many params
+#-- wrong param types
+#-- invalid type
+#-- create table as execute
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

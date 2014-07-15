@@ -26,65 +26,94 @@ Ready.
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 
---
--- VACUUM
---
-CREATE TABLE vactst (i INT);
-INSERT INTO vactst VALUES (1);
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst VALUES (0);
-SELECT count(*) FROM vactst;
- count 
--------
-  2049
-(1 row)
+#--
+#-- VACUUM
+#--
+#CREATE TABLE vactst (i INT);
+#INSERT INTO vactst VALUES (1);
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst VALUES (0);
+[ 1 ]
+#SELECT count(*) FROM vactst;
+% sys.L0 # table_name
+% count # name
+% ? # type
+% ? # length
+[ 2049 ]
 
 DELETE FROM vactst WHERE i != 0;
-SELECT * FROM vactst;
- i 
----
- 0
-(1 row)
+#SELECT * FROM vactst;
+% sys.L0 # table_name
+% i # name
+% ? # type
+% ? # length
+[ 0 ]
 
 VACUUM FULL vactst;
-UPDATE vactst SET i = i + 1;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst SELECT * FROM vactst;
-INSERT INTO vactst VALUES (0);
-SELECT count(*) FROM vactst;
- count 
--------
-  2049
-(1 row)
+#UPDATE vactst SET i = i + 1;
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1 ]
+#INSERT INTO vactst VALUES (0);
+[ 1 ]
+#SELECT count(*) FROM vactst;
+% sys.L0 # table_name
+% count # name
+% ? # type
+% ? # length
+[ 2049 ]
 
 DELETE FROM vactst WHERE i != 0;
 VACUUM FULL vactst;
 DELETE FROM vactst;
-SELECT * FROM vactst;
- i 
----
-(0 rows)
+#SELECT * FROM vactst;
+% sys.L0 # table_name
+% i # name
+% ? # type
+% ? # length
 
-DROP TABLE vactst;
+#DROP TABLE vactst;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 

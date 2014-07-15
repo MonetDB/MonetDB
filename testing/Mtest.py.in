@@ -1503,6 +1503,11 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
     cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+    if env.get('MULTIFARM'):
+        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                      ignore_errors = True)
+        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     setpgrp = True
@@ -2085,6 +2090,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             errcode = F_SEGV
         elif tres == 'abort':
             errcode = F_ABRT
+        elif tres == 'socket':
+            errcode = F_SOCK
         elif tres == 'error':
             errcode = F_WARN
         elif tres is not None:
@@ -2106,6 +2113,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         ##fi
         ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
+
+        if tres == 'socket':
+            if quiet:
+                STDOUT.write("\n%s : Socket!\n" % TST)
+            elif verbose:
+                STDOUT.write("(Socket!) ")
 
         if tres == 'timeout':
             if quiet:
@@ -2345,7 +2358,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                                      FailedOut, FailedErr)
 
         if not verbose and not quiet:
-            if tres == 'timeout':
+            if tres == 'socket':
+                STDOUT.write("%sSOCKET%s" % (PURPLE, BLACK))
+            elif tres == 'timeout':
                 STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
             elif tres == 'recursion':
                 STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
@@ -2723,7 +2738,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if dbinit:
                     DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)]
+            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF
+            Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+            if env.get('MULTIFARM'):
+                Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                              ignore_errors = True)
+                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             lang=""
 
             if SERVER == "MAL":
@@ -2806,7 +2827,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)] + PRELUDE
+                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + PRELUDE
+                cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+                if env.get('MULTIFARM'):
+                    cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
+                                  ignore_errors = True)
+                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                 if CALL == "mal":
                     X=""
                 else:
@@ -2970,22 +2997,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         return None
 
     # Try to detect segfaults and the like
-    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
-    # FIXME: this begs for a much nicer solution (100% copy of below)
-    for f in (TestErrFile, TestOutFile):
-        if os.path.isfile(f):
-            for l in open(f):
-                if TO.search(l):
-                    return 'segfault'
-
     # Try to detect aborts due to too deep recursion
-    TO = re.compile("aborted too deep recursion", re.MULTILINE)
-    # FIXME: this begs for a much nicer solution (100% copy of above)
-    for f in (TestErrFile, TestOutFile):
-        if os.path.isfile(f):
-            for l in open(f):
-                if TO.search(l):
-                    return 'recursion'
+    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))",
+                           'segfault'),
+                          ("aborted too deep recursion",
+                           'recursion'),
+                          ("mal_mapi\.listen:operation failed: bind to stream socket port",
+                           'socket')]:
+        TO = re.compile(regexp, re.MULTILINE)
+        # FIXME: this begs for a much nicer solution (100% copy of below)
+        for f in (TestErrFile, TestOutFile):
+            if os.path.isfile(f):
+                for l in open(f):
+                    if TO.search(l):
+                        return msg
 
     return None
 
@@ -3432,6 +3457,8 @@ def main(argv) :
             ('testweb', None, 'testweb', None, 'Optimize testing for testweb'),
             ('releaserun', None, 'releaserun', None,
              'run tests as if for a release test'),
+            ('multifarm', None, 'multifarm', None,
+             'use multiple dbfarms (developers only)'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3539,6 +3566,9 @@ def main(argv) :
         a = opts.get('no_clean')
         if a is not None:
             env['NOCLEAN'] = a
+        a = opts.get('multifarm')
+        if a is not None:
+            env['MULTIFARM'] = 'True'
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3925,7 +3955,14 @@ def main(argv) :
             env['TST_OIDS'] = ""
             env['TST_SINGLE'] = ""
             env['TST_STATIC'] = ""
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
+            cmd = splitcommand(env['exe']['Mserver'][1])
+            cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+            if env.get('MULTIFARM'):
+                cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                              ignore_errors = True)
+                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+            if Check(cmd, 'clients.quit();\n'):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)

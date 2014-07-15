@@ -118,7 +118,7 @@ static int
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
-	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2);
+	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
@@ -192,7 +192,7 @@ static int
 CMDlike(BAT **ret, BAT *b, str s)
 {
 	BATiter bi = bat_iterator(b);
-	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10);
+	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10, TRANSIENT);
 	str t;
 	BUN u, v;
 	BUN yy = 0;
@@ -545,7 +545,7 @@ ALGthetaselect(int *result, int *bid, ptr val, str *OP)
 	nilptr = ATOMnilptr(b->ttype);
 	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
-		bn = BATnew(b->htype,b->ttype, 0);
+		bn = BATnew(b->htype,b->ttype, 0, TRANSIENT);
 	} else {
 		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
@@ -640,7 +640,7 @@ ALGthetauselect(int *result, int *bid, ptr val, str *OP)
 	nilptr = ATOMnilptr(b->ttype);
 	derefStr(b, t, val);
 	if (ATOMcmp(b->ttype, val, nilptr) == 0) {
-		bn = BATnew(b->htype,TYPE_void, 0);
+		bn = BATnew(b->htype,TYPE_void, 0, TRANSIENT);
 	} else {
 		char *op = *OP;
 		bit lin = TRUE, rin = TRUE;
@@ -927,6 +927,69 @@ ALGsubthetajoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, int 
 				   NULL, BATsubthetajoin, "algebra.subthetajoin");
 }
 
+/* algebra.firstn(b:bat[:oid,:any],
+ *                [ s:bat[:oid,:oid],
+ *                [ g:bat[:oid,:oid], ] ]
+ *                n:wrd,
+ *                asc:bit)
+ * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
+ */
+str
+ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret1, *ret2 = NULL;
+	bat bid, sid, gid;
+	BAT *b, *s = NULL, *g = NULL;
+	BAT *bn, *gn;
+	wrd n;
+	bit asc;
+	gdk_return rc;
+
+	(void) cntxt;
+	(void) mb;
+
+	assert(pci->retc == 1 || pci->retc == 2);
+	assert(pci->argc - pci->retc >= 3 && pci->argc - pci->retc <= 5);
+
+	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
+	if (n < 0 || (lng) n >= (lng) BUN_MAX)
+		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+	ret1 = getArgReference(stk, pci, 0);
+	if (pci->retc == 2)
+		ret2 = getArgReference(stk, pci, 1);
+	bid = * (bat *) getArgReference(stk, pci, pci->retc);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+	if (pci->argc - pci->retc > 3) {
+		sid = * (bat *) getArgReference(stk, pci, pci->retc + 1);
+		if ((s = BATdescriptor(sid)) == NULL) {
+			BBPreleaseref(bid);
+			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+		}
+		if (pci->argc - pci->retc > 4) {
+			gid = * (bat *) getArgReference(stk, pci, pci->retc + 2);
+			if ((g = BATdescriptor(gid)) == NULL) {
+				BBPreleaseref(bid);
+				BBPreleaseref(sid);
+				throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+			}
+		}
+	}
+	asc = * (bit *) getArgReference(stk, pci, pci->argc - 1);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
+	if (rc == GDK_FAIL)
+		throw(MAL, "algebra.firstn", MAL_MALLOC_FAIL);
+	BBPkeepref(*ret1 = bn->batCacheid);
+	if (ret2)
+		BBPkeepref(*ret2 = gn->batCacheid);
+	return MAL_SUCCEED;
+}
+
 static str
 ALGunary(int *result, int *bid, BAT *(*func)(BAT *), const char *name)
 {
@@ -1023,7 +1086,7 @@ ALGhistogram(bat *result, bat *bid)
 static BAT *
 BATwcopy(BAT *b)
 {
-	return BATcopy(b, b->htype, b->ttype, 1);
+	return BATcopy(b, b->htype, b->ttype, 1, TRANSIENT);
 }
 
 str
@@ -1758,7 +1821,7 @@ ALGrevert(int *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.revert", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 	BATrevert(bn);
 	*result= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2197,7 +2260,7 @@ ALGprojectNIL(int *ret, int *bid)
         throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
     }
 
-    bn = BATconst(b, TYPE_void, (ptr) &oid_nil);
+    bn = BATconst(b, TYPE_void, (ptr) &oid_nil, TRANSIENT);
     if (bn) {
         *ret = bn->batCacheid;
         BBPkeepref(bn->batCacheid);
@@ -2224,7 +2287,7 @@ ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	b = BATmirror(b);
-	bn = BATconst(b, v->vtype, VALptr(v));
+	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
 		*ret = 0;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
@@ -2250,7 +2313,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	bn = BATconst(b, v->vtype, VALptr(v));
+	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
 		*ret = 0;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
@@ -2305,7 +2368,7 @@ str ALGreuse(int *ret, int *bid)
 		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
 		} else {
-			bn = BATnew(b->htype,b->ttype,BATcount(b));
+			bn = BATnew(b->htype,b->ttype,BATcount(b), TRANSIENT);
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;

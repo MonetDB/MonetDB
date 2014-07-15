@@ -112,7 +112,7 @@ BATkunique(BAT *b)
 	BATcheck(b, "BATkunique");
 
 	if (b->hkey) {
-		bn = BATcopy(b, b->htype, b->ttype, FALSE);
+		bn = BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT);
 	} else {
 		b = BATmirror(b);	/* work on tail instead of head */
 		/* b is a [any_1,any_2] BAT */
@@ -533,14 +533,14 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types");
 
 	if (BATcount(r) == 0) {
-		return diff ? BATcopy(l, l->htype, l->ttype, FALSE) : BATclone(l, 10);
+		return diff ? BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT) : BATclone(l, 10, TRANSIENT);
 	} else if (BATcount(l) == 0) {
-		return BATclone(l, 10);
+		return BATclone(l, 10, TRANSIENT);
 	}
 	smaller = BATcount(l);
 	if (!diff && BATcount(r) < smaller)
 		smaller = BATcount(r);
-	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY));
+	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -616,7 +616,7 @@ BATkunion(BAT *l, BAT *r)
 		r = b;
 	}
 	if (BATcount(r) == 0) {
-		return BATcopy(l, l->htype, l->ttype, FALSE);
+		return BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT);
 	}
 
 	b = NULL;
@@ -638,7 +638,7 @@ BATkunion(BAT *l, BAT *r)
 	if (BATcount(r) == 0) {
 		if (b)
 			BBPreclaim(r);
-		return BATcopy(l, l->htype, l->ttype, FALSE);
+		return BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT);
 	}
 
 	ht = l->htype;
@@ -647,7 +647,7 @@ BATkunion(BAT *l, BAT *r)
 		ht = TYPE_oid;
 	if (tt == TYPE_void && l->tseqbase != oid_nil)
 		tt = TYPE_oid;
-	bn = BATcopy(l, ht, tt, TRUE);
+	bn = BATcopy(l, ht, tt, TRUE, TRANSIENT);
 	if (bn == NULL) {
 		if (b)
 			BBPreclaim(r);

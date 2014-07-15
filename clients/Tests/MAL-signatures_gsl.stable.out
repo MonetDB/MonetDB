@@ -236,6 +236,14 @@ command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int]
 address ALGhistogram;
 comment Produce a BAT containing the histogram over the tail values.
 
+command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
+address JSONgroupStr;
+comment Aggregate the double values to array.
+
+command aggr.jsonaggr(val:bat[:oid,:str]):str 
+address JSONgroupStr;
+comment Aggregate the string values to array.
+
 function aggr.median(b:bat[:oid,:any_1]):any_1;
 command aggr.median(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1] 
 address AGGRmedian3;
@@ -773,6 +781,22 @@ function aggr.quantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl]):any_1;
 command aggr.quantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:bat[:oid,:dbl]):bat[:oid,:any_1] 
 address AGGRquantile3;
 comment Grouped quantile aggregate
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubquantilecand;
@@ -2397,6 +2421,30 @@ comment Returns physical copy of a BAT.
 command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit 
 address ALGexist;
 comment Returns whether 'val' occurs in b.
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+address ALGfirstn;
+comment Calculate first N values of B
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B with candidate list S
+
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+address ALGfirstn;
+comment Calculate first N values of B
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
@@ -39436,14 +39484,6 @@ command iterator.new(b:bat[:oid,:any_2],size:lng) (X_3:lng,X_4:bat[:oid,:any_2])
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
-command json.aggr(val:bat[:oid,:dbl]):str 
-address JSONgroupStr;
-comment Aggregate the double values to array.
-
-command json.aggr(val:bat[:oid,:str]):str 
-address JSONgroupStr;
-comment Aggregate the string values to array.
-
 command json.dump(j:json):void 
 address JSONdump;
 pattern json.fold(k:bat[:oid,:any]):json 
@@ -39546,22 +39586,6 @@ pattern json.renderarray(val:any...):json
 address JSONrenderarray;
 pattern json.renderobject(val:any...):json 
 address JSONrenderobject;
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
-
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
-
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
-
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
-
 command json.suboutput(b:bat[:oid,:any_1],gid:bat[:oid,:oid],ext:bat[:oid,:wrd],flg:bit):bat[:oid,:str] 
 address JSONtextGrouped;
 comment Pack the values into a json structure
@@ -41046,32 +41070,6 @@ comment Convert a SQL like pattern with the given escape character into a PCRE p
 command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
 address PCREselectDef;
 comment Select tuples based on the pattern
-
-function pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
-function pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd):bat[:oid,:oid];
-pattern pqueue.topn_max(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
-address PQtopn3_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_min(a:bat[:oid,:any_1],bp:bat[:oid,:oid],bg:bat[:oid,:oid],n:wrd) (cp:bat[:oid,:oid],cg:bat[:oid,:oid]) 
-address PQtopn3_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_max(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn2_minmax;
-comment Return unique top n withn groups
-
-pattern pqueue.topn_min(b:bat[:oid,:any_1],n:wrd) (piv:bat[:oid,:oid],gid:bat[:oid,:oid]) 
-address PQtopn2_minmax;
-comment Return unique top n within groups
-
-pattern pqueue.topn_max(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_minmax;
-comment Return the top n elements using a max-pqueue
-
-pattern pqueue.topn_min(a:bat[:oid,:any_1],n:wrd):bat[:oid,:oid] 
-address PQtopn_minmax;
-comment Return the top n elements using a min-pqueue
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;

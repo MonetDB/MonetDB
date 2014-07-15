@@ -140,7 +140,7 @@ ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
 		throw(OPTIMIZER, "zorder.encode", ILLEGAL_ARGUMENT);
 	}
 	
-	bz = BATnew(TYPE_void, TYPE_oid, BATcount(bx));
+	bz = BATnew(TYPE_void, TYPE_oid, BATcount(bx), TRANSIENT);
 	if (bz == 0){
 		BBPunfix(bx->batCacheid);
 		BBPunfix(by->batCacheid);
@@ -214,8 +214,8 @@ ZORDbatdecode_int_oid(int *xbid, int *ybid, int *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz));
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz));
+	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 || by == 0 ){
 		if ( bx ) BBPunfix(bx->batCacheid);
 		if ( by ) BBPunfix(by->batCacheid);
@@ -291,7 +291,7 @@ ZORDbatdecode_int_oid_x(int *xbid, int *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz));
+	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
@@ -345,7 +345,7 @@ ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz));
+	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( by == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
@@ -394,7 +394,7 @@ str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 	int i,j;
 	oid zv;
 
-	bn = BATnew(TYPE_void, TYPE_oid, 0);
+	bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
 	BATseqbase(bn, 0);
 	if( bn == 0)
 		throw(OPTIMIZER, "zorder.slice", MAL_MALLOC_FAIL);

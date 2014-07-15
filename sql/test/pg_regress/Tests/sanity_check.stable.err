@@ -29,6 +29,17 @@ stderr of test 'sanity_check` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+#--
+#-- sanity check, if we don't have indices the test will take years to
+#-- complete.  But skip TOAST relations since they will have varying
+#-- names depending on the current OID counter.
+#--
+#--
+#-- another sanity check: every system catalog that has OIDs should have
+#-- a unique index on OID.  This ensures that the OIDs will be unique,
+#-- even after the OID counter wraps around.
+#-- We exclude non-system tables from the check by looking at nspname.
+#--
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

@@ -78,7 +78,7 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, double datapoints)
 		throw(MAL, "chisqprob", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
@@ -115,7 +115,7 @@ gsl_cst_chisqprob_bat(bat * retval, double chi2, bat datapoints)
 	if (chi2 < 0)
 		throw(MAL, "gsl.chi2prob", "Wrong value for chi2");
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
 	if( bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
@@ -149,7 +149,7 @@ gsl_bat_chisqprob_bat(bat * retval, bat chi2, bat datapoints)
 		throw(MAL, "chisqprob", "Cannot access descriptor datapoints");
 	}
 	assert(b->htype == TYPE_void);
-	bn = BATnew(TYPE_void, TYPE_dbl, cnt = BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_dbl, cnt = BATcount(b), TRANSIENT);
 	if( bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
