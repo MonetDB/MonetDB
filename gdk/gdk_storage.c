@@ -44,6 +44,19 @@
 #include <fcntl.h>
 #endif
 
+/* GDKfilepath returns a newly allocated string containing the path
+ * name of a database farm.
+ * The arguments are the farmID or -1, the name of a subdirectory
+ * within the farm (i.e., something like BATDIR or BAKDIR -- see
+ * gdk.h) or NULL, the name of a BAT (i.e. the name that is store in
+ * BBP.dir -- something like 07/714), and finally the file extension.
+ *
+ * If farmid is >= 0, GDKfilepath returns the complete path to the
+ * specified farm concatenated with the other arguments with
+ * appropriate separators.  If farmid is -1, it returns the
+ * concatenation of its other arguments (in this case, the result
+ * cannot be used to access a file directly -- the farm needs to be
+ * prepended in some other place). */
 char *
 GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 {
