@@ -187,7 +187,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	sql_schema *s = NULL;
 	sql_table *files_table = NULL;
 	lng cur_file_id;
-	char buf_threads_msg[] = "There were reader threads that contained errors:\n";
+	char buf_threads_msg[4096] = "There were reader threads that contained errors:\n";
 	int threads_msg_len = strlen(buf_threads_msg);
 	int i, errnr;
 	str msg = MAL_SUCCEED;
@@ -355,7 +355,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	TO_LOG("<bam_loader> Waiting for reader threads to finish...\n");
 	/* Wait until all threads finish and collect their
 	 * messages. Though it is not very likely, it could be the
-	 * case that more than 1 thread generate an error message (not
+	 * case that more than 1 thread generates an error message (not
 	 * likely because threads exit once they notice that another
 	 * thread has failed).  Therefore, we collect all error
 	 * messages in one big error string
@@ -382,7 +382,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 			 * use MAX to make sure we don't add a
 			 * negative amount to threads_msg_len */
 			step = snprintf(msg + threads_msg_len,
-					2048 - threads_msg_len, "* %s\n",
+					4096 - threads_msg_len, "* %s\n",
 					r_thread_data[i].msg);
 			threads_msg_len += MAX(0, step);
 			GDKfree(r_thread_data[i].msg);
