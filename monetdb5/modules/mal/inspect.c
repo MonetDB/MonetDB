@@ -414,13 +414,12 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
 				char *bn;
-				bn= GDKmalloc(lim+BUFSIZ);
+				bn= GDKrealloc(buf, lim+BUFSIZ);
 				if ( bn == NULL) {
 					GDKfree(ps);
+					GDKfree(buf);
 					throw(MAL, "inspect.getSource", MAL_MALLOC_FAIL);
 				}
-				strcpy(bn,buf);
-				GDKfree(buf);
 				buf=bn;
 				lim+= BUFSIZ;
 			}
