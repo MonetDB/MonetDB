@@ -267,7 +267,7 @@ ALGminany(ptr result, int *bid)
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -279,6 +279,7 @@ ALGminany(ptr result, int *bid)
 			* (ptr *) result = p = BATmin(b, NULL);
 		} else {
 			p = BATmin(b, result);
+			assert(p == result);
 		}
 		if (p == NULL)
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
@@ -294,7 +295,7 @@ ALGmaxany(ptr result, int *bid)
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -306,6 +307,7 @@ ALGmaxany(ptr result, int *bid)
 			* (ptr *) result = p = BATmax(b, NULL);
 		} else {
 			p = BATmax(b, result);
+			assert(p == result);
 		}
 		if (p == NULL)
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
