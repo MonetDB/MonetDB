@@ -21,5 +21,6 @@ numRings
 transform
 contains
 equals
-
-
+boundary
+dimension
+asEWKT

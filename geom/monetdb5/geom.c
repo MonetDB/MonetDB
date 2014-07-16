@@ -105,7 +105,7 @@ geom_export str wkbDimension(int*, wkb**);
 geom_export str wkbGeometryType(char**, wkb**, int*);
 geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
-geom_export str wkbAsText(str*, wkb**);
+geom_export str wkbAsText(char**, wkb**, int*);
 //AsBinary
 geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsSimple(bit*, wkb**);
@@ -1189,10 +1189,58 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 }
 
 /*create textual representation of the wkb */
-str wkbAsText(str *txt, wkb **geomWKB) {
+str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 	int len =0;
-	if(wkbTOSTR(txt, &len, *geomWKB))
+	char* wkt;
+
+	if(wkbTOSTR(&wkt, &len, *geomWKB)) {
+		if(*withSRID == 0) {
+			*txt = GDKmalloc(strlen(wkt));
+			if(*txt == NULL) {
+				GDKfree(wkt);
+				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
+			}
+			strcpy(*txt, wkt);	
+		} else {
+			char* sridTxt = "SRID:";
+			char* sridIntToString = NULL;
+			int len = 0;
+			
+			//count the number of digits in srid
+			int tmp = (*geomWKB)->srid;
+			int digitsNum =0;
+			while(tmp > 0) {
+				tmp/=10;
+				digitsNum++;
+			}
+
+			sridIntToString = GDKmalloc(digitsNum+1);
+			if(sridIntToString == NULL) {
+				GDKfree(wkt);
+				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
+			}	
+			sprintf(sridIntToString, "%d", (*geomWKB)->srid);
+
+			len = strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2; 
+			*txt = GDKmalloc(len);
+			if(*txt == NULL) {
+				GDKfree(wkt);
+				GDKfree(sridIntToString);
+				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
+			}	
+	
+			memcpy(*txt, sridTxt, strlen(sridTxt));
+			memcpy(*txt+strlen(sridTxt), sridIntToString, strlen(sridIntToString));
+			(*txt)[strlen(sridTxt)+strlen(sridIntToString)] = ';';
+			memcpy(*txt+strlen(sridTxt)+strlen(sridIntToString)+1, wkt, strlen(wkt));
+			(*txt)[len-1] = '\0';
+
+			GDKfree(sridIntToString);
+		}	
+		
+		GDKfree(wkt);
 		return MAL_SUCCEED;
+	}
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
 }
 
