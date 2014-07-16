@@ -180,9 +180,13 @@ str RMTconnectScen(
 				"is not supported", *scen);
 
 	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
-	if (mapi_error(m))
-		throw(MAL, "remote.connect", "unable to connect to '%s': %s",
-				*ouri, mapi_error_str(m));
+	if (mapi_error(m)) {
+		msg = createException(MAL, "remote.connect",
+							  "unable to connect to '%s': %s",
+							  *ouri, mapi_error_str(m));
+		mapi_destroy(m);
+		return msg;
+	}
 
 	MT_lock_set(&mal_remoteLock, "remote.connect");
 
@@ -199,8 +203,9 @@ str RMTconnectScen(
 
 	if (mapi_reconnect(m) != MOK) {
 		MT_lock_unset(&mal_remoteLock, "remote.connect");
-		msg = createException(IO, "remote.connect", "unable to connect to '%s': %s",
-				*ouri, mapi_error_str(m));
+		msg = createException(IO, "remote.connect",
+							  "unable to connect to '%s': %s",
+							  *ouri, mapi_error_str(m));
 		mapi_destroy(m);
 		return msg;
 	}
