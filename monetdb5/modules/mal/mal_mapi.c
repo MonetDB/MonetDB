@@ -571,6 +571,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	psock[2] = INVALID_SOCKET;
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_DETACHED) != 0) {
 		GDKfree(psock);
+		if (usockfile)
+			GDKfree(usockfile);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
 #ifdef DEBUG_SERVER
