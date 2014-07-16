@@ -1118,7 +1118,7 @@ SQLinitClient(Client c)
 					struct stat st;
 					if (fstat(fileno(getFile(fd)), &st) < 0)
 						st.st_size = 128 * BLOCK;
-					bfd = bstream_create(fd, BLOCK * (st.st_size / BLOCK + 1));
+					bfd = bstream_create(fd, (size_t) st.st_size);
 					if (bfd && bstream_next(bfd) >= 0)
 						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
 					bstream_destroy(bfd);

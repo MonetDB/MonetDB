@@ -1316,8 +1316,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			s= strchr(s,' ');
 			if (s == NULL)		/* unexpected format of file */
 				break;
-			if ( cpu < 0 || cpu > 255) goto skip;
-			
+
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
