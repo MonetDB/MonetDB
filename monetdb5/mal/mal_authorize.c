@@ -413,7 +413,6 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	/* decypher the password */
 	msg= AUTHdecypherValue(&hash, &tmp);
 	if ( msg){
-		GDKfree(hash);
 		return msg;
 	}
 	if (strcmp(hash, *oldpass) != 0){
@@ -425,7 +424,6 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	/* cypher the password */
 	msg= AUTHcypherValue(&hash, passwd);
 	if ( msg){
-		GDKfree(hash);
 		return msg;
 	}
 
