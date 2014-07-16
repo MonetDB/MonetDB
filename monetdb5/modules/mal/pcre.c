@@ -627,6 +627,7 @@ pcre_select(BAT **res, const char *pattern, BAT *strs, bit insensitive)
 	if (r == NULL)
 		throw(MAL, "pcre_select", MAL_MALLOC_FAIL);
 	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
+		BBPreclaim(r);
 		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}

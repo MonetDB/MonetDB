@@ -4603,6 +4603,10 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 		int v;
 
 		r = BATnew(TYPE_void, TYPE_int, 1024, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4619,6 +4623,10 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_int;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4651,6 +4659,10 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 		sht v;
 
 		r = BATnew(TYPE_void, TYPE_sht, 1024, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4667,6 +4679,10 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_sht;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4699,6 +4715,10 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 		bte v;
 
 		r = BATnew(TYPE_void, TYPE_bte, 64, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4715,6 +4735,10 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_bte;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4746,6 +4770,10 @@ BATSTRstrings(bat *res, bat *src)
        	h = s->T->vheap;
        	extralen = h->hashash ? EXTRALEN : 0;
 	r = BATnew(TYPE_void, TYPE_str, 1024, TRANSIENT);
+	if (r == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(SQL, "calc.strings", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(r, 0);
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {

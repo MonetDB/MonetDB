@@ -33,6 +33,7 @@
 #define voidresultBAT(X1,X2)\
 	bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);\
 	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
 	BATseqbase(bn, b->hseqbase);\
