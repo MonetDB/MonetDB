@@ -1158,7 +1158,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc++;
 		}
 		if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-			ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+			if (ret == MAL_SUCCEED)
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}
 	}
