@@ -365,9 +365,12 @@ command MakePointM{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl])
 comment "creates a 2D with m attribute points BAT using three double BATs";
 command setSRID(w:bat[:oid,:wkb], srid:int) :bat[:oid,:wkb] address wkbSetSRID_bat
 comment "Sets the Reference System ID for this Geometry.";
-command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat
-comment "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.";
 
+#create one pattern for each possible combination of bat - scalar
+#pattern Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
+#pattern Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat;
+#pattern Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
+command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat_bat;
 
 
 
