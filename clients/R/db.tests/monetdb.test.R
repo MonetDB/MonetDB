@@ -1,4 +1,5 @@
 options(monetdb.debug.query=T)
+options(monetdb.insert.splitsize=10)
 
 library(MonetDB.R)
 

@@ -77,13 +77,12 @@ batxml_export str AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat 
 batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
 
 
-#define prepareResult(X,Y,tpe,Z, Freeup)					\
-	assert((Y)->htype == TYPE_void);				\
-    (X) = BATnew(TYPE_void, (tpe), BATcount(Y), TRANSIENT);	\
+#define prepareResult(X,Y,tpe,Z,free)				\
+	(X) = BATnew((Y)->htype, (tpe), BATcount(Y), TRANSIENT);			\
     if ((X) == NULL) {								\
         BBPreleaseref((Y)->batCacheid);				\
-		Freeup;                                     \
-        throw(MAL, "xml." Z, MAL_MALLOC_FAIL); \
+		free;										\
+        throw(MAL, "xml." Z, MAL_MALLOC_FAIL);		\
     }												\
 	BATseqbase((X), (Y)->hseqbase);					\
     (X)->hsorted = (Y)->hsorted;					\
@@ -109,7 +108,7 @@ BATXMLxml2str(bat *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "xml.str", INTERNAL_BAT_ACCESS);
-	prepareResult(bn, b, TYPE_str, "str",);
+	prepareResult(bn, b, TYPE_str, "str", (void) 0);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		const void *h = (const void *) BUNhead(bi, p);
@@ -146,7 +145,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "xml.text", INTERNAL_BAT_ACCESS);
-	prepareResult(bn, b, TYPE_str, "text",);
+	prepareResult(bn, b, TYPE_str, "text", (void) 0);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		const void *h = (const void *) BUNhead(bi, p);
@@ -256,7 +255,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		GDKfree(buf);
 		throw(MAL, "xml.xml", INTERNAL_BAT_ACCESS);
 	}
-	prepareResult(bn, b, TYPE_xml, "xml",GDKfree(buf));
+	prepareResult(bn, b, TYPE_xml, "xml", GDKfree(buf));
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		const void *h = (const void *) BUNhead(bi, p);
@@ -440,7 +439,7 @@ BATXMLisdocument(bat *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "xml.isdocument", INTERNAL_BAT_ACCESS);
-	prepareResult(bn, b, TYPE_bit, "isdocument",);
+	prepareResult(bn, b, TYPE_bit, "isdocument", (void) 0);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		const void *h = (const void *) BUNhead(bi, p);
@@ -505,7 +504,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 		GDKfree(buf);
 		throw(MAL, "xml.options", INTERNAL_BAT_ACCESS);
 	}
-	prepareResult(bn, b, TYPE_xml, "options", GDKfree(buf);GDKfree(val));
+	prepareResult(bn, b, TYPE_xml, "options", GDKfree(val); GDKfree(buf));
 
 	if (strcmp(*options, "absent") == 0)
 		buf[0] = 0;
@@ -980,7 +979,9 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "xml.forest", INTERNAL_BAT_ACCESS);
 	}
 
-	prepareResult(bn, bi[pci->retc].b, TYPE_xml, "forest", GDKfree(bi);GDKfree(p);GDKfree(q);GDKfree(buf));
+	prepareResult(bn, bi[pci->retc].b, TYPE_xml, "forest",
+				  for (i = pci->retc; i < pci->argc; i++) BBPunfix(bi[i].b->batCacheid);
+				  GDKfree(bi); GDKfree(p); GDKfree(q); GDKfree(buf));
 
 	while (p[pci->retc] < q[pci->retc]) {
 		const char *t;
@@ -1073,7 +1074,8 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	q = BUNlast(b);
 	rp = BUNfirst(r);
 
-	prepareResult(bn, b, TYPE_xml, "concat", GDKfree(buf));
+	prepareResult(bn, b, TYPE_xml, "concat",
+				  GDKfree(buf); BBPunfix(r->batCacheid));
 
 	bi = bat_iterator(b);
 	ri = bat_iterator(r);

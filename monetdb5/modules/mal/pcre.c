@@ -1349,15 +1349,17 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 	char *ppat = NULL;
 	str res = sql2pcre(&ppat, *pat, *esc);
 
-	if (!res) {
+	if (res == MAL_SUCCEED) {
 		BAT *strs = BATdescriptor(*bid);
 		BATiter strsi;
 		BAT *r;
 		bit *br;
 		BUN p, q, i = 0;
 
-		if (strs == NULL)
+		if (strs == NULL) {
+			GDKfree(ppat);
 			throw(MAL, "batstr.like", OPERATION_FAILED);
+		}
 
 		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL)
@@ -1389,9 +1391,11 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL) {
 				BBPreleaseref(strs->batCacheid);
 				BBPreleaseref(r->batCacheid);
-				throw(MAL, "pcre.match", OPERATION_FAILED
+				res = createException(MAL, "pcre.match", OPERATION_FAILED
 						": compilation of regular expression (%s) failed "
 						"at %d with '%s'", ppat, errpos, err_p);
+				GDKfree(ppat);
+				return res;
 			}
 
 			BATloop(strs, p, q) {
@@ -1406,8 +1410,10 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				else {
 					BBPreleaseref(strs->batCacheid);
 					BBPreleaseref(r->batCacheid);
-					throw(MAL, "pcre.match", OPERATION_FAILED
+					res = createException(MAL, "pcre.match", OPERATION_FAILED
 							": matching of regular expression (%s) failed with %d", ppat, pos);
+					GDKfree(ppat);
+					return res;
 				}
 				i++;
 			}
@@ -1429,9 +1435,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		}
 		BBPkeepref(*ret = r->batCacheid);
 		BBPreleaseref(strs->batCacheid);
-	}
-	if (ppat)
 		GDKfree(ppat);
+	}
 	return res;
 }
 
@@ -1595,8 +1600,10 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		BAT *bp = BATdescriptor(*b);
 		BAT *res = NULL;
 
-		if (bp == NULL)
+		if (bp == NULL) {
+			re_destroy(re);
 			throw(MAL, "pcre.like", RUNTIME_OBJECT_MISSING);
+		}
 		if (us)
 			res = re_uselect(re, bp, ignore);
 		else
@@ -1615,7 +1622,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 
 	r = sql2pcre(&ppat, *pat, *esc);
 
-	if (!r && ppat) {
+	if (r == MAL_SUCCEED) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			/* there is no pattern or escape involved, fall back to
 			 * simple (no PCRE) match */
@@ -1623,8 +1630,8 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			 * insensitive match, so even though there is no pattern,
 			 * just fall back to PCRE for the moment.  If there is a
 			 * case insensitive BAT*select, we should use that instead */
+			GDKfree(ppat);
 			if (ignore) {
-				GDKfree(ppat);
 				ppat = GDKmalloc(sizeof(char) * (strlen(*pat) + 3));
 				if (ppat == NULL)
 					throw(MAL, "pcre.like", MAL_MALLOC_FAIL); /* likely to fail hard as well */
@@ -1655,10 +1662,9 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 				r = PCREuselect(ret, &ppat, b, &ignore);
 			else
 				r = PCREselect(ret, &ppat, b, &ignore);
+			GDKfree(ppat);
 		}
 	}
-	if (ppat)
-		GDKfree(ppat);
 	return r;
 }
 
