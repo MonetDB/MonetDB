@@ -1122,10 +1122,10 @@ GDKinit(opt *set, int setlen)
 
 	GDKkey = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
 	GDKval = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
-	if (GDKkey == NULL)
+	if (GDKkey == NULL || GDKval == NULL) {
+		/* no cleanup necessary before GDKfatal */
 		GDKfatal("GDKinit: Could not create environment BAT");
-	if (GDKval == NULL)
-		GDKfatal("GDKinit: Could not create environment BAT");
+	}
 	BATseqbase(GDKkey,0);
 	BATkey(GDKkey, BOUND2BTRUE);
 	BATrename(GDKkey, "environment_key");
