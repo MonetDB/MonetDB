@@ -457,10 +457,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		}
 
 		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) ) {
+			char *err = strerror(errno);
 			GDKfree(psock);
 			if (usockfile)
 				GDKfree(usockfile);
-			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", strerror(errno));
+			closesocket(sock);
+			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
 		}
 
 		server.sin_family = AF_INET;
