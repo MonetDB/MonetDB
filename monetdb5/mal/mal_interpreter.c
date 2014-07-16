@@ -532,8 +532,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
 		mb->starttime = GDKusec();
-		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout)
+		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout) {
+			if ( backup != backups) GDKfree(backup);
+			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", RUNTIME_SESSION_TIMEOUT);
+		}
 	} 
 	stkpc = startpc;
 	exceptionVar = -1;
