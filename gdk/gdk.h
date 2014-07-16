@@ -1159,7 +1159,8 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  */
 #define BATDELETE	(-9999)
 
-gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity);
+gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity)
+	__attribute__((warn_unused_result));
 gdk_export BAT *BATextend(BAT *b, BUN newcap);
 
 /* internal */

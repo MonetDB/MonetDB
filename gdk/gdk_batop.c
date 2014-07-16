@@ -2457,8 +2457,10 @@ BATintersectcand(BAT *a, BAT *b)
 
 	if (BATcount(a) == 0 || BATcount(b) == 0) {
 		bn = BATnew(TYPE_void, TYPE_void, 0);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		if (bn) {
+			BATseqbase(bn, 0);
+			BATseqbase(BATmirror(bn), 0);
+		}
 		return bn;
 	}
 

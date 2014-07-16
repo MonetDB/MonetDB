@@ -446,6 +446,8 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
 	BAT *nb;
 	nb= BATnew(b->htype, b->ttype, BATcapacity(b));
+	if (nb == NULL)
+		throw(MAL, "CLUSTER_apply", MAL_MALLOC_FAIL);
 	BATseqbase(nb,0);
 	nb->hrevsorted = 0;
 	nb->tsorted= FALSE;

@@ -121,6 +121,8 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	wrd j, gcnt = BATcount(gids);
 	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2);
 
+	if (r == NULL)
+		return GDK_FAIL;
 	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
@@ -2572,7 +2574,7 @@ ALGmaterialize(int *ret, int *bid)
 	if( b->htype == TYPE_void){
 		bn= BATmaterialize(b);
 		if( bn == NULL)
-			throw(MAL, "batcalc.materialize", MAL_MALLOC_FAIL);
+			throw(MAL, "algebra.materialize", MAL_MALLOC_FAIL);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else
@@ -2589,8 +2591,16 @@ str ALGreuse(int *ret, int *bid)
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
+			if (bn == NULL) {
+				BBPreleaseref(b->batCacheid);
+				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+			}
 		} else {
 			bn = BATnew(b->htype,b->ttype,BATcount(b));
+			if (bn == NULL) {
+				BBPreleaseref(b->batCacheid);
+				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+			}
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;

@@ -1289,8 +1289,11 @@ MTIMEprelude(void)
 		BAT *tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
 		BAT *tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
 
-		if (tzbatnme == NULL || tzbatdef == NULL)
+		if (tzbatnme == NULL || tzbatdef == NULL) {
+			BBPreclaim(tzbatnme);
+			BBPreclaim(tzbatdef);
 			throw(MAL, "time.prelude", "failed to create box");
+		}
 		BBPrename(tzbatnme->batCacheid, "timezone_name");
 		BBPrename(tzbatdef->batCacheid, "timezone_def");
 		BATseqbase(tzbatnme,0);

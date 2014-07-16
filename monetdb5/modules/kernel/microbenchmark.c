@@ -273,7 +273,7 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		return GDK_FAIL;
 	}
 
-        b = BATnew(TYPE_void, TYPE_int, n);
+	b = BATnew(TYPE_void, TYPE_int, n);
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {

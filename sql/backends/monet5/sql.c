@@ -2222,6 +2222,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create void,void bat with length and oid's set */
 	tids = BATnew(TYPE_void, TYPE_void, 0);
+	if (tids == NULL)
+		throw(SQL, "sql.tid", MAL_MALLOC_FAIL);
 	tids->H->seq = sb;
 	tids->T->seq = sb;
 	BATsetcount(tids, (BUN) nr);
@@ -2860,6 +2862,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void, TYPE_str, 0);
+			if (c == NULL)
+				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*(str *) getArgReference(stk, pci, i), "r");

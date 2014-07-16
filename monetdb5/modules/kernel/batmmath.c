@@ -32,10 +32,10 @@
 
 #define voidresultBAT(X1,X2)\
 	bn = BATnew(TYPE_void, X1, BATcount(b));\
-	BATseqbase(bn, b->hseqbase);\
 	if (bn == NULL) {\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
+	BATseqbase(bn, b->hseqbase);\
 	bn->hsorted = b->hsorted;\
 	bn->hrevsorted = b->hrevsorted;\
 	bn->tsorted = b->tsorted;\

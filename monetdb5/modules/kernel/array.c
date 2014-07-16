@@ -342,6 +342,11 @@ ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
 		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);\
 	}\
 	bn= BATnew(TYPE_void, TYPE_##X2, BATcount(b)*BATcount(r));\
+	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
+		BBPreleaseref(r->batCacheid);\
+		throw(MAL, "array.*", MAL_MALLOC_FAIL);\
+	}\
 	BATseqbase(bn,0);\
 	bi = bat_iterator(b);\
 	ri = bat_iterator(r);\

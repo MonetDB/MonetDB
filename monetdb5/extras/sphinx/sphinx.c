@@ -37,7 +37,7 @@
  * SIGNATURE: SPHINXsearchIndexLimit(str, str, int) : bat[oid,lng]; */
 static str
 sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. */
-                        str query, str index, int limit)
+						str query, str index, int limit)
 {
 	int i;
 	BAT *bn;
@@ -54,8 +54,12 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	res = sphinx_query ( client, query, index, NULL );
 	if (!res || (res && res->num_matches == 0)) {
 		bn = BATnew(TYPE_void, TYPE_lng, 0);
+		if (bn == NULL)
+			throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 	} else {
 		bn = BATnew(TYPE_void, TYPE_lng, res->num_matches);
+		if (bn == NULL)
+			throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 		for ( i = 0; i < res->num_matches; i++ ) {
 			lng sphinx_id = sphinx_get_id ( res, i );
 			o++;
@@ -66,9 +70,9 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	sphinx_destroy (client);
 
 	bn->hseqbase = 0;
-        bn->T->sorted = 0;
-        bn->T->revsorted = 0;
-        bn->T->nonil = 1;
+	bn->T->sorted = 0;
+	bn->T->revsorted = 0;
+	bn->T->nonil = 1;
 	BATkey(BATmirror(bn), FALSE);
 
 	*ret = bn;
@@ -82,8 +86,7 @@ SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 	str msg = sphinx_searchIndexLimit(&b, *query, *index, *limit);
 
 	if (msg) {
-		GDKfree(msg);
-		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
+		return msg;
 	}
 	assert(b != NULL);
 	*ret = b->batCacheid;

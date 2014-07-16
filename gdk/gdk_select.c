@@ -46,9 +46,13 @@ float nextafterf(float x, float y);
 	} while (0)
 
 static BAT *
-newempty(void)
+newempty(const char *func)
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_void, 0);
+	if (bn == NULL) {
+		GDKerror("%s: memory allocation error", func);
+		return NULL;
+	}
 	BATseqbase(bn, 0);
 	BATseqbase(BATmirror(bn), 0);
 	return bn;
@@ -868,7 +872,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				if (!li) {				\
 					/* open range on left */	\
 					if (*(TYPE*)tl == MAXVALUE##TYPE) \
-						return newempty();	\
+						return newempty("BATsubselect"); \
 					/* vl < x === vl+1 <= x */	\
 					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
 					li = 1;				\
@@ -886,7 +890,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				if (!hi) {				\
 					/* open range on right */	\
 					if (*(TYPE*)th == MINVALUE##TYPE) \
-						return newempty();	\
+						return newempty("BATsubselect"); \
 					/* x < vh === x <= vh-1 */	\
 					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
 					hi = 1;				\
@@ -971,7 +975,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ",s=%s,anti=%d): trivially empty\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
-		return newempty();
+		return newempty("BATsubselect");
 	}
 
 	t = b->ttype;
@@ -1020,7 +1024,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  "nil-nil range, nonil\n",
 					  BATgetId(b), BATcount(b),
 					  s ? BATgetId(s) : "NULL", anti);
-			return newempty();
+			return newempty("BATsubselect");
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
 			 * select for nil-nil range (i.e. everything
@@ -1060,7 +1064,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ",s=%s,anti=%d): empty range\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
-		return newempty();
+		return newempty("BATsubselect");
 	}
 	if (equi && lnil && b->T->nonil) {
 		/* return all nils, but there aren't any */
@@ -1068,7 +1072,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ",s=%s,anti=%d): equi-nil, nonil\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
-		return newempty();
+		return newempty("BATsubselect");
 	}
 
 	if (!equi && !lval && !hval && lnil && b->T->nonil) {
@@ -1379,7 +1383,7 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
-		return newempty();
+		return newempty("BATthetasubselect");
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
 		/* "=" or "==" */
 		return BATsubselect(b, s, val, NULL, 1, 1, 0);

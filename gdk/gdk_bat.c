@@ -382,10 +382,12 @@ BATclone(BAT *b, BUN cap)
 {
 	BAT *c = BATnew(b->htype, b->ttype, cap);
 
-	if (c && c->htype == TYPE_void && b->hseqbase != oid_nil)
-		BATseqbase(c, b->hseqbase);
-	if (c && c->ttype == TYPE_void && b->tseqbase != oid_nil)
-		BATseqbase(BATmirror(c), b->tseqbase);
+	if (c) {
+		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
+			BATseqbase(c, b->hseqbase);
+		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
+			BATseqbase(BATmirror(c), b->tseqbase);
+	}
 	return c;
 }
 

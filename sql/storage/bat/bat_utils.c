@@ -32,7 +32,7 @@ bat_new(int ht, int tt, BUN size)
 {
 	BAT *nb = BATnew(ht, tt, size);
 
-	if (ht == TYPE_void) {
+	if (nb != NULL && ht == TYPE_void) {
 		BATseqbase(nb, 0);
 		nb->H->dense = 1;
 	}
