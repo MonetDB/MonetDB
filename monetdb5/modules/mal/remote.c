@@ -198,10 +198,11 @@ str RMTconnectScen(
 	}
 
 	if (mapi_reconnect(m) != MOK) {
-		mapi_destroy(m);
 		MT_lock_unset(&mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", "unable to connect to '%s': %s",
+		msg = createException(IO, "remote.connect", "unable to connect to '%s': %s",
 				*ouri, mapi_error_str(m));
+		mapi_destroy(m);
+		return msg;
 	}
 
 	/* connection established, add to list */
