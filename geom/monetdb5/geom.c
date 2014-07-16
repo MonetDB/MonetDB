@@ -1222,8 +1222,7 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			}	
 			sprintf(sridIntToString, "%d", (*geomWKB)->srid);
 
-			len = strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2; 
-			*txt = GDKmalloc(len);
+			*txt = GDKmalloc(strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2);
 			if(*txt == NULL) {
 				GDKfree(wkt);
 				GDKfree(sridIntToString);
