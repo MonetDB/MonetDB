@@ -220,41 +220,15 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 	}
 
-	/* Start with creating bam schema if it does not exist yet */
+	/* Start with binding bam schema and the files table */
 	if ((msg =
-		 create_schema_if_not_exists(cntxt, m, "bam", "bam.create_schema",
-					 &s)) != MAL_SUCCEED)
+		 bind_bam_schema(m, &s)) != MAL_SUCCEED)
+		goto cleanup;
+	if((msg = 
+		 bind_table(m, s, "files", &files_table)) != MAL_SUCCEED)
 		goto cleanup;
 
-	/* Now create the header tables that do not exist yet */
-	if ((msg =
-		 create_table_if_not_exists(cntxt, m, s, "files",
-					SQL_CREATE_FILES, "bam.create_files",
-					&files_table)) != MAL_SUCCEED)
-		goto cleanup;
-	if ((msg =
-		 create_table_if_not_exists(cntxt, m, s, "sq", SQL_CREATE_SQ,
-					"bam.create_sq",
-					NULL)) != MAL_SUCCEED)
-		goto cleanup;
-	if ((msg =
-		 create_table_if_not_exists(cntxt, m, s, "rg", SQL_CREATE_RG,
-					"bam.create_rg",
-					NULL)) != MAL_SUCCEED)
-		goto cleanup;
-	if ((msg =
-		 create_table_if_not_exists(cntxt, m, s, "pg", SQL_CREATE_PG,
-					"bam.create_pg",
-					NULL)) != MAL_SUCCEED)
-		goto cleanup;
-
-	if ((msg =
-		 create_table_if_not_exists(cntxt, m, s, "export", SQL_CREATE_EXPORT,
-					"bam.create_export",
-					NULL)) != MAL_SUCCEED)
-		goto cleanup;
-
-	/* Get next file id */
+	/* Get next file id from files table */
 	TO_LOG("<bam_loader> Retrieving next file id...\n");
 	if ((msg = next_file_id(m, files_table, &cur_file_id)) != MAL_SUCCEED) {
 		goto cleanup;

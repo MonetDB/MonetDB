@@ -214,74 +214,36 @@ static char buf_sql_copy_into[BUF_SIZE_COPY_INTO];
 
 
 str
-create_schema_if_not_exists(Client cntxt, mvc * m, str schemaname, str descr,
-				sql_schema ** ret)
+bind_bam_schema(mvc * m, sql_schema ** ret)
 {
 	sql_schema *result;
 
-	if ((result = mvc_bind_schema(m, schemaname)) == NULL) {
-		char buf_sql_create_schema[64];
-		str sql_create_schema = buf_sql_create_schema;
-		str msg;
-
-		snprintf(sql_create_schema, 64, "CREATE SCHEMA %s;",
-			 schemaname);
-
-		TO_LOG("<bam_loader> Creating schema '%s'...\n", schemaname);
-		RUN_SQL(cntxt, &sql_create_schema, descr, msg);
-		if (msg != MAL_SUCCEED) {
-			REUSE_EXCEPTION(msg, MAL,
-					"create_schema_if_not_exists",
-					"Could not create bam schema: %s",
-					msg);
-			return msg;
-		}
-		if ((result = mvc_bind_schema(m, schemaname)) == NULL) {
-			throw(MAL, "create_schema_if_not_exists",
-				  "Could not create bam schema");
-		}
+	if ((result = mvc_bind_schema(m, "bam")) == NULL) {
+		throw(MAL, "bind_bam_schema",
+				   "Could not find bam schema");
 	}
 	if (ret)
 		*ret = result;
+
 	return MAL_SUCCEED;
 }
 
-
-/**
- * Function tries to bind to a table with the given name. If it fails
- * (== NULL), it attempts to create the table.
- * The function fails if a binding to the table is impossible, even
- * after creation.  If the function succeeds, it adjusts the
- * optionally given pointer to point to the binded sql_table.
- */
 str
-create_table_if_not_exists(Client cntxt, mvc * m, sql_schema * s,
-			   str tablename, str sql_creation, str descr,
-			   sql_table ** ret)
+bind_table(mvc * m, sql_schema * s,
+			   str tablename, sql_table ** ret)
 {
 	sql_table *result;
-	str msg;
 
 	if ((result = mvc_bind_table(m, s, tablename)) == NULL) {
-		TO_LOG("<bam_loader> Creating table '%s'...\n", tablename);
-
-		RUN_SQL(cntxt, &sql_creation, descr, msg);
-		if (msg != MAL_SUCCEED) {
-			REUSE_EXCEPTION(msg, MAL,
-					"create_table_if_not_exists",
-					"Could not create table '%s': %s",
-					tablename, msg);
-			return msg;
-		}
-		if ((result = mvc_bind_table(m, s, tablename)) == NULL) {
-			throw(MAL, "create_table_if_not_exists",
-				  "Could not create table '%s'", tablename);
-		}
+		throw(MAL, "bind_table",
+				   "Could not find table %s", tablename);
 	}
 	if (ret)
 		*ret = result;
+
 	return MAL_SUCCEED;
 }
+
 
 
 /**
