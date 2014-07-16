@@ -1748,6 +1748,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 					r = PCREuselect(ret, &ppat, b, &ignore);
 				else
 					r = PCREselect(ret, &ppat, b, &ignore);
+				GDKfree(ppat);
 			} else {
 				BAT *bp = BATdescriptor(*b);
 				BAT *res = NULL;
