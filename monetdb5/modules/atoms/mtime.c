@@ -1286,8 +1286,11 @@ MTIMEprelude(void)
 	tzbatnme = BATnew(TYPE_void, TYPE_str, 30, TRANSIENT);
 	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30, TRANSIENT);
 
-	if (tzbatnme == NULL || tzbatdef == NULL)
+	if (tzbatnme == NULL || tzbatdef == NULL) {
+		BBPreclaim(tzbatnme);
+		BBPreclaim(tzbatdef);
 		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
+	}
 	BBPrename(tzbatnme->batCacheid, "timezone_name");
 	BBPrename(tzbatdef->batCacheid, "timezone_def");
 	BATseqbase(tzbatnme,0);
@@ -2409,12 +2412,11 @@ MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year)
 str
 MTIMEtzone_tostr(str *s, const tzone *ret)
 {
-	char buf[128], *s1 = buf;
-	int len = 128;
+	char *s1 = NULL;
+	int len = 0;
 
-	*s1 = 0;
 	tzone_tostr(&s1, &len, ret);
-	*s = GDKstrdup(buf);
+	*s = s1;
 	return MAL_SUCCEED;
 }
 

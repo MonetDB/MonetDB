@@ -145,7 +145,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if (b) 
 		return b;
 
-	b = BATnew(TYPE_void, tt, 1 << 16, TRANSIENT);
+	b = BATnew(TYPE_void, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 

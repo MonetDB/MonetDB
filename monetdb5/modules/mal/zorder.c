@@ -395,9 +395,9 @@ str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 	oid zv;
 
 	bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
-	BATseqbase(bn, 0);
 	if( bn == 0)
 		throw(OPTIMIZER, "zorder.slice", MAL_MALLOC_FAIL);
+	BATseqbase(bn, 0);
 	/* use the expensive road, could be improved by bit masking */
 	for ( i= *xb; i < *xt; i++)
 	{
