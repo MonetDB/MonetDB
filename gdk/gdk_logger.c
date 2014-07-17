@@ -774,15 +774,11 @@ tr_abort(logger *lg, trans *tr)
 /* Update the last transaction id written in the catalog file.
  * Mostly used by the shared logger. */
 static int
-logger_update_catalog_file(logger *lg, char *dir, char *log_filename, int role)
+logger_update_catalog_file(logger *lg, char *dir, char *filename, int role)
 {
 	FILE *fp;
-	char filename[BUFSIZ];
-	char bak_filename[BUFSIZ];
 	int bak_exists;
-
-	snprintf(filename, BUFSIZ, "%s%s", dir, log_filename);
-	snprintf(bak_filename, BUFSIZ, "%s.%s", filename, "bak");
+	int farmid = BBPselectfarm(role, 0, offheap);
 
 	bak_exists = 0;
 	/* check if an older file exists and move bak it up */
@@ -792,13 +788,13 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename, int role)
 	if (access(filename, 0) != -1) {
 #endif
 		bak_exists = 1;
-		if (GDKmove(BBPselectfarm(role, 0, offheap), dir, filename, NULL, dir, filename, "bak") < 0) {
+		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
 			return LOG_ERR;
 		}
 	}
 
-	if ((fp = fopen(filename, "w")) != NULL) {
+	if ((fp = GDKfileopen(farmid, dir, filename, NULL, "w")) != NULL) {
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: write to %s failed\n", filename);
 			return LOG_ERR;
@@ -811,7 +807,7 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename, int role)
 
 		/* cleanup the bak file, if it exists*/
 		if (bak_exists) {
-			GDKunlink(BBPselectfarm(role, 0, offheap), dir, filename, "bak");
+			GDKunlink(farmid, dir, filename, "bak");
 		}
 	} else {
 		fprintf(stderr, "!ERROR: logger_update_catalog_file: could not create %s\n", filename);
@@ -824,9 +820,11 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename, int role)
 static int
 logger_open(logger *lg)
 {
-	char filename[BUFSIZ];
+	char id[BUFSIZ];
+	char *filename;
 
-	snprintf(filename, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
+	snprintf(id, BUFSIZ, LLFMT, lg->id);
+	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
 	lg->end = 0;
@@ -859,11 +857,13 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
+	char* path = GDKfilepath_long(BBPselectfarm(lg->dbfarm_role, 0, offheap), filename, NULL);
 
 	if (lg->debug & 1) {
-			fprintf(stderr, "#logger_readlog opening %s\n", filename);
+		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
-	lg->log = open_rstream(filename);
+
+	lg->log = open_rstream(path);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -998,7 +998,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
-		char buf[BUFSIZ];
+		char log_filename[BUFSIZ];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1006,8 +1006,8 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		}
 
 		while(lid > lg->id && res != LOG_ERR) {
-			snprintf(buf, BUFSIZ, "%s." LLFMT, filename, lg->id);
-			if ((logger_readlog(lg, buf)) == LOG_ERR && lg->shared && lg->id > 1) {
+			snprintf(log_filename, BUFSIZ, "%s." LLFMT, filename, lg->id);
+			if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
 				/* we cannot distinguish errors from
 				 * incomplete transactions (even if we
 				 * would log aborts in the logs). So
@@ -1018,7 +1018,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 				 * then we have missing transactions and we should abort.
 				 * Yeah, and we also ignore the 1st files it most likely never exists. */
 				res = LOG_ERR;
-				fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", buf);
+				fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
 			}
 			/* Increment the id only at the end, since we want to re-read the last file.
 			 * That is because last time we read it, it was empty, since the logger create empty files
@@ -1027,7 +1027,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		}
 		/* if this is a shared logger, write the id in the shared file */
 		if (lg->shared) {
-			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dir_dbfarm_role);
+			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
 	}
 	return res;
@@ -1285,7 +1285,7 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 		logger_fatal("logger_create_catalog_file: cannot create directory for log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
-	if ((fp = fopen(filename, "w")) == NULL) {
+	if ((fp = GDKfileopen(BBPselectfarm(lg->dbfarm_role, 0, offheap), filename, NULL, NULL, "w")) == NULL) {
 		logger_fatal("logger_create_catalog_file: cannot create log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
@@ -1396,6 +1396,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	log_bid seqs_id = 0;
 	char bak[BUFSIZ];
 	bat catalog_bid, catalog_nme, bid;
+	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, BUFSIZ, "%s.bak", filename);
@@ -1403,13 +1404,13 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = fopen(bak, "r")) != NULL) {
+	if ((fp = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
 		fclose(fp);
-		(void) GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, NULL);
-		if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
+		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
+		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
 			logger_fatal("logger_load: cannot move log.bak file back.\n", 0, 0, 0);
 	}
-	fp = fopen(filename, "r");
+	fp = GDKfileopen(farmid, filename, NULL, NULL, "r");
 
 	snprintf(bak, BUFSIZ, "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1543,7 +1544,8 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 					curid = -1; /* shouldn't happen? */
 				fseek(fp, off, SEEK_SET);
 
-			if ((fp1 = fopen(bak, "r")) != NULL) {
+
+			if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
 				 * a 32->64 bit OID conversion exists;
 				 * record the fact in case we get
@@ -1552,7 +1554,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 				fclose(fp1);
 				/* first create a versioned file using
 				 * the current log id */
-				if ((fp1 = fopen(cvfile, "w")) == NULL ||
+				if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
 				    fprintf(fp1, "%d\n", curid) < 2 ||
 				    fflush(fp1) != 0 || /* make sure it's save on disk */
 #if defined(_MSC_VER)
@@ -1570,7 +1572,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 				unlink(bak);
 				/* set the flag that we need to convert */
 				lg->read32bitoid = 1;
-			} else if ((fp1 = fopen(cvfile, "r")) != NULL) {
+			} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
 				/* the versioned conversion file
 				 * exists: check version */
 				int newid;
@@ -1645,7 +1647,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	lg->read32bitoid = 0;
 #endif
 
-	lg->dir_dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
 	    (lg->dir = GDKstrdup(filename)) == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
@@ -1661,7 +1663,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	if (shared) {
 		/* set the local logdir as well
 		 * here we pass 0 for the shared flag, since we want these file(s) to be stored in the default logdir */
-		lg->local_dir_dbfarm_role = logger_set_logdir_path(filename, fn, local_logdir, 0);
+		lg->local_dbfarm_role = logger_set_logdir_path(filename, fn, local_logdir, 0);
 		if ((lg->local_dir = GDKstrdup(filename)) == NULL) {
 			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 			GDKfree(lg->fn);
@@ -1682,7 +1684,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 #else
 		if (access(shared_log_filename, 0) != -1) {
 #endif
-			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED);
+			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 			if (res == LOG_ERR) {
 				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
 				GDKfree(lg->fn);
@@ -1811,16 +1813,17 @@ logger_exit(logger *lg)
 {
 	FILE *fp;
 	char filename[BUFSIZ];
+	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
-	if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") < 0) {
+	if (GDKmove(farmid, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") < 0) {
 		fprintf(stderr, "!ERROR: logger_exit: rename %s to %s.bak in %s failed\n",
 			LOGFILE, LOGFILE, lg->dir);
 		return LOG_ERR;
 	}
 
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
-	if ((fp = fopen(filename, "w")) != NULL) {
+	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "w")) != NULL) {
 		char ext[BUFSIZ];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
@@ -1846,7 +1849,7 @@ logger_exit(logger *lg)
 		 * later cleanup actions */
 		snprintf(ext, BUFSIZ, "bak-" LLFMT, lg->id);
 
-		if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0) {
+		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: rename %s.bak to %s.%s failed\n",
 				LOGFILE, LOGFILE, ext);
 			return LOG_ERR;
@@ -1883,6 +1886,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	char buf[BUFSIZ];
 	char id[BUFSIZ];
 	FILE *fp = NULL;
+	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
@@ -1891,7 +1895,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	}
 
 	if (!keep_persisted_log_files) {
-		if ((fp = fopen(buf, "r")) == NULL) {
+		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
 		}
@@ -1905,13 +1909,13 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 
 			if (e)
 				*e = 0;
-			GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
+			GDKunlink(farmid, lg->dir, LOGFILE, id);
 		}
 		fclose(fp);
 	}
 	snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
 
-	GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, buf);
+	GDKunlink(farmid, lg->dir, LOGFILE, buf);
 
 	return LOG_OK;
 }
@@ -1924,15 +1928,16 @@ logger_changes(logger *lg)
 
 /* Read the last recorded transactions id from a logfile */
 lng
-logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file)
+logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
 	char filename[BUFSIZ];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = LOG_ERR;
+	int farmid = BBPselectfarm(role, 0, offheap);
 
 	snprintf(filename, BUFSIZ, "%s%s", dir, logger_file);
-	if ((fp = fopen(filename, "r")) == NULL) {
+	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}

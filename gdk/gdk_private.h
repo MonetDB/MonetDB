@@ -114,6 +114,8 @@ int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
 FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
+FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
+	__attribute__((__visibility__("hidden")));
 char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)

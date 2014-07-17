@@ -1648,6 +1648,7 @@ gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export char *GDKfilepath_long(int farmid, const char *dir, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);
 
 /*

@@ -405,7 +405,7 @@ bl_changes(void)
 static lng
 bl_read_last_transaction_id_shared(void)
 {
-	return logger_read_last_transaction_id(bat_logger_shared, bat_logger_shared->dir, LOGFILE);
+	return logger_read_last_transaction_id(bat_logger_shared, bat_logger_shared->dir, LOGFILE, bat_logger_shared->dbfarm_role);
 }
 
 static lng

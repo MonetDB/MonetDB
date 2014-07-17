@@ -65,8 +65,8 @@ typedef struct logger {
 	char *dir;
 	char *local_dir; /* the directory in which the non-shared log is written */
 	int shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
-	int dir_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
-	int local_dir_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
+	int dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
+	int local_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;
@@ -123,7 +123,7 @@ gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
 gdk_export int logger_cleanup(logger *lg, int keep_persisted_log_files);
 gdk_export lng logger_changes(logger *lg);
-gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file);
+gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 gdk_export int logger_reload(logger *lg);
 
