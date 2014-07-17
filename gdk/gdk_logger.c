@@ -774,7 +774,7 @@ tr_abort(logger *lg, trans *tr)
 /* Update the last transaction id written in the catalog file.
  * Mostly used by the shared logger. */
 static int
-logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
+logger_update_catalog_file(logger *lg, char *dir, char *log_filename, int role)
 {
 	FILE *fp;
 	char filename[BUFSIZ];
@@ -792,7 +792,7 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 	if (access(filename, 0) != -1) {
 #endif
 		bak_exists = 1;
-		if (GDKmove(0, dir, filename, NULL, dir, filename, "bak") < 0) {
+		if (GDKmove(BBPselectfarm(role, 0, offheap), dir, filename, NULL, dir, filename, "bak") < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
 			return LOG_ERR;
 		}
@@ -811,7 +811,7 @@ logger_update_catalog_file(logger *lg, char *dir, char *log_filename)
 
 		/* cleanup the bak file, if it exists*/
 		if (bak_exists) {
-			GDKunlink(0, dir, filename, "bak");
+			GDKunlink(BBPselectfarm(role, 0, offheap), dir, filename, "bak");
 		}
 	} else {
 		fprintf(stderr, "!ERROR: logger_update_catalog_file: could not create %s\n", filename);
@@ -1027,7 +1027,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		}
 		/* if this is a shared logger, write the id in the shared file */
 		if (lg->shared) {
-			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED);
+			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dir_dbfarm_role);
 		}
 	}
 	return res;
@@ -1175,17 +1175,20 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	v = BATmark(BATmirror(b), 0);
 	BATappend(lg->catalog_nme, BATmirror(v), FALSE);
 	BBPunfix(v->batCacheid);
+
 	/* Make persistent */
 	*bid = lg->catalog_bid->batCacheid;
 	BBPincref(*bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	BBPrename(lg->catalog_bid->batCacheid, bak);
+
 	/* Make persistent */
 	*bid = lg->catalog_nme->batCacheid;
 	BBPincref(*bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
 	BBPrename(lg->catalog_nme->batCacheid, bak);
 	logbat_destroy(b);
+
 	/* split snapshots -> snapshots_bid, snapshots_tid */
 	*bid = logger_find_bat(lg, "snapshots");
 	b = BATdescriptor(*bid);
@@ -1337,18 +1340,48 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
 	return LOG_OK;
 }
 
-static void
-logger_set_logdir_path(char *filename, char *fn, char *logdir)
+/* Set the logdir path, add a dbfarm if needed.
+ * Returns the role of the dbfarm containing the logdir.
+ */
+static int
+logger_set_logdir_path(char *filename, char *fn, char *logdir, int shared)
 {
-	/* if the logdir path is absolute, do not prefix it with the gdk_dbpath */
+	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
+	char *last_dir_full;
+	int last_dirsep_index = 0;
+	char *logdir_name;
+	char *logdir_parent_path;
+
 	if (MT_path_absolute(logdir)) {
-		snprintf(filename, BUFSIZ, "%s%c%s%c",
-				logdir, DIR_SEP, fn, DIR_SEP);
+		last_dir_full = strrchr(logdir, DIR_SEP);
+		last_dirsep_index = last_dir_full - logdir;
+
+		/* split the logdir string into absolute parent dir path and (relative) log dir name */
+		logdir_name = (char*)malloc(strlen(last_dir_full));
+		strncpy(logdir_name, last_dir_full + 1, strlen(logdir));
+		logdir_name[strlen(last_dir_full) - 1] = (char)0;
+
+		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
+
+		logdir_parent_path = (char*)malloc(last_dirsep_index + 1);
+		strncpy(logdir_parent_path, logdir, last_dirsep_index);
+		logdir_parent_path[last_dirsep_index] = (char)0;
+
+		/* add a new dbfarm for the logger directory using the parent dir path,
+		 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
+		 * or at least it appears so to (multi)dbfarm aware functions */
+		if (!shared) {
+			role = LOG_DIR;
+		} else {
+			role = SHARED_LOG_DIR;
+		}
+		BBPaddfarm(logdir_parent_path, 1 << role);
 	} else {
-		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
-				GDKgetenv("gdk_dbpath"), DIR_SEP,
-				logdir, DIR_SEP, fn, DIR_SEP);
+		/* just concat the logdir and fn with appropriate separators */
+		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
 	}
+
+	return role;
 }
 
 /* Load data from the logger logdir
@@ -1372,8 +1405,8 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	 * checking the database consistency later on */
 	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
-		(void) GDKunlink(0, lg->dir, LOGFILE, NULL);
-		if (GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
+		(void) GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, NULL);
+		if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != 0)
 			logger_fatal("logger_load: cannot move log.bak file back.\n", 0, 0, 0);
 	}
 	fp = fopen(filename, "r");
@@ -1612,8 +1645,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	lg->read32bitoid = 0;
 #endif
 
-	logger_set_logdir_path(filename, fn, logdir);
-
+	lg->dir_dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
 	if ((lg->fn = GDKstrdup(fn)) == NULL ||
 	    (lg->dir = GDKstrdup(filename)) == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
@@ -1627,10 +1659,10 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 
 	if (shared) {
-		logger_set_logdir_path(filename, fn, local_logdir);
-		/* set the local logdir as well */
-		if ((lg->fn = GDKstrdup(fn)) == NULL ||
-			(lg->local_dir = GDKstrdup(filename)) == NULL) {
+		/* set the local logdir as well
+		 * here we pass 0 for the shared flag, since we want these file(s) to be stored in the default logdir */
+		lg->local_dir_dbfarm_role = logger_set_logdir_path(filename, fn, local_logdir, 0);
+		if ((lg->local_dir = GDKstrdup(filename)) == NULL) {
 			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 			GDKfree(lg->fn);
 			GDKfree(lg->dir);
@@ -1781,7 +1813,7 @@ logger_exit(logger *lg)
 	char filename[BUFSIZ];
 
 	logger_close(lg);
-	if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") < 0) {
+	if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") < 0) {
 		fprintf(stderr, "!ERROR: logger_exit: rename %s to %s.bak in %s failed\n",
 			LOGFILE, LOGFILE, lg->dir);
 		return LOG_ERR;
@@ -1814,7 +1846,7 @@ logger_exit(logger *lg)
 		 * later cleanup actions */
 		snprintf(ext, BUFSIZ, "bak-" LLFMT, lg->id);
 
-		if (GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0) {
+		if (GDKmove(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: rename %s.bak to %s.%s failed\n",
 				LOGFILE, LOGFILE, ext);
 			return LOG_ERR;
@@ -1873,13 +1905,13 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 
 			if (e)
 				*e = 0;
-			GDKunlink(0, lg->dir, LOGFILE, id);
+			GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 		}
 		fclose(fp);
 	}
 	snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
 
-	GDKunlink(0, lg->dir, LOGFILE, buf);
+	GDKunlink(BBPselectfarm(lg->dir_dbfarm_role, 0, offheap), lg->dir, LOGFILE, buf);
 
 	return LOG_OK;
 }

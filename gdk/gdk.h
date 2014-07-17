@@ -1568,6 +1568,8 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define PERSISTENT		0
 #define TRANSIENT		1
+#define LOG_DIR			2
+#define SHARED_LOG_DIR	3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */

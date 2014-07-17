@@ -65,6 +65,8 @@ typedef struct logger {
 	char *dir;
 	char *local_dir; /* the directory in which the non-shared log is written */
 	int shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
+	int dir_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
+	int local_dir_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;
