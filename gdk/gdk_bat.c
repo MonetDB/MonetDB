@@ -1274,6 +1274,7 @@ BUNappend(BAT *b, const void *t, bit force)
 		return NULL;
 	}
 
+	assert(!isVIEW(b));
 	bm = BBP_cache(-b->batCacheid);
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t) != BUN_NONE) {
 		return b;
