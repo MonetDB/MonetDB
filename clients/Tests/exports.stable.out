@@ -160,7 +160,7 @@ int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 BAT *BATmode(BAT *b, int onoff);
 gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 int BATname(BAT *b, const char *nme);
-BAT *BATnew(int hdtype, int tltype, BUN capacity);
+BAT *BATnew(int hdtype, int tltype, BUN capacity) __attribute__((warn_unused_result));
 BAT *BATorder(BAT *b);
 BAT *BATorder_rev(BAT *b);
 int BATordered(BAT *b);
