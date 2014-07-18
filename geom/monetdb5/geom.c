@@ -895,9 +895,6 @@ int mbrFROMSTR(char *src, int *len, mbr **atom) {
 		l = strlen(src);
 		assert(l <= GDK_int_max);
 		nchars = (int) l;
-		l = strlen(src);
-		assert(l <= GDK_int_max);
-		nchars = (int) l;
 	}
 	if (geosMbr)
 		GEOSGeom_destroy(geosMbr);
