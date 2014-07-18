@@ -1205,7 +1205,7 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 		} else {
 			char* sridTxt = "SRID:";
 			char* sridIntToString = NULL;
-			int len = 0;
+			size_t len = 0;
 			
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
