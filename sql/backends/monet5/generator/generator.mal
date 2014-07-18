@@ -121,7 +121,7 @@ address VLTgenerator_thetasubselect;
 pattern thetasubselect(b:bat[:oid,:dbl], cnd:bat[:oid,:oid], low:dbl, oper:str) :bat[:oid,:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:oid,:timestamp], cnd:bat[:oid,:oid], low:timestamp, oper:str) :bat[:oid,:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
