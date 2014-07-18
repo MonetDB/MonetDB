@@ -1201,12 +1201,12 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 				GDKfree(wkt);
 				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
 			}
-			strcpy(*txt, wkt);	
+			strcpy(*txt, wkt);
 		} else {
 			char* sridTxt = "SRID:";
 			char* sridIntToString = NULL;
 			size_t len2 = 0;
-			
+
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
 			int digitsNum =0;
@@ -1219,17 +1219,17 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			if(sridIntToString == NULL) {
 				GDKfree(wkt);
 				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
-			}	
+			}
 			sprintf(sridIntToString, "%d", (*geomWKB)->srid);
 
-			len2 = strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2; 
+			len2 = strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2;
 			*txt = GDKmalloc(len2);
 			if(*txt == NULL) {
 				GDKfree(wkt);
 				GDKfree(sridIntToString);
 				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
-			}	
-	
+			}
+
 			memcpy(*txt, sridTxt, strlen(sridTxt));
 			memcpy(*txt+strlen(sridTxt), sridIntToString, strlen(sridIntToString));
 			(*txt)[strlen(sridTxt)+strlen(sridIntToString)] = ';';
@@ -1237,8 +1237,8 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			(*txt)[len2-1] = '\0';
 
 			GDKfree(sridIntToString);
-		}	
-		
+		}
+
 		GDKfree(wkt);
 		return MAL_SUCCEED;
 	}
