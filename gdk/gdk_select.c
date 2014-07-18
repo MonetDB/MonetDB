@@ -622,7 +622,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!equi || (li && hi && !anti));
 	assert(!anti || lval || hval);
 	assert( anti || lval || hval || !b->T->nonil);
-	assert(b->ttype != TYPE_oid || equi || b->T->nonil);
+	assert(b->ttype != TYPE_void || equi || b->T->nonil);
 
 #ifndef NDEBUG
 	cmp = BATatoms[b->ttype].atomCmp;
