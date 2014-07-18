@@ -179,7 +179,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = pci->argc == 3 ? 1 : *(TPE*) getArgReference(stk, pci, 3); \
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
 			throw(MAL, "generator.table",			\
-			      "Illegal generator arguments");		\
+			      "Illegal generator range");		\
 		n = (BUN) ((l - f) / s);				\
 		if ((TPE) (n * s + f) != l)				\
 			n++;						\
@@ -238,7 +238,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
 				       &stk->stk[pci->argv[2]]) == GDK_FAIL)
 				throw(MAL, "generator.table",
-				      "Illegal generator expression arguments");
+				      "Illegal generator expression range");
 			f = *(timestamp *) getArgReference(stk, pci, 1);
 			l = *(timestamp *) getArgReference(stk, pci, 2);
 			s = *(lng *) getArgReference(stk, pci, 3);
@@ -247,7 +247,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			    (s < 0 && ret.val.btval < 0) ||
 				timestamp_isnil(f) || timestamp_isnil(l))
 				throw(MAL, "generator.table",
-				      "Illegal generator arguments");
+				      "Illegal generator range");
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
@@ -317,7 +317,7 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 		s = p->argc == 3 ? 1 : * (TPE *) getArgReference(stk, p, 3); \
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.subselect",		\
-			      "Illegal generator arguments");		\
+			      "Illegal generator range");		\
 		n = (BUN) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
 		if ((TPE)(n * s + f) != l)				\
 			n++;						\
@@ -432,9 +432,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tsf = *(timestamp *) getArgReference(stk, p, 1);
 			tsl = *(timestamp *) getArgReference(stk, p, 2);
 			tss = *(lng *) getArgReference(stk, p, 3);
-			if ( tss == 0 ||
-				timestamp_isnil(tsf) || timestamp_isnil(tsl))
-				throw(MAL, "generator.subselect", "Illegal generator arguments");
+			if ( tss == 0 || 
+				timestamp_isnil(tsf) || timestamp_isnil(tsl) ||
+				 (tss > 0 && (tsf.days > tsl.days || (tsf.days == tsl.days && tsf.msecs > tsl.msecs) )) ||
+				 (tss < 0 && (tsf.days < tsl.days || (tsf.days == tsl.days && tsf.msecs < tsl.msecs) )) 
+				)
+				throw(MAL, "generator.subselect", "Illegal generator range");
 
 			tlow = *(timestamp*) getArgReference(stk,pci,i);
 			thgh = *(timestamp*) getArgReference(stk,pci,i+1);
@@ -457,6 +460,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATnew(TYPE_void, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.subselect", MAL_MALLOC_FAIL);
+			BATseqbase(bn,0);\
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, BUNfirst(bn));
@@ -607,6 +611,7 @@ float nextafterf(float x, float y);
 	bn = BATnew(TYPE_void, TYPE_oid, cap, TRANSIENT);\
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
+	BATseqbase(bn,0);\
 	low= hgh = TPE##_nil;\
 	v = (oid*) Tloc(bn,BUNfirst(bn));\
 	if ( strcmp(oper,"<") == 0){\
@@ -635,8 +640,8 @@ float nextafterf(float x, float y);
 	for(j=0;j<cap;j++, f+=s, o++)\
 		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
 			if(cand){ \
-				if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
-				else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
+				if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
+				else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
 			} else {*v++ = o; c++;}\
 		} \
 }
@@ -646,7 +651,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 {
 	int idx, cndid =0, c= 0, anti =0,tpe;
 	BAT *cand = 0, *bn = NULL;
-	BUN cap;
+	BUN cap,j;
 	lng cn= 0;
 	oid o = 0, oc = 0,  *cl = 0;
 	InstrPtr p;
@@ -681,22 +686,20 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	break;
 	default:
 		if ( tpe == TYPE_timestamp){
-			timestamp f,l, low, hgh;
+			timestamp f,l, val, low, hgh;
 			lng  s;
 			oid *v;
 
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
 			s = *(lng*) getArgReference(stk,p, 3);
-			hgh = low = *(timestamp*) getArgReference(stk,pci, idx);
+			if ( s == 0 || 
+				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
+				 (s < 0 && (f.days < l.days || (f.days == l.days && f.msecs < l.msecs) )) 
+				)
+				throw(MAL, "generator.subselect", "Illegal generator range");
 
-			if ( s == 0 || timestamp_isnil(f) || timestamp_isnil(l))
-				throw(MAL, "generator.subselect", "Illegal generator arguments");
-			if( timestamp_isnil(low) )
-				low = f;
-			if( timestamp_isnil(hgh))
-				hgh = l;
-
+			hgh = low = *timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(timestamp*) getArgReference(stk,pci,idx);
 			} else
@@ -723,33 +726,21 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( bn == NULL)
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
 			v = (oid*) Tloc(bn,BUNfirst(bn));
+			BATseqbase(bn,0);
 
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
-			if( (f.days < l.days || (f.days = l.days && f.msecs <l.msecs)) && s > 0){
-				for(; f.days<l.days || (f.days == l.days && f.msecs <l.msecs); o++){
-					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
-						if(cand){
-							if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
-							else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
-						} else {*v++ = o; c++;}
-					}
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						goto wrapup;
+			val = f;
+			for(j = 0; j<= cap; j++,  o++){
+				if( (( timestamp_isnil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
+					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) || anti){
+					if(cand){
+						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
+						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
+					} else {*v++ = o; c++;}
 				}
-			} else 
-			if( (f.days > l.days || (f.days = l.days && f.msecs >l.msecs)) && s < 0){
-				for(; f.days>l.days || (f.days == l.days && f.msecs >l.msecs); o++){
-					if( (f.days<hgh.days|| (f.days== hgh.days && f.msecs < hgh.msecs))  || timestamp_isnil(hgh) || anti){
-						if(cand){
-							if( cl){ while(cn-- > 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
-							else { while(cn-- > 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
-						} else {*v++ = o; c++;}
-					}
-					if( (msg = MTIMEtimestamp_add(&f, &f, &s)) != MAL_SUCCEED)
-						goto wrapup;
-				}
-			} else
-				throw(MAL,"generator.thetasubselect","Illegal generator arguments");
+				if( (msg = MTIMEtimestamp_add(&val, &val, &s)) != MAL_SUCCEED)
+					goto wrapup;
+			}
 		} else
 			throw(MAL,"generator.thetasubselect","Illegal generator arguments");
 	}
@@ -849,9 +840,11 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
 					return msg;
 
-				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  || timestamp_isnil(val)) )
+				if ( timestamp_isnil(val))
 					continue;
-				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs < l.msecs)) || ((val.days>f.days || (val.days== f.days && val.msecs >= f.msecs)))  || timestamp_isnil(val)) )
+				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  ) )
+					continue;
+				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs < l.msecs)) || ((val.days>f.days || (val.days== f.days && val.msecs >= f.msecs)))  ) )
 					continue;
 				*v++ = val;
 				c++;
