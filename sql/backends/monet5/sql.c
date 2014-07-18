@@ -2067,9 +2067,15 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 			i = BATmirror(BATmark(cminu, 0));
 			BBPunfix(cminu->batCacheid);
 		}
-		if (isVIEW(res) &&
-		    (res = BATcopy(res, res->htype, res->ttype, TRUE)) == NULL)
-			throw(MAL, "sql.delta", OPERATION_FAILED);
+		if (isVIEW(res)) {
+			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE);
+			BBPunfix(res->batCacheid);
+			res = n;
+			if (res == NULL) {
+				BBPunfix(i->batCacheid);
+				throw(MAL, "sql.delta", OPERATION_FAILED);
+			}
+		}
 		res = BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
