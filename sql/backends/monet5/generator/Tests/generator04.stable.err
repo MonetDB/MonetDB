@@ -29,19 +29,19 @@ stderr of test 'generator04` in directory 'sql/backends/monet5/generator` itself
 # 21:38:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14305" "--port=36294"
 # 21:38:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14305/.s.monetdb.36294
+MAPI  = (monetdb) /var/tmp/mtest-27050/.s.monetdb.39285
 QUERY = select * from generate_series('a','b','c');
-ERROR = !timestamp (b) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-14305/.s.monetdb.36294
+ERROR = !timestamp (a) has incorrect format
+MAPI  = (monetdb) /var/tmp/mtest-27050/.s.monetdb.39285
 QUERY = select * from generate_series(false,true,false) ;
 ERROR = !types boolean(1,0) and timestamp(7,0) are not equal for column 'L1'
-MAPI  = (monetdb) /var/tmp/mtest-14305/.s.monetdb.36294
+MAPI  = (monetdb) /var/tmp/mtest-27050/.s.monetdb.39285
 QUERY = select * from generate_series(null,null,1);
-ERROR = !Illegal generator arguments
-MAPI  = (monetdb) /var/tmp/mtest-14305/.s.monetdb.36294
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-27050/.s.monetdb.39285
 QUERY = select * from generate_series(10,null,1);
-ERROR = !Illegal generator arguments
-MAPI  = (monetdb) /var/tmp/mtest-14305/.s.monetdb.36294
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-27050/.s.monetdb.39285
 QUERY = select * from generate_series(null,10,1);
 ERROR = !types tinyint(8,0) and timestamp(7,0) are not equal for column 'L2'
 
