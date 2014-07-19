@@ -35,6 +35,18 @@ Ready.
 [ 3	]
 [ 4	]
 [ 5	]
+#select * from generate_series(0,10,2) X, tmp Y where X.value = Y.i;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 4,	4	]
+#select * from generate_series(0,10,2) X, tmp Y where Y.i = X.value;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 4,	4	]
 #select * from generate_series(0,10,2) X, tmp Y where X.value = Y.i and value <5;
 % .x,	sys.y # table_name
 % value,	i # name
