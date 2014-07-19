@@ -129,6 +129,11 @@ Ready.
 [ 2	]
 [ 4	]
 [ 6	]
+#select * from generate_series(0,0,2);
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
 
 # 18:09:07 >  
 # 18:09:07 >  "Done."

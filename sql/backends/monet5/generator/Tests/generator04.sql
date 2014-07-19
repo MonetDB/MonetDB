@@ -1,5 +1,5 @@
 -- some unit  tests
-select * from generate_series('a','b','c');
+select * from generate_series('a','a','c');
 
 select * from generate_series(false,true,false) ;
 

@@ -110,6 +110,44 @@ Ready.
 % 1,	1 # length
 [ 8,	8	]
 #drop table tmp2;
+#create table tmp(i tinyint);
+#insert into tmp values(3),(4),(5);
+[ 3	]
+#select * from tmp;
+% sys.tmp # table_name
+% i # name
+% tinyint # type
+% 1 # length
+[ 3	]
+[ 4	]
+[ 5	]
+#select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 3,	3	]
+[ 5,	5	]
+#select * from generate_series(9,0,-2) X, tmp Y where Y.i = X.value;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 3,	3	]
+[ 5,	5	]
+#select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i and value <5;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 3,	3	]
+#select * from generate_series(9,0,-2) as  X, tmp Y where X.value = Y.i and value <7 and value >3;
+% .x,	sys.y # table_name
+% value,	i # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 5,	5	]
+#drop table tmp;
 
 # 14:48:53 >  
 # 14:48:53 >  "Done."

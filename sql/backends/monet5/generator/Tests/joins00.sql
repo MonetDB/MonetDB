@@ -29,3 +29,17 @@ select * from generate_series(0,10,2) as  X, tmp2 Y where X.value = Y.i and valu
 select * from generate_series(0,10,2) as  X, tmp2 Y where Y.i = X.value  and value <12 and value >3;
 
 drop table tmp2;
+
+-- negative range
+create table tmp(i tinyint);
+insert into tmp values(3),(4),(5);
+select * from tmp;
+
+select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i;
+select * from generate_series(9,0,-2) X, tmp Y where Y.i = X.value;
+
+select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i and value <5;
+
+select * from generate_series(9,0,-2) as  X, tmp Y where X.value = Y.i and value <7 and value >3;
+
+drop table tmp;
