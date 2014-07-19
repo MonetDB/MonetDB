@@ -920,7 +920,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = q? q : p;
 	cnt = BATcount(b);
 	tpe = b->ttype;
-	o= b->tseqbase;
+	o= b->hseqbase;
 	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
