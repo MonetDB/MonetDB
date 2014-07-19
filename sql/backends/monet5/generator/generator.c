@@ -946,7 +946,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	v = (bte*) Tloc(b,BUNfirst(b));
 	for( ; cnt >0; cnt--,o++,v++){
 		w = (BUN) floor(abs(*v -f)/abs(s));
-		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
+		if ( f + (bte)( w * s) == *v ){
 			*ol++ = (oid) w;
 			*or++ = o;
 			c++;
