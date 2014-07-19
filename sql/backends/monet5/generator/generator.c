@@ -607,7 +607,7 @@ float nextafterf(float x, float y);
 	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
-	cap = (BUN)(((lng)l-(lng)f)/ABS(s));\
+	cap = (BUN)(ABS((lng)l-(lng)f)/ABS(s));\
 	bn = BATnew(TYPE_void, TYPE_oid, cap, TRANSIENT);\
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
