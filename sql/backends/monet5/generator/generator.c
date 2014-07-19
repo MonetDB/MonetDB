@@ -866,7 +866,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 }
 
 /* The operands of a join operation can either be defined on a generator */
-#define VLTjoin(TPE) \
+#define VLTjoin(TPE, ABS) \
 	{ TPE f,l,s; TPE *v; BUN w;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
@@ -875,7 +875,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.join","Illegal range");\
 	for( ; cnt >0; cnt--,o++,v++){\
-		w = (BUN) floor( (double)((*v -f)/s));\
+		w = (BUN) floor( (double)(ABS(*v -f)/ABS(s)));\
 		if ( f + (TPE)(w * s) == *v ){\
 			*ol++ = w;\
 			*or++ = o;\
@@ -936,7 +936,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: //VLTjoin(bte); break; 
+	case TYPE_bte: //VLTjoin(bte,abs); break; 
 	{ bte f,l,s; bte *v; BUN w;
 	f = *(bte*) getArgReference(stk,p, 1);
 	l = *(bte*) getArgReference(stk,p, 2);
@@ -945,7 +945,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"generator.join","Illegal range");
 	v = (bte*) Tloc(b,BUNfirst(b));
 	for( ; cnt >0; cnt--,o++,v++){
-		w = (BUN) floor((*v -f)/s);
+		w = (BUN) floor(abs(*v -f)/abs(s));
 		if ( *v >= f && *v < l && f + (bte)( w * s) == *v ){
 			*ol++ = (oid) w;
 			*or++ = o;
@@ -953,11 +953,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} }
 	break;
-	case TYPE_sht: VLTjoin(sht); break;
-	case TYPE_int: VLTjoin(int); break;
-	case TYPE_lng: VLTjoin(lng); break;
-	case TYPE_flt: VLTjoin(flt); break;
-	case TYPE_dbl: VLTjoin(dbl); break;
+	case TYPE_sht: VLTjoin(sht,abs); break;
+	case TYPE_int: VLTjoin(int,abs); break;
+	case TYPE_lng: VLTjoin(lng,llabs); break;
+	case TYPE_flt: VLTjoin(flt,fabsf); break;
+	case TYPE_dbl: VLTjoin(dbl,fabs); break;
 	default:
 		if( tpe == TYPE_timestamp){ 
 			// it is easier to produce the timestamp series
