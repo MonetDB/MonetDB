@@ -183,7 +183,7 @@ log_read_string(logger *l)
 	}
 	if (len == 0)
 		return NULL;
-	buf = (char *) GDKmalloc(len);
+	buf = GDKmalloc(len);
 	if (buf == NULL) {
 		fprintf(stderr, "!ERROR: log_read_string: malloc failed\n");
 		return NULL;
@@ -649,14 +649,14 @@ la_bat_use(logger *lg, logaction *la)
 static trans *
 tr_create(trans *tr, int tid)
 {
-	trans *ntr = (trans *) GDKmalloc(sizeof(trans));
+	trans *ntr = GDKmalloc(sizeof(trans));
 
 	if (ntr == NULL)
 		return NULL;
 	ntr->tid = tid;
 	ntr->sz = TR_SIZE;
 	ntr->nr = 0;
-	ntr->changes = (logaction *) GDKmalloc(sizeof(logaction) * TR_SIZE);
+	ntr->changes = GDKmalloc(sizeof(logaction) * TR_SIZE);
 	if (ntr->changes == NULL) {
 		GDKfree(ntr);
 		return NULL;
@@ -1092,7 +1092,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 {
 	BUN p, q;
 	BUN nn = 3 + (list_bid->batFirst > list_bid->batDeleted ? list_bid->batFirst - list_bid->batDeleted : 0) + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
-	bat *n = (bat*)GDKmalloc(sizeof(bat) * nn);
+	bat *n = GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
 	int res;
@@ -1157,7 +1157,8 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 	GDKexit(1);
 }
 
-/* upgrade from old logger format */
+/* upgrade from old logger format; all errors are fatal since
+ * this should only happen on startup */
 static void
 logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	/* split catalog -> catalog_bid, catalog_nme */
@@ -1169,49 +1170,74 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 
 	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
+
 	v = BATmark(b, 0);
-	BATappend(lg->catalog_bid, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->catalog_bid, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 	v = BATmark(BATmirror(b), 0);
-	BATappend(lg->catalog_nme, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->catalog_nme, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 
 	/* Make persistent */
 	*bid = lg->catalog_bid->batCacheid;
 	BBPincref(*bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
-	BBPrename(lg->catalog_bid->batCacheid, bak);
+	if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
 
 	/* Make persistent */
 	*bid = lg->catalog_nme->batCacheid;
 	BBPincref(*bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-	BBPrename(lg->catalog_nme->batCacheid, bak);
+	if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
+
 	logbat_destroy(b);
 
 	/* split snapshots -> snapshots_bid, snapshots_tid */
 	*bid = logger_find_bat(lg, "snapshots");
 	b = BATdescriptor(*bid);
-	if (b == 0) {
+	if (b == 0)
 		logger_fatal("logger_upgrade_format: inconsistent database, '%s' snapshots does not exist", bak, 0, 0);
-	}
 
 	lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
+	if (lg->snapshots_bid == NULL)
+		logger_fatal("logger_upgrade_format: cannot create snapshot bat", 0, 0, 0);
 	v = BATmark(b, 0);
-	BATappend(lg->snapshots_bid, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->snapshots_bid, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 	snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
-	BBPrename(lg->snapshots_bid->batCacheid, bak);
+	if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
 	logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
 	lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
+	if (lg->snapshots_tid == NULL)
+		logger_fatal("logger_upgrade_format: cannot create snapshot bat", 0, 0, 0);
+
 	v = BATmark(BATmirror(b), 0);
-	BATappend(lg->snapshots_tid, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->snapshots_tid, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 	snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
-	BBPrename(lg->snapshots_tid->batCacheid, bak);
+	if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
+
 	logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid");
+
 	logbat_destroy(b);
+
 	/* split seqs -> seqs_id, seqs_val */
 	*bid = logger_find_bat(lg, "seqs");
 	b = BATdescriptor(*bid);
@@ -1220,23 +1246,36 @@ logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
 	}
 
 	lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
+	if (lg->seqs_id == NULL)
+		logger_fatal("logger_upgrade_format: cannot create sequences bat", 0, 0, 0);
 	v = BATmark(b, 0);
-	BATappend(lg->seqs_id, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->seqs_id, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 	snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
-	BBPrename(lg->seqs_id->batCacheid, bak);
+	if (BBPrename(lg->seqs_id->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
 	logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
 	lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
+	if (lg->seqs_val == NULL)
+		logger_fatal("logger_upgrade_format: cannot create sequences bat", 0, 0, 0);
 	v = BATmark(BATmirror(b), 0);
-	BATappend(lg->seqs_val, BATmirror(v), FALSE);
+	if (v == NULL)
+		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
+	if (BATappend(lg->seqs_val, BATmirror(v), FALSE) == NULL)
+		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
 	BBPunfix(v->batCacheid);
 	snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
-	BBPrename(lg->seqs_val->batCacheid, bak);
+	if (BBPrename(lg->seqs_val->batCacheid, bak) < 0)
+		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
 	logger_add_bat(lg, lg->seqs_val, "seqs_val");
 
 	logbat_destroy(b);
-	bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug);
+	if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug) < 0)
+		logger_fatal("logger_upgrade_format: commit of logger conversion failed", 0, 0, 0);
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_nme);
 	logbat_destroy(lg->snapshots_bid);
@@ -1266,6 +1305,8 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 
 	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
+	if (lg->catalog_bid == NULL || lg->catalog_nme == NULL)
+		logger_fatal("logger_create_catalog_file: cannot create catalog bats", 0, 0, 0);
 	if (debug & 1)
 		fprintf(stderr, "#create %s catalog\n", fn);
 
@@ -1273,13 +1314,17 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 	bid = lg->catalog_bid->batCacheid;
 	BBPincref(bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
-	BBPrename(lg->catalog_bid->batCacheid, bak);
+	if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
+		logger_fatal("logger_create_catalog_file: BBPrename to %s failed", bak, 0, 0);
+
 
 	/* Make persistent */
 	bid = lg->catalog_nme->batCacheid;
 	BBPincref(bid, TRUE);
 	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-	BBPrename(lg->catalog_nme->batCacheid, bak);
+	if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
+		logger_fatal("logger_create_catalog_file: BBPrename to %s failed", bak, 0, 0);
+
 
 	if (!GDKcreatedir(filename)) {
 		logger_fatal("logger_create_catalog_file: cannot create directory for log file %s\n", filename, 0, 0);
@@ -1289,10 +1334,18 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
 		logger_fatal("logger_create_catalog_file: cannot create log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
-	fprintf(fp, "%06d\n\n", lg->version);
 	lg->id++;
-	fprintf(fp, LLFMT "\n", lg->id);
-	fclose(fp);
+	if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
+		fclose(fp);
+		unlink(filename);
+		logger_fatal("logger_create_catalog_file: writing log file %s failed",
+				filename, 0, 0);
+	}
+	if (fclose(fp) < 0) {
+		unlink(filename);
+		logger_fatal("logger_create_catalog_file: closing log file %s failed",
+				filename, 0, 0);
+	}
 	fp = NULL;
 	if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid,
 			lg->catalog_nme, NULL, lg->debug) != 0) {
@@ -1438,28 +1491,39 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	if (seqs_id == 0) {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
-		BBPrename(lg->seqs_id->batCacheid, bak);
+		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
 		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
-		BBPrename(lg->seqs_val->batCacheid, bak);
+		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
 		logger_add_bat(lg, lg->seqs_val, "seqs_val");
 
-		BUNappend(lg->seqs_id, &id, FALSE);
-		BUNappend(lg->seqs_val, &lg->id, FALSE);
+		if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
+		    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+			logger_fatal("logger_load: failed to append value to "
+				     "sequences bat", 0, 0, 0);
 
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
-		BBPrename(lg->snapshots_bid->batCacheid, bak);
+		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
 		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
-		BBPrename(lg->snapshots_tid->batCacheid, bak);
+		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid");
 
-		bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug);
+		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug) < 0)
+			logger_fatal("logger_load: commit failed", 0, 0, 0);
 	} else {
 		bat seqs_val = logger_find_bat(lg, "seqs_val");
 		bat snapshots_bid = logger_find_bat(lg, "snapshots_bid");
@@ -1478,8 +1542,10 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 				fprintf(stderr, "#logger_load setting new logger id to " LLFMT "\n", lg->id);
 			}
 		} else {
-			BUNappend(lg->seqs_id, &id, FALSE);
-			BUNappend(lg->seqs_val, &lg->id, FALSE);
+			if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
+			    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+				logger_fatal("logger_load: failed to append "
+					     "value to sequences bat", 0, 0, 0);
 		}
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)
@@ -1489,9 +1555,12 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 			logger_fatal("logger_load: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
 	}
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
+	if (lg->freed == NULL)
+		logger_fatal("logger_load: failed to create freed bat", 0, 0, 0);
 	BATseqbase(lg->freed, 0);
 	snprintf(bak, BUFSIZ, "%s_freed", fn);
-	BBPrename(lg->freed->batCacheid, bak);
+	if (BBPrename(lg->freed->batCacheid, bak) < 0 && !lg->shared)
+		logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
@@ -1565,7 +1634,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 				    fsync(fileno(fp1)) < 0 ||
 #endif
 				    fclose(fp1) != 0)
-					logger_fatal("Logger_new: failed to write %s\n", cvfile, 0, 0);
+					logger_fatal("logger_load: failed to write %s\n", cvfile, 0, 0);
 				/* then remove the unversioned file
 				 * that gdk_bbp created (in this
 				 * order!) */

@@ -457,6 +457,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || (sz = BATcount(n)) == 0) {
 		return b;
 	}
+	assert(!isVIEW(b));
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BATappend: input must be (V)OID headed\n");
 		return NULL;
