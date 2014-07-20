@@ -282,7 +282,6 @@ GDKfileopen(int farmid, const char * dir, const char *name, const char *extensio
 	} else {
 		path = GDKfilepath(farmid, dir, name, extension);
 	}
-	fprintf(stderr, "GDKfileopen: path=%s\n", path);
 
 	return fopen(path, mode);
 }
