@@ -100,7 +100,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 char *
 GDKfilepath_long(int farmid, const char *dir, const char *ext) {
 	char *last_dir_with_sep;
-	int last_dirsep_index;
+	__int64_t last_dirsep_index;
 	char *last_dir;
 	char *last_dir_parent;
 
@@ -258,7 +258,7 @@ GDKfileopen(int farmid, const char * dir, const char *name, const char *extensio
 	/* if name is null, try to get one from dir (in case it was a path) */
 	if ((name == NULL) || (*name == 0)) {
 		char *last_dir_with_sep;
-		int last_dirsep_index;
+		__int64_t last_dirsep_index;
 		char *last_dir;
 		char *last_dir_parent;
 
