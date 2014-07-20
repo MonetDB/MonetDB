@@ -101,7 +101,11 @@ VLTgenerator_optimizer(Client cntxt, MalBlkPtr mb)
 						// projection over a series
 						setModuleId(q, generatorRef);
 						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						used++;
+						if(q->typechk == TYPE_UNKNOWN){
+							setModuleId(q, algebraRef);
+							typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
+						} else
+							used++;
 					} else
 					if ( getModuleId(q) == languageRef && getFunctionId(q) == passRef && getArg(q,1) == getArg(p,0))
 						// nothing happens in this instruction
@@ -296,11 +300,12 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
-	str vaultRef = putName("generator",9);
+	str vaultRef = putName("vault",5);
+	str generatorRef = putName("generator",9);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target && getModuleId(q) == vaultRef)
+		if (q->argv[0] == target && (getModuleId(q) == vaultRef || getModuleId(q) == generatorRef))
 			p = q;
 		if (q == pci)
 			return p;
@@ -730,7 +735,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
-			for(j = 0; j<= cap; j++,  o++){
+			for(j = 0; j< cap; j++,  o++){
 				if( (( timestamp_isnil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
 					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) || anti){
 					if(cand){
@@ -877,7 +882,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	for( ; cnt >0; cnt--,o++,v++){\
 		w = (BUN) floor( (double)(ABS(*v -f)/ABS(s)));\
 		if ( f + (TPE)(w * s) == *v ){\
-			*ol++ = w;\
+			*ol++ = (oid) w;\
 			*or++ = o;\
 			c++;\
 		}\
@@ -909,7 +914,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	// in case of both generators materialize the 'smallest' one first
+	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first
 	// or implement more knowledge, postponed
 	assert(!( p && q));
 	assert(p || q);
@@ -963,6 +968,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// it is easier to produce the timestamp series
 			// then to estimate the possible index
 			}
+		throw(MAL,"generator.join","Illegal type");
 	}
 
 	BATsetcount(bln,c);
