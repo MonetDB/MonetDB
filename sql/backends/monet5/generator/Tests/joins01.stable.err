@@ -25,12 +25,8 @@ stderr of test 'joins01` in directory 'sql/backends/monet5/generator` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 11:37:00 >  
-# 11:37:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8569" "--port=39494"
-# 11:37:00 >  
 
-
-# 11:37:00 >  
-# 11:37:00 >  "Done."
-# 11:37:00 >  
+# 10:34:40 >  
+# 10:34:40 >  "Done."
+# 10:34:40 >  
 

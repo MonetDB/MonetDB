@@ -24,31 +24,100 @@ Ready.
 # 11:37:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8569" "--port=39494"
 # 11:37:00 >  
 
-#select * from generate_series(0,3,1) as A, generate_series(0,6,2) as B;
-% .a,	.b # table_name
-% value,	value # name
-% tinyint,	tinyint # type
-% 1,	1 # length
-[ 0,	0	]
-[ 0,	2	]
-[ 0,	4	]
-[ 1,	0	]
-[ 1,	2	]
-[ 1,	4	]
-[ 2,	0	]
-[ 2,	2	]
-[ 2,	4	]
-#select * from generate_series(0,3,1) as A, generate_series(0,6,2) as B
-#where A.value < B.value;
-% .a,	.b # table_name
-% value,	value # name
-% tinyint,	tinyint # type
-% 1,	1 # length
-[ 0,	2	]
-[ 0,	4	]
-[ 1,	2	]
-[ 1,	4	]
-[ 2,	4	]
+#create table tmp(i timestamp);
+#insert into tmp values
+#(timestamp '2008-03-01 00:00'),
+#(timestamp '2008-03-01 10:00'),
+#(timestamp '2008-03-01 20:00');
+[ 3	]
+#select * from tmp;
+% sys.tmp # table_name
+% i # name
+% timestamp # type
+% 26 # length
+[ 2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where X.value = Y.i;
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value;
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value  and value < timestamp '2008-03-01 20:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' and value > timestamp '200-03-01 00:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X;
+% .x # table_name
+% value # name
+% timestamp # type
+% 26 # length
+[ 2008-03-04 18:00:00.000000	]
+[ 2008-03-04 08:00:00.000000	]
+[ 2008-03-03 22:00:00.000000	]
+[ 2008-03-03 12:00:00.000000	]
+[ 2008-03-03 02:00:00.000000	]
+[ 2008-03-02 16:00:00.000000	]
+[ 2008-03-02 06:00:00.000000	]
+[ 2008-03-01 20:00:00.000000	]
+[ 2008-03-01 10:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i;
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where Y.i = X.value;
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
+#and value > timestamp '2008-03-01 09:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
+#and value > timestamp '2008-03-01 09:00';
+#and value < timestamp '2008-03-01 20:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
 
 # 11:37:00 >  
 # 11:37:00 >  "Done."
