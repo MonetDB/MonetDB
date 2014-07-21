@@ -53,7 +53,8 @@ decimal2
 null
 joins
 default
-keys
+!HAVE_SAMTOOLS?keys
+HAVE_SAMTOOLS?keys_bam
 
 like_tests
 
