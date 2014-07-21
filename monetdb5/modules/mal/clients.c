@@ -187,10 +187,9 @@ CLTLogin(int *nme, int *ret)
 	int i;
 	char s[26];
 
-	if (b == 0)
-		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
-	if ( u==0){
-		BBPreleaseref(b->batCacheid);
+	if (b == 0 || u == 0) {
+		BBPreclaim(b);
+		BBPreclaim(u);
 		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -597,23 +596,19 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;
 	lng clk,timeout;
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
 
 	user = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	BATseqbase(user,0);
 	login = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(login,0);
 	stimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(stimeout,0);
 	last = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(last,0);
 	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(qtimeout,0);
 	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
-	BATseqbase(active,0);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
+		if ( user) BBPreleaseref(user->batCacheid);
 		if ( login) BBPreleaseref(login->batCacheid);
 		if ( stimeout) BBPreleaseref(stimeout->batCacheid);
 		if ( qtimeout) BBPreleaseref(qtimeout->batCacheid);
@@ -621,21 +616,35 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( active) BBPreleaseref(active->batCacheid);
 		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(user,0);
+	BATseqbase(login,0);
+	BATseqbase(stimeout,0);
+	BATseqbase(last,0);
+	BATseqbase(qtimeout,0);
+	BATseqbase(active,0);
 	
     MT_lock_set(&mal_contextLock, "clients.sessions");
 	
     for (c = mal_clients + (GDKgetenv_isyes("monet_daemon")?1:0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
 		BUNappend(user, &usrname, FALSE);
-		(void) MTIMEunix_epoch(&ts);
+		msg = MTIMEunix_epoch(&ts);
+		if (msg)
+			goto bailout;
 		clk = c->login * 1000;
-		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		if (msg)
+			goto bailout;
 		BUNappend(login, &ret, FALSE);
 		timeout = c->stimeout / 1000000;
 		BUNappend(stimeout, &timeout, FALSE);
-		(void) MTIMEunix_epoch(&ts);
+		msg = MTIMEunix_epoch(&ts);
+		if (msg)
+			goto bailout;
 		clk = c->lastcmd * 1000;
-		(void) MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		if (msg)
+			goto bailout;
 		BUNappend(last, &ret, FALSE);
 		timeout = c->qtimeout / 1000000;
 		BUNappend(qtimeout, &timeout, FALSE);
@@ -649,4 +658,14 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*lastId = last->batCacheid);
 	BBPkeepref(*activeId = active->batCacheid);
 	return MAL_SUCCEED;
+
+  bailout:
+    MT_lock_unset(&mal_contextLock, "clients.sessions");
+	BBPreleaseref(user->batCacheid);
+	BBPreleaseref(login->batCacheid);
+	BBPreleaseref(stimeout->batCacheid);
+	BBPreleaseref(qtimeout->batCacheid);
+	BBPreleaseref(last->batCacheid);
+	BBPreleaseref(active->batCacheid);
+	return msg;
 }

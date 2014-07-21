@@ -1,0 +1,103 @@
+stdout of test 'oid-table-assert.Bug-3514` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 12:20:31 >  
+# 12:20:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34106" "--set" "mapi_usock=/var/tmp/mtest-8487/.s.monetdb.34106" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 12:20:31 >  
+
+# MonetDB 5 server v11.17.18 (hg id: 0afa28ccc79e+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.734 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:34106/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8487/.s.monetdb.34106
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 12:20:32 >  
+# 12:20:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8487" "--port=34106"
+# 12:20:32 >  
+
+#START TRANSACTION;
+#CREATE TABLE OID_TBL(f1 oid);
+#INSERT INTO OID_TBL(f1) VALUES ('1234');
+[ 1	]
+#INSERT INTO OID_TBL(f1) VALUES ('1235');
+[ 1	]
+#SELECT * FROM OID_TBL WHERE f1 = 1234;
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1234@0	]
+#SELECT * FROM OID_TBL WHERE f1 <> 1234;
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1235@0	]
+#SELECT * FROM OID_TBL WHERE f1 = '1234';
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1234@0	]
+#INSERT INTO OID_TBL(f1) VALUES ('    ');
+[ 1	]
+#SELECT * FROM OID_TBL WHERE f1 = 1234;
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1234@0	]
+#SELECT * FROM OID_TBL WHERE f1 <> 1234;
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1235@0	]
+#SELECT * FROM OID_TBL WHERE f1 = '1234';
+% sys.oid_tbl # table_name
+% f1 # name
+% oid # type
+% 6 # length
+[ 1234@0	]
+#ROLLBACK;
+
+# 12:20:32 >  
+# 12:20:32 >  "Done."
+# 12:20:32 >  
+

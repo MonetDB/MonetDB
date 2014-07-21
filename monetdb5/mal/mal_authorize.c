@@ -418,7 +418,6 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	/* decypher the password */
 	msg= AUTHdecypherValue(&hash, &tmp);
 	if ( msg){
-		GDKfree(hash);
 		return msg;
 	}
 	if (strcmp(hash, *oldpass) != 0){
@@ -430,7 +429,6 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	/* cypher the password */
 	msg= AUTHcypherValue(&hash, passwd);
 	if ( msg){
-		GDKfree(hash);
 		return msg;
 	}
 
@@ -593,7 +591,7 @@ AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	/* decypher the password */
 	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, &tmp));
 
-	*ret = GDKstrdup(passwd);
+	*ret = passwd;
 	return(NULL);
 }
 
@@ -645,8 +643,7 @@ AUTHdecypherValue(str *ret, str *value) {
 	 */
 
 	/* this is the XOR decypher implementation */
-	str r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
-	str w = r;
+	str r, w;
 	str s = *value;
 	char t = '\0';
 	int escaped = 0;
@@ -654,10 +651,11 @@ AUTHdecypherValue(str *ret, str *value) {
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
-	if( r == NULL)
-		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
+	w = r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
+	if( r == NULL)
+		throw(MAL, "decypherValue", MAL_MALLOC_FAIL);
 
 	keylen = (int) strlen(vaultKey);
 
@@ -688,17 +686,17 @@ AUTHdecypherValue(str *ret, str *value) {
 static str
 AUTHcypherValue(str *ret, str *value) {
 	/* this is the XOR cypher implementation */
-	str r = GDKmalloc(sizeof(char) * (strlen(*value) * 2 + 1));
-	str w = r;
+	str r, w;
 	str s = *value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
 	int keylen = 0;
 
-	if( r == NULL)
-		throw(MAL, "cypherValue", MAL_MALLOC_FAIL);
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
+	w = r = GDKmalloc(sizeof(char) * (strlen(*value) * 2 + 1));
+	if( r == NULL)
+		throw(MAL, "cypherValue", MAL_MALLOC_FAIL);
 
 	keylen = (int) strlen(vaultKey);
 

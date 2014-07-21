@@ -59,7 +59,7 @@ static int lastfile = 0;
 MALfcn
 getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 {
-	void *dl = 0;
+	void *dl;
 	MALfcn adr;
 	static int idx=0;
 	static int prev= -1;
@@ -94,22 +94,27 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 	/*
 	 * Try the program libraries at large or run through all
 	 * loaded files and try to resolve the functionname again.
-	 */
+	 *
+	 * the first argument must be the same as the base name of the
+	 * library that is created in src/tools */
+	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
 	if (dl == NULL) {
-		/* the first argument must be the same as the base name of the
-		 * library that is created in src/tools */
-		dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
+		/* shouldn't happen, really */
+		if (!silent)
+			showException(out, MAL, "MAL.getAddress",
+						  "address of '%s.%s' not found",
+						  (modnme?modnme:"<unknown>"), fcnname);
+		return NULL;
 	}
-	if( dl != NULL){
-		adr = (MALfcn) dlsym(dl, fcnname);
-		if( adr != NULL)
-			return adr; /* found it */
-	}
+
+	adr = (MALfcn) dlsym(dl, fcnname);
+	dlclose(dl);
+	if( adr != NULL)
+		return adr; /* found it */
+
 	if (!silent)
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
-	if ( dl)
-		dlclose(dl);
 	return NULL;
 }
 /*

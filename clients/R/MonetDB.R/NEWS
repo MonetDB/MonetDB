@@ -1,5 +1,6 @@
 0.9.4
 - dbWriteTable overhaul (thanks, Anthony)
+- Fix for dbListTables for MonetDB versions after Jan2014
 
 0.9.3
 - Remove trailing slashes for monetdb.program.path parameter for monetdb.server.setup (Thanks, Anthony!)

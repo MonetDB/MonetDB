@@ -457,6 +457,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || (sz = BATcount(n)) == 0) {
 		return b;
 	}
+	assert(!isVIEW(b));
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BATappend: input must be (V)OID headed\n");
 		return NULL;
@@ -2256,8 +2257,10 @@ BATintersectcand(BAT *a, BAT *b)
 
 	if (BATcount(a) == 0 || BATcount(b) == 0) {
 		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		if (bn) {
+			BATseqbase(bn, 0);
+			BATseqbase(BATmirror(bn), 0);
+		}
 		return bn;
 	}
 

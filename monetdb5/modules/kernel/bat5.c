@@ -174,8 +174,10 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 
 	if (!(bk = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT)))
 		return GDK_FAIL;
-	if (!(bv = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT)))
+	if (!(bv = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT))) {
+		BBPreclaim(bk);
 		return GDK_FAIL;
+	}
 	BATseqbase(bk,0);
 	BATseqbase(bv,0);
 	*ret1 = bk;
