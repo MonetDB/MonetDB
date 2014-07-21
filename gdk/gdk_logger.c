@@ -1559,7 +1559,8 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 		logger_fatal("logger_load: failed to create freed bat", 0, 0, 0);
 	BATseqbase(lg->freed, 0);
 	snprintf(bak, BUFSIZ, "%s_freed", fn);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0 && !lg->shared)
+	/* do not rename it if this is a shared logger */
+	if (!lg->shared && BBPrename(lg->freed->batCacheid, bak) < 0)
 		logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
 
 	if (fp != NULL) {
