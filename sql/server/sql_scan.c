@@ -853,7 +853,6 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
 	case '^': /* binary xor */
-	case '&': /* binary and */
 	case '*':
 	case '?':
 	case '%':
@@ -866,6 +865,25 @@ int scanner_symbol(mvc * c, int cur)
 	case ']':
 		lc->started = 1;
 		return scanner_token(lc, cur);
+	case '&':
+		lc->started = 1;
+		cur = scanner_getc(lc);
+		if(cur == '<') {
+			next = scanner_getc(lc);
+			if(next == '|') {
+				return scanner_token(lc, GEOM_OVERLAP_OR_BELOW);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				return scanner_token(lc, GEOM_OVERLAP_OR_LEFT);
+			}
+		} else if(cur == '>')
+			return scanner_token(lc, GEOM_OVERLAP_OR_RIGHT);
+		else if(cur == '&')
+			return scanner_token(lc, GEOM_OVERLAP);
+		else {/* binary and */
+			utf8_putchar(lc, cur); //put the char back
+			return scanner_token(lc, '&');
+		}
 	case '@':
 		lc->started = 1;
 		return scanner_token(lc, AT);
@@ -880,7 +898,23 @@ int scanner_symbol(mvc * c, int cur)
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
-			return scanner_token( lc, LEFT_SHIFT);
+			next = scanner_getc(lc);
+			if(next == '|')
+				return scanner_token(lc, GEOM_BELOW);
+			else {
+				utf8_putchar(lc, next); //put the char back
+				return scanner_token( lc, LEFT_SHIFT);
+			}
+		} else if(cur == '-') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_DIST);
+			} else {
+				//put the characters back and fall in the next possible case
+				utf8_putchar(lc, next);
+				utf8_putchar(lc, cur);
+				return scanner_token( lc, COMPARISON);
+			}
 		} else {
 			utf8_putchar(lc, cur); 
 			return scanner_token( lc, COMPARISON);
@@ -912,6 +946,24 @@ int scanner_symbol(mvc * c, int cur)
 		cur = scanner_getc(lc);
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
+		} else if (cur == '&') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_OVERLAP_OR_ABOVE);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				utf8_putchar(lc, cur); //put the char back
+				return scanner_token(lc, '|');
+			}
+		} else if (cur == '>') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_ABOVE);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				utf8_putchar(lc, cur); //put the char back
+				return scanner_token(lc, '|');
+			}
 		} else {
 			utf8_putchar(lc, cur); 
 			return scanner_token(lc, '|');

@@ -534,7 +534,14 @@ int yydebug=1;
 %left <operation> '/' '%'
 %left <operation> '~'
 
-	/* literal keyword tokens */
+%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE, GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW, GEOM_ABOVE GEOM_DIST
+
+/*
+%left <geom_operation> "&&" "&<" "&<|" "&>" "<<" "<<|" ">>" "@" "|&>" "|>>" "~=" "<->"
+*/
+
+/* literal keyword tokens */
 /*
 CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
@@ -3324,7 +3331,7 @@ subquery:
 	/* simple_scalar expressions */
 simple_scalar_exp:
     value_exp
- |  scalar_exp '+' scalar_exp
+ | scalar_exp '+' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "sql_add")));
@@ -3373,12 +3380,88 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_LEFT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_left")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp  GEOM_OVERLAP_OR_RIGHT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_right")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, append_string(L(), sa_strdup(SA, "mbr_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_DIST scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_distance")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp AT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contained")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '|' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contains")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~''=' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $4);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
@@ -3388,15 +3471,20 @@ simple_scalar_exp:
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
-			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "left_shift")));
+			  //if(($1->data.lval->h->type == type_int) && ($3->data.lval->h->type == type_int)) 
+				append_list(l, append_string(L(), sa_strdup(SA, "left_shift")));
+			  //else
+			  //	append_list(l, append_string(L(), sa_strdup(SA, "mbr_left")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT scalar_exp
 			{ dlist *l = L();
-			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "right_shift")));
+			  //if(($1->data.lval->h->type == type_int) && ($3->data.lval->h->type == type_int)) 
+			  	append_list(l, append_string(L(), sa_strdup(SA, "right_shift")));
+			  //else
+			  //	append_list(l, append_string(L(), sa_strdup(SA, "mbr_right")));
+
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }

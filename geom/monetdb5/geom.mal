@@ -272,33 +272,59 @@ command Transform(g:wkb, srid_src:int, srid_dst:int, proj_src:str, proj_dest:str
 comment "Transforms a geometry from one srid to another";
 
 
-
 command mbr(:wkb) :mbr address wkbMBR
 comment "Creates the mbr for the given wkb.";
+
+command mbrOverlaps(geom1:wkb, geom2:wkb) :bit address mbrOverlaps_wkb
+comment "Returns true if the mbr of geom1 overlaps the mbr of geom2";
 command mbrOverlaps(box1:mbr, box2:mbr) :bit address mbrOverlaps
 comment "Returns true if box1 overlaps box2";
+command mbrOverlapOrLeft(geom1:wkb, geom2:wkb) :bit address mbrOverlapOrLeft_wkb
+comment "Returns true if the mbr of geom1 overlaps or is to the left of thr mbr of geom2";
 command mbrOverlapOrLeft(box1:mbr, box2:mbr) :bit address mbrOverlapOrLeft
 comment "Returns true if box1 overlaps or is to the left of box2";
+command mbrOverlapOrBelow(geom1:wkb, geom2:wkb) :bit address mbrOverlapOrBelow_wkb
+comment "Returns true if the mbr of geom1 overlaps or is below the mbr of geom2";
 command mbrOverlapOrBelow(box1:mbr, box2:mbr) :bit address mbrOverlapOrBelow
 comment "Returns true if box1 overlaps or is below box2";
+command mbrOverlapOrRight(geom1:wkb, geom2:wkb) :bit address mbrOverlapOrRight_wkb
+comment "Returns true if the mbr of geom1 overlalps or is right of the mbr of geom2";
 command mbrOverlapOrRight(box1:mbr, box2:mbr) :bit address mbrOverlapOrRight
 comment "Returns true if box1 overlalps or is right of box2";
+command mbrLeft(geom1:wkb, geom2:wkb) :bit address mbrLeft_wkb
+comment "Returns true if the mbr of geom1 is left of the mbr of geom2";
 command mbrLeft(box1:mbr, box2:mbr) :bit address mbrLeft
 comment "Returns true if box1 is left of box2";
+command mbrBelow(geom1:wkb, geom2:wkb) :bit address mbrBelow_wkb
+comment "Returns true if the mbr of geom1 is below the mbr of geom2";
 command mbrBelow(box1:mbr, box2:mbr) :bit address mbrBelow
 comment "Returns true if box1 is below box2";
+command mbrEqual(geom1:wkb, geom2:wkb) :bit address mbrEqual_wkb
+comment "Returns true if the mbr of geom1 is the same as the mbr of geom2";
 command mbrEqual(box1:mbr, box2:mbr) :bit address mbrEqual
 comment "Returns true if box1 is the same as box2";
+command mbrRight(geom1:wkb, geom2:wkb) :bit address mbrRight_wkb
+comment "Returns true if the mbr of geom1 is right of the mbr of geom2";
 command mbrRight(box1:mbr, box2:mbr) :bit address mbrRight
 comment "Returns true if box1 is right of box2";
+command mbrContained(geom1:wkb, geom2:wkb) :bit address mbrContained_wkb
+comment "Returns true if the mbr of geom1 is contained by the mbr of geom2";
 command mbrContained(box1:mbr, box2:mbr) :bit address mbrContained
 comment "Returns true if box1 is contained by box2";
+command mbrOverlapOrAbove(geom1:wkb, geom2:wkb) :bit address mbrOverlapOrAbove_wkb
+comment "Returns true if the mbr of geom1 overlaps or is above the mbr of geom2";
 command mbrOverlapOrAbove(box1:mbr, box2:mbr) :bit address mbrOverlapOrAbove
 comment "Returns true if box1 overlaps or is above box2";
+command mbrAbove(geom1:wkb, geom2:wkb) :bit address mbrAbove_wkb
+comment "Returns true if the mbr of geom1 is above the mbr of geom2";
 command mbrAbove(box1:mbr, box2:mbr) :bit address mbrAbove
 comment "Returns true if box1 is above box2";
+command mbrContains(geom1:wkb, geom2:wkb) :bit address mbrContains_wkb
+comment "Returns true if the mbr of geom1 contains the mbr of geom2";
 command mbrContains(box1:mbr, box2:mbr) :bit address mbrContains
 comment "Returns true if box1 contains box2";
+command mbrDistance(geom1:wkb, geom2:wkb) :dbl address mbrDistance_wkb
+comment "Returns the distance of the centroids of the mbrs of the two geometries";
 command mbrDistance(box1:mbr, box2:mbr) :dbl address mbrDistance
 comment "Returns the distance of the centroids of the two boxes";
 command coordinateFromWKB(:wkb, :int) :dbl address wkbCoordinateFromWKB

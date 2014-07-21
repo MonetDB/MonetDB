@@ -3975,19 +3975,19 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
 CREATE FUNCTION mbr(geom Geometry) RETURNS mbr external name geom."mbr";
-CREATE FUNCTION mbrOverlap(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlap";
-CREATE FUNCTION mbrOverlapOrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrLeft";
-CREATE FUNCTION mbrOverlapOrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrBelow";
-CREATE FUNCTION mbrOverlapOrRight(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrRight";
-CREATE FUNCTION mbrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrLeft";
-CREATE FUNCTION mbrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrBelow";
-CREATE FUNCTION mbrEqual(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrEqual";
-CREATE FUNCTION mbrRight(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrRight";
-CREATE FUNCTION mbrContained(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrContained";
-CREATE FUNCTION mbrOverlapOrAbove(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrAbove";
-CREATE FUNCTION mbrAbove(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrAbove";
-CREATE FUNCTION mbrContains(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrContains";
-CREATE FUNCTION mbrDistance(box1 mbr, box2 mbr) RETURNS double external name geom."mbrDistance";
+--CREATE FUNCTION mbrOverlap(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlap";
+--CREATE FUNCTION mbrOverlapOrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrLeft";
+--CREATE FUNCTION mbrOverlapOrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrBelow";
+--CREATE FUNCTION mbrOverlapOrRight(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrRight";
+--CREATE FUNCTION mbrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrLeft";
+--CREATE FUNCTION mbrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrBelow";
+--CREATE FUNCTION mbrEqual(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrEqual";
+--CREATE FUNCTION mbrRight(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrRight";
+--CREATE FUNCTION mbrContained(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrContained";
+--CREATE FUNCTION mbrOverlapOrAbove(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrAbove";
+--CREATE FUNCTION mbrAbove(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrAbove";
+--CREATE FUNCTION mbrContains(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrContains";
+--CREATE FUNCTION mbrDistance(box1 mbr, box2 mbr) RETURNS double external name geom."mbrDistance";
 
 
 -------------------------------------------------------------------------
