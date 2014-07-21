@@ -493,13 +493,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 			BATsetcount(bn, (BUN) n);
-			if( cand){
-				bn->tsorted = 1;
-				bn->trevsorted = BATcount(bn) <= 1;
-			} else {
-				bn->tsorted = tss > 0 || n <= 1;
-				bn->trevsorted = tss < 0 || n <= 1;
-			}
+			bn->tsorted = 1;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = 1;
+			bn->T->nil = 0;
+			bn->T->nonil = 1;
 			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
