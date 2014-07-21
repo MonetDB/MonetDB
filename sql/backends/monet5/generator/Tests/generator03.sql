@@ -23,6 +23,12 @@ select * from generate_series(
 where value < timestamp '2008-03-03 00:00';
 
 select * from generate_series(
+	timestamp '2008-03-04 12:00',
+	timestamp '2008-03-01 00:00',
+	cast( '-10' as interval hour))
+where value < timestamp '2008-03-02 00:00';
+
+select * from generate_series(
 	timestamp '2008-03-01 00:00',
 	timestamp '2008-03-04 12:00',
 	cast( '10' as interval hour))
