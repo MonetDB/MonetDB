@@ -61,6 +61,7 @@ Ready.
 % 26,	26 # length
 [ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
 [ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value  and value < timestamp '2008-03-01 20:00';
 % .x,	sys.y # table_name
 % value,	i # name
@@ -68,12 +69,14 @@ Ready.
 % 26,	26 # length
 [ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
 [ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' and value > timestamp '200-03-01 00:00';
 % .x,	sys.y # table_name
 % value,	i # name
 % timestamp,	timestamp # type
 % 26,	26 # length
 [ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X;
 % .x # table_name
 % value # name
@@ -108,16 +111,15 @@ Ready.
 % value,	i # name
 % timestamp,	timestamp # type
 % 26,	26 # length
-[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
 [ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 #and value > timestamp '2008-03-01 09:00';
 #and value < timestamp '2008-03-01 20:00';
-% .x,	sys.y # table_name
-% value,	i # name
-% timestamp,	timestamp # type
-% 26,	26 # length
-[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+% .x,   sys.y # table_name
+% value,    i # name
+% timestamp,    timestamp # type
+% 26,   26 # length
+[ 2008-03-01 10:00:00.000000,   2008-03-01 10:00:00.000000  ]
 
 # 11:37:00 >  
 # 11:37:00 >  "Done."
