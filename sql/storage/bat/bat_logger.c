@@ -91,9 +91,9 @@ bl_postversion( void *lg)
 			return;
 		bi = bat_iterator(b);
 		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-        	BATseqbase(b1, b->hseqbase);
 		if (!b1)
 			return;
+        	BATseqbase(b1, b->hseqbase);
 		/* only sys and tmp are system schemas */
 		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
 			bit v = FALSE;
@@ -113,9 +113,9 @@ bl_postversion( void *lg)
 			return;
 		bi = bat_iterator(b);
 		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-        	BATseqbase(b1, b->hseqbase);
 		if (!b1)
 			return;
+        	BATseqbase(b1, b->hseqbase);
 		/* default to ARG_IN, names starting with 'res' are ARG_OUT */
 		bi = bat_iterator(b);
 		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -137,10 +137,10 @@ bl_postversion( void *lg)
 		bi = bat_iterator(b);
 		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
 		b2 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-        	BATseqbase(b1, b->hseqbase);
-        	BATseqbase(b2, b->hseqbase);
 		if (!b1 || !b2)
 			return;
+        	BATseqbase(b1, b->hseqbase);
+        	BATseqbase(b2, b->hseqbase);
 		/* default to no variaable arguments and results */
 		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
 			bit v = FALSE;

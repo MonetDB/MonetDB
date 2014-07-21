@@ -45,10 +45,12 @@ BATsemijoin(BAT *l, BAT *r)
 		return BATcopy(l, l->htype, l->ttype, 0, TRANSIENT);
 	if (BATcount(r) == 0) {
 		bn = BATnew(l->htype, l->ttype, 0, TRANSIENT);
-		if (BAThdense(l))
-			BATseqbase(bn, l->hseqbase);
-		if (BATtdense(l))
-			BATseqbase(BATmirror(bn), l->tseqbase);
+		if (bn) {
+			if (BAThdense(l))
+				BATseqbase(bn, l->hseqbase);
+			if (BATtdense(l))
+				BATseqbase(BATmirror(bn), l->tseqbase);
+		}
 		return bn;
 	}
 

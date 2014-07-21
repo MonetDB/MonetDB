@@ -443,6 +443,8 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	BAT *nb;
 	assert(b->htype==TYPE_void);
 	nb= BATnew(TYPE_void, b->ttype, BATcapacity(b), TRANSIENT);
+	if (nb == NULL)
+		throw(MAL, "CLUSTER_apply", MAL_MALLOC_FAIL);
 	BATseqbase(nb,0);
 	nb->hrevsorted = 0;
 	nb->tsorted= FALSE;

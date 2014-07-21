@@ -79,13 +79,13 @@
  */
 
 str
-SAMPLEuniform(bat *r, bat *b, ptr s) {
+SAMPLEuniform(bat *r, bat *b, wrd *s) {
 	BAT *br, *bb;
 
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
-	br = BATsample(bb,*(BUN *)s);
+	br = BATsample(bb, (BUN) *s);
 	if (br == NULL)
 		throw(MAL, "sample.subuniform", OPERATION_FAILED);
 
@@ -96,9 +96,9 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 }
 
 str
-SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
+SAMPLEuniform_dbl(bat *r, bat *b, dbl *p) {
 	BAT *bb;
-	double pr = *(double *)p;
+	double pr = *p;
 	wrd s;
 
 	if ( pr < 0.0 || pr > 1.0 ) {
@@ -106,12 +106,12 @@ SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
 				" p should be between 0 and 1.0" );
 	} else if (pr == 0) {/* special case */
 		s = 0;
-		return SAMPLEuniform(r, b, (ptr)&s);
+		return SAMPLEuniform(r, b, &s);
 	}
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
 	}
 	s = (wrd) (pr*(double)BATcount(bb));
 	BBPunfix(bb->batCacheid);
-	return SAMPLEuniform(r, b, (ptr) &s);
+	return SAMPLEuniform(r, b, &s);
 }

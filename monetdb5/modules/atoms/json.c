@@ -1127,6 +1127,8 @@ JSONkeyTable(int *ret, json *js)
 
 	jt= JSONparse(*js, TRUE); // already validated
 	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	if (bn == NULL)
+		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;
@@ -1180,6 +1182,8 @@ JSONvalueTable(int *ret, json *js)
 
 	jt= JSONparse(*js, TRUE); // already validated
 	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	if (bn == NULL)
+		throw(MAL, "json.values", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;

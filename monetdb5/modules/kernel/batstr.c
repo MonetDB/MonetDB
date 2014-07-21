@@ -142,13 +142,13 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 	X->trevsorted=0;
 #define prepareResult2(X,Y,A,T,Z)				\
 	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);			\
-	if( Y->htype== TYPE_void)					\
-		BATseqbase(X, Y->hseqbase);				\
 	if( X == NULL){								\
 		BBPreleaseref(Y->batCacheid);			\
 		BBPreleaseref(A->batCacheid);			\
 		throw(MAL, Z, MAL_MALLOC_FAIL);			\
 	}											\
+	if( Y->htype== TYPE_void)					\
+		BATseqbase(X, Y->hseqbase);				\
 	X->hsorted=Y->hsorted;						\
 	X->hrevsorted=Y->hrevsorted;				\
 	X->tsorted=0;								\
@@ -1354,6 +1354,10 @@ STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length)
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
 	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5, TRANSIENT);
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(bn, b->hseqbase);
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -1410,13 +1414,13 @@ str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t)
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	bn= BATnew(TYPE_void, TYPE_str,BATcount(left), TRANSIENT);
-	BATseqbase(bn, left->hseqbase);
 	if( bn == NULL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(start->batCacheid);
 		BBPreleaseref(length->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn, left->hseqbase);
 
 	bn->hsorted= left->hsorted;
 	bn->hrevsorted= left->hrevsorted;

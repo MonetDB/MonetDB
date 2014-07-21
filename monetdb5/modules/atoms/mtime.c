@@ -1286,8 +1286,11 @@ MTIMEprelude(void)
 	tzbatnme = BATnew(TYPE_void, TYPE_str, 30, TRANSIENT);
 	tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30, TRANSIENT);
 
-	if (tzbatnme == NULL || tzbatdef == NULL)
+	if (tzbatnme == NULL || tzbatdef == NULL) {
+		BBPreclaim(tzbatnme);
+		BBPreclaim(tzbatdef);
 		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
+	}
 	BBPrename(tzbatnme->batCacheid, "timezone_name");
 	BBPrename(tzbatdef->batCacheid, "timezone_def");
 	BATseqbase(tzbatnme,0);
