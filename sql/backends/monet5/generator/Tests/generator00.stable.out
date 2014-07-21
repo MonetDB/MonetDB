@@ -71,8 +71,13 @@ Ready.
 [ 0	]
 [ 2	]
 [ 4	]
-#select * from generate_series(0,10,2) as v
-#where value <7 and value >3;
+#select * from generate_series(0,10,2) where value =4;
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 4	]
+#select * from generate_series(0,10,2) as v where value <7 and value >3;
 % .v # table_name
 % value # name
 % tinyint # type
@@ -105,6 +110,12 @@ Ready.
 % 1 # length
 [ 4	]
 [ 2	]
+#select * from generate_series(10,0,-2) where value = 6;
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 6	]
 #select * from generate_series(10,0,-2) as v where value <7 and value >3;
 % .v # table_name
 % value # name
