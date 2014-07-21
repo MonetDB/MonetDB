@@ -831,8 +831,8 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			l = *(timestamp*) getArgReference(stk,p, 2);
 			s =  *(lng*) getArgReference(stk,p, 3);
 			if ( s == 0 ||
-				(s< 0 &&	(f.days<= l.days || (f.days == l.days && f.msecs < l.msecs))) ||
-				(s> 0 &&	(l.days<= f.days || (l.days == f.days && l.msecs < f.msecs))) )
+				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
+				(s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) )
 				throw(MAL,"generator.leftfetchjoin","Illegal range");
 
 			bn = BATnew(TYPE_void, TYPE_timestamp, cnt, TRANSIENT);
