@@ -493,8 +493,13 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 			BATsetcount(bn, (BUN) n);
-			bn->tsorted = tss > 0 || n <= 1;
-			bn->trevsorted = tss < 0 || n <= 1;
+			if( cand){
+				bn->tsorted = 1;
+				bn->trevsorted = BATcount(bn) <= 1;
+			} else {
+				bn->tsorted = tss > 0 || n <= 1;
+				bn->trevsorted = tss < 0 || n <= 1;
+			}
 			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
@@ -775,7 +780,7 @@ wrapup:
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPreleaseref(bid);\
-		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
 	for(; cnt-- > 0; ol++, o++){\
@@ -876,6 +881,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
 	s = *(TPE*) getArgReference(stk,p, 3);\
+	incr = s > 0;\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.join","Illegal range");\
@@ -893,7 +899,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
 	oid o= 0, *ol, *or;
-	int tpe;
+	int tpe, incr=0;
 	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -946,6 +952,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	f = *(bte*) getArgReference(stk,p, 1);
 	l = *(bte*) getArgReference(stk,p, 2);
 	s = *(bte*) getArgReference(stk,p, 3);
+	incr = s > 0;
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.join","Illegal range");
 	v = (bte*) Tloc(b,BUNfirst(b));
@@ -975,12 +982,16 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bln->hdense = 1;
 	bln->hseqbase = 0;
 	bln->hkey = 1;
+	bln->tsorted = incr || c <= 1;				\
+	bln->trevsorted = !incr || c <= 1;			\
 	BATderiveProps(bln,0);
 	
 	BATsetcount(brn,c);
 	brn->hdense = 1;
 	brn->hseqbase = 0;
 	brn->hkey = 1;
+	brn->tsorted = incr || c <= 1;				\
+	brn->trevsorted = !incr || c <= 1;			\
 	BATderiveProps(brn,0);
 	if( q){
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
