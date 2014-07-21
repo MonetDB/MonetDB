@@ -24,9 +24,15 @@ select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01
 
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and value > timestamp '2008-03-01 11:00';
+select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
+and i > timestamp '2008-03-01 11:00';
 
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and value > timestamp '2008-03-01 11:00'
 and value < timestamp '2008-03-01 21:00';
+
+select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
+and i > timestamp '2008-03-01 11:00'
+and i < timestamp '2008-03-01 21:00';
 
 drop table tmp;
