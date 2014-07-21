@@ -10,6 +10,6 @@ SELECT "f"."id",
 FROM "sys"."args" "a",
      "sys"."functions" "f"
 WHERE "f"."id" NOT IN (SELECT "function_id" FROM "sys"."systemfunctions") AND
-      "f"."sql" = FALSE AND
+      "f"."language" <> 1 AND
       "a"."func_id" = "f"."id"
 ORDER BY "f"."id", "a"."number";
