@@ -17,6 +17,8 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' and value > timestamp '200-03-01 00:00';
 
+select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and i < timestamp '2008-03-01 20:00' and i > timestamp '200-03-01 00:00';
+
 -- negative range
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X;
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i;
@@ -26,6 +28,8 @@ select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01
 and value > timestamp '2008-03-01 11:00';
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and i > timestamp '2008-03-01 11:00';
+
+select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X where value > timestamp '2008-03-01 11:00' and value < timestamp '2008-03-01 21:00';
 
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and value > timestamp '2008-03-01 11:00'
