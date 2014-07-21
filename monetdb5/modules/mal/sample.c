@@ -130,5 +130,5 @@ SAMPLEuniform_dbl(bat *r, bat *b, dbl *p) {
 	}
 	s = (wrd) (pr*(double)BATcount(bb));
 	BBPunfix(bb->batCacheid);
-	return SAMPLEuniform(r, b, (ptr) &s);
+	return SAMPLEuniform(r, b, &s);
 }
