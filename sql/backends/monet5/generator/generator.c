@@ -447,16 +447,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tlow = *(timestamp*) getArgReference(stk,pci,i);
 			thgh = *(timestamp*) getArgReference(stk,pci,i+1);
 
-			if( hi && !timestamp_isnil(thgh) ){
-				msg = MTIMEtimestamp_add(&thgh, &thgh, &tss);
-				if (msg != MAL_SUCCEED) 
-					return msg;
-			}
-			if( !li && !timestamp_isnil(tlow) ){
-				msg = MTIMEtimestamp_add(&tlow, &tlow, &tss);
-				if (msg != MAL_SUCCEED) 
-					return msg;
-			}
+			if( hi && !timestamp_isnil(thgh) )
+				thgh.msecs++;
+			if( !li && !timestamp_isnil(tlow) )
+				tlow.msecs++;
 
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
@@ -740,7 +734,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
 				if( (( timestamp_isnil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
-					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) || anti){
+					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs < hgh.msecs)))) || anti){
 					if(cand){
 						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
 						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
