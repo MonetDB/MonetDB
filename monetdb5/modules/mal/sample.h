@@ -39,9 +39,9 @@
 #endif
 
 sample_export str
-SAMPLEuniform(bat *r, bat *b, ptr s);
+SAMPLEuniform(bat *r, bat *b, wrd *s);
 
 sample_export str
-SAMPLEuniform_dbl(bat *r, bat *b, ptr p);
+SAMPLEuniform_dbl(bat *r, bat *b, dbl *p);
 
 #endif
