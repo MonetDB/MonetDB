@@ -15,8 +15,7 @@ crashonschema.Bug-2547
 copy-into-too-long-string.Bug-2358
 in_column_exp.Bug-2561
 multiple-updates-in-transaction.Bug-2543
-!HAVE_SAMTOOLS?limit_in_prepare.Bug-2552
-HAVE_SAMTOOLS?limit_in_prepare.Bug-2552_bam
+limit_in_prepare.Bug-2552
 select_star.Bug-2563
 delete_insert.Bug-2529
 decimal_div_whole_nrs.Bug-2579

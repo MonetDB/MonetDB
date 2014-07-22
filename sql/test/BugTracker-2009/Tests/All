@@ -1,8 +1,7 @@
 # These three tests should be run first to prevent them from being corrupted
 # by remains of other tests in case those don't work / clean-up properly.
 alter_table_drop_constraint.SF-2803477
-!HAVE_SAMTOOLS?mclient-lsql-D
-HAVE_SAMTOOLS?mclient-lsql-D_bam
+mclient-lsql-D
 alter_table_drop_constraint.SF-2803477_cleanup
 #
 binop.SF.2499537
@@ -58,8 +57,7 @@ missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
 dumping_tables.SF-2776908--optimizers
-!HAVE_SAMTOOLS?name_clash_with_dump.SF-2780395
-HAVE_SAMTOOLS?name_clash_with_dump.SF-2780395_bam
+name_clash_with_dump.SF-2780395
 temporary_table_leftover.SF-2779437
 temporary_table_leftover.SF-2734713
 multi-column_join_with_expression.SF-2783279

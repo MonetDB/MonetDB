@@ -2,8 +2,7 @@ drop_foreignkey_selfreferencing
 foreignkey_leftjoin-bug-sf-854312
 create_insert_select-bug-sf-900198
 insert_update_arith-bug-sf-900206
-!HAVE_SAMTOOLS?insert_delete-bug-sf-904025
-HAVE_SAMTOOLS?insert_delete-bug-sf-904025_bam
+insert_delete-bug-sf-904025
 union_all_where_1=1-bug-sf-936386
 view_selfjoin-bug-sf-937835
 bug-sf-938733
@@ -38,8 +37,7 @@ union-bug-sf-978045
 object_name-bug-sf-985242
 view_join-bug-sf-990096
 cast_bool2int-bug-sf-1000576
-!HAVE_SAMTOOLS?subselect_multiple_unionall_where_1=1-bug-sf-1005596
-HAVE_SAMTOOLS?subselect_multiple_unionall_where_1=1-bug-sf-1005596_bam
+subselect_multiple_unionall_where_1=1-bug-sf-1005596
 escape_quote-bug-sf-1006469
 case_cast-bug-sf-1019506
 select_constant_from_where_1=1-bug-sf-1019529
@@ -67,8 +65,7 @@ order_disjunctive_bug.SF-1338309
 default_with_cast.SF-1334486
 predicate_or-sf-1409824
 alter_view
-!HAVE_SAMTOOLS?simple_view
-HAVE_SAMTOOLS?simple_view_bam
+simple_view
 float2dec
 not
 references-bug
@@ -101,8 +98,7 @@ alter_table_add_column
 create_index
 select_from_values
 or_in_crash
-!HAVE_SAMTOOLS?crash_order_by
-HAVE_SAMTOOLS?crash_order_by_bam
+crash_order_by
 in_or_bug
 create_insert_select_aggr-bug-00001
 procedure_resolution_bug

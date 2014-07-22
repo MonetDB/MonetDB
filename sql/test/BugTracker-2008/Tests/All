@@ -29,8 +29,7 @@ server_aborts_on_nested_query_without_from_in_subquery.SF-2183292
 group_by_in_subquery_fails.SF-2219131
 count_with_order_by_and_limit_crashes.SF-2229936
 insert-null-byte.SF-2233581
-!HAVE_SAMTOOLS?sql_command_kills_db.SF-2233677
-HAVE_SAMTOOLS?sql_command_kills_db.SF-2233677_bam
+sql_command_kills_db.SF-2233677
 between_no_columns.SF2102101
 col_from_another_inside_function_body.SF-2420768
 is_distinct_broken.SF-2430201

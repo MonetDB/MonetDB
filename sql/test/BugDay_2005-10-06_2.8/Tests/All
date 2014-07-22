@@ -1,6 +1,5 @@
 select_null
-!HAVE_SAMTOOLS?MapiClient-dump.SF-905851
-HAVE_SAMTOOLS?MapiClient-dump.SF-905851_bam
+MapiClient-dump.SF-905851
 double_commit.SF-916584
 mixed_type.SF-917372
 union-SF.918078

@@ -1,5 +1,4 @@
-!HAVE_SAMTOOLS?add_constraint_1643522
-HAVE_SAMTOOLS?add_constraint_1643522_bam
+add_constraint_1643522
 delete_primarykey_1643845
 drop_column_1643542
 update_primarykey_1643375

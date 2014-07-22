@@ -1,4 +1,3 @@
 HAVE_GEOM?testdb-load
 HAVE_GEOM&RELEASERUN?testdb-package
-!HAVE_SAMTOOLS&HAVE_GEOM?testdb-dump
-HAVE_SAMTOOLS&HAVE_GEOM?testdb-dump_bam
+HAVE_GEOM?testdb-dump

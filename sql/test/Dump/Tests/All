@@ -1,8 +1,6 @@
-!HAVE_SAMTOOLS?dump-empty
-HAVE_SAMTOOLS?dump-empty_bam
+dump-empty
 load
-!HAVE_SAMTOOLS?dump
-HAVE_SAMTOOLS?dump_bam
+dump
 clean
 reload
 test

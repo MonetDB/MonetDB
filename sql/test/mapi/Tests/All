@@ -8,8 +8,7 @@ smack01
 HAVE_PERL?perl_dbi
 HAVE_PYTHON2?python2_dbapi
 HAVE_PYTHON3?python3_dbapi
-!HAVE_SAMTOOLS&HAVE_PHP?php_monetdb
-HAVE_SAMTOOLS&HAVE_PHP?php_monetdb_bam
+HAVE_PHP?php_monetdb
 utf8test
 HAVE_PYTHON2?python2_test_monetdb_sql
 HAVE_PYTHON3?python3_test_monetdb_sql
