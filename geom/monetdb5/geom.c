@@ -179,6 +179,7 @@ geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* 
 geom_export str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
+geom_export str wkbMBR_bat(int* outBAT_id, int* inBAT_id);
 
 geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
@@ -3010,6 +3011,60 @@ str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 		throw(MAL, "wkb.mbr", "Failed to create mbr");
 
 	return MAL_SUCCEED;	
+}
+
+/* Creates the BAT with mbrs from the BAT with geometries. */
+str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	mbr *outMBR = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.mbr", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.mbr", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.mbr", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.mbr", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,outMBR,TRUE); //add the point to the new BAT
+		GDKfree(outMBR);
+		outMBR = NULL;
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
 }
 
 /*returns true if the two mbrs overlap */
