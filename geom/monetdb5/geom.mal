@@ -402,6 +402,43 @@ command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkb
 command mbr(:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbMBR_bat
 comment "Creates the mbr for the given wkb.";
 
+command coordinateFromWKB(:bat[:oid,:wkb], :int) :bat[:oid,:dbl] address wkbCoordinateFromWKB_bat
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";
+command coordinateFromMBR(:bat[:oid,:mbr], :int) :bat[:oid,:dbl] address wkbCoordinateFromMBR_bat
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
+
+function XMinFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	x := coordinateFromWKB(g, 1);
+	return x;
+end XMinFromWKB;
+function YMinFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	x := coordinateFromWKB(g, 2);
+	return x;
+end YMinFromWKB;
+function XMaxFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	x := coordinateFromWKB(g, 3);
+	return x;
+end XMaxFromWKB;
+function YMaxFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	x := coordinateFromWKB(g, 4);
+	return x;
+end YMaxFromWKB;
+function XMinFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+	x := coordinateFromMBR(b, 1);
+	return x;
+end XMinFromMBR;
+function YMinFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+	x := coordinateFromMBR(b, 2);
+	return x;
+end YMinFromMBR;
+function XMaxFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+	x := coordinateFromMBR(b, 3);
+	return x;
+end XMaxFromMBR;
+function YMaxFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+	x := coordinateFromMBR(b, 4);
+	return x;
+end YMaxFromMBR;
 
 
 

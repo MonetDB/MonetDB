@@ -207,8 +207,12 @@ geom_export str mbrEqual(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
 geom_export str mbrDistance(double *out, mbr **b1, mbr **b2);
 geom_export str mbrDistance_wkb(double *out, wkb **geom1WKB, wkb **geom2WKB);
+
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
+geom_export str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx);
+
 geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
+geom_export str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx);
 
 /** convert degrees to radians */
 static void degrees2radians(double *x, double *y, double *z) {
@@ -3522,11 +3526,64 @@ str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx
 			*coordinateValue = (*geomMBR)->ymax;
 			break;
 		default:
-			throw(MAL, "wkb.coordinateFromMBR", "Unrecognised coordinateIdx: %d\n", *coordinateIdx);
+			throw(MAL, "geom.coordinateFromMBR", "Unrecognised coordinateIdx: %d\n", *coordinateIdx);
 	}
 
 	return MAL_SUCCEED;
 }
+
+str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	mbr *inMBR = NULL;
+	double outDbl = 0.0;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.coordinateFromMBR", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+
+		inMBR = (mbr*) BUNtail(inBAT_iter, p);
+		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&outDbl,TRUE);
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+
+}
+ 
 
 str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx) {
 	mbr* geomMBR;
@@ -3540,6 +3597,23 @@ str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx
 
 	return ret;
 }
+
+str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
+	str err = NULL;
+	int inBAT_mbr_id = 0; //the id of the bat with the mbrs
+
+	if((err = wkbMBR_bat(&inBAT_mbr_id, inBAT_id)) != MAL_SUCCEED) {
+		str msg;
+		msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
+		GDKfree(err);
+		return msg;
+
+	}
+
+	//call the bulk version of wkbCoordinateFromMBR
+	return wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
+}
+
 
 
 geom_export BUN mbrHASH(mbr *atom);
