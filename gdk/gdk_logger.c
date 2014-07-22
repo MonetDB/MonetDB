@@ -1397,38 +1397,30 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, char *fn, char *logdir, int shared)
-{
+logger_set_logdir_path(char *filename, char *fn, char *logdir, int shared) {
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
-	char *last_dir_full;
-	int last_dirsep_index = 0;
-	char *logdir_name;
-	char *logdir_parent_path;
 
 	if (MT_path_absolute(logdir)) {
-		last_dir_full = strrchr(logdir, DIR_SEP);
-		last_dirsep_index = last_dir_full - logdir;
-
+		char logdir_parent_path[BUFSIZ] = "";
+		char logdir_name[BUFSIZ] = "";
 		/* split the logdir string into absolute parent dir path and (relative) log dir name */
-		logdir_name = (char*)malloc(strlen(last_dir_full));
-		strncpy(logdir_name, last_dir_full + 1, strlen(logdir));
-		logdir_name[strlen(last_dir_full) - 1] = (char)0;
+		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name)) {
+			/* set the new relative logdir locaiton including the logger function name subdir */
+			snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
 
-		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
-
-		logdir_parent_path = (char*)malloc(last_dirsep_index + 1);
-		strncpy(logdir_parent_path, logdir, last_dirsep_index);
-		logdir_parent_path[last_dirsep_index] = (char)0;
-
-		/* add a new dbfarm for the logger directory using the parent dir path,
-		 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
-		 * or at least it appears so to (multi)dbfarm aware functions */
-		if (!shared) {
-			role = LOG_DIR;
+			/* add a new dbfarm for the logger directory using the parent dir path,
+			 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
+			 * or at least it appears so to (multi)dbfarm aware functions */
+			if (!shared) {
+				role = LOG_DIR;
+			} else {
+				role = SHARED_LOG_DIR;
+			}
+			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
-			role = SHARED_LOG_DIR;
+			logger_fatal("logger_set_logdir_path: logdir path is not correct (%s)."
+					"Make sure you specify a valid absolute or relative path.\n", logdir, 0, 0);
 		}
-		BBPaddfarm(logdir_parent_path, 1 << role);
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
 		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);

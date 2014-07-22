@@ -99,33 +99,14 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 /* Same as GDKfilepath, but tries to extract a filename from multilevel dir paths. */
 char *
 GDKfilepath_long(int farmid, const char *dir, const char *ext) {
-	char *last_dir_with_sep;
-	ptrdiff_t last_dirsep_index;
-	char *last_dir;
-	char *last_dir_parent;
+	char last_dir_parent[BUFSIZ] = "";
+	char last_dir[BUFSIZ] = "";
 
-	assert(dir == NULL || *dir != DIR_SEP);
-
-	last_dir_with_sep = strrchr(dir, DIR_SEP);
-	if (last_dir_with_sep == NULL) {
-		/* it wasn't a path, can't work with that */
-		return NULL;
+	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir)) {
+		return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
 	}
-	last_dirsep_index = last_dir_with_sep - dir;
-
-	/* split the dir string into absolute parent dir path and (relative) log dir name */
-	last_dir = (char*)malloc(strlen(last_dir_with_sep));
-	strncpy(last_dir, last_dir_with_sep + 1, strlen(dir));
-	last_dir[strlen(last_dir_with_sep) - 1] = (char)0;
-
-	last_dir_parent = (char*)malloc(last_dirsep_index + 1);
-	strncpy(last_dir_parent, dir, last_dirsep_index);
-	last_dir_parent[last_dirsep_index] = (char)0;
-
-	return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
+	return NULL;
 }
-
-
 
 int
 GDKcreatedir(const char *dir)
@@ -251,39 +232,18 @@ FILE *
 GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode) {
 	char *path;
 
-	/* it is possible for nme and extension to be null, if provided in the dir path */
-	if ((dir == NULL) || (*dir == 0)) {
-		return NULL;
-	}
 	/* if name is null, try to get one from dir (in case it was a path) */
 	if ((name == NULL) || (*name == 0)) {
-		char *last_dir_with_sep;
-		ptrdiff_t last_dirsep_index;
-		char *last_dir;
-		char *last_dir_parent;
-
-		last_dir_with_sep = strrchr(dir, DIR_SEP);
-		if (last_dir_with_sep == NULL) {
-			/* it wasn't a path, can't work with that */
-			return NULL;
-		}
-		last_dirsep_index = last_dir_with_sep - dir;
-
-		/* split the dir string into absolute parent dir path and (relative) log dir name */
-		last_dir = (char*)malloc(strlen(last_dir_with_sep));
-		strncpy(last_dir, last_dir_with_sep + 1, strlen(dir));
-		last_dir[strlen(last_dir_with_sep) - 1] = (char)0;
-
-		last_dir_parent = (char*)malloc(last_dirsep_index + 1);
-		strncpy(last_dir_parent, dir, last_dirsep_index);
-		last_dir_parent[last_dirsep_index] = (char)0;
-
-		path = GDKfilepath(farmid, last_dir_parent, last_dir, extension);
+		path = GDKfilepath_long(farmid, dir, extension);
 	} else {
 		path = GDKfilepath(farmid, dir, name, extension);
 	}
 
-	return fopen(path, mode);
+	if (path != NULL) {
+        IODEBUG THRprintf(GDKstdout, "#GDKfileopen(%s)\n", path);
+		return fopen(path, mode);
+	}
+	return NULL;
 }
 
 /*
