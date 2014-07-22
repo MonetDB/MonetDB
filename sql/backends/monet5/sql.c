@@ -2061,6 +2061,15 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 			i = BATmirror(BATmark(cminu, 0));
 			BBPunfix(cminu->batCacheid);
 		}
+		if (isVIEW(res)) {
+			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE, TRANSIENT);
+			BBPunfix(res->batCacheid);
+			res = n;
+			if (res == NULL) {
+				BBPunfix(i->batCacheid);
+				throw(MAL, "sql.delta", OPERATION_FAILED);
+			}
+		}
 		res = BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
@@ -2216,6 +2225,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create void,void bat with length and oid's set */
 	tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	if (tids == NULL)
+		throw(SQL, "sql.tid", MAL_MALLOC_FAIL);
 	tids->H->seq = sb;
 	tids->T->seq = sb;
 	BATsetcount(tids, (BUN) nr);
@@ -2855,6 +2866,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+			if (c == NULL)
+				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*(str *) getArgReference(stk, pci, i), "r");
@@ -4599,6 +4612,10 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 		int v;
 
 		r = BATnew(TYPE_void, TYPE_int, 1024, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4615,6 +4632,10 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_int;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4647,6 +4668,10 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 		sht v;
 
 		r = BATnew(TYPE_void, TYPE_sht, 1024, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4663,6 +4688,10 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_sht;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4695,6 +4724,10 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 		bte v;
 
 		r = BATnew(TYPE_void, TYPE_bte, 64, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(r, 0);
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -4711,6 +4744,10 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 		}
 	} else {
 		r = VIEWcreate(s, s);
+		if (r == NULL) {
+			BBPunfix(s->batCacheid);
+			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+		}
 		r->ttype = TYPE_bte;
 		r->tvarsized = 0;
 		r->T->vheap = NULL;
@@ -4742,6 +4779,10 @@ BATSTRstrings(bat *res, bat *src)
        	h = s->T->vheap;
        	extralen = h->hashash ? EXTRALEN : 0;
 	r = BATnew(TYPE_void, TYPE_str, 1024, TRANSIENT);
+	if (r == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(SQL, "calc.strings", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(r, 0);
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {

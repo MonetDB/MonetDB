@@ -14,7 +14,7 @@ stdout of test 'reload` in directory 'monetdb5/tests/gdkTests` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    MMO_location := bat.new(:oid,:str);
+    MMO_location := bat.new_persistent(:oid,:str);
     bat.setName(MMO_location,"MMO_location");
     bat.setPersistent(MMO_location);
     b0:bat[:oid,:str]  := bbp.bind("MMO_location");

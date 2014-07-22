@@ -389,10 +389,12 @@ BATclone(BAT *b, BUN cap, int role)
 {
 	BAT *c = BATnew(b->htype, b->ttype, cap, role);
 
-	if (c && c->htype == TYPE_void && b->hseqbase != oid_nil)
-		BATseqbase(c, b->hseqbase);
-	if (c && c->ttype == TYPE_void && b->tseqbase != oid_nil)
-		BATseqbase(BATmirror(c), b->tseqbase);
+	if (c) {
+		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
+			BATseqbase(c, b->hseqbase);
+		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
+			BATseqbase(BATmirror(c), b->tseqbase);
+	}
 	return c;
 }
 
@@ -1286,6 +1288,7 @@ BUNappend(BAT *b, const void *t, bit force)
 		return NULL;
 	}
 
+	assert(!isVIEW(b));
 	bm = BBP_cache(-b->batCacheid);
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t) != BUN_NONE) {
 		return b;

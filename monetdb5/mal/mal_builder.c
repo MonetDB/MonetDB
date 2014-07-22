@@ -433,6 +433,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 {
 	int _t,idx;
 	ValRecord cst;
+	str msg;
 
 	if (q == NULL)
 		return NULL;
@@ -442,7 +443,11 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
 	cst.len = 0;
-	convertConstant(idx, &cst);
+	msg = convertConstant(idx, &cst);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(msg);
+		return NULL;
+	}
 	_t = defConstant(mb,idx,&cst);
 	setVarUDFtype(mb,_t);
 
@@ -453,13 +458,18 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
 	ValRecord cst;
+	str msg;
 
 	if (q == NULL)
 		return NULL;
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
 	cst.len = 0;
-	convertConstant(tpe, &cst);
+	msg = convertConstant(tpe, &cst);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(msg);
+		return NULL;
+	}
 	_t = defConstant(mb,tpe,&cst);
 	setVarUDFtype(mb,_t);
 
@@ -471,13 +481,18 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
 	ValRecord cst;
+	str msg;
 
 	if (q == NULL)
 		return NULL;
 	cst.vtype=TYPE_int;
 	cst.val.ival= 0;
 	cst.len = 0;
-	convertConstant(tpe, &cst);
+	msg = convertConstant(tpe, &cst);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(msg);
+		return NULL;
+	}
 	_t = defConstant(mb,tpe,&cst);
 
 	return pushArgument(mb, q, _t);
