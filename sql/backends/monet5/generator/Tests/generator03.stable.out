@@ -97,7 +97,6 @@ Ready.
 % value # name
 % timestamp # type
 % 26 # length
-[ 2008-03-02 00:00:00.000000	]
 [ 2008-03-01 14:00:00.000000	]
 #select * from generate_series(
 #	timestamp '2008-03-01 00:00',

@@ -61,7 +61,6 @@ Ready.
 % 26,	26 # length
 [ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
 [ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
-[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value  and value < timestamp '2008-03-01 20:00';
 % .x,	sys.y # table_name
 % value,	i # name
@@ -69,8 +68,14 @@ Ready.
 % 26,	26 # length
 [ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
 [ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
-[ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' and value > timestamp '200-03-01 00:00';
+% .x,	sys.y # table_name
+% value,	i # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 2008-03-01 00:00:00.000000,	2008-03-01 00:00:00.000000	]
+[ 2008-03-01 10:00:00.000000,	2008-03-01 10:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and i < timestamp '2008-03-01 20:00' and i > timestamp '200-03-01 00:00';
 % .x,	sys.y # table_name
 % value,	i # name
 % timestamp,	timestamp # type
@@ -119,6 +124,12 @@ Ready.
 % timestamp,	timestamp # type
 % 26,	26 # length
 [ 2008-03-01 20:00:00.000000,	2008-03-01 20:00:00.000000	]
+#select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X where value > timestamp '2008-03-01 11:00' and value < timestamp '2008-03-01 21:00';
+% .x # table_name
+% value # name
+% timestamp # type
+% 26 # length
+[ 2008-03-01 20:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 #and value > timestamp '2008-03-01 11:00'
 #and value < timestamp '2008-03-01 21:00';
