@@ -2692,7 +2692,7 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-//		if(aWKB_previous == NULL && bWKB_previous==NULL) {
+/*		if(aWKB_previous == NULL && bWKB_previous==NULL) {
 			//create the minimum bounding boxes
 			if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
 				str msg;
@@ -2712,7 +2712,7 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 				GDKfree(aMBR);
 				return msg;
 			}
-/*		} else {
+		} else {
 			assert(aWKB_previous != NULL && bWKB_previous != NULL); //both of them shoudl be NULL ot !NULL
 			
 			//the common thing I expect to be comparing one geometry with a banch
