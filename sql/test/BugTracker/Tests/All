@@ -1,9 +1,12 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
-rank_over.SF-1691098
-with_only_once.SF-1720293
-multi-column-constraint.SF-1964587
+!HAVE_SAMTOOLS?rank_over.SF-1691098
+HAVE_SAMTOOLS?rank_over.SF-1691098_bam
+!HAVE_SAMTOOLS?with_only_once.SF-1720293
+HAVE_SAMTOOLS?with_only_once.SF-1720293_bam
+!HAVE_SAMTOOLS?multi-column-constraint.SF-1964587
+HAVE_SAMTOOLS?multi-column-constraint.SF-1964587_bam
 inserting_invalid_timestamp.SF-1363557
 large_prepare.SF-1363729
 large_prepare_2.SF-1363729

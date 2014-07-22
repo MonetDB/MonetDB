@@ -1,0 +1,124 @@
+stdout of test 'exists-select.Bug-2933_bam` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 11:37:21 >  
+# 11:37:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37462" "--set" "mapi_usock=/var/tmp/mtest-1325/.s.monetdb.37462" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_BugTracker-2011" "--set" "mal_listing=0"
+# 11:37:21 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:37462/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1325/.s.monetdb.37462
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup calc.min a bulk operator implementation is needed
+
+# 11:37:21 >  
+# 11:37:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1325" "--port=37462"
+# 11:37:21 >  
+
+#CREATE TABLE _rank2933 (pre INTEGER, post INTEGER);
+#INSERT INTO _rank2933 VALUES (22, 37);
+[ 1	]
+#INSERT INTO _rank2933 VALUES (23, 24);
+[ 1	]
+#INSERT INTO _rank2933 VALUES (33, 34);
+[ 1	]
+#SELECT
+#  count(*)
+#FROM
+#  _rank2933 AS _rank1,
+#  _rank2933 AS _rank2
+#WHERE
+#  NOT _rank1.pre = _rank2.pre AND
+#  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post AND
+#    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#SELECT
+#  count(*)
+#FROM
+#  _rank2933 AS _rank1,
+#  _rank2933 AS _rank2
+#WHERE
+#  NOT _rank1.pre = _rank2.pre AND
+#  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post 
+#  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#DROP TABLE _rank2933;
+#SELECT 123 AS dummy1 FROM tables n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
+#	(SELECT * FROM columns) nnn WHERE n.id > 0 );
+% .L # table_name
+% dummy1 # name
+% tinyint # type
+% 3 # length
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+
+# 11:37:21 >  
+# 11:37:21 >  "Done."
+# 11:37:21 >  

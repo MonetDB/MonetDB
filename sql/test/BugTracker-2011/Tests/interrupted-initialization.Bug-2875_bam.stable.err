@@ -1,0 +1,47 @@
+stderr of test 'interrupted-initialization.Bug-2875_bam` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 11:37:18 >  
+# 11:37:18 >  "/usr/bin/python2" "interrupted-initialization.Bug-2875_bam.py" "interrupted-initialization.Bug-2875_bam"
+# 11:37:18 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37462
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1325/.s.monetdb.37462
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_BugTracker-2011-bug2875
+# cmdline opt 	gdk_debug = 536870922
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37462
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1325/.s.monetdb.37462
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_BugTracker-2011-bug2875
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:37:19 >  
+# 11:37:19 >  "Done."
+# 11:37:19 >  

@@ -1,7 +1,8 @@
 # tests related to bug reports:
 # <descriptive-name>.Bug-<bug-report-id>
 #
-aggregate_vs_positional_column_crash.Bug-3085
+!HAVE_SAMTOOLS?aggregate_vs_positional_column_crash.Bug-3085
+HAVE_SAMTOOLS?aggregate_vs_positional_column_crash.Bug-3085_bam
 time-export-bug.Bug-2963
 sticky-precision.Bug-2969
 date_script_test.Bug-2973

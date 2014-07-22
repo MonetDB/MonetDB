@@ -1,1 +1,2 @@
-create
+!HAVE_SAMTOOLS?create
+HAVE_SAMTOOLS?create_bam

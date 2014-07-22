@@ -1,0 +1,35 @@
+stderr of test 'insert_delete-bug-sf-904025_bam` in directory 'sql/test/bugs` itself:
+
+
+# 13:28:56 >  
+# 13:28:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37484" "--set" "mapi_usock=/var/tmp/mtest-18452/.s.monetdb.37484" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_bugs" "--set" "mal_listing=0"
+# 13:28:56 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37484
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18452/.s.monetdb.37484
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_bugs
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:28:56 >  
+# 13:28:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18452" "--port=37484"
+# 13:28:56 >  
+
+
+# 13:28:57 >  
+# 13:28:57 >  "Done."
+# 13:28:57 >  

@@ -1,0 +1,176 @@
+stdout of test 'dump_bam` in directory 'sql/test/Dump` itself:
+
+
+# 13:22:29 >  
+# 13:22:29 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39786" "--set" "mapi_usock=/var/tmp/mtest-17428/.s.monetdb.39786" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_Dump" "--set" "mal_listing=0"
+# 13:22:29 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dump', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:39786/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17428/.s.monetdb.39786
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+
+# 13:22:29 >  
+# 13:22:29 >  "/usr/bin/python2" "dump_bam.SQL.py" "dump_bam"
+# 13:22:29 >  
+
+START TRANSACTION;
+CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
+SET SCHEMA "bam";
+CREATE TABLE "bam"."files" (
+	"file_id"        BIGINT        NOT NULL,
+	"file_location"  CHARACTER LARGE OBJECT NOT NULL,
+	"dbschema"       SMALLINT      NOT NULL,
+	"format_version" VARCHAR(7),
+	"sorting_order"  VARCHAR(10),
+	"comments"       CHARACTER LARGE OBJECT,
+	CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id")
+);
+CREATE TABLE "bam"."sq" (
+	"sn"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"ln"      INTEGER,
+	"as"      INTEGER,
+	"m5"      CHARACTER LARGE OBJECT,
+	"sp"      CHARACTER LARGE OBJECT,
+	"ur"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id")
+);
+CREATE TABLE "bam"."rg" (
+	"id"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"cn"      CHARACTER LARGE OBJECT,
+	"ds"      CHARACTER LARGE OBJECT,
+	"dt"      TIMESTAMP,
+	"fo"      CHARACTER LARGE OBJECT,
+	"ks"      CHARACTER LARGE OBJECT,
+	"lb"      CHARACTER LARGE OBJECT,
+	"pg"      CHARACTER LARGE OBJECT,
+	"pi"      INTEGER,
+	"pl"      CHARACTER LARGE OBJECT,
+	"pu"      CHARACTER LARGE OBJECT,
+	"sm"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id")
+);
+CREATE TABLE "bam"."pg" (
+	"id"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"pn"      CHARACTER LARGE OBJECT,
+	"cl"      CHARACTER LARGE OBJECT,
+	"pp"      CHARACTER LARGE OBJECT,
+	"vn"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id")
+);
+CREATE TABLE "bam"."export" (
+	"qname" CHARACTER LARGE OBJECT NOT NULL,
+	"flag"  SMALLINT      NOT NULL,
+	"rname" CHARACTER LARGE OBJECT NOT NULL,
+	"pos"   INTEGER       NOT NULL,
+	"mapq"  SMALLINT      NOT NULL,
+	"cigar" CHARACTER LARGE OBJECT NOT NULL,
+	"rnext" CHARACTER LARGE OBJECT NOT NULL,
+	"pnext" INTEGER       NOT NULL,
+	"tlen"  INTEGER       NOT NULL,
+	"seq"   CHARACTER LARGE OBJECT NOT NULL,
+	"qual"  CHARACTER LARGE OBJECT NOT NULL
+);
+SET SCHEMA "sys";
+CREATE TABLE "sys"."test" (
+	"id" INTEGER,
+	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"
+);
+COPY 5 RECORDS INTO "sys"."test" FROM stdin USING DELIMITERS '\t','\n','"';
+0	7
+1	10
+2	5
+3	8
+4	5
+CREATE TABLE "sys"."typestest" (
+	"boolean"        BOOLEAN,
+	"tinyint"        TINYINT,
+	"smallint"       SMALLINT,
+	"int"            INTEGER,
+	"wrd"            BIGINT,
+	"bigint"         BIGINT,
+	"double"         DOUBLE,
+	"real"           REAL,
+	"decimal"        DECIMAL,
+	"decimal9"       DECIMAL(9),
+	"decimal83"      DECIMAL(8,3),
+	"float"          DOUBLE,
+	"float9"         FLOAT(9),
+	"float83"        FLOAT(8,3),
+	"date"           DATE,
+	"iY"             INTERVAL YEAR,
+	"iYM"            INTERVAL YEAR TO MONTH,
+	"iM"             INTERVAL MONTH,
+	"id"             INTERVAL DAY,
+	"idh"            INTERVAL DAY TO HOUR,
+	"idm"            INTERVAL DAY TO MINUTE,
+	"ids"            INTERVAL DAY TO SECOND,
+	"ih"             INTERVAL HOUR,
+	"ihm"            INTERVAL HOUR TO MINUTE,
+	"ihs"            INTERVAL HOUR TO SECOND,
+	"im"             INTERVAL MINUTE,
+	"ims"            INTERVAL MINUTE TO SECOND,
+	"is"             INTERVAL SECOND,
+	"timestamp"      TIMESTAMP,
+	"timestamp5"     TIMESTAMP(5),
+	"timestampzone"  TIMESTAMP WITH TIME ZONE,
+	"timestamp5zone" TIMESTAMP(5) WITH TIME ZONE,
+	"time"           TIME,
+	"time5"          TIME(5),
+	"timezone"       TIME WITH TIME ZONE,
+	"time5zone"      TIME(5) WITH TIME ZONE,
+	"blob"           BINARY LARGE OBJECT,
+	"blob100"        BINARY LARGE OBJECT(100),
+	"clob"           CHARACTER LARGE OBJECT,
+	"clob100"        CHARACTER LARGE OBJECT(100),
+	"character"      CHAR(1),
+	"varchar100"     VARCHAR(100),
+	"character10"    CHAR(10)
+);
+COPY 1 RECORDS INTO "sys"."typestest" FROM stdin USING DELIMITERS '\t','\n','"';
+true	10	10000	1000000	1000000	10000000000	1e+30	1.00000002e+20	1	123456789	12345.678	3.1415000000000002	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	1995-07-15 07:30:00.000000	1995-07-15 07:30:00.00000	1995-07-15 07:30:00.000000+00:00	1995-07-15 07:30:00.00000+00:00	07:30:00	07:30:00.00000	07:30:00+00:00	07:30:00.00000+00:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"
+CREATE TABLE "sys"."keytest1" (
+	"key1" INTEGER       NOT NULL,
+	"key2" INTEGER       NOT NULL,
+	CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2")
+);
+COPY 2 RECORDS INTO "sys"."keytest1" FROM stdin USING DELIMITERS '\t','\n','"';
+0	0
+0	1
+CREATE TABLE "sys"."keytest2" (
+	"key1" INTEGER,
+	"key2" INTEGER
+);
+COPY 2 RECORDS INTO "sys"."keytest2" FROM stdin USING DELIMITERS '\t','\n','"';
+0	0
+0	1
+ALTER TABLE "bam"."pg" ADD CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "bam"."rg" ADD CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "bam"."sq" ADD CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "sys"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "sys"."keytest1" ("key1", "key2");
+ALTER SEQUENCE "sys"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
+COMMIT;
+
+# 13:22:30 >  
+# 13:22:30 >  "Done."
+# 13:22:30 >  

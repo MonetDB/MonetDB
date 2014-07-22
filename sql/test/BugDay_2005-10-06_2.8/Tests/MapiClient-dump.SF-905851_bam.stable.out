@@ -1,0 +1,256 @@
+stdout of test 'MapiClient-dump.SF-905851_bam` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 09:57:11 >  
+# 09:57:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39049" "--set" "mapi_usock=/var/tmp/mtest-13702/.s.monetdb.39049" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_BugDay_2005-10-06_2.8" "--set" "mal_listing=0"
+# 09:57:11 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugDay_2005-10-06_2.8', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:39049/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13702/.s.monetdb.39049
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+
+# 09:57:11 >  
+# 09:57:11 >  "/usr/bin/python2" "MapiClient-dump.SF-905851_bam.SQL.py" "MapiClient-dump.SF-905851_bam"
+# 09:57:11 >  
+
+
+# 09:57:11 >  
+# 09:57:11 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-13702 --port=39049 --database=mTests_sql_test_BugDay_2005-10-06_2.8 < "/home/robin/MonetDB/SOURCE/sql/test/BugDay_2005-10-06_2.8/Tests/JdbcClient_create_tables.sql"
+# 09:57:11 >  
+
+#START TRANSACTION;
+#CREATE TABLE allnewtriples (
+#	id integer NOT NULL,
+#	subject integer NOT NULL,
+#	predicate integer NOT NULL,
+#	object integer NOT NULL,
+#	explicit boolean NOT NULL,
+#	PRIMARY KEY(id),
+#	CONSTRAINT unique_key UNIQUE(subject, predicate, object)
+#);
+#CREATE INDEX allnewtriples_subject_idx ON allnewtriples (subject);
+#CREATE INDEX allnewtriples_predicate_idx ON allnewtriples (predicate);
+#CREATE INDEX allnewtriples_object_idx ON allnewtriples (object);
+#CREATE TABLE "foreign" (
+#	id integer NOT NULL,
+#	subject integer NOT NULL,
+#	predicate integer NOT NULL,
+#	object integer NOT NULL,
+#	FOREIGN KEY (id) REFERENCES allnewtriples (id),
+#	FOREIGN KEY (subject, predicate, object) REFERENCES allnewtriples (subject, predicate, object)
+#);
+#CREATE TABLE "triples" (
+#	"id"        int NOT NULL,
+#	"subject"   int NOT NULL,
+#	"predicate" int NOT NULL,
+#	"object"    int NOT NULL,
+#	"explicit"  boolean     NOT NULL,
+#	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
+#);
+#CREATE INDEX "triples_object_idx" ON "triples" ("object");
+#CREATE INDEX "triples_predicate_idx" ON "triples" ("predicate");
+#CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object");
+#CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
+#CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
+#CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
+#COMMIT;
+
+# 09:57:11 >  
+# 09:57:11 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-13702 --port=39049 --database=mTests_sql_test_BugDay_2005-10-06_2.8 < "/home/robin/MonetDB/SOURCE/sql/test/BugDay_2005-10-06_2.8/Tests/JdbcClient_inserts_selects.sql"
+# 09:57:11 >  
+
+#START TRANSACTION;
+#INSERT INTO allnewtriples VALUES(1, 1, 1, 1, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(2, 1, 1, 2, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(3, 1, 2, 1, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(4, 2, 1, 1, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(5, 1, 2, 2, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(6, 2, 2, 1, false);
+[ 1	]
+#INSERT INTO allnewtriples VALUES(7, 2, 2, 2, false);
+[ 1	]
+#INSERT INTO "foreign" VALUES(1, 1, 1, 1);
+[ 1	]
+#INSERT INTO "foreign" VALUES(2, 2, 2, 2);
+[ 1	]
+#INSERT INTO "foreign" VALUES(3, 1, 2, 2);
+[ 1	]
+#INSERT INTO "foreign" VALUES(4, 2, 2, 1);
+[ 1	]
+#INSERT INTO "foreign" VALUES(5, 2, 1, 1);
+[ 1	]
+#INSERT INTO "foreign" VALUES(6, 1, 2, 1);
+[ 1	]
+#INSERT INTO "foreign" VALUES(7, 1, 1, 2);
+[ 1	]
+#SELECT * FROM allnewtriples;
+% sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples,	sys.allnewtriples # table_name
+% id,	subject,	predicate,	object,	explicit # name
+% int,	int,	int,	int,	boolean # type
+% 1,	1,	1,	1,	5 # length
+[ 1,	1,	1,	1,	false	]
+[ 2,	1,	1,	2,	false	]
+[ 3,	1,	2,	1,	false	]
+[ 4,	2,	1,	1,	false	]
+[ 5,	1,	2,	2,	false	]
+[ 6,	2,	2,	1,	false	]
+[ 7,	2,	2,	2,	false	]
+#SELECT * FROM "foreign";
+% sys.foreign,	sys.foreign,	sys.foreign,	sys.foreign # table_name
+% id,	subject,	predicate,	object # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+[ 1,	1,	1,	1	]
+[ 2,	2,	2,	2	]
+[ 3,	1,	2,	2	]
+[ 4,	2,	2,	1	]
+[ 5,	2,	1,	1	]
+[ 6,	1,	2,	1	]
+[ 7,	1,	1,	2	]
+#COMMIT;
+
+# 09:57:11 >  
+# 09:57:11 >  Mtimeout -timeout 60 msqldump -q --host=/var/tmp/mtest-13702 --port=39049 --database=mTests_sql_test_BugDay_2005-10-06_2.8
+# 09:57:11 >  
+
+START TRANSACTION;
+SET SCHEMA "bam";
+CREATE TABLE "bam"."files" (
+	"file_id"        BIGINT        NOT NULL,
+	"file_location"  CHARACTER LARGE OBJECT NOT NULL,
+	"dbschema"       SMALLINT      NOT NULL,
+	"format_version" VARCHAR(7),
+	"sorting_order"  VARCHAR(10),
+	"comments"       CHARACTER LARGE OBJECT,
+	CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id")
+);
+CREATE TABLE "bam"."sq" (
+	"sn"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"ln"      INTEGER,
+	"as"      INTEGER,
+	"m5"      CHARACTER LARGE OBJECT,
+	"sp"      CHARACTER LARGE OBJECT,
+	"ur"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id")
+);
+CREATE TABLE "bam"."rg" (
+	"id"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"cn"      CHARACTER LARGE OBJECT,
+	"ds"      CHARACTER LARGE OBJECT,
+	"dt"      TIMESTAMP,
+	"fo"      CHARACTER LARGE OBJECT,
+	"ks"      CHARACTER LARGE OBJECT,
+	"lb"      CHARACTER LARGE OBJECT,
+	"pg"      CHARACTER LARGE OBJECT,
+	"pi"      INTEGER,
+	"pl"      CHARACTER LARGE OBJECT,
+	"pu"      CHARACTER LARGE OBJECT,
+	"sm"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id")
+);
+CREATE TABLE "bam"."pg" (
+	"id"      CHARACTER LARGE OBJECT NOT NULL,
+	"file_id" BIGINT        NOT NULL,
+	"pn"      CHARACTER LARGE OBJECT,
+	"cl"      CHARACTER LARGE OBJECT,
+	"pp"      CHARACTER LARGE OBJECT,
+	"vn"      CHARACTER LARGE OBJECT,
+	CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id")
+);
+CREATE TABLE "bam"."export" (
+	"qname" CHARACTER LARGE OBJECT NOT NULL,
+	"flag"  SMALLINT      NOT NULL,
+	"rname" CHARACTER LARGE OBJECT NOT NULL,
+	"pos"   INTEGER       NOT NULL,
+	"mapq"  SMALLINT      NOT NULL,
+	"cigar" CHARACTER LARGE OBJECT NOT NULL,
+	"rnext" CHARACTER LARGE OBJECT NOT NULL,
+	"pnext" INTEGER       NOT NULL,
+	"tlen"  INTEGER       NOT NULL,
+	"seq"   CHARACTER LARGE OBJECT NOT NULL,
+	"qual"  CHARACTER LARGE OBJECT NOT NULL
+);
+SET SCHEMA "sys";
+CREATE TABLE "sys"."allnewtriples" (
+	"id"        INTEGER       NOT NULL,
+	"subject"   INTEGER       NOT NULL,
+	"predicate" INTEGER       NOT NULL,
+	"object"    INTEGER       NOT NULL,
+	"explicit"  BOOLEAN       NOT NULL,
+	CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
+	CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
+);
+CREATE INDEX "allnewtriples_object_idx" ON "sys"."allnewtriples" ("object");
+CREATE INDEX "allnewtriples_predicate_idx" ON "sys"."allnewtriples" ("predicate");
+CREATE INDEX "allnewtriples_subject_idx" ON "sys"."allnewtriples" ("subject");
+COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t','\n','"';
+1	1	1	1	false
+2	1	1	2	false
+3	1	2	1	false
+4	2	1	1	false
+5	1	2	2	false
+6	2	2	1	false
+7	2	2	2	false
+CREATE TABLE "sys"."foreign" (
+	"id"        INTEGER       NOT NULL,
+	"subject"   INTEGER       NOT NULL,
+	"predicate" INTEGER       NOT NULL,
+	"object"    INTEGER       NOT NULL
+);
+COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t','\n','"';
+1	1	1	1
+2	2	2	2
+3	1	2	2
+4	2	2	1
+5	2	1	1
+6	1	2	1
+7	1	1	2
+CREATE TABLE "sys"."triples" (
+	"id"        INTEGER       NOT NULL,
+	"subject"   INTEGER       NOT NULL,
+	"predicate" INTEGER       NOT NULL,
+	"object"    INTEGER       NOT NULL,
+	"explicit"  BOOLEAN       NOT NULL,
+	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
+);
+CREATE INDEX "triples_object_idx" ON "sys"."triples" ("object");
+CREATE INDEX "triples_predicate_idx" ON "sys"."triples" ("predicate");
+CREATE INDEX "triples_predicate_object_idx" ON "sys"."triples" ("predicate", "object");
+CREATE INDEX "triples_subject_idx" ON "sys"."triples" ("subject");
+CREATE INDEX "triples_subject_object_idx" ON "sys"."triples" ("subject", "object");
+CREATE INDEX "triples_subject_predicate_idx" ON "sys"."triples" ("subject", "predicate");
+ALTER TABLE "bam"."pg" ADD CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "bam"."rg" ADD CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "bam"."sq" ADD CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id");
+ALTER TABLE "sys"."foreign" ADD CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id");
+ALTER TABLE "sys"."foreign" ADD CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object");
+COMMIT;
+
+# 09:57:12 >  
+# 09:57:12 >  "Done."
+# 09:57:12 >  

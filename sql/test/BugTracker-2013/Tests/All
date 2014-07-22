@@ -34,7 +34,8 @@ update_on_declared_table.Bug-3318
 correlated_subquery.Bug-3317
 incorrect_subquery_delete.Bug-3315
 pivot.Bug-3339
-qualified_aggrname.Bug-3332
+!HAVE_SAMTOOLS?qualified_aggrname.Bug-3332
+HAVE_SAMTOOLS?qualified_aggrname.Bug-3332_bam
 cannot_use_columns_after_groupby.Bug-3340
 iso8601_weekofyear.Bug-3232
 sort_void_crash.Bug-3341

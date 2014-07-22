@@ -1,5 +1,7 @@
-drop_columns_cascade
+!HAVE_SAMTOOLS?drop_columns_cascade
+HAVE_SAMTOOLS?drop_columns_cascade_bam
 drop_function_cascade
-drop_pkey_cascade
+!HAVE_SAMTOOLS?drop_pkey_cascade
+HAVE_SAMTOOLS?drop_pkey_cascade_bam
 drop_table_cascade
 drop_view_cascade
