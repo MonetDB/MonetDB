@@ -45,7 +45,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -830,6 +830,19 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jul 22 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
+- Rebuilt.
+- BZ#3487: dead link to "Professional services"
+- BZ#3500: MonetDB driver wants an empty string for SQLTables and
+  SQLColumns API calls, where other drivers expect NULL
+- BZ#3514: mserver5 crash due (assertion failure in gdk_select.c)
+- BZ#3515: mserver5 crash due (assertion failure in gdk_bat.c)
+
+* Tue Jun  3 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
+- buildtools: Fix configure to continue without Python if the python binary is
+  too old.  This instead of always aborting configure if python happens
+  to be too old.
+
 * Wed May 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.17-20140514
 - Rebuilt.
 - BZ#3482: Crossproduct error
