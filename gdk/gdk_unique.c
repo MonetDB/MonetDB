@@ -97,9 +97,17 @@ BATsubunique(BAT *b, BAT *s)
 	}
 
 	if (cand && BATcount(b) > 16 * BATcount(s)) {
-		BAT *nb = BATproject(s, b); 
-		BAT *r = BATsubunique(nb, 0);
-		BAT *nr = BATproject(r, s);
+		BAT *nb, *r, *nr;
+
+		nb = BATproject(s, b);
+		if (nb == NULL)
+			return NULL;
+		r = BATsubunique(nb, NULL);
+		if (r == NULL) {
+			BBPunfix(nb->batCacheid);
+			return NULL;
+		}
+		nr = BATproject(r, s);
 		BBPunfix(nb->batCacheid);
 		BBPunfix(r->batCacheid);
 		return nr;

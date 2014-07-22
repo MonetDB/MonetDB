@@ -120,6 +120,8 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	wrd j, gcnt = BATcount(gids);
 	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
+	if (r == NULL)
+		return GDK_FAIL;
 	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
@@ -267,7 +269,7 @@ ALGminany(ptr result, int *bid)
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -279,6 +281,7 @@ ALGminany(ptr result, int *bid)
 			* (ptr *) result = p = BATmin(b, NULL);
 		} else {
 			p = BATmin(b, result);
+			assert(p == result);
 		}
 		if (p == NULL)
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
@@ -294,7 +297,7 @@ ALGmaxany(ptr result, int *bid)
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -306,6 +309,7 @@ ALGmaxany(ptr result, int *bid)
 			* (ptr *) result = p = BATmax(b, NULL);
 		} else {
 			p = BATmax(b, result);
+			assert(p == result);
 		}
 		if (p == NULL)
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
@@ -2350,7 +2354,7 @@ ALGmaterialize(int *ret, int *bid)
 	if( b->htype == TYPE_void){
 		bn= BATmaterialize(b);
 		if( bn == NULL)
-			throw(MAL, "batcalc.materialize", MAL_MALLOC_FAIL);
+			throw(MAL, "algebra.materialize", MAL_MALLOC_FAIL);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else
@@ -2367,8 +2371,16 @@ str ALGreuse(int *ret, int *bid)
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
+			if (bn == NULL) {
+				BBPreleaseref(b->batCacheid);
+				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+			}
 		} else {
 			bn = BATnew(b->htype,b->ttype,BATcount(b), TRANSIENT);
+			if (bn == NULL) {
+				BBPreleaseref(b->batCacheid);
+				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+			}
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
