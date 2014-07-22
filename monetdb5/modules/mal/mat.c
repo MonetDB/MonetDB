@@ -861,6 +861,8 @@ MATsortloop_rev( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte ma
 	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
+	if (res == NULL)
+		return NULL;
 	BATseqbase(res, 0);
 	if (map_i1 == NULL) {
 		/* map_i1 = 0 */
@@ -919,6 +921,8 @@ MATsortloop_( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i
 	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
+	if (res == NULL)
+		return NULL;
 	BATseqbase(res, 0);
 	if (map_i1 == NULL) {
 		/* map_i1 = 0 */
@@ -974,6 +978,8 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	bte *map_in = NULL;
 
 	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+	if (*map == NULL)
+		return NULL;
 	BATseqbase(*map, 0);
 	mapT = (bte*)Tloc(*map, 0);
 	/* merge */
@@ -995,6 +1001,8 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 		}
 		if (i != 1)
 			BBPunfix(in->batCacheid);
+		if (res == NULL)
+			return NULL;
 		in = res;
 		map_in = mapT+cnt-len1-len2;
 		len1 += len2;
@@ -1361,6 +1369,12 @@ MATsort_lng( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
 	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+	if (res == NULL || *map == NULL) {
+		BBPreclaim(res);
+		BBPreclaim(*map);
+		*map = NULL;
+		return NULL;
+	}
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (lng*)Tloc(res, 0);
@@ -1409,6 +1423,12 @@ MATsort_int( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
 	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+	if (res == NULL || *map == NULL) {
+		BBPreclaim(res);
+		BBPreclaim(*map);
+		*map = NULL;
+		return NULL;
+	}
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (int*)Tloc(res, 0);
@@ -1457,6 +1477,12 @@ MATsort_sht( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
 	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+	if (res == NULL || *map == NULL) {
+		BBPreclaim(res);
+		BBPreclaim(*map);
+		*map = NULL;
+		return NULL;
+	}
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (sht*)Tloc(res, 0);
@@ -1505,6 +1531,12 @@ MATsort_bte( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt, TRANSIENT);
 	*map = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+	if (res == NULL || *map == NULL) {
+		BBPreclaim(res);
+		BBPreclaim(*map);
+		*map = NULL;
+		return NULL;
+	}
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
 	resT = (bte*)Tloc(res, 0);

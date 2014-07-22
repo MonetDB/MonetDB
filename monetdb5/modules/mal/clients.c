@@ -187,10 +187,9 @@ CLTLogin(int *nme, int *ret)
 	int i;
 	char s[26];
 
-	if (b == 0)
-		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
-	if ( u==0){
-		BBPreleaseref(b->batCacheid);
+	if (b == 0 || u == 0) {
+		BBPreclaim(b);
+		BBPreclaim(u);
 		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -603,17 +602,11 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	user = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	BATseqbase(user,0);
 	login = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(login,0);
 	stimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(stimeout,0);
 	last = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(last,0);
 	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	BATseqbase(qtimeout,0);
 	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
-	BATseqbase(active,0);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
 		if ( user) BBPreleaseref(user->batCacheid);
 		if ( login) BBPreleaseref(login->batCacheid);
@@ -623,6 +616,12 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( active) BBPreleaseref(active->batCacheid);
 		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
 	}
+	BATseqbase(user,0);
+	BATseqbase(login,0);
+	BATseqbase(stimeout,0);
+	BATseqbase(last,0);
+	BATseqbase(qtimeout,0);
+	BATseqbase(active,0);
 	
     MT_lock_set(&mal_contextLock, "clients.sessions");
 	

@@ -2506,9 +2506,14 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 		rcount = MIN(rcount, BATcount(sr));
 	if (lcount == 0 || rcount == 0) {
 		r1 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (r1 == NULL || r2 == NULL) {
+			BBPreclaim(r1);
+			BBPreclaim(r2);
+			return GDK_FAIL;
+		}
 		BATseqbase(r1, 0);
 		BATseqbase(BATmirror(r1), 0);
-		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r2, 0);
 		BATseqbase(BATmirror(r2), 0);
 		*r1p = r1;
@@ -2641,9 +2646,14 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		rcount = MIN(rcount, BATcount(sr));
 	if (lcount == 0 || rcount == 0) {
 		r1 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (r1 == NULL || r2 == NULL) {
+			BBPreclaim(r1);
+			BBPreclaim(r2);
+			return GDK_FAIL;
+		}
 		BATseqbase(r1, 0);
 		BATseqbase(BATmirror(r1), 0);
-		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		BATseqbase(r2, 0);
 		BATseqbase(BATmirror(r2), 0);
 		*r1p = r1;

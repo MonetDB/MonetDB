@@ -317,10 +317,11 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
-	if (b == 0)
+	if (b == 0 || bn == 0) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
-	if (bn == 0)
-		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	pseudo(ret,b,"view","stk","frame");
@@ -336,10 +337,11 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	
-	if ( b== NULL)
+	if (b == 0 || bn == 0) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
-	if ( bn== NULL)
-		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 
@@ -368,8 +370,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if ( b== NULL)
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
 	bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	if ( bn== NULL)
+	if ( bn== NULL) {
+		BBPreclaim(b);
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	(void) cntxt;

@@ -178,9 +178,13 @@ str RMTconnectScen(
 				"is not supported", *scen);
 
 	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
-	if (mapi_error(m))
-		throw(MAL, "remote.connect", "unable to connect to '%s': %s",
-				*ouri, mapi_error_str(m));
+	if (mapi_error(m)) {
+		msg = createException(MAL, "remote.connect",
+							  "unable to connect to '%s': %s",
+							  *ouri, mapi_error_str(m));
+		mapi_destroy(m);
+		return msg;
+	}
 
 	MT_lock_set(&mal_remoteLock, "remote.connect");
 
@@ -196,10 +200,12 @@ str RMTconnectScen(
 	}
 
 	if (mapi_reconnect(m) != MOK) {
-		mapi_destroy(m);
 		MT_lock_unset(&mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", "unable to connect to '%s': %s",
-				*ouri, mapi_error_str(m));
+		msg = createException(IO, "remote.connect",
+							  "unable to connect to '%s': %s",
+							  *ouri, mapi_error_str(m));
+		mapi_destroy(m);
+		return msg;
 	}
 
 	/* connection established, add to list */
@@ -747,17 +753,20 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mapi_close_handle(mhdl);
 	} else {
 		str val = NULL;
+		char *tpe;
 		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
 		if (ATOMvarsized(type)) {
 			ATOMformat(type, *(str *)value, &val);
 		} else {
 			ATOMformat(type, value, &val);
 		}
+		tpe = getTypeIdentifier(type);
 		if (type <= TYPE_str)
-			snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, getTypeIdentifier(type));
+			snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, tpe);
 		else
-			snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, getTypeIdentifier(type));
+			snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, tpe);
 		qbuf[BUFSIZ] = '\0';
+		GDKfree(tpe);
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
 		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
