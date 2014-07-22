@@ -68,6 +68,11 @@ TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT
 sys	mTests_sql_jdbc_tests	mTests_sql_jdbc_tests	
 Resultset with 10 columns
 TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS	TYPE_CAT	TYPE_SCHEM	TYPE_NAME	SELF_REFERENCING_COL_NAME	REF_GENERATION	
+mTests_sql_jdbc_tests	bam	export	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	bam	files	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	bam	pg	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	bam	rg	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	bam	sq	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	_columns	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	args	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -122,12 +127,8 @@ as select "schema","table",max(count) as "count",
 from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	bam	export	TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	bam	files	TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	bam	pg	TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	bam	rg	TABLE	null	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	bam	sq	TABLE	null	null	null	null	rowid	SYSTEM	
 
-# 15:28:56 >  
-# 15:28:56 >  "Done."
-# 15:28:56 >  
+# 21:45:39 >  
+# 21:45:39 >  "Done."
+# 21:45:39 >  
+

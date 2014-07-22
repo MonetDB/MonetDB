@@ -1,6 +1,6 @@
-HAVE_GEOM&!HAVE_GSL?systemfunctions
-HAVE_GEOM&HAVE_GSL?systemfunctions_gsl
-!HAVE_GEOM&!HAVE_GSL?systemfunctions_nogeom
+HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions
+HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_gsl
+!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_nogeom
 example
 example-queries
 example-drop
