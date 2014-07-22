@@ -98,3 +98,8 @@ CREATE TABLE bam.export (
 	seq						   	STRING	  		NOT NULL, 
 	qual						STRING	  		NOT NULL  
 );
+
+update sys._tables
+    set system = true
+    where name in ('export', 'files', 'pg', 'rg', 'sq')
+        and schema_id = (select id from sys.schemas where name = 'bam');
