@@ -2648,7 +2648,7 @@ fprintf(stderr, "In wkbContains_firstScalar_bat\n");
 
 str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
-	wkb *aWKB = NULL, *bWKB = NULL, *aWKB_previous = NULL, *bWKB_previous = NULL;
+	wkb *aWKB = NULL, *bWKB = NULL; //, *aWKB_previous = NULL, *bWKB_previous = NULL;
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
@@ -2691,7 +2691,7 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if(aWKB_previous == NULL && bWKB_previous==NULL) {
+//		if(aWKB_previous == NULL && bWKB_previous==NULL) {
 			//create the minimum bounding boxes
 			if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
 				str msg;
@@ -2711,7 +2711,7 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 				GDKfree(aMBR);
 				return msg;
 			}
-		} else {
+/*		} else {
 			assert(aWKB_previous != NULL && bWKB_previous != NULL); //both of them shoudl be NULL ot !NULL
 			
 			//the common thing I expect to be comparing one geometry with a banch
@@ -2759,8 +2759,8 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 			GDKfree(bMBR);
 			return msg;
 		}
-		
-		if(outBIT) {
+*/		
+//		if(outBIT) {
 			if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
 				str msg;
 				BBPreleaseref(aBAT->batCacheid);
@@ -2770,12 +2770,12 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 				GDKfree(err);
 				return msg;
 			}
-		}
+//		}
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-		
-		//rememeber the previous geometries
-		aWKB_previous = aWKB;
-		bWKB_previous = bWKB;
+//		
+//		//rememeber the previous geometries
+//		aWKB_previous = aWKB;
+//		bWKB_previous = bWKB;
 	}
 
 	//set some properties of the new BAT
