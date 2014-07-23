@@ -1113,8 +1113,40 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 	}
 	fp = fopen(filename, "r");
 
+	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
+	catalog_bid = BBPindex(bak);
+
 	snprintf(bak, BUFSIZ, "%s_catalog", fn);
 	bid = BBPindex(bak);
+
+	if (catalog_bid && bid) {
+		/* new and old both exist, destroy old to avoid
+		 * confusion */
+		BAT *b;
+
+		if ((b = BATdescriptor(bid)) != NULL) {
+			BATmode(b, TRANSIENT);
+			BBPunfix(b->batCacheid);
+		}
+
+		snprintf(bak, BUFSIZ, "%s_snapshots", fn);
+		bid = BBPindex(bak);
+		if ((b = BATdescriptor(bid)) != NULL) {
+			BATmode(b, TRANSIENT);
+			BBPunfix(b->batCacheid);
+		}
+
+		snprintf(bak, BUFSIZ, "%s_seqs", fn);
+		bid = BBPindex(bak);
+		if ((b = BATdescriptor(bid)) != NULL) {
+			BATmode(b, TRANSIENT);
+			BBPunfix(b->batCacheid);
+		}
+
+		TMcommit();
+
+		bid = 0;
+	}
 
 	/* upgrade from old logger format; all errors are fatal since
 	 * this should only happen on startup */
