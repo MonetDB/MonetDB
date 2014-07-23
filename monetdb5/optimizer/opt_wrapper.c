@@ -138,8 +138,10 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			getArgType(mb,p,2) != TYPE_str ||
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
-		) 
+			) {
+			freeInstruction(q);
 			throw(MAL, optimizer, ILLARG_CONSTANTS);
+		}
 
 		if( stk != 0){
 			modnme= *(str*)getArgReference(stk,p,1);
@@ -152,6 +154,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
 
 		if( s == NULL) {
+			freeInstruction(q);
 			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		}
 		mb = s->def;

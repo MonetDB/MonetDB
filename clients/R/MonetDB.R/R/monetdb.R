@@ -149,7 +149,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F, quote=F) {
   q <- "select schemas.name as sn, tables.name as tn from tables join schemas on tables.schema_id=schemas.id"
-  if (!sys_tables) q <- paste0(q, " where system=false")
+  if (!sys_tables) q <- paste0(q, " where tables.system=false")
   df <- dbGetQuery(conn, q)
   if (quote) {
     df$tn <- paste0("\"", df$tn, "\"")
@@ -275,8 +275,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 
 
 # adapted from RMonetDB, very useful...
-setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, append=FALSE, insert=FALSE,
-                                                            ...) {
+setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
+  append=FALSE, csvdump=FALSE, ...) {
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value)
   if (length(value)<1) stop("value must have at least one column")
   if (is.null(names(value))) names(value) <- paste("V", 1:length(value), sep='')
@@ -291,8 +291,9 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   qname <- make.db.names(conn, name, allow.keywords=FALSE)
   if (dbExistsTable(conn, name)) {
     if (overwrite) dbRemoveTable(conn, name)
-    if (!overwrite && !append) stop("Table '", name, "' already exists. Set overwrite=TRUE if you want to remove 
-      the existing table. Set append=TRUE if you would like to add the new data to the existing table.")
+    if (!overwrite && !append) stop("Table '", name, "' already exists. Set overwrite=TRUE if you want 
+      to remove the existing table. Set append=TRUE if you would like to add the new data to the 
+      existing table.")
   }
   if (!dbExistsTable(conn, name)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
@@ -301,18 +302,24 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
     dbSendUpdate(conn, ct)
   }
   if (length(value[[1]])) {
-    if (insert) {
-       inss <- paste("INSERT INTO ", qname, " VALUES (", paste(rep("?", length(value)), collapse=', '), 
-                  ")", sep='')
-      dbTransaction(conn)
-      for (j in 1:length(value[[1]])) dbSendUpdate(conn, inss, list=as.list(value[j, ]))
-      dbCommit(conn)
-    } else {
+    if (csvdump) {
       tmp <- tempfile(fileext = ".csv")
       write.table(value, tmp, sep = ",", quote = TRUE,row.names = FALSE, col.names = FALSE,na="")
       dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
       " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS '' LOCKED"))
-      file.remove(tmp)
+      file.remove(tmp) 
+    } else {
+      vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
+      dbTransaction(conn)
+      # chunk some inserts together so we do not need to do a round trip for every one
+      splitlen <- 0:(nrow(value)-1) %/% getOption("monetdb.insert.splitsize", 1000)
+      lapply(split(value, splitlen), 
+        function(valueck) {
+        bvins <- c()
+        for (j in 1:length(valueck[[1]])) bvins <- c(bvins,.bindParameters(vins, as.list(valueck[j, ])))
+        dbSendUpdate(conn, paste0("INSERT INTO ", qname, " VALUES ",paste0(bvins, collapse=", ")))
+      })
+      dbCommit(conn)
     }
   }
   return(invisible(TRUE))
@@ -324,7 +331,6 @@ setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def =
   else if (is.integer(obj)) "INTEGER"
   else if (is.numeric(obj)) "DOUBLE PRECISION"
   else if (is.raw(obj)) "BLOB"
-  
   else "STRING"
 }, valueClass = "character")
 

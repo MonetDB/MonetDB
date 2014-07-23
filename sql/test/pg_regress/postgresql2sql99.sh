@@ -66,6 +66,7 @@ sed -r \
 	-e 's/COMMIT TRANSACTION;/COMMIT;/ig' \
 	-e 's/^COMMENT.*;$//ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/ig' \
+	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
