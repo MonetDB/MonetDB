@@ -1157,139 +1157,6 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 	GDKexit(1);
 }
 
-/* upgrade from old logger format; all errors are fatal since
- * this should only happen on startup */
-static void
-logger_upgrade_format(char *fn, logger *lg, bat *bid, char *bak) {
-	/* split catalog -> catalog_bid, catalog_nme */
-	BAT* b = BATdescriptor(*bid);
-	BAT* v;
-	if (b == 0) {
-		logger_fatal("logger_upgrade_format: inconsistent database, '%s' does not exist", bak, 0, 0);
-	}
-
-	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
-	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-
-	v = BATmark(b, 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->catalog_bid, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-	v = BATmark(BATmirror(b), 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->catalog_nme, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-
-	/* Make persistent */
-	*bid = lg->catalog_bid->batCacheid;
-	BBPincref(*bid, TRUE);
-	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
-	if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-
-	/* Make persistent */
-	*bid = lg->catalog_nme->batCacheid;
-	BBPincref(*bid, TRUE);
-	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-	if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-
-	logbat_destroy(b);
-
-	/* split snapshots -> snapshots_bid, snapshots_tid */
-	*bid = logger_find_bat(lg, "snapshots");
-	b = BATdescriptor(*bid);
-	if (b == 0)
-		logger_fatal("logger_upgrade_format: inconsistent database, '%s' snapshots does not exist", bak, 0, 0);
-
-	lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
-	if (lg->snapshots_bid == NULL)
-		logger_fatal("logger_upgrade_format: cannot create snapshot bat", 0, 0, 0);
-	v = BATmark(b, 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->snapshots_bid, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-	snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
-	if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-	logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
-
-	lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
-	if (lg->snapshots_tid == NULL)
-		logger_fatal("logger_upgrade_format: cannot create snapshot bat", 0, 0, 0);
-
-	v = BATmark(BATmirror(b), 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->snapshots_tid, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-	snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
-	if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-
-	logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid");
-
-	logbat_destroy(b);
-
-	/* split seqs -> seqs_id, seqs_val */
-	*bid = logger_find_bat(lg, "seqs");
-	b = BATdescriptor(*bid);
-	if (b == 0) {
-		logger_fatal("logger_upgrade_format: inconsistent database, '%s' seqs does not exist", bak, 0, 0);
-	}
-
-	lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
-	if (lg->seqs_id == NULL)
-		logger_fatal("logger_upgrade_format: cannot create sequences bat", 0, 0, 0);
-	v = BATmark(b, 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->seqs_id, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-	snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
-	if (BBPrename(lg->seqs_id->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-	logger_add_bat(lg, lg->seqs_id, "seqs_id");
-
-	lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
-	if (lg->seqs_val == NULL)
-		logger_fatal("logger_upgrade_format: cannot create sequences bat", 0, 0, 0);
-	v = BATmark(BATmirror(b), 0);
-	if (v == NULL)
-		logger_fatal("logger_upgrade_format: cannot create view on bat", 0, 0, 0);
-	if (BATappend(lg->seqs_val, BATmirror(v), FALSE) == NULL)
-		logger_fatal("logger_upgrade_format: BATappend failed", 0, 0, 0);
-	BBPunfix(v->batCacheid);
-	snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
-	if (BBPrename(lg->seqs_val->batCacheid, bak) < 0)
-		logger_fatal("logger_upgrade_format: BBPrename to %s failed", bak, 0, 0);
-	logger_add_bat(lg, lg->seqs_val, "seqs_val");
-
-	logbat_destroy(b);
-	if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, NULL, lg->debug) < 0)
-		logger_fatal("logger_upgrade_format: commit of logger conversion failed", 0, 0, 0);
-	logbat_destroy(lg->catalog_bid);
-	logbat_destroy(lg->catalog_nme);
-	logbat_destroy(lg->snapshots_bid);
-	logbat_destroy(lg->snapshots_tid);
-	logbat_destroy(lg->seqs_id);
-	logbat_destroy(lg->seqs_val);
-	lg->catalog_bid = NULL;
-	lg->catalog_nme = NULL;
-	lg->snapshots_bid = NULL;
-	lg->snapshots_tid = NULL;
-	lg->seqs_id = NULL;
-	lg->seqs_val = NULL;
-}
-
 static int
 logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *filename, char *bak) {
 	log_bid bid = 0;
@@ -1460,12 +1327,12 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 	snprintf(bak, BUFSIZ, "%s_catalog", fn);
 	bid = BBPindex(bak);
 
-	if (bid) {
-		logger_upgrade_format(fn, lg, &bid, bak);
-	}
-
 	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
 	catalog_bid = BBPindex(bak);
+
+	if (bid != 0 && catalog_bid == 0)
+		logger_fatal("Logger_new: ancient database, please upgrade "
+			     "first to Jan2014 (11.17.X) release", 0, 0, 0);
 
 	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
 	 * force it to find the persistent catalog */
