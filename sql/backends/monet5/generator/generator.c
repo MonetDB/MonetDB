@@ -180,7 +180,9 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TPE *v, f, l, s;					\
 		f = *(TPE*) getArgReference(stk, pci, 1);		\
 		l = *(TPE*) getArgReference(stk, pci, 2);		\
-		s = pci->argc == 3 ? 1 : *(TPE*) getArgReference(stk, pci, 3); \
+		if ( pci->argc == 3) \
+			s = f<l? (TPE) 1: (TPE)-1;\
+		else s =  *(TPE*) getArgReference(stk,pci, 3);\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
 			throw(MAL, "generator.table",			\
 			      "Illegal generator range");		\
@@ -245,6 +247,8 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				      "Illegal generator expression range");
 			f = *(timestamp *) getArgReference(stk, pci, 1);
 			l = *(timestamp *) getArgReference(stk, pci, 2);
+			if ( pci->argc == 3) 
+					throw(MAL,"generator.table","Timestamp step missing");
 			s = *(lng *) getArgReference(stk, pci, 3);
 			if (s == 0 ||
 			    (s > 0 && ret.val.btval > 0) ||
@@ -319,7 +323,9 @@ findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
 									\
 		f = * (TPE *) getArgReference(stk, p, 1);		\
 		l = * (TPE *) getArgReference(stk, p, 2);		\
-		s = p->argc == 3 ? 1 : * (TPE *) getArgReference(stk, p, 3); \
+		if ( p->argc == 3) \
+			s = f<l? (TPE) 1: (TPE)-1;\
+		else s = * (TPE *) getArgReference(stk, p, 3); \
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.subselect",		\
 			      "Illegal generator range");		\
@@ -436,6 +442,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			tsf = *(timestamp *) getArgReference(stk, p, 1);
 			tsl = *(timestamp *) getArgReference(stk, p, 2);
+			if ( p->argc == 3) 
+					throw(MAL,"generator.table","Timestamp step missing");
 			tss = *(lng *) getArgReference(stk, p, 3);
 			if ( tss == 0 || 
 				timestamp_isnil(tsf) || timestamp_isnil(tsl) ||
@@ -606,7 +614,9 @@ float nextafterf(float x, float y);
 	BUN j; oid *v;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
-	s = pci->argc == 3 ? 1:  *(TPE*) getArgReference(stk,p, 3);\
+	if ( p->argc == 3) \
+		s = f<l? (TPE) 1: (TPE)-1;\
+	else s =  *(TPE*) getArgReference(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
 	cap = (BUN)(ABS(l-f)/ABS(s));\
@@ -694,6 +704,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
+			if ( p->argc == 3) 
+					throw(MAL,"generator.table","Timestamp step missing");
 			s = *(lng*) getArgReference(stk,p, 3);
 			if ( s == 0 || 
 				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
@@ -766,7 +778,9 @@ wrapup:
 	TPE *v;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
-	s = *(TPE*) getArgReference(stk,p, 3);\
+	if ( p->argc == 3) \
+		s = f<l? (TPE) 1: (TPE)-1;\
+	else s = * (TPE *) getArgReference(stk, p, 3); \
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.leftfetchjoin","Illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
@@ -823,6 +837,8 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			timestamp *v;
 			f = *(timestamp*) getArgReference(stk,p, 1);
 			l = *(timestamp*) getArgReference(stk,p, 2);
+			if ( p->argc == 3) 
+					throw(MAL,"generator.table","Timestamp step missing");
 			s =  *(lng*) getArgReference(stk,p, 3);
 			if ( s == 0 ||
 				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
@@ -872,7 +888,9 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	{ TPE f,l,s; TPE *v; BUN w;\
 	f = *(TPE*) getArgReference(stk,p, 1);\
 	l = *(TPE*) getArgReference(stk,p, 2);\
-	s = *(TPE*) getArgReference(stk,p, 3);\
+	if ( p->argc == 3) \
+		s = f<l? (TPE) 1: (TPE)-1;\
+	else s = * (TPE *) getArgReference(stk, p, 3); \
 	incr = s > 0;\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\

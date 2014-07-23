@@ -52,6 +52,21 @@ Ready.
 # 18:09:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27022" "--port=30145"
 # 18:09:06 >  
 
+#select * from generate_series(0,10);
+% . # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
 #select * from generate_series(0,10,2);
 % . # table_name
 % value # name

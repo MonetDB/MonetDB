@@ -59,19 +59,3 @@ external name vault.generate_series;
 create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
 returns table (value timestamp)
 external name vault.generate_series;
-
--- create function sys.generate_series(first timestamp, last timestamp, stepsize interval minute)
--- returns table (value timestamp)
--- external name vault.generate_series;
--- 
--- create function sys.generate_series(first timestamp, last timestamp, stepsize interval hour)
--- returns table (value timestamp)
--- external name vault.generate_series;
--- 
--- create function sys.generate_series(first timestamp, last timestamp, stepsize interval day)
--- returns table (value timestamp)
--- external name vault.generate_series;
--- 
--- create function sys.generate_series(first timestamp, last timestamp, stepsize interval month)
--- returns table (value timestamp)
--- external name vault.generate_series;
