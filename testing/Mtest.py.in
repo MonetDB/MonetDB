@@ -3371,8 +3371,8 @@ def main(argv) :
     env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = "_configure('@QXSOURCE@')"
-    dft['TSTTRGBASE']     = "_configure('@QXprefix@')"   # or os.getcwd() ?
+    dft['TSTSRCBASE']     = r"_configure('@QXSOURCE@')"
+    dft['TSTTRGBASE']     = r"_configure('@QXprefix@')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
