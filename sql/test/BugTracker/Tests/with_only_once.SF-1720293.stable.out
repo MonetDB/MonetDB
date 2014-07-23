@@ -14,27 +14,63 @@ stdout of test 'with_only_once.SF-1720293` in directory 'sql/test/BugTracker` it
 # MonetDB/SQL module v2.25.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
+# 17:55:39 >  
+# 17:55:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30978" "--port=32166"
+# 17:55:39 >  
 
-# 22:41:45 >  
-# 22:41:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32869 
-# 22:41:45 >  
-
-#WITH t AS ( SELECT count(*) FROM tables ) SELECT * FROM t;
-% .t # table_name
+#create table withonlybug (id int);
+#insert into withonlybug values (42);
+[ 1	]
+#insert into withonlybug select * from withonlybug;
+[ 1	]
+#insert into withonlybug select * from withonlybug;
+[ 2	]
+#insert into withonlybug select * from withonlybug;
+[ 4	]
+#insert into withonlybug select * from withonlybug;
+[ 8	]
+#insert into withonlybug select * from withonlybug;
+[ 16	]
+#WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
+% sys.t # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 40	]
-#WITH t AS ( SELECT count(*) FROM tables ) SELECT * FROM t;
-% .t # table_name
+[ 32	]
+#WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
+% sys.t # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 40	]
+[ 32	]
+#drop table withonlybug;
 
 # 22:41:45 >  
 # 22:41:45 >  Done.
