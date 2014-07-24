@@ -651,7 +651,7 @@ CREATE FUNCTION fDistanceArcMinXYZ(nx1 float, ny1 float, nz1 float,
 RETURNS float
 BEGIN
     DECLARE d2r float; 
-    RETURN ( 2*DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
+    RETURN ( 2*SYS.DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
 END;
 
 CREATE FUNCTION fDistanceArcMinEq(ra1 float, dec1 float, 
@@ -667,7 +667,7 @@ BEGIN
 	SET ny2  = COS(dec2*d2r)*SIN(ra2*d2r);
 	SET nz2  = SIN(dec2*d2r);
 
-  RETURN ( 2*DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
+  RETURN ( 2*SYS.DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
 END;
 
 CREATE  FUNCTION fDMSbase(deg float, truncat int, precision int)
@@ -699,17 +699,17 @@ BEGIN
 		SET np = np + 1;
 	END WHILE;
 	SET d = ABS(deg);
-	-- degrees
+	-- sys.degrees
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(2)));
-	SET t  = MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
+	SET t  = SYS.MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
 	-- minutes
 	SET d  = 60.0 * (d-nd);
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(4)));
-	SET t  = MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
+	SET t  = SYS.MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
-	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
+	SET d  = SYS.MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
 	IF (precision = 1) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
@@ -717,7 +717,7 @@ BEGIN
 	IF (precision = 10) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
-	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
+	SET t = SYS.MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(s||t);
 END;
@@ -763,26 +763,26 @@ BEGIN
 		SET np = np + 1;
 	END WHILE;
 	SET d = ABS(deg/15.0);
-	-- degrees
+	-- sys.degrees
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(2)));
-	SET t  = MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
+	SET t  = SYS.MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
 	-- minutes
 	SET d  = 60.0 * (d-nd);
 	SET nd = FLOOR(d);
 	SET q  = LTRIM(CAST(nd as varchar(4)));
-	SET t  = MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
+	SET t  = SYS.MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
-	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
+	SET d  = SYS.MS_ROUND( 60.0 * (d-nd),precision,truncat );
 	IF (precision = 1) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
 	END IF;
 	IF (precision = 10) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
-	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
+	SET t = SYS.MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 --	SET d  = 60.0 * (d-nd);
---	SET t = MS_STUFF(t,13-LENGTH(q),LENGTH(q), q);
+--	SET t = SYS.MS_STUFF(t,13-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(t);
 END;
@@ -835,8 +835,8 @@ RETURNS TABLE (x float, y float, z float)
 BEGIN
     --
     DECLARE x float, y float, z float;
-    SET x = SIN(RADIANS(eta));
-    SET y = COS(RADIANS(eta));
+    SET x = SIN(SYS.RADIANS(eta));
+    SET y = COS(SYS.RADIANS(eta));
     SET z = 0.0;
     --
     RETURN TABLE(SELECT v2.x, v2.y, v2.z 
@@ -863,8 +863,8 @@ BEGIN
 	ELSE SET eta = (stripe-82)*2.5 -32.5;
     END CASE;
     --
-    SET x = SIN(RADIANS(eta));
-    SET y = COS(RADIANS(eta));
+    SET x = SIN(SYS.RADIANS(eta));
+    SET y = COS(SYS.RADIANS(eta));
     SET z = 0.0;
     --
     RETURN TABLE(SELECT v2.x, v2.y, v2.z 
@@ -875,7 +875,7 @@ CREATE FUNCTION fGetLat(mode varchar(8),cx float,cy float,cz float)
 RETURNS float
 BEGIN
     DECLARE lat float;
-    SELECT DEGREES(ASIN(v3.z)) INTO lat FROM fRotateV3(mode,cx,cy,cz) v3;
+    SELECT SYS.DEGREES(ASIN(v3.z)) INTO lat FROM fRotateV3(mode,cx,cy,cz) v3;
     RETURN lat;
 END;
 
@@ -883,7 +883,7 @@ CREATE FUNCTION fGetLon(mode varchar(8),cx float,cy float,cz float)
 RETURNS float
 BEGIN
     DECLARE lon float;
-    SELECT DEGREES(ATAN(v3.y,v3.x)) INTO lon FROM fRotateV3(mode,cx,cy,cz) v3;
+    SELECT SYS.DEGREES(ATAN(v3.y,v3.x)) INTO lon FROM fRotateV3(mode,cx,cy,cz) v3;
     IF lon<0 
 	THEN SET lon=lon+360;
     END IF;
@@ -896,7 +896,7 @@ BEGIN
     --
     DECLARE lon float, lat float;
     --
-    SELECT DEGREES(ATAN(v3.y,v3.x)), DEGREES(ASIN(v3.z)) INTO lon, lat
+    SELECT SYS.DEGREES(ATAN(v3.y,v3.x)), SYS.DEGREES(ASIN(v3.z)) INTO lon, lat
 	FROM fRotateV3(mode,cx,cy,cz) v3;
     --
     IF lon<0 
@@ -919,10 +919,10 @@ BEGIN
 	cx float, cy float, cz float,
 	gx float, gy float, gz float;
 	--
-    -- convert to radians
-    SET rmu = RADIANS(mu-node);
-    SET rnu = RADIANS(nu);
-    SET rin = RADIANS(incl);
+    -- convert to sys.radians
+    SET rmu = SYS.RADIANS(mu-node);
+    SET rnu = SYS.RADIANS(nu);
+    SET rin = SYS.RADIANS(incl);
     --
     SET gx = cos(rmu)*cos(rnu);
     SET gy = sin(rmu)*cos(rnu);
@@ -932,14 +932,14 @@ BEGIN
     SET cy = gy*cos(rin)-gz*sin(rin);
     SET cz = gy*sin(rin)+gz*cos(rin);
     --
-    SET deci = DEGREES(asin(cz));
-    SET ra  = DEGREES(ATAN(cy,cx)) + node;
+    SET deci = SYS.DEGREES(asin(cz));
+    SET ra  = SYS.DEGREES(ATAN(cy,cx)) + node;
     IF  ra<0 
 	THEN SET ra = ra+360 ;
     END IF;
     --
-    SET cx = cos(RADIANS(ra))*cos(RADIANS(deci));
-    SET cy = sin(RADIANS(ra))*cos(RADIANS(deci));
+    SET cx = cos(SYS.RADIANS(ra))*cos(SYS.RADIANS(deci));
+    SET cy = sin(SYS.RADIANS(ra))*cos(SYS.RADIANS(deci));
     --
     RETURN TABLE (SELECT ra, deci, cx, cy, cz);
 END;
@@ -964,15 +964,15 @@ BEGIN
 	mu float, nu float,
         stripeEta float;
     --
-    SET cx = cos(radians(deci))* cos(radians(ra-95.0));
-    SET cy = cos(radians(deci))* sin(radians(ra-95.0));
-    SET cz = sin(radians(deci));
+    SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
+    SET cy = cos(sys.radians(deci))* sin(sys.radians(ra-95.0));
+    SET cz = sin(sys.radians(deci));
     --
-    SET lambda = -degrees(asin(cx));
+    SET lambda = -sys.degrees(asin(cx));
     IF (cy = 0.0 and cz = 0.0)
         THEN SET cy = 1e-16;
     END IF;
-    SET eta    =  degrees(ATAN(cz,cy))-32.5;
+    SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
     IF lambda < -180.0 
@@ -1030,11 +1030,11 @@ BEGIN
     END IF;
     --
     SET qx = cx;
-    SET qy = cy*cos(radians(incl))+cz*sin(radians(incl));
-    SET qz =-cy*sin(radians(incl))+cz*cos(radians(incl));
+    SET qy = cy*cos(sys.radians(incl))+cz*sin(sys.radians(incl));
+    SET qz =-cy*sin(sys.radians(incl))+cz*cos(sys.radians(incl));
     --
-    SET mu = degrees(ATAN(qy,qx))+95.0;
-    SET nu = degrees(asin(qz));
+    SET mu = sys.degrees(ATAN(qy,qx))+95.0;
+    SET nu = sys.degrees(asin(qz));
     IF  stripe>50 
 	THEN SET mu = mu+360;
     END IF;
@@ -1053,11 +1053,11 @@ BEGIN
 	stripe int, incl float,
 	mu float;
     --
-    SET cx = cos(radians(deci))* cos(radians(ra-95.0));
-    SET cy = cos(radians(deci))* sin(radians(ra-95.0));
-    SET cz = sin(radians(deci));
+    SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
+    SET cy = cos(sys.radians(deci))* sin(sys.radians(ra-95.0));
+    SET cz = sin(sys.radians(deci));
     --
-    SET eta = degrees(ATAN(cz,cy));
+    SET eta = sys.degrees(ATAN(cz,cy));
     SET eta = eta -32.5;
     IF  eta<-180 
 	THEN SET eta = eta+360;
@@ -1070,10 +1070,10 @@ BEGIN
     END IF;
     --
     SET qx = cx;
-    SET qy = cy*cos(radians(incl))+cz*sin(radians(incl));
-    SET qz =-cy*sin(radians(incl))+cz*cos(radians(incl));
+    SET qy = cy*cos(sys.radians(incl))+cz*sin(sys.radians(incl));
+    SET qz =-cy*sin(sys.radians(incl))+cz*cos(sys.radians(incl));
     --
-    SET mu = degrees(ATAN(qy,qx))+95.0;
+    SET mu = sys.degrees(ATAN(qy,qx))+95.0;
     IF  stripe>50 
 	THEN SET mu = mu+360;
     END IF;
@@ -1091,10 +1091,10 @@ BEGIN
 	stripe int, incl float,
 	nu float;
     --
-    SET cy = cos(radians(deci))* sin(radians(ra-95.0));
-    SET cz = sin(radians(deci));
+    SET cy = cos(sys.radians(deci))* sin(sys.radians(ra-95.0));
+    SET cz = sin(sys.radians(deci));
     --
-    SET eta    =  degrees(ATAN(cz,cy));
+    SET eta    =  sys.degrees(ATAN(cz,cy));
     SET eta	= eta -32.5;
     IF  eta<-180 
 	THEN SET eta = eta+360;
@@ -1107,9 +1107,9 @@ BEGIN
 	THEN SET incl = (stripe-82)*2.5;
     END IF;
     --
-    SET qz =-cy*sin(radians(incl))+cz*cos(radians(incl));
+    SET qz =-cy*sin(sys.radians(incl))+cz*cos(sys.radians(incl));
     --
-    SET nu = degrees(asin(qz));
+    SET nu = sys.degrees(asin(qz));
     --
     RETURN nu;
 END;
@@ -1122,15 +1122,15 @@ BEGIN
 	lambda float, eta float, 
         stripeEta float;
     --
-    SET cx = cos(radians(deci))* cos(radians(ra-95.0));
-    SET cy = cos(radians(deci))* sin(radians(ra-95.0));
-    SET cz = sin(radians(deci));
+    SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
+    SET cy = cos(sys.radians(deci))* sin(sys.radians(ra-95.0));
+    SET cz = sin(sys.radians(deci));
     --
-    SET lambda = -degrees(asin(cx));
+    SET lambda = -sys.degrees(asin(cx));
     IF (cy = 0.0 and cz = 0.0)
         THEN SET cy = 1e-16;
     END IF;
-    SET eta    =  degrees(ATAN(cz,cy))-32.5;
+    SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
     IF lambda < -180.0 
@@ -1180,15 +1180,15 @@ BEGIN
 	lambda float, eta float, 
         stripeEta float;
     --
-    SET cx = cos(radians(deci))* cos(radians(ra-95.0));
-    SET cy = cos(radians(deci))* sin(radians(ra-95.0));
-    SET cz = sin(radians(deci));
+    SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
+    SET cy = cos(sys.radians(deci))* sin(sys.radians(ra-95.0));
+    SET cz = sin(sys.radians(deci));
     --
-    SET lambda = -degrees(asin(cx));
+    SET lambda = -sys.degrees(asin(cx));
     IF (cy = 0.0 and cz = 0.0)
         THEN SET cy = 1e-16;
     END IF;
-    SET eta    =  degrees(ATAN(cz,cy))-32.5;
+    SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
     IF lambda < -180.0 
@@ -1253,10 +1253,10 @@ BEGIN
 	qx float, qy float, qz float,
 	gx float, gy float, gz float;
 
-    -- convert to radians
-    SET rin  = RADIANS(incl);
-    SET rra  = RADIANS(ra-node);
-    SET rdec = RADIANS(deci);
+    -- convert to sys.radians
+    SET rin  = SYS.RADIANS(incl);
+    SET rra  = SYS.RADIANS(ra-node);
+    SET rdec = SYS.RADIANS(deci);
     --
     SET qx   = cos(rra)*cos(rdec);
     SET qy   = sin(rra)*cos(rdec);
@@ -1266,8 +1266,8 @@ BEGIN
     SET gy =  qy*cos(rin)+qz*sin(rin);
     SET gz = -qy*sin(rin)+qz*cos(rin);
     --
-    SET nu = DEGREES(ASIN(gz));
-    SET mu = DEGREES(ATAN(gy,gx)) + node;
+    SET nu = SYS.DEGREES(ASIN(gz));
+    SET mu = SYS.DEGREES(ATAN(gy,gx)) + node;
     IF  mu<0 
 	THEN SET mu = mu+360 ;
     END IF;
@@ -1505,9 +1505,9 @@ CREATE FUNCTION fHtmLookupEq(ra float, deci float)
 RETURNS bigint
 BEGIN
 	DECLARE x float, y float, z float; 
-	SET x  = COS(RADIANS(deci))*COS(RADIANS(ra));
-	SET y  = COS(RADIANS(deci))*SIN(RADIANS(ra));
-	SET z  = SIN(RADIANS(deci));
+	SET x  = COS(SYS.RADIANS(deci))*COS(SYS.RADIANS(ra));
+	SET y  = COS(SYS.RADIANS(deci))*SIN(SYS.RADIANS(ra));
+	SET z  = SIN(SYS.RADIANS(deci));
 	RETURN fHtmLookupXyz(x, y, z);
 END;
 
@@ -1858,7 +1858,7 @@ CREATE FUNCTION fRegionFuzz(d float, buffer float)
 RETURNS float
 BEGIN 
 	DECLARE fuzzR float;
-	SET fuzzR = RADIANS(buffer/60.00000000);
+	SET fuzzR = SYS.RADIANS(buffer/60.00000000);
 	-----------------------------------------
 	-- convert it to a normal form (blank separated trailing blank, upper case)
 	-----------------------------------------
@@ -1919,7 +1919,7 @@ END;
 --	    from RegionConvex 
 --	    where type in (select type from typesTable)
 --	      and dbo.fDistanceArcminXYZ(x,y,z,x,y,z) <radius+buffer
- --	      and 2*DEGREES(ASIN(sqrt(power(x-x,2)+power(y-y,2)+power(z-z,2))/2)) <(radius+buffer)/60
+ --	      and 2*SYS.DEGREES(ASIN(sqrt(power(x-x,2)+power(y-y,2)+power(z-z,2))/2)) <(radius+buffer)/60
 --	    ) o
 --	GROUP BY regionid;
 	----------------------------------------------------
@@ -1964,9 +1964,9 @@ BEGIN
 	-- transform to xyz coordinates
 	--------------------------------
 	DECLARE x float, y float, z float;
-	SET x  = COS(RADIANS(deci))*COS(RADIANS(ra));
-	SET y  = COS(RADIANS(deci))*SIN(RADIANS(ra));
-	SET z  = SIN(RADIANS(deci));
+	SET x  = COS(SYS.RADIANS(deci))*COS(SYS.RADIANS(ra));
+	SET y  = COS(SYS.RADIANS(deci))*SIN(SYS.RADIANS(ra));
+	SET z  = SIN(SYS.RADIANS(deci));
 	-- call the xyz function
 	Return TABLE(
 	    SELECT RegionID, type FROM fRegionsContainingPointXYZ(x,y,z,types,buffer) o);
@@ -2007,9 +2007,9 @@ RETURNS TABLE (
 BEGIN
 	--
 	DECLARE nx float,ny float,nz float; 
-	SET nx  = COS(RADIANS(deci))*COS(RADIANS(ra));
-	SET ny  = COS(RADIANS(deci))*SIN(RADIANS(ra));
-	SET nz  = SIN(RADIANS(deci));
+	SET nx  = COS(SYS.RADIANS(deci))*COS(SYS.RADIANS(ra));
+	SET ny  = COS(SYS.RADIANS(deci))*SIN(SYS.RADIANS(ra));
+	SET nz  = SIN(SYS.RADIANS(deci));
 	-------------------
 	-- get htm ranges
 	-------------------
@@ -2020,10 +2020,10 @@ BEGIN
 		SELECT htmidStart, htmidEnd
 		FROM fHtmCoverCircleXyz(nx,ny,nz,radius);
 	RETURN TABLE(SELECT  fieldID,a,b,c,d,e,f,node,incl, 
-           (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
+           (2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
 	    FROM cover H inner join Frame F ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
 	    WHERE zoom = zoo
-	    AND (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) < radius ORDER BY val ASC);
+	    AND (2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) < radius ORDER BY val ASC);
 END;
 
 CREATE FUNCTION fGetNearestFrameEq (ra float, deci float, zoom int)
@@ -2206,11 +2206,11 @@ BEGIN
 	    cy,
 	    cz,
 	    htmID,
- 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg 
+ 	    2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg 
 	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
 	    FROM fHtmCoverCircleXyz(nx,ny,nz,rr) H join PhotoObjAll P
 	             ON  (P.HtmID BETWEEN H.HtmIDstart AND H.HtmIDend )
-	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
+	    AND ( (2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
 	ORDER BY deg ASC);
  END;
 

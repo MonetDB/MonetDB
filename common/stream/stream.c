@@ -781,6 +781,26 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
+#ifdef WIN32
+		/* on Windows when in text mode, convert \r\n line
+		 * endings to \n */
+		if (s->type == ST_ASCII) {
+			char *p1, *p2, *pe;
+
+			p1 = buf;
+			pe = p1 + size;
+			while (p1 < pe && *p1 != '\r')
+				p1++;
+			p2 = p1;
+			while (p1 < pe) {
+				if (*p1 == '\r' && p1[1] == '\n')
+					size--;
+				else
+					*p2++ = *p1;
+				p1++;
+			}
+		}
+#endif
 		return (ssize_t) (size / elmsize);
 	}
 	return 0;
@@ -996,6 +1016,26 @@ stream_bzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
+#ifdef WIN32
+	/* on Windows when in text mode, convert \r\n line endings to
+	 * \n */
+	if (s->type == ST_ASCII) {
+		char *p1, *p2, *pe;
+
+		p1 = buf;
+		pe = p1 + size;
+		while (p1 < pe && *p1 != '\r')
+			p1++;
+		p2 = p1;
+		while (p1 < pe) {
+			if (*p1 == '\r' && p1[1] == '\n')
+				size--;
+			else
+				*p2++ = *p1;
+			p1++;
+		}
+	}
+#endif
 	return size / elmsize;
 }
 
