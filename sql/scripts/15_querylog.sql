@@ -69,11 +69,6 @@ select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 
-update sys._tables
-    set system = true
-    where name in ('querylog_history', 'querylog_calls', 'querylog_catalog')
-        and schema_id = (select id from sys.schemas where name = 'sys');
-
 -- reset history for a particular user
 create procedure sys.querylog_empty()
 external name sql.querylog_empty;
