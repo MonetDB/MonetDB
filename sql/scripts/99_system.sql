@@ -15,13 +15,13 @@
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
+-- only system functions until now
 create table systemfunctions (function_id)
 	as (select id from functions) with data;
 grant select on systemfunctions to public;
-update _tables
-	set system = true
-	where name = 'systemfunctions'
-		and schema_id = (select id from schemas where name = 'sys');
 
--- sofar only system schemas
+-- only system tables until now
+update _tables set system = true;
+
+-- only system schemas until now
 update schemas set system = true;

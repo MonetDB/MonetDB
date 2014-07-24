@@ -1,0 +1,124 @@
+stdout of test 'uppercaseboolean.Bug-3519` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 13:58:47 >  
+# 13:58:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36353" "--set" "mapi_usock=/var/tmp/mtest-15988/.s.monetdb.36353" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-default-install/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 13:58:47 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-apple-darwin13.3.0/64bit with 64bit OIDs dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-195.eduroam.cwi.nl:36353/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15988/.s.monetdb.36353
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 13:58:47 >  
+# 13:58:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15988" "--port=36353"
+# 13:58:47 >  
+
+#start transaction;
+#create table bug3519(a boolean);
+#insert into bug3519 values (true),(false),(TRUE),(FALSE);
+[ 4	]
+#insert into bug3519 values ('true'),('false');
+[ 2	]
+#insert into bug3519 values (1),(0),(NULL),('1'),('0');
+[ 5	]
+#COPY 5 RECORDS INTO bug3519 FROM stdin NULL as '';
+#true
+#false
+#1
+#0
+#
+[ 5	]
+#select * from bug3519;
+% sys.bug3519 # table_name
+% a # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ NULL	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ NULL	]
+#insert into bug3519 values ('TRUE'),('FALSE');
+[ 2	]
+#COPY 2 RECORDS INTO bug3519 FROM stdin;
+#TRUE
+#FALSE
+[ 2	]
+#select * from bug3519;
+% sys.bug3519 # table_name
+% a # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ NULL	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+[ NULL	]
+[ true	]
+[ false	]
+[ true	]
+[ false	]
+#rollback;
+
+# 13:58:47 >  
+# 13:58:47 >  "Done."
+# 13:58:47 >  
+
