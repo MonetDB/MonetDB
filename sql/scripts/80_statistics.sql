@@ -35,11 +35,6 @@ CREATE TABLE sys.statistics(
 	maxval string,
 	sorted boolean);
 
-update sys._tables
-	set system = true
-	where name = 'statistics'
-		and schema_id = (select id from sys.schemas where name = 'sys');
-
 create procedure analyze()
 external name sql.analyze;
 
