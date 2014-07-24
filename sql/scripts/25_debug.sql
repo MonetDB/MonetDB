@@ -45,11 +45,6 @@ create function sys.environment()
 	external name sql.sql_environment;
 create view sys.environment as select * from sys.environment();
 
-update sys._tables
-    set system = true
-    where name in ( 'environment', 'optimizers')
-        and schema_id = (select id from sys.schemas where name = 'sys');
-
 -- The BAT buffer pool overview
 create function sys.bbp () 
 	returns table (id int, name string, htype string, 
