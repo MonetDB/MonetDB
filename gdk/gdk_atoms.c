@@ -450,7 +450,13 @@ bitFromStr(const char *src, int *len, bit **dst)
 	} else if (p[0] == 't' && p[1] == 'r' && p[2] == 'u' && p[3] == 'e') {
 		**dst = TRUE;
 		p += 4;
+	} else if (p[0] == 'T' && p[1] == 'R' && p[2] == 'U' && p[3] == 'E') {
+		**dst = TRUE;
+		p += 4;
 	} else if (p[0] == 'f' && p[1] == 'a' && p[2] == 'l' && p[3] == 's' && p[4] == 'e') {
+		**dst = FALSE;
+		p += 5;
+	} else if (p[0] == 'F' && p[1] == 'A' && p[2] == 'L' && p[3] == 'S' && p[4] == 'E') {
 		**dst = FALSE;
 		p += 5;
 	} else if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
