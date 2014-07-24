@@ -21,7 +21,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
   list(name="MonetDBDriver", 
-       driver.version="0.9.4", 
+       driver.version="0.9.5", 
        DBI.version="0.2-7", 
        client.version=NA, 
        max.connections=NA)
@@ -135,7 +135,7 @@ setClass("MonetDBConnection", representation("DBIConnection", socket="externalpt
                                              connenv="environment", fetchSize="integer", Id="integer"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
-  envdata <- dbGetQuery(dbObj, "SELECT name, value from env()")
+  envdata <- dbGetQuery(dbObj, "SELECT name, value from sys.env()")
   ll <- as.list(envdata$value)
   names(ll) <- envdata$name
   ll$name <- "MonetDBConnection"
@@ -148,7 +148,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 })
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F, quote=F) {
-  q <- "select schemas.name as sn, tables.name as tn from tables join schemas on tables.schema_id=schemas.id"
+  q <- "select schemas.name as sn, tables.name as tn from tables join sys.schemas on tables.schema_id=schemas.id"
   if (!sys_tables) q <- paste0(q, " where tables.system=false")
   df <- dbGetQuery(conn, q)
   if (quote) {
@@ -185,7 +185,7 @@ setMethod("dbRollback", "MonetDBConnection", def=function(conn, ...) {
 setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  df <- dbGetQuery(conn, paste0("select columns.name as name from columns join tables on \
+  df <- dbGetQuery(conn, paste0("select columns.name as name from sys.columns join sys.tables on \
     columns.table_id=tables.id where tables.name='", name, "';"))	
   df$name
 })
