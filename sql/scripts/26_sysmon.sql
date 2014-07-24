@@ -32,10 +32,6 @@ returns table(
 external name sql.sysmon_queue;
 
 create view sys.queue as select * from sys.queue();
-update sys._tables
-    set system = true
-    where name = 'queue'
-        and schema_id = (select id from sys.schemas where name = 'sys');
 
 -- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag int)
