@@ -19,6 +19,8 @@
 
 # converts PostgreSQL specific SQL into SQL99 equivalent (if possible)
 
+# Note: when bug 3520 has been implemented, remove the substitution rule:  -e 's/LN(/LOG(/ig' \
+
 sed -r \
 	-e 's/\bAS true/AS "true"/ig' \
 	-e 's/\bAS false/AS "false"/ig' \
@@ -48,6 +50,7 @@ sed -r \
 	-e 's/\bfloat8\b/double/ig' \
 	-e 's/\bnumeric(210,10)\b/numeric(18,10)/ig' \
 	-e 's/\bfloat8 (*)/cast(\1 as double)/ig' \
+	-e 's/\bbytea\b/blob/ig' \
 	-e 's/\bpath\b/string/ig' \
 	-e 's/\bpoint\b/string/ig' \
 	-e 's/\bbox\b/string/ig' \
@@ -56,8 +59,17 @@ sed -r \
 	-e 's/\bname,/string,/ig' \
 	-e 's/\bname$/string/ig' \
 	-e 's/LOG(numeric '10',/LOG10(/ig' \
+	-e 's/LOG(/LOG10(/ig' \
 	-e 's/LN(/LOG(/ig' \
+	-e 's/substr(/substring(/ig' \
+	-e 's/strpos(*,*)/locate(\2,\1)/ig' \
+	-e 's/TRIM(BOTH FROM *)/TRIM(\1)/ig' \
+	-e 's/TRIM(LEADING FROM *)/LTRIM(\1)/ig' \
+	-e 's/TRIM(TRAILING FROM *)/RTRIM(\1)/ig' \
+	-e 's/TRIM(BOTH * FROM *)/TRIM(replace(\2,\1,' '))/ig' \
 	-e 's/\bnumeric '10'/cast('10.0' as numeric(2,0))/ig' \
+	-e 's/\btext 'text'/cast('text' as text)/ig' \
+	-e 's/\bchar(20) 'characters'/cast('characters' as char(20))/ig' \
 	-e 's/\b!= /<> /ig' \
 	-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/ig' \
 	-e 's/BEGIN TRANSACTION;/START TRANSACTION;/ig' \
@@ -67,6 +79,7 @@ sed -r \
 	-e 's/^COMMENT.*;$//ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/ig' \
 	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//ig' \
+	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
