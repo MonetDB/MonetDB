@@ -56,6 +56,9 @@ sed -r \
 	-e 's/\bbox\b/string/ig' \
 	-e 's/\bpolygon\b/string/ig' \
 	-e 's/\bcity_budget\b/decimal(7,2)/ig' \
+	-e 's/\bdate 'yesterday'/sql_sub(current_date, 24*60*60.0)/ig' \
+	-e 's/\bdate 'today'/current_date/ig' \
+	-e 's/\bdate 'tomorrow'/sql_add((current_date, 24*60*60.0)/ig' \
 	-e 's/\bname,/string,/ig' \
 	-e 's/\bname$/string/ig' \
 	-e 's/LOG(numeric '10',/LOG10(/ig' \
