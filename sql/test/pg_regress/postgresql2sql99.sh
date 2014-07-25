@@ -80,6 +80,8 @@ sed -r \
 	-e 's/\) (INHERITS.*);/\); -- \1/ig' \
 	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//ig' \
+	-e 's/SET geqo TO *;/\/* SET geqo TO \1; *\//ig' \
+	-e 's/RESET geqo;/\/* RESET geqo; *\//ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
