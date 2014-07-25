@@ -830,6 +830,11 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.21-20140725
+- Rebuilt.
+- BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean
+  values
+
 * Tue Jul 22 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
 - Rebuilt.
 - BZ#3487: dead link to "Professional services"
