@@ -1756,12 +1756,13 @@ stack_push_children(sql_stack *stk, stmt *s)
 	default:
 		if ((s->type == st_uselect2 || s->type == st_unique || s->type == st_group) && s->op4.stval)
 			stack_push_stmt(stk, s->op4.stval, 1);
-		if (s->op3)
-			stack_push_stmt(stk, s->op3, 1);
-		if (s->op3)
-			stack_push_stmt(stk, s->op3, 1);
-		if (s->op2)
+		if (s->op2) {
+			if (s->op3)
+				stack_push_stmt(stk, s->op3, 1);
+			if (s->op3)
+				stack_push_stmt(stk, s->op3, 1);
 			stack_push_stmt(stk, s->op2, 1);
+		}
 		if (s->op1)
 			stack_push_stmt(stk, s->op1, 1);
 	}
