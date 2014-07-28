@@ -1,3 +1,42 @@
+monetdb (11.17.21-20140725) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 15:09:55 +0200
+
+monetdb (11.17.21-20140725) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean
+    values
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 15:09:53 +0200
+
+monetdb (11.17.19-20140722) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 22 Jul 2014 11:42:09 +0200
+
+monetdb (11.17.19-20140722) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3487: dead link to "Professional services"
+  * BZ#3500: MonetDB driver wants an empty string for SQLTables and
+    SQLColumns API calls, where other drivers expect NULL
+  * BZ#3514: mserver5 crash due (assertion failure in gdk_select.c)
+  * BZ#3515: mserver5 crash due (assertion failure in gdk_bat.c)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 22 Jul 2014 11:42:07 +0200
+
+monetdb (11.17.19-20140722) unstable; urgency=low
+
+  * buildtools: Fix configure to continue without Python if the python binary is
+    too old.  This instead of always aborting configure if python happens
+    to be too old.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Jun 2014 11:42:07 +0200
+
 monetdb (11.17.17-20140514) unstable; urgency=low
 
   * Rebuilt.

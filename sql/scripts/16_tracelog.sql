@@ -34,7 +34,3 @@ create function sys.tracelog()
 	external name sql.dump_trace;
 
 create view sys.tracelog as select * from sys.tracelog();
-update sys._tables
-    set system = true
-    where name = 'tracelog'
-        and schema_id = (select id from sys.schemas where name = 'sys');

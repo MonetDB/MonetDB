@@ -56,8 +56,8 @@ end main;
 # int	bit	  # type
 #-----------------#
 [ 0@0,	  true	  ]
-[ 1@0,	  nil	  ]
-[ 2@0,	  nil	  ]
+[ 1@0,	true  ]
+[ 2@0,	false  ]
 [ 3@0,	  false	  ]
 [ 4@0,	  nil	  ]
 [ 5@0,	  nil	  ]

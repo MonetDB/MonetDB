@@ -24,8 +24,21 @@ Ready.
 # 16:03:46 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38533 
 # 16:03:46 >  
 
-#select RANK () OVER () as foo from tables;
-% .L # table_name
+#create table rankbug (id int);
+#insert into rankbug values (42);
+[ 1	]
+#insert into rankbug select * from rankbug;
+[ 1	]
+#insert into rankbug select * from rankbug;
+[ 2	]
+#insert into rankbug select * from rankbug;
+[ 4	]
+#insert into rankbug select * from rankbug;
+[ 8	]
+#insert into rankbug select * from rankbug;
+[ 16	]
+#select RANK () OVER () as foo from rankbug;
+% sys.L # table_name
 % foo # name
 % int # type
 % 2 # length
@@ -61,14 +74,7 @@ Ready.
 [ 30	]
 [ 31	]
 [ 32	]
-[ 33	]
-[ 34	]
-[ 35	]
-[ 36	]
-[ 37	]
-[ 38	]
-[ 39	]
-[ 40	]
+#drop table rankbug;
 
 # 17:29:50 >  
 # 17:29:50 >  "Done."

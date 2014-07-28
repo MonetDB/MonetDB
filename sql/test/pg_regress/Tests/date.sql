@@ -197,17 +197,27 @@ SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
 
 SELECT f1 - date 'epoch' AS "Days From Epoch" FROM DATE_TBL;
 
-SELECT date 'yesterday' - date 'today' AS "One day";
+SELECT current_date AS "today";
+SELECT sql_sub(current_date, 24*60*60.0) AS "yesterday";
+SELECT sql_add(current_date, 24*60*60.0) AS "tomorrow";
 
-SELECT date 'today' - date 'tomorrow' AS "One day";
+-- SELECT date 'yesterday' - date 'today' AS "One day";
+SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
 
-SELECT date 'yesterday' - date 'tomorrow' AS "Two days";
+-- SELECT date 'today' - date 'tomorrow' AS "One day";
+SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
 
-SELECT date 'tomorrow' - date 'today' AS "One day";
+-- SELECT date 'yesterday' - date 'tomorrow' AS "Two days";
+SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
 
-SELECT date 'today' - date 'yesterday' AS "One day";
+-- SELECT date 'tomorrow' - date 'today' AS "One day";
+SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
 
-SELECT date 'tomorrow' - date 'yesterday' AS "Two days";
+-- SELECT date 'today' - date 'yesterday' AS "One day";
+SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
+
+-- SELECT date 'tomorrow' - date 'yesterday' AS "Two days";
+SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
 
 --
 -- test extract!
@@ -269,3 +279,5 @@ SELECT DATE_TRUNC('CENTURY', DATE '0055-08-10 BC'); -- 0100-01-01 BC
 SELECT DATE_TRUNC('DECADE', DATE '1993-12-25'); -- 1990-01-01
 SELECT DATE_TRUNC('DECADE', DATE '0004-12-25'); -- 0001-01-01 BC
 SELECT DATE_TRUNC('DECADE', DATE '0002-12-31 BC'); -- 0011-01-01 BC
+
+DROP TABLE DATE_TBL;
