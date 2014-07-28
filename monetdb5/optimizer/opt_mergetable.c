@@ -709,18 +709,6 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		s = pushArgument(mb, s, getArg(r,0));
 		pushInstruction(mb, s);
 		r = s;
-
-/* DEAD CODE FOUND BY COVERITY
-		if (isAvg) {
-			s = newInstruction(mb,ASSIGNsymbol);
-			setModuleId(s, algebraRef);
-			setFunctionId(s, selectNotNilRef);
-			getArg(s,0) = newTmpVariable(mb, battp2);
-			s = pushArgument(mb, s, getArg(u,0));
-			pushInstruction(mb, s);
-			u = s;
-		}
-*/
 	}
 
 	/* for avg we do sum (avg*(count/sumcount) ) */
