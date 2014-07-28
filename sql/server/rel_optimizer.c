@@ -2897,7 +2897,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
 			} else {
-				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_copy(sql->sa, oa);
 			}
 			exp_setname(sql->sa, ne, exp_find_rel_name(oa), exp_name(oa));
 			append(exps, ne);
