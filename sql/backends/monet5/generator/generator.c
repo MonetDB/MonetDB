@@ -24,6 +24,7 @@
 
 #include "monetdb_config.h"
 #include "opt_prelude.h"
+#include "algebra.h"
 #include "generator.h"
 #include "mtime.h"
 #include "math.h"
@@ -56,13 +57,13 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (tpe == TYPE_timestamp){
 			s = *(timestamp*) getArgReference(stk,pci, 3);
 			if( timestamp_isnil(s)) nullerr++;
-		} else throw(MAL,"vault.generator","unknown data type %d", getArgType(mb,pci,1));
+		} else throw(MAL,"generator.noop","unknown data type %d", getArgType(mb,pci,1));
 	}
 	}
 	if( zeroerror)
-		throw(MAL,"vault.generator","zero step size not allowed");
+		throw(MAL,"generator.noop","zero step size not allowed");
 	if( nullerr)
-		throw(MAL,"vault.generator","null step size not allowed");
+		throw(MAL,"generator.noop","null step size not allowed");
 	return MAL_SUCCEED;
 }
 
@@ -202,20 +203,18 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*
  * Selection over the generator table does not require a materialization of the table
  * An optimizer can replace the subselect directly into a generator specific one.
- * The target to look for is vault.generator(A1,A2,A3)
+ * The target to look for is generator.series(A1,A2,A3)
  * We need the generator parameters, which are injected to replace the target column
  */
 static InstrPtr
-findLastAssign(MalBlkPtr mb, InstrPtr pci, int target)
+findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 {
 	InstrPtr q, p = NULL;
 	int i;
-	str vaultRef = putName("vault",5);
-	str generatorRef = putName("generator",9);
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target && (getModuleId(q) == vaultRef || getModuleId(q) == generatorRef))
+		if (q->argv[0] == target && getModuleId(q) == generatorRef && getFunctionId(q) == parametersRef)
 			p = q;
 		if (q == pci)
 			return p;
@@ -309,7 +308,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe;
 
 	(void) cntxt;
-	p = findLastAssign(mb, pci, pci->argv[1]);
+	p = findGeneratorDefinition(mb, pci, pci->argv[1]);
 	if (p == NULL)
 		throw(MAL, "generator.subselect",
 		      "Could not locate definition for object");
@@ -576,7 +575,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	str oper, msg= MAL_SUCCEED;
 
 	(void) cntxt;
-	p = findLastAssign(mb,pci,pci->argv[1]);
+	p = findGeneratorDefinition(mb,pci,pci->argv[1]);
 	if( p == NULL)
 		throw(MAL,"generator.thetasubselect","Could not locate definition for object");
 
@@ -706,7 +705,7 @@ wrapup:
 
 str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int bid =0, c= 0, tpe;
+	int bid =0, c= 0, tpe, *ret;
 	BAT *b, *bn = NULL;
 	BUN cnt;
 	oid *ol =0, o= 0;
@@ -714,14 +713,23 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	str msg;
 
 	(void) cntxt;
-	p = findLastAssign(mb,pci,pci->argv[2]);
-	// if it does not exist we should fall back to the ordinary join to try
-	if( p == NULL)
-		throw(MAL,"generator.leftfetchjoin","Could not locate definition for object");
+	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
 
+	ret = (int*) getArgReference(stk,pci,0);
 	b = BATdescriptor(bid = *(int*) getArgReference(stk,pci,1));
 	if( b == NULL)
 		throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+
+	// if it does not exist we should fall back to the ordinary leftfetchjoin to try
+	// it might have been materialized already
+	if( p == NULL){
+		bn = BATdescriptor( *(int*) getArgReference(stk,pci,2));
+		if( bn == NULL)
+			throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+		msg = ALGleftfetchjoin(ret, &b->batCacheid, &bn->batCacheid);
+		return msg;
+	}
+
 	cnt = BATcount(b);
 	if ( b->ttype == TYPE_void)
 		o = b->tseqbase;
@@ -821,13 +829,13 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
-	p = findLastAssign(mb,pci,pci->argv[2]);
+	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
 	if( p == NULL){
 		bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
 		if( bl == NULL)
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	}
-	q = findLastAssign(mb,pci,pci->argv[3]);
+	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 	if ( q == NULL){
 		br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
 		if( br == NULL){
