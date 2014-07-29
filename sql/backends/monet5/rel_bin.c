@@ -2516,7 +2516,9 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 
 		stmt *aggrstmt = NULL;
 
-		/* first look in the group by column list */
+		/* first look in the current aggr list (l) and group by column list */
+		if (l && !aggrstmt && aggrexp->type == e_column) 
+			aggrstmt = list_find_column(sql->sa, l, aggrexp->l, aggrexp->r);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(sql->sa, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby)

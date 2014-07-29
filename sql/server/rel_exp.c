@@ -995,6 +995,8 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 {
 	sql_exp *ne = NULL;
 
+	if (!rel)
+		return NULL;
 	switch(e->type) {
 	case e_column:
 		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
@@ -1033,7 +1035,8 @@ sql_exp *
 rel_find_exp( sql_rel *rel, sql_exp *e)
 {
 	sql_exp *ne = rel_find_exp_(rel, e);
-	if (!ne) {
+
+	if (rel && !ne) {
 		switch(rel->op) {
 		case op_left:
 		case op_right:
