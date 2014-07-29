@@ -29,113 +29,75 @@ stderr of test 'strings` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- STRINGS
-#-- Test various data entry syntaxes.
-#--
-#-- SQL92 string continuation syntax
-#-- E021-03 character string literals
-#-- illegal string continuation syntax
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT 'first line'
-' - next line' /* this comment is not allowed here */
-' - third line'
-	AS "Illegal comment within continuation";
-ERROR = syntax error at or near "' - third line'" at character 75
-#--
-#-- test conversions between various string types
-#-- E021-10 implicit casting among the character data types
-#--
-#-- since this is an explicit cast, it should truncate w/o error:
-#-- note: implicit-cast case is tested in char.sql
-#--
-#-- test SQL92 string functions
-#-- E### and T### are feature reference numbers from SQL99
-#--
-#-- E021-09 trim function
-#-- E021-06 substring expression
-#-- T581 regular expression substring (with SQL99's bizarre regexp syntax)
-#-- No match should return NULL
-#-- Null inputs should return NULL
-#-- PostgreSQL extension to allow omitting the escape character;
-#-- here the regexp is taken as Posix syntax
-#-- With a parenthesized subexpression, return only what matches the subexpr
-#-- E021-11 position expression
-#-- T312 character overlay function
-#--
-#-- test LIKE
-#-- Be sure to form every test as a LIKE/NOT LIKE pair.
-#--
-#-- simplest examples
-#-- E061-04 like predicate
-#-- unused escape character
-#-- escape character
-#-- E061-05 like predicate with escape clause
-#-- escape character same as pattern character
-#--
-#-- test ILIKE (case-insensitive LIKE)
-#-- Be sure to form every test as an ILIKE/NOT ILIKE pair.
-#--
-#--
-#-- test implicit type conversion
-#--
-#-- E021-07 character concatenation
-#--
-#-- test substr with toasted text values
-#--
-#--
-#-- Ensure that some values are uncompressed, to test the faster substring
-#-- operation used in that case
-#--
-#-- If the starting position is zero or less, then return from the start of the string
-#-- adjusting the length to be consistent with the "negative start" per SQL92.
-#-- If the length is less than zero, an ERROR is thrown.
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT substr(f1, 5, -1) from toasttest;
-ERROR = negative substring length not allowed
-#-- If no third argument (length) is provided, the length to the end of the
-#-- string is assumed.
-#-- If start plus length is > string length, the result is truncated to
-#-- string length
-#--
-#-- test substr with toasted bytea values
-#--
-#--
-#-- Ensure that some values are uncompressed, to test the faster substring
-#-- operation used in that case
-#--
-#-- If the starting position is zero or less, then return from the start of the string
-#-- adjusting the length to be consistent with the "negative start" per SQL92.
-#-- If the length is less than zero, an ERROR is thrown.
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT substr(f1, 5, -1) from toasttest;
-ERROR = negative substring length not allowed
-#-- If no third argument (length) is provided, the length to the end of the
-#-- string is assumed.
-#-- If start plus length is > string length, the result is truncated to
-#-- string length
-#--
-#-- test length
-#--
-#--
-#-- test strpos
-#--
-#--
-#-- test replace
-#--
-#--
-#-- test split_part
-#--
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM '#"(b_d)#"%' FOR '#') IS NULL AS "True";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5) AS "yabadaba";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
 QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
-ERROR = field position must be greater than zero
-#--
-#-- test to_hex
-#--
-#--
-#-- MD5 test suite - from IETF RFC 1321
-#-- (see: ftp://ftp.rfc-editor.org/in-notes/rfc1321.txt)
-#--
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select split_part('joeuser@mydatabase','@',1) AS "joeuser";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select split_part('joeuser@mydatabase','@',3) AS "empty string";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
+
+MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+QUERY = select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
+
+
+
+
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
