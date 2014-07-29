@@ -15,16 +15,65 @@ stdout of test 'simple_view` in directory 'sql/test/bugs` itself:
 # MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 99_system.sql
 
+# 22:53:24 >  
+# 22:53:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11507" "--port=31473"
+# 22:53:24 >  
 
-# 20:29:05 >  
-# 20:29:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33640 
-# 20:29:05 >  
-
-% .tt,	.tv,	.tv # table_name
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false	0
+#2007	"types"	2000	NULL	0	true	0	false	0
+#2016	"functions"	2000	NULL	0	true	0	false	0
+#2027	"args"	2000	NULL	0	true	0	false	0
+#2036	"sequences"	2000	NULL	0	true	0	false	0
+#2046	"dependencies"	2000	NULL	0	true	0	false	0
+#2050	"connections"	2000	NULL	0	true	0	false	0
+#2059	"_tables"	2000	NULL	0	true	0	false	0
+#2068	"_columns"	2000	NULL	0	true	0	false	0
+#2079	"keys"	2000	NULL	0	true	0	false	0
+#2086	"idxs"	2000	NULL	0	true	0	false	0
+[ 40	]
+#create view tv as select 'str' as S, 1 as I;
+#select tt.name, tv.* from tbls as tt, tv;
+% sys.tt,	.tv,	.tv # table_name
 % name,	s,	i # name
 % varchar,	char,	tinyint # type
 % 17,	3,	1 # length
@@ -68,12 +117,7 @@ Ready.
 [ "tablestoragemodel",	"str",	1	]
 [ "statistics",	"str",	1	]
 [ "systemfunctions",	"str",	1	]
-[ "test_update",	"str",	1	]
-[ "pwprijs",	"str",	1	]
-[ "foo1345861",	"str",	1	]
-[ "urlparts",	"str",	1	]
-[ "t",	"str",	1	]
-[ "tv",	"str",	1	]
+#drop table tbls;
 
 # 20:29:05 >  
 # 20:29:05 >  Done.

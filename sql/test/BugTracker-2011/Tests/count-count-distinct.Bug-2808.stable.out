@@ -18,26 +18,76 @@ stdout of test 'count-count-distinct.Bug-2808` in directory 'sql/test/BugTracker
 # MonetDB/SQL module loaded
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 99_system.sql
 
+# 22:29:39 >  
+# 22:29:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10252" "--port=34585"
+# 22:29:39 >  
 
-# 10:05:42 >  
-# 10:05:42 >  mclient -lsql -ftest -i -e --host=alf --port=30195 
-# 10:05:42 >  
-
-#select count(name) from tables;
-% .L1 # table_name
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false	0
+#2007	"types"	2000	NULL	0	true	0	false	0
+#2016	"functions"	2000	NULL	0	true	0	false	0
+#2027	"args"	2000	NULL	0	true	0	false	0
+#2036	"sequences"	2000	NULL	0	true	0	false	0
+#2046	"dependencies"	2000	NULL	0	true	0	false	0
+#2050	"connections"	2000	NULL	0	true	0	false	0
+#2059	"_tables"	2000	NULL	0	true	0	false	0
+#2068	"_columns"	2000	NULL	0	true	0	false	0
+#2079	"keys"	2000	NULL	0	true	0	false	0
+#2086	"idxs"	2000	NULL	0	true	0	false	0
+[ 40	]
+#select count(name) from tbls;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 40	]
-#select count(distinct name) from tables;
-% .L1 # table_name
+#select count(distinct name) from tbls;
+% sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 34	]
-#select count(name) , count(distinct name) from tables;
-% .L1,	.L2 # table_name
+#select count(name) , count(distinct name) from tbls;
+% sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
 % wrd,	wrd # type
 % 2,	2 # length
