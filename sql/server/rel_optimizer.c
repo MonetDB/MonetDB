@@ -2901,7 +2901,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
 			} else {
-				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_copy(sql->sa, oa);
 			}
 			exp_setname(sql->sa, ne, exp_find_rel_name(oa), exp_name(oa));
 			append(exps, ne);
@@ -3348,55 +3348,64 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  * ->
  * join( semijoin(A, C) [ A.z == C.c ], B ) [ A.x == B.y ]
  */
-#if 0
 static sql_rel *
 rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
 {
-	list *exps = NULL;
-
 	(void)*changes;
 	if (is_semi(rel->op) && rel->exps && rel->l) {
-		sql_rel *l = rel->l, *ol = l, *ll = NULL, *lr = NULL;
+		int op = rel->op;
+		node *n;
+		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
 		list *exps = rel->exps, *nsexps, *njexps;
+		int left = 1, right = 1;
 
 		/* handle project 
 		if (l->op == op_project && !need_distinct(l))
 			l = l->l;
 		*/
 
-		if (!is_join(l->op))
+		if (!is_join(l->op) || rel_is_ref(l))
 			return rel;
 
 		ll = l->l;
 		lr = l->r;
-		/* semijoin shouldn't be based on right relation of join */)
+		/* semijoin shouldn't be based on right relation of join */
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (is_complex_exp(e->flag) || 
-			    rel_has_exp(lr, sje->l) ||
-			    rel_has_exp(lr, sje->r))
-				return rel;
+			if (right &&
+				(is_complex_exp(sje->flag) || 
+			    	rel_has_exp(lr, sje->l) >= 0 ||
+			    	rel_has_exp(lr, sje->r) >= 0)) {
+				right = 0;
 			}
+			if (right)
+				left = 0;
+			if (!right && left &&
+				(is_complex_exp(sje->flag) || 
+			    	rel_has_exp(ll, sje->l) >= 0 ||
+			    	rel_has_exp(ll, sje->r) >= 0)) {
+				left = 0;
+			}
+			if (!right && !left)
+				return rel;
 		} 
-		nsexps = sa_list(sql->sa);
-		for(n = exps->h; n; n = n->next) {
-			sql_exp *sje = n->data;
-		} 
-		njexps = sa_list(sql->sa);
-		if (l->exps) {
-			for(n = l->exps->h; n; n = n->next) {
-				sql_exp *sje = n->data;
-			} 
-		}
-		l = rel_crossproduce(sql->sa, ll, r, op_semi);
+		nsexps = rel->exps;
+		njexps = l->exps;
+		if (right)
+			l = rel_crossproduct(sql->sa, ll, r, op);
+		else
+			l = rel_crossproduct(sql->sa, lr, r, op);
 		l->exps = nsexps;
-		rel = rel_inplace_join(rel, l, lr, op_join, njexps);
+		if (right)
+			rel = rel_crossproduct(sql->sa, l, lr, op_join);
+		else
+			rel = rel_crossproduct(sql->sa, l, ll, op_join);
+		rel->exps = njexps;
 	}
 	return rel;
 }
-#endif
 
 static int
 rel_is_join_on_pkey( sql_rel *rel ) 
@@ -5780,7 +5789,7 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *le = NULL, *oe = n->data;
 				sql_exp *re = NULL, *ne = m->data;
 				sql_column *cl;  
-				int anti = (rel->op == op_anti), equal = 0;
+				int equal = 0;
 				
 				if (oe->type != e_cmp || ne->type != e_cmp ||
 				    oe->flag != cmp_equal || 
@@ -5800,14 +5809,14 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
 					equal = exp_match_exp(ne->r, e);
-					if (anti && !equal)
+					if (!equal)
 						return rel;
 					re = ne->r;
 				} else if (exp_find_column(rl, ne->r, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
 					equal = exp_match_exp(ne->l, e);
-					if (anti && !equal)
+					if (!equal)
 						return rel;
 					re = ne->l;
 				} else
@@ -5815,13 +5824,6 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 
 				ne = exp_compare(sql->sa, le, re, cmp_equal);
 				append(exps, ne);
-				if (!equal) {
-					re = (le==oe->r)?oe->l:oe->r;
-					re = (or != r)?rel_find_exp(or, re):re;
-					assert(0);
-					oe = exp_compare(sql->sa, le, re, cmp_equal);
-					append(exps, oe);
-				}
 			}
 
 			rel->r = rel_dup(r->r);
@@ -6813,7 +6815,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
 		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
 		/* push semijoin through join */
-		//rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
+		rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 		rel = rewrite(sql, rel, &rel_rewrite_antijoin, &changes);
 		if (level <= 0)
