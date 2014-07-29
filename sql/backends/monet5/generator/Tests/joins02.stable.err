@@ -29,15 +29,6 @@ stderr of test 'joins02` in directory 'sql/backends/monet5/generator` itself:
 # 14:13:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23026" "--port=39679"
 # 14:13:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23026/.s.monetdb.39679
-QUERY = select * from generate_series(0,10,2) X, generate_series(0,4,2) Y where X.value = Y.value;
-ERROR = !Join over generator pairs not supported
-MAPI  = (monetdb) /var/tmp/mtest-23026/.s.monetdb.39679
-QUERY = select * from generate_series(0,4,2) X, generate_series(0,10,2) Y where X.value = Y.value;
-ERROR = !Join over generator pairs not supported
-MAPI  = (monetdb) /var/tmp/mtest-23026/.s.monetdb.39679
-QUERY = select * from generate_series(0,10,3) X, generate_series(0,4,2) Y where X.value = Y.value;
-ERROR = !Join over generator pairs not supported
 
 # 14:13:32 >  
 # 14:13:32 >  "Done."

@@ -24,6 +24,26 @@ Ready.
 # 14:13:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23026" "--port=39679"
 # 14:13:31 >  
 
+#select * from generate_series(0,10,2) X, generate_series(0,4,2) Y where X.value = Y.value;
+% .x,	.y # table_name
+% value,	value # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 0,	0	]
+[ 2,	2	]
+#select * from generate_series(0,4,2) X, generate_series(0,10,2) Y where X.value = Y.value;
+% .x,	.y # table_name
+% value,	value # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 0,	0	]
+[ 2,	2	]
+#select * from generate_series(0,10,3) X, generate_series(0,4,2) Y where X.value = Y.value;
+% .x,	.y # table_name
+% value,	value # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 0,	0	]
 
 # 14:13:32 >  
 # 14:13:32 >  "Done."
