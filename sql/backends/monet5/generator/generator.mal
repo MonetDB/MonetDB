@@ -77,9 +77,27 @@ address VLTgenerator_noop;
 pattern parameters(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
 address VLTgenerator_noop;
 
-pattern parameters(first:timestamp,last:timestamp,step:int):bat[:oid,:timestamp]
+pattern parameters(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
 address VLTgenerator_noop
 comment "Retain the table definition, but don't materialize";
+
+pattern parameters(first:bte,last:bte):bat[:oid,:bte]
+address VLTgenerator_noop;
+
+pattern parameters(first:sht,last:sht):bat[:oid,:sht]
+address VLTgenerator_noop;
+
+pattern parameters(first:int,last:int):bat[:oid,:int]
+address VLTgenerator_noop;
+
+pattern parameters(first:lng,last:lng):bat[:oid,:lng]
+address VLTgenerator_noop;
+
+pattern parameters(first:flt,last:flt):bat[:oid,:flt]
+address VLTgenerator_noop;
+
+pattern parameters(first:dbl,last:dbl):bat[:oid,:dbl]
+address VLTgenerator_noop;
 
 pattern thetasubselect(b:bat[:oid,:bte], low:bte, oper:str) :bat[:oid,:oid]
 address VLTgenerator_thetasubselect;

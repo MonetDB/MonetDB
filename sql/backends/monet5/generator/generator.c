@@ -29,112 +29,6 @@
 #include "math.h"
 
 
-static int
-assignedOnce(MalBlkPtr mb, int varid)
-{
-	InstrPtr p;
-	int i,j, c=0;
-
-	for(i = 1; i< mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		for( j = 0; j < p->retc; j++)
-		if( getArg(p,j) == varid){
-			c++;
-			break;
-		}
-	}
-	return c == 1;
-}
-static int
-useCount(MalBlkPtr mb, int varid)
-{
-	InstrPtr p;
-	int i,j, d,c=0;
-
-	for(i = 1; i< mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		d= 0;
-		for( j = p->retc; j < p->argc; j++)
-		if( getArg(p,j) == varid)
-			d++;
-		c += d > 0;
-	}
-	return c;
-}
-
-static int
-VLTgenerator_optimizer(Client cntxt, MalBlkPtr mb)
-{
-	InstrPtr p,q;
-	int i,j,k, used= 0, cases, blocked;
-	str vaultRef = putName("vault",5);
-	str generateRef = putName("generate_series",15);
-	str generatorRef = putName("generator",9);
-	str noopRef = putName("noop",4);
-
-	for( i=1; i < mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		if ( getModuleId(p) == vaultRef && getFunctionId(p) == generateRef){
-			/* found a target for propagation */
-			if ( assignedOnce(mb, getArg(p,0)) ){
-				cases = useCount(mb, getArg(p,0));
-				blocked = 0;
-				for( j = i+1; j< mb->stop && blocked == 0; j++){
-					q = getInstrPtr(mb,j);
-					if ( getModuleId(q) == algebraRef && getFunctionId(q) == subselectRef && getArg(q,1) == getArg(p,0)){
-						setModuleId(q, generatorRef);
-						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						used++;
-					} else
-					if ( getModuleId(q) == algebraRef && getFunctionId(q) == thetasubselectRef && getArg(q,1) == getArg(p,0)){
-						setModuleId(q, generatorRef);
-						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						used++;
-					} else
-					if ( getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef && getArg(q,2) == getArg(p,0)){
-						// projection over a series
-						setModuleId(q, generatorRef);
-						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						used++;
-					} else
-					if ( getModuleId(q) == algebraRef && getFunctionId(q) == joinRef && (getArg(q,2) == getArg(p,0) || getArg(q,3) == getArg(p,0))){
-						// projection over a series
-						setModuleId(q, generatorRef);
-						typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						if(q->typechk == TYPE_UNKNOWN){
-							setModuleId(q, algebraRef);
-							typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);
-						} else
-							used++;
-					} else
-					if ( getModuleId(q) == languageRef && getFunctionId(q) == passRef && getArg(q,1) == getArg(p,0))
-						// nothing happens in this instruction
-						used++;
-					else {
-						// check for use without conversion
-						for(k = q->retc; k < q->argc; k++)
-						if( getArg(q,k) == getArg(p,0))
-							blocked++;
-					}
-				}
-				// fix the original, only when all use cases are replaced by the overloaded function
-				if(used == cases && blocked == 0){
-					setModuleId(p, generatorRef);
-					setFunctionId(p, noopRef);
-					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
-				} else used = 0;
-#ifdef VLT_DEBUG
-				mnstr_printf(cntxt->fdout,"#generator target %d cases %d used %d error %d\n",getArg(p,0), cases, used, p->typechk);
-#endif
-			}
-		}
-	}
-#ifdef VLT_DEBUG
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
-	return used== 0;
-}
-
 /*
  * The noop simply means that we keep the properties for the generator object.
  */
@@ -199,8 +93,8 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn->trevsorted = s < 0 || n <= 1;			\
 	} while (0)
 
-str
-VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BUN c, n;
 	BAT *bn;
@@ -208,11 +102,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe;
 	(void) cntxt;
 
-	if ((msg = VLTgenerator_noop(cntxt, mb, stk, pci)) != MAL_SUCCEED)
-		return msg;
-	if (VLTgenerator_optimizer(cntxt, mb) == 0)
-		return MAL_SUCCEED;
-
+	*result = NULL;
 	tpe = getArgType(mb, pci, 1);
 	switch (tpe) {
 	case TYPE_bte:
@@ -288,9 +178,25 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	*(bat*) getArgReference(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	*result = bn;
 	return MAL_SUCCEED;
+}
+
+str
+VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	BAT *bn = NULL;
+
+	if ((msg = VLTgenerator_noop(cntxt, mb, stk, pci)) != MAL_SUCCEED)
+		return msg;
+
+	msg =  VLTgenerator_table_(&bn, cntxt, mb, stk, pci);
+	if( msg == MAL_SUCCEED){
+		*(bat*) getArgReference(stk, pci, 0) = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
+	}
+	return msg;
 }
 
 /*
@@ -932,8 +838,13 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first
 	// or implement more knowledge, postponed
-	if (p && q )
+	if (p && q ){
+		msg =  VLTgenerator_table_(&bl, cntxt, mb, stk, p);
+		if( msg || bl == NULL )
 			throw(MAL,"generator.join","Join over generator pairs not supported");
+		else
+			p = NULL;
+	}
 
 	// switch roles to have a single target bat[:oid,:any] designated 
 	// by b and reference instruction p for the generator

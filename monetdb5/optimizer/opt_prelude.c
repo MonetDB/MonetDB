@@ -96,6 +96,7 @@ str exportOperationRef;
 str finishRef;
 str firstnRef;
 str getRef;
+str generatorRef;
 str grabRef;
 str groupRef;
 str subgroupRef;
@@ -358,6 +359,7 @@ void optimizerInit(void)
 	finishRef = putName("finish",6);
 	firstnRef = putName("firstn",6);
 	getRef = putName("get",3);
+	generatorRef = putName("generator",9);
 	grabRef = putName("grab",4);
 	groupRef = putName("group",5);
 	subgroupRef = putName("subgroup",8);

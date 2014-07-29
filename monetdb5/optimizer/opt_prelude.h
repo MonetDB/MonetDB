@@ -94,6 +94,7 @@ opt_export	str exportOperationRef;
 opt_export  str finishRef;
 opt_export  str firstnRef;
 opt_export  str getRef;
+opt_export  str generatorRef;
 opt_export  str grabRef;
 opt_export  str groupRef;
 opt_export  str subgroupRef;
