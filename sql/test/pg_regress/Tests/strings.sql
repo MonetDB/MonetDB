@@ -21,11 +21,31 @@ SELECT 'first line'
 -- E021-10 implicit casting among the character data types
 --
 
+CREATE TABLE CHAR_TBL(f1 char);
+INSERT INTO CHAR_TBL (f1) VALUES ('a');
+INSERT INTO CHAR_TBL (f1) VALUES ('A');
+INSERT INTO CHAR_TBL (f1) VALUES ('1');
+INSERT INTO CHAR_TBL (f1) VALUES (2);
+INSERT INTO CHAR_TBL (f1) VALUES ('3');
+INSERT INTO CHAR_TBL (f1) VALUES ('');
+
 SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+
+CREATE TABLE VARCHAR_TBL(f1 varchar(1));
+INSERT INTO VARCHAR_TBL (f1) VALUES ('a');
+INSERT INTO VARCHAR_TBL (f1) VALUES ('A');
+INSERT INTO VARCHAR_TBL (f1) VALUES ('1');
+INSERT INTO VARCHAR_TBL (f1) VALUES (2);
+INSERT INTO VARCHAR_TBL (f1) VALUES ('3');
+INSERT INTO VARCHAR_TBL (f1) VALUES ('');
 
 SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
 
-SELECT CAST(name 'namefield' AS text) AS "text(name)";
+SELECT CAST('namefield' AS text) AS "text(name)";
+
+CREATE TABLE TEXT_TBL (f1 text);
+INSERT INTO TEXT_TBL VALUES ('doh!');
+INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
 
 -- since this is an explicit cast, it should truncate w/o error:
 SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
@@ -35,13 +55,17 @@ SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
 
 SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
 
-SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
+SELECT CAST('namefield' AS char(10)) AS "char(name)";
 
-SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
+SELECT CAST(f1 AS varchar(1)) AS "varchar(text)" FROM TEXT_TBL;
 
-SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
+SELECT CAST(f1 AS varchar(1)) AS "varchar(char)" FROM CHAR_TBL;
 
-SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
+SELECT CAST('namefield' AS string) AS "varchar(name)";
+
+DROP TABLE CHAR_TBL;
+DROP TABLE VARCHAR_TBL;
+DROP TABLE TEXT_TBL;
 
 --
 -- test SQL92 string functions
@@ -49,13 +73,17 @@ SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
 --
 
 -- E021-09 trim function
-SELECT TRIM(BOTH FROM '  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
+--SELECT TRIM(BOTH FROM '  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
+SELECT TRIM('  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
 
-SELECT TRIM(LEADING FROM '  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
+--SELECT TRIM(LEADING FROM '  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
+SELECT LTRIM('  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
 
-SELECT TRIM(TRAILING FROM '  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
+--SELECT TRIM(TRAILING FROM '  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
+SELECT RTRIM('  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
 
-SELECT TRIM(BOTH 'x' FROM 'xxxxxsome Xsxxxxx') = 'some Xs' AS "some Xs";
+--SELECT TRIM(BOTH 'x' FROM 'xxxxxsome Xsxxxxx') = 'some Xs' AS "some Xs";
+SELECT TRIM(replace('xxxxxsome Xsxxxxx', 'x', ' ')) = 'some Xs' AS "some Xs";
 
 -- E021-06 substring expression
 SELECT SUBSTRING('1234567890' FROM 3) = '34567890' AS "34567890";
@@ -197,13 +225,13 @@ SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false";
 -- E021-07 character concatenation
 SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
 
-SELECT text 'text' || ' and unknown' AS "Concat text to unknown type";
+SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
 
-SELECT char(20) 'characters' || ' and text' AS "Concat char to unknown type";
+SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
 
-SELECT text 'text' || char(20) ' and characters' AS "Concat text to char";
+SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
 
-SELECT text 'text' || varchar ' and varchar' AS "Concat text to varchar";
+SELECT cast('text' as text) || cast(' and varchar' as varchar(20)) AS "Concat text to varchar";
 
 --
 -- test substr with toasted text values
@@ -217,57 +245,59 @@ insert into toasttest values(repeat('1234567890',10000));
 -- Ensure that some values are uncompressed, to test the faster substring
 -- operation used in that case
 --
-alter table toasttest alter column f1 set storage external;
+/* alter table toasttest alter column f1 set storage external; */
 insert into toasttest values(repeat('1234567890',10000));
 insert into toasttest values(repeat('1234567890',10000));
 
 -- If the starting position is zero or less, then return from the start of the string
 -- adjusting the length to be consistent with the "negative start" per SQL92.
-SELECT substr(f1, -1, 5) from toasttest;
+SELECT substring(f1, -1, 5) from toasttest;
 
 -- If the length is less than zero, an ERROR is thrown.
-SELECT substr(f1, 5, -1) from toasttest;
+SELECT substring(f1, 5, -1) from toasttest;
 
 -- If no third argument (length) is provided, the length to the end of the
 -- string is assumed.
-SELECT substr(f1, 99995) from toasttest;
+SELECT substring(f1, 99995) from toasttest;
 
 -- If start plus length is > string length, the result is truncated to
 -- string length
-SELECT substr(f1, 99995, 10) from toasttest;
+SELECT substring(f1, 99995, 10) from toasttest;
 
 DROP TABLE toasttest;
 
 --
 -- test substr with toasted bytea values
 --
-CREATE TABLE toasttest(f1 bytea);
+CREATE TABLE toasttest(f1 blob);
 
 insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+insert into toasttest values(repeat('1234567890',10000));
+insert into toasttest values(repeat('1234567890',10000));
 
 --
 -- Ensure that some values are uncompressed, to test the faster substring
 -- operation used in that case
 --
-alter table toasttest alter column f1 set storage external;
+/* alter table toasttest alter column f1 set storage external; */
 insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 
 -- If the starting position is zero or less, then return from the start of the string
 -- adjusting the length to be consistent with the "negative start" per SQL92.
-SELECT substr(f1, -1, 5) from toasttest;
+SELECT substring(f1, -1, 5) from toasttest;
 
 -- If the length is less than zero, an ERROR is thrown.
-SELECT substr(f1, 5, -1) from toasttest;
+SELECT substring(f1, 5, -1) from toasttest;
 
 -- If no third argument (length) is provided, the length to the end of the
 -- string is assumed.
-SELECT substr(f1, 99995) from toasttest;
+SELECT substring(f1, 99995) from toasttest;
 
 -- If start plus length is > string length, the result is truncated to
 -- string length
-SELECT substr(f1, 99995, 10) from toasttest;
+SELECT substring(f1, 99995, 10) from toasttest;
 
 DROP TABLE toasttest;
 
@@ -278,12 +308,12 @@ DROP TABLE toasttest;
 SELECT length('abcdef') AS "length_6";
 
 --
--- test strpos
+-- test strpos(a1,a2)  (Note: this is converted to locate(a2,a1))
 --
 
-SELECT strpos('abcdef', 'cd') AS "pos_3";
+SELECT locate('cd', 'abcdef') AS "pos_3";
 
-SELECT strpos('abcdef', 'xy') AS "pos_0";
+SELECT locate('xy', 'abcdef') AS "pos_0";
 
 --
 -- test replace
@@ -312,7 +342,7 @@ select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
 --
 select to_hex(256*256*256 - 1) AS "ffffff";
 
-select to_hex(256::bigint*256::bigint*256::bigint*256::bigint - 1) AS "ffffffff";
+select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
 
 --
 -- MD5 test suite - from IETF RFC 1321

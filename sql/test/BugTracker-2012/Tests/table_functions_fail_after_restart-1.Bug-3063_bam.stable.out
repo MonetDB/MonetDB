@@ -1,0 +1,41 @@
+stdout of test 'table_functions_fail_after_restart-1.Bug-3063_bam` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 09:28:53 >  
+# 09:28:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36187" "--set" "mapi_usock=/var/tmp/mtest-1669/.s.monetdb.36187" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_BugTracker-2012" "--set" "mal_listing=0"
+# 09:28:53 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:36187/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1669/.s.monetdb.36187
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 09:28:53 >  
+# 09:28:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1669" "--port=36187"
+# 09:28:53 >  
+
+#select * from ft.func() as ftf;
+% .ftf # table_name
+% sch # name
+% varchar # type
+% 4 # length
+[ "sys"	]
+[ "tmp"	]
+[ "json"	]
+[ "bam"	]
+[ "ft"	]
+#drop function ft.func;
+#drop schema ft;
+
+# 09:28:53 >  
+# 09:28:53 >  "Done."
+# 09:28:53 >  
