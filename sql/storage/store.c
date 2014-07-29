@@ -3562,7 +3562,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 
-	if (isKindOfTable(t))
+	if (isKindOfTable(t) || isView(t))
 		sys_drop_columns(tr, t, drop_action);
 
 	if (isGlobal(t)) 
