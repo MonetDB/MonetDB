@@ -23,14 +23,38 @@ Ready.
 # 21:48:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=39026"
 # 21:48:51 >  
 
-#SELECT 1, (SELECT count(*) FROM tables);
-% .L1,	.L2 # table_name
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false	0
+#2007	"types"	2000	NULL	0	true	0	false	0
+#2016	"functions"	2000	NULL	0	true	0	false	0
+#2027	"args"	2000	NULL	0	true	0	false	0
+#2036	"sequences"	2000	NULL	0	true	0	false	0
+#2046	"dependencies"	2000	NULL	0	true	0	false	0
+#2050	"connections"	2000	NULL	0	true	0	false	0
+#2059	"_tables"	2000	NULL	0	true	0	false	0
+#2068	"_columns"	2000	NULL	0	true	0	false	0
+#2079	"keys"	2000	NULL	0	true	0	false	0
+#2086	"idxs"	2000	NULL	0	true	0	false	0
+[ 40	]
+#SELECT 1, (SELECT count(*) FROM tbls);
+% .L1,	sys.L2 # table_name
 % L1,	L2 # name
 % tinyint,	wrd # type
 % 1,	2 # length
 [ 1,	40	]
-#SELECT (SELECT count(*) FROM tables), 1;
-% .L1,	.L1 # table_name
+#SELECT (SELECT count(*) FROM tbls), 1;
+% sys.L1,	.L1 # table_name
 % L1,	single_value # name
 % wrd,	tinyint # type
 % 2,	1 # length

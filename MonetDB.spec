@@ -36,6 +36,10 @@
 %define with_geos 1
 %endif
 
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%define with_samtools 1
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -78,6 +82,9 @@ BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
+%if %{?with_samtools:1}%{!?with_samtools:0}
+BuildRequires: samtools-devel
+%endif
 
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
@@ -449,6 +456,29 @@ numerical analysis (gsl).
 %{_libdir}/monetdb5/gsl.mal
 %{_libdir}/monetdb5/lib_gsl.so
 
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%package bam-MonetDB5
+Summary: MonetDB5 SQL interface to the bam library
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description bam-MonetDB5
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to load and query BAM (binary
+version of Sequence Alignment/Map) data.
+
+%files bam-MonetDB5
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_bam.mal
+%{_libdir}/monetdb5/createdb/*_bam.sql
+%{_libdir}/monetdb5/bam.mal
+%{_libdir}/monetdb5/lib_bam.so
+%endif
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -512,6 +542,11 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%exclude %{_libdir}/monetdb5/bam.mal
+%exclude %{_libdir}/monetdb5/autoload/*_bam.mal
+%exclude %{_libdir}/monetdb5/lib_bam.so
+%endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
@@ -605,6 +640,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%exclude %{_libdir}/monetdb5/createdb/*_bam.sql
+%endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
@@ -762,6 +800,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-readline=yes \
 	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
 	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
+	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
@@ -802,6 +841,11 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.21-20140725
+- Rebuilt.
+- BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean
+  values
+
 * Tue Jul 22 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
 - Rebuilt.
 - BZ#3487: dead link to "Professional services"

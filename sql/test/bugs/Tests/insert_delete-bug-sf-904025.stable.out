@@ -12,39 +12,89 @@ stdout of test 'insert_delete-bug-sf-904025` in directory 'sql/test/bugs` itself
 # Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 99_system.sql
 
+# 22:50:56 >  
+# 22:50:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11409" "--port=36497"
+# 22:50:56 >  
 
-# 21:30:34 >  
-# 21:30:34 >  mclient -lsql -ftest -i -e --host=alf --port=30040 
-# 21:30:34 >  
-
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false	0
+#2007	"types"	2000	NULL	0	true	0	false	0
+#2016	"functions"	2000	NULL	0	true	0	false	0
+#2027	"args"	2000	NULL	0	true	0	false	0
+#2036	"sequences"	2000	NULL	0	true	0	false	0
+#2046	"dependencies"	2000	NULL	0	true	0	false	0
+#2050	"connections"	2000	NULL	0	true	0	false	0
+#2059	"_tables"	2000	NULL	0	true	0	false	0
+#2068	"_columns"	2000	NULL	0	true	0	false	0
+#2079	"keys"	2000	NULL	0	true	0	false	0
+#2086	"idxs"	2000	NULL	0	true	0	false	0
+[ 40	]
 #create table tmp(name string, id int);
-#insert into tmp select name, id from tables where "type" = 0;
-[ 27	]
+#insert into tmp select name, id from tbls where "type" = 0;
+[ 26	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 27	]
+[ 26	]
 #delete from tmp;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 1 # length
 [ 0	]
-#insert into tmp select name, id from tables where "type" = 0;
-[ 27	]
+#insert into tmp select name, id from tbls where "type" = 0;
+[ 26	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 27	]
+[ 26	]
 #delete from tmp;
-[ 27	]
+[ 26	]
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name

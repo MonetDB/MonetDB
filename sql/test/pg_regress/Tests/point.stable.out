@@ -46,7 +46,7 @@ Ready.
 [ 1 ]
 #
 #
-#SELECT '' AS six, POINT_TBL.*;
+#SELECT '' AS six, POINT_TBL.* FROM POINT_TBL;
 % sys.L0,	sys.L0 # table_name
 % six,	f1 # name
 % ?,	? # type
@@ -146,7 +146,6 @@ Ready.
 [ "",	"(10,10)",	14.14213562 ]
 [ "",	"(5.1,34.5)",	34.87491935 ]
 
-SET geqo TO 'off';
 #SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
 #   FROM POINT_TBL p1, POINT_TBL p2
 #   ORDER BY dist, point1 using <<, point2 using <<;
@@ -266,8 +265,6 @@ SET geqo TO 'off';
 [ "",	"(-3,4)",	"(0,0)",	5 ]
 [ "",	"(-10,0)",	"(-5,-12)",	13 ]
 [ "",	"(5.1,34.5)",	"(10,10)",	24.98519562 ]
-
-RESET geqo;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
 

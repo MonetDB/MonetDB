@@ -461,6 +461,12 @@
 /* Define to 1 if you have the `round' function. */
 /* #undef HAVE_ROUND */
 
+/* Define if you have the samtools (providing the bam library) */
+/* #undef HAVE_SAMTOOLS */
+
+/* Define to 1 if you have the <samtools/kstring.h> header file. */
+/* #undef HAVE_SAMTOOLS_KSTRING_H */
+
 /* Define to 1 if you have the `sbrk' function. */
 /* #undef HAVE_SBRK */
 
