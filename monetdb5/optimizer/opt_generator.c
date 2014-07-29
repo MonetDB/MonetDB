@@ -64,9 +64,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 {
 	InstrPtr p,q;
 	int i,j,k, used= 0, cases, blocked;
-	str vaultRef = putName("vault",5);
-	str generateRef = putName("generate_series",15);
-	str paramRef = putName("parameters",10);
 
 	(void) cntxt;
 	(void) stk;
@@ -74,7 +71,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for( i=1; i < mb->stop; i++){
 		p = getInstrPtr(mb,i);
-		if ( getModuleId(p) == vaultRef && getFunctionId(p) == generateRef){
+		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef){
 			/* found a target for propagation */
 			if ( assignedOnce(mb, getArg(p,0)) ){
 				cases = useCount(mb, getArg(p,0));
@@ -120,7 +117,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				// fix the original, only when all use cases are replaced by the overloaded function
 				if(used == cases && blocked == 0){
 					setModuleId(p, generatorRef);
-					setFunctionId(p, paramRef);
+					setFunctionId(p, parametersRef);
 					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
 				} else used = 0;
 #ifdef VLT_DEBUG
