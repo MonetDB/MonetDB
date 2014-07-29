@@ -15,49 +15,47 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-module vault;
+module generator;
 
-pattern generate_series(first:bte,last:bte):bat[:oid,:bte]
+pattern series(first:bte,last:bte):bat[:oid,:bte]
 address VLTgenerator_table;
 
-pattern generate_series(first:sht,last:sht):bat[:oid,:sht]
+pattern series(first:sht,last:sht):bat[:oid,:sht]
 address VLTgenerator_table;
 
-pattern generate_series(first:int,last:int):bat[:oid,:int]
+pattern series(first:int,last:int):bat[:oid,:int]
 address VLTgenerator_table;
 
-pattern generate_series(first:lng,last:lng):bat[:oid,:lng]
+pattern series(first:lng,last:lng):bat[:oid,:lng]
 address VLTgenerator_table;
 
-pattern generate_series(first:flt,last:flt):bat[:oid,:flt]
+pattern series(first:flt,last:flt):bat[:oid,:flt]
 address VLTgenerator_table;
 
-pattern generate_series(first:dbl,last:dbl):bat[:oid,:dbl]
+pattern series(first:dbl,last:dbl):bat[:oid,:dbl]
 address VLTgenerator_table;
 
-pattern generate_series(first:bte,last:bte,step:bte):bat[:oid,:bte]
+pattern series(first:bte,last:bte,step:bte):bat[:oid,:bte]
 address VLTgenerator_table;
 
-pattern generate_series(first:sht,last:sht,step:sht):bat[:oid,:sht]
+pattern series(first:sht,last:sht,step:sht):bat[:oid,:sht]
 address VLTgenerator_table;
 
-pattern generate_series(first:int,last:int,step:int):bat[:oid,:int]
+pattern series(first:int,last:int,step:int):bat[:oid,:int]
 address VLTgenerator_table;
 
-pattern generate_series(first:lng,last:lng,step:lng):bat[:oid,:lng]
+pattern series(first:lng,last:lng,step:lng):bat[:oid,:lng]
 address VLTgenerator_table;
 
-pattern generate_series(first:flt,last:flt,step:flt):bat[:oid,:flt]
+pattern series(first:flt,last:flt,step:flt):bat[:oid,:flt]
 address VLTgenerator_table;
 
-pattern generate_series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
+pattern series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
 address VLTgenerator_table
 comment "Create and materialize a generator table";
 
-pattern generate_series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
+pattern series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
 address VLTgenerator_table;
-
-module generator;
 
 pattern parameters(first:bte,last:bte,step:bte):bat[:oid,:bte]
 address VLTgenerator_noop;

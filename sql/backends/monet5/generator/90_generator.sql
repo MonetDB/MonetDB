@@ -15,47 +15,44 @@
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
--- Author M.Kersten
--- The vault is the container for all foreign file support functionalities
-
--- example of a (void) foreign file interface
+-- (c) Author M.Kersten
 
 create function sys.generate_series(first tinyint, last tinyint)
 returns table (value tinyint)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
 returns table (value tinyint)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first int, last int)
 returns table (value int)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first int, last int, stepsize int)
 returns table (value int)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first bigint, last bigint)
 returns table (value bigint)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first bigint, last bigint, stepsize bigint)
 returns table (value bigint)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first real, last real, stepsize real)
 returns table (value real)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first double, last double, stepsize double)
 returns table (value double)
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
 returns table (value decimal(10,2))
-external name vault.generate_series;
+external name generator.series;
 
 create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
 returns table (value timestamp)
-external name vault.generate_series;
+external name generator.series;
