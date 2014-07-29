@@ -20,26 +20,26 @@
 # converts PostgreSQL specific SQL into SQL99 equivalent (if possible)
 
 sed -r \
-	-e 's/\bint8\b/bigint/ig' \
-	-e 's/\bint4\b/integer/ig' \
-	-e 's/\bint2\b/smallint/ig' \
-	-e 's/\bfloat4\b/float/ig' \
-	-e 's/\bfloat8\b/double/ig' \
-	-e 's/\bpath\b/string/ig' \
-	-e 's/\bpoint\b/string/ig' \
-	-e 's/\bbox\b/string/ig' \
-	-e 's/\bpolygon\b/string/ig' \
-	-e 's/\bcity_budget\b/decimal(7,2)/ig' \
-	-e 's/\bname,/string,/ig' \
-	-e 's/\bname$/string/ig' \
-	-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/ig' \
-	-e 's/BEGIN;/START TRANSACTION;/ig' \
-	-e 's/END;/COMMIT;/ig' \
-	-e 's/COMMENT.*;//ig' \
+	-e 's/\bint8\b/bigint/Ig' \
+	-e 's/\bint4\b/integer/Ig' \
+	-e 's/\bint2\b/smallint/Ig' \
+	-e 's/\bfloat4\b/float/Ig' \
+	-e 's/\bfloat8\b/double/Ig' \
+	-e 's/\bpath\b/string/Ig' \
+	-e 's/\bpoint\b/string/Ig' \
+	-e 's/\bbox\b/string/Ig' \
+	-e 's/\bpolygon\b/string/Ig' \
+	-e 's/\bcity_budget\b/decimal(7,2)/Ig' \
+	-e 's/\bname,/string,/Ig' \
+	-e 's/\bname$/string/Ig' \
+	-e 's/(.*)\bFROM ONLY (.*)/\1 FROM \2/Ig' \
+	-e 's/BEGIN;/START TRANSACTION;/Ig' \
+	-e 's/END;/COMMIT;/Ig' \
+	-e 's/COMMENT.*;//Ig' \
 	-e '/CREATE TABLE.*INHERITS.*;/s/INHERITS (.*)//' \
-	-e 's/\) INHERITS.*;/\);/ig' \
-	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
-	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
-	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/ig' \
-	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/ig' \
-	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/ig'
+	-e 's/\) INHERITS.*;/\);/Ig' \
+	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/Ig' \
+	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/Ig' \
+	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/Ig' \
+	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/Ig' \
+	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/Ig'
