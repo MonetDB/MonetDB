@@ -932,8 +932,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first
 	// or implement more knowledge, postponed
-	assert(!( p && q));
-	assert(p || q);
+	if (p && q )
+			throw(MAL,"generator.join","Join over generator pairs not supported");
 
 	// switch roles to have a single target bat[:oid,:any] designated 
 	// by b and reference instruction p for the generator
