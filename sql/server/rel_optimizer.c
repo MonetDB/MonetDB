@@ -6606,7 +6606,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		return rel;
 	}
 
-	if (changes)
+	if (changes || level == 0)
 		return _rel_optimizer(sql, rel, ++level);
 
 	/* optimize */

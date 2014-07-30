@@ -73,7 +73,7 @@ project (
 | | | | | | | | ) [ customer.c_acctbal NOT NULL > decimal(15,2)[decimal(3,2) "0"], sys.substring(varchar[customer.c_phone NOT NULL] as customer.c_phone, int[tinyint "1"], int[tinyint "2"]) in (varchar(15)[char(2) "13"], varchar(15)[char(2) "31"], varchar(15)[char(2) "23"], varchar(15)[char(2) "29"], varchar(15)[char(2) "30"], varchar(15)[char(2) "18"], varchar(15)[char(2) "17"]) ]
 | | | | | | | ) [  ] [ sys.avg no nil (double[customer.c_acctbal NOT NULL] as customer.c_acctbal) as L1.L1 ]
 | | | | | | ) [ L1 as L1.L1 ]
-| | | | | ) [ double(53,2)[customer.c_acctbal NOT NULL] > double(53,2)[L1.L1] ]
+| | | | | ) [ double(53,2)[customer.c_acctbal NOT NULL] > L1.L1 ]
 | | | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ],
 | | | | table(sys.orders) [ orders.o_custkey NOT NULL as L4.o_custkey ] COUNT 
 | | | ) [ L4.o_custkey NOT NULL = customer.c_custkey NOT NULL ]
