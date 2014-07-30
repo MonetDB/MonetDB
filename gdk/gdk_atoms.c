@@ -432,14 +432,6 @@ voidWrite(const void *a, stream *s, size_t cnt)
 }
 
 /*
- * Windows calls strncasecmp _strnicmp, and we need it for the function below.
- * Interface is the same, see http://msdn.microsoft.com/en-us/library/chd90w8e.aspx
- */
-#ifdef NATIVE_WIN32
-	#define strncasecmp _strnicmp
-#endif
-
-/*
  * Converts string values such as TRUE/FALSE/true/false etc to 1/0/NULL.
  * Switched from byte-to-byte compare to library function strncasecmp,
  * experiments showed that library function is even slightly faster and we
