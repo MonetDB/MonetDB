@@ -18,7 +18,8 @@
 INCLUDES = \
 	../include \
 	../driver \
-	-I$(MONETDB_INCLUDEDIR)
+	-I$(MONETDB_INCLUDEDIR) \
+	$(ODBC_INCS)
 
 DEFS = @DEFS@
 ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
