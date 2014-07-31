@@ -3353,7 +3353,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)*changes;
 	if (is_semi(rel->op) && rel->exps && rel->l) {
-		int op = rel->op;
+		operator_type op = rel->op;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
