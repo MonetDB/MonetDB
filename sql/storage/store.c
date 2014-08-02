@@ -871,11 +871,9 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s = SA_ZNEW(tr->sa, sql_schema);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 		base_init(tr->sa, &s->base, sid, TR_OLD, v); _DELETE(v);
-		v = table_funcs.column_find_value(tr, 
-			find_sql_column(ss, "authorization"), rid);
+		v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
-		v = table_funcs.column_find_value(tr, 
-			find_sql_column(tables, "system"), rid);
+		v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
 		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
