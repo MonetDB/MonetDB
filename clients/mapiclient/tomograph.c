@@ -165,7 +165,7 @@ static int source[MAXTHREADS];
 
 static void
 showNumaHeatmap(void){
-	int i,j;
+	int i,j =0;
 	int max= 0;
 	FILE *f;
 
