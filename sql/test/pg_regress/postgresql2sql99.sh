@@ -24,12 +24,18 @@
 sed -r \
 	-e 's/\bAS true/AS "true"/Ig' \
 	-e 's/\bAS false/AS "false"/Ig' \
+	-e 's/\bAS year/AS "year"/Ig' \
+	-e 's/\bAS month/AS "month"/Ig' \
+	-e 's/\bAS day/AS "day"/Ig' \
+	-e 's/\bAS hour/AS "hour"/Ig' \
+	-e 's/\bAS minute/AS "minute"/Ig' \
+	-e 's/\bAS second/AS "second"/Ig' \
 	-e 's/\bIS TRUE/= TRUE/Ig' \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
 	-e 's/\bbool '*'\b/cast('\1' as boolean)/Ig' \
-	-e 's/\char 'c'/cast('c' as char)/Ig' \
+	-e 's/\bchar 'c'/cast('c' as char)/Ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/Ig' \
 	-e 's/\bint2 '1'/cast('1' as smallint)/Ig' \
 	-e 's/\bint2 '2'/cast('2' as smallint)/Ig' \
@@ -61,6 +67,17 @@ sed -r \
 	-e 's/\bdate 'tomorrow'/sql_add((current_date, 24*60*60.0)/Ig' \
 	-e 's/\bname,/string,/Ig' \
 	-e 's/\bname$/string/Ig' \
+	-e 's/\btimestamp with time zone 'now'/cast(now as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone 'today'/cast(current_date as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone '*'/cast('\1' as timestamptz)/Ig' \
+	-e 's/\btimestamp without time zone 'now'/cast(now as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone 'today'/cast(current_date as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone '*'/cast('\1' as timestamp)/Ig' \
+	-e 's/\btimestamp(2) without time zone/timestamp(2)/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \
@@ -83,7 +100,9 @@ sed -r \
 	-e 's/\) (INHERITS.*);/\); -- \1/Ig' \
 	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//Ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//Ig' \
+	-e 's/SET datestyle TO *;/\/* SET datestyle TO \1; *\//Ig' \
 	-e 's/SET geqo TO *;/\/* SET geqo TO \1; *\//Ig' \
+	-e 's/RESET datestyle;/\/* RESET datestyle; *\//Ig' \
 	-e 's/RESET geqo;/\/* RESET geqo; *\//Ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/Ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/Ig' \

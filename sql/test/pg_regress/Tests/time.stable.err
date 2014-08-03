@@ -29,21 +29,6 @@ stderr of test 'time` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- TIME
-#--
-#-- as of 7.4, timezone spec should be accepted and ignored
-#--
-#-- TIME simple math
-#--
-#-- We now make a distinction between time and intervals,
-#-- and adding two times together makes no sense at all.
-#-- Leave in one query to show that it is rejected,
-#-- and do the rest of the testing in horology.sql
-#-- where we do mixed-type arithmetic. - thomas 2000-12-02
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = SELECT f1 + time '00:01' AS "Illegal" FROM TIME_TBL;
-ERROR = operator is not unique: time without time zone + time without time zone
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
