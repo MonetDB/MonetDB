@@ -163,9 +163,9 @@ static int crossings[MAXTHREADS][MAXTHREADS];
 static int target[MAXTHREADS];
 static int source[MAXTHREADS];
 
-static int
+static void
 showNumaHeatmap(void){
-	int i,j, object=0;
+	int i,j;
 	int max= 0;
 	FILE *f;
 
@@ -173,7 +173,7 @@ showNumaHeatmap(void){
 	f= fopen("tomograph_heatmap.csv","a");
 	if( f == NULL){
 		fprintf(stderr,"Can not create tomograph_heatmap.csv\n");
-		return 0;
+		return;
 	}
 	for( i=0; i< MAXTHREADS; i++){
 		if( target[i])
@@ -205,9 +205,6 @@ showNumaHeatmap(void){
 		target[i]=0;
 		source[i]=0;
 	}
-	fprintf(gnudata,"set pm3d map\n");
-	fprintf(gnudata,"splot \"tomograph_heatmap.csv\" matrix\n");
-	return object;
 }
 
 static void
@@ -1602,7 +1599,6 @@ static void createTomogram(void)
 			}
 
 
-	object+= showNumaHeatmap();
 
 	fprintf(gnudata, "plot 0 notitle with lines\n");
 	fprintf(gnudata, "unset for[i=%d:%d] object i\n", prevobject, object - 1);
@@ -1612,6 +1608,7 @@ static void createTomogram(void)
 	keepdata(filename);
 	(void) fclose(gnudata);
 	gnudata = 0;
+	showNumaHeatmap();
 
 	// show follow up action only once
 	if (atlas && atlaspage == atlas-1) {
