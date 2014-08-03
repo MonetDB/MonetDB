@@ -86,7 +86,8 @@ static struct {
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
 	/*  21 */  { "footprint", 0},
-	/*  21 */  { 0, 0}
+	/*  22 */  { "numa", 0},
+	/*  23 */  { 0, 0}
 };
 
 int
@@ -140,6 +141,9 @@ activateCounter(str name)
 		break;
 	case 'm':
 		profileCounter[PROFmemory].status = 1;
+		break;
+	case 'n':
+		profileCounter[PROFnuma].status = 1;
 		break;
 	case 'p':
 		profileCounter[PROFprocess].status = 1;
@@ -312,6 +316,9 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFfootprint].status) {
 		logadd("footprint,\t");
 	}
+	if (profileCounter[PROFnuma].status) {
+		logadd("numa,\t");
+	}
 	if (profileCounter[PROFreads].status)
 		logadd("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
@@ -453,6 +460,14 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 	}
 	if (profileCounter[PROFfootprint].status) {
 		logadd(LLFMT",\t", stk->tmpspace);
+	}
+	if (profileCounter[PROFnuma].status) {
+		int i;
+		logadd("\"");
+		for( i= pci->retc ; i < pci->argc; i++)
+		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
+			logadd("@%d", mb->var[getArg(pci,i)]->worker);
+		logadd("\",\t");
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -1447,6 +1462,12 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 #endif
 	if (profileCounter[PROFmemory].status && delayswitch < 0)
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+	if (profileCounter[PROFfootprint].status)
+		logadd("0,\t");
+	if (profileCounter[PROFnuma].status){
+		logadd("\"");
+		logadd("\",\t");
+	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
@@ -1454,8 +1475,6 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
-	if (profileCounter[PROFfootprint].status)
-		logadd("0,\t");
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
