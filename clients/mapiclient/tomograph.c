@@ -58,12 +58,10 @@
 
 /* #define FOOTPRINT */
 #ifdef FOOTPRINT
-#define COUNTERSDEFAULT "ISTestMmrw"
+#define COUNTERSDEFAULT "ISTestMmrwn"
 #else
-#define COUNTERSDEFAULT "ISTestmrw"
+#define COUNTERSDEFAULT "ISTestmrwn"
 #endif
-
-/* #define _DEBUG_TOMOGRAPH_*/
 
 static struct {
 	char tag;
@@ -110,7 +108,8 @@ profileCounter[] = {
 #ifdef FOOTPRINT
 	/*  5  */ { 'M', "footprint", "footprint", 0 },
 #endif
-	/*  6  */ { 0, 0, 0, 0 }
+	/*  6  */ { 'n', "numa", "numa", 0 },
+	/*  7  */ { 0, 0, 0, 0 }
 };
 
 typedef struct _wthread {
@@ -156,6 +155,60 @@ static int atlaspage = 0;
 static FILE *gnudata;
 
 static int capturing=0;
+
+#define MAXTHREADS 1048
+#define MAXBOX 32678	 /* should be > MAXTHREADS */
+
+static int crossings[MAXTHREADS][MAXTHREADS];
+static int target[MAXTHREADS];
+static int source[MAXTHREADS];
+
+static int
+showNumaHeatmap(void){
+	int i,j, object=0;
+	int max= 0;
+	FILE *f;
+
+	
+	f= fopen("tomograph_heatmap.csv","a");
+	if( f == NULL){
+		fprintf(stderr,"Can not create tomograph_heatmap.csv\n");
+		return 0;
+	}
+	for( i=0; i< MAXTHREADS; i++){
+		if( target[i])
+		for(j=MAXTHREADS-1; j>0 && crossings[i][j]; j--)
+			;
+		if (j > max) max =j;
+	}
+	for( i=0; i< max; i++)
+	if( target[i] && source[i] ){
+		for(j=0; j< max; j++)
+		if( target[j] && source[j])
+			fprintf(stderr,"%d\t", crossings[i][j]);
+		fprintf(stderr,"\n");
+	}
+/*
+	for( i=0; i< max; i++)
+	if( target[i] || source[i])
+		fprintf(stderr,"%d\t",target[i]);
+	fprintf(stderr,"\n");
+	for( i=0; i< max; i++)
+	if( target[i] || source[i])
+		fprintf(stderr,"%d\t",source[i]);
+	fprintf(stderr,"\n");
+*/
+
+	for( i=0; i< MAXTHREADS; i++){
+		for(j=0; j< MAXTHREADS; j++)
+			crossings[i][j]=0;
+		target[i]=0;
+		source[i]=0;
+	}
+	fprintf(gnudata,"set pm3d map\n");
+	fprintf(gnudata,"splot \"tomograph_heatmap.csv\" matrix\n");
+	return object;
+}
 
 static void
 usage(void)
@@ -293,8 +346,6 @@ stop_disconnect:
 	}
 }
 
-#define MAXTHREADS 2048
-#define MAXBOX 32678	 /* should be > MAXTHREADS */
 
 #define START 1
 #define DONE 2
@@ -302,6 +353,8 @@ stop_disconnect:
 #define PING 4
 #define WAIT 5
 #define GCOLLECT 6
+
+static char *statenames[]= {"","start","done","action","ping","wait","gccollect"};
 
 typedef struct BOX {
 	int row;
@@ -314,6 +367,7 @@ typedef struct BOX {
 	lng reads, writes;
 	char *stmt;
 	char *fcn;
+	char *numa;
 	int state;
 } Box;
 
@@ -1548,6 +1602,8 @@ static void createTomogram(void)
 			}
 
 
+	object+= showNumaHeatmap();
+
 	fprintf(gnudata, "plot 0 notitle with lines\n");
 	fprintf(gnudata, "unset for[i=%d:%d] object i\n", prevobject, object - 1);
 	prevobject = object - 1;
@@ -1576,6 +1632,23 @@ static void createTomogram(void)
 	}
 }
 
+/* The intra-thread flow is collected for later presentation */
+
+
+static void
+updateNumaHeatmap(int thread, char *numa){
+	char *c;
+	int t;
+	for( c= numa; *c && *c == '@';){
+		c++;
+		t =atoi(c);
+		crossings[thread][t]++;
+		target[thread]++;
+		source[t]++;
+		while(*c && *c !='@') c++;
+	}
+}
+
 /* the main issue to deal with in the analysis is
  * that the tomograph start can appear while the
  * system is already processing. This leads to
@@ -1586,19 +1659,23 @@ static void createTomogram(void)
  */
 
 static void
-update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
+update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
 {
 	int idx;
 	Box b;
 	char *s;
 
+	if (debug)
+		fprintf(stderr, "Update %s batch %d input %s %s" LLFMT" %s\n",(state>=0?statenames[state]:"unknown"),batch, (fcn?fcn:"(null)"),currentfunction,starttime,numa);
 	/* ignore the flow of control statements 'function' and 'end' */
-	if (fcn && strncmp(fcn, "end ", 4) == 0) {
+	if (fcn && strncmp(fcn, "end ", 4) == 0)
 		return;
-	}
+
 	if (starttime == 0) {
 		/* ignore all instructions up to the first function call, unless input comes from a file */
-		if (inputfile == NULL && (state >= PING || fcn == 0 || strncmp(fcn, "function", 8))) {
+		if (inputfile == NULL && (state >= PING || fcn == 0 )) {
+			if (debug)
+				fprintf(stderr, "Skip %s input %s\n",(state>=0?statenames[state]:"unknown"),fcn);
 			return;
 		}
 		if (debug)
@@ -1618,11 +1695,12 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 		return;
 	}
 	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
+		if(debug)
+			fprintf(stderr, "Leave function \"%s\" capture \"%s\"?\n", (currentfunction?currentfunction:""), fcn+9);
 		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
 			capturing--;
-#ifdef _DEBUG_TOMOGRAPH_
-			fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
-#endif
+			if(debug)
+				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			free(currentfunction);
 			currentfunction = 0;
 		} else
@@ -1642,9 +1720,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	}
 
 	if (state == DONE && fcn && strncmp(fcn, "profiler.tomograph", 18) == 0) {
-#ifdef _DEBUG_TOMOGRAPH_
-		fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
-#endif
+		if( debug)
+			fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
 		deactivateBeat();
 		createTomogram();
 		totalclkticks = 0; /* number of clock ticks reported */
@@ -1700,22 +1777,22 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, lng footprint
 	idx = threads[thread];
 	/* start of instruction box */
 	if (state == START && thread < MAXTHREADS) {
-#ifdef _DEBUG_TOMOGRAPH_
-		fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
-#endif
+		if(debug)
+			fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
 		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
 		box[idx].memstart = memory;
+		box[idx].numa = numa;
+		updateNumaHeatmap(thread, numa);
 		box[idx].footstart = footprint;
 		box[idx].stmt = stmt;
 		box[idx].fcn = fcn ? strdup(fcn) : "";
 	}
 	/* end the instruction box */
 	if (state == DONE && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
-#ifdef _DEBUG_TOMOGRAPH_
-		fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
-#endif
+		if( debug)
+			fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
 		lastclk[thread] = clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
@@ -1761,7 +1838,7 @@ parser(char *row)
 	lng ticks = 0;
 	lng memory = 0; /* in MB*/
 	lng footprint = 0; /* in MB*/
-	char *fcn = 0, *stmt = 0;
+	char *fcn = 0, *stmt = 0, *numa=0;
 	int state = 0;
 	lng reads= 0, writes= 0;
 
@@ -1822,10 +1899,12 @@ parser(char *row)
 	if (c == 0)
 		return -4;
 	thread = atoi(c + 1);
+
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -5;
 	ticks = strtoll(c + 1, NULL, 10);
+
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -6;
@@ -1833,6 +1912,17 @@ parser(char *row)
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
+
+	for(; *c && *c !='"'; c++) ;
+	numa = c+1;
+	for(c++; *c && *c !='"'; c++)
+		;
+	if (*c == '"'){
+		*c = 0;
+		numa= strdup(numa);
+		*c = '"';
+	}
+	c = strchr(c + 1, ',');
 
 #ifdef FOOTPRINT
 	footprint = strtoll(c + 1, NULL, 10);
@@ -1872,6 +1962,7 @@ parser(char *row)
 	} else {
 		fcn = strchr(fcn, '"');
 		if (fcn) {
+			fcn++;
 			v=  strchr(fcn+1,'"');
 			if ( v ) *v = 0;
 		}
@@ -1883,7 +1974,7 @@ parser(char *row)
 #ifdef FOOTPRINT
 wrapup:
 #endif
-	update(state, thread, clkticks, ticks, memory, footprint, reads, writes, fcn, stmt);
+	update(state, thread, clkticks, ticks, memory, numa, footprint, reads, writes, fcn, stmt);
 #else
 	(void) row;
 #endif
@@ -2039,13 +2130,11 @@ doProfile(void *d)
 	}
 	if (wthr->tid > 0) {
 		snprintf(id, 10, "[%d] ", wthr->tid);
-#ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
-#endif
+		if( debug)
+			fprintf(stderr,"-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
 	} else {
-#ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s\n", wthr->uri ? wthr->uri : host);
-#endif
+		if(debug)
+			fprintf(stderr,"-- connection with server %s\n", wthr->uri ? wthr->uri : host);
 	}
 
 	/* set counters */
@@ -2062,9 +2151,8 @@ doProfile(void *d)
 			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
 				profileCounter[i].ptag);
 			doQ(buf);
-#ifdef _DEBUG_TOMOGRAPH_
-			printf("-- %s%s\n", id, buf);
-#endif
+			if( debug)
+				printf("-- %s%s\n", id, buf);
 		}
 		x = profileCounter[i].ptag;
 	}
@@ -2090,9 +2178,8 @@ doProfile(void *d)
 	doQ("profiler.setNone();");
 
 	if (wthr->argc == 0) {
-#ifdef _DEBUG_TOMOGRAPH_
-		printf("-- %sprofiler.setAll();\n", id);
-#endif
+		if( debug)
+			fprintf(stderr,"-- %sprofiler.setAll();\n", id);
 		doQ("profiler.setAll();");
 	} else {
 		for (a = 0; a < wthr->argc; a++) {
@@ -2112,16 +2199,14 @@ doProfile(void *d)
 				mod = "*";
 			}
 			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
-#ifdef _DEBUG_TOMOGRAPH_
-			printf("-- %s%s\n", id, buf);
-#endif
+			if( debug)
+				fprintf(stderr,"-- %s%s\n", id, buf);
 			doQ(buf);
 			free(arg);
 		}
 	}
-#ifdef _DEBUG_TOMOGRAPH_
-	printf("-- %sprofiler.start();\n", id);
-#endif
+	if( debug)
+		fprintf(stderr,"-- %sprofiler.start();\n", id);
 	activateBeat();
 	doQ("profiler.start();");
 	fflush(NULL);
