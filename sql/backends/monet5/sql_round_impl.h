@@ -300,7 +300,7 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 			*res = NIL(TYPE);
 			return MAL_SUCCEED;
 		} else {
-			throw(SQL, STRING(TYPE), "\"%s\" is no decimal value (doesn't contain a '.')", *val);
+			scale = 0;
 		}
 	}
 
