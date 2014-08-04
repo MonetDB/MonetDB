@@ -162,6 +162,7 @@ typedef struct VARRECORD {
 	int tmpindex;				/* temporary variable */
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
+	int worker;					/* tread id of last worker producing it */
 	int propc, maxprop;			/* proc count and max number of properties */
 	int prps[];					/* property array */
 } *VarPtr, VarRecord;

@@ -87,7 +87,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
-		if (catalog_version) {
+		if (!first) {
 			t = mvc_bind_table(m, s, "tables");
 			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
@@ -105,7 +105,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
-		if (catalog_version) {
+		if (!first) {
 			int pub = ROLE_PUBLIC;
 			int p = PRIV_SELECT;
 			int zero = 0;
@@ -125,15 +125,13 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage", "varchar", 2048);
 
-		if (catalog_version) {
+		if (!first) {
 			int pub = ROLE_PUBLIC;
 			int p = PRIV_SELECT;
 			int zero = 0;
 			sql_table *privs = find_sql_table(s, "privileges");
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-		}
-
-		if (!catalog_version) {
+		} else { 
 			sql_create_env(m, s);
 			sql_create_privileges(m, s);
 		}

@@ -5545,9 +5545,20 @@ int sqlerror(mvc * c, const char *err)
 		sqlstate = "";
 		err++;
 	}
-	(void)sql_error( c, 4,
-		 "!%s%s in: \"%s\"\n",
-		 sqlstate, err, QUERY(c->scanner));
+	if (c->scanner.errstr) {
+		if (c->scanner.errstr[0] == '!')
+			(void)sql_error(c, 4,
+					"!%s%s: %s\n",
+					sqlstate, err, c->scanner.errstr + 1);
+		else
+			(void)sql_error(c, 4,
+					"!%s%s: %s in \"%.80s\"\n",
+					sqlstate, err, c->scanner.errstr,
+					QUERY(c->scanner));
+	} else
+		(void)sql_error(c, 4,
+				"!%s%s in: \"%.80s\"\n",
+				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
 

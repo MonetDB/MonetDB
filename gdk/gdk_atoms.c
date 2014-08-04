@@ -431,6 +431,12 @@ voidWrite(const void *a, stream *s, size_t cnt)
 	return GDK_SUCCEED;
 }
 
+/*
+ * Converts string values such as TRUE/FALSE/true/false etc to 1/0/NULL.
+ * Switched from byte-to-byte compare to library function strncasecmp,
+ * experiments showed that library function is even slightly faster and we
+ * now also support True/False (and trUe/FAlSE should this become a thing).
+ */
 int
 bitFromStr(const char *src, int *len, bit **dst)
 {
@@ -447,19 +453,13 @@ bitFromStr(const char *src, int *len, bit **dst)
 	} else if (*p == '1') {
 		**dst = TRUE;
 		p++;
-	} else if (p[0] == 't' && p[1] == 'r' && p[2] == 'u' && p[3] == 'e') {
+	} else if (strncasecmp(p, "true",  4) == 0) {
 		**dst = TRUE;
 		p += 4;
-	} else if (p[0] == 'T' && p[1] == 'R' && p[2] == 'U' && p[3] == 'E') {
-		**dst = TRUE;
-		p += 4;
-	} else if (p[0] == 'f' && p[1] == 'a' && p[2] == 'l' && p[3] == 's' && p[4] == 'e') {
+	} else if (strncasecmp(p, "false", 5) == 0) {
 		**dst = FALSE;
 		p += 5;
-	} else if (p[0] == 'F' && p[1] == 'A' && p[2] == 'L' && p[3] == 'S' && p[4] == 'E') {
-		**dst = FALSE;
-		p += 5;
-	} else if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+	} else if (strncasecmp(p, "nil",   3) == 0) {
 		p += 3;
 	} else {
 		p = src;

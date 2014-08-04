@@ -56,6 +56,7 @@ typedef struct Mallinfo Mallinfo;
 #define PROFflow   19
 #define PROFping   20	/* heartbeat ping messages */
 #define PROFfootprint 21
+#define PROFnuma 22
 
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
