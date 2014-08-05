@@ -47,7 +47,6 @@ include status;
 include groupby;
 include group;
 include aggr;
-include array;
 include mkey;
 
 # Atom extensions
