@@ -1432,8 +1432,12 @@ list *
 exps_copy( sql_allocator *sa, list *exps)
 {
 	node *n;
-	list *nl = new_exp_list(sa);
+	list *nl;
 
+	if (!exps)
+		return exps;
+
+	nl = new_exp_list(sa);
 	for(n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data;
 
