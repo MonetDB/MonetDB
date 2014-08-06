@@ -43,6 +43,7 @@
 #include <cluster.h>
 #include <opt_pipes.h>
 #include "clients.h"
+#include "mosaic.h"
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif
@@ -3878,6 +3879,123 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
+	return MAL_SUCCEED;
+}
+
+/*
+ * Table (de-)compression schemes
+ */
+str
+SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *sch = (str *) getArgReference(stk, pci, 1);
+	str *tbl = (str *) getArgReference(stk, pci, 2);
+	sql_trans *tr;
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	mvc *m = NULL;
+	str msg;
+	bat bid;
+	BAT *b;
+	node *o;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	s = mvc_bind_schema(m, *sch);
+	if (s == NULL)
+		throw(SQL, "sql.compress", "3F000!Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if (t == NULL)
+		throw(SQL, "sql.compress", "42S02!Table missing");
+	if ( !t->readonly)
+		throw(SQL, "sql.compress", "!Table must be read only");
+	tr = m->session->tr;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
+
+	for (o = t->columns.set->h; o; o = o->next) {
+		sql_delta *d;
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(SQL, "sql.compress", "Can not access descriptor");
+		msg =MOScompressInternal(cntxt, &bid, &b->batCacheid,0);
+		BBPreleaseref(b->batCacheid);
+		if (msg) 
+			return msg;
+		d = c->data;
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
+		d->bid = bid;
+		d->ibase = 0;
+		d->ibid = 0;	/* use the insert bat */
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
+	}
+	/* bat was cleared */
+	t->cleared = 1;
+	return MAL_SUCCEED;
+}
+
+str
+SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *sch = (str *) getArgReference(stk, pci, 1);
+	str *tbl = (str *) getArgReference(stk, pci, 2);
+	sql_trans *tr;
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	mvc *m = NULL;
+	str msg;
+	bat bid;
+	BAT *b;
+	node *o;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	s = mvc_bind_schema(m, *sch);
+	if (s == NULL)
+		throw(SQL, "sql.decompress", "3F000!Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if (t == NULL)
+		throw(SQL, "sql.decompress", "42S02!Table missing");
+	if ( !t->readonly)
+		throw(SQL, "sql.compress", "!Table must be read only");
+	tr = m->session->tr;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
+
+	for (o = t->columns.set->h; o; o = o->next) {
+		sql_delta *d;
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(SQL, "sql.decompress", "Can not access descriptor");
+		msg =MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		if (msg)
+			return msg;
+		d = c->data;
+		if (d->bid)
+			BBPdecref(d->bid, TRUE);
+		if (d->ibid)
+			BBPdecref(d->ibid, TRUE);
+		d->bid = bid;
+		d->ibase = 0;
+		d->ibid = 0;	/* use the insert bat */
+		c->base.wtime = tr->wstime;
+		c->base.rtime = tr->stime;
+	}
+	/* bat was cleared */
+	t->cleared = 1;
 	return MAL_SUCCEED;
 }
 
