@@ -18,7 +18,9 @@ in_incorrect_multi.Bug-3462
 crash_on_groupby_distinct_serial.Bug-3463
 local-temp-1.Bug-3468
 local-temp-2.Bug-3468
+boolean_not.Bug-3505
 varchar_conversion_crash.Bug-3506
+bug_in_cse.Bug-3511
 stringfloatshtcompare.Bug-3512
 oid-table-assert.Bug-3514
 round-properties.Bug-3515
