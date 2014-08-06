@@ -9,7 +9,6 @@ inspect00
 inspect05
 inspect10
 #inspect40 word size problems on different platforms
-
 register00
 
 mserver00
@@ -18,12 +17,12 @@ qgram
 
 groupby00
 
+
 imprints
 
 call00
 callstring
 callfunction
-
 
 #ascii_io2 needs work
 
@@ -67,7 +66,10 @@ zorder
 
 manifold
 manifoldstr
-#manifoldaggr
+
+mosaic_none
+mosaic_rle
+mosaic_mix
 
 #HAVE_RAPTOR?rdf
 

@@ -17,6 +17,7 @@
 
 INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
+   ../../../monetdb5/optimizer \
 	../../../common/options \
 	../../../common/stream \
 	../../../common/utils \
@@ -60,6 +61,7 @@ lib_mal = {
 		zorder.c zorder.h \
 		sample.c sample.h \
 		json_util.c json_util.h \
+		mosaic.c mosaic.h \
 		calc.c batcalc.c
 }
 
@@ -75,7 +77,7 @@ headers_mal = {
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
-		tokenizer.mal zorder.mal sample.mal json_util.mal \
+		tokenizer.mal zorder.mal sample.mal json_util.mal mosaic.mal \
 		calc.mal batcalc.mal batmtime.mal querylog.mal sysmon.mal
 }
 
@@ -83,7 +85,7 @@ EXTRA_DIST = batExtensions.mal iterator.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal manifold.mal pcre.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
-	mal_mapi.mal mat.mal tokenizer.mal calc.mal \
-	batcalc.mal batmtime.mal querylog.mal sysmon.mal
+	mal_mapi.mal mat.mal tokenizer.mal calc.mal 
+	batcalc.mal batmtime.mal querylog.mal sysmon.mal mosaic.mal
 
 EXTRA_DIST_DIR = Tests
