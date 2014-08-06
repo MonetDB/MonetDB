@@ -72,11 +72,15 @@ typedef struct{
 		if (msg) 				\
 			break;				\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(!ATOMvarsized(mut->args[i].type)){ 	\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] += mut->args[i].size;	\
-			} else {				\
+			} else if (ATOMvarsized(mut->args[i].type)) { \
 				mut->args[i].o++;		\
 				mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+				args[i] = (void*)  &mut->args[i].s;	 \
+			} else { \
+				mut->args[i].o++;		\
+				mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
 				args[i] = (void*)  &mut->args[i].s;	 \
 			}				\
 		}					\
@@ -102,11 +106,15 @@ default:\
 			break;					\
 		bunfastapp(mut->args[0].b, (void*) y);	\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(!ATOMvarsized(mut->args[i].type)){	\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] += mut->args[i].size;	\
-			} else {				\
+			} else if(ATOMvarsized(mut->args[i].type)){	\
 				mut->args[i].o++;		\
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
+				args[i] =  (void*) & mut->args[i].s; 	\
+			} else {				\
+				mut->args[i].o++;		\
+				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);\
 				args[i] =  (void*) & mut->args[i].s; 	\
 			}					\
 		}						\
@@ -130,10 +138,13 @@ MANIFOLDjob(MULTItask *mut)
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
 		if ( mut->args[i].b ){
-			if (!ATOMvarsized(mut->args[i].type)) {
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] = (char*) mut->args[i].first;
-			} else {
+			} else if(ATOMvarsized(mut->args[i].type)){	\
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
+				args[i] =  (void*) & mut->args[i].s; 
+			} else {
+				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s; 
 			}
 		} else {
@@ -307,7 +318,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	freeInstruction(mut.pci);
 
 	// consolidate the properties
-	if (!ATOMvarsized(mat[0].b->ttype))
+	if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
