@@ -168,6 +168,7 @@ struct OPTcatalog {
 {"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
+{"mosaic",		0,	0,	0,	DEBUG_OPT_MOSAIC},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},

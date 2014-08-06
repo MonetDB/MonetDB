@@ -56,6 +56,7 @@
 #include "opt_joinpath.h"
 #include "opt_mapreduce.h"
 #include "opt_matpack.h"
+#include "opt_mosaic.h"
 #include "opt_json.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
@@ -100,6 +101,7 @@ struct{
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
+	{"mosaic", &OPTmosaicImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"octopus", &OPToctopusImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
