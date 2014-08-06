@@ -486,6 +486,8 @@ float nextafterf(float x, float y);
 
 /* The algebra operators should fall back to their default
  * when we know that the heap is not compressed
+ * The actual decompression should wait until we know that
+ * the administration thru SQL layers works properly.
  */
 #define calculate_range(TPE, TPE2)					\
 	do {								\
@@ -517,7 +519,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	li = (bit *) getArgReference(stk, pci, i + 4);
 	hi = (bit *) getArgReference(stk, pci, i + 5);
 	anti = (bit *) getArgReference(stk, pci, i + 6);
-	// use default implementation is possible
+	// use default implementation if possible
 	if( !isCompressed(*bid))
 		return ALGsubselect1(ret,bid,low,hgh,li,hi,anti);
 
