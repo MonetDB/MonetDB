@@ -1159,6 +1159,33 @@ exp_has_func( sql_exp *e )
 	return 0;
 }
 
+int
+exp_unsafe( sql_exp *e) 
+{
+	if (!e)
+		return 0;
+
+	if (e->type != e_func && e->type != e_convert)
+		return 0;
+
+	if (e->type == e_func && e->card == CARD_AGGR)
+		return 1;
+	if (e->type == e_convert && e->l)
+		return exp_unsafe(e->l);
+	if (e->type == e_func && e->l) {
+		list *args = e->l;
+		node *n;
+
+		for(n = args->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_unsafe(e))
+				return 1;			
+		}
+	}
+	return 0;
+}
+
 static int
 exp_key( sql_exp *e )
 {

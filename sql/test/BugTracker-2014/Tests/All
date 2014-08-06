@@ -23,4 +23,6 @@ stringfloatshtcompare.Bug-3512
 oid-table-assert.Bug-3514
 round-properties.Bug-3515
 union_with_subqueries.Bug-3518
+unsafe_project_push_down.Bug-3523
 non_groupby_column.Bug-3524
+orderby_count.Bug-3526
