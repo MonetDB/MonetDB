@@ -103,6 +103,7 @@ include txtsim;
 include tokenizer;
 include zorder;
 
+include mosaic;
 # include logger;
 include transaction;
 

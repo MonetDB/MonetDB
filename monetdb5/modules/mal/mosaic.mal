@@ -1,0 +1,109 @@
+module mosaic;
+
+pattern compress(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address MOScompress
+comment "Apply dynamic compression over chunks";
+
+pattern decompress(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address MOSdecompress
+comment "Apply dynamic compression over chunks";
+
+pattern analyse()
+address MOSanalyse
+comment "Apply heap compression on all";
+
+pattern dump(b:bat[:oid,:any])
+address MOSdump
+comment "Dump the compressed structure";
+
+pattern subselect(b:bat[:oid,:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:sht], cand:bat[:oid,:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:int], cand:bat[:oid,:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:lng], cand:bat[:oid,:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:flt], cand:bat[:oid,:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
+pattern thetasubselect(b:bat[:oid,:bte], low:bte, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:sht], low:sht, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:int], low:int, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:lng], low:lng, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:flt], low:flt, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:dbl], low:dbl, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
+pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect
+comment "Overloaded selection routine";
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+address MOSleftfetchjoin
+comment "Overloaded leftfetchjoin operation";
+
+pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address MOSjoin
+comment "Overloaded join operation";
