@@ -717,12 +717,14 @@ typedef struct {
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
-		      forcemap:1;  /* force STORE_MMAP even if heap exists */
+		      forcemap:1,  /* force STORE_MMAP even if heap exists */
+			  compressed:1; /* compress heaps */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
 	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
+	BUN count;		/* decompression count */
 } Heap;
 
 typedef struct {
@@ -1743,7 +1745,8 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			if ((col)->seq == oid_nil) {			\
 				(col)->nonil = (b)->batCount == 0;	\
 				(col)->nil = !(col)->nonil;		\
-				(col)->revsorted = 1;			\
+				if( !(col)->heap.compressed) \
+					(col)->revsorted = 1;			\
 				(col)->key = (b)->batCount <= 1;	\
 				(col)->dense = 0;			\
 			} else {					\
@@ -1751,11 +1754,13 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->nonil = 1;			\
 				(col)->nil = 0;				\
 				(col)->key = 1;				\
-				(col)->revsorted = (b)->batCount <= 1;	\
+				if( !(col)->heap.compressed) \
+					(col)->revsorted = (b)->batCount <= 1;	\
 			}						\
-			(col)->sorted = 1;				\
+			if( !(col)->heap.compressed) \
+				(col)->sorted = 1;				\
 		} else if ((b)->batCount <= 1) {			\
-			if (BATatoms[(col)->type].linear) {		\
+			if( !(col)->heap.compressed  && BATatoms[(col)->type].linear) {		\
 				(col)->sorted = 1;			\
 				(col)->revsorted = 1;			\
 			}						\
@@ -1782,7 +1787,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->seq = sqbs;			\
 			}						\
 		}							\
-		if (!BATatoms[(col)->type].linear) {			\
+		if( !(col)->heap.compressed && !BATatoms[(col)->type].linear) {			\
 			(col)->sorted = 0;				\
 			(col)->revsorted = 0;				\
 		}							\
