@@ -283,6 +283,14 @@ pattern optimizer.mitosis(mod:str, fcn:str):str
 address OPTwrapper
 comment "Modify the plan to exploit parallel processing on multiple cores";
 
+#opt_mosaic.mal
+
+pattern optimizer.mosaic():str
+address OPTwrapper;
+pattern optimizer.mosaic(mod:str, fcn:str):str
+address OPTwrapper
+comment "Modify the plan to exploit compressed storage";
+
 #opt_multiplex.mal
 pattern optimizer.multiplex():void
 address OPTwrapper
