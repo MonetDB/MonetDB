@@ -468,7 +468,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				ValRecord cst;
 
 				/* slice the candidates */
-				setFunctionId(r, sliceRef);
+				setFunctionId(r, subsliceRef);
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				getArg(r, 1) = getArg(s, 1); 
 				cst.vtype = getArgType(mb, r, 2);
