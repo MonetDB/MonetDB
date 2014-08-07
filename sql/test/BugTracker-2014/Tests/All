@@ -18,6 +18,7 @@ in_incorrect_multi.Bug-3462
 crash_on_groupby_distinct_serial.Bug-3463
 local-temp-1.Bug-3468
 local-temp-2.Bug-3468
+select_in_crash.Bug-3491
 boolean_not.Bug-3505
 varchar_conversion_crash.Bug-3506
 bug_in_cse.Bug-3511
