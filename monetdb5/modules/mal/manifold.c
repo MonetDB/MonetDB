@@ -129,7 +129,7 @@ MANIFOLDjob(MULTItask *mut)
 {	int i;
 	char *p, *q;
 	char **args;
-	str y, msg= MAL_SUCCEED;
+	str y = NULL, msg= MAL_SUCCEED;
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
@@ -167,6 +167,8 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg= createException(MAL,"mal.manifold","manifold call limitation ");
 	}
+	if (ATOMextern(mut->args[0].type) && y) 
+		GDKfree(y); 
 bunins_failed:
 	GDKfree(args);
 	return msg;
