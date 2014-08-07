@@ -1,9 +1,9 @@
 stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:41 >  
-# 17:11:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:41 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,27 +20,35 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:42 >  
-# 17:11:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:42 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- TIME
+#--
 #CREATE TABLE TIME_TBL (f1 time(2));
 #INSERT INTO TIME_TBL VALUES ('00:00');
-[ 1	]
+[ 1 ]
 #INSERT INTO TIME_TBL VALUES ('01:00');
-[ 1	]
+[ 1 ]
+#-- as of 7.4, timezone spec should be accepted and ignored
 #INSERT INTO TIME_TBL VALUES ('02:03 PST');
-[ 1	]
+[ 1 ]
 #INSERT INTO TIME_TBL VALUES ('11:59 EDT');
-[ 1	]
+[ 1 ]
 #INSERT INTO TIME_TBL VALUES ('12:00');
-[ 1	]
+[ 1 ]
 #INSERT INTO TIME_TBL VALUES ('12:01');
-[ 1	]
+[ 1 ]
 #INSERT INTO TIME_TBL VALUES ('23:59');
+[ 1 ]
+#INSERT INTO TIME_TBL VALUES ('11:59:59.99 AM');
 [ 1	]
 #INSERT INTO TIME_TBL VALUES ('11:59:59.99 PM');
-[ 1	]
+[ 1 ]
 #SELECT f1 AS "Time" FROM TIME_TBL;
 % sys.L # table_name
 % Time # name
@@ -54,6 +62,7 @@ Ready.
 [ 12:01:00.00	]
 [ 23:59:00.00	]
 [ 11:59:59.99	]
+[ 11:59:59.99	]
 #SELECT f1 AS "Three" FROM TIME_TBL WHERE f1 < '05:06:07';
 % sys.L # table_name
 % Three # name
@@ -62,9 +71,9 @@ Ready.
 [ 00:00:00.00	]
 [ 01:00:00.00	]
 [ 02:03:00.00	]
-#SELECT f1 AS "Five" FROM TIME_TBL WHERE f1 > '05:06:07';
+#SELECT f1 AS "Six" FROM TIME_TBL WHERE f1 > '05:06:07';
 % sys.L # table_name
-% Five # name
+% Six # name
 % time # type
 % 11 # length
 [ 11:59:00.00	]
@@ -72,14 +81,15 @@ Ready.
 [ 12:01:00.00	]
 [ 23:59:00.00	]
 [ 11:59:59.99	]
+[ 11:59:59.99	]
 #SELECT f1 AS "None" FROM TIME_TBL WHERE f1 < '00:00';
 % sys.L # table_name
 % None # name
 % time # type
 % 11 # length
-#SELECT f1 AS "Eight" FROM TIME_TBL WHERE f1 >= '00:00';
+#SELECT f1 AS "Nine" FROM TIME_TBL WHERE f1 >= '00:00';
 % sys.L # table_name
-% Eight # name
+% Nine # name
 % time # type
 % 11 # length
 [ 00:00:00.00	]
@@ -90,21 +100,24 @@ Ready.
 [ 12:01:00.00	]
 [ 23:59:00.00	]
 [ 11:59:59.99	]
-#SELECT f1 + time '00:01' AS "Illegal" FROM TIME_TBL;
-% sys.L # table_name
-% Illegal # name
-% time # type
-% 15 # length
-[ 00:01:00.000000	]
-[ 01:01:00.000000	]
-[ 02:04:00.000000	]
-[ 12:00:00.000000	]
-[ 12:01:00.000000	]
-[ 12:02:00.000000	]
-[ nil	]
-[ 12:00:59.990000	]
+[ 11:59:59.99	]
+#SELECT f1, f1 + time '00:01' AS "Illegal" FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	Illegal # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	00:01:00.000000	]
+[ 01:00:00.00,	01:01:00.000000	]
+[ 02:03:00.00,	02:04:00.000000	]
+[ 11:59:00.00,	12:00:00.000000	]
+[ 12:00:00.00,	12:01:00.000000	]
+[ 12:01:00.00,	12:02:00.000000	]
+[ 23:59:00.00,	nil	]
+[ 11:59:59.99,	12:00:59.990000	]
+[ 11:59:59.99,	12:00:59.990000	]
+#DROP TABLE TIME_TBL;
 
-# 17:11:42 >  
-# 17:11:42 >  "Done."
-# 17:11:42 >  
+# 12:39:42 >  
+# 12:39:42 >  "Done."
+# 12:39:42 >  
 

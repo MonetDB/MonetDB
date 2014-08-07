@@ -21,7 +21,7 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
   list(name="MonetDBDriver", 
-       driver.version="0.9.2", 
+       driver.version="0.9.5", 
        DBI.version="0.2-7", 
        client.version=NA, 
        max.connections=NA)
@@ -135,7 +135,7 @@ setClass("MonetDBConnection", representation("DBIConnection", socket="externalpt
                                              connenv="environment", fetchSize="integer", Id="integer"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
-  envdata <- dbGetQuery(dbObj, "SELECT name, value from env()")
+  envdata <- dbGetQuery(dbObj, "SELECT name, value from sys.env()")
   ll <- as.list(envdata$value)
   names(ll) <- envdata$name
   ll$name <- "MonetDBConnection"
@@ -148,8 +148,8 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 })
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F, quote=F) {
-  q <- "select schemas.name as sn, tables.name as tn from tables join schemas on tables.schema_id=schemas.id"
-  if (!sys_tables) q <- paste0(q, " where system=false")
+  q <- "select schemas.name as sn, tables.name as tn from sys.tables join sys.schemas on tables.schema_id=schemas.id"
+  if (!sys_tables) q <- paste0(q, " where tables.system=false")
   df <- dbGetQuery(conn, q)
   if (quote) {
     df$tn <- paste0("\"", df$tn, "\"")
@@ -168,24 +168,24 @@ if (is.null(getGeneric("dbTransaction"))) setGeneric("dbTransaction", function(c
   standardGeneric("dbTransaction"))
 
 setMethod("dbTransaction", signature(conn="MonetDBConnection"),  def=function(conn, ...) {
-  dbSendQuery(conn, "start transaction")
+  dbSendQuery(conn, "START TRANSACTION")
   invisible(TRUE)
 })
 
 setMethod("dbCommit", "MonetDBConnection", def=function(conn, ...) {
-  dbSendQuery(conn, "commit")
+  dbSendQuery(conn, "COMMIT")
   invisible(TRUE)
 })
 
 setMethod("dbRollback", "MonetDBConnection", def=function(conn, ...) {
-  dbSendQuery(conn, "rollback")
+  dbSendQuery(conn, "ROLLBACK")
   invisible(TRUE)
 })
 
 setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  df <- dbGetQuery(conn, paste0("select columns.name as name from columns join tables on \
+  df <- dbGetQuery(conn, paste0("select columns.name as name from sys.columns join sys.tables on \
     columns.table_id=tables.id where tables.name='", name, "';"))	
   df$name
 })
@@ -275,9 +275,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 
 
 # adapted from RMonetDB, very useful...
-setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=TRUE, 
-                                                            ...) {
-  
+setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
+  append=FALSE, csvdump=FALSE, ...) {
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value)
   if (length(value)<1) stop("value must have at least one column")
   if (is.null(names(value))) names(value) <- paste("V", 1:length(value), sep='')
@@ -286,37 +285,52 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   } else {
     if (!is.data.frame(value)) value <- as.data.frame(value)
   }
-  fts <- sapply(value, dbDataType, dbObj=conn)
-  
+  if (overwrite && append) {
+    stop("Setting both overwrite and append to true makes no sense.")
+  }
+  qname <- make.db.names(conn, name, allow.keywords=FALSE)
   if (dbExistsTable(conn, name)) {
     if (overwrite) dbRemoveTable(conn, name)
-    else stop("Table `", name, "' already exists")
+    if (!overwrite && !append) stop("Table '", name, "' already exists. Set overwrite=TRUE if you want 
+      to remove the existing table. Set append=TRUE if you would like to add the new data to the 
+      existing table.")
   }
-  
-  fdef <- paste(make.db.names(conn, names(value), allow.keywords=FALSE), fts, collapse=', ')
-  qname <- make.db.names(conn, name, allow.keywords=FALSE)
-  ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
-  dbSendUpdate(conn, ct)
-  
+  if (!dbExistsTable(conn, name)) {
+    fts <- sapply(value, dbDataType, dbObj=conn)
+    fdef <- paste(make.db.names(conn, names(value), allow.keywords=FALSE), fts, collapse=', ')
+    ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
+    dbSendUpdate(conn, ct)
+  }
   if (length(value[[1]])) {
-    inss <- paste("INSERT INTO ", qname, " VALUES(", paste(rep("?", length(value)), collapse=', '), 
-                  ")", sep='')
-    .mapiRequest(conn, "Xauto_commit 0")
-    for (j in 1:length(value[[1]])) dbSendUpdate(conn, inss, list=as.list(value[j, ]))
-    dbSendQuery(conn, "COMMIT")
-    .mapiRequest(conn, "Xauto_commit 1")
+    if (csvdump) {
+      tmp <- tempfile(fileext = ".csv")
+      write.table(value, tmp, sep = ",", quote = TRUE,row.names = FALSE, col.names = FALSE,na="")
+      dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
+      " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS '' LOCKED"))
+      file.remove(tmp) 
+    } else {
+      vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
+      dbTransaction(conn)
+      # chunk some inserts together so we do not need to do a round trip for every one
+      splitlen <- 0:(nrow(value)-1) %/% getOption("monetdb.insert.splitsize", 1000)
+      lapply(split(value, splitlen), 
+        function(valueck) {
+        bvins <- c()
+        for (j in 1:length(valueck[[1]])) bvins <- c(bvins,.bindParameters(vins, as.list(valueck[j, ])))
+        dbSendUpdate(conn, paste0("INSERT INTO ", qname, " VALUES ",paste0(bvins, collapse=", ")))
+      })
+      dbCommit(conn)
+    }
   }
   return(invisible(TRUE))
 })
 
 setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def = function(dbObj, 
                                                                                           obj, ...) {
-  
   if (is.logical(obj)) "BOOLEAN"
   else if (is.integer(obj)) "INTEGER"
   else if (is.numeric(obj)) "DOUBLE PRECISION"
   else if (is.raw(obj)) "BLOB"
-  
   else "STRING"
 }, valueClass = "character")
 

@@ -1,9 +1,9 @@
 stdout of test 'random` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:05 >  
-# 17:11:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:05 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,12 +20,75 @@ stdout of test 'random` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:07 >  
-# 17:11:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:07 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- RANDOM
+#-- Test the random function
+#--
+#-- count the number of tuples originally, should be 1000
+#SELECT count(*) FROM onek;
+% sys.L0 # table_name
+% count # name
+% ? # type
+% ? # length
+[ 1000 ]
+
+#-- pick three random rows, they shouldn't match
+(SELECT unique1 AS random
+  FROM onek ORDER BY random() LIMIT 1)
+INTERSECT
+(SELECT unique1 AS random
+  FROM onek ORDER BY random() LIMIT 1)
+INTERSECT
+(SELECT unique1 AS random
+  FROM onek ORDER BY random() LIMIT 1);
+% sys.L0 # table_name
+% random # name
+% ? # type
+% ? # length
+
+#-- count roughly 1/10 of the tuples
+#SELECT count(*) AS random INTO RANDOM_TBL
+#  FROM onek WHERE random() < 1.0/10;
+#-- select again, the count should be different
+#INSERT INTO RANDOM_TBL (random)
+#  SELECT count(*)
+#  FROM onek WHERE random() < 1.0/10;
+[ 1 ]
+#-- select again, the count should be different
+#INSERT INTO RANDOM_TBL (random)
+#  SELECT count(*)
+#  FROM onek WHERE random() < 1.0/10;
+[ 1 ]
+#-- select again, the count should be different
+#INSERT INTO RANDOM_TBL (random)
+#  SELECT count(*)
+#  FROM onek WHERE random() < 1.0/10;
+[ 1 ]
+#-- now test that they are different counts
+#SELECT random, count(random) FROM RANDOM_TBL
+#  GROUP BY random HAVING count(random) > 3;
+% sys.L0,	sys.L0 # table_name
+% random,	count # name
+% ?,	? # type
+% ?,	? # length
+
+#SELECT AVG(random) FROM RANDOM_TBL
+#  HAVING AVG(random) NOT BETWEEN 80 AND 120;
+% sys.L0 # table_name
+% avg # name
+% ? # type
+% ? # length
 
 
-# 17:11:07 >  
-# 17:11:07 >  "Done."
-# 17:11:07 >  
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

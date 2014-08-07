@@ -152,8 +152,8 @@ SYScpuStatistics(int *ret, int *ret2)
 # endif
 #endif
 
-	bn = BATnew(TYPE_void, TYPE_str, 32);
-	b = BATnew(TYPE_void, TYPE_int, 32);
+	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
+	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
 		if ( b) BBPreleaseref(b->batCacheid);
 		if ( bn) BBPreleaseref(bn->batCacheid);
@@ -214,8 +214,8 @@ SYSmemStatistics(int *ret, int *ret2)
 
 	m = MT_mallinfo();
 
-	bn = BATnew(TYPE_void,TYPE_str, 32);
-	b = BATnew(TYPE_void, TYPE_wrd, 32);
+	bn = BATnew(TYPE_void,TYPE_str, 32, TRANSIENT);
+	b = BATnew(TYPE_void, TYPE_wrd, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPreleaseref(b->batCacheid);
 		if ( bn) BBPreleaseref(bn->batCacheid);
@@ -287,8 +287,8 @@ str
 SYSmem_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize());
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize());
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
 	struct Mallinfo m;
 	char buf[1024];
 	bat i;
@@ -406,8 +406,8 @@ str
 SYSvm_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize());
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize());
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
 	char buf[1024];
 	bat i;
 
@@ -528,8 +528,8 @@ SYSioStatistics(int *ret, int *ret2)
 #ifndef NATIVE_WIN32
 	getrusage(RUSAGE_SELF, &ru);
 #endif
-	bn = BATnew(TYPE_void, TYPE_str, 32);
-	b = BATnew(TYPE_void, TYPE_int, 32);
+	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
+	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPreleaseref(b->batCacheid);
 		if ( bn) BBPreleaseref(bn->batCacheid);
@@ -600,8 +600,8 @@ SYSgdkEnv(int *ret, int *ret2)
 	int tmp = 0, per = 0;
 	BAT *b,*bn;
 
-	bn = BATnew(TYPE_void, TYPE_str, 32);
-	b = BATnew(TYPE_void, TYPE_int, 32);
+	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
+	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPreleaseref(b->batCacheid);
 		if ( bn) BBPreleaseref(bn->batCacheid);
@@ -648,8 +648,8 @@ SYSgdkThread(int *ret, int *ret2)
 	BAT *b, *bn;
 	int i;
 
-	bn = BATnew(TYPE_void,TYPE_int, THREADS);
-	b = BATnew(TYPE_void, TYPE_str, THREADS);
+	bn = BATnew(TYPE_void,TYPE_int, THREADS, TRANSIENT);
+	b = BATnew(TYPE_void, TYPE_str, THREADS, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPreleaseref(b->batCacheid);
 		if ( bn) BBPreleaseref(bn->batCacheid);

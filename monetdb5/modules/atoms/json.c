@@ -1058,7 +1058,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 
 	JSON *jt = JSONparse(*js,TRUE);
 
-	bk = BATnew(TYPE_void, TYPE_str, 64);
+	bk = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL){
 		JSONfree(jt);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
@@ -1072,7 +1072,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 	bk->T->nonil = 1;
 
 	if( od){
-		bo = BATnew(TYPE_void, TYPE_oid, 64);
+		bo = BATnew(TYPE_void, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL){
 			BBPreleaseref(bk->batCacheid);
 			JSONfree(jt);
@@ -1087,7 +1087,7 @@ JSONunfoldInternal(int *od, int *key, int *val, json *js)
 		bo->T->nonil = 1;
 	}
 
-	bv = BATnew(TYPE_void, TYPE_json, 64);
+	bv = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
 		JSONfree(jt);
 		if( od)
@@ -1126,7 +1126,9 @@ JSONkeyTable(int *ret, json *js)
 	JSON *jt;
 
 	jt= JSONparse(*js, TRUE); // already validated
-	bn = BATnew(TYPE_void, TYPE_str, 64);
+	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	if (bn == NULL)
+		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;
@@ -1179,7 +1181,9 @@ JSONvalueTable(int *ret, json *js)
 	JSON *jt;
 
 	jt= JSONparse(*js, TRUE); // already validated
-	bn = BATnew(TYPE_void, TYPE_str, 64);
+	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	if (bn == NULL)
+		throw(MAL, "json.values", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
 	bn->hsorted = 1;
 	bn->hrevsorted = 0;
@@ -1720,7 +1724,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	}
 	assert(b->ttype == TYPE_str||b->ttype == TYPE_dbl);
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp);
+		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
 		if (bn == NULL)
 			return MAL_MALLOC_FAIL;
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
@@ -1761,12 +1765,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 		}
 	}
-	if (g && BATtdense(g)) {
-		/* singleton groups: return group ID's (g's tail) and original
-		 * values from b */
-		bn = VIEWcreate(BATmirror(g), b);
-		goto out;
-	}
 
 	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
@@ -1774,7 +1772,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	buflen = 0;
-	bn = BATnew(TYPE_void, TYPE_str, ngrp);
+	bn = BATnew(TYPE_void, TYPE_str, ngrp, TRANSIENT);
 	if (bn == NULL) {
 		err = MAL_MALLOC_FAIL;
 		goto out;
@@ -1798,12 +1796,83 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		} else {
 			map = (const oid *) Tloc(t2, BUNfirst(t2));
 		}
+		if (g && BATtdense(g)) {
+			for (p = 0, q = BATcount(g); p < q; p++) {
+				switch(b->ttype) {
+				case  TYPE_str:
+					v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					break;
+				case TYPE_dbl:
+					val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					if (*val != dbl_nil) {
+						snprintf(temp, sizeof(temp), "%f", *val);
+						v = (const char *)temp;
+					} else {
+						v =  NULL;
+					}
+					break;
+				}
+				if (!v||strNil(v)) {
+					if (skip_nils) {
+						/*
+						 * if q is 1 and the value is
+						 * null, then we need to fill
+						 * in a value. Otherwise
+						 * BATproject will fail.
+						 */
+						if ((p == 0 ) && (q == 1)) {
+							strncpy(buf, "[ null ]", maxlen - buflen);
+							buflen += strlen("[ null ]");
+							isnil = 1;
+						} else {
+							continue;
+						}
+					} else {
+						strncpy(buf, str_nil, buflen);
+						isnil = 1;
+					}
+				} else {
+					len = strlen(v);
+					if (len >= maxlen - buflen) {
+						maxlen += len + BUFSIZ;
+						buf = GDKrealloc(buf, maxlen);
+						if (buf == NULL) {
+							err = MAL_MALLOC_FAIL;
+							goto bunins_failed;
+						}
+					}
+					switch (b->ttype) {
+					case TYPE_str:
+						len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\" ]", v);
+						buflen += len;
+						break;
+					case TYPE_dbl:
+						len = snprintf(buf + buflen, maxlen - buflen, "[ %s ]", v);
+						buflen += len;
+						break;
+					}
+				}
+				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				buflen = 0;
+			}
+			BATseqbase(bn, min);
+			bn->T->nil = nils != 0;
+			bn->T->nonil = nils == 0;
+			bn->T->sorted = BATcount(bn) <= 1;
+			bn->T->revsorted = BATcount(bn) <= 1;
+			bn->T->key = BATcount(bn) <= 1;
+			goto out;
+		}
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
 		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
+			if (p == 0) {
+  				strncpy(buf + buflen, "[ ", maxlen - buflen);
+				buflen += 2;
+			}
 			if (p == q || grps[p] != prev) {
-  				strncpy(buf + buflen, " ]", buflen);
+  				strncpy(buf + buflen, " ]", maxlen - buflen);
 				buflen += 2;
 				while (BATcount(bn) < prev - min) {
 					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
@@ -1811,11 +1880,13 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				}
 				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				nils += strNil(buf);
-				strncpy(buf, str_nil, maxlen);
+				strncpy(buf + buflen, str_nil, maxlen - buflen);
 				buflen = 0;
 				if (p == q)
 					break;
 				prev = grps[p];
+  				strncpy(buf + buflen, "[ ", maxlen - buflen);
+				buflen += 2;
 				isnil = 0;
 			}
 			if (isnil)
@@ -1851,8 +1922,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				}
 				switch (b->ttype) {
 				case TYPE_str:
-					if (buflen == 0) {
-						len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\"", v);
+					if (buflen == 2) {
+						len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
 						buflen += len;
 					} else {
 						len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
@@ -1860,8 +1931,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					break;
 				case TYPE_dbl:
-					if (buflen == 0) {
-						len = snprintf(buf + buflen, maxlen - buflen, "[ %s", v);
+					if (buflen == 2) {
+						len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
 						buflen += len;
 					} else {
 						len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
@@ -1875,8 +1946,22 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		t2 = NULL;
 	} else {
 		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
-			v = (const char *) BUNtail(bi, p);
-			if (strNil(v)) {
+			switch(b->ttype) {
+				case  TYPE_str:
+				  v = (const char *) BUNtail(bi, p);
+				break;
+			case TYPE_dbl:
+				val = (const double *) BUNtail(bi, p);
+				if (*val != dbl_nil) {
+					snprintf(temp, sizeof(temp), "%f", *val);
+					v = (const char *)temp;
+			  	} else {
+                                	v =  NULL;
+				}
+				break;
+			}
+
+			if (!v||strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);
@@ -1892,12 +1977,25 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					goto bunins_failed;
 				}
 			}
-			if (buflen == 0) {
-				len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\"", v);
-				buflen += len;
-			} else {
-				len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
-				buflen += len;
+			switch (b->ttype) {
+			case TYPE_str:
+			  if (buflen == 2) {
+			    len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
+			    buflen += len;
+			  } else {
+			    len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
+			    buflen += len;
+			  }
+			  break;
+			case TYPE_dbl:
+			  if (buflen == 2) {
+			    len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
+			    buflen += len;
+			  } else {
+			    len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
+			    buflen += len;
+			  }
+			  break;
 			}
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));

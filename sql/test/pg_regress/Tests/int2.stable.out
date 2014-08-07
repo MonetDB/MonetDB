@@ -1,9 +1,9 @@
 stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:39 >  
-# 17:10:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:39 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,19 +20,220 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:40 >  
-# 17:10:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:40 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- smallint
+#-- NOTE: smallint operators never check for over/underflow!
+#-- Some of these answers are consequently numerically incorrect.
+#--
 #CREATE TABLE INT2_TBL(f1 smallint);
+#INSERT INTO INT2_TBL(f1) VALUES ('0   ');
+[ 1 ]
+#INSERT INTO INT2_TBL(f1) VALUES ('  1234 ');
+[ 1 ]
 #INSERT INTO INT2_TBL(f1) VALUES ('    -1234');
-[ 1	]
+[ 1 ]
+#
+#-- largest and smallest values
 #INSERT INTO INT2_TBL(f1) VALUES ('32767');
-[ 1	]
+[ 1 ]
 #INSERT INTO INT2_TBL(f1) VALUES ('-32767');
-[ 1	]
+[ 1 ]
+#SELECT '' AS five, * FROM INT2_TBL;
+% .L,	sys.int2_tbl # table_name
+% five,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	32767 ]
+[ "",	-32767 ]
+#SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as smallint);
+% .L,	sys.i # table_name
+% four,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	32767 ]
+[ "",	-32767 ]
+#SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as integer);
+% .L,	sys.i # table_name
+% four,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	32767 ]
+[ "",	-32767 ]
+#SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as smallint);
+% .L,	sys.i # table_name
+% one,	f1 # name
+% char,	smallint # type
+% 0,	1 # length
+#SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as integer);
+% .L,	sys.i # table_name
+% one,	f1 # name
+% char,	smallint # type
+% 0,	1 # length
+#SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as smallint);
+% .L,	sys.i # table_name
+% two,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	-32767 ]
+#SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as integer);
+% .L,	sys.i # table_name
+% two,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	-32767 ]
+#SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as smallint);
+% .L,	sys.i # table_name
+% three,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	-32767 ]
+#SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as integer);
+% .L,	sys.i # table_name
+% three,	f1 # name
+% char,	smallint # type
+% 0,	6 # length
+[ "",	-1234 ]
+[ "",	-32767 ]
+#SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as smallint);
+% .L,	sys.i # table_name
+% two,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	32767 ]
+#SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as integer);
+% .L,	sys.i # table_name
+% two,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	32767 ]
+#SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as smallint);
+% .L,	sys.i # table_name
+% three,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	32767 ]
+#SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as integer);
+% .L,	sys.i # table_name
+% three,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	32767 ]
+#SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
+% .L,	sys.i # table_name
+% one,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	32767 ]
+#SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
+% .L,	sys.i # table_name
+% three,	f1 # name
+% char,	smallint # type
+% 0,	5 # length
+[ "",	-1234 ]
+#SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	6,	6 # length
+[ "",	-1234,	-2468	]
+[ "",	32767,	65534	]
+[ "",	-32767,	-65534	]
+#SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
+#WHERE abs(f1) < 16384;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	5,	5 # length
+[ "",	-1234,	-2468 ]
+#SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	bigint # type
+% 0,	6,	6 # length
+[ "",	-1234,	-2468 ]
+[ "",	32767,	65534 ]
+[ "",	-32767,	-65534 ]
+#SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	6,	6 # length
+[ "",	-1234,	-1232	]
+[ "",	32767,	32769	]
+[ "",	-32767,	-32765	]
+#SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
+#WHERE f1 < 32766;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	6,	6 # length
+[ "",	-1234,	-1232 ]
+[ "",	-32767,	-32765 ]
+#SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	bigint # type
+% 0,	6,	6 # length
+[ "",	-1234,	-1232 ]
+[ "",	32767,	32769 ]
+[ "",	-32767,	-32765 ]
+#SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	6,	6 # length
+[ "",	-1234,	-1236	]
+[ "",	32767,	32765	]
+[ "",	-32767,	-32769	]
+#SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
+#WHERE f1 > -32767;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	5,	5 # length
+[ "",	-1234,	-1236 ]
+[ "",	32767,	32765 ]
+#SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	bigint # type
+% 0,	6,	6 # length
+[ "",	-1234,	-1236 ]
+[ "",	32767,	32765 ]
+[ "",	-32767,	-32769 ]
+#SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	smallint # type
+% 0,	6,	6 # length
+[ "",	-1234,	-617 ]
+[ "",	32767,	16383 ]
+[ "",	-32767,	-16383 ]
+#SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT2_TBL i;
+% .L,	sys.i,	sys.L # table_name
+% five,	f1,	x # name
+% char,	smallint,	int # type
+% 0,	6,	6 # length
+[ "",	-1234,	-617 ]
+[ "",	32767,	16383 ]
+[ "",	-32767,	-16383 ]
 
-# 17:10:40 >  
-# 17:10:40 >  "Done."
-# 17:10:40 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

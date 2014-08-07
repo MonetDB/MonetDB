@@ -83,8 +83,26 @@ Ready.
 % 1 # length
 [ 2	]
 #DROP TABLE _rank2933;
-#SELECT 123 AS dummy1 FROM tables n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
-#	(SELECT * FROM columns) nnn WHERE n.id > 0 );
+#create table tbls (id int);
+#insert into tbls values (42);
+[ 1	]
+#insert into tbls select * from tbls;
+[ 1	]
+#insert into tbls select * from tbls;
+[ 2	]
+#insert into tbls select * from tbls;
+[ 4	]
+#create table clmns (id int);
+#insert into clmns values (42);
+[ 1	]
+#insert into clmns select * from clmns;
+[ 1	]
+#insert into clmns select * from clmns;
+[ 2	]
+#insert into clmns select * from clmns;
+[ 4	]
+#SELECT 123 AS dummy1 FROM tbls n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
+#	(SELECT * FROM clmns) nnn WHERE n.id > 0 );
 % .L # table_name
 % dummy1 # name
 % tinyint # type
@@ -97,42 +115,8 @@ Ready.
 [ 123	]
 [ 123	]
 [ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
-[ 123	]
+#drop table clmns;
+#drop table tbls;
 
 # 17:14:07 >  
 # 17:14:07 >  "Done."

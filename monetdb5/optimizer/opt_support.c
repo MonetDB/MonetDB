@@ -840,6 +840,7 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 int isMapOp(InstrPtr p){
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
+		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef));
@@ -854,11 +855,8 @@ int isLikeOp(InstrPtr p){
 }
 
 int isTopn(InstrPtr p){
-	return ((getModuleId(p) == pqueueRef &&
-		(getFunctionId(p) == topn_minRef ||
-		 getFunctionId(p) == topn_maxRef ||
-		 getFunctionId(p) == utopn_minRef ||
-		 getFunctionId(p) == utopn_maxRef)) || isSlice(p));
+	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
+			isSlice(p));
 }
 
 int isSlice(InstrPtr p){
@@ -880,7 +878,8 @@ int isDiffOp(InstrPtr p){
 
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-                (getFunctionId(p) == joinRef ||
+                (getFunctionId(p) == crossRef ||
+                 getFunctionId(p) == joinRef ||
                  getFunctionId(p) == antijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef)

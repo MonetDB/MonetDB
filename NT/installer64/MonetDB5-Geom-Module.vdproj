@@ -94,11 +94,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Windows.Installer.2.0"
-                    {
-                    "Name" = "8:Windows Installer 2.0"
-                    "ProductCode" = "8:Microsoft.Windows.Installer.2.0"
-                    }
                 }
             }
         }
@@ -428,6 +423,7 @@
         "ProductCode" = "8:{BD1A3C71-3A8E-421D-922D-2B7A19926B5C}"
         "PackageCode" = "8:{471DD1DA-9C69-4289-821D-4CC329A8BA94}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
+        "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
@@ -992,7 +988,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x64.msm"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x64.msm"
                 "Properties"
                 {
                 }

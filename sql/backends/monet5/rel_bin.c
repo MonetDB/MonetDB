@@ -1802,7 +1802,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_distinct(mvc *sql, stmt *s)
+rel2bin_distinct(mvc *sql, stmt *s, stmt **distinct)
 {
 	node *n;
 	stmt *g = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
@@ -1842,6 +1842,8 @@ rel2bin_distinct(mvc *sql, stmt *s)
 		list_append(rl, stmt_project(sql->sa, ext, t));
 	}
 
+	if (distinct)
+		*distinct = ext;
 	s = stmt_list(sql->sa, rl);
 	return s;
 }
@@ -1903,7 +1905,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 	}
 
 	if (need_distinct(rel)) 
-		sub = rel2bin_distinct(sql, sub);
+		sub = rel2bin_distinct(sql, sub, NULL);
 	return sub;
 }
 
@@ -2042,7 +2044,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	}
 
 	if (need_distinct(rel))
-		sub = rel2bin_distinct(sql, sub);
+		sub = rel2bin_distinct(sql, sub, NULL);
 	return sub;
 }
 
@@ -2168,7 +2170,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	}
 
 	if (need_distinct(rel))
-		sub = rel2bin_distinct(sql, sub);
+		sub = rel2bin_distinct(sql, sub, NULL);
 	return sub;
 }
 
@@ -2266,7 +2268,10 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			assert(0);
 			return NULL;
 		}
-		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
+		/* single value with limit */
+		if (topn && rel->r && sub && sub->nrcols == 0)
+			s = const_column(sql->sa, s);
+		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(sql->sa, bin_first_column(sql->sa, sub), s);
 			
 		s = stmt_rename(sql, rel, exp, s);
@@ -2323,11 +2328,11 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		sub = stmt_list(sql->sa, npl);
 	}
 	if (need_distinct(rel)) {
-		psub = rel2bin_distinct(sql, psub);
+		stmt *distinct = NULL;
+		psub = rel2bin_distinct(sql, psub, &distinct);
 		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
 		if (sub) {
 			list *npl = sa_list(sql->sa);
-			stmt *distinct = stmt_mirror(sql->sa, psub->op4.lval->h->data);
 			
 			pl = sub->op4.lval;
 			for ( n=pl->h ; n; n = n->next) 
@@ -2511,7 +2516,9 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 
 		stmt *aggrstmt = NULL;
 
-		/* first look in the group by column list */
+		/* first look in the current aggr list (l) and group by column list */
+		if (l && !aggrstmt && aggrexp->type == e_column) 
+			aggrstmt = list_find_column(sql->sa, l, aggrexp->l, aggrexp->r);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(sql->sa, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby)

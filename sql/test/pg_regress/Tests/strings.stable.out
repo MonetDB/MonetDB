@@ -1,9 +1,9 @@
 stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:33 >  
-# 17:11:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:33 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,10 +20,18 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:33 >  
-# 17:11:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:33 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- STRINGS
+#-- Test various data entry syntaxes.
+#--
+#-- SQL92 string continuation syntax
+#-- E021-03 character string literals
 #SELECT 'first line'
 #' - next line'
 #	' - third line'
@@ -33,6 +41,168 @@ Ready.
 % char # type
 % 35 # length
 [ "first line - next line - third line"	]
+#SELECT 'first line'
+#' - next line' /* this comment is not allowed here */
+#' - third line'
+#	AS "Illegal comment within continuation";
+% .L # table_name
+% Illegal comment within continuation # name
+% char # type
+% 35 # length
+[ "first line - next line - third line" ]
+#CREATE TABLE CHAR_TBL(f1 char);
+#INSERT INTO CHAR_TBL (f1) VALUES ('a');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('A');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('1');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES (2);
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('3');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('');
+[ 1	]
+#SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+% sys.L # table_name
+% text(char) # name
+% clob # type
+% 1 # length
+[ "a"	]
+[ "A"	]
+[ "1"	]
+[ "2"	]
+[ "3"	]
+[ ""	]
+#CREATE TABLE VARCHAR_TBL(f1 varchar(1));
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('a');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('A');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('1');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES (2);
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('3');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('');
+[ 1	]
+#SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
+% sys.L # table_name
+% text(varchar) # name
+% clob # type
+% 1 # length
+[ "a"	]
+[ "A"	]
+[ "1"	]
+[ "2"	]
+[ "3"	]
+[ ""	]
+#SELECT CAST('namefield' AS text) AS "text(name)";
+% .L # table_name
+% text(name) # name
+% clob # type
+% 9 # length
+[ "namefield"	]
+#CREATE TABLE TEXT_TBL (f1 text);
+#INSERT INTO TEXT_TBL VALUES ('doh!');
+[ 1	]
+#INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
+[ 1	]
+#SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
+% sys.L # table_name
+% char(text) # name
+% char # type
+% 10 # length
+[ "doh!"	]
+[ "hi de ho n"	]
+#SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
+% sys.L # table_name
+% char(text) # name
+% char # type
+% 20 # length
+[ "doh!"	]
+[ "hi de ho neighbor"	]
+#SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
+% sys.L # table_name
+% char(varchar) # name
+% char # type
+% 10 # length
+[ "a"	]
+[ "A"	]
+[ "1"	]
+[ "2"	]
+[ "3"	]
+[ ""	]
+#SELECT CAST('namefield' AS char(10)) AS "char(name)";
+% .L # table_name
+% char(name) # name
+% char # type
+% 10 # length
+[ "namefield"	]
+#SELECT CAST(f1 AS varchar(1)) AS "varchar(text)" FROM TEXT_TBL;
+% sys.L # table_name
+% varchar(text) # name
+% varchar # type
+% 1 # length
+[ "d"	]
+[ "h"	]
+#SELECT CAST(f1 AS varchar(1)) AS "varchar(char)" FROM CHAR_TBL;
+% sys.L # table_name
+% varchar(char) # name
+% varchar # type
+% 1 # length
+[ "a"	]
+[ "A"	]
+[ "1"	]
+[ "2"	]
+[ "3"	]
+[ ""	]
+#SELECT CAST('namefield' AS string) AS "varchar(name)";
+% .L # table_name
+% varchar(name) # name
+% clob # type
+% 9 # length
+[ "namefield"	]
+#DROP TABLE CHAR_TBL;
+#DROP TABLE VARCHAR_TBL;
+#DROP TABLE TEXT_TBL;
+#SELECT TRIM('  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
+% .L # table_name
+% bunch o blanks # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT LTRIM('  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
+% .L # table_name
+% bunch o blanks   # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT RTRIM('  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
+% .L # table_name
+%   bunch o blanks # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT TRIM(replace('xxxxxsome Xsxxxxx', 'x', ' ')) = 'some Xs' AS "some Xs";
+% .L # table_name
+% some Xs # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT SUBSTRING('1234567890' FROM 3) = '34567890' AS "34567890";
+% .L # table_name
+% 34567890 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT SUBSTRING('1234567890' FROM 4 FOR 3) = '456' AS "456";
+% .L # table_name
+% 456 # name
+% boolean # type
+% 5 # length
+[ true	]
 #SELECT POSITION('4' IN '1234567890') = '4' AS "4";
 % .L # table_name
 % 4 # name
@@ -361,42 +531,166 @@ Ready.
 % .L # table_name
 % Concat unknown types # name
 % char # type
-% 0 # length
-[ "unknown and unknown"	]
+% 19 # length
+[ "unknown and unknown" ]
+#SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
+% .L # table_name
+% Concat text to unknown type # name
+% varchar # type
+% 16 # length
+[ "text and unknown" ]
+#SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
+% .L # table_name
+% Concat char to unknown type # name
+% char # type
+% 29 # length
+[ "characters and text" ]
+#SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
+% .L # table_name
+% Concat text to char # name
+% varchar # type
+% 19 # length
+[ "text and characters" ]
+#SELECT cast('text' as text) || cast(' and varchar' as varchar(20)) AS "Concat text to varchar";
+% .L # table_name
+% Concat text to varchar # name
+% varchar # type
+% 16 # length
+[ "text and varchar" ]
+
+#--
+#-- test substr with toasted text values
+#--
 #CREATE TABLE toasttest(f1 text);
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
+#--
+#-- Ensure that some values are uncompressed, to test the faster substring
+#-- operation used in that case
+#--
+#alter table toasttest alter column f1 set storage external;
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
 #insert into toasttest values(repeat('1234567890',10000));
-[ 1	]
+[ 1 ]
+#SELECT substring(f1, -1, 5) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% varchar # type
+% 5 # length
+[ "12345"	]
+[ "12345"	]
+[ "12345"	]
+[ "12345"	]
+#SELECT substring(f1, 5, -1) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% varchar # type
+% 0 # length
+[ ""	]
+[ ""	]
+[ ""	]
+[ ""	]
+#SELECT substring(f1, 99995) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% varchar # type
+% 6 # length
+[ "567890"	]
+[ "567890"	]
+[ "567890"	]
+[ "567890"	]
+#SELECT substring(f1, 99995, 10) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% varchar # type
+% 6 # length
+[ "567890"	]
+[ "567890"	]
+[ "567890"	]
+[ "567890"	]
 #DROP TABLE toasttest;
+#CREATE TABLE toasttest(f1 blob);
+#insert into toasttest values(repeat('1234567890',10000));
+[ 1 ]
+#insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
+[ 1 ]
+#SELECT substring(f1, -1, 5) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% clob # type
+% 5 # length
+[ "12345"	]
+[ "12345"	]
+#SELECT substring(f1, 5, -1) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% clob # type
+% 0 # length
+[ ""	]
+[ ""	]
+#SELECT substring(f1, 99995) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% clob # type
+% 6 # length
+[ "567890"	]
+[ "567890"	]
+#SELECT substring(f1, 99995, 10) from toasttest;
+% sys.L # table_name
+% substring_f1 # name
+% clob # type
+% 6 # length
+[ "567890"	]
+[ "567890"	]
+#DROP TABLE toasttest;
+#--
+#-- test length
+#--
 #SELECT length('abcdef') AS "length_6";
 % .L # table_name
 % length_6 # name
 % int # type
 % 1 # length
-[ 6	]
+[ 6 ]
+#SELECT locate('cd', 'abcdef') AS "pos_3";
+% .L # table_name
+% pos_3 # name
+% int # type
+% 1 # length
+[ 3 ]
+#SELECT locate('xy', 'abcdef') AS "pos_0";
+% .L # table_name
+% pos_0 # name
+% int # type
+% 1 # length
+[ 0 ]
+
+#--
+#-- test replace
+#--
 #SELECT replace('abcdef', 'de', '45') AS "abc45f";
 % .L # table_name
 % abc45f # name
 % char # type
 % 0 # length
-[ "abc45f"	]
+[ "abc45f" ]
+
 #SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
 % .L # table_name
 % ya123da123doo # name
 % char # type
 % 0 # length
-[ "ya123da123doo"	]
+[ "ya123da123doo" ]
+
 #SELECT replace('yabadoo', 'bad', '') AS "yaoo";
 % .L # table_name
 % yaoo # name
 % char # type
 % 0 # length
-[ "yaoo"	]
+[ "yaoo" ]
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
 % .L # table_name
 % TRUE # name
@@ -440,7 +734,7 @@ Ready.
 % 5 # length
 [ true	]
 
-# 17:11:34 >  
-# 17:11:34 >  "Done."
-# 17:11:34 >  
+# 15:36:03 >  
+# 15:36:03 >  "Done."
+# 15:36:03 >  
 

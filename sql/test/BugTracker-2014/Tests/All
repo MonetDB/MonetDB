@@ -19,3 +19,8 @@ in_incorrect_multi.Bug-3462
 crash_on_groupby_distinct_serial.Bug-3463
 local-temp-1.Bug-3468
 local-temp-2.Bug-3468
+varchar_conversion_crash.Bug-3506
+stringfloatshtcompare.Bug-3512
+oid-table-assert.Bug-3514
+round-properties.Bug-3515
+union_with_subqueries.Bug-3518

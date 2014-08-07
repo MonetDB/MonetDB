@@ -96,7 +96,7 @@ bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt);
+	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -130,6 +130,7 @@ bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
 	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -228,7 +229,7 @@ bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt);
+	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -262,6 +263,7 @@ bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -356,7 +358,7 @@ batnil_2dec(int *res, int *bid, int *d, int *sc)
 		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TYPE), BATcount(b));
+	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
@@ -383,7 +385,7 @@ batstr_2dec(int *res, int *bid, int *d, int *sc)
 		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TYPE), BATcount(b));
+	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
@@ -421,7 +423,7 @@ batstr_2num(int *res, int *bid, int *len)
 		throw(SQL, "batcalc.str_2num_" STRING(TYPE), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TYPE), BATcount(b));
+	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);

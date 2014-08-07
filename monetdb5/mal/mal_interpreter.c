@@ -533,10 +533,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* also produce event record for start of function */
 	if ( startpc == 1 ){
 		runtimeProfileInit(cntxt, mb, stk);
-		runtimeProfileBegin(cntxt, mb, stk, NULL, &runtimeProfileFunction);
+		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
-		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout)
+		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout) {
+			if ( backup != backups) GDKfree(backup);
+			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", RUNTIME_SESSION_TIMEOUT);
+		}
 	} 
 	stkpc = startpc;
 	exceptionVar = -1;
@@ -808,7 +811,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 								backup[i].val.bval = 0;
 								BBPdecref(bx, TRUE);
 							}
-							if (i >= 0 && garbage[i] >= 0) {
+							if (garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 								bid = abs(stk->stk[garbage[i]].val.bval);
 								stk->stk[garbage[i]].val.bval = 0;
@@ -1172,7 +1175,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc++;
 		}
 		if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-			ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+			if (ret == MAL_SUCCEED)
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}
 	}

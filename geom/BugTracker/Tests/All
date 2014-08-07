@@ -3,6 +3,7 @@
 
 X_crash.SF-1971632
 copy_into_crash.SF-1975402
+copy_into_mbr.3492
 
 # tests related to bug reports:
 # <descriptive-name>.Bug-<bug-report-id>

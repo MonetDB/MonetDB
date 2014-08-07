@@ -123,7 +123,7 @@ voidbathash(BAT **res, BAT *b )
 	wrd *r, *f;
 	BATiter bi, dsti;
 
-	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
+	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT);
 	if (!dst)
 		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
@@ -286,7 +286,7 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 		return " Illegal number of rotate bits";
 	}
 
-	br = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
+	br = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT);
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
 		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(b));
@@ -454,7 +454,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	} else {
 		cur = (*BATatoms[tpe].atomHash)(pval);
 	}
-	br = BATnew(TYPE_void, TYPE_wrd, BATcount(hn));
+	br = BATnew(TYPE_void, TYPE_wrd, BATcount(hn), TRANSIENT);
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
 		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(hn));
@@ -513,7 +513,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		return " Illegal number of rotate bits";
 	}
 
-	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
+	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn), TRANSIENT);
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
 		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(bn));

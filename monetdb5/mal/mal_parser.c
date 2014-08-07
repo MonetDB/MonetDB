@@ -1927,7 +1927,7 @@ parseMAL(Client cntxt, Symbol curPrg)
  * Comment lines produced by Mx, i.e. #line directives are not saved.
  * The deadcode optimizer removes all comment information.
  */
-				curInstr = newInstruction(NULL, REMsymbol);
+				curInstr = newInstruction(curBlk, REMsymbol);
 				cst.vtype = TYPE_str;
 				cst.len = (int) strlen(start);
 				cst.val.sval = GDKstrdup(start);

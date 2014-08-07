@@ -239,7 +239,7 @@ BATprev(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}
@@ -268,7 +268,7 @@ BATalpha(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}
@@ -297,7 +297,7 @@ BATdelta(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}

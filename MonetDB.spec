@@ -36,6 +36,10 @@
 %define with_geos 1
 %endif
 
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%define with_samtools 1
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -45,7 +49,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -78,6 +82,9 @@ BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
+%if %{?with_samtools:1}%{!?with_samtools:0}
+BuildRequires: samtools-devel
+%endif
 
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
@@ -449,6 +456,29 @@ numerical analysis (gsl).
 %{_libdir}/monetdb5/gsl.mal
 %{_libdir}/monetdb5/lib_gsl.so
 
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%package bam-MonetDB5
+Summary: MonetDB5 SQL interface to the bam library
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description bam-MonetDB5
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to load and query BAM (binary
+version of Sequence Alignment/Map) data.
+
+%files bam-MonetDB5
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_bam.mal
+%{_libdir}/monetdb5/createdb/*_bam.sql
+%{_libdir}/monetdb5/bam.mal
+%{_libdir}/monetdb5/lib_bam.so
+%endif
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -501,16 +531,22 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
-%{_libdir}/monetdb5/autoload/0*.mal
-# %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_lsst.mal
-%{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
-%{_libdir}/monetdb5/autoload/*_udf*.mal
-%{_libdir}/monetdb5/autoload/*_vault.mal
+%if %{?with_geos:1}%{!?with_geos:0}
+%exclude %{_libdir}/monetdb5/autoload/*_geom.mal
+%endif
+%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+# %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
+%exclude %{_libdir}/monetdb5/autoload/*_sql.mal
+%{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%exclude %{_libdir}/monetdb5/bam.mal
+%exclude %{_libdir}/monetdb5/autoload/*_bam.mal
+%exclude %{_libdir}/monetdb5/lib_bam.so
+%endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
@@ -561,9 +597,9 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1}
-# for systemd-tmpfiles
-Requires: systemd-units
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+Requires: %{_bindir}/systemd-tmpfiles
 %endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
@@ -577,7 +613,7 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if %{?rhel:0}%{!?rhel:1}
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
@@ -587,11 +623,11 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
-%if %{?rhel:0}%{!?rhel:1}
-# Fedora 15 and newer
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %else
-# RedHat Enterprise Linux
+# RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
@@ -604,6 +640,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
+%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%exclude %{_libdir}/monetdb5/createdb/*_bam.sql
+%endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
@@ -761,6 +800,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-readline=yes \
 	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
 	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
+	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
@@ -801,6 +841,24 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.21-20140725
+- Rebuilt.
+- BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean
+  values
+
+* Tue Jul 22 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
+- Rebuilt.
+- BZ#3487: dead link to "Professional services"
+- BZ#3500: MonetDB driver wants an empty string for SQLTables and
+  SQLColumns API calls, where other drivers expect NULL
+- BZ#3514: mserver5 crash due (assertion failure in gdk_select.c)
+- BZ#3515: mserver5 crash due (assertion failure in gdk_bat.c)
+
+* Tue Jun  3 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.19-20140722
+- buildtools: Fix configure to continue without Python if the python binary is
+  too old.  This instead of always aborting configure if python happens
+  to be too old.
+
 * Wed May 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.17-20140514
 - Rebuilt.
 - BZ#3482: Crossproduct error

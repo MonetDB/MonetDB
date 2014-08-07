@@ -32,8 +32,8 @@
 #include "mal_interpreter.h"
 #include "algebra.h"
 
-#define DEBUG_OPT_DETAIL
-#define _DEBUG_OPT_CENTIPEDE_ 
+//#define DEBUG_OPT_DETAIL
+//#define _DEBUG_OPT_CENTIPEDE_ 
 
 #define BLOCKED 1	// Instruction should remain in main routine
 #define PARTITION 2	// Instruction is part of the fragment routine
@@ -642,12 +642,6 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			if ( vars[getArg(p,1)] == PARTITION ){
 				status[i] = BLOCKED;
 				vars[getArg(p,0)] = BLOCKED;
-			}
-		} else
-		if ( getModuleId(p) == pqueueRef && getFunctionId(p) == utopn_minRef ){
-			if ( vars[getArg(p,1)] == PARTITION ){
-				status[i] = PIVOT;
-				vars[getArg(p,0)] = PIVOT;
 			}
 		} else
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subsortRef || getFunctionId(p) == sortRef || getFunctionId(p)== tinterRef) ) {

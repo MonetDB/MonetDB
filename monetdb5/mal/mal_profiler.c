@@ -86,7 +86,8 @@ static struct {
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
 	/*  21 */  { "footprint", 0},
-	/*  21 */  { 0, 0}
+	/*  22 */  { "numa", 0},
+	/*  23 */  { 0, 0}
 };
 
 int
@@ -140,6 +141,9 @@ activateCounter(str name)
 		break;
 	case 'm':
 		profileCounter[PROFmemory].status = 1;
+		break;
+	case 'n':
+		profileCounter[PROFnuma].status = 1;
 		break;
 	case 'p':
 		profileCounter[PROFprocess].status = 1;
@@ -312,6 +316,9 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFfootprint].status) {
 		logadd("footprint,\t");
 	}
+	if (profileCounter[PROFnuma].status) {
+		logadd("numa,\t");
+	}
 	if (profileCounter[PROFreads].status)
 		logadd("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
@@ -453,6 +460,14 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 	}
 	if (profileCounter[PROFfootprint].status) {
 		logadd(LLFMT",\t", stk->tmpspace);
+	}
+	if (profileCounter[PROFnuma].status) {
+		int i;
+		logadd("\"");
+		for( i= pci->retc ; i < pci->argc; i++)
+		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
+			logadd("@%d", mb->var[getArg(pci,i)]->worker);
+		logadd("\",\t");
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -879,19 +894,19 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	MT_lock_set(&mal_profileLock, "TRACEtable");
-	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
-	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
-	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
-	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
-	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
-	r[4] = BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
-	r[5] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
-	r[6] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
-	r[7] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
-	r[8] = BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
-	r[9] = BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
-	r[10] = BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
-	r[11] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
+	r[0] = BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0, TRANSIENT);
+	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
+	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
+	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
+	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
+	r[4] = BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0, TRANSIENT);
+	r[5] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
+	r[6] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
+	r[7] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0, TRANSIENT);
+	r[8] = BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0, TRANSIENT);
+	r[9] = BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0, TRANSIENT);
+	r[10] = BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0, TRANSIENT);
+	r[11] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "TRACEtable");
 }
 
@@ -908,7 +923,7 @@ TRACEcreate(str hnme, str tnme, int tt)
 		return b;
 	}
 
-	b = BATnew(TYPE_void, tt, 1 << 16);
+	b = BATnew(TYPE_void, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
@@ -1026,31 +1041,31 @@ getTrace(str nme)
 	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "tag") == 0)
-		return BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0);
+		return BATcopy(TRACE_id_tag, TRACE_id_tag->htype, TRACE_id_tag->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "event") == 0)
-		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
+		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "time") == 0)
-		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
+		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "ticks") == 0)
-		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
+		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "pc") == 0)
-		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
+		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "thread") == 0)
-		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
+		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "user") == 0)
-		return BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
+		return BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "stmt") == 0)
-		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
+		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "type") == 0)
-		return BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
+		return BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "rbytes") == 0)
-		return BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
+		return BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "wbytes") == 0)
-		return BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
+		return BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "reads") == 0)
-		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
+		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "writes") == 0)
-		return BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
+		return BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0, TRANSIENT);
 	return NULL;
 }
 
@@ -1302,8 +1317,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
 		return -1;
 	buf[n] = 0;
-	for ( s= buf; *s; s++)
-	{
+	for ( s= buf; *s; s++) {
 		if ( strncmp(s,"cpu",3)== 0){
 			s +=3;
 			if ( *s == ' ') {
@@ -1315,8 +1329,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 					cpu = 255;
 			}
 			s= strchr(s,' ');
-			if ( s== 0 || cpu < 0 || cpu > 255) goto skip;
-			
+			if (s == NULL)		/* unexpected format of file */
+				break;
+
 			while( *s && isspace((int)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
@@ -1330,7 +1345,9 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			corestat[cpu].idle = idle;
 			corestat[cpu].iowait = iowait;
 		} 
-		skip: if(s) while( *s && *s != '\n') s++;
+	  skip:
+		while (*s && *s != '\n')
+			s++;
 	}
 
 	s= cpuload;
@@ -1445,6 +1462,12 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 #endif
 	if (profileCounter[PROFmemory].status && delayswitch < 0)
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+	if (profileCounter[PROFfootprint].status)
+		logadd("0,\t");
+	if (profileCounter[PROFnuma].status){
+		logadd("\"");
+		logadd("\",\t");
+	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
@@ -1452,8 +1475,6 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
-	if (profileCounter[PROFfootprint].status)
-		logadd("0,\t");
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);

@@ -193,7 +193,7 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_hge, cnt);
+	res = BATnew(TYPE_void, TYPE_hge, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -324,7 +324,7 @@ hge_bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TYPE_hge, cnt);
+	res = BATnew(TYPE_void, TYPE_hge, cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPreleaseref(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -454,7 +454,7 @@ batnil_2dec_hge(int *res, int *bid, int *d, int *sc)
 		throw(SQL, "batcalc.nil_2dec_hge", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_hge, BATcount(b));
+	dst = BATnew(b->htype, TYPE_hge, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec_hge", MAL_MALLOC_FAIL);
@@ -481,7 +481,7 @@ batstr_2dec_hge(int *res, int *bid, int *d, int *sc)
 		throw(SQL, "batcalc.str_2dec_hge", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_hge, BATcount(b));
+	dst = BATnew(b->htype, TYPE_hge, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec_hge", MAL_MALLOC_FAIL);
@@ -519,7 +519,7 @@ batstr_2num_hge(int *res, int *bid, int *len)
 		throw(SQL, "batcalc.str_2num_hge", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_hge, BATcount(b));
+	dst = BATnew(b->htype, TYPE_hge, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num_hge", MAL_MALLOC_FAIL);

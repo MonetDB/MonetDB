@@ -188,11 +188,8 @@ str
 CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *fnme = (str*) getArgReference(stk,pci,1);
-	str msg = MAL_SUCCEED;
 	(void) mb;		/* fool compiler */
-	if( msg == MAL_SUCCEED)
-		setLogFile(cntxt->fdout,cntxt->nspace, *fnme);
-	return msg;
+	return setLogFile(cntxt->fdout,cntxt->nspace, *fnme);
 }
 
 str
@@ -201,8 +198,7 @@ CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *host = (str*) getArgReference(stk,pci,1);
 	int *port = (int*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
-	setLogStream(cntxt->nspace, *host, *port);
-	return MAL_SUCCEED;
+	return setLogStream(cntxt->nspace, *host, *port);
 }
 
 str
@@ -211,8 +207,7 @@ CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
-	setStartPoint(cntxt->nspace, *mod, *fcn);
-	return MAL_SUCCEED;
+	return setStartPoint(cntxt->nspace, *mod, *fcn);
 }
 
 str
@@ -221,8 +216,7 @@ CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
-	setStartPoint(cntxt->nspace, *mod, *fcn);
-	return MAL_SUCCEED;
+	return setStartPoint(cntxt->nspace, *mod, *fcn);
 }
 
 str
@@ -233,8 +227,7 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	stopProfiling();
-	return MAL_SUCCEED;
+	return stopProfiling();
 }
 
 str
@@ -245,8 +238,7 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	startProfiling();
-	return MAL_SUCCEED;
+	return startProfiling();
 }
 str
 CMDnoopProfiler(int *res)
@@ -291,8 +283,7 @@ CMDgetTrace(int *res, str *ev)
 str
 CMDcleanup(int *ret){
 	(void) ret;
-	cleanupProfiler();
-	return MAL_SUCCEED;
+	return cleanupProfiler();
 }
 
 str

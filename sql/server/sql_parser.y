@@ -2509,7 +2509,11 @@ opt_using:
 opt_nr:
     /* empty */			{ $$ = NULL; }
  |  poslng RECORDS		{ $$ = append_lng(append_lng(L(), $1), 0); }
- |  poslng OFFSET poslng RECORDS	{ $$ = append_lng(append_lng(L(), $1), $3); }
+ |  OFFSET poslng 		{ $$ = append_lng(append_lng(L(), -1), $2); }
+ |  poslng OFFSET poslng RECORDS	
+				{ $$ = append_lng(append_lng(L(), $1), $3); }
+ |  poslng RECORDS OFFSET poslng	
+				{ $$ = append_lng(append_lng(L(), $1), $4); }
  ;
 
 opt_null_string:
@@ -4279,10 +4283,18 @@ literal:
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_bool(SA, &t, FALSE)); }
+ |  NOT BOOL_FALSE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(SA, &t, TRUE)); }
  |  BOOL_TRUE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_bool(SA, &t, TRUE)); }
+ |  NOT BOOL_TRUE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(SA, &t, FALSE)); }
  ;
 
 interval_expression:
@@ -5564,9 +5576,20 @@ int sqlerror(mvc * c, const char *err)
 		sqlstate = "";
 		err++;
 	}
-	(void)sql_error( c, 4,
-		 "!%s%s in: \"%s\"\n",
-		 sqlstate, err, QUERY(c->scanner));
+	if (c->scanner.errstr) {
+		if (c->scanner.errstr[0] == '!')
+			(void)sql_error(c, 4,
+					"!%s%s: %s\n",
+					sqlstate, err, c->scanner.errstr + 1);
+		else
+			(void)sql_error(c, 4,
+					"!%s%s: %s in \"%.80s\"\n",
+					sqlstate, err, c->scanner.errstr,
+					QUERY(c->scanner));
+	} else
+		(void)sql_error(c, 4,
+				"!%s%s in: \"%.80s\"\n",
+				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
 

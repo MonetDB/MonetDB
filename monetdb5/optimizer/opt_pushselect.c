@@ -399,9 +399,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 				if (subselect_find_subselect(&subselects, var) > 0) {
 					InstrPtr qq = newAssignment(mb);
+					/* TODO: check result */
 
 					getArg(qq, 0) = getArg(p, 0); 
-					qq = pushArgument(mb, qq, getArg(p, 1));
+					(void) pushArgument(mb, qq, getArg(p, 1));
 					actions++;
 					freeInstruction(p);
 					continue;
@@ -457,6 +458,31 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			vars[res] = i;
 		}
 
+		/* push subslice under projectdelta */
+		if (isSlice(p) && p->retc == 1) {
+			int var = getArg(p, 1);
+			InstrPtr q = old[vars[var]];
+			if (getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr s = copyInstruction(q);
+				ValRecord cst;
+
+				/* slice the candidates */
+				setFunctionId(r, sliceRef);
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(r, 1) = getArg(s, 1); 
+				cst.vtype = getArgType(mb, r, 2);
+				cst.val.wval = 0;
+				getArg(r, 2) = defConstant(mb, cst.vtype, &cst); /* start from zero */
+				pushInstruction(mb,r);
+
+				/* dummy result for the old q, will be removed by deadcode optimizer */
+				getArg(q, 0) = newTmpVariable(mb, getArgType(mb, q, 0));
+
+				getArg(s, 1) = getArg(r, 0); /* use result of subslice */
+				pushInstruction(mb, s);
+			}
+		}
 		/* c = delta(b, uid, uvl, ins)
 		 * s = subselect(c, C1..)
 		 *

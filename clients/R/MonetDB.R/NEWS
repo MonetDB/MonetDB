@@ -1,3 +1,15 @@
+0.9.5
+- Fixed package date (Thanks, Dimitar)
+- Added sys. schema name to internal queries, so SET SCHEMA xx would not break things (Thanks again, Dimitar)
+
+0.9.4
+- dbWriteTable overhaul (thanks, Anthony)
+- Fix for dbListTables for MonetDB versions after Jan2014
+
+0.9.3
+- Remove trailing slashes for monetdb.program.path parameter for monetdb.server.setup (Thanks, Anthony!)
+- fixed monetdbd.liststatus (Thanks, Bart)
+
 0.9.2
 - monetdb_queryinfo method to find out things about an arbitrary query cheaply
 - new options monetdb.sequential, monetdb.debug.query and monetdb.debug.mapi

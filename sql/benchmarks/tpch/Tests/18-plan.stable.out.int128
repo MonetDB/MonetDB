@@ -70,22 +70,22 @@ top N (
 | | | | | join (
 | | | | | | group by (
 | | | | | | | project (
-| | | | | | | | semijoin (
+| | | | | | | | join (
 | | | | | | | | | join (
-| | | | | | | | | | join (
-| | | | | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT ,
-| | | | | | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT 
-| | | | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
-| | | | | | | | | | table(sys.lineitem) [ lineitem.l_quantity NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
-| | | | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
-| | | | | | | | | project (
-| | | | | | | | | | select (
-| | | | | | | | | | | group by (
-| | | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
-| | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
-| | | | | | | | | | ) [ L3 NOT NULL > hugeint[smallint "300"] ]
-| | | | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
-| | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ]
+| | | | | | | | | | semijoin (
+| | | | | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT ,
+| | | | | | | | | | | project (
+| | | | | | | | | | | | select (
+| | | | | | | | | | | | | group by (
+| | | | | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
+| | | | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
+| | | | | | | | | | | | ) [ L3 NOT NULL > hugeint[smallint "300"] ]
+| | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
+| | | | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ],
+| | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
+| | | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = lineitem.l_orderkey NOT NULL HASHCOL  ],
+| | | | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT 
+| | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ]
 | | | | | | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ]
 | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL , customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ],
 | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL  as L10.c_custkey, customer.c_name NOT NULL as L10.c_name ] COUNT 

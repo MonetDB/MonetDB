@@ -15,20 +15,46 @@ stdout of test 'sql_command_kills_db.SF-2233677` in directory 'sql/test/BugTrack
 # MonetDB/SQL module v2.26.0 loaded
 
 Ready.
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 99_system.sql
 
+# 22:12:44 >  
+# 22:12:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9576" "--port=31254"
+# 22:12:44 >  
 
-# 16:15:09 >  
-# 16:15:09 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39774  -G
-# 16:15:09 >  
+#create table tbls (id int);
+#insert into tbls values (0),(1),(2);
+[ 3	]
+#create table t1 (id int NOT NULL);
+#drop table t1;
+#drop table tbls;
 
-
-# 16:15:09 >  
-# 16:15:09 >  Done.
-# 16:15:09 >  
+# 22:12:44 >  
+# 22:12:44 >  "Done."
+# 22:12:44 >  
 

@@ -1,9 +1,9 @@
 stdout of test 'circle` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:09:57 >  
-# 17:09:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:09:57 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,12 +20,119 @@ stdout of test 'circle` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:09:58 >  
-# 17:09:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:09:58 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- CIRCLE
+#--
+#CREATE TABLE CIRCLE_TBL (f1 circle);
+#INSERT INTO CIRCLE_TBL VALUES ('<(5,1),3>');
+[ 1 ]
+#INSERT INTO CIRCLE_TBL VALUES ('<(1,2),100>');
+[ 1 ]
+#INSERT INTO CIRCLE_TBL VALUES ('1,3,5');
+[ 1 ]
+#INSERT INTO CIRCLE_TBL VALUES ('((1,2),3)');
+[ 1 ]
+#INSERT INTO CIRCLE_TBL VALUES ('<(100,200),10>');
+[ 1 ]
+#INSERT INTO CIRCLE_TBL VALUES ('<(100,1),115>');
+[ 1 ]
+#-- bad values
+#
+#
+#
+#SELECT * FROM CIRCLE_TBL;
+% sys.L0 # table_name
+% f1 # name
+% ? # type
+% ? # length
+[ "<(5,1),3>" ]
+[ "<(1,2),100>" ]
+[ "<(1,3),5>" ]
+[ "<(1,2),3>" ]
+[ "<(100,200),10>" ]
+[ "<(100,1),115>" ]
+
+#SELECT '' AS six, center(f1) AS center
+#  FROM CIRCLE_TBL;
+% sys.L0,	sys.L0 # table_name
+% six,	center # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"(5,1)" ]
+[ "",	"(1,2)" ]
+[ "",	"(1,3)" ]
+[ "",	"(1,2)" ]
+[ "",	"(100,200)" ]
+[ "",	"(100,1)" ]
+
+#SELECT '' AS six, radius(f1) AS radius
+#  FROM CIRCLE_TBL;
+% sys.L0,	sys.L0 # table_name
+% six,	radius # name
+% ?,	? # type
+% ?,	? # length
+[ "",	3 ]
+[ "",	100 ]
+[ "",	5 ]
+[ "",	3 ]
+[ "",	10 ]
+[ "",	115 ]
+
+#SELECT '' AS six, diameter(f1) AS diameter
+#  FROM CIRCLE_TBL;
+% sys.L0,	sys.L0 # table_name
+% six,	diameter # name
+% ?,	? # type
+% ?,	? # length
+[ "",	6 ]
+[ "",	200 ]
+[ "",	10 ]
+[ "",	6 ]
+[ "",	20 ]
+[ "",	230 ]
+
+#SELECT '' AS two, f1 FROM CIRCLE_TBL WHERE radius(f1) < 5;
+% sys.L0,	sys.L0 # table_name
+% two,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"<(5,1),3>" ]
+[ "",	"<(1,2),3>" ]
+
+#SELECT '' AS four, f1 FROM CIRCLE_TBL WHERE diameter(f1) >= 10;
+% sys.L0,	sys.L0 # table_name
+% four,	f1 # name
+% ?,	? # type
+% ?,	? # length
+[ "",	"<(1,2),100>" ]
+[ "",	"<(1,3),5>" ]
+[ "",	"<(100,200),10>" ]
+[ "",	"<(100,1),115>" ]
+
+#SELECT '' as five, c1.f1 AS one, c2.f1 AS two, (c1.f1 <-> c2.f1) AS distance
+#  FROM CIRCLE_TBL c1, CIRCLE_TBL c2
+#  WHERE (c1.f1 < c2.f1) AND ((c1.f1 <-> c2.f1) > 0)
+#  ORDER BY distance, one USING < , two USING < ;
+% sys.L0,	sys.L0,	sys.L0,	sys.L0 # table_name
+% five,	one,	two,	distance # name
+% ?,	?,	?,	? # type
+% ?,	?,	?,	? # length
+[ "",	"<(100,200),10>",	"<(100,1),115>",	74 ]
+[ "",	"<(100,200),10>",	"<(1,2),100>",	111.3707298 ]
+[ "",	"<(1,3),5>",	"<(100,200),10>",	205.4767561 ]
+[ "",	"<(5,1),3>",	"<(100,200),10>",	207.5130382 ]
+[ "",	"<(1,2),3>",	"<(100,200),10>",	208.3707298 ]
 
 
-# 17:09:58 >  
-# 17:09:58 >  "Done."
-# 17:09:58 >  
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
 

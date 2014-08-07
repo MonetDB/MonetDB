@@ -314,13 +314,14 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int *ret = (int *) getArgReference(s, p, 0);
 	int *ret2 = (int *) getArgReference(s, p, 1);
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
-	if (b == 0)
+	if (b == 0 || bn == 0) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
-	if (bn == 0)
-		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	pseudo(ret,b,"view","stk","frame");
@@ -333,13 +334,14 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int n, *ret = (int *) getArgReference(s, p, 0);
 	int *ret2 = (int *) getArgReference(s, p, 1);
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	
-	if ( b== NULL)
+	if (b == 0 || bn == 0) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
-	if ( bn== NULL)
-		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 
@@ -364,12 +366,14 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int k = 0;
 	size_t len,l;
 
-	b = BATnew(TYPE_void, TYPE_int, 256);
+	b = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
 	if ( b== NULL)
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
-	bn = BATnew(TYPE_void, TYPE_str, 256);
-	if ( bn== NULL)
+	bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	if ( bn== NULL) {
+		BBPreclaim(b);
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 	(void) cntxt;
@@ -540,7 +544,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
 	int i, *ret = (int *) getArgReference(stk, p, 0);
 	str ps;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
 	(void) cntxt;
 	if (b == 0)
@@ -679,7 +683,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static BAT *
 TBL_getdir(void)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 100);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
 	int i = 0;
 
 	char *mod_path;

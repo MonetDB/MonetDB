@@ -24,7 +24,7 @@ INSERT INTO POINT_TBL(f1) VALUES ('(10.0 10.0)');
 INSERT INTO POINT_TBL(f1) VALUES ('(10.0,10.0');
 
 
-SELECT '' AS six, POINT_TBL.*;
+SELECT '' AS six, POINT_TBL.* FROM POINT_TBL;
 
 -- left of 
 SELECT '' AS three, p.* FROM POINT_TBL p WHERE p.f1 << '(0.0, 0.0)';
@@ -55,7 +55,7 @@ SELECT '' AS six, p.f1, p.f1 <-> string '(0,0)' AS dist
    FROM POINT_TBL p
    ORDER BY dist;
 
-SET geqo TO 'off';
+/* SET geqo TO 'off'; */
 
 SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
    FROM POINT_TBL p1, POINT_TBL p2
@@ -77,5 +77,4 @@ SELECT '' AS three, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS dista
    WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1 and p1.f1 >^ p2.f1
    ORDER BY distance;
 
-RESET geqo;
-
+/* RESET geqo; */

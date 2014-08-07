@@ -29,8 +29,8 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
-/* version 05.20.02 of catalog */
-#define CATALOG_VERSION 52002
+/* version 05.21.00 of catalog */
+#define CATALOG_VERSION 52100
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
@@ -871,11 +871,9 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s = SA_ZNEW(tr->sa, sql_schema);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 		base_init(tr->sa, &s->base, sid, TR_OLD, v); _DELETE(v);
-		v = table_funcs.column_find_value(tr, 
-			find_sql_column(ss, "authorization"), rid);
+		v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
-		v = table_funcs.column_find_value(tr, 
-			find_sql_column(tables, "system"), rid);
+		v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
 		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
@@ -3555,7 +3553,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 
-	if (isKindOfTable(t))
+	if (isKindOfTable(t) || isView(t))
 		sys_drop_columns(tr, t, drop_action);
 
 	if (isGlobal(t)) 

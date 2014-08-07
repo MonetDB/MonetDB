@@ -154,7 +154,7 @@ batnil_2_timestamp(int *res, int *bid)
 		throw(SQL, "batcalc.nil_2_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b));
+	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
@@ -181,7 +181,7 @@ batstr_2_timestamp(int *res, int *bid)
 		throw(SQL, "batcalc.str_2_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b));
+	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
@@ -252,7 +252,7 @@ batnil_2_daytime(int *res, int *bid)
 		throw(SQL, "batcalc.nil_2_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b));
+	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
@@ -279,7 +279,7 @@ batstr_2_daytime(int *res, int *bid)
 		throw(SQL, "batcalc.str_2_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b));
+	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
@@ -350,7 +350,7 @@ batnil_2_date(int *res, int *bid)
 		throw(SQL, "batcalc.nil_2_date", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_date, BATcount(b));
+	dst = BATnew(b->htype, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
@@ -377,7 +377,7 @@ batstr_2_date(int *res, int *bid)
 		throw(SQL, "batcalc.str_2_date", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_date, BATcount(b));
+	dst = BATnew(b->htype, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
@@ -448,7 +448,7 @@ batnil_2_sqlblob(int *res, int *bid)
 		throw(SQL, "batcalc.nil_2_sqlblob", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b));
+	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
@@ -475,7 +475,7 @@ batstr_2_sqlblob(int *res, int *bid)
 		throw(SQL, "batcalc.str_2_sqlblob", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b));
+	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
@@ -578,7 +578,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "batcalc.str", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_str, BATcount(b));
+	dst = BATnew(b->htype, TYPE_str, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);

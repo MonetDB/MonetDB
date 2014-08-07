@@ -1,9 +1,9 @@
 stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:10:25 >  
-# 17:10:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:10:25 >  
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
@@ -20,22 +20,84 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:10:26 >  
-# 17:10:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:10:26 >  
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
 
+= ! Correct / expected output still needs to be provided / verified / approved ! =
+
+#--
+#-- double
+#--
 #CREATE TABLE FLOAT8_TBL(f1 double);
+#INSERT INTO FLOAT8_TBL(f1) VALUES ('    0.0   ');
+[ 1 ]
+#INSERT INTO FLOAT8_TBL(f1) VALUES ('1004.30  ');
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
-[ 1	]
+[ 1 ]
+#SELECT cast('10e-400' as double);
+% .L # table_name
+% single_value # name
+% double # type
+% 24 # length
+[ 0	]
+#SELECT cast('-10e-400' as double);
+% .L # table_name
+% single_value # name
+% double # type
+% 24 # length
+[ -0	]
+#SELECT cast('NaN' as double);
+% .L # table_name
+% single_value # name
+% double # type
+% 24 # length
+[ NULL	]
+#SELECT cast('nan' as double);
+% .L # table_name
+% single_value # name
+% double # type
+% 24 # length
+[ NULL	]
+#SELECT cast('infinity' as double);
+% .L # table_name
+% single_value # name
+% double # type
+% 24 # length
+[ inf	]
+#SELECT cast('Infinity' as double) / cast('Infinity' as double);
+% .L # table_name
+% sql_div_single_value # name
+% double # type
+% 24 # length
+[ NULL	]
+#SELECT cast('nan' as double) / cast('nan' as double);
+% .L # table_name
+% sql_div_single_value # name
+% double # type
+% 24 # length
+[ NULL	]
+#SELECT '' AS five, * FROM FLOAT8_TBL;
+% .L,	sys.float8_tbl # table_name
+% five,	f1 # name
+% char,	double # type
+% 0,	24 # length
+[ "",	0	]
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
 % .L,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	0	]
 [ "",	-34	]
 [ "",	1	]
 [ "",	1	]
@@ -44,11 +106,13 @@ Ready.
 % one,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	1004	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE '1004.3' > f.f1;
 % .L,	sys.f # table_name
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	0	]
 [ "",	-34	]
 [ "",	1	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE  f.f1 < '1004.3';
@@ -56,6 +120,7 @@ Ready.
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	0	]
 [ "",	-34	]
 [ "",	1	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE '1004.3' >= f.f1;
@@ -63,6 +128,8 @@ Ready.
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	0	]
+[ "",	1004	]
 [ "",	-34	]
 [ "",	1	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE  f.f1 <= '1004.3';
@@ -70,6 +137,8 @@ Ready.
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
+[ "",	0	]
+[ "",	1004	]
 [ "",	-34	]
 [ "",	1	]
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x 
@@ -79,6 +148,7 @@ Ready.
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
+[ "",	1004,	-10043	]
 [ "",	1,	-1	]
 [ "",	1,	-1	]
 #SELECT '' AS three, f.f1, f.f1 + '-10' AS x
@@ -88,6 +158,7 @@ Ready.
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
+[ "",	1004,	994	]
 [ "",	1,	1	]
 [ "",	1,	-10	]
 #SELECT '' AS three, f.f1, f.f1 / '-10' AS x
@@ -97,6 +168,7 @@ Ready.
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
+[ "",	1004,	-100	]
 [ "",	1,	-1	]
 [ "",	1,	-1	]
 #SELECT '' AS three, f.f1, f.f1 - '-10' AS x
@@ -106,6 +178,7 @@ Ready.
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
+[ "",	1004,	1014	]
 [ "",	1,	1	]
 [ "",	1,	10	]
 #SELECT '' AS one, f.f1 ^ '2.0' AS square_f1
@@ -114,68 +187,134 @@ Ready.
 % one,	square_f1 # name
 % char,	decimal # type
 % 0,	20 # length
+[ "",	1006	]
+#SELECT '' AS five, f.f1, abs(f1) AS abs_f1 
+#   FROM FLOAT8_TBL f;
+% .L,	sys.f,	sys.L # table_name
+% five,	f1,	abs_f1 # name
+% char,	double,	double # type
+% 0,	24,	24 # length
+[ "",	0,	0	]
+[ "",	1004,	1004	]
+[ "",	-34,	34	]
+[ "",	1,	1	]
+[ "",	1,	1	]
+#SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
+#   FROM FLOAT8_TBL f;
+% .L,	sys.f,	sys.L # table_name
+% five,	f1,	round_f1 # name
+% char,	double,	double # type
+% 0,	24,	24 # length
+[ "",	0,	0	]
+[ "",	1004,	1004	]
+[ "",	-34,	-35	]
+[ "",	1,	1	]
+[ "",	1,	0	]
 #select ceil(f1) as ceil_f1 from float8_tbl f;
 % sys.L # table_name
 % ceil_f1 # name
 % double # type
 % 24 # length
-[ -34	]
-[ 1	]
+[ 0	]
+[ 1005	]
+[ -34 ]
+[ 1 ]
 [ 1	]
 #select ceiling(f1) as ceiling_f1 from float8_tbl f;
 % sys.L # table_name
 % ceiling_f1 # name
 % double # type
 % 24 # length
-[ -34	]
-[ 1	]
+[ 0	]
+[ 1005	]
+[ -34 ]
+[ 1 ]
 [ 1	]
 #select floor(f1) as floor_f1 from float8_tbl f;
 % sys.L # table_name
 % floor_f1 # name
 % double # type
 % 24 # length
-[ -35	]
-[ 1	]
 [ 0	]
+[ 1004	]
+[ -35 ]
+[ 1	]
+[ 0 ]
+
+#-- sign
 #select sign(f1) as sign_f1 from float8_tbl f;
 % sys.L # table_name
 % sign_f1 # name
 % tinyint # type
 % 2 # length
-[ -1	]
+[ 0	]
 [ 1	]
-[ 1	]
+[ -1 ]
+[ 1 ]
+[ 1 ]
+#SELECT '' AS five, * FROM FLOAT8_TBL;
+% .L,	sys.float8_tbl # table_name
+% five,	f1 # name
+% char,	double # type
+% 0,	24 # length
+[ "",	0	]
+[ "",	1004	]
+[ "",	-34	]
+[ "",	1	]
+[ "",	1	]
 #UPDATE FLOAT8_TBL
 #   SET f1 = FLOAT8_TBL.f1 * '-1'
 #   WHERE FLOAT8_TBL.f1 > '0.0';
-[ 2	]
+[ 3	]
 #SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
 % .L,	sys.L # table_name
 % bad,	exp_f1 # name
 % char,	double # type
 % 0,	24 # length
-[ "",	7	]
-[ "",	0	]
 [ "",	1	]
+[ "",	0	]
+[ "",	7	]
+[ "",	0 ]
+[ "",	1	]
+#SELECT '' AS five, * FROM FLOAT8_TBL;
+% .L,	sys.float8_tbl # table_name
+% five,	f1 # name
+% char,	double # type
+% 0,	24 # length
+[ "",	0	]
+[ "",	-1004	]
+[ "",	-34	]
+[ "",	-1	]
+[ "",	-1	]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('10e-400');
 [ 1	]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-10e-400');
 [ 1	]
 #DELETE FROM FLOAT8_TBL;
-[ 5	]
+[ 7	]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('0.0');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-34.84');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-1004.30');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e+200');
-[ 1	]
+[ 1 ]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e-200');
-[ 1	]
+[ 1 ]
+#SELECT '' AS five, * FROM FLOAT8_TBL;
+% .L,	sys.float8_tbl # table_name
+% five,	f1 # name
+% char,	double # type
+% 0,	24 # length
+[ "",	0 ]
+[ "",	-34	]
+[ "",	-1004	]
+[ "",	-1	]
+[ "",	-1	]
+#DROP TABLE FLOAT8_TBL;
 
-# 17:10:26 >  
-# 17:10:26 >  "Done."
-# 17:10:26 >  
+# 18:12:46 >  
+# 18:12:46 >  "Done."
+# 18:12:46 >  
 

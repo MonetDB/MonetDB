@@ -66,6 +66,12 @@ Shorthand for option
 Default value:
 .BR @localstatedir@/monetdb5/dbfarm/demo .
 .TP
+\fB\-\-dbextra=\fP\fIpath\fP
+Path where mserver5 should store transient data.  Default value is the
+value of the
+.B \-\-dbpath
+option.
+.TP
 \fB\-\-dbinit=\fP\fIstmt\fP
 MAL statement to execute as part of the startup of the server.
 .TP

@@ -117,7 +117,7 @@ TKNZRopen(int *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH + 1);
+	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock, "tokenizer");
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
@@ -135,7 +135,7 @@ TKNZRopen(int *ret, str *in)
 	idx = BBPindex(batname);
 
 	if (idx == 0) { /* new tokenizer */
-		b = BATnew(TYPE_void, TYPE_oid, 1024);
+		b = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
@@ -266,7 +266,7 @@ TKNZRappend(oid *pos, str *s)
 			/* make new bat for value */
 			batname = (str) GDKmalloc(132 * sizeof(char));
 			snprintf(batname, 128, "%s_%d", name, i);
-			bVal = BATnew(TYPE_void, TYPE_str, 1024);
+			bVal = BATnew(TYPE_void, TYPE_str, 1024, PERSISTENT);
 			if (bVal == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
@@ -293,7 +293,7 @@ TKNZRappend(oid *pos, str *s)
 
 			/* make new bat for index */
 			snprintf(batname, 132, "%s_idx_%d", name, i);
-			bIdx = BATnew(TYPE_void, TYPE_oid, 1024);
+			bIdx = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
 			if (bIdx == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
@@ -608,7 +608,7 @@ TKNZRgetCount(int *r)
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
-	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1);
+	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);
@@ -633,7 +633,7 @@ TKNZRgetCardinality(int *r)
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
-	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1);
+	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);

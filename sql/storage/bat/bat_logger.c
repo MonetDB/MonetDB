@@ -81,7 +81,7 @@ bl_postversion( void *lg)
 	(void)lg;
 	if (catalog_version == CATALOG_FEB2013) {
 		/* we need to add the new schemas.system column */
-		BAT *b, *b1;
+		BAT *b, *b1, *b2;
 		BATiter bi;
 		char *s = "sys", n[64];
 		BUN p,q;
@@ -90,10 +90,10 @@ bl_postversion( void *lg)
 		if (!b)
 			return;
 		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b));
-        	BATseqbase(b1, b->hseqbase);
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
 		if (!b1)
 			return;
+        	BATseqbase(b1, b->hseqbase);
 		/* only sys and tmp are system schemas */
 		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
 			bit v = FALSE;
@@ -106,6 +106,57 @@ bl_postversion( void *lg)
 		logger_add_bat(lg, b1, N(n, NULL, s, "schemas_system"));
 		bat_destroy(b);
 		bat_destroy(b1);
+
+		/* add args.inout (default to ARG_IN) */
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "args_name")));
+		if (!b)
+			return;
+		bi = bat_iterator(b);
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
+		if (!b1)
+			return;
+        	BATseqbase(b1, b->hseqbase);
+		/* default to ARG_IN, names starting with 'res' are ARG_OUT */
+		bi = bat_iterator(b);
+		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			bte v = ARG_IN;
+			char *name = BUNtail(bi, p);
+			if (strncmp(name, "res", 3) == 0)
+				v = ARG_OUT;
+			BUNappend(b1, &v, TRUE);
+		}
+		b1 = BATsetaccess(b1, BAT_READ);
+		logger_add_bat(lg, b1, N(n, NULL, s, "args_inout"));
+		bat_destroy(b);
+		bat_destroy(b1);
+
+		/* add functions.vararg/varres */
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_name")));
+		if (!b)
+			return;
+		bi = bat_iterator(b);
+		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
+		b2 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
+		if (!b1 || !b2)
+			return;
+        	BATseqbase(b1, b->hseqbase);
+        	BATseqbase(b2, b->hseqbase);
+		/* default to no variaable arguments and results */
+		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			bit v = FALSE;
+			/* TODO how about import ! */
+			BUNappend(b1, &v, TRUE);
+			BUNappend(b2, &v, TRUE);
+		}
+		b1 = BATsetaccess(b1, BAT_READ);
+		b2 = BATsetaccess(b2, BAT_READ);
+		logger_add_bat(lg, b1, N(n, NULL, s, "functions_vararg"));
+		logger_add_bat(lg, b2, N(n, NULL, s, "functions_varres"));
+		bat_destroy(b);
+		bat_destroy(b1);
+		bat_destroy(b2);
+
+		/* TODO rename columns.storage_type -> storage */
 	}
 	if (catalog_version == CATALOG_OCT2010) {
 		BAT *b, *b1;
@@ -120,7 +171,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, "D", s, "keycolumns")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -132,7 +183,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_id")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -144,7 +195,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_column")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -156,7 +207,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_nr")));
 			if (!b)
 				return;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -182,7 +233,7 @@ bl_postversion( void *lg)
 		BUN bs;
 		BATiter iiname, itname, isname;
 
-		/* TODO funcs.aggr (boolean) -> funcs.type (int) */
+		/* TODO functions.aggr (boolean) -> functions.type (int) */
 		fprintf(stdout, "# upgrading catalog from Apr2011\n");
 		fflush(stdout);
 
@@ -228,7 +279,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, s, t, i)));
 			if (!b) /* skip idxs without bats */
 				continue;
-			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			b1 = BATcopy(b, b->htype, b->ttype, 1, PERSISTENT);
 			if (!b1)
 				return;
 			b1 = BATsetaccess(b1, BAT_READ);
@@ -251,7 +302,7 @@ bl_postversion( void *lg)
 			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_aggr")));
 			if (!b)
 				return;
-			b1 = BATnew(TYPE_void, TYPE_int, BATcount(b));
+			b1 = BATnew(TYPE_void, TYPE_int, BATcount(b), PERSISTENT);
 			if (!b1)
 				return;
         		BATseqbase(b1, b->hseqbase);

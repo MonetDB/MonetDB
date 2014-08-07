@@ -168,27 +168,27 @@ pattern calc.isnil(v:json):bit
 address CMDvarISNIL
 comment "Nil test for json value";
 
-command json.aggr(val:bat[:oid,:str]):str
+command aggr.jsonaggr(val:bat[:oid,:str]):str
 address JSONgroupStr
 comment "Aggregate the string values to array.";
 
-command json.aggr(val:bat[:oid,:dbl]):str
+command aggr.jsonaggr(val:bat[:oid,:dbl]):str
 address JSONgroupStr
 comment "Aggregate the double values to array.";
 
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command json.subaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
-command json.subaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 

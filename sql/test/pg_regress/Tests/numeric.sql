@@ -2,17 +2,17 @@
 -- NUMERIC
 --
 
-CREATE TABLE num_data (id integer, val numeric(210,10));
-CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(210,10));
-CREATE TABLE num_exp_sqrt (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_ln (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_log10 (id integer, expected numeric(210,10));
-CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(210,10));
+CREATE TABLE num_data (id integer, val numeric(18,10));
+CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(18,10));
+CREATE TABLE num_exp_sqrt (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_ln (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_log10 (id integer, expected numeric(18,10));
+CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(18,10));
 
-CREATE TABLE num_result (id1 integer, id2 integer, result numeric(210,10));
+CREATE TABLE num_result (id1 integer, id2 integer, result numeric(18,10));
 
 
 -- ******************************
@@ -20,97 +20,97 @@ CREATE TABLE num_result (id1 integer, id2 integer, result numeric(210,10));
 -- * with a scale of 200
 -- ******************************
 
-BEGIN TRANSACTION;
-INSERT INTO num_exp_add VALUES (0,0,'0');
-INSERT INTO num_exp_sub VALUES (0,0,'0');
-INSERT INTO num_exp_mul VALUES (0,0,'0');
+--START TRANSACTION;
+INSERT INTO num_exp_add VALUES (0,0,'0.0');
+INSERT INTO num_exp_sub VALUES (0,0,'0.0');
+INSERT INTO num_exp_mul VALUES (0,0,'0.0');
 INSERT INTO num_exp_div VALUES (0,0,'NaN');
-INSERT INTO num_exp_add VALUES (0,1,'0');
-INSERT INTO num_exp_sub VALUES (0,1,'0');
-INSERT INTO num_exp_mul VALUES (0,1,'0');
+INSERT INTO num_exp_add VALUES (0,1,'0.0');
+INSERT INTO num_exp_sub VALUES (0,1,'0.0');
+INSERT INTO num_exp_mul VALUES (0,1,'0.0');
 INSERT INTO num_exp_div VALUES (0,1,'NaN');
 INSERT INTO num_exp_add VALUES (0,2,'-34338492.215397047');
 INSERT INTO num_exp_sub VALUES (0,2,'34338492.215397047');
-INSERT INTO num_exp_mul VALUES (0,2,'0');
-INSERT INTO num_exp_div VALUES (0,2,'0');
+INSERT INTO num_exp_mul VALUES (0,2,'0.0');
+INSERT INTO num_exp_div VALUES (0,2,'0.0');
 INSERT INTO num_exp_add VALUES (0,3,'4.31');
 INSERT INTO num_exp_sub VALUES (0,3,'-4.31');
-INSERT INTO num_exp_mul VALUES (0,3,'0');
-INSERT INTO num_exp_div VALUES (0,3,'0');
+INSERT INTO num_exp_mul VALUES (0,3,'0.0');
+INSERT INTO num_exp_div VALUES (0,3,'0.0');
 INSERT INTO num_exp_add VALUES (0,4,'7799461.4119');
 INSERT INTO num_exp_sub VALUES (0,4,'-7799461.4119');
-INSERT INTO num_exp_mul VALUES (0,4,'0');
-INSERT INTO num_exp_div VALUES (0,4,'0');
+INSERT INTO num_exp_mul VALUES (0,4,'0.0');
+INSERT INTO num_exp_div VALUES (0,4,'0.0');
 INSERT INTO num_exp_add VALUES (0,5,'16397.038491');
 INSERT INTO num_exp_sub VALUES (0,5,'-16397.038491');
-INSERT INTO num_exp_mul VALUES (0,5,'0');
-INSERT INTO num_exp_div VALUES (0,5,'0');
+INSERT INTO num_exp_mul VALUES (0,5,'0.0');
+INSERT INTO num_exp_div VALUES (0,5,'0.0');
 INSERT INTO num_exp_add VALUES (0,6,'93901.57763026');
 INSERT INTO num_exp_sub VALUES (0,6,'-93901.57763026');
-INSERT INTO num_exp_mul VALUES (0,6,'0');
-INSERT INTO num_exp_div VALUES (0,6,'0');
+INSERT INTO num_exp_mul VALUES (0,6,'0.0');
+INSERT INTO num_exp_div VALUES (0,6,'0.0');
 INSERT INTO num_exp_add VALUES (0,7,'-83028485');
 INSERT INTO num_exp_sub VALUES (0,7,'83028485');
-INSERT INTO num_exp_mul VALUES (0,7,'0');
-INSERT INTO num_exp_div VALUES (0,7,'0');
+INSERT INTO num_exp_mul VALUES (0,7,'0.0');
+INSERT INTO num_exp_div VALUES (0,7,'0.0');
 INSERT INTO num_exp_add VALUES (0,8,'74881');
 INSERT INTO num_exp_sub VALUES (0,8,'-74881');
-INSERT INTO num_exp_mul VALUES (0,8,'0');
-INSERT INTO num_exp_div VALUES (0,8,'0');
+INSERT INTO num_exp_mul VALUES (0,8,'0.0');
+INSERT INTO num_exp_div VALUES (0,8,'0.0');
 INSERT INTO num_exp_add VALUES (0,9,'-24926804.045047420');
 INSERT INTO num_exp_sub VALUES (0,9,'24926804.045047420');
-INSERT INTO num_exp_mul VALUES (0,9,'0');
-INSERT INTO num_exp_div VALUES (0,9,'0');
-INSERT INTO num_exp_add VALUES (1,0,'0');
-INSERT INTO num_exp_sub VALUES (1,0,'0');
-INSERT INTO num_exp_mul VALUES (1,0,'0');
+INSERT INTO num_exp_mul VALUES (0,9,'0.0');
+INSERT INTO num_exp_div VALUES (0,9,'0.0');
+INSERT INTO num_exp_add VALUES (1,0,'0.0');
+INSERT INTO num_exp_sub VALUES (1,0,'0.0');
+INSERT INTO num_exp_mul VALUES (1,0,'0.0');
 INSERT INTO num_exp_div VALUES (1,0,'NaN');
-INSERT INTO num_exp_add VALUES (1,1,'0');
-INSERT INTO num_exp_sub VALUES (1,1,'0');
-INSERT INTO num_exp_mul VALUES (1,1,'0');
+INSERT INTO num_exp_add VALUES (1,1,'0.0');
+INSERT INTO num_exp_sub VALUES (1,1,'0.0');
+INSERT INTO num_exp_mul VALUES (1,1,'0.0');
 INSERT INTO num_exp_div VALUES (1,1,'NaN');
 INSERT INTO num_exp_add VALUES (1,2,'-34338492.215397047');
 INSERT INTO num_exp_sub VALUES (1,2,'34338492.215397047');
-INSERT INTO num_exp_mul VALUES (1,2,'0');
-INSERT INTO num_exp_div VALUES (1,2,'0');
+INSERT INTO num_exp_mul VALUES (1,2,'0.0');
+INSERT INTO num_exp_div VALUES (1,2,'0.0');
 INSERT INTO num_exp_add VALUES (1,3,'4.31');
 INSERT INTO num_exp_sub VALUES (1,3,'-4.31');
-INSERT INTO num_exp_mul VALUES (1,3,'0');
-INSERT INTO num_exp_div VALUES (1,3,'0');
+INSERT INTO num_exp_mul VALUES (1,3,'0.0');
+INSERT INTO num_exp_div VALUES (1,3,'0.0');
 INSERT INTO num_exp_add VALUES (1,4,'7799461.4119');
 INSERT INTO num_exp_sub VALUES (1,4,'-7799461.4119');
-INSERT INTO num_exp_mul VALUES (1,4,'0');
-INSERT INTO num_exp_div VALUES (1,4,'0');
+INSERT INTO num_exp_mul VALUES (1,4,'0.0');
+INSERT INTO num_exp_div VALUES (1,4,'0.0');
 INSERT INTO num_exp_add VALUES (1,5,'16397.038491');
 INSERT INTO num_exp_sub VALUES (1,5,'-16397.038491');
-INSERT INTO num_exp_mul VALUES (1,5,'0');
-INSERT INTO num_exp_div VALUES (1,5,'0');
+INSERT INTO num_exp_mul VALUES (1,5,'0.0');
+INSERT INTO num_exp_div VALUES (1,5,'0.0');
 INSERT INTO num_exp_add VALUES (1,6,'93901.57763026');
 INSERT INTO num_exp_sub VALUES (1,6,'-93901.57763026');
-INSERT INTO num_exp_mul VALUES (1,6,'0');
-INSERT INTO num_exp_div VALUES (1,6,'0');
+INSERT INTO num_exp_mul VALUES (1,6,'0.0');
+INSERT INTO num_exp_div VALUES (1,6,'0.0');
 INSERT INTO num_exp_add VALUES (1,7,'-83028485');
 INSERT INTO num_exp_sub VALUES (1,7,'83028485');
-INSERT INTO num_exp_mul VALUES (1,7,'0');
-INSERT INTO num_exp_div VALUES (1,7,'0');
+INSERT INTO num_exp_mul VALUES (1,7,'0.0');
+INSERT INTO num_exp_div VALUES (1,7,'0.0');
 INSERT INTO num_exp_add VALUES (1,8,'74881');
 INSERT INTO num_exp_sub VALUES (1,8,'-74881');
-INSERT INTO num_exp_mul VALUES (1,8,'0');
-INSERT INTO num_exp_div VALUES (1,8,'0');
+INSERT INTO num_exp_mul VALUES (1,8,'0.0');
+INSERT INTO num_exp_div VALUES (1,8,'0.0');
 INSERT INTO num_exp_add VALUES (1,9,'-24926804.045047420');
 INSERT INTO num_exp_sub VALUES (1,9,'24926804.045047420');
-INSERT INTO num_exp_mul VALUES (1,9,'0');
-INSERT INTO num_exp_div VALUES (1,9,'0');
+INSERT INTO num_exp_mul VALUES (1,9,'0.0');
+INSERT INTO num_exp_div VALUES (1,9,'0.0');
 INSERT INTO num_exp_add VALUES (2,0,'-34338492.215397047');
 INSERT INTO num_exp_sub VALUES (2,0,'-34338492.215397047');
-INSERT INTO num_exp_mul VALUES (2,0,'0');
+INSERT INTO num_exp_mul VALUES (2,0,'0.0');
 INSERT INTO num_exp_div VALUES (2,0,'NaN');
 INSERT INTO num_exp_add VALUES (2,1,'-34338492.215397047');
 INSERT INTO num_exp_sub VALUES (2,1,'-34338492.215397047');
-INSERT INTO num_exp_mul VALUES (2,1,'0');
+INSERT INTO num_exp_mul VALUES (2,1,'0.0');
 INSERT INTO num_exp_div VALUES (2,1,'NaN');
 INSERT INTO num_exp_add VALUES (2,2,'-68676984.430794094');
-INSERT INTO num_exp_sub VALUES (2,2,'0');
+INSERT INTO num_exp_sub VALUES (2,2,'0.0');
 INSERT INTO num_exp_mul VALUES (2,2,'1179132047626883.596862135856320209');
 INSERT INTO num_exp_div VALUES (2,2,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (2,3,'-34338487.905397047');
@@ -143,18 +143,18 @@ INSERT INTO num_exp_mul VALUES (2,9,'855948866655588.453741509242968740');
 INSERT INTO num_exp_div VALUES (2,9,'1.37757299946438931811');
 INSERT INTO num_exp_add VALUES (3,0,'4.31');
 INSERT INTO num_exp_sub VALUES (3,0,'4.31');
-INSERT INTO num_exp_mul VALUES (3,0,'0');
+INSERT INTO num_exp_mul VALUES (3,0,'0.0');
 INSERT INTO num_exp_div VALUES (3,0,'NaN');
 INSERT INTO num_exp_add VALUES (3,1,'4.31');
 INSERT INTO num_exp_sub VALUES (3,1,'4.31');
-INSERT INTO num_exp_mul VALUES (3,1,'0');
+INSERT INTO num_exp_mul VALUES (3,1,'0.0');
 INSERT INTO num_exp_div VALUES (3,1,'NaN');
 INSERT INTO num_exp_add VALUES (3,2,'-34338487.905397047');
 INSERT INTO num_exp_sub VALUES (3,2,'34338496.525397047');
 INSERT INTO num_exp_mul VALUES (3,2,'-147998901.44836127257');
 INSERT INTO num_exp_div VALUES (3,2,'-.00000012551512084352');
 INSERT INTO num_exp_add VALUES (3,3,'8.62');
-INSERT INTO num_exp_sub VALUES (3,3,'0');
+INSERT INTO num_exp_sub VALUES (3,3,'0.0');
 INSERT INTO num_exp_mul VALUES (3,3,'18.5761');
 INSERT INTO num_exp_div VALUES (3,3,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (3,4,'7799465.7219');
@@ -183,11 +183,11 @@ INSERT INTO num_exp_mul VALUES (3,9,'-107434525.43415438020');
 INSERT INTO num_exp_div VALUES (3,9,'-.00000017290624149854');
 INSERT INTO num_exp_add VALUES (4,0,'7799461.4119');
 INSERT INTO num_exp_sub VALUES (4,0,'7799461.4119');
-INSERT INTO num_exp_mul VALUES (4,0,'0');
+INSERT INTO num_exp_mul VALUES (4,0,'0.0');
 INSERT INTO num_exp_div VALUES (4,0,'NaN');
 INSERT INTO num_exp_add VALUES (4,1,'7799461.4119');
 INSERT INTO num_exp_sub VALUES (4,1,'7799461.4119');
-INSERT INTO num_exp_mul VALUES (4,1,'0');
+INSERT INTO num_exp_mul VALUES (4,1,'0.0');
 INSERT INTO num_exp_div VALUES (4,1,'NaN');
 INSERT INTO num_exp_add VALUES (4,2,'-26539030.803497047');
 INSERT INTO num_exp_sub VALUES (4,2,'42137953.627297047');
@@ -198,7 +198,7 @@ INSERT INTO num_exp_sub VALUES (4,3,'7799457.1019');
 INSERT INTO num_exp_mul VALUES (4,3,'33615678.685289');
 INSERT INTO num_exp_div VALUES (4,3,'1809619.81714617169373549883');
 INSERT INTO num_exp_add VALUES (4,4,'15598922.8238');
-INSERT INTO num_exp_sub VALUES (4,4,'0');
+INSERT INTO num_exp_sub VALUES (4,4,'0.0');
 INSERT INTO num_exp_mul VALUES (4,4,'60831598315717.14146161');
 INSERT INTO num_exp_div VALUES (4,4,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (4,5,'7815858.450391');
@@ -223,11 +223,11 @@ INSERT INTO num_exp_mul VALUES (4,9,'-194415646271340.1815956522980');
 INSERT INTO num_exp_div VALUES (4,9,'-.31289456112403769409');
 INSERT INTO num_exp_add VALUES (5,0,'16397.038491');
 INSERT INTO num_exp_sub VALUES (5,0,'16397.038491');
-INSERT INTO num_exp_mul VALUES (5,0,'0');
+INSERT INTO num_exp_mul VALUES (5,0,'0.0');
 INSERT INTO num_exp_div VALUES (5,0,'NaN');
 INSERT INTO num_exp_add VALUES (5,1,'16397.038491');
 INSERT INTO num_exp_sub VALUES (5,1,'16397.038491');
-INSERT INTO num_exp_mul VALUES (5,1,'0');
+INSERT INTO num_exp_mul VALUES (5,1,'0.0');
 INSERT INTO num_exp_div VALUES (5,1,'NaN');
 INSERT INTO num_exp_add VALUES (5,2,'-34322095.176906047');
 INSERT INTO num_exp_sub VALUES (5,2,'34354889.253888047');
@@ -242,7 +242,7 @@ INSERT INTO num_exp_sub VALUES (5,4,'-7783064.373409');
 INSERT INTO num_exp_mul VALUES (5,4,'127888068979.9935054429');
 INSERT INTO num_exp_div VALUES (5,4,'.00210232958726897192');
 INSERT INTO num_exp_add VALUES (5,5,'32794.076982');
-INSERT INTO num_exp_sub VALUES (5,5,'0');
+INSERT INTO num_exp_sub VALUES (5,5,'0.0');
 INSERT INTO num_exp_mul VALUES (5,5,'268862871.275335557081');
 INSERT INTO num_exp_div VALUES (5,5,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (5,6,'110298.61612126');
@@ -263,11 +263,11 @@ INSERT INTO num_exp_mul VALUES (5,9,'-408725765384.257043660243220');
 INSERT INTO num_exp_div VALUES (5,9,'-.00065780749354660427');
 INSERT INTO num_exp_add VALUES (6,0,'93901.57763026');
 INSERT INTO num_exp_sub VALUES (6,0,'93901.57763026');
-INSERT INTO num_exp_mul VALUES (6,0,'0');
+INSERT INTO num_exp_mul VALUES (6,0,'0.0');
 INSERT INTO num_exp_div VALUES (6,0,'NaN');
 INSERT INTO num_exp_add VALUES (6,1,'93901.57763026');
 INSERT INTO num_exp_sub VALUES (6,1,'93901.57763026');
-INSERT INTO num_exp_mul VALUES (6,1,'0');
+INSERT INTO num_exp_mul VALUES (6,1,'0.0');
 INSERT INTO num_exp_div VALUES (6,1,'NaN');
 INSERT INTO num_exp_add VALUES (6,2,'-34244590.637766787');
 INSERT INTO num_exp_sub VALUES (6,2,'34432393.793027307');
@@ -286,7 +286,7 @@ INSERT INTO num_exp_sub VALUES (6,5,'77504.53913926');
 INSERT INTO num_exp_mul VALUES (6,5,'1539707782.76899778633766');
 INSERT INTO num_exp_div VALUES (6,5,'5.72674008674192359679');
 INSERT INTO num_exp_add VALUES (6,6,'187803.15526052');
-INSERT INTO num_exp_sub VALUES (6,6,'0');
+INSERT INTO num_exp_sub VALUES (6,6,'0.0');
 INSERT INTO num_exp_mul VALUES (6,6,'8817506281.4517452372676676');
 INSERT INTO num_exp_div VALUES (6,6,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (6,7,'-82934583.42236974');
@@ -303,11 +303,11 @@ INSERT INTO num_exp_mul VALUES (6,9,'-2340666225110.29929521292692920');
 INSERT INTO num_exp_div VALUES (6,9,'-.00376709254265256789');
 INSERT INTO num_exp_add VALUES (7,0,'-83028485');
 INSERT INTO num_exp_sub VALUES (7,0,'-83028485');
-INSERT INTO num_exp_mul VALUES (7,0,'0');
+INSERT INTO num_exp_mul VALUES (7,0,'0.0');
 INSERT INTO num_exp_div VALUES (7,0,'NaN');
 INSERT INTO num_exp_add VALUES (7,1,'-83028485');
 INSERT INTO num_exp_sub VALUES (7,1,'-83028485');
-INSERT INTO num_exp_mul VALUES (7,1,'0');
+INSERT INTO num_exp_mul VALUES (7,1,'0.0');
 INSERT INTO num_exp_div VALUES (7,1,'NaN');
 INSERT INTO num_exp_add VALUES (7,2,'-117366977.215397047');
 INSERT INTO num_exp_sub VALUES (7,2,'-48689992.784602953');
@@ -330,7 +330,7 @@ INSERT INTO num_exp_sub VALUES (7,6,'-83122386.57763026');
 INSERT INTO num_exp_mul VALUES (7,6,'-7796505729750.37795610');
 INSERT INTO num_exp_div VALUES (7,6,'-884.20756174009028770294');
 INSERT INTO num_exp_add VALUES (7,7,'-166056970');
-INSERT INTO num_exp_sub VALUES (7,7,'0');
+INSERT INTO num_exp_sub VALUES (7,7,'0.0');
 INSERT INTO num_exp_mul VALUES (7,7,'6893729321395225');
 INSERT INTO num_exp_div VALUES (7,7,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (7,8,'-82953604');
@@ -343,11 +343,11 @@ INSERT INTO num_exp_mul VALUES (7,9,'2069634775752159.035758700');
 INSERT INTO num_exp_div VALUES (7,9,'3.33089171198810413382');
 INSERT INTO num_exp_add VALUES (8,0,'74881');
 INSERT INTO num_exp_sub VALUES (8,0,'74881');
-INSERT INTO num_exp_mul VALUES (8,0,'0');
+INSERT INTO num_exp_mul VALUES (8,0,'0.0');
 INSERT INTO num_exp_div VALUES (8,0,'NaN');
 INSERT INTO num_exp_add VALUES (8,1,'74881');
 INSERT INTO num_exp_sub VALUES (8,1,'74881');
-INSERT INTO num_exp_mul VALUES (8,1,'0');
+INSERT INTO num_exp_mul VALUES (8,1,'0.0');
 INSERT INTO num_exp_div VALUES (8,1,'NaN');
 INSERT INTO num_exp_add VALUES (8,2,'-34263611.215397047');
 INSERT INTO num_exp_sub VALUES (8,2,'34413373.215397047');
@@ -374,7 +374,7 @@ INSERT INTO num_exp_sub VALUES (8,7,'83103366');
 INSERT INTO num_exp_mul VALUES (8,7,'-6217255985285');
 INSERT INTO num_exp_div VALUES (8,7,'-.00090187120721280172');
 INSERT INTO num_exp_add VALUES (8,8,'149762');
-INSERT INTO num_exp_sub VALUES (8,8,'0');
+INSERT INTO num_exp_sub VALUES (8,8,'0.0');
 INSERT INTO num_exp_mul VALUES (8,8,'5607164161');
 INSERT INTO num_exp_div VALUES (8,8,'1.00000000000000000000');
 INSERT INTO num_exp_add VALUES (8,9,'-24851923.045047420');
@@ -383,11 +383,11 @@ INSERT INTO num_exp_mul VALUES (8,9,'-1866544013697.195857020');
 INSERT INTO num_exp_div VALUES (8,9,'-.00300403532938582735');
 INSERT INTO num_exp_add VALUES (9,0,'-24926804.045047420');
 INSERT INTO num_exp_sub VALUES (9,0,'-24926804.045047420');
-INSERT INTO num_exp_mul VALUES (9,0,'0');
+INSERT INTO num_exp_mul VALUES (9,0,'0.0');
 INSERT INTO num_exp_div VALUES (9,0,'NaN');
 INSERT INTO num_exp_add VALUES (9,1,'-24926804.045047420');
 INSERT INTO num_exp_sub VALUES (9,1,'-24926804.045047420');
-INSERT INTO num_exp_mul VALUES (9,1,'0');
+INSERT INTO num_exp_mul VALUES (9,1,'0.0');
 INSERT INTO num_exp_div VALUES (9,1,'NaN');
 INSERT INTO num_exp_add VALUES (9,2,'-59265296.260444467');
 INSERT INTO num_exp_sub VALUES (9,2,'9411688.170349627');
@@ -418,13 +418,13 @@ INSERT INTO num_exp_sub VALUES (9,8,'-25001685.045047420');
 INSERT INTO num_exp_mul VALUES (9,8,'-1866544013697.195857020');
 INSERT INTO num_exp_div VALUES (9,8,'-332.88556569820675471748');
 INSERT INTO num_exp_add VALUES (9,9,'-49853608.090094840');
-INSERT INTO num_exp_sub VALUES (9,9,'0');
+INSERT INTO num_exp_sub VALUES (9,9,'0.0');
 INSERT INTO num_exp_mul VALUES (9,9,'621345559900192.420120630048656400');
 INSERT INTO num_exp_div VALUES (9,9,'1.00000000000000000000');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
-INSERT INTO num_exp_sqrt VALUES (0,'0');
-INSERT INTO num_exp_sqrt VALUES (1,'0');
+--COMMIT;
+--START TRANSACTION;
+INSERT INTO num_exp_sqrt VALUES (0,'0.0');
+INSERT INTO num_exp_sqrt VALUES (1,'0.0');
 INSERT INTO num_exp_sqrt VALUES (2,'5859.90547836712524903505');
 INSERT INTO num_exp_sqrt VALUES (3,'2.07605394920266944396');
 INSERT INTO num_exp_sqrt VALUES (4,'2792.75158435189147418923');
@@ -433,8 +433,8 @@ INSERT INTO num_exp_sqrt VALUES (6,'306.43364311096782703406');
 INSERT INTO num_exp_sqrt VALUES (7,'9111.99676251039939975230');
 INSERT INTO num_exp_sqrt VALUES (8,'273.64392922189960397542');
 INSERT INTO num_exp_sqrt VALUES (9,'4992.67503899937593364766');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+--COMMIT;
+--START TRANSACTION;
 INSERT INTO num_exp_ln VALUES (0,'NaN');
 INSERT INTO num_exp_ln VALUES (1,'NaN');
 INSERT INTO num_exp_ln VALUES (2,'17.35177750493897715514');
@@ -445,8 +445,8 @@ INSERT INTO num_exp_ln VALUES (6,'11.45000246622944403127');
 INSERT INTO num_exp_ln VALUES (7,'18.23469429965478772991');
 INSERT INTO num_exp_ln VALUES (8,'11.22365546576315513668');
 INSERT INTO num_exp_ln VALUES (9,'17.03145425013166006962');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+--COMMIT;
+--START TRANSACTION;
 INSERT INTO num_exp_log10 VALUES (0,'NaN');
 INSERT INTO num_exp_log10 VALUES (1,'NaN');
 INSERT INTO num_exp_log10 VALUES (2,'7.53578122160797276459');
@@ -457,8 +457,8 @@ INSERT INTO num_exp_log10 VALUES (6,'4.97267288886207207671');
 INSERT INTO num_exp_log10 VALUES (7,'7.91922711353275546914');
 INSERT INTO num_exp_log10 VALUES (8,'4.87437163556421004138');
 INSERT INTO num_exp_log10 VALUES (9,'7.39666659961986567059');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
+--COMMIT;
+--START TRANSACTION;
 INSERT INTO num_exp_power_10_ln VALUES (0,'NaN');
 INSERT INTO num_exp_power_10_ln VALUES (1,'NaN');
 INSERT INTO num_exp_power_10_ln VALUES (2,'224790267919917955.13261618583642653184');
@@ -469,10 +469,10 @@ INSERT INTO num_exp_power_10_ln VALUES (6,'281839893606.99372343357047819067');
 INSERT INTO num_exp_power_10_ln VALUES (7,'1716699575118597095.42330819910640247627');
 INSERT INTO num_exp_power_10_ln VALUES (8,'167361463828.07491320069016125952');
 INSERT INTO num_exp_power_10_ln VALUES (9,'107511333880052007.04141124673540337457');
-COMMIT TRANSACTION;
-BEGIN TRANSACTION;
-INSERT INTO num_data VALUES (0, '0');
-INSERT INTO num_data VALUES (1, '0');
+--COMMIT;
+--START TRANSACTION;
+INSERT INTO num_data VALUES (0, '0.0');
+INSERT INTO num_data VALUES (1, '0.0');
 INSERT INTO num_data VALUES (2, '-34338492.215397047');
 INSERT INTO num_data VALUES (3, '4.31');
 INSERT INTO num_data VALUES (4, '7799461.4119');
@@ -481,7 +481,7 @@ INSERT INTO num_data VALUES (6, '93901.57763026');
 INSERT INTO num_data VALUES (7, '-83028485');
 INSERT INTO num_data VALUES (8, '74881');
 INSERT INTO num_data VALUES (9, '-24926804.045047420');
-COMMIT TRANSACTION;
+--COMMIT;
 
 -- ******************************
 -- * Create indices for faster checks
@@ -496,14 +496,14 @@ CREATE UNIQUE INDEX num_exp_ln_idx ON num_exp_ln (id);
 CREATE UNIQUE INDEX num_exp_log10_idx ON num_exp_log10 (id);
 CREATE UNIQUE INDEX num_exp_power_10_ln_idx ON num_exp_power_10_ln (id);
 
-VACUUM ANALYZE num_exp_add;
-VACUUM ANALYZE num_exp_sub;
-VACUUM ANALYZE num_exp_div;
-VACUUM ANALYZE num_exp_mul;
-VACUUM ANALYZE num_exp_sqrt;
-VACUUM ANALYZE num_exp_ln;
-VACUUM ANALYZE num_exp_log10;
-VACUUM ANALYZE num_exp_power_10_ln;
+--VACUUM ANALYZE num_exp_add;
+--VACUUM ANALYZE num_exp_sub;
+--VACUUM ANALYZE num_exp_div;
+--VACUUM ANALYZE num_exp_mul;
+--VACUUM ANALYZE num_exp_sqrt;
+--VACUUM ANALYZE num_exp_ln;
+--VACUUM ANALYZE num_exp_log10;
+--VACUUM ANALYZE num_exp_power_10_ln;
 
 -- ******************************
 -- * Now check the behaviour of the NUMERIC type
@@ -518,7 +518,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val + t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 10)
@@ -526,7 +526,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 10)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 10) as expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 10);
+    AND t1.result <> round(t2.expected, 10);
 
 -- ******************************
 -- * Subtraction check
@@ -537,7 +537,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val - t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
@@ -545,7 +545,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40)
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 40);
+    AND t1.result <> round(t2.expected, 40);
 
 -- ******************************
 -- * Multiply check
@@ -556,7 +556,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val * t2.val
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val * t2.val, 30)
@@ -564,7 +564,7 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val * t2.val, 30)
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 30);
+    AND t1.result <> round(t2.expected, 30);
 
 -- ******************************
 -- * Division check
@@ -572,20 +572,20 @@ SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, t1.val / t2.val
     FROM num_data t1, num_data t2
-    WHERE t2.val != '0.0';
+    WHERE t2.val <> '0.0';
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val / t2.val, 80)
     FROM num_data t1, num_data t2
-    WHERE t2.val != '0.0';
+    WHERE t2.val <> '0.0';
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result != round(t2.expected, 80);
+    AND t1.result <> round(t2.expected, 80);
 
 -- ******************************
 -- * Square root check
@@ -596,43 +596,43 @@ INSERT INTO num_result SELECT id, 0, SQRT(ABS(val))
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_sqrt t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * Natural logarithm check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, LN(ABS(val))
+INSERT INTO num_result SELECT id, 0, LOG(ABS(val))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_ln t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * Logarithm base 10 check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, LOG(numeric '10', ABS(val))
+INSERT INTO num_result SELECT id, 0, LOG10(ABS(val))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_log10 t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
--- * POWER(10, LN(value)) check
+-- * POWER(10, LOG(value)) check
 -- ******************************
 DELETE FROM num_result;
-INSERT INTO num_result SELECT id, 0, POWER(numeric '10', LN(ABS(round(val,200))))
+INSERT INTO num_result SELECT id, 0, POWER(cast('10.0' as numeric(3,0)), LOG(ABS(round(val,20))))
     FROM num_data
-    WHERE val != '0.0';
+    WHERE val <> '0.0';
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_power_10_ln t2
     WHERE t1.id1 = t2.id
-    AND t1.result != t2.expected;
+    AND t1.result <> t2.expected;
 
 -- ******************************
 -- * miscellaneous checks for things that have been broken in the past...
@@ -665,6 +665,13 @@ INSERT INTO ceil_floor_round VALUES ('0.0');
 INSERT INTO ceil_floor_round VALUES ('0.0000001');
 INSERT INTO ceil_floor_round VALUES ('-0.000001');
 SELECT a, ceil(a), ceiling(a), floor(a), round(a) FROM ceil_floor_round;
+
+SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round;
+
+SELECT a, round(a) FROM ceil_floor_round;
+
+SELECT a, round(a, 0) FROM ceil_floor_round;
+
 DROP TABLE ceil_floor_round;
 
 -- Testing for width_bucket()
@@ -788,3 +795,19 @@ INSERT INTO num_input_test(n1) VALUES ('');
 INSERT INTO num_input_test(n1) VALUES (' N aN ');
 
 SELECT * FROM num_input_test;
+
+DROP TABLE num_input_test;
+
+
+-- cleanup created tables
+DROP TABLE num_data;
+DROP TABLE num_exp_add;
+DROP TABLE num_exp_sub;
+DROP TABLE num_exp_div;
+DROP TABLE num_exp_mul;
+DROP TABLE num_exp_sqrt;
+DROP TABLE num_exp_ln;
+DROP TABLE num_exp_log10;
+DROP TABLE num_exp_power_10_ln;
+DROP TABLE num_result;
+

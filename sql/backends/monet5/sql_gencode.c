@@ -1008,11 +1008,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (s->flag) {
 				int topn = 0, flag = s->flag, utopn = flag & 2;
-				char *name = "topn_min";
 
 				flag >>= 2;
-				if (flag)
-					name = "topn_max";
 
 				q = newStmt1(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
@@ -1021,7 +1018,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				topn = getDestVar(q);
 
-				q = newStmt(mb, "pqueue", name);
+				q = newStmt(mb, algebraRef, firstnRef);
 				if (utopn)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
@@ -1030,6 +1027,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (g)
 					q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, topn);
+				q = pushBit(mb, q, flag != 0);
+
 				if (q == NULL)
 					return -1;
 				s->nr = getArg(q, 0);

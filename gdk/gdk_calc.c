@@ -207,7 +207,7 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -332,7 +332,7 @@ BATcalcnegate(BAT *b, BAT *s)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -462,7 +462,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -596,7 +596,7 @@ BATcalciszero(BAT *b, BAT *s)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, TYPE_bit, cnt);
+	bn = BATnew(TYPE_void, TYPE_bit, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -728,7 +728,7 @@ BATcalcsign(BAT *b, BAT *s)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, TYPE_bte, cnt);
+	bn = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -877,19 +877,19 @@ BATcalcisnil(BAT *b, BAT *s)
 		    (b->T->type == TYPE_void && b->T->seq != oid_nil)) {
 			bit zero = 0;
 
-			bn = BATconstant(TYPE_bit, &zero, cnt);
+			bn = BATconstant(TYPE_bit, &zero, cnt, TRANSIENT);
 			BATseqbase(bn, b->H->seq);
 			return bn;
 		} else if (b->T->type == TYPE_void && b->T->seq == oid_nil) {
 			bit one = 1;
 
-			bn = BATconstant(TYPE_bit, &one, cnt);
+			bn = BATconstant(TYPE_bit, &one, cnt, TRANSIENT);
 			BATseqbase(bn, b->H->seq);
 			return bn;
 		}
 	}
 
-	bn = BATnew(TYPE_void, TYPE_bit, cnt);
+	bn = BATnew(TYPE_void, TYPE_bit, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -2565,7 +2565,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -2620,7 +2620,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -2673,7 +2673,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -2744,7 +2744,7 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -4323,7 +4323,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -4366,7 +4366,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -4414,7 +4414,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -6181,7 +6181,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -6231,7 +6231,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -6289,7 +6289,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -8095,7 +8095,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -8156,7 +8156,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -9676,7 +9676,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -9719,7 +9719,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, tp, cnt);
+	bn = BATnew(TYPE_void, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -9846,7 +9846,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b1->T->type, cnt);
+	bn = BATnew(TYPE_void, b1->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -9895,7 +9895,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -9944,7 +9944,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10093,7 +10093,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b1->T->type, cnt);
+	bn = BATnew(TYPE_void, b1->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10142,7 +10142,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10191,7 +10191,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10337,7 +10337,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b1->T->type, cnt);
+	bn = BATnew(TYPE_void, b1->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10386,7 +10386,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10434,7 +10434,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10668,7 +10668,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b1->T->type, cnt);
+	bn = BATnew(TYPE_void, b1->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10710,7 +10710,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10752,7 +10752,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, v->vtype, cnt);
+	bn = BATnew(TYPE_void, v->vtype, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -10978,7 +10978,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b1->T->type, cnt);
+	bn = BATnew(TYPE_void, b1->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11020,7 +11020,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, b->T->type, cnt);
+	bn = BATnew(TYPE_void, b->T->type, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11062,7 +11062,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATnew(TYPE_void, v->vtype, cnt);
+	bn = BATnew(TYPE_void, v->vtype, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11372,7 +11372,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	bn = BATnew(TYPE_void, TYPE_bit, cnt);
+	bn = BATnew(TYPE_void, TYPE_bit, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11496,7 +11496,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 				     (hi->T->seq == oid_nil ||
 				      b->T->seq <= hi->T->seq));
 
-		return BATconst(b, TYPE_bit, &res);
+		return BATconst(b, TYPE_bit, &res, TRANSIENT);
 	}
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
@@ -11703,7 +11703,7 @@ BATcalcifthenelse_intern(BAT *b,
 
 	assert(col2 != NULL || incr2 == 0);
 
-	bn = BATnew(col2 || off == oid_nil ? TYPE_void : TYPE_oid, tpe, cnt);
+	bn = BATnew(col2 || off == oid_nil ? TYPE_void : TYPE_oid, tpe, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -12886,9 +12886,9 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (s == NULL && tp != TYPE_bit && ATOMstorage(b->T->type) == ATOMstorage(tp))
-		return BATcopy(b, b->H->type, tp, 0);
+		return BATcopy(b, b->H->type, tp, 0, TRANSIENT);
 
-	bn = BATnew(TYPE_void, tp, b->batCount);
+	bn = BATnew(TYPE_void, tp, b->batCount, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 

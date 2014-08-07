@@ -571,18 +571,42 @@ BATimprints(BAT *b) {
 		if (imprints == NULL) {
 			GDKerror("#BATimprints: memory allocation error.\n");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-			"BATimprints");
+				      "BATimprints");
 			return NULL;
 		}
 
 #define SMP_SIZE 2048
 		s = BATsample(b, SMP_SIZE);
+		if (s == NULL) {
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
+				      "BATimprints");
+			GDKfree(imprints);
+			return NULL;
+		}
 		smp = BATsubunique(b, s);
 		BBPunfix(s->batCacheid);
+		if (smp == NULL) {
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
+				      "BATimprints");
+			GDKfree(imprints);
+			return NULL;
+		}
 		s = BATproject(smp,b);
 		BBPunfix(smp->batCacheid);
+		if (s == NULL) {
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
+				      "BATimprints");
+			GDKfree(imprints);
+			return NULL;
+		}
 		s->tkey=1; /* we know is unique on tail now */
-		BATsubsort(&smp,NULL,NULL,s,NULL,NULL,0,0);
+		if (BATsubsort(&smp,NULL,NULL,s,NULL,NULL,0,0) == GDK_FAIL) {
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
+				      "BATimprints");
+			BBPunfix(s->batCacheid);
+			GDKfree(imprints);
+			return NULL;
+		}
 		BBPunfix(s->batCacheid);
 		/* smp now is ordered and unique on tail */
 		assert(smp->tkey && smp->tsorted);
@@ -600,7 +624,7 @@ BATimprints(BAT *b) {
 			GDKfree(imprints);
 			BBPunfix(smp->batCacheid);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-			"BATimprints");
+				      "BATimprints");
 			return NULL;
 		}
 		sprintf(imprints->bins->filename, "%s.bins", nme);
@@ -609,7 +633,7 @@ BATimprints(BAT *b) {
 			GDKfree(imprints->bins);
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-					"BATimprints");
+				      "BATimprints");
 			return NULL;
 		}
 

@@ -238,11 +238,11 @@ MseedLoadIntern(BAT **bbtime, BAT **bbdata, str targetfile)
 	if ( access(file,R_OK) )
 		throw(MAL, "mseed.load", "Cannot access %s\n", file);
 
-	btime = BATnew(TYPE_void,TYPE_timestamp,0);
+	btime = BATnew(TYPE_void,TYPE_timestamp,0, TRANSIENT);
 	if ( btime == NULL)
 		throw(MAL,"mseed.load",MAL_MALLOC_FAIL);
 	BATseqbase(btime,0);
-	bdata = BATnew(TYPE_void,TYPE_int,0);
+	bdata = BATnew(TYPE_void,TYPE_int,0, TRANSIENT);
 	if ( bdata == NULL){
 		BBPreleaseref(btime->batCacheid);
 		throw(MAL,"mseed.load",MAL_MALLOC_FAIL);
