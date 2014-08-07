@@ -134,7 +134,6 @@ tst256
 tst260
 tst2570
 # tst265 -- windowsum and slidingsum have been removed
-tst267
 # opens /tmp/MonetEvents, i.e. not on Windows:
 NOT_WIN32?tst270
 tst272

@@ -18,10 +18,7 @@ tst4630
 tst4700
 tst4701
 # tst4730 -- uses group.refine
-tst4800
-tst4801
 tst4820
-tst4900
 
 qep00
 qep01
@@ -81,13 +78,11 @@ CXerror1
 #the remainder are snippets used in the reference manual
 CMexample
 CRexample
-AEexample
 ARexample
 DCexample
 DCexample2
 ESexample
 FTexample
-GCexample
 GCexample01
 CXexample
 JPexample
