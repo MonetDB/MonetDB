@@ -1005,7 +1005,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag&1) {
 				int topn = 0, flag = s->flag, grps = flag & 2;
 
-				flag >>= 1;
+				flag >>= 2;
 
 				q = newStmt1(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
