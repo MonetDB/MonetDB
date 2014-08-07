@@ -21,10 +21,7 @@ QUERY = select case i
 ERROR = !syntax error, unexpected FROM, expecting END in: "select case i
         !when 0 then 'base table'
         !when 1 then 'system table'
-        !when 2 then 'view'
-        !when 3 then 'session temporary table'
-        !when 4 then 'temporary table'
-        !from"
+        !when 2 then 'v"
 
 # 23:52:38 >  
 # 23:52:38 >  Done.
