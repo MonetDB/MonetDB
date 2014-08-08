@@ -44,6 +44,8 @@ struct scanner {
 	prot mode;		/* which mode (line (1,N), blocked) */
 	char *schema;		/* Keep schema name of create statement, 
 				   needed AUTO_INCREMENT, SERIAL */
+	char *errstr;		/* error message from the bowels of
+				 * the scanner */
 };
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)

@@ -533,7 +533,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* also produce event record for start of function */
 	if ( startpc == 1 ){
 		runtimeProfileInit(cntxt, mb, stk);
-		runtimeProfileBegin(cntxt, mb, stk, NULL, &runtimeProfileFunction);
+		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
 		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout) {
 			if ( backup != backups) GDKfree(backup);

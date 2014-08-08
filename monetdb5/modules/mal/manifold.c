@@ -30,12 +30,15 @@
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,
  * but saves quite some hacking in non-essential cases or
- * expensive user defined functions..
+ * expensive user defined functions.
  *
  * To keep things simple and reasonably performant we limit the
  * implementation to those cases where a single BAT is returned.
  * Arguments may be of any type. The MAL signature should be a COMMAND.
  *
+ * The functionality has been extended to also perform the manifold
+ * over aligned BATs, provided the underlying scalar function carries
+ * the 'manifold' property.
  */
 
 typedef struct{
@@ -69,11 +72,15 @@ typedef struct{
 		if (msg) 				\
 			break;				\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if( ATOMstorage(mut->args[i].type) != TYPE_str){ \
-				args[i] += mut->args[i].size;		 \
-			} else {			\
-				mut->args[i].o++;	\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+				args[i] += mut->args[i].size;	\
+			} else if (ATOMvarsized(mut->args[i].type)) { \
+				mut->args[i].o++;		\
 				mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+				args[i] = (void*)  &mut->args[i].s;	 \
+			} else { \
+				mut->args[i].o++;		\
+				mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
 				args[i] = (void*)  &mut->args[i].s;	 \
 			}				\
 		}					\
@@ -92,24 +99,26 @@ case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
 case TYPE_str: \
+default:\
 	for( ; p< q ; p += mut->args[mut->fvar].size){ 		\
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
 		if (msg)					\
 			break;					\
 		bunfastapp(mut->args[0].b, (void*) y);	\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if( ATOMstorage(mut->args[i].type) !=  TYPE_str){\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] += mut->args[i].size;	\
-			} else {				\
+			} else if(ATOMvarsized(mut->args[i].type)){	\
 				mut->args[i].o++;		\
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
+				args[i] =  (void*) & mut->args[i].s; 	\
+			} else {				\
+				mut->args[i].o++;		\
+				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);\
 				args[i] =  (void*) & mut->args[i].s; 	\
 			}					\
 		}						\
 	}							\
-	break;							\
-default:							\
-	msg= createException(MAL,"mal.manifold","manifold call limitation (unknown type?) ");\
 }
 
 // single argument is preparatory step for GDK_mapreduce
@@ -120,23 +129,28 @@ MANIFOLDjob(MULTItask *mut)
 {	int i;
 	char *p, *q;
 	char **args;
-	str y, msg= MAL_SUCCEED;
+	str y = NULL, msg= MAL_SUCCEED;
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
 		throw(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 	
 	// the mod.fcn arguments are ignored from the call
-	for( i = mut->pci->retc+2; i< mut->pci->argc; i++)
-	if ( mut->args[i].b ){
-		if ( ATOMstorage(mut->args[i].type) != TYPE_str)
-			args[i] = (char*) mut->args[i].first;
-		else {
-			mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
-			args[i] =  (void*) & mut->args[i].s; 
+	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
+		if ( mut->args[i].b ){
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+				args[i] = (char*) mut->args[i].first;
+			} else if(ATOMvarsized(mut->args[i].type)){	\
+				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
+				args[i] =  (void*) & mut->args[i].s; 
+			} else {
+				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);
+				args[i] =  (void*) & mut->args[i].s; 
+			}
+		} else {
+			args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
 		}
-	} else
-		args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
+	}
 
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
@@ -153,6 +167,8 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg= createException(MAL,"mal.manifold","manifold call limitation ");
 	}
+	if (ATOMextern(mut->args[0].type) && y) 
+		GDKfree(y); 
 bunins_failed:
 	GDKfree(args);
 	return msg;
@@ -168,29 +184,27 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	MalBlkPtr nmb;
 	MALfcn fcn;
 
-	if ( pci->argc > 8 || getModuleId(pci) == NULL) // limitation on MANIFOLDjob
+	if (pci->retc >1 || pci->argc > 8 || getModuleId(pci) == NULL) // limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
 	nmb = newMalBlk(MAXVARS, STMT_INCREMENT);
 	if( nmb == NULL)
 		return NULL;
+	// the scalar function
 	q = newStmt(nmb,
 		getVarConstant(mb,getArg(pci,pci->retc)).val.sval,
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
 	tpe =getColumnType(getArgType(mb,pci,0));
-	k= getArg(q,0) = newTmpVariable(nmb, tpe);
+	k= getArg(q,0);
+	setVarType(nmb,k,tpe);
 	setVarFixed(nmb,k);
 	setVarUDFtype(nmb,k);
 	
-	// extract their argument type
+	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getColumnType(getArgType(mb,pci,i));
-		if (ATOMstorage(tpe) > TYPE_str){
-			freeMalBlk(nmb);
-			return NULL;
-		}
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 		setVarUDFtype(nmb,k);
@@ -201,7 +215,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
 	printInstruction(cntxt->fdout,nmb,0,q,LIST_MAL_ALL);
 #endif
-	// Localize the underlying opertor
+	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL)
@@ -216,6 +230,9 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	return fcn;
 }
 
+/*
+ * The manifold should support aligned BATs as well
+ */
 str
 MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MULTItask mut;
@@ -303,7 +320,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	freeInstruction(mut.pci);
 
 	// consolidate the properties
-	if (ATOMstorage(mat[0].b->ttype) != TYPE_str)
+	if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
