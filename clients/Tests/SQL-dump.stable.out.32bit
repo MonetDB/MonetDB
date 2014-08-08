@@ -141,6 +141,7 @@ SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
 SYSTEM FUNCTION  sys.fuse
+SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext
 SYSTEM FUNCTION  sys.geometrytypeid
 SYSTEM FUNCTION  sys.geomfromtext
