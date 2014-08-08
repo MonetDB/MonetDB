@@ -34,7 +34,7 @@ sed -r \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
-	-e 's/\bbool '*'\b/cast('\1' as boolean)/Ig' \
+	-e 's/\bbool ''*''\b/cast('\1' as boolean)/Ig' \
 	-e 's/\bchar 'c'/cast('c' as char)/Ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/Ig' \
 	-e 's/\bint2 '1'/cast('1' as smallint)/Ig' \
@@ -71,13 +71,17 @@ sed -r \
 	-e 's/\btimestamp with time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamptz)/Ig' \
 	-e 's/\btimestamp with time zone 'today'/cast(current_date as timestamptz)/Ig' \
 	-e 's/\btimestamp with time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamptz)/Ig' \
-	-e 's/\btimestamp with time zone '*'/cast('\1' as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone ''*''/cast('\1' as timestamptz)/Ig' \
 	-e 's/\btimestamp without time zone 'now'/cast(now as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'today'/cast(current_date as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamp)/Ig' \
-	-e 's/\btimestamp without time zone '*'/cast('\1' as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone ''*''/cast('\1' as timestamp)/Ig' \
 	-e 's/\btimestamp(2) without time zone/timestamp(2)/Ig' \
+	-e 's/\b(f1 interval)/(f1 interval second)/Ig' \
+	-e 's/\binterval ''*''/cast('\1' as interval second)/Ig' \
+	-e 's/\b(f1 reltime)/(f1 interval second)/Ig' \
+	-e 's/\breltime ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \
