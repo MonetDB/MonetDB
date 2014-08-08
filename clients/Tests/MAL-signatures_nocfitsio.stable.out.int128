@@ -941,30 +941,18 @@ comment Grouped quantile aggregate
 pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
 
 pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid]):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
 
 pattern aggr.sum(b:bat[:oid,:dbl],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B.
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
 
 pattern aggr.sum(b:bat[:oid,:dbl]):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B.
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
 
 pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
@@ -1637,6 +1625,22 @@ comment Grouped tail sum on bte
 command aggr.sum(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:hge] 
 address AGGRsum2_hge;
 comment Sum over grouped tail sum on bte
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubquantilecand;
@@ -40822,6 +40826,10 @@ command bat.hasAppendMode(b:bat[:any_1,:any_2]):bit
 address BKChasAppendMode;
 comment return true if to this BAT is append only.
 
+command bat.imprintsize(b:bat[:oid,:hge]):lng 
+address CMDBATimprintsize;
+command bat.imprints(b:bat[:oid,:hge]):void 
+address CMDBATimprints;
 command bat.imprintsize(b:bat[:oid,:dbl]):lng 
 address CMDBATimprintsize;
 comment Return the size of the imprints
@@ -46723,6 +46731,104 @@ comment Cast VALUE to flt
 
 function calc.geomcollection{unsafe}(wkt:str):wkb;
 function calc.geometry{unsafe}(wkt:str):wkb;
+command calc.hge(s1:int,v:hge,d2:int,s2:int):hge 
+address hge_dec2dec_hge;
+comment cast decimal(hge) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:hge):hge 
+address hge_dec2_hge;
+comment cast decimal(hge) to hge and check for overflow
+
+command calc.hge(v:hge,digits:int,scale:int):hge 
+address hge_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:lng,d2:int,s2:int):hge 
+address lng_dec2dec_hge;
+comment cast decimal(lng) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:lng):hge 
+address lng_dec2_hge;
+comment cast decimal(lng) to hge and check for overflow
+
+command calc.hge(v:lng,digits:int,scale:int):hge 
+address lng_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:wrd,d2:int,s2:int):hge 
+address wrd_dec2dec_hge;
+comment cast decimal(wrd) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:wrd):hge 
+address wrd_dec2_hge;
+comment cast decimal(wrd) to hge and check for overflow
+
+command calc.hge(v:wrd,digits:int,scale:int):hge 
+address wrd_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:int,d2:int,s2:int):hge 
+address int_dec2dec_hge;
+comment cast decimal(int) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:int):hge 
+address int_dec2_hge;
+comment cast decimal(int) to hge and check for overflow
+
+command calc.hge(v:int,digits:int,scale:int):hge 
+address int_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:sht,d2:int,s2:int):hge 
+address sht_dec2dec_hge;
+comment cast decimal(sht) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:sht):hge 
+address sht_dec2_hge;
+comment cast decimal(sht) to hge and check for overflow
+
+command calc.hge(v:sht,digits:int,scale:int):hge 
+address sht_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:bte,d2:int,s2:int):hge 
+address bte_dec2dec_hge;
+comment cast decimal(bte) to decimal(hge) and check for overflow
+
+command calc.hge(s1:int,v:bte):hge 
+address bte_dec2_hge;
+comment cast decimal(bte) to hge and check for overflow
+
+command calc.hge(v:bte,digits:int,scale:int):hge 
+address bte_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:dbl,digits:int,scale:int):hge 
+address dbl_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:flt,digits:int,scale:int):hge 
+address flt_num2dec_hge;
+comment cast number to decimal(hge) and check for overflow
+
+command calc.hge(v:str,digits:int,scale:int):hge 
+address str_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command calc.hge(v:str,digits:int):hge 
+address str_2num_hge;
+comment cast to hge and check for overflow
+
+command calc.hge(v:void,digits:int,scale:int):hge 
+address nil_2dec_hge;
+comment cast to dec(hge) and check for overflow
+
+command calc.hge(v:void,digits:int):hge 
+address nil_2num_hge;
+comment cast to hge and check for overflow
+
+pattern calc.hash(v:hge):wrd 
+address MKEYhash;
 pattern calc.hash(v:any):wrd 
 address MKEYhash;
 pattern calc.hash(v:dbl):wrd 
@@ -48954,10 +49060,6 @@ pattern calc.sign(v:bte):bte
 address CMDvarSIGN;
 comment Unary sign (-1,0,1) of V
 
-command calc.str(s:uuid):str 
-address UUIDuuid2str;
-comment Coerce a uuid to a string type
-
 pattern calc.str(v:hge):str 
 address CMDvarCONVERT;
 comment Cast VALUE to str
@@ -49029,6 +49131,10 @@ comment Return V1 - V2, overflow causes NIL value
 pattern calc.sign(v:hge):bte 
 address CMDvarSIGN;
 comment Unary sign (-1,0,1) of V
+
+command calc.str(s:uuid):str 
+address UUIDuuid2str;
+comment Coerce a uuid to a string type
 
 command calc.sqlblob(s:str):sqlblob 
 address BLOBsqlblob_fromstr;
@@ -50096,6 +50202,10 @@ pattern io.table(b1:bat[:oid,:any]):void
 address IOttable;
 comment Print an n-ary table. Like print, but does not print oid column
 
+command iterator.filter(name:json,idx:hge,other:str):json 
+address JSONfilterArrayDefault;
+command iterator.filter(name:json,idx:hge):json 
+address JSONfilterArray;
 command iterator.next(step:hge,last:hge):hge 
 address ITRnext_hge;
 command iterator.next(step:dbl,last:dbl):dbl 
