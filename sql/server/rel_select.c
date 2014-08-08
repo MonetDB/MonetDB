@@ -1856,8 +1856,12 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 			return rel_var_ref(sql, name, 0);
 		}
-		if (!exp && !var)
-			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		if (!exp && !var) {
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
+				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+			else
+				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		}
 		
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -1879,8 +1883,12 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 				exp = rel_bind_column(sql, *rel, cname, f);
 			}
 		}
-		if (!exp)
-			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+		if (!exp) {
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
+				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			else
+				return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
 	}
