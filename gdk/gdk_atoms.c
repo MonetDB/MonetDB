@@ -488,6 +488,8 @@ bitFromStr(const char *src, int *len, bit **dst)
 	} else {
 		p = src;
 	}
+	while (GDKisspace(*p))
+		p++;
 	return (int) (p - src);
 }
 
@@ -686,6 +688,8 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	}
 #endif
 	}
+	while (GDKisspace(*p))
+		p++;
 	return (int) (p - src);
 }
 
@@ -807,6 +811,8 @@ ptrFromStr(const char *src, int *len, ptr **dst)
 		}
 		**dst = (ptr) base;
 	}
+	while (GDKisspace(*p))
+		p++;
 	return (int) (p - src);
 }
 
@@ -849,6 +855,8 @@ dblFromStr(const char *src, int *len, dbl **dst)
 			**dst = (dbl) d;
 		}
 	}
+	while (GDKisspace(*p))
+		p++;
 	return (int) (p - src);
 }
 
@@ -882,6 +890,8 @@ fltFromStr(const char *src, int *len, flt **dst)
 		errno = 0;
 		f = strtof(src, &pe);
 		p = pe;
+		while (GDKisspace(*p))
+			p++;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
@@ -1770,6 +1780,8 @@ OIDfromStr(const char *src, int *len, oid **dst)
 		}
 		p += pos;
 	}
+	while (GDKisspace(*p))
+		p++;
 	return (int) (p - src);
 }
 

@@ -117,6 +117,7 @@ extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
+extern int exp_unsafe(sql_exp *e);
 
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);
 extern sql_rel *find_rel(list *rels, sql_exp *e);
@@ -133,5 +134,6 @@ extern int exps_intern(list *exps);
 
 extern char *compare_func( comp_type t );
 extern int is_identity( sql_exp *e, sql_rel *r);
+
 
 #endif /* _REL_EXP_H_ */

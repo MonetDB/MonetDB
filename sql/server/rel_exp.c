@@ -770,6 +770,24 @@ exp_match_list( list *l, list *r)
 	return match;
 }
 
+static int 
+exps_equal( list *l, list *r)
+{
+	node *n, *m;
+
+	if (!l || !r)
+		return l == r;
+	if (list_length(l) != list_length(r))
+		return 0;
+	for (n = l->h, m = r->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data, *re = m->data;
+
+		if (!exp_match_exp(le,re))
+			return 0;
+	}
+	return 1;
+}
+
 int 
 exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
@@ -801,15 +819,15 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			break;
 		case e_aggr:
 			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
-			    exp_match_list(e1->l, e2->l) && 
+			    exps_equal(e1->l, e2->l) && 
 			    e1->flag == e2->flag)
 				return 1;
 			break;
 		case e_func:
 			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
-			    exp_match_list(e1->l, e2->l) &&
+			    exps_equal(e1->l, e2->l) &&
 			    /* optional order by expressions */
-			    exp_match_list(e1->r, e2->r))
+			    exps_equal(e1->r, e2->r))
 				return 1;
 			break;
 		case e_atom:
@@ -1190,6 +1208,33 @@ exp_has_func( sql_exp *e )
 	case e_column:
 	case e_psm:
 		return 0;
+	}
+	return 0;
+}
+
+int
+exp_unsafe( sql_exp *e) 
+{
+	if (!e)
+		return 0;
+
+	if (e->type != e_func && e->type != e_convert)
+		return 0;
+
+	if (e->type == e_func && e->card == CARD_AGGR)
+		return 1;
+	if (e->type == e_convert && e->l)
+		return exp_unsafe(e->l);
+	if (e->type == e_func && e->l) {
+		list *args = e->l;
+		node *n;
+
+		for(n = args->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_unsafe(e))
+				return 1;			
+		}
 	}
 	return 0;
 }
