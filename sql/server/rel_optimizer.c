@@ -1296,7 +1296,7 @@ project_unsafe(sql_rel *rel)
 		sql_exp *e = n->data;
 
 		/* aggr func in project ! */
-		if (e->type == e_func && e->card == CARD_AGGR)
+		if (exp_unsafe(e))
 			return 1;
 	}
 	return 0;

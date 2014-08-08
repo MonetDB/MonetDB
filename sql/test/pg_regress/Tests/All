@@ -41,7 +41,7 @@ timestamptz
 interval
 # abstime NOT supported ABSTIME, deprecated in Postgresql
 reltime
-tinterval
+# tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
 inet
 comments
 geometry

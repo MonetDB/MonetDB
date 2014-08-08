@@ -841,6 +841,7 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 int isMapOp(InstrPtr p){
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
+		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef));
@@ -878,7 +879,8 @@ int isDiffOp(InstrPtr p){
 
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-                (getFunctionId(p) == joinRef ||
+                (getFunctionId(p) == crossRef ||
+                 getFunctionId(p) == joinRef ||
                  getFunctionId(p) == antijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef)
