@@ -3918,11 +3918,16 @@ SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		sql_delta *d;
+		BAT *bn;
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
 			throw(SQL, "sql.compress", "Can not access descriptor");
-		msg =MOScompressInternal(cntxt, &bid, &b->batCacheid,0);
+		// simplified test case
+		bn = BATcopy(b,b->htype, b->ttype,0,TRANSIENT);
+		BBPkeepref(bn->batCacheid);
+		bid = bn->batCacheid;
+		//msg =MOScompressInternal(cntxt, &bid, &b->batCacheid,0);
 		BBPreleaseref(b->batCacheid);
 		if (msg) 
 			return msg;
@@ -3975,11 +3980,16 @@ SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		sql_delta *d;
+		BAT *bn;
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
 			throw(SQL, "sql.decompress", "Can not access descriptor");
-		msg =MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
+		// simplified test case
+		bn = BATcopy(b,b->htype, b->ttype,0,TRANSIENT);
+		BBPkeepref(bn->batCacheid);
+		bid = bn->batCacheid;
+		//msg =MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		if (msg)
 			return msg;
