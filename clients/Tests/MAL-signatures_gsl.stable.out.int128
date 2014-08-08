@@ -941,30 +941,18 @@ comment Grouped quantile aggregate
 pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
 
 pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid]):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjsoncand;
-comment Grouped aggregation of values with candidates list.
 
 pattern aggr.sum(b:bat[:oid,:dbl],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B.
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
 
 pattern aggr.sum(b:bat[:oid,:dbl]):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B.
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
-address JSONsubjson;
-comment Grouped aggregation of values.
 
 pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
@@ -1637,6 +1625,22 @@ comment Grouped tail sum on bte
 command aggr.sum(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:hge] 
 address AGGRsum2_hge;
 comment Sum over grouped tail sum on bte
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjsoncand;
+comment Grouped aggregation of values with candidates list.
+
+command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
+
+command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
+address JSONsubjson;
+comment Grouped aggregation of values.
 
 command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubquantilecand;
