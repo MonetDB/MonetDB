@@ -1,0 +1,92 @@
+stdout of test 'boolean_not.Bug-3505` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 19:06:47 >  
+# 19:06:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38042" "--set" "mapi_usock=/var/tmp/mtest-25685/.s.monetdb.38042" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 19:06:47 >  
+
+# MonetDB 5 server v11.17.22
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.334 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:38042/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25685/.s.monetdb.38042
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:06:47 >  
+# 19:06:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25685" "--port=38042"
+# 19:06:47 >  
+
+#start transaction;
+#CREATE TABLE BOOLTBL1 (f1 bool);
+#INSERT INTO BOOLTBL1 (f1) VALUES (cast('true' AS boolean));
+[ 1	]
+#INSERT INTO BOOLTBL1 (f1) VALUES ('true');
+[ 1	]
+#INSERT INTO BOOLTBL1 (f1) VALUES ('false');
+[ 1	]
+#SELECT f1 FROM BOOLTBL1 WHERE f1 = NOT FALSE;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+#SELECT f1 FROM BOOLTBL1 WHERE f1 = NOT TRUE;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT f1 FROM BOOLTBL1 WHERE f1 = (NOT FALSE);
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+#SELECT f1 FROM BOOLTBL1 WHERE NOT FALSE = f1;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+#SELECT f1 FROM BOOLTBL1 WHERE NOT f1 = FALSE;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+#SELECT f1 FROM BOOLTBL1 WHERE f1 = (NOT TRUE);
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT f1 FROM BOOLTBL1 WHERE NOT TRUE = f1;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT f1 FROM BOOLTBL1 WHERE NOT f1 = TRUE;
+% sys.booltbl1 # table_name
+% f1 # name
+% boolean # type
+% 5 # length
+[ false	]
+
+# 19:06:48 >  
+# 19:06:48 >  "Done."
+# 19:06:48 >  
+

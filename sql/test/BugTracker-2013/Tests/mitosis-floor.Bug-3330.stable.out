@@ -51,8 +51,8 @@ Ready.
 #;
 % sys.image,	sys.image,	sys.image,	sys.L1 # table_name
 % tilex,	tiley,	intensity,	count # name
-% real,	real,	int,	wrd # type
-% 15,	15,	1,	1 # length
+% double,	double,	int,	wrd # type
+% 24,	24,	1,	1 # length
 [ 0,	0,	3,	1	]
 [ 0,	0,	6,	1	]
 #drop table error;

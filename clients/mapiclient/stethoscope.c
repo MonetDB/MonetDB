@@ -39,7 +39,7 @@
 # endif
 #endif
 
-#define COUNTERSDEFAULT "ISTest"
+#define COUNTERSDEFAULT "ISTestn"
 
 /* #define _DEBUG_STETHOSCOPE_*/
 
@@ -84,7 +84,8 @@ static struct {
 	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 'F', "flow", "flow", 0 },
 	/*  4  */ { 'M', "footprint", "footprint", 0 },
-	/*  5  */ { 0, 0, 0, 0 }
+	/*  5  */ { 'n', "numa","numa",0},
+	/*  6  */ { 0, 0, 0, 0 }
 };
 
 static stream *conn = NULL;
@@ -112,6 +113,7 @@ usage(void)
 	fprintf(stderr, "  c = cpu statistics (utime,ctime,stime,cstime)\n");
 	fprintf(stderr, "  m = rss memory as provided by OS (in MB)\n");
 	fprintf(stderr, "  M = memory footprint of non-persistent objects\n");
+	fprintf(stderr, "  n = numa intra socket data flow\n");
 	fprintf(stderr, "  r = block reads\n");
 	fprintf(stderr, "  w = block writes\n");
 	fprintf(stderr, "  b = bytes read/written\n");

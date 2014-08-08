@@ -856,6 +856,18 @@ sql_update_default(Client c)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	/* cleanup columns of dropped views */
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id not in (select id from _tables);\n");
+
+	/* add new columns */
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'system', 'boolean', 1, 0, (select id from _tables where name = 'schemas'), NULL, true, 4, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'varres', 'boolean', 1, 0, (select id from _tables where name = 'functions'), NULL, true, 7, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'vararg', 'boolean', 1, 0, (select id from _tables where name = 'functions'), NULL, true, 8, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'inout', 'tinyint', 8, 0, (select id from _tables where name = 'args'), NULL, true, 6, NULL);\n");
+	/* correct column numbers */
+	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='9' where name = 'schema_id' and table_id in (select id from _tables where name = 'functions');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='7' where name = 'number' and table_id in (select id from _tables where name = 'args');\n");
+
  	/* remove table return types (#..), ie tt_generated from
 	 * _tables/_columns */
 	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select id from _tables where name like '#%%');\n");

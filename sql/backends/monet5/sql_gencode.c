@@ -1017,8 +1017,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				c = k;
 			}
-			if (s->flag) {
-				int topn = 0, flag = s->flag, utopn = flag & 2;
+			if (s->flag&1) {
+				int topn = 0, flag = s->flag, grps = flag & 2;
 
 				flag >>= 2;
 
@@ -1030,7 +1030,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				topn = getDestVar(q);
 
 				q = newStmt(mb, algebraRef, firstnRef);
-				if (utopn)
+				if (grps) /* we need the groups for the next firstn */
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
 				if (p)

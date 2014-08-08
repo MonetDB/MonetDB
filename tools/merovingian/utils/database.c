@@ -132,16 +132,6 @@ char* db_create(char* dbname) {
 		free(dbfarm);
 		return(strdup(buf));
 	}
-	/* to all insanity, .gdk_lock is "valid" if it contains a
-	 * ':', which it does by pure coincidence of time having a
-	 * ':' in there twice... */
-	if (fwrite("bla:", 1, 4, f) < 4) {
-		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
-				strerror(errno));
-		free(dbfarm);
-		fclose(f);
-		return(strdup(buf));
-	}
 	fclose(f);
 
 	/* generate a vault key */

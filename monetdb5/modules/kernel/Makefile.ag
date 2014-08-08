@@ -30,7 +30,6 @@ lib_kernel = {
 		aggr.c \
 		alarm.c alarm.h \
 		algebra.c algebra.h \
-		array.c array.h \
 		bat5.c bat5.h \
 		batcolor.c batcolor.h \
 		batmmath.c batmmath.h \
@@ -49,7 +48,7 @@ headers_mal = {
 	SOURCES = bat5.mal algebra.mal status.mal \
 		mmath.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
-		group.mal aggr.mal array.mal \
+		group.mal aggr.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
