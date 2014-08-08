@@ -84,6 +84,7 @@ CREATE TABLE emp (
 	name 		text,
 	age			integer,
 	location 	string,
+
 	salary 		integer,
 	manager 	string
 ); -- INHERITS (person)
@@ -93,6 +94,7 @@ CREATE TABLE student (
 	name 		text,
 	age			integer,
 	location 	string,
+
 	gpa 		double
 ); -- INHERITS (person)
 
@@ -101,9 +103,12 @@ CREATE TABLE stud_emp (
 	name 		text,
 	age			integer,
 	location 	string,
+
 	salary 		integer,
 	manager 	string,
+
 	gpa 		double,
+
 	percent 	integer
 ); -- INHERITS (emp, student)
 
@@ -140,6 +145,7 @@ CREATE TABLE ihighway (
 CREATE TABLE shighway (
 	name		text,
 	thepath 	string,
+
 	surface		text
 ); -- INHERITS (road)
 
@@ -167,19 +173,24 @@ CREATE TABLE a_star (
 CREATE TABLE b_star (
 	class		char, 
 	a 			integer,
+
 	b 			text
 ); -- INHERITS (a_star)
 
 CREATE TABLE c_star (
 	class		char, 
 	a 			integer,
+
 	c 			string
 ); -- INHERITS (a_star)
 
 CREATE TABLE d_star (
 	class		char, 
 	a 			integer,
+	b 			text,
+
 	c 			string,
+
 	d 			double
 ); -- INHERITS (b_star, c_star)
 
@@ -187,6 +198,7 @@ CREATE TABLE e_star (
 	class		char, 
 	a 			integer,
 	c 			string,
+
 	e 			smallint
 ); -- INHERITS (c_star)
 
@@ -195,6 +207,7 @@ CREATE TABLE f_star (
 	a 			integer,
 	c 			string,
 	e 			smallint,
+
 	f 			string
 ); -- INHERITS (e_star)
 
@@ -251,3 +264,5 @@ CREATE TABLE bt_f8_heap (
 	random 		integer
 );
 
+
+-- in drop.sql all these tables are dropped
