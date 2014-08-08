@@ -1296,7 +1296,7 @@ project_unsafe(sql_rel *rel)
 		sql_exp *e = n->data;
 
 		/* aggr func in project ! */
-		if (e->type == e_func && e->card == CARD_AGGR)
+		if (exp_unsafe(e))
 			return 1;
 	}
 	return 0;
@@ -3353,7 +3353,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)*changes;
 	if (is_semi(rel->op) && rel->exps && rel->l) {
-		int op = rel->op;
+		operator_type op = rel->op;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
@@ -3489,10 +3489,10 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 static sql_rel *
 rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
-	if (((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+	if ((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps;
-		sql_exp *je = exps->h->data;
+		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
 
 		if (!l || !r || need_distinct(l) || need_distinct(r))
 			return rel;
@@ -3503,7 +3503,7 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 
 		/* both sides only if we have a join index */
 		if (!l || !r ||(is_union(l->op) && is_union(r->op) && 
-			!find_prop(je->p, PROP_JOINIDX) && /* FKEY JOIN */
+			je && !find_prop(je->p, PROP_JOINIDX) && /* FKEY JOIN */
 			!rel_is_join_on_pkey(rel))) /* aligned PKEY JOIN */
 			return rel;
 

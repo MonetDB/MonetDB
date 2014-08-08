@@ -300,10 +300,12 @@ GDKextendf(int fd, size_t size, const char *fn)
 int
 GDKextend(const char *fn, size_t size)
 {
-	int rt = -1, fd;
-
-	rt = -1;
-	if ((fd = open(fn, O_RDWR)) >= 0) {
+	int fd, rt = -1, flags = O_RDWR;
+#ifdef WIN32
+	/* On Windows, open() fails if the file is bigger than 2^32 bytes without O_BINARY. */
+	flags |= O_BINARY;
+#endif
+	if ((fd = open(fn, flags)) >= 0) {
 		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	}
