@@ -2,7 +2,7 @@
 -- RELTIME
 --
 
-CREATE TABLE RELTIME_TBL (f1 reltime);
+CREATE TABLE RELTIME_TBL (f1 interval second);
 
 INSERT INTO RELTIME_TBL (f1) VALUES ('@ 1 minute');
 
@@ -24,28 +24,29 @@ INSERT INTO RELTIME_TBL (f1) VALUES ('@ 30 eons ago');
 
 -- test reltime operators
 
-SELECT '' AS six, RELTIME_TBL.*;
+SELECT '' AS six, RELTIME_TBL.* FROM RELTIME_TBL;
 
-SELECT '' AS five, RELTIME_TBL.*
-   WHERE RELTIME_TBL.f1 <> reltime '@ 10 days';
+SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 <> cast('@ 10 days' as interval second);
 
-SELECT '' AS three, RELTIME_TBL.*
-   WHERE RELTIME_TBL.f1 <= reltime '@ 5 hours';
+SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 <= cast('@ 5 hours' as interval second);
 
-SELECT '' AS three, RELTIME_TBL.*
-   WHERE RELTIME_TBL.f1 < reltime '@ 1 day';
+SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 < cast('@ 1 day' as interval second);
 
-SELECT '' AS one, RELTIME_TBL.*
-   WHERE RELTIME_TBL.f1 = reltime '@ 34 years';
+SELECT '' AS one, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 = cast('@ 34 years' as interval second);
 
-SELECT '' AS two, RELTIME_TBL.* 
-   WHERE RELTIME_TBL.f1 >= reltime '@ 1 month';
+SELECT '' AS two, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 >= cast('@ 1 month' as interval second);
 
-SELECT '' AS five, RELTIME_TBL.*
-   WHERE RELTIME_TBL.f1 > reltime '@ 3 seconds ago';
+SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
+   WHERE RELTIME_TBL.f1 > cast('@ 3 seconds ago' as interval second);
 
 SELECT '' AS fifteen, r1.*, r2.*
    FROM RELTIME_TBL r1, RELTIME_TBL r2
    WHERE r1.f1 > r2.f1
    ORDER BY r1.f1, r2.f1;
 
+DROP TABLE RELTIME_TBL;

@@ -30,77 +30,38 @@ Ready.
 #-- COMMENTS
 #--
 #SELECT 'trailing' AS first; -- trailing single line
-% sys.L0 # table_name
+% .L # table_name
 % first # name
-% ? # type
-% ? # length
+% char # type
+% 8 # length
 [ "trailing" ]
-
-#SELECT /* embedded single line */ 'embedded' AS second;
-% sys.L0 # table_name
+#SELECT /* embedded single line */ 'embedded' AS "second";
+% .L # table_name
 % second # name
-% ? # type
-% ? # length
-[ "embedded" ]
-
+% char # type
+% 8 # length
+[ "embedded"	]
 #SELECT /* both embedded and trailing single line */ 'both' AS third; -- trailing single line
-% sys.L0 # table_name
+% .L # table_name
 % third # name
-% ? # type
-% ? # length
+% char # type
+% 4 # length
 [ "both" ]
 
 #SELECT 'before multi-line' AS fourth;
-% sys.L0 # table_name
+% .L # table_name
 % fourth # name
-% ? # type
-% ? # length
+% char # type
+% 17 # length
 [ "before multi-line" ]
-
-/* This is an example of SQL which should not execute:
- * select 'multi-line';
- */
 #SELECT 'after multi-line' AS fifth;
-% sys.L0 # table_name
+% .L # table_name
 % fifth # name
-% ? # type
-% ? # length
+% char # type
+% 16 # length
 [ "after multi-line" ]
 
-#--
-#-- Nested comments
-#--
-/*
-#SELECT 'trailing' as x1; -- inside block comment
-*/
-/* This block comment surrounds a query which itself has a block comment...
-#SELECT /* embedded single line */ 'embedded' AS x2;
-*/
-#SELECT -- continued after the following block comments...
-#/* Deeply nested comment.
-#   This includes a single apostrophe to make sure we aren't decoding this part as a string.
-#SELECT 'deep nest' AS n1;
-/* Second level of nesting...
-#SELECT 'deeper nest' as n2;
-/* Third level of nesting...
-#SELECT 'deepest nest' as n3;
-*/
-Hoo boy. Still two deep...
-*/
-Now just one deep...
-*/
-'deeply nested example' AS sixth;
-% sys.L0 # table_name
-% sixth # name
-% ? # type
-% ? # length
-[ "deeply nested example" ]
-
-/* and this is the end of the file */
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 16:12:37 >  
+# 16:12:37 >  "Done."
+# 16:12:37 >  
 
