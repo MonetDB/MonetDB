@@ -29,17 +29,6 @@ stderr of test 'reltime` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- RELTIME
-#--
-#-- badly formatted reltimes
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('badly formatted reltime');
-ERROR = invalid input syntax for type reltime: "badly formatted reltime"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 30 eons ago');
-ERROR = invalid input syntax for type reltime: "@ 30 eons ago"
-#-- test reltime operators
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
