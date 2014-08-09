@@ -50,7 +50,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old;
     int limit,i,j, k, target=0;
-	char *check;
+	signed char *check;
 
 	check = GDKzalloc(mb->vsize);
 	if ( check == NULL)
