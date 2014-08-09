@@ -24,9 +24,9 @@
 
 /* Beware, the dump routines use the compressed part of the task */
 static void
-MOSdump_rle_(Client cntxt, MOStask task)
+MOSdump_rle(Client cntxt, MOStask task)
 {
-	MosaicBlk blk= task->hdr;
+	MosaicBlk blk= task->blk;
 	void *val = (void*)(((char*) blk) + MosaicBlkSize);
 
 	mnstr_printf(cntxt->fdout,"#rle "LLFMT" ", (lng)(blk->cnt));
@@ -49,23 +49,30 @@ MOSdump_rle_(Client cntxt, MOStask task)
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
+
 static void
-MOSdump_rle(Client cntxt, MOStask task)
+MOSadvance_rle(MOStask task)
 {
-	MOSdump_rle_(cntxt,task);
-	task->elm -= task->hdr->cnt;
 	switch(task->type){
-	case TYPE_bte: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(bte)); break;
-	case TYPE_bit: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(bit)); break;
-	case TYPE_sht: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(sht)); break;
-	case TYPE_int: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(int)); break;
-	case TYPE_lng: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(lng)); break;
-	case TYPE_flt: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(flt)); break;
-	case TYPE_dbl: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(dbl)); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte))); break;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bit))); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(sht))); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(int))); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(lng))); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(flt))); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl))); break;
 	default:
 		if( task->type == TYPE_timestamp){
 		}
 	}
+}
+
+static void
+MOSskip_rle(MOStask task)
+{
+	MOSadvance_rle(task);
+	if ( task->blk->tag == MOSAIC_EOL)
+		task->blk = 0; // ENDOFLIST
 }
 
 #define Estimate(TYPE)\
@@ -73,7 +80,6 @@ MOSdump_rle(Client cntxt, MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
-	task->xsize[MOSAIC_RLE] = MosaicBlkSize + sizeof(TYPE); \
 	chunksize = i;\
 }
 
@@ -93,7 +99,6 @@ MOSestimate_rle(Client cntxt, MOStask task)
 		for(i =1; i<task->elm; i++)
 		if ( ((int*)task->src)[i] != val)
 			break;
-		task->xsize[MOSAIC_RLE] = MosaicBlkSize + sizeof(int);
 		chunksize = i;
 	}
 	break;
@@ -107,35 +112,33 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			if ( !( ((timestamp*)task->src)[i].days == val.days && ((timestamp*)task->src)[i].msecs == val.msecs))
 				break;
 			chunksize = i;
-			task->xsize[MOSAIC_RLE] = MosaicBlkSize +sizeof(timestamp);
 		}
 	}
-	task->elements[MOSAIC_RLE]= i;
 	return chunksize;
 }
 
 // insert a series of values into the compressor block using rle.
 #define RLEcompress(TYPE)\
 	{	TYPE val = *(TYPE*) task->src;\
-		TYPE *dst = (TYPE*) ((char*)task->hdr + MosaicBlkSize);\
+		TYPE *dst = (TYPE*) task->dst;\
 		*dst = val;\
 		for(i =1; i<task->elm; i++)\
 		if ( ((TYPE*)task->src)[i] != val)\
 			break;\
-		hdr->cnt = i;\
-		wordaligned(task->compressed,sizeof(TYPE));\
+		blk->cnt = i;\
+		task->dst +=  sizeof(TYPE);\
 		task->src += i * sizeof(TYPE);\
-		task->elm -= i;\
 	}
 
 static void
 MOScompress_rle(Client cntxt, MOStask task)
 {
 	BUN i ;
-	MosaicBlk hdr = task->hdr;
+	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
-	hdr->tag = MOSAIC_RLE;
+	blk->tag = MOSAIC_RLE;
+	blk->cnt =  0;
 	task->time[MOSAIC_RLE] = GDKusec();
 
 	switch(task->type){
@@ -144,16 +147,14 @@ MOScompress_rle(Client cntxt, MOStask task)
 	case TYPE_sht: RLEcompress(sht); break;
 	case TYPE_int:
 	{	int val = *(int*) task->src;
-		int *dst = (int*) ((char*)task->hdr + MosaicBlkSize );
+		int *dst = (int*) task->dst;
 		*dst = val;
 		for(i =1; i<task->elm; i++)
 		if ( ((int*)task->src)[i] != val)
 			break;
-		hdr->cnt = i;
-		wordaligned(task->compressed,sizeof(int));
-		//task->compressed += sizeof(int);
+		blk->cnt = i;
+		task->dst +=  sizeof(int);
 		task->src += i * sizeof(int);
-		task->elm -= i;
 	}
 		break;
 	case TYPE_lng: RLEcompress(lng); break;
@@ -162,28 +163,25 @@ MOScompress_rle(Client cntxt, MOStask task)
 	default:
 		if( task->type == TYPE_timestamp){
 			timestamp val = *(timestamp*) task->src;
-			timestamp *dst = (timestamp*) ((char*)hdr + MosaicBlkSize );
+			timestamp *dst = (timestamp*) task->dst;
 			*dst = val;
 			for(i =1; i<task->elm; i++)
 			if ( !(((timestamp*)task->src)[i].days == val.days && ((timestamp*)task->src)[i].msecs == val.msecs))
 				break;
-			hdr->cnt = i;
-			task->compressed+= sizeof(timestamp);
+			blk->cnt = i;
 			task->src += i * sizeof(timestamp);
-			task->elm -= i;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	MOSdump_rle_(cntxt, task);
+	MOSdump_rle(cntxt, task);
 #endif
 	task->time[MOSAIC_RLE] = GDKusec() - task->time[MOSAIC_RLE];
 }
 
 // the inverse operator, extend the src
 #define RLEdecompress(TYPE)\
-{	TYPE val = *(TYPE*) task->compressed;\
-	wordaligned(task->compressed,sizeof(TYPE));\
-	for(i = 0; i < (BUN) hdr->cnt; i++)\
+{	TYPE val = *(TYPE*) task->dst;\
+	for(i = 0; i < (BUN) blk->cnt; i++)\
 		((TYPE*)task->src)[i] = val;\
 	task->src += i * sizeof(TYPE);\
 }
@@ -191,20 +189,19 @@ MOScompress_rle(Client cntxt, MOStask task)
 static void
 MOSdecompress_rle( MOStask task)
 {
+	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
-	MosaicBlk hdr =  ((MosaicBlk) task->hdr);
-	task->compressed += MosaicBlkSize;
-	task->elm -= hdr->cnt;
+	lng clk = GDKusec();
+	char *compressed;
 
-	task->time[MOSAIC_RLE] = GDKusec();
+	compressed = (char*) blk + MosaicBlkSize;
 	switch(task->type){
 	case TYPE_bte: RLEdecompress(bte); break ;
 	case TYPE_bit: RLEdecompress(bit); break ;
 	case TYPE_sht: RLEdecompress(sht); break;
 	case TYPE_int:
-	{	int val = *(int*) task->compressed ;
-		wordaligned(task->compressed,sizeof(int));
-		for(i = 0; i < (BUN) hdr->cnt; i++)
+	{	int val = *(int*) compressed ;
+		for(i = 0; i < (BUN) blk->cnt; i++)
 			((int*)task->src)[i] = val;
 		task->src += i * sizeof(int);
 	}
@@ -214,17 +211,14 @@ MOSdecompress_rle( MOStask task)
 	case TYPE_dbl: RLEdecompress(dbl); break;
 	default:
 		if( task->type == TYPE_timestamp)
-		{	timestamp val = *(timestamp*) task->src;
-			task->src += sizeof(timestamp);
+		{	timestamp val = *(timestamp*) compressed;
 
-			for(i = 0; i < (BUN) hdr->cnt; i++)
+			for(i = 0; i < (BUN) blk->cnt; i++)
 				((timestamp*)task->src)[i] = val;
 			task->src += i * sizeof(timestamp);
-			task->elm -= i;
 		}
 	}
-	task->hdr= (MosaicBlk)task->compressed;
-	task->time[MOSAIC_RLE] = GDKusec() - task->time[MOSAIC_RLE];
+	task->time[MOSAIC_RLE] = GDKusec() - clk;
 }
 
 

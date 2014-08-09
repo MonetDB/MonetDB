@@ -22,40 +22,38 @@
  * Use a chunk that has not been compressed
  */
 
-#ifdef _DEBUG_MOSAIC_
-static void
-MOSdump_none_(Client cntxt, MOStask task)
-{
-	MosaicBlk hdr = task->hdr;
-	mnstr_printf(cntxt->fdout,"#none "LLFMT"\n", (lng)(hdr->cnt));
-}
-#endif
-
 static void
 MOSdump_none(Client cntxt, MOStask task)
 {
-	MosaicBlk hdr = task->hdr;
-	mnstr_printf(cntxt->fdout,"#none "LLFMT"\n", (lng)(hdr->cnt));
-	task->elm -= hdr->cnt;
+	MosaicBlk blk = task->blk;
+	mnstr_printf(cntxt->fdout,"#none "LLFMT"\n", (lng)(blk->cnt));
+}
+
+static void
+MOSskip_none(MOStask task)
+{
+	MosaicBlk blk = task->blk;
 	switch(task->type){
-	case TYPE_bte: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(bte)* hdr->cnt); break ;
-	case TYPE_bit: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(bit)* hdr->cnt); break ;
-	case TYPE_sht: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(sht)* hdr->cnt); break ;
-	case TYPE_int: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(int)* hdr->cnt); break ;
-	case TYPE_lng: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(lng)* hdr->cnt); break ;
-	case TYPE_flt: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(flt)* hdr->cnt); break ;
-	case TYPE_dbl: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(dbl)); 
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* blk->cnt)); break ;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* blk->cnt)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* blk->cnt)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); 
 	}
+	if ( task->blk->tag == MOSAIC_EOL)
+		task->blk = 0; // ENDOFLIST
 }
 
 
 // append a series of values into the non-compressed block
 
 #define NONEcompress(TYPE)\
-{	*(TYPE*) task->compressed = *(TYPE*) task->src;\
+{	*(TYPE*) task->dst = *(TYPE*) task->src;\
 	task->src += sizeof(TYPE);\
-	task->compressed += sizeof(TYPE);\
-	hdr->cnt ++;\
+	task->dst += sizeof(TYPE);\
+	blk->cnt ++;\
 	task->elm--;\
 }
 
@@ -63,10 +61,10 @@ MOSdump_none(Client cntxt, MOStask task)
 static void
 MOScompress_none(Client cntxt, MOStask task)
 {
-	MosaicBlk hdr = (MosaicBlk) task->hdr;
+	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	(void) cntxt;
-    task->elements[MOSAIC_NONE]++;
+	blk->tag = MOSAIC_NONE;
     task->time[MOSAIC_NONE] = GDKusec();
 
 	switch(task->type){
@@ -74,10 +72,10 @@ MOScompress_none(Client cntxt, MOStask task)
 	case TYPE_bit: NONEcompress(bit); break ;
 	case TYPE_sht: NONEcompress(sht); break;
 	case TYPE_int:
-	{	*(int*) task->compressed = *(int*) task->src;
+	{	*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
-		task->compressed += sizeof(int);
-		hdr->cnt ++;
+		task->dst += sizeof(int);
+		blk->cnt ++;
 		task->elm--;
 	}
 		break;
@@ -96,33 +94,29 @@ MOScompress_none(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define NONEdecompress(TYPE)\
-{ for(i = 0; i < (BUN) hdr->cnt; i++) \
-	((TYPE*)task->src)[i] = ((TYPE*)task->compressed)[i]; \
+{ for(i = 0; i < (BUN) blk->cnt; i++) \
+	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
 	task->src += i * sizeof(TYPE);\
-	task->compressed += i * sizeof(TYPE);\
-	task->hdr = (MosaicBlk) task->compressed; \
 }
 
 static void
 MOSdecompress_none( MOStask task)
 {
+	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
-	MosaicBlk hdr = (MosaicBlk) task->hdr;
+	lng clk = GDKusec();
+	char *compressed;
 
-    task->time[MOSAIC_NONE] = GDKusec();
-	task->elm -= hdr->cnt;
-	task->compressed += MosaicBlkSize;
+	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(task->type){
 	case TYPE_bte: NONEdecompress(bte); break ;
 	case TYPE_bit: NONEdecompress(bit); break ;
 	case TYPE_sht: NONEdecompress(sht); break;
 	case TYPE_int:
 	{	
-		for(i = 0; i < (BUN) hdr->cnt; i++) 
-			((int*)task->src)[i] = ((int*)task->compressed)[i];
+		for(i = 0; i < (BUN) blk->cnt; i++) 
+			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
-		task->compressed += i * sizeof(int);
-		task->hdr = (MosaicBlk) task->compressed;
 	}
 		break;
 	case TYPE_lng: NONEdecompress(lng); break;
@@ -132,7 +126,7 @@ MOSdecompress_none( MOStask task)
 		if( task->type == TYPE_timestamp)
 			NONEdecompress(timestamp);
 	}
-    task->time[MOSAIC_NONE] = GDKusec() - task->time[MOSAIC_NONE];
+    task->time[MOSAIC_NONE] = GDKusec() - clk;
 }
 
 
