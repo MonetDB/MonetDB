@@ -481,25 +481,6 @@ isCompressed(int bid)
 	return r;
 }
 
-// advancing the chunks depends on their compression scheme
-/*
-static int
-MOSskipChunk(MOStask task)
-{
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	if(task->blk)
-	switch(task->blk->tag){
-	case MOSAIC_RLE:
-		MOSskip_rle(task);
-		break;
-	case MOSAIC_NONE:
-	default:
-		MOSskip_none(task);
-	}
-	return task->blk != 0;
-}
-*/
-
 #ifdef _MSC_VER
 #define nextafter   _nextafter
 float nextafterf(float x, float y);
