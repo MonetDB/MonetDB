@@ -153,7 +153,7 @@ static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
-	mnstr_printf(cntxt->fdout,"#type %d todo "LLFMT"\n", task->type, (lng)task->elm);
+	mnstr_printf(cntxt->fdout,"#type %d todo "BUNFMT"\n", task->type, task->elm);
 	mnstr_printf(cntxt->fdout,"#wins ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout,LLFMT " ",task->wins[i]);

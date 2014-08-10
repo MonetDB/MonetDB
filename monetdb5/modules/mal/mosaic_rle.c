@@ -244,7 +244,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 	case TYPE_flt: MOSselect_rle(flt); break;
 	case TYPE_dbl: MOSselect_rle(dbl); break;
 	case TYPE_int:
-	// Expanded MOSselect_none for debugging
+	// Expanded MOSselect_rle for debugging
 	{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
 
 		if( !*anti){
@@ -311,33 +311,15 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 		break;
 	default:
 		if( task->type == TYPE_timestamp){
-			//MOSselect_none(timestamp);
+			//MOSselect_rle(timestamp);
 		}
 	}
 	task->lb = o;
 	return MAL_SUCCEED;
-
-	(void) cntxt;
-	(void) task;
-	(void) low;
-	(void) hgh;
-	(void) li;
-	(void) hi;
-	(void) anti;
-	(void) first;
-	(void) last;
-	switch( task->type){
-	case TYPE_int:
-		// position the dst reader on first qualifying value
-		// inspect all non-compressed value
-	default:
-		;
-	}
-	return MAL_SUCCEED;
 }
 /*
 static str
-MOSthetasubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, int li, int hi, int anti){
+MOSthetasubselect_rle(Client cntxt,  MOStask task, void *low, void *hgh, int li, int hi, int anti){
 	(void) cntxt;
 	(void) task;
 	(void) low;
@@ -348,13 +330,13 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, int li
 	return MAL_SUCCEED;
 }
 static str
-MOSleftfetchjoin_none(Client cntxt,  MOStask task){
+MOSleftfetchjoin_rle(Client cntxt,  MOStask task){
 	(void) cntxt;
 	(void) task;
 	return MAL_SUCCEED;
 }
 static str
-MOSjoin_none(Client cntxt,  MOStask task){
+MOSjoin_rle(Client cntxt,  MOStask task){
 	(void) cntxt;
 	(void) task;
 	return MAL_SUCCEED;
