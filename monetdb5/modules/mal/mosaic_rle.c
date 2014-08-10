@@ -53,7 +53,8 @@ static void
 MOSdump_rle(Client cntxt, MOStask task)
 {
 	MOSdump_rle_(cntxt,task);
-	task->elm -= task->hdr->cnt;
+	assert(0 <= (lng) task->hdr->cnt && (lng) task->hdr->cnt <= (lng) task->elm);
+	task->elm -= (BUN) task->hdr->cnt;
 	switch(task->type){
 	case TYPE_bte: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(bte)); break;
 	case TYPE_bit: task->hdr = (MosaicBlk)( ((char*)task->hdr) + MosaicBlkSize + sizeof(bit)); break;
@@ -194,7 +195,8 @@ MOSdecompress_rle( MOStask task)
 	BUN i;
 	MosaicBlk hdr =  ((MosaicBlk) task->hdr);
 	task->compressed += MosaicBlkSize;
-	task->elm -= hdr->cnt;
+	assert(0 <= (lng) hdr->cnt && (lng) hdr->cnt <= (lng) task->elm);
+	task->elm -= (BUN) hdr->cnt;
 
 	task->time[MOSAIC_RLE] = GDKusec();
 	switch(task->type){

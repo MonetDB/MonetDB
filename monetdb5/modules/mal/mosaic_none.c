@@ -36,7 +36,8 @@ MOSdump_none(Client cntxt, MOStask task)
 {
 	MosaicBlk hdr = task->hdr;
 	mnstr_printf(cntxt->fdout,"#none "LLFMT"\n", (lng)(hdr->cnt));
-	task->elm -= hdr->cnt;
+	assert(0 <= (lng) hdr->cnt && (lng) hdr->cnt <= (lng) task->elm);
+	task->elm -= (BUN) hdr->cnt;
 	switch(task->type){
 	case TYPE_bte: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(bte)* hdr->cnt); break ;
 	case TYPE_bit: task->hdr = (MosaicBlk)( ((char*) task->hdr) + MosaicBlkSize + sizeof(bit)* hdr->cnt); break ;
@@ -110,7 +111,8 @@ MOSdecompress_none( MOStask task)
 	MosaicBlk hdr = (MosaicBlk) task->hdr;
 
     task->time[MOSAIC_NONE] = GDKusec();
-	task->elm -= hdr->cnt;
+	assert(0 <= (lng) hdr->cnt && (lng) hdr->cnt <= (lng) task->elm);
+	task->elm -= (BUN) hdr->cnt;
 	task->compressed += MosaicBlkSize;
 	switch(task->type){
 	case TYPE_bte: NONEdecompress(bte); break ;
