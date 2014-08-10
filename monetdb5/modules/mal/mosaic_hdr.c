@@ -93,5 +93,5 @@ MOSfindChunk(Client cntxt, MOStask task, oid o)
 	for(;  i <hdr->top-1; i++)
 		if ( hdr->index[i+1] > o)
 			break;
-	task->blk = (MosaicBlk) task->dst + hdr->offset[i];
+	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + (i ? hdr->offset[i]:0));
 }

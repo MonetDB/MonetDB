@@ -221,22 +221,142 @@ MOSdecompress_rle( MOStask task)
 	task->time[MOSAIC_RLE] = GDKusec() - clk;
 }
 
+// perform relational algebra operators over non-compressed chunks
+// They are bound by an oid range and possibly a candidate list
 
-// The remainder should provide the minimal algebraic framework
-//  to apply the operator to a RLE compressed chunk
-//  To be filled in later
-//str MOSrle_table(Client cntxt, MOStask task, BAT *bn){
-	//return MAL_SUCCEED;
-//}
-//str MOSrle_subselect(Client cntxt,  MOStask task, oid *cand, void *low, void *hgh, int li, int ri, int anti){
-	//return MAL_SUCCEED;
-//}
-//str MOSrle_thetaselect(Client cntxt,  MOStask task, oid *cand, void *low, void *hgh, int li, int ri, int anti){
-	//return MAL_SUCCEED;
-//}
-//str MOSrle_leftfetchjoin(Client cntxt,  MOStask task, oid *cand){
-	//return MAL_SUCCEED;
-//}
-//str MOSrle_join(Client cntxt,  MOStask task, oid *cand){
-	//return MAL_SUCCEED;
-//}
+#define  MOSselect_rle(TPE) /* TBD */
+
+static str
+MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+	oid *o;
+	int cmp;
+	(void) cntxt;
+
+	if ( first + task->blk->cnt > last)
+		last = task->blk->cnt;
+	o = task->lb;
+
+	switch(task->type){
+	case TYPE_bit: MOSselect_rle(bit); break;
+	case TYPE_bte: MOSselect_rle(bte); break;
+	case TYPE_sht: MOSselect_rle(sht); break;
+	case TYPE_lng: MOSselect_rle(lng); break;
+	case TYPE_flt: MOSselect_rle(flt); break;
+	case TYPE_dbl: MOSselect_rle(dbl); break;
+	case TYPE_int:
+	// Expanded MOSselect_none for debugging
+	{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
+
+		if( !*anti){
+			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
+				for( ; first < last; first++, val++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			} else
+			if( *(int*) low == int_nil ){
+				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
+				if (cmp )
+				for( ; first < last; first++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			} else
+			if( *(int*) hgh == int_nil ){
+				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
+				if (cmp )
+				for( ; first < last; first++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			} else{
+				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
+						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
+				if (cmp )
+				for( ; first < last; first++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			}
+		} else {
+			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
+				/* nothing is matching */
+			} else
+			if( *(int*) low == int_nil ){
+				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
+				if ( !cmp )
+				for( ; first < last; first++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			} else
+			if( *(int*) hgh == int_nil ){
+				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
+				if ( !cmp )
+				for( ; first < last; first++, val++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			} else{
+				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
+						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
+				if (!cmp)
+				for( ; first < last; first++, val++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
+			}
+		}
+	}
+		break;
+	default:
+		if( task->type == TYPE_timestamp){
+			//MOSselect_none(timestamp);
+		}
+	}
+	task->lb = o;
+	return MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) task;
+	(void) low;
+	(void) hgh;
+	(void) li;
+	(void) hi;
+	(void) anti;
+	(void) first;
+	(void) last;
+	switch( task->type){
+	case TYPE_int:
+		// position the dst reader on first qualifying value
+		// inspect all non-compressed value
+	default:
+		;
+	}
+	return MAL_SUCCEED;
+}
+/*
+static str
+MOSthetasubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, int li, int hi, int anti){
+	(void) cntxt;
+	(void) task;
+	(void) low;
+	(void) hgh;
+	(void) li;
+	(void) hi;
+	(void) anti;
+	return MAL_SUCCEED;
+}
+static str
+MOSleftfetchjoin_none(Client cntxt,  MOStask task){
+	(void) cntxt;
+	(void) task;
+	return MAL_SUCCEED;
+}
+static str
+MOSjoin_none(Client cntxt,  MOStask task){
+	(void) cntxt;
+	(void) task;
+	return MAL_SUCCEED;
+}
+*/

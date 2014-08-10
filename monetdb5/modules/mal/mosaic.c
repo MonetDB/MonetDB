@@ -81,8 +81,13 @@ typedef struct MOSTASK{
 	MosaicHdr hdr;	// start of the destination heap
 	MosaicBlk blk;	// current block header
 	char *dst;		// write pointer into current compressed blocks
+
 	BUN	elm;		// elements left to compress
 	char *src;		// read pointer into source
+
+	oid *lb, *rb;	// Collected oids from operations
+	oid *cl;		// candidate admin
+	lng	n;			// element count in candidate list
 
 	// collect compression statistics for the particular task
 	lng time[MOSAIC_METHODS];
@@ -99,6 +104,27 @@ typedef struct MOSINDEX{
 } *mosaicindex;
 
 /* Run through a column to produce a compressed version */
+
+#ifdef _MSC_VER
+#define nextafter   _nextafter
+float nextafterf(float x, float y);
+#endif
+
+#define PREVVALUEbte(x) ((x) - 1)
+#define PREVVALUEsht(x) ((x) - 1)
+#define PREVVALUEint(x) ((x) - 1)
+#define PREVVALUElng(x) ((x) - 1)
+#define PREVVALUEoid(x) ((x) - 1)
+#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
+#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
+
+#define NEXTVALUEbte(x) ((x) + 1)
+#define NEXTVALUEsht(x) ((x) + 1)
+#define NEXTVALUEint(x) ((x) + 1)
+#define NEXTVALUElng(x) ((x) + 1)
+#define NEXTVALUEoid(x) ((x) + 1)
+#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
+#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
 
 /* simple include the details of the hardwired compressors */
 #include "mosaic_hdr.c"
@@ -507,10 +533,6 @@ float nextafterf(float x, float y);
  * The actual decompression should wait until we know that
  * the administration thru SQL layers works properly.
  */
-#define calculate_range(TPE, TPE2)					\
-	do {								\
-	} while (0)
-
 str
 MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -518,12 +540,13 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *low, *hgh;
 	int *ret, *bid, *cid= 0;
 	int i;
-	oid *cl = 0;
-	BAT *b, *bn= NULL, *cand = NULL;
+	BUN first =0, last = 0, cnt= 0;
+	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
 
 	(void) cntxt;
+	(void) mb;
 	ret = (int *) getArgReference(stk, pci, 0);
 	bid = (int *) getArgReference(stk, pci, 1);
 
@@ -532,11 +555,12 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		i = 3;
 	} else
 		i = 2;
-	low = (void *) getArgReference(stk, pci, i + 2);
-	hgh = (void *) getArgReference(stk, pci, i + 3);
-	li = (bit *) getArgReference(stk, pci, i + 4);
-	hi = (bit *) getArgReference(stk, pci, i + 5);
-	anti = (bit *) getArgReference(stk, pci, i + 6);
+	low = (void *) getArgReference(stk, pci, i);
+	hgh = (void *) getArgReference(stk, pci, i + 1);
+	li = (bit *) getArgReference(stk, pci, i + 2);
+	hi = (bit *) getArgReference(stk, pci, i + 3);
+	anti = (bit *) getArgReference(stk, pci, i + 4);
+	//
 	// use default implementation if possible
 	if( !isCompressed(*bid))
 		return ALGsubselect1(ret,bid,low,hgh,li,hi,anti);
@@ -544,78 +568,85 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BATdescriptor(*bid);
 	if( b == NULL)
 			throw(MAL, "mosaic.subselect",RUNTIME_OBJECT_MISSING);
+	// determine the elements in the compressed structure
+	last = b->T->heap.count;
 
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+	}
+
+	// accumulator for the oids
+	bn = BATnew(TYPE_void, TYPE_oid, last, TRANSIENT);
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+	}
+	task->lb = (oid*) Tloc(bn,BUNfirst(bn));
+
+	MOSinit(task,b);
+	// drag along the candidate list into the task descriptor
 	if (cid) {
 		cand = BATdescriptor(*cid);
-		if (cand == NULL)
+		if (cand == NULL){
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(bn->batCacheid);
 			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
-		cl = (oid *) Tloc(cand, BUNfirst(cand));
-	}
-	(void) cl;
-	(void) hi;
-	(void) li;
-	(void) anti;
-	(void) mb;
-	// inject the de-decompression
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	task->type = b->ttype;
-	task->elm =  b->T->heap.count;
-	task->dst = (void*) Tloc(b,BUNfirst(b));
-	task->blk = (MosaicBlk) task->dst;
-	task->dst += MosaicHdrSize;
-	task->blk = (MosaicBlk) task->dst;
-	MOSfindChunk(cntxt,task,0);
+		}
+		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
+		task->n = BATcount(cand);
+		first = *(oid*) task->src;
+	} else 
+		first = 0;
 
-	// loop thru all the chunks and collect the results
-	while(task->blk )
+	// loop thru all the chunks and collect the partial results
+	if ( task->cl && task->n && (BUN) *task->cl > first)
+		first = (BUN)  *task->cl;
+	MOSfindChunk(cntxt,task,first);
+	while(task->blk && first < last ){
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
+			MOSsubselect_rle(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
+			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
 		case MOSAIC_NONE:
 		default:
+			MOSsubselect_none(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
+			first += task->blk->cnt;
 			MOSskip_none(task);
 		}
+	}
+	// derive the filling
+	cnt = task->lb - (oid*) Tloc(bn,BUNfirst(bn));
+	BATsetcount(bn,cnt);
+	BATseqbase(bn,b->hseqbase);
+    bn->hdense = 1;
+    bn->hkey = 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	bn->tsorted = 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tkey = 1;
 	* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return msg;
-}
-#ifdef _MSC_VER
-#define nextafter   _nextafter
-float nextafterf(float x, float y);
-#endif
-
-#define PREVVALUEbte(x) ((x) - 1)
-#define PREVVALUEsht(x) ((x) - 1)
-#define PREVVALUEint(x) ((x) - 1)
-#define PREVVALUElng(x) ((x) - 1)
-#define PREVVALUEoid(x) ((x) - 1)
-#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
-#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
-
-#define NEXTVALUEbte(x) ((x) + 1)
-#define NEXTVALUEsht(x) ((x) + 1)
-#define NEXTVALUEint(x) ((x) + 1)
-#define NEXTVALUElng(x) ((x) + 1)
-#define NEXTVALUEoid(x) ((x) + 1)
-#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
-#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
-
-
-#define MOSthetasubselect_(TPE,ABS) {\
 }
 
 
 str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, cndid =0, c= 0, anti =0,tpe, *ret, *bid;
-	BAT *cand = 0, *bn = NULL;
+	int idx, cndid =0, c= 0, anti =0, *ret, *bid;
+	BAT *b = 0, *cand = 0, *bn = NULL;
 	BUN cap= 0;
 	oid *cl = 0;
 	str msg= MAL_SUCCEED;
 	char **oper;
 	void *low;
+	MOStask task;
 
+	(void) mb;
 	(void) cntxt;
 	ret= (int*) getArgReference(stk,pci,0);
 	bid= (int*) getArgReference(stk,pci,1);
@@ -640,21 +671,27 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// check the step direction
-	
-	switch( tpe =getArgType(mb,pci,idx)){
-	case TYPE_bte: MOSthetasubselect_(bte,abs);break;
-	case TYPE_int: MOSthetasubselect_(int,abs);break;
-	case TYPE_sht: MOSthetasubselect_(sht,abs);break;
-	case TYPE_lng: MOSthetasubselect_(lng,llabs);break;
-	case TYPE_flt: MOSthetasubselect_(flt,fabsf);break;
-	case TYPE_dbl: MOSthetasubselect_(dbl,fabs);break;
-	break;
-	default:
-		if ( tpe == TYPE_timestamp){
-		} else
-			throw(MAL,"mosaic.thetasubselect","Illegal generator arguments");
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL){
+		BBPreleaseref(b->batCacheid);
+		if( cand)
+			BBPreleaseref(cand->batCacheid);
+		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
+	MOSinit(task,b);
+	MOSfindChunk(cntxt,task,0);
 
+	// loop thru all the chunks and collect the results
+	while(task->blk )
+		switch(task->blk->tag){
+		case MOSAIC_RLE:
+			MOSskip_rle(task);
+			break;
+		case MOSAIC_NONE:
+		default:
+			MOSskip_none(task);
+		}
+	
 	if( cndid)
 		BBPreleaseref(cndid);
 	if( bn){
@@ -673,12 +710,14 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *bid =0, *cid=0, c= 0, tpe;
+	int *ret, *bid =0, *cid=0, c= 0;
 	BAT *b, *bn = NULL;
 	BUN cnt;
 	oid *ol =0, o = 0;
 	str msg= MAL_SUCCEED;
+	MOStask task;
 
+	(void) mb;
 	(void) cntxt;
 
 	ret = (int*) getArgReference(stk,pci,0);
@@ -700,18 +739,24 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cnt;
 	(void) ol;
 	(void) o;
-	/* the actual code to perform a leftfetchjoin over generators */
-	switch( tpe = getArgType(mb,pci,1)){
-	case TYPE_bte:  MOSleftfetchjoin_(bte); break;
-	case TYPE_sht:  MOSleftfetchjoin_(sht); break;
-	case TYPE_int:  MOSleftfetchjoin_(int); break;
-	case TYPE_lng:  MOSleftfetchjoin_(lng); break;
-	case TYPE_flt:  MOSleftfetchjoin_(flt); break;
-	case TYPE_dbl:  MOSleftfetchjoin_(dbl); break;
-	default:
-		if ( tpe == TYPE_timestamp){
-		}
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
+	MOSinit(task,b);
+	MOSfindChunk(cntxt,task,0);
+
+	// loop thru all the chunks and collect the results
+	while(task->blk )
+		switch(task->blk->tag){
+		case MOSAIC_RLE:
+			MOSskip_rle(task);
+			break;
+		case MOSAIC_NONE:
+		default:
+			MOSskip_none(task);
+		}
 
 	/* adminstrative wrapup of the leftfetchjoin */
 	BBPreleaseref(*bid);
@@ -735,10 +780,11 @@ str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret,*bid,*cid;
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
-	oid o= 0, *ol, *or;
-	int tpe, incr=0;
+	oid o, *ol, *or;
+	int incr=0;
 	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
+	MOStask task;
 
 	ret = (int*) getArgReference(stk,pci,0);
 	bid = (int*) getArgReference(stk,pci,1);
@@ -768,7 +814,6 @@ str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = q? bl : br;
 	p = q? q : p;
 	cnt = BATcount(b);
-	tpe = b->ttype;
 	o= b->hseqbase;
 	
 	bln = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
@@ -783,38 +828,31 @@ str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ol = (oid*) Tloc(bln,BUNfirst(bln));
 	or = (oid*) Tloc(brn,BUNfirst(brn));
 
-	/* The actual join code for generators be injected here */
-	switch(tpe){
-	case TYPE_bte: //MOSjoin_(bte,abs); break;
-	{ bte f,l,s; bte *v; BUN w;
-	f = *(bte*) getArgReference(stk,p, 1);
-	l = *(bte*) getArgReference(stk,p, 2);
-	s = *(bte*) getArgReference(stk,p, 3);
-	incr = s > 0;
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
-		throw(MAL,"mosaic.join","Illegal range");
-	v = (bte*) Tloc(b,BUNfirst(b));
-	for( ; cnt >0; cnt--,o++,v++){
-		w = (BUN) floor(abs(*v -f)/abs(s));
-		if ( f + (bte)( w * s) == *v ){
-			*ol++ = (oid) w;
-			*or++ = o;
-			c++;
-		}
-	} }
-	break;
-	case TYPE_sht: MOSjoin_(sht,abs); break;
-	case TYPE_int: MOSjoin_(int,abs); break;
-	case TYPE_lng: MOSjoin_(lng,llabs); break;
-	case TYPE_flt: MOSjoin_(flt,fabsf); break;
-	case TYPE_dbl: MOSjoin_(dbl,fabs); break;
-	default:
-		if( tpe == TYPE_timestamp){
-			// it is easier to produce the timestamp series
-			// then to estimate the possible index
-			}
-		throw(MAL,"mosaic.join","Illegal type");
+	(void) o;
+	(void)ol;
+	(void)or;
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL){
+		if(bln) BBPreleaseref(bln->batCacheid);
+		if(brn) BBPreleaseref(brn->batCacheid);
+		if(bl) BBPreleaseref(bl->batCacheid);
+		if(br) BBPreleaseref(br->batCacheid);
+		BBPreleaseref(b->batCacheid);
 	}
+	MOSinit(task,b);
+	MOSfindChunk(cntxt,task,0);
+
+	// loop thru all the chunks and collect the results
+	while(task->blk )
+		switch(task->blk->tag){
+		case MOSAIC_RLE:
+			MOSskip_rle(task);
+			break;
+		case MOSAIC_NONE:
+		default:
+			MOSskip_none(task);
+		}
+
     BATsetcount(bln,c);
     bln->hdense = 1;
     bln->hseqbase = 0;
