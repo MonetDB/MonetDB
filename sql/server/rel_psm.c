@@ -784,6 +784,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					if (res && restype)
 						f->res = restype;
 					f->sql = 0; /* native */
+					f->lang = FUNC_LANG_INT;
 				}
 			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
@@ -829,6 +830,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP(fmod);
 					f->imp = _STRDUP(fnme);
 					f->sql = 0; /* native */
+					f->lang = FUNC_LANG_INT;
 				}
 			}
 		}
