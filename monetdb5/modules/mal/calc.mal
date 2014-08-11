@@ -4361,7 +4361,7 @@ comment "Return -1/0/1 if V1 </==/> V2";
 
 pattern between(b:any_1,lo:any_1,hi:any_1) :bit
 address CMDvarBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 
 pattern void(v:void) :void
 address CMDvarCONVERT
