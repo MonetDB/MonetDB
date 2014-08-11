@@ -106,6 +106,7 @@ mapping = {
     types.INT: int,
     types.WRD: int,
     types.BIGINT: int,
+    types.HUGEINT: int,
     types.SERIAL: int,
     types.REAL: float,
     types.DOUBLE: float,

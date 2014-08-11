@@ -501,6 +501,11 @@ do {									\
 	case TYPE_lng:
 		BINSIZE(bits, IMPS_CREATE, lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		BINSIZE(bits, IMPS_CREATE, hge);
+		break;
+#endif
 	case TYPE_flt:
 		BINSIZE(bits, IMPS_CREATE, flt);
 		break;
@@ -531,6 +536,9 @@ BATimprints(BAT *b) {
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 	case TYPE_flt:
 	case TYPE_dbl:
 		break;
@@ -666,6 +674,11 @@ do {								\
 		case TYPE_lng:
 			FILL_HISTOGRAM(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			FILL_HISTOGRAM(hge);
+			break;
+#endif
 		case TYPE_flt:
 			FILL_HISTOGRAM(flt);
 			break;
@@ -792,6 +805,14 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 				BINSIZE(bits, getbin, lng);
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			{
+				hge *bins = (hge *) inbins;
+				BINSIZE(bits, getbin, hge);
+			}
+			break;
+#endif
 		case TYPE_flt:
 			{
 				flt *bins = (flt *) inbins;

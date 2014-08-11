@@ -259,6 +259,9 @@ BATkunique(BAT *b)
 #define sht_EQ(x,y) simple_EQ(x,y,sht)
 #define int_EQ(x,y) simple_EQ(x,y,int)
 #define lng_EQ(x,y) simple_EQ(x,y,lng)
+#ifdef HAVE_HGE
+#define hge_EQ(x,y) simple_EQ(x,y,hge)
+#endif
 #define flt_EQ(x,y) simple_EQ(x,y,flt)
 #define dbl_EQ(x,y) simple_EQ(x,y,dbl)
 
@@ -387,6 +390,14 @@ BATkunique(BAT *b)
 		}						\
 	} while (0)
 
+#ifdef HAVE_HGE
+#define batcheck_hge(a1)						\
+		case TYPE_hge:						\
+			check(a1,loc,hge,simple_CMP(h,h2,hge),hge_EQ);	\
+			break
+#else
+#define batcheck_hge(a1)
+#endif
 #define batcheck(a1)							\
 static BAT*								\
 BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
@@ -503,6 +514,7 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		case TYPE_lng:						\
 			check(a1,loc,lng,simple_CMP(h,h2,lng),lng_EQ);	\
 			break;						\
+		batcheck_hge(a1);					\
 		default:						\
 			if (r->hvarsized) {				\
 				checkall(a1,var,var,((*merge)(h,h2)));	\

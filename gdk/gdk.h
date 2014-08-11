@@ -119,6 +119,8 @@
  *  The IEEE @strong{double} type.
  * @item lng:
  *  Longs: the C @strong{long long} type (64-bit integers).
+ * @item hge:
+ *  "huge" integers: the GCC @strong{__int128} type (128-bit integers).
  * @item str:
  *  UTF-8 strings (Unicode). A zero-terminated byte sequence.
  * @item bat:
@@ -554,7 +556,12 @@
 #define TYPE_flt	9
 #define TYPE_dbl	10
 #define TYPE_lng	11
+#ifdef HAVE_HGE
+#define TYPE_hge	12
+#define TYPE_str	13
+#else
 #define TYPE_str	12
+#endif
 #define TYPE_any	255	/* limit types to <255! */
 
 typedef signed char bit;
@@ -807,6 +814,9 @@ typedef struct {
 		str sval;
 		dbl dval;
 		lng lval;
+#ifdef HAVE_HGE
+		hge hval;
+#endif
 	} val;
 	int len, vtype;
 } *ValPtr, ValRecord;
@@ -962,7 +972,8 @@ typedef struct {
 #define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
 #define GDKLIBRARY_CHR		061024	/* version that still had chr type */
 #define GDKLIBRARY_SORTED_BYTE	061025	/* version that still had byte-sized sorted flag */
-#define GDKLIBRARY		061026
+#define GDKLIBRARY_64_BIT_INT	061026	/* version that had no 128-bit integer option, yet */
+#define GDKLIBRARY		061027
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2599,6 +2610,9 @@ VALptr(const ValRecord *v)
 	case TYPE_flt: return (const void *) &v->val.fval;
 	case TYPE_dbl: return (const void *) &v->val.dval;
 	case TYPE_lng: return (const void *) &v->val.lval;
+#ifdef HAVE_HGE
+	case TYPE_hge: return (const void *) &v->val.hval;
+#endif
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;
 	}
@@ -3010,6 +3024,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloop_lng
  * @tab
  *  (BAT *b; Hash *h, size_t idx; lng *value, BUN w)
+ * @item HASHloop_hge
+ * @tab
+ *  (BAT *b; Hash *h, size_t idx; hge *value, BUN w)
  * @item HASHloop_dbl
  * @tab
  *  (BAT *b; Hash *h, size_t idx; dbl *value, BUN w)
@@ -3158,6 +3175,9 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
 #define HASHloop_wrd(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, wrd)
 #define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
 #define HASHloop_oid(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, oid)
 #define HASHloop_bat(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bat)
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)

@@ -111,6 +111,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(bte, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(bte, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(bte, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, flt, TPE, OP);
@@ -160,6 +168,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(sht, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(sht, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(sht, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, flt, TPE, OP);
@@ -212,6 +228,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(int, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(int, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(int, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, flt, TPE, OP);
@@ -264,6 +288,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(lng, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(lng, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(lng, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, flt, TPE, OP);
@@ -280,6 +312,63 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, bte, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, bte, TPE, OP);
+			break;
+		case TYPE_sht:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, sht, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, sht, TPE, OP);
+			break;
+		case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, int, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, int, TPE, OP);
+			break;
+		case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
+#endif
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, lng, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, lng, TPE, OP);
+			break;
+		case TYPE_hge:
+		hgehge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, hge, TPE, OP);
+			break;
+		case TYPE_flt:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, flt, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, flt, TPE, OP);
+			break;
+		case TYPE_dbl:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(hge, dbl, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(hge, dbl, TPE, OP);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
 	case TYPE_flt:
 		switch (tp2) {
 		case TYPE_bte:
@@ -312,6 +401,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(flt, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(flt, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(flt, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 		fltflt:
 			if (nonil)
@@ -361,6 +458,14 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			else
 				BINARY_3TYPE_FUNC(dbl, lng, TPE, OP);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(dbl, hge, TPE, OP);
+			else
+				BINARY_3TYPE_FUNC(dbl, hge, TPE, OP);
+			break;
+#endif
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, flt, TPE, OP);
@@ -449,6 +554,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto intint;
 		if (atomcmp == BATatoms[TYPE_lng].atomCmp)
 			goto lnglng;
+#ifdef HAVE_HGE
+		if (atomcmp == BATatoms[TYPE_hge].atomCmp)
+			goto hgehge;
+#endif
 		if (atomcmp == BATatoms[TYPE_flt].atomCmp)
 			goto fltflt;
 		if (atomcmp == BATatoms[TYPE_dbl].atomCmp)

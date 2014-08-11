@@ -1359,6 +1359,9 @@ convertConstant(int type, ValPtr vr)
 	case TYPE_dbl:
 	case TYPE_wrd:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 		VALconvert(type, vr);
 		if (vr->vtype != type)
 			throw(SYNTAX, "convertConstant", "coercion failed");
@@ -1934,6 +1937,12 @@ varGetPropStr(MalBlkPtr mb, int var)
 
 			ATOMformat(v->type, VALptr(&v->value), &t);
 			switch (v->type) {
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				assert(0);
+				sprintf(s, "%s%s%s:hge", nme, op, t);
+				break;
+#endif
 			case TYPE_oid:
 				sprintf(s, "%s%s%s:oid", nme, op, t);
 				break;

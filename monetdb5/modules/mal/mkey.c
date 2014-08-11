@@ -82,6 +82,20 @@ MKEYhash_lng(wrd *res, lng *val)
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_HGE
+str
+MKEYhash_hge(wrd *res, hge *val)
+{
+#if SIZEOF_WRD == SIZEOF_LNG
+	*res = ((wrd *) val)[0] ^ ((wrd *) val)[1];
+#else
+	*res = ((wrd *) val)[0] ^ ((wrd *) val)[1] ^
+	       ((wrd *) val)[2] ^ ((wrd *) val)[3];
+#endif
+	return MAL_SUCCEED;
+}
+#endif
+
 str
 MKEYhash_dbl(wrd *res, dbl *val)
 {
@@ -153,6 +167,17 @@ voidbathash(BAT **res, BAT *b )
 				*r++ = ((wrd *) v)[0] ^ ((wrd *) v)[1];
 #endif
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			for(; v < e; v+=sz)
+#if SIZEOF_WRD == SIZEOF_LNG
+				*r++ = ((wrd *) v)[0] ^ ((wrd *) v)[1];
+#else
+				*r++ = ((wrd *) v)[0] ^ ((wrd *) v)[1] ^
+				       ((wrd *) v)[2] ^ ((wrd *) v)[3];
+#endif
+			break;
+#endif
 		default:
 			for(; v < e; v+=sz)
 				*r++ = hash(v);
@@ -221,6 +246,17 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		wrd val = ((wrd *) cur)[0] ^ ((wrd *) cur)[1];
 #endif
 		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
+#ifdef HAVE_HGE
+	} else if (tpe == TYPE_hge) {
+		hge *cur = (hge*) pval;
+#if SIZEOF_WRD == SIZEOF_LNG
+		wrd val = ((wrd *) cur)[0] ^ ((wrd *) cur)[1];
+#else
+		wrd val = ((wrd *) cur)[0] ^ ((wrd *) cur)[1] ^
+		          ((wrd *) cur)[2] ^ ((wrd *) cur)[3];
+#endif
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
+#endif
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		str cur = *(str*) pval;
 		BUN val = strHash(cur);
@@ -291,6 +327,25 @@ while (cur < end) {\
 			cur++;
 			dst++;
 		}
+#ifdef HAVE_HGE
+	} else if (tpe == TYPE_hge) {
+		hge *cur = (hge *) BUNtloc(bi, BUNfirst(b));
+		hge *end = (hge *) BUNtloc(bi, BUNlast(b));
+
+		while (cur < end) {
+			wrd *t = (wrd*)cur;
+#if SIZEOF_WRD == SIZEOF_LNG
+			wrd val = t[0] ^ t[1];
+#else
+			wrd val = t[0] ^ t[1] ^
+			          t[2] ^ t[3];
+#endif
+
+			*dst = GDK_ROTATE(*hsh, lbit, rbit, mask) ^ val;
+			cur++;
+			dst++;
+		}
+#endif
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		BUN p, q;
 
@@ -382,6 +437,16 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		cur = *(wrd *) pcur;
 #else
 		cur = ((wrd *) pcur)[0] ^ ((wrd *) pcur)[1];
+#endif
+#ifdef HAVE_HGE
+	} else if (tpe == TYPE_hge) {
+		hge *pcur = (hge*) pval;
+#if SIZEOF_WRD == SIZEOF_LNG
+		cur = ((wrd *) pcur)[0] ^ ((wrd *) pcur)[1];
+#else
+		cur = ((wrd *) pcur)[0] ^ ((wrd *) pcur)[1] ^
+		      ((wrd *) pcur)[2] ^ ((wrd *) pcur)[3];
+#endif
 #endif
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		str pcur = *(str*) pval;
@@ -505,6 +570,26 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			dst++;
 			src++;
 		}
+#ifdef HAVE_HGE
+	} else if (tpe == TYPE_hge) {
+		hge *cur = (hge *) BUNtloc(bi, BUNfirst(b));
+		hge *end = (hge *) BUNtloc(bi, BUNlast(b));
+
+		while (cur < end) {
+			wrd *t = (wrd*)cur;
+#if SIZEOF_WRD == SIZEOF_LNG
+			wrd val = t[0] ^ t[1];
+#else
+			wrd val = t[0] ^ t[1] ^
+			          t[2] ^ t[3];
+#endif
+
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
+			cur++;
+			dst++;
+			src++;
+		}
+#endif
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		BUN p, q;
 

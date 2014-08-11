@@ -34,6 +34,7 @@ EXTRA_DIST = \
 		Test_Rpositioning.java \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
+		Test_Int128.java \
 		BugConcurrent_clients_SF_1504657.java \
 		BugDatabaseMetaData_Bug_3356.java \
 		build.xml build.properties

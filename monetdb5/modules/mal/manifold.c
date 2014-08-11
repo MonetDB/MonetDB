@@ -89,12 +89,19 @@ typedef struct{
 }
 
 // The target BAT tail type determines the result variable
+#ifdef HAVE_HGE
+#define Manifoldbody_hge(...) \
+	case TYPE_hge: ManifoldLoop(hge,__VA_ARGS__); break
+#else
+#define Manifoldbody_hge(...)
+#endif
 #define Manifoldbody(...) \
 switch(ATOMstorage(mut->args[0].b->T->type)){\
 case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;\
 case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;\
 case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;\
 case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\
+Manifoldbody_hge(__VA_ARGS__);                      \
 case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
 case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\

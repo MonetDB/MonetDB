@@ -37,7 +37,49 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-static lng scales[20] = {
+#ifdef HAVE_HGE
+static hge scales[39] = {
+	(hge) LL_CONSTANT(1),
+	(hge) LL_CONSTANT(10),
+	(hge) LL_CONSTANT(100),
+	(hge) LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
+};
+#else
+static lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),
@@ -58,6 +100,7 @@ static lng scales[20] = {
 	LL_CONSTANT(100000000000000000),
 	LL_CONSTANT(1000000000000000000)
 };
+#endif
 
 str
 nil_2_timestamp(timestamp *res, void *val)
@@ -647,6 +690,44 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 bte
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 sht
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 int
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 wrd
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 lng
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 hge
+#define TP2 hge
+#include "sql_cast_impl_up_to_int.h"
+#undef TP2
+#undef TP1
+#endif
+
 /* sql_cast_impl_down_from_flt */
 
 #define TP1 flt
@@ -679,6 +760,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 flt
+#define TP2 hge
+#include "sql_cast_impl_down_from_flt.h"
+#undef TP2
+#undef TP1
+#endif
+
 #define TP1 dbl
 #define TP2 bte
 #include "sql_cast_impl_down_from_flt.h"
@@ -708,6 +797,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
+
+#ifdef HAVE_HGE
+#define TP1 dbl
+#define TP2 hge
+#include "sql_cast_impl_down_from_flt.h"
+#undef TP2
+#undef TP1
+#endif
 
 /* sql_cast_impl_up_to_flt */
 
@@ -741,6 +838,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 flt
+#include "sql_cast_impl_up_to_flt.h"
+#undef TP2
+#undef TP1
+#endif
+
 #define TP1 bte
 #define TP2 dbl
 #include "sql_cast_impl_up_to_flt.h"
@@ -771,6 +876,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 dbl
+#include "sql_cast_impl_up_to_flt.h"
+#undef TP2
+#undef TP1
+#endif
+
 /* sql_cast_impl_down_from_int */
 
 #define TP1 sht
@@ -797,6 +910,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 bte
+#include "sql_cast_impl_down_from_int.h"
+#undef TP2
+#undef TP1
+#endif
+
 #define TP1 int
 #define TP2 sht
 #include "sql_cast_impl_down_from_int.h"
@@ -815,6 +936,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 sht
+#include "sql_cast_impl_down_from_int.h"
+#undef TP2
+#undef TP1
+#endif
+
 #define TP1 wrd
 #define TP2 int
 #include "sql_cast_impl_down_from_int.h"
@@ -827,9 +956,31 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 int
+#include "sql_cast_impl_down_from_int.h"
+#undef TP2
+#undef TP1
+#endif
+
 #define TP1 lng
 #define TP2 wrd
 #include "sql_cast_impl_down_from_int.h"
 #undef TP2
 #undef TP1
+
+#ifdef HAVE_HGE
+#define TP1 hge
+#define TP2 wrd
+#include "sql_cast_impl_down_from_int.h"
+#undef TP2
+#undef TP1
+
+#define TP1 hge
+#define TP2 lng
+#include "sql_cast_impl_down_from_int.h"
+#undef TP2
+#undef TP1
+#endif
 

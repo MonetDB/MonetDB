@@ -1,0 +1,29 @@
+stdout of test 'view_case-bug-sf-1023058` in directory 'sql/test/bugs` itself:
+
+
+# 12:53:39 >  
+# 12:53:39 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:53:39 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+
+Ready.
+
+
+# 11:55:42 >  
+# 11:55:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < view_case-bug-sf-1023058.sql
+# 11:55:42 >  
+
+% sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata # table_name
+% artist,	album,	track,	tracknum,	duration,	weightindex # name
+% varchar,	varchar,	varchar,	int,	int,	hugeint # type
+% 0,	0,	0,	1,	1,	1 # length
+
+# 11:55:42 >  
+# 11:55:42 >  Done.
+# 11:55:42 >  
+

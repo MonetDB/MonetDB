@@ -1,0 +1,171 @@
+stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 11:12:19 >  
+# 11:12:19 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=33716 --set xrpc_port=47982 --set xrpc_docroot=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/sql --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:12:19 >  
+
+# MonetDB server v5.10.1, based on kernel v1.28.1
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33716/
+# MonetDB/SQL module v2.28.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:47:36 >  
+# 11:47:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:47:36 >  
+
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#;
+% .L1 # table_name
+% suma # name
+% hugeint # type
+% 40 # length
+[ NULL	]
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) IS NULL
+#;
+% .L1 # table_name
+% suma # name
+% hugeint # type
+% 1 # length
+[ NULL	]
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) IS NOT NULL
+#;
+% .L1 # table_name
+% suma # name
+% hugeint # type
+% 1 # length
+#SELECT SUM(a) AS suma
+#FROM ( 
+#  SELECT *
+#  FROM ( 
+#    SELECT 1 AS a, 'x' AS b
+#    ) sub
+#  WHERE b IN ('y')
+#) sub2
+#HAVING SUM(a) > 0
+#;
+% .L1 # table_name
+% suma # name
+% hugeint # type
+% 1 # length
+
+% .sub3,	.sub3 # table_name
+% suma,	mynull # name
+% hugeint,	char # type
+% 1,	0 # length
+
+% .sub3,	.sub3 # table_name
+% suma,	mynull # name
+% hugeint,	char # type
+% 1,	0 # length
+
+% .sub,	.sub # table_name
+% a,	b # name
+% tinyint,	char # type
+% 1,	0 # length
+
+% .sub,	.sub # table_name
+% a,	b # name
+% tinyint,	char # type
+% 1,	0 # length
+[ 1	]
+
+% sys.dummy,	sys.dummy # table_name
+% a,	b # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	NULL	]
+
+% sys.dummy,	sys.dummy # table_name
+% a,	b # name
+% int,	int # type
+% 1,	1 # length
+
+% sys.dummy,	sys.dummy # table_name
+% a,	b # name
+% int,	int # type
+% 1,	1 # length
+
+% sys.dummy,	sys.dummy # table_name
+% a,	b # name
+% int,	int # type
+% 1,	1 # length
+
+% sys.dummy,	sys.dummy # table_name
+% a,	b # name
+% int,	int # type
+% 1,	1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT 
+#  a
+#, b
+#, NOT a   AS "NOT_a"
+#, a=b     AS "a_EQ_b"
+#, a<>b    AS "a_NE_b"
+#, a<b     AS "a_LT_b"
+#, a<=b    AS "a_LE_b"
+#, a>b     AS "a_GT_b"
+#, a>=b    AS "a_GE_b"
+#, a OR b  AS "a_OR_b"
+#, a AND b AS "a_AND_b"
+#FROM dummy
+#;
+% sys.dummy,	sys.dummy,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% a,	b,	NOT_a,	a_EQ_b,	a_NE_b,	a_LT_b,	a_LE_b,	a_GT_b,	a_GE_b,	a_OR_b,	a_AND_b # name
+% boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
+[ true,	true,	false,	true,	false,	false,	true,	false,	true,	true,	true	]
+[ true,	false,	false,	false,	true,	false,	false,	true,	true,	true,	false	]
+[ true,	NULL,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	true,	NULL	]
+[ false,	true,	true,	false,	true,	true,	true,	false,	false,	true,	false	]
+[ false,	false,	true,	true,	false,	false,	true,	false,	true,	false,	false	]
+[ false,	NULL,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	false	]
+[ NULL,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	true,	NULL	]
+[ NULL,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	false	]
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+
+# 11:12:20 >  
+# 11:12:20 >  Done.
+# 11:12:20 >  
+

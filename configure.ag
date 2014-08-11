@@ -2780,7 +2780,11 @@ AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
-AC_CHECK_TYPES([__int64, long long, __int128])
+AC_CHECK_TYPES([__int64, long long])
+have_hge=no
+why_have_hge-'(no 128-bit integer type found)'
+AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''])
+AM_CONDITIONAL(HAVE_HGE, test "x$have_hge" = xyes)
 AC_CHECK_TYPES([ptrdiff_t],,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_TYPES(bool)
@@ -2796,6 +2800,8 @@ AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
+AC_CHECK_SIZEOF(__int128)
+AC_CHECK_SIZEOF(__int128_t)
 AC_C_CHAR_UNSIGNED
 
 case $host_os in
@@ -3303,6 +3309,19 @@ typedef __int64 lng;
 # endif
 #endif
 
+#ifdef HAVE___INT128
+typedef __int128 hge;
+# define HAVE_HGE 1
+# define SIZEOF_HGE SIZEOF___INT128
+#else
+# if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
+typedef __int128_t hge;
+#  define HAVE_HGE 1
+#  define SIZEOF_HGE SIZEOF___INT128_T
+# endif
+#endif
+
+
 #ifndef HAVE_PTRDIFF_T
 # if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ptrdiff_t;
@@ -3509,9 +3528,18 @@ for comp in \
 	echo $ECHO_N "    $comp = $ECHO_C"
 	if test "x$have" != xno ; then echo "yes"; else echo "no  $why"; fi
 done
+if test "x$have_hge" = xyes ; then
+	hge_bits='128'
+	hge_digits=' 38'
+else
+	hge_bits=' 64'
+	hge_digits=' 18'
+fi
 echo
 echo "* Important options:"
-echo "    OID size: " ${oids} bits
+echo "    OID size:              ${oids} bits"
+echo "    largest integer type: ${hge_bits} bits"
+echo "    largest decimal type: ${hge_digits} digits"
 echo
 
 dnl give some hints to the user
