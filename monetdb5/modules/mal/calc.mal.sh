@@ -310,7 +310,7 @@ echo
 cat <<EOF
 pattern between(b:any_1,lo:any_1,hi:any_1) :bit
 address CMDvarBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 
 EOF
 

@@ -530,28 +530,28 @@ echo
 cat <<EOF
 pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
+comment "B between LO and HI inclusive with candidates list";
 pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
+comment "B between LO and HI inclusive with candidates list";
 pattern between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 pattern between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
+comment "B between LO and HI inclusive with candidates list";
 pattern between(b:bat[:oid,:any_1],lo:any_1,hi:any_1) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
+comment "B between LO and HI inclusive";
 pattern between(b:bat[:oid,:any_1],lo:any_1,hi:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
+comment "B between LO and HI inclusive with candidates list";
 
 EOF
 echo
