@@ -18,6 +18,8 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = ../include ../common ../storage \
+		   ../../monetdb5/mal \
+		   ../../monetdb5/extras/rapi \
 		   ../../clients/mapilib \
 		   ../../common/options \
 		   ../../common/stream \

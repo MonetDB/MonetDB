@@ -51,7 +51,7 @@ ERROR = cannot change number of columns in view
 #-- should fail
 MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
 QUERY = CREATE OR REPLACE VIEW viewtest AS
-	SELECT a, b::numeric FROM viewtest_tbl;
+	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 ERROR = cannot change data type of view column "b"
 
 # 17:11:19 >  

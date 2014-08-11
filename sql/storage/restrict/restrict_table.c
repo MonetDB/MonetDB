@@ -174,7 +174,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	BAT *b = NULL, *s = NULL, *d = NULL;
 	sql_column *nc;
 	void *nvl, *nvh;
-	rids *rs = NEW(rids);
+	rids *rs = MNEW(rids);
 	sql_bat *bat = key->t->data;
 
 	/* special case, key_value_low and high NULL, ie return all */

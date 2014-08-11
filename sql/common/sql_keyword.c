@@ -48,7 +48,7 @@ keyword_key(char *k, int *l)
 void
 keywords_insert(char *k, int token)
 {
-	keyword *kw = NEW(keyword);
+	keyword *kw = MNEW(keyword);
 	int len = 0;
 	int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
 

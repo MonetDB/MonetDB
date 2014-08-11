@@ -352,9 +352,14 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 	/* start with function in context */
 	if (*b == '[') {
 		idx = atoi(b + 1);
+		if( idx < 0)
+			return NULL;
 		return getMalBlkHistory(mb, idx);
 	} else if (isdigit((int) *b)) {
-		return getMalBlkHistory(mb, atoi(b));
+		idx = atoi(b);
+		if( idx < 0)
+			return NULL;
+		return getMalBlkHistory(mb, idx);
 	} else if (*b != 0) {
 		char *fcnname = strchr(b, '.');
 		Symbol fsym;
@@ -364,6 +369,8 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 		if ((h = strchr(fcnname + 1, '['))) {
 			*h = 0;
 			idx = atoi(h + 1);
+			if( idx < 0)
+				return NULL;
 		}
 		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b, strlen(b))), fcnname + 1);
 		*fcnname = '.';
@@ -820,12 +827,17 @@ retryRead:
 			/* search the symbol */
 			i = findVariable(mb, b);
 			if (i < 0) {
+				// deal with temporary
+				if( *b == 'X' ) b++;
+				i = findVariable(mb, b);
+			}
+			if (i < 0) {
 				i = BBPindex(b);
 				if (i != 0) {
 					printBATelm(out, i, size, first);
 				} else {
 					i = atoi(b);
-					if (i || *b == '0')
+					if (i>-0 || *b == '0')
 						printStackElm(out, mb, stk->stk + i, i, size, first);
 					else
 						mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
