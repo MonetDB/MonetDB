@@ -8346,10 +8346,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* between (any "linear" type) */
 
 #define BETWEEN(v, lo, hi, TYPE)					\
-	((v) == TYPE##_nil || ((lo) == TYPE##_nil && (hi) == TYPE##_nil) ? \
+	((v) == TYPE##_nil || (lo) == TYPE##_nil || (hi) == TYPE##_nil ? \
 	 (nils++, bit_nil) :						\
-	 (bit) (((lo) == TYPE##_nil || (v) >= (lo)) &&			\
-		((hi) == TYPE##_nil || (v) <= (hi))))
+	 (bit) ((v) >= (lo) && (v) <= (hi)))
 
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
@@ -8666,15 +8665,13 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		break;
 	default:
 		if (atomcmp(VALptr(v), nil) == 0 ||
-		    (atomcmp(VALptr(lo), nil) == 0 &&
-		     atomcmp(VALptr(hi), nil) == 0))
+		    atomcmp(VALptr(lo), nil) == 0 ||
+		    atomcmp(VALptr(hi), nil) == 0)
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval =
-				(bit) ((atomcmp(VALptr(lo), nil) == 0 ||
-					atomcmp(VALptr(v), VALptr(lo)) >= 0) &&
-				       (atomcmp(VALptr(hi), nil) == 0 ||
-					atomcmp(VALptr(v), VALptr(hi)) <= 0));
+				(bit) (atomcmp(VALptr(v), VALptr(lo)) >= 0 &&
+				       atomcmp(VALptr(v), VALptr(hi)) <= 0);
 		break;
 	}
 	(void) nils;
