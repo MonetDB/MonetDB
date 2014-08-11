@@ -2835,10 +2835,28 @@ AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
 AC_CHECK_TYPES([__int64, long long])
-have_hge=no
-why_have_hge='(no 128-bit integer type found)'
-AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''])
+
+dft_int128=auto
+AC_ARG_ENABLE(int128,
+	AS_HELP_STRING([--enable-int128],
+		[enable support for 128-bit integers (default=auto)]),
+	enable_int128=$enableval,
+	enable_int128=$dft_int128)
+
+case "$enable_int128" in
+yes|auto)
+	have_hge=no
+	why_have_hge='(no 128-bit integer type found)'
+	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''],
+		[if test x$enable_int128 = xyes; then AC_MSG_ERROR([128-bit integers not supported by platform]); fi])
+	;;
+no)
+	have_hge=no
+	why_have_hge='(128-bit integer support disabled)'
+	;;
+esac
 AM_CONDITIONAL(HAVE_HGE, test "x$have_hge" = xyes)
+
 AC_CHECK_TYPES([ptrdiff_t],,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_TYPES(bool)
