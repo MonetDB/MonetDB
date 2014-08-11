@@ -227,7 +227,7 @@ MOSdecompress_rle( MOStask task)
 #define  MOSselect_rle(TPE) /* TBD */
 
 static str
-MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
 	(void) cntxt;
@@ -251,7 +251,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			} else
 			if( *(int*) low == int_nil ){
@@ -259,7 +259,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -267,7 +267,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			} else{
 				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
@@ -275,7 +275,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			}
 		} else {
@@ -287,7 +287,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if ( !cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -295,7 +295,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if ( !cmp )
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			} else{
 				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
@@ -303,7 +303,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 				if (!cmp)
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first;
+					*o++ = (oid) first + task->offset;
 				}
 			}
 		}
@@ -317,18 +317,55 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 	task->lb = o;
 	return MAL_SUCCEED;
 }
-/*
+
 static str
-MOSthetasubselect_rle(Client cntxt,  MOStask task, void *low, void *hgh, int li, int hi, int anti){
+MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *val, str oper)
+{
+	oid *o;
+	int anti=0;
 	(void) cntxt;
-	(void) task;
-	(void) low;
-	(void) hgh;
-	(void) li;
-	(void) hi;
-	(void) anti;
+	
+	if ( first + task->blk->cnt > last)
+		last = task->blk->cnt;
+	o = task->lb;
+
+	switch(task->type){
+	case TYPE_int:
+		{ 	int low,hgh;
+			low= hgh = int_nil;
+			if ( strcmp(oper,"<") == 0){
+				hgh= *(int*) val;
+				hgh = PREVVALUEint(hgh);
+			} else
+			if ( strcmp(oper,"<=") == 0){
+				hgh= *(int*) val;
+			} else
+			if ( strcmp(oper,">") == 0){
+				low = *(int*) val;
+				low = NEXTVALUEint(low);
+			} else
+			if ( strcmp(oper,">=") == 0){
+				low = *(int*) val;
+			} else
+			if ( strcmp(oper,"!=") == 0){
+				hgh = *(int*) val;
+				anti++;
+			} else
+			if ( strcmp(oper,"==") == 0){
+				hgh= low= *(int*) val;
+			} 
+			if( ((low == int_nil || *(int*)val >= low) && ( *(int*)val <= hgh || hgh == int_nil)) || anti)
+			for( ; first < last; first++){
+				MOSskipit();
+				*o++ = (oid) first + task->offset;
+			} 
+		}
+		break;
+	}
+	task->lb =o;
 	return MAL_SUCCEED;
 }
+/*
 static str
 MOSleftfetchjoin_rle(Client cntxt,  MOStask task){
 	(void) cntxt;

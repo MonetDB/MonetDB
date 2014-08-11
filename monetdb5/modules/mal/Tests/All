@@ -72,7 +72,9 @@ mosaic_rle
 mosaic_mix
 
 mosaic_none_qry
+mosaic_none_qry2
 mosaic_rle_qry
+mosaic_rle_qry2
 #HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2

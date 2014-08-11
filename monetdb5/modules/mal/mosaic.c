@@ -87,6 +87,7 @@ typedef struct MOSTASK{
 
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
+	oid offset;		// seqbase offset
 	lng	n;			// element count in candidate list
 
 	// collect compression statistics for the particular task
@@ -540,7 +541,8 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *low, *hgh;
 	int *ret, *bid, *cid= 0;
 	int i;
-	BUN first =0, last = 0, cnt= 0;
+	BUN cnt = 0;
+	lng first =0, last = 0;
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
@@ -596,12 +598,13 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
 		task->n = BATcount(cand);
+		task->offset = cand->tseqbase;
 		first = *(oid*) task->src;
 	} else 
 		first = 0;
 
 	// loop thru all the chunks and collect the partial results
-	if ( task->cl && task->n && (BUN) *task->cl > first)
+	if ( task->cl && task->n && *task->cl > (oid) first)
 		first = (BUN)  *task->cl;
 	MOSfindChunk(cntxt,task,first);
 	while(task->blk && first < last ){
@@ -619,7 +622,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	// derive the filling
-	cnt = task->lb - (oid*) Tloc(bn,BUNfirst(bn));
+	cnt = (BUN) (task->lb - (oid*) Tloc(bn,BUNfirst(bn)));
 	BATsetcount(bn,cnt);
 	BATseqbase(bn,b->hseqbase);
     bn->hdense = 1;
@@ -637,10 +640,9 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, cndid =0, c= 0, anti =0, *ret, *bid;
+	int idx, cid =0,  *ret, *bid;
 	BAT *b = 0, *cand = 0, *bn = NULL;
-	BUN cap= 0;
-	oid *cl = 0;
+	lng first,last, cnt=0;
 	str msg= MAL_SUCCEED;
 	char **oper;
 	void *low;
@@ -651,7 +653,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret= (int*) getArgReference(stk,pci,0);
 	bid= (int*) getArgReference(stk,pci,1);
 	if( pci->argc == 5){ // candidate list included
-		cndid = *(int*) getArgReference(stk,pci, 2);
+		cid = *(int*) getArgReference(stk,pci, 2);
 		idx = 3;
 	} else idx = 2;
 	low= (void*) getArgReference(stk,pci,idx+1);
@@ -659,47 +661,72 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( !isCompressed(*bid))
 		return ALGthetasubselect1(ret,bid,low, (const char **)oper);
+	// determine the elements in the compressed structure
+	last = b->T->heap.count;
 
-	(void) cl;
-	(void) anti;
-	(void) cap;
-	if(cndid){
-		cand = BATdescriptor(cndid);
-		if( cand == NULL)
-			throw(MAL,"mosaic.subselect",RUNTIME_OBJECT_MISSING);
-		cl = (oid*) Tloc(cand,BUNfirst(cand));\
-	}
-
-	// check the step direction
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPreleaseref(b->batCacheid);
-		if( cand)
-			BBPreleaseref(cand->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
-	MOSinit(task,b);
-	MOSfindChunk(cntxt,task,0);
 
-	// loop thru all the chunks and collect the results
-	while(task->blk )
+	// accumulator for the oids
+	bn = BATnew(TYPE_void, TYPE_oid, last, TRANSIENT);
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+	}
+	task->lb = (oid*) Tloc(bn,BUNfirst(bn));
+
+	MOSinit(task,b);
+	// drag along the candidate list into the task descriptor
+	if (cid) {
+		cand = BATdescriptor(cid);
+		if (cand == NULL){
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(bn->batCacheid);
+			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		}
+		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
+		task->offset = cand->tseqbase;
+		task->n = BATcount(cand);
+		first = *(oid*) task->src;
+	} else 
+		first = 0;
+
+	// loop thru all the chunks and collect the partial results
+	if ( task->cl && task->n && *task->cl > (oid) first)
+		first = (BUN)  *task->cl;
+	MOSfindChunk(cntxt,task,first);
+
+	while(task->blk && first < last ){
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
+			MOSthetasubselect_rle(cntxt,task,first,first + task->blk->cnt,low,*oper);
+			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
 		case MOSAIC_NONE:
 		default:
+			MOSthetasubselect_none(cntxt,task,first,first + task->blk->cnt,low,*oper);
+			first += task->blk->cnt;
 			MOSskip_none(task);
 		}
+	}
+	// derive the filling
+	cnt = task->lb - (oid*) Tloc(bn,BUNfirst(bn));
 	
-	if( cndid)
-		BBPreleaseref(cndid);
+	if( cid)
+		BBPreleaseref(cid);
 	if( bn){
-		BATsetcount(bn,c);
+		BATsetcount(bn,cnt);
 		bn->hdense = 1;
-		bn->hseqbase = 0;
 		bn->hkey = 1;
-		BATderiveProps(bn,0);
+		bn->T->nil = 0;
+		bn->T->nonil = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->tkey = 1;
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
 	}
 	return msg;

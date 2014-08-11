@@ -48,14 +48,14 @@ MOSupdateHeader(Client cntxt, MOStask task)
 		if( hdr->top == 0)
 			hdr->index[hdr->top] = task->blk->cnt;
 		else hdr->index[hdr->top] = task->blk->cnt + hdr->index[hdr->top-1];
-		hdr->offset[hdr->top] =  (lng) task->dst - (lng) task->hdr;
+		hdr->offset[hdr->top] =  (lng) (task->dst - (char*) task->hdr);
 		hdr->top++;
 		MOSdumpHeader(cntxt,task);
 		return;
 	}
 	// compress the index by finding the smallest compressed fragment pair
 	hdr->index[hdr->top] = task->blk->cnt + hdr->index[hdr->top-1];
-	hdr->offset[hdr->top] =  (lng) task->dst - (lng) task->hdr;
+	hdr->offset[hdr->top] =  (lng) (task->dst - (char*) task->hdr);
 	minsize = hdr->offset[1];
 	j = 0;
 	for( i = 1; i <= hdr->top; i++)
