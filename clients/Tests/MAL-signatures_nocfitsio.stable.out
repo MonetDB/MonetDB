@@ -21621,293 +21621,69 @@ pattern batcalc.bit(b:bat[:oid,:void]):bat[:oid,:bit]
 address CMDconvertsignal_bit;
 comment cast from void to bit, signal error on overflow
 
-pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:oid,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:oid):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:oid,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:oid):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:dbl):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:dbl):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:flt):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:flt):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:lng):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:lng):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:wrd,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:wrd):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:bat[:oid,:wrd]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:wrd,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:wrd):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:bat[:oid,:wrd]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:int,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:int):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:bat[:oid,:int]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:int,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:int):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:bat[:oid,:int]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:sht,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:sht):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:bat[:oid,:sht]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:sht,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:sht):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:bat[:oid,:sht]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bte,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bte):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
-
-pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bat[:oid,:bte]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bte,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bte):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bat[:oid,:bte]):bat[:oid,:bit] 
-address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1]):bat[:oid,:bit] 
+address CMDbatBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bit,s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+comment B between LO and HI inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bit):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:any_1):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+comment B between LO and HI inclusive
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+comment B between LO and HI inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bat[:oid,:bit]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+comment B between LO and HI inclusive
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bit,s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+comment B between LO and HI inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bit):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+comment B between LO and HI inclusive
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+comment B between LO and HI inclusive with candidates list
 
-pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bat[:oid,:bit]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive, nil border is (minus) infinity
+comment B between LO and HI inclusive
 
 pattern batcalc.cmp(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bte] 
 address CMDbatCMP;
@@ -35676,6 +35452,14 @@ pattern calc.bit(v:void):bit
 address CMDvarCONVERT;
 comment Cast VALUE to bit
 
+pattern calc.between_symmetric(b:any_1,v1:any_1,v2:any_1):bit 
+address CMDvarBETWEENsymmetric;
+comment B between V1 and V2 (or vice versa) inclusive
+
+pattern calc.between(b:any_1,lo:any_1,hi:any_1):bit 
+address CMDvarBETWEEN;
+comment B between LO and HI inclusive
+
 command calc.blob(s:str):blob 
 address BLOBblob_fromstr;
 command calc.blob(b:blob):blob 
@@ -38836,6 +38620,156 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
+pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+comment Overloaded join operation
+
+pattern generator.join(b:bat[:oid,:flt],gen:bat[:oid,:flt]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+pattern generator.join(b:bat[:oid,:lng],gen:bat[:oid,:lng]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+pattern generator.join(b:bat[:oid,:int],gen:bat[:oid,:int]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+pattern generator.join(b:bat[:oid,:sht],gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+pattern generator.join(b:bat[:oid,:bte],gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
+address VLTgenerator_leftfetchjoin;
+comment Overloaded leftfetchjoin operation
+
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
+address VLTgenerator_leftfetchjoin;
+pattern generator.parameters(first:dbl,last:dbl):bat[:oid,:dbl] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:flt,last:flt):bat[:oid,:flt] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:lng,last:lng):bat[:oid,:lng] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:int,last:int):bat[:oid,:int] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:sht,last:sht):bat[:oid,:sht] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:bte,last:bte):bat[:oid,:bte] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp] 
+address VLTgenerator_noop;
+comment Retain the table definition, but don't materialize
+
+pattern generator.parameters(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:flt,last:flt,step:flt):bat[:oid,:flt] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:lng,last:lng,step:lng):bat[:oid,:lng] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:int,last:int,step:int):bat[:oid,:int] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:sht,last:sht,step:sht):bat[:oid,:sht] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:bte,last:bte,step:bte):bat[:oid,:bte] 
+address VLTgenerator_noop;
+pattern generator.subselect(b:bat[:oid,:timestamp],cand:bat[:oid,:oid],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+comment Overloaded selection routine
+
+pattern generator.subselect(b:bat[:oid,:dbl],cand:bat[:oid,:oid],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:flt],cand:bat[:oid,:oid],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:lng],cand:bat[:oid,:oid],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:int],cand:bat[:oid,:oid],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:sht],cand:bat[:oid,:oid],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:bte],cand:bat[:oid,:oid],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:timestamp],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+comment Overloaded selection routine
+
+pattern generator.subselect(b:bat[:oid,:dbl],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:flt],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:lng],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:int],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:sht],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.subselect(b:bat[:oid,:bte],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+pattern generator.series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp] 
+address VLTgenerator_table;
+pattern generator.series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl] 
+address VLTgenerator_table;
+comment Create and materialize a generator table
+
+pattern generator.series(first:flt,last:flt,step:flt):bat[:oid,:flt] 
+address VLTgenerator_table;
+pattern generator.series(first:lng,last:lng,step:lng):bat[:oid,:lng] 
+address VLTgenerator_table;
+pattern generator.series(first:int,last:int,step:int):bat[:oid,:int] 
+address VLTgenerator_table;
+pattern generator.series(first:sht,last:sht,step:sht):bat[:oid,:sht] 
+address VLTgenerator_table;
+pattern generator.series(first:bte,last:bte,step:bte):bat[:oid,:bte] 
+address VLTgenerator_table;
+pattern generator.series(first:dbl,last:dbl):bat[:oid,:dbl] 
+address VLTgenerator_table;
+pattern generator.series(first:flt,last:flt):bat[:oid,:flt] 
+address VLTgenerator_table;
+pattern generator.series(first:lng,last:lng):bat[:oid,:lng] 
+address VLTgenerator_table;
+pattern generator.series(first:int,last:int):bat[:oid,:int] 
+address VLTgenerator_table;
+pattern generator.series(first:sht,last:sht):bat[:oid,:sht] 
+address VLTgenerator_table;
+pattern generator.series(first:bte,last:bte):bat[:oid,:bte] 
+address VLTgenerator_table;
+pattern generator.thetasubselect(b:bat[:oid,:timestamp],cnd:bat[:oid,:oid],low:timestamp,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+comment Overloaded selection routine
+
+pattern generator.thetasubselect(b:bat[:oid,:dbl],cnd:bat[:oid,:oid],low:dbl,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:flt],cnd:bat[:oid,:oid],low:flt,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:lng],cnd:bat[:oid,:oid],low:lng,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:int],cnd:bat[:oid,:oid],low:int,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:sht],cnd:bat[:oid,:oid],low:sht,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:bte],cnd:bat[:oid,:oid],low:bte,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:timestamp],low:timestamp,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+comment Overloaded selection routine
+
+pattern generator.thetasubselect(b:bat[:oid,:dbl],low:dbl,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:flt],low:flt,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:lng],low:lng,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:int],low:int,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:sht],low:sht,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:bte],low:bte,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
 command geom.Area(g:wkb):dbl 
 address wkbArea;
 comment Returns the area of the geometry.
@@ -40638,6 +40572,12 @@ address OPTwrapper;
 comment Turn function into a factory
 
 pattern optimizer.factorize():str 
+address OPTwrapper;
+pattern optimizer.generator(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Sequence generator optimizer
+
+pattern optimizer.generator():str 
 address OPTwrapper;
 pattern optimizer.groups(mod:str,fcn:str):str 
 address OPTwrapper;
