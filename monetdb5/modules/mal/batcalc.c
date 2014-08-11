@@ -255,6 +255,10 @@ calctype(int tp1, int tp2)
 		return TYPE_dbl;
 	if (tp1s == TYPE_flt || tp2s == TYPE_flt)
 		return TYPE_flt;
+#ifdef HAVE_HGE
+	if (tp1s == TYPE_hge || tp2s == TYPE_hge)
+		return TYPE_hge;
+#endif
 	return TYPE_lng;
 }
 
@@ -272,6 +276,13 @@ calctypeenlarge(int tp1, int tp2)
 	case TYPE_wrd:
 #endif
 		return TYPE_lng;
+#ifdef HAVE_HGE
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
+	case TYPE_lng:
+		return TYPE_hge;
+#endif
 	case TYPE_flt:
 		return TYPE_dbl;
 	default:
@@ -997,10 +1008,8 @@ CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 "batcalc.cmp");
 }
 
-batcalc_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 {
 	bat *bid;
 	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL, *t, *map;
@@ -1071,15 +1080,15 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (lo == NULL) {
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-									  &stk->stk[getArg(pci, 3)], s);
+									  &stk->stk[getArg(pci, 3)], s, sym);
 		} else {
-			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s);
+			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, sym);
 		}
 	} else {
 		if (hi == NULL) {
-			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s);
+			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, sym);
 		} else {
-			bn = BATcalcbetween(b, lo, hi, s);
+			bn = BATcalcbetween(b, lo, hi, s, sym);
 		}
 	}
 	BBPreleaseref(b->batCacheid);
@@ -1103,6 +1112,22 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+batcalc_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return callbatBETWEEN(cntxt, mb, stk, pci, 0);
+}
+
+batcalc_export str CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return callbatBETWEEN(cntxt, mb, stk, pci, 1);
 }
 
 batcalc_export str CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1320,6 +1345,29 @@ CMDconvertsignal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return CMDconvertbat(stk, pci, TYPE_lng, 1);
 }
+
+#ifdef HAVE_HGE
+batcalc_export str CMDconvert_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+batcalc_export str CMDconvertsignal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDconvert_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDconvertbat(stk, pci, TYPE_hge, 0);
+}
+
+str
+CMDconvertsignal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDconvertbat(stk, pci, TYPE_hge, 1);
+}
+#endif
 
 batcalc_export str CMDconvert_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 batcalc_export str CMDconvertsignal_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -102,6 +102,7 @@ sed -r \
 	-e 's/COMMIT TRANSACTION;/COMMIT;/Ig' \
 	-e 's/^COMMENT.*;$//Ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/Ig' \
+	-e 's/SELECT * INTO TABLE * FROM *;/\CREATE TABLE \2 AS SELECT \1 FROM \3 WITH DATA;/Ig' \
 	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//Ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//Ig' \
 	-e 's/SET datestyle TO *;/\/* SET datestyle TO \1; *\//Ig' \
@@ -114,5 +115,7 @@ sed -r \
 	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/Ig' \
 	-e 's/\s+([^\s]+)::float4\b/ cast(\1 as real)/Ig' \
 	-e 's/\s+([^\s]+)::float8\b/ cast(\1 as double)/Ig' \
-	-e 's/\s+([^\s]+)::text\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::name\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::string\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::text\b/ cast(\1 as text)/Ig' \
 	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/Ig'

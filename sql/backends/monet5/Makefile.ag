@@ -15,7 +15,7 @@
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST ENABLE_DATACELL?datacell HAVE_JSONSTORE?rest HAVE_GSL?gsl
+SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST ENABLE_DATACELL?datacell HAVE_JSONSTORE?rest HAVE_GSL?gsl generator
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \
@@ -24,6 +24,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/mal \
 		   ../../../monetdb5/optimizer \
 		   ../../../monetdb5/scheduler \
+		   ../../../monetdb5/extras/rapi \
 		   ../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
@@ -108,13 +109,28 @@ headers_mal = {
 		sql_rank.mal  sql_rdf.mal  sql_sort.mal sql.mal sql_octopus.mal
 }
 
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal
+}
+
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 40_sql.mal
 }
 
+headers_autoload_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 41_sql_hge.mal
+}
+
 EXTRA_DIST = 40_sql.mal \
+	41_sql_hge.mal sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal \
 	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 	sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
 	sql_rank.mal  sql_rdf.mal  sql_sort.mal sql.mal sql_octopus.mal

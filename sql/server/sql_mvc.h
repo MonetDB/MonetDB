@@ -171,7 +171,7 @@ extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, char *name, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, char *name, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg);
 extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -243,9 +243,15 @@ extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, char *name);
 extern void stack_set_string(mvc *sql, char *name, str v);
+#ifdef HAVE_HGE
+extern hge val_get_number(ValRecord *val);
+extern hge stack_get_number(mvc *sql, char *name);
+extern void stack_set_number(mvc *sql, char *name, hge v);
+#else
 extern lng val_get_number(ValRecord *val);
 extern lng stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, lng v);
+#endif
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);

@@ -211,7 +211,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
+	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST, "SELECT u.\"name\" AS \"name\", " "ui.\"fullname\", ui.\"default_schema\" " "FROM db_users() AS u LEFT JOIN " "\"sys\".\"db_user_info\" AS ui " "ON u.\"name\" = ui.\"name\" " ";", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);

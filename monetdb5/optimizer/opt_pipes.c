@@ -60,6 +60,7 @@ static struct PIPELINES {
 	 "optimizer.remap();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -94,6 +95,7 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -128,6 +130,7 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -161,6 +164,7 @@ static struct PIPELINES {
 	 "optimizer.matpack();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -191,6 +195,7 @@ static struct PIPELINES {
 	 "optimizer.recycler();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -220,6 +225,7 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPToctopus", NULL, 1},
@@ -247,6 +253,7 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.mosaic();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},

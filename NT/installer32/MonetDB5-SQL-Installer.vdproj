@@ -1142,10 +1142,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_08FE3FD8B70B485EA4405D5FA91E1F1D"
             {
-            "SourcePath" = "8:lib\\monetdb5\\calc.mal"
-            "TargetName" = "8:calc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_calc.mal"
+            "TargetName" = "8:01_calc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1582,10 +1582,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2772CB6509D248C38E00C9DAC069AAA2"
             {
-            "SourcePath" = "8:lib\\monetdb5\\batcalc.mal"
-            "TargetName" = "8:batcalc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_batcalc.mal"
+            "TargetName" = "8:01_batcalc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2242,7 +2242,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_667BD650736E43C9A8B6899179FA0CAA"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.18.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.20.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -3182,7 +3182,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9DB6CF8297A4BEEAF7A6D4958A4B0D6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.18.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.20.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -4246,7 +4246,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_6C21CE578F0941D09FDD9951A229FF37"
                                     {
-                                    "Name" = "8:MonetDB-SQL-11.18.0"
+                                    "Name" = "8:MonetDB-SQL-11.20.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -4296,7 +4296,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.18.0"
+        "ProductVersion" = "8:11.20.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"

@@ -243,6 +243,9 @@ BINSEARCHFUNC(sht)
 BINSEARCHFUNC(int)
 BINSEARCHFUNC(oid)
 BINSEARCHFUNC(lng)
+#ifdef HAVE_HGE
+BINSEARCHFUNC(hge)
+#endif
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
 
@@ -282,6 +285,11 @@ binsearch(const oid *rcand, oid offset,
 #endif
 		return binsearch_lng(rcand, offset, (const lng *) rvals,
 				     lo, hi, (const lng *) v, ordering, last);
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return binsearch_hge(rcand, offset, (const hge *) rvals,
+				     lo, hi, (const hge *) v, ordering, last);
+#endif
 	case TYPE_flt:
 		return binsearch_flt(rcand, offset, (const flt *) rvals,
 				     lo, hi, (const flt *) v, ordering, last);
@@ -1499,6 +1507,23 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 							break;
 					}
 					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					if (!nil_matches && *(const hge*)v == hge_nil) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
+					HASHloop_hge(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
+					}
+					break;
+#endif
 				default:
 					if (!nil_matches && cmp(v, nil) == 0) {
 						lskipped = BATcount(r1) > 0;
@@ -1907,6 +1932,15 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
 			return GDK_SUCCEED;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (*(const hge *)c1 == hge_nil ||
+		    *(const hge *)c2 == hge_nil ||
+		    -*(const hge *)c1 > *(const hge *)c2 ||
+		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
+			return GDK_SUCCEED;
+		break;
+#endif
 	case TYPE_flt:
 		if (*(const flt *)c1 == flt_nil ||
 		    *(const flt *)c2 == flt_nil ||
@@ -2023,6 +2057,24 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					continue;
 				break;
 			}
+#ifdef HAVE_HGE
+			case TYPE_lng: {
+				hge v1 = (hge) *(const lng *) vr, v2;
+
+				if (v1 == lng_nil)
+					continue;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!li || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hi || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
 #ifdef HAVE___INT128
 			case TYPE_lng: {
 				__int128 v1 = (__int128) *(const lng *) vr, v2;
@@ -2065,6 +2117,35 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  lmatch2:
 				break;
 			  nolmatch:
+				continue;
+			}
+#endif
+#endif
+#ifdef HAVE_HAVE
+			case TYPE_hge: {
+				hge v1, v2;
+				int abort_on_error = 1;
+
+				if (*(const hge *)vr == hge_nil)
+					continue;
+				SUB_WITH_CHECK(hge, *(const hge *)vr,
+					       hge, *(const hge *)c1,
+					       hge, v1,
+					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(0));
+				if (*(const hge *)vl <= v1 &&
+				    (!li || *(const hge *)vl != v1))
+					continue;
+			  hmatch1:
+				ADD_WITH_CHECK(hge, *(const hge *)vr,
+					       hge, *(const hge *)c2,
+					       hge, v2,
+					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(0));
+				if (*(const hge *)vl >= v2 &&
+				    (!hi || *(const hge *)vl != v2))
+					continue;
+			  hmatch2:
+				break;
+			  nohmatch:
 				continue;
 			}
 #endif
@@ -2379,6 +2460,17 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				    (!hi && *(const lng*)vl == *(const lng*)vrh))
 					continue;
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (*(const hge*)vrl == hge_nil ||
+				    *(const hge*)vrh == hge_nil ||
+				    *(const hge*)vl < *(const hge*)vrl ||
+				    *(const hge*)vl > *(const hge*)vrh ||
+				    (!li && *(const hge*)vl == *(const hge*)vrl) ||
+				    (!hi && *(const hge*)vl == *(const hge*)vrh))
+					continue;
+				break;
+#endif
 			case TYPE_oid:
 				if (*(const oid*)vrl == oid_nil ||
 				    *(const oid*)vrh == oid_nil ||
@@ -2807,6 +2899,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 	return GDK_SUCCEED;						\
 }
 
+
 /* project type switch */
 project_loop(bte)
 project_loop(sht)
@@ -2814,6 +2907,9 @@ project_loop(int)
 project_loop(flt)
 project_loop(dbl)
 project_loop(lng)
+#ifdef HAVE_HGE
+project_loop(hge)
+#endif
 
 static int
 project_void(BAT *bn, BAT *l, BAT *r)
@@ -3035,6 +3131,11 @@ BATproject(BAT *l, BAT *r)
 	case TYPE_lng:
 		res = project_lng(bn, l, r, nilcheck, sortcheck);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		res = project_hge(bn, l, r, nilcheck, sortcheck);
+		break;
+#endif
 	case TYPE_oid:
 		if (r->ttype == TYPE_void) {
 			res = project_void(bn, l, r);

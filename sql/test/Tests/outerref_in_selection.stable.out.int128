@@ -1,0 +1,47 @@
+stdout of test 'outerref_in_selection` in directory 'sql/test` itself:
+
+
+# 21:08:27 >  
+# 21:08:27 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31756 --set xrpc_port=46905 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 21:08:27 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_test', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31756/
+# MonetDB/SQL module v2.25.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:50:11 >  
+# 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < outerref_in_selection.sql
+# 11:50:11 >  
+
+# 11:42:51 >  
+# 11:42:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 11:42:51 >  
+
+#create table capediff (
+#        cape_date date,
+#        num_at_cape integer
+#);
+#SELECT cape_date,(
+#    SELECT sum(a.num_at_cape)
+#        FROM capediff AS a
+#        WHERE a.cape_date <= b.cape_date) AS numppl
+#    FROM capediff AS b;
+% .b,	.L2 # table_name
+% cape_date,	numppl # name
+% date,	hugeint # type
+% 10,	1 # length
+
+# 11:50:11 >  
+# 11:50:11 >  Done.
+# 11:50:11 >  
+

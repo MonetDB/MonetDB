@@ -2077,6 +2077,9 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	case TYPE_sht: shrinkloop(sht); break;
 	case TYPE_int: shrinkloop(int); break;
 	case TYPE_lng: shrinkloop(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: shrinkloop(hge); break;
+#endif
 	case TYPE_flt: shrinkloop(flt); break;
 	case TYPE_dbl: shrinkloop(dbl); break;
 	case TYPE_oid: shrinkloop(oid); break;
@@ -2101,6 +2104,9 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			case 2:shrinkloop(sht); break;
 			case 4:shrinkloop(int); break;
 			case 8:shrinkloop(lng); break;
+#ifdef HAVE_HGE
+			case 16:shrinkloop(hge); break;
+#endif
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
@@ -2250,6 +2256,9 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 	case TYPE_sht: reuseloop(sht); break;
 	case TYPE_int: reuseloop(int); break;
 	case TYPE_lng: reuseloop(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: reuseloop(hge); break;
+#endif
 	case TYPE_flt: reuseloop(flt); break;
 	case TYPE_dbl: reuseloop(dbl); break;
 	case TYPE_oid: reuseloop(oid); break;
@@ -2278,6 +2287,9 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 			case 2:reuseloop(sht); break;
 			case 4:reuseloop(int); break;
 			case 8:reuseloop(lng); break;
+#ifdef HAVE_HGE
+			case 16:reuseloop(hge); break;
+#endif
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}

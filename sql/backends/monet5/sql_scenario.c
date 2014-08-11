@@ -373,6 +373,9 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+#ifdef HAVE_HGE
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 
@@ -384,6 +387,9 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+#ifdef HAVE_HGE
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 
@@ -395,6 +401,9 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+#ifdef HAVE_HGE
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val REAL) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"variance\";\n");
 
@@ -406,6 +415,9 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+#ifdef HAVE_HGE
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val REAL) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 
@@ -575,8 +587,8 @@ update sys._tables\n\
 static str
 sql_update_feb2013_sp3(Client c)
 {
-	char *buf = GDKmalloc(4096), *err = NULL;
 	size_t bufsize = 4096, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
 
 	/* aggregates on type WRD */
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val WRD) returns DOUBLE external name \"aggr\".\"stdev\";\n");
@@ -753,6 +765,9 @@ external name sql.sysmon_stop;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val WRD, q DOUBLE) returns WRD external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name \"aggr\".\"quantile\";\n");
+#ifdef HAVE_HGE
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT external name \"aggr\".\"quantile\";\n");
+#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val REAL, q DOUBLE) returns REAL external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name \"aggr\".\"quantile\";\n");
@@ -1008,12 +1023,53 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* new file 90_generator.sql */
+	pos += snprintf(buf+pos, bufsize - pos, "create function sys.generate_series(first tinyint, last tinyint)\n"
+		"returns table (value tinyint)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\n"
+		"returns table (value tinyint)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first int, last int)\n"
+		"returns table (value int)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first int, last int, stepsize int)\n"
+		"returns table (value int)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first bigint, last bigint)\n"
+		"returns table (value bigint)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\n"
+		"returns table (value bigint)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first real, last real, stepsize real)\n"
+		"returns table (value real)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first double, last double, stepsize double)\n"
+		"returns table (value double)\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\n"
+		"returns table (value decimal(10,2))\n"
+		"external name generator.series;\n"
+		"\n"
+		"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\n"
+		"returns table (value timestamp)\n"
+    		"external name generator.series;\n");
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('hashsize', 'imprintsize', 'isauuid', 'md5', 'uuid') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'generate_series', 'storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);
 
 	if (schema) {
@@ -1314,7 +1370,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	initSQLreferences();
 	m = sql->mvc;
 	ac = m->session->auto_commit;
-	o = NEW(mvc);
+	o = MNEW(mvc);
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
@@ -2460,6 +2516,34 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+
+#ifdef HAVE_HGE
+str
+SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	hge *flg = (hge*) getArgReference(stk,pci, 1);
+	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void) cntxt;
+	(void)mb;
+	if (*flg){
+		const char *sqlstate = "M0M29!";
+		/* mdbDump(mb,stk,pci);*/
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
+	}
+	return MAL_SUCCEED;
+}
+#endif
 
 str
 SQLCacheRemove(Client c, str nme)

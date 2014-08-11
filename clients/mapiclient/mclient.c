@@ -1254,6 +1254,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			(strcmp(s, "int") == 0 ||
 			 strcmp(s, "tinyint") == 0 ||
 			 strcmp(s, "bigint") == 0 ||
+			 strcmp(s, "hugeint") == 0 ||
 			 strcmp(s, "wrd") == 0 ||
 			 strcmp(s, "oid") == 0 ||
 			 strcmp(s, "smallint") == 0 ||

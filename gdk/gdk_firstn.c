@@ -179,6 +179,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique(flt, LT);
 			break;
@@ -203,6 +208,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique(flt, GT);
 			break;
@@ -325,6 +335,11 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique_with_groups(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique_with_groups(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique_with_groups(flt, LT);
 			break;
@@ -352,6 +367,11 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique_with_groups(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique_with_groups(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique_with_groups(flt, GT);
 			break;
@@ -491,6 +511,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_grouped1(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped1(flt, LT);
 			break;
@@ -522,6 +547,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_grouped1(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped1(flt, GT);
 			break;
@@ -584,6 +614,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	case TYPE_lng:
 		shuffle_grouped2(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		shuffle_grouped2(hge);
+		break;
+#endif
 	case TYPE_flt:
 		shuffle_grouped2(flt);
 		break;
@@ -768,6 +803,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		case TYPE_lng:
 			shuffle_grouped_with_groups1(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped_with_groups1(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped_with_groups1(flt, LT);
 			break;
@@ -799,6 +839,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		case TYPE_lng:
 			shuffle_grouped_with_groups1(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped_with_groups1(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped_with_groups1(flt, GT);
 			break;
@@ -862,6 +907,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	case TYPE_lng:
 		shuffle_grouped_with_groups2(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		shuffle_grouped_with_groups2(hge);
+		break;
+#endif
 	case TYPE_flt:
 		shuffle_grouped_with_groups2(flt);
 		break;

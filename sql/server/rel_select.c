@@ -980,8 +980,8 @@ static char * rel_get_name( sql_rel *rel )
 		if (rel->r) 
 			return exp_name(rel->r);
 		return NULL;
-	case op_basetable:
-		return rel->r;
+	case op_basetable: 
+		return NULL;
 	default:
 		if (rel->l)
 			return rel_get_name(rel->l);
@@ -1895,10 +1895,18 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 	return exp;
 }
 
+#ifdef HAVE_HGE
+static hge
+#else
 static lng
+#endif
 scale2value(int scale)
 {
+#ifdef HAVE_HGE
+	hge val = 1;
+#else
 	lng val = 1;
+#endif
 
 	if (scale < 0)
 		scale = -scale;
@@ -1928,7 +1936,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC);
 			}
 			if (c) {
+#ifdef HAVE_HGE
+				hge val = scale2value(scale_diff);
+#else
 				lng val = scale2value(scale_diff);
+#endif
 				atom *a = atom_int(sql->sa, it, val);
 				sql_subtype *res = c->res->h->data;
 
@@ -1942,7 +1954,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", et, it, F_FUNC);
 
 		if (c) {
+#ifdef HAVE_HGE
+			hge val = scale2value(scale_diff);
+#else
 			lng val = scale2value(scale_diff);
+#endif
 			atom *a = atom_int(sql->sa, it, val);
 			sql_subtype *res = c->res->h->data;
 
@@ -1963,7 +1979,11 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param, int upcast)
 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM) 
+#ifdef HAVE_HGE
+		type = sql_bind_localtype("hge");
+#else
 		type = sql_bind_localtype("lng");
+#endif
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
@@ -2032,7 +2052,11 @@ rel_numeric_supertype(mvc *sql, sql_exp *e )
 		return rel_check_type(sql, dtp, e, type_cast);
 	}
 	if (tp->type->eclass == EC_NUM) {
+#ifdef HAVE_HGE
+		sql_subtype *ltp = sql_bind_localtype("hge");
+#else
 		sql_subtype *ltp = sql_bind_localtype("lng");
+#endif
 
 		return rel_check_type(sql, ltp, e, type_cast);
 	}
@@ -2096,10 +2120,19 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		res->digits = lt->digits + rt->digits;
 
 		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (ares->type.type->radix == 10 && res->digits > 39)
+			res->digits = 39;
+#else
 		if (ares->type.type->radix == 10 && res->digits > 19)
 			res->digits = 19;
+#endif
 		if (ares->type.type->radix == 2 && res->digits > 53)
+#ifdef HAVE_HGE
+			res->digits = 128;
+#else
 			res->digits = 53;
+#endif
 
 		/* sum of digits may mean we need a bigger result type
 		 * as the function don't support this we need to
@@ -2147,10 +2180,19 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
 
 		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (res->type->radix == 10 && digits > 39)
+			digits = 39;
+#else
 		if (res->type->radix == 10 && digits > 19)
 			digits = 19;
+#endif
 		if (res->type->radix == 2 && digits > 53)
+#ifdef HAVE_HGE
+			digits = 128;
+#else
 			digits = 53;
+#endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = rel_check_type( sql, &nlt, l, type_equal );
@@ -3647,17 +3689,23 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(sql, rel, se, f);
 	}
 
-	if (!l || !r) 
-		return NULL;
-
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
 	if (type == F_FUNC) {
 		sql_subfunc *func = sql_find_func(sql->sa, s, fname, 2, F_AGGR);
-		if (func)
+		if (func) {
+			if (!l || !r) { /* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+			}
 			return _rel_aggr(sql, rel, 0, s, fname, dl->next, f);
+		}
 	}
+
+	if (!l || !r) 
+		return NULL;
+
 	return rel_binop_(sql, l, r, s, fname, ek.card);
 }
 
@@ -4963,7 +5011,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 		}
 	}
 	if (!found) {
-		sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", rel_get_name(t1)?rel_get_name(t1):"", rel_get_name(t2)?rel_get_name(t2):"");
+		sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
 		rel_destroy(rel);
 		return NULL;
 	}
@@ -5491,7 +5539,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where);
 
 			if (!ls || !rs) {
-				sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_get_name(t1)?rel_get_name(t1):"", rel_get_name(t2)?rel_get_name(t2):"", nm);
+				sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
 				rel_destroy(rel);
 				return NULL;
 			}
