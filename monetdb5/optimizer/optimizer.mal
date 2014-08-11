@@ -166,6 +166,13 @@ pattern optimizer.groups(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
+#opt_generator.mal
+pattern optimizer.generator():str
+address OPTwrapper;
+pattern optimizer.generator(mod:str, fcn:str):str
+address OPTwrapper
+comment "Sequence generator optimizer";
+
 #opt_querylog
 pattern optimizer.querylog():str
 address OPTwrapper;
