@@ -8434,8 +8434,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     k = start * incr3,
 			     l = start;
 		     l < end;
-		     i += incr1, j += incr2, k += incr3, l++, 
-		     soff+=wd1, loff+= wd2, hoff+= wd3 ) {
+		     i += incr1, j += incr2, k += incr3, l++,
+			     soff += wd1, loff += wd2, hoff += wd3) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
 			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
