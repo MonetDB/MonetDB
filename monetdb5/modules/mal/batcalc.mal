@@ -19696,6 +19696,31 @@ pattern between(b:bat[:oid,:any_1],lo:any_1,hi:any_1,s:bat[:oid,:oid]) :bat[:oid
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list";
 
+pattern between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive";
+pattern between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatBETWEENsymmetric
+comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+
 
 pattern avg(b:bat[:oid,:bte]) :dbl
 address CMDcalcavg
