@@ -8623,15 +8623,29 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	       const ValRecord *hi)
 {
 	BUN nils = 0;		/* to make reusing BETWEEN macro easier */
+	int t;
+	int (*atomcmp)(const void *, const void *);
+	const void *nil;
 
-	if (ATOMstorage(v->vtype) != ATOMstorage(lo->vtype) ||
-	    ATOMstorage(v->vtype) != ATOMstorage(hi->vtype)) {
+	t = v->vtype;
+	if (t != lo->vtype || t != hi->vtype) {
 		GDKerror("VARcalcbetween: incompatible input types.\n");
 		return GDK_FAIL;
 	}
+	if (!BATatoms[t].linear) {
+		GDKerror("VARcalcbetween: non-linear input type.\n");
+		return GDK_FAIL;
+	}
+
+	nil = ATOMnilptr(t);
+	atomcmp = BATatoms[t].atomCmp;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
+		t = ATOMstorage(t);
 
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
+	switch (t) {
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);
 		break;
@@ -8651,9 +8665,17 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		ret->val.btval = BETWEEN(v->val.dval, lo->val.dval, hi->val.dval, dbl);
 		break;
 	default:
-		GDKerror("VARcalcbetween: bad input type %s.\n",
-			 ATOMname(v->vtype));
-		return GDK_FAIL;
+		if (atomcmp(VALptr(v), nil) == 0 ||
+		    (atomcmp(VALptr(lo), nil) == 0 &&
+		     atomcmp(VALptr(hi), nil) == 0))
+			ret->val.btval = bit_nil;
+		else
+			ret->val.btval =
+				(bit) ((atomcmp(VALptr(lo), nil) == 0 ||
+					atomcmp(VALptr(v), VALptr(lo)) >= 0) &&
+				       (atomcmp(VALptr(hi), nil) == 0 ||
+					atomcmp(VALptr(v), VALptr(hi)) <= 0));
+		break;
 	}
 	(void) nils;
 	return GDK_SUCCEED;
