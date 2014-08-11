@@ -1,0 +1,70 @@
+stdout of test '12` in directory 'sql/benchmarks/tpch/LOCKED` itself:
+
+
+# 23:06:32 >  
+# 23:06:32 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=36595 --set xrpc_port=41594 --set xrpc_docroot=/net/alf.ins.cwi.nl/export/scratch1/niels/rc/sql --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:06:32 >  
+
+# MonetDB server v5.10.0, based on kernel v1.28.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36595/
+# MonetDB/SQL module v2.28.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:48:01 >  
+# 11:48:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 12.sql
+# 11:48:01 >  
+
+# 15:21:34 >  
+# 15:21:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:34 >  
+
+#select
+#	l_shipmode,
+#	sum(case
+#		when o_orderpriority = '1-URGENT'
+#			or o_orderpriority = '2-HIGH'
+#			then 1
+#		else 0
+#	end) as high_line_count,
+#	sum(case
+#		when o_orderpriority <> '1-URGENT'
+#			and o_orderpriority <> '2-HIGH'
+#			then 1
+#		else 0
+#	end) as low_line_count
+#from
+#	orders,
+#	lineitem
+#where
+#	o_orderkey = l_orderkey
+#	and l_shipmode in ('MAIL', 'SHIP')
+#	and l_commitdate < l_receiptdate
+#	and l_shipdate < l_commitdate
+#	and l_receiptdate >= date '1994-01-01'
+#	and l_receiptdate < date '1994-01-01' + interval '1' year
+% sys.lineitem,	sys.L1,	sys.L2 # table_name
+% l_shipmode,	high_line_count,	low_line_count # name
+% varchar,	hugeint,	hugeint # type
+% 4,	2,	2 # length
+[ "MAIL",	64,	86	]
+[ "SHIP",	61,	96	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:17:16 >  
+# 09:17:16 >  Done.
+# 09:17:16 >  
+

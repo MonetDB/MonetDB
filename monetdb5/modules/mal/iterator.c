@@ -204,6 +204,16 @@ str ITRnext_lng(lng *i, lng *step, lng *last){
 		*i = lng_nil;
 	return MAL_SUCCEED;
 }
+#ifdef HAVE_HGE
+str ITRnext_hge(hge *i, hge *step, hge *last){
+	hge v = *i;
+	v = v + *step;
+	*i = v;
+	if ( *last <= v )
+		*i = hge_nil;
+	return MAL_SUCCEED;
+}
+#endif
 str ITRnext_int(int *i, int *step, int *last){
 	int v = *i;
 	v = v + *step;

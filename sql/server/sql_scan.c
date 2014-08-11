@@ -101,6 +101,9 @@ scanner_init_keywords(void)
 	keywords_insert("INT", sqlINTEGER);
 	keywords_insert("MEDIUMINT", sqlINTEGER);
 	keywords_insert("BIGINT", BIGINT);
+#ifdef HAVE_HGE
+	keywords_insert("HUGEINT", HUGEINT);
+#endif
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);
 	keywords_insert("NUMERIC", sqlDECIMAL);

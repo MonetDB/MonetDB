@@ -1706,6 +1706,13 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 			((lng *) p)[i] = *(lng *) v;
 		bn->T->nil = n >= 1 && (ATOMstorage(tailtype) == TYPE_lng ? *(lng *) v == lng_nil : *(dbl *) v == dbl_nil);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		for (i = 0; i < n; i++)
+			((hge *) p)[i] = *(hge *) v;
+		bn->T->nil = n >= 1 && *(hge *) v == hge_nil;
+		break;
+#endif
 	default:
 		bn->T->nil = n >= 1 && ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) == 0;
 		for (i = BUNfirst(bn), n += i; i < n; i++)
@@ -1929,6 +1936,11 @@ BAThistogram(BAT *b)
 		case TYPE_dbl:
 			histoloop_sorted(BUNtloc, simple_CMP, lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			histoloop_sorted(BUNtloc, simple_CMP, hge);
+			break;
+#endif
 		default:
 			tt = bn->htype;
 			if (bn->hvarsized)
@@ -1953,6 +1965,11 @@ BAThistogram(BAT *b)
 		case TYPE_dbl:
 			histoloop_merge(BUNtloc, HASHloop_lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			histoloop_merge(BUNtloc, HASHloop_hge);
+			break;
+#endif
 		default:
 			if (bn->hvarsized)
 				histoloop_merge(BUNtvar, HASHloopvar);
@@ -2056,6 +2073,12 @@ BATcount_no_nil(BAT *b)
 		for (i = 0; i < n; i++)
 			cnt += ((const lng *) p)[i] != lng_nil;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		for (i = 0; i < n; i++)
+			cnt += ((const hge *) p)[i] != hge_nil;
+		break;
+#endif
 	case TYPE_flt:
 		for (i = 0; i < n; i++)
 			cnt += ((const flt *) p)[i] != flt_nil;

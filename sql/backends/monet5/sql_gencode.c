@@ -576,7 +576,11 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 	stmt *bl = s->op2, *bh = s->op3;
 	int tt = tail_type(s->op2)->type->localtype;
 
+#ifdef HAVE_HGE
+	if (tt > TYPE_hge)
+#else
 	if (tt > TYPE_lng)
+#endif
 		return 0;
 	if (s->op2->type == st_Nop && list_length(s->op2->op1->op4.lval) == 2) {
 		bl = s->op2->op1->op4.lval->h->data;

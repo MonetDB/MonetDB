@@ -66,6 +66,14 @@ lngCmp(const lng *l, const lng *r)
 	return simple_CMP(l, r, lng);
 }
 
+#ifdef HAVE_HGE
+static int
+hgeCmp(const hge *l, const hge *r)
+{
+	return simple_CMP(l, r, hge);
+}
+#endif
+
 static int
 dblCmp(const dbl *l, const dbl *r)
 {
@@ -99,6 +107,15 @@ lngHash(const lng *v)
 {
 	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1]);
 }
+
+#ifdef HAVE_HGE
+static BUN
+hgeHash(const hge *v)
+{
+	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1] ^ \
+	                     ((const unsigned int *) v)[2] ^ ((const unsigned int *) v)[3]);
+}
+#endif
 
 /*
  * @+ Standard Atoms
@@ -224,6 +241,9 @@ const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
 const dbl dbl_nil = GDK_dbl_min;
 const lng lng_nil = GDK_lng_min;
+#ifdef HAVE_HGE
+const hge hge_nil = GDK_hge_min;
+#endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const wrd wrd_nil = GDK_wrd_min;
 const char str_nil[2] = { '\200', 0 };
@@ -279,6 +299,10 @@ ATOMcmp(int t, const void *l, const void *r)
 		return simple_CMP(l, r, flt);
 	case TYPE_lng:
 		return simple_CMP(l, r, lng);
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return simple_CMP(l, r, hge);
+#endif
 	case TYPE_dbl:
 		return simple_CMP(l, r, dbl);
 	default:
@@ -573,8 +597,13 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 {
 	const char *p = src;
 	int sz = ATOMsize(tp);
+#ifdef HAVE_HGE
+	hge base = 0;
+	hge maxdiv10 = 0;	/* max value / 10 */
+#else
 	lng base = 0;
 	lng maxdiv10 = 0;	/* max value / 10 */
+#endif
 	int maxmod10 = 7;	/* max value % 10 */
 	int sign = 1;
 
@@ -609,6 +638,12 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	case 8:
 		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
 		break;
+#ifdef HAVE_HGE
+	case 16:
+		maxdiv10 = GDK_hge_max / 10;
+		//         17014118346046923173168730371588410572/*7*/;
+		break;
+#endif
 	}
 	do {
 		if (base > maxdiv10 ||
@@ -643,6 +678,15 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 			p += 2;
 		break;
 	}
+#ifdef HAVE_HGE
+	case 16: {
+		hge **dsthge = (hge **) dst;
+		**dsthge = (hge) base;
+		if (p[0] == 'L' && p[1] == 'L')
+			p += 2;
+		break;
+	}
+#endif
 	}
 	while (GDKisspace(*p))
 		p++;
@@ -673,6 +717,14 @@ lngFromStr(const char *src, int *len, lng **dst)
 	return numFromStr(src, len, (void **) dst, TYPE_lng);
 }
 
+#ifdef HAVE_HGE
+int
+hgeFromStr(const char *src, int *len, hge **dst)
+{
+	return numFromStr(src, len, (void **) dst, TYPE_hge);
+}
+#endif
+
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
 TYPE##Read(TYPE *a, stream *s, size_t cnt)				\
@@ -697,8 +749,36 @@ atomtostr(int, "%d", )
 atom_io(int, Int, int)
 
 atomtostr(lng, LLFMT, )
-
 atom_io(lng, Lng, lng)
+
+#ifdef HAVE_HGE
+#ifdef WIN32
+#define HGE_LL018FMT "%018I64d"
+#else
+#define HGE_LL018FMT "%018lld"
+#endif
+#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
+int
+hgeToStr(char **dst, int *len, const hge *src)
+{
+	atommem(char, hgeStrlen);
+	if (*src == hge_nil) {
+		strncpy(*dst, "nil", *len);
+		return 3;
+	}
+	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
+		lng s = (lng) *src;
+		return lngToStr(dst, len, &s);
+	} else {
+		hge s = *src / HGE_LL18DIGITS;
+		int l = hgeToStr(dst, len, &s);
+		snprintf(*dst + l, *len - l, HGE_LL018FMT, (lng) HGE_ABS(*src % HGE_LL18DIGITS));
+		return (int) strlen(*dst);
+	}
+}
+atom_io(hge, Hge, hge)
+#endif
 
 int
 ptrFromStr(const char *src, int *len, ptr **dst)
@@ -1980,6 +2060,27 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0,			/* atomLen */
 	 0,			/* atomHeap */
 	},
+#ifdef HAVE_HGE
+	{"hge",			/* name */
+	 TYPE_hge,		/* storage */
+	 1,			/* linear */
+	 sizeof(hge),		/* size */
+	 sizeof(hge),		/* align */
+	 (ptr) &hge_nil,	/* atomNull */
+	 (int (*)(const char *, int *, ptr *)) hgeFromStr,   /* atomFromStr */
+	 (int (*)(str *, int *, const void *)) hgeToStr,     /* atomToStr */
+	 (void *(*)(void *, stream *, size_t)) hgeRead,	     /* atomRead */
+	 (int (*)(const void *, stream *, size_t)) hgeWrite, /* atomWrite */
+	 (int (*)(const void *, const void *)) hgeCmp,	     /* atomCmp */
+	 (BUN (*)(const void *)) hgeHash,		     /* atomHash */
+	 0,			/* atomFix */
+	 0,			/* atomUnfix */
+	 0,			/* atomPut */
+	 0,			/* atomDel */
+	 0,			/* atomLen */
+	 0,			/* atomHeap */
+	},
+#endif
 	{"str",			/* name */
 	 TYPE_str,		/* storage */
 	 1,			/* linear */

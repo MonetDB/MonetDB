@@ -1,0 +1,75 @@
+stdout of test '07` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 19:37:38 >  
+# 19:37:38 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:37:38 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
+# MonetDB/SQL module v2.27.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:47:57 >  
+# 11:47:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 07.sql
+# 11:47:57 >  
+
+# 14:36:19 >  
+# 14:36:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:19 >  
+
+#select
+#	supp_nation,
+#	cust_nation,
+#	l_year,
+#	sum(volume) as revenue
+#from
+#	(
+#		select
+#			n1.n_name as supp_nation,
+#			n2.n_name as cust_nation,
+#			extract(year from l_shipdate) as l_year,
+#			l_extendedprice * (1 - l_discount) as volume
+#		from
+#			supplier,
+#			lineitem,
+#			orders,
+#			customer,
+#			nation n1,
+#			nation n2
+#		where
+#			s_suppkey = l_suppkey
+#			and o_orderkey = l_orderkey
+#			and c_custkey = o_custkey
+#			and s_nationkey = n1.n_nationkey
+#			and c_nationkey = n2.n_nationkey
+#			and (
+#				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.L1 # table_name
+% supp_nation,	cust_nation,	l_year,	revenue # name
+% varchar,	varchar,	int,	decimal # type
+% 7,	7,	4,	35 # length
+[ "FRANCE",	"GERMANY",	1995,	268068.5774	]
+[ "FRANCE",	"GERMANY",	1996,	303862.2980	]
+[ "GERMANY",	"FRANCE",	1995,	621159.4882	]
+[ "GERMANY",	"FRANCE",	1996,	379095.8854	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	5	]
+
+# 09:17:14 >  
+# 09:17:14 >  Done.
+# 09:17:14 >  
+
