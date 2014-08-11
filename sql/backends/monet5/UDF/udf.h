@@ -49,6 +49,9 @@ udf_export char * UDFBATreverse(bat *ret, const bat *arg);
 UDFfuse_scalar_decl(bte, sht);
 UDFfuse_scalar_decl(sht, int);
 UDFfuse_scalar_decl(int, lng);
+#ifdef HAVE_HGE
+UDFfuse_scalar_decl(lng, hge);
+#endif
 
 udf_export char * UDFBATfuse(bat *ret, const bat *one, const bat *two);
 

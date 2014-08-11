@@ -236,6 +236,23 @@ sql5_export str nil_2num_lng(lng *res, void *v, int *len);
 sql5_export str batnil_2dec_lng(int *res, int *val, int *d, int *sc);
 sql5_export str batnil_2num_lng(int *res, int *v, int *len);
 
+#ifdef HAVE_HGE
+sql5_export str hge_dec_round_wrap(hge *res, hge *v, hge *r);
+sql5_export str hge_bat_dec_round_wrap(bat *res, bat *v, hge *r);
+sql5_export str hge_round_wrap(hge *res, hge *v, int *d, int *s, bte *r);
+sql5_export str hge_bat_round_wrap(bat *res, bat *v, int *d, int *s, bte *r);
+sql5_export str str_2dec_hge(hge *res, str *val, int *d, int *sc);
+sql5_export str str_2num_hge(hge *res, str *v, int *len);
+sql5_export str batstr_2dec_hge(int *res, int *val, int *d, int *sc);
+sql5_export str batstr_2num_hge(int *res, int *v, int *len);
+sql5_export str hge_dec2second_interval(lng *res, int *sc, hge *dec, int *ek, int *sk);
+
+sql5_export str nil_2dec_hge(hge *res, void *val, int *d, int *sc);
+sql5_export str nil_2num_hge(hge *res, void *v, int *len);
+sql5_export str batnil_2dec_hge(int *res, int *val, int *d, int *sc);
+sql5_export str batnil_2num_hge(int *res, int *v, int *len);
+#endif
+
 sql5_export str nil_2time_timestamp(timestamp *res, void *v, int *len);
 sql5_export str batnil_2time_timestamp(int *res, int *v, int *len);
 sql5_export str str_2time_timestamp(timestamp *res, str *v, int *len);

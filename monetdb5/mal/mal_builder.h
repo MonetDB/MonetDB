@@ -36,6 +36,9 @@ mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
+#ifdef HAVE_HGE
+mal_export InstrPtr pushHge(MalBlkPtr mb, InstrPtr q, hge val);
+#endif
 mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
 mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);

@@ -138,31 +138,7 @@ command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRavg12_dbl;
 comment Grouped tail average on bte
 
-command aggr.avg(b:bat[:oid,:dbl]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:flt]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:lng]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:wrd]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:int]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:sht]):dbl 
-address ALGavg;
-comment Gives the avg of all tail values
-
-command aggr.avg(b:bat[:oid,:bte]):dbl 
+command aggr.avg(b:bat[:oid,:any_2]):dbl 
 address ALGavg;
 comment Gives the avg of all tail values
 
@@ -264,150 +240,6 @@ comment Return the highest tail value or nil.
 command aggr.min(b:bat[:any_1,:any_2]):any_2 
 address ALGminany;
 comment Return the lowest tail value or nil.
-
-command aggr.prod(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRprod3_dbl;
-comment Grouped tail product on dbl
-
-command aggr.prod(b:bat[:oid,:dbl],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRprod2_dbl;
-comment Product over grouped tail product on dbl
-
-command aggr.prod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRprod3_dbl;
-comment Grouped tail product on flt
-
-command aggr.prod(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRprod2_dbl;
-comment Product over grouped tail product on flt
-
-command aggr.prod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:flt] 
-address AGGRprod3_flt;
-comment Grouped tail product on flt
-
-command aggr.prod(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:flt] 
-address AGGRprod2_flt;
-comment Product over grouped tail product on flt
-
-command aggr.prod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod3_lng;
-comment Grouped tail product on lng
-
-command aggr.prod(b:bat[:oid,:lng],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod2_lng;
-comment Product over grouped tail product on lng
-
-command aggr.prod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod3_lng;
-comment Grouped tail product on wrd
-
-command aggr.prod(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod2_lng;
-comment Product over grouped tail product on wrd
-
-command aggr.prod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod3_wrd;
-comment Grouped tail product on wrd
-
-command aggr.prod(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod2_wrd;
-comment Product over grouped tail product on wrd
-
-command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod3_lng;
-comment Grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod2_lng;
-comment Product over grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod3_wrd;
-comment Grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod2_wrd;
-comment Product over grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod3_int;
-comment Grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod2_int;
-comment Product over grouped tail product on int
-
-command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod3_lng;
-comment Grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod2_lng;
-comment Product over grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod3_wrd;
-comment Grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod2_wrd;
-comment Product over grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod3_int;
-comment Grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod2_int;
-comment Product over grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:sht] 
-address AGGRprod3_sht;
-comment Grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:sht] 
-address AGGRprod2_sht;
-comment Product over grouped tail product on sht
-
-command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod3_lng;
-comment Grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:lng] 
-address AGGRprod2_lng;
-comment Product over grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod3_wrd;
-comment Grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address AGGRprod2_wrd;
-comment Product over grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod3_int;
-comment Grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:int] 
-address AGGRprod2_int;
-comment Product over grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:sht] 
-address AGGRprod3_sht;
-comment Grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:sht] 
-address AGGRprod2_sht;
-comment Product over grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:bte] 
-address AGGRprod3_bte;
-comment Grouped tail product on bte
-
-command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:bte] 
-address AGGRprod2_bte;
-comment Product over grouped tail product on bte
 
 pattern aggr.prod(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
 address CMDBATprod;
@@ -777,26 +609,534 @@ pattern aggr.prod(b:bat[:oid,:bte]):bte
 address CMDBATprod;
 comment Calculate aggregate product of B.
 
+command aggr.prod(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
+address AGGRprod3_dbl;
+comment Grouped tail product on dbl
+
+command aggr.prod(b:bat[:oid,:dbl],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
+address AGGRprod2_dbl;
+comment Product over grouped tail product on dbl
+
+command aggr.prod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
+address AGGRprod3_dbl;
+comment Grouped tail product on flt
+
+command aggr.prod(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:dbl] 
+address AGGRprod2_dbl;
+comment Product over grouped tail product on flt
+
+command aggr.prod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:flt] 
+address AGGRprod3_flt;
+comment Grouped tail product on flt
+
+command aggr.prod(b:bat[:oid,:flt],e:bat[:oid,:any_1]):bat[:oid,:flt] 
+address AGGRprod2_flt;
+comment Product over grouped tail product on flt
+
+command aggr.prod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod3_lng;
+comment Grouped tail product on lng
+
+command aggr.prod(b:bat[:oid,:lng],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod2_lng;
+comment Product over grouped tail product on lng
+
+command aggr.prod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod3_lng;
+comment Grouped tail product on wrd
+
+command aggr.prod(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod2_lng;
+comment Product over grouped tail product on wrd
+
+command aggr.prod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod3_wrd;
+comment Grouped tail product on wrd
+
+command aggr.prod(b:bat[:oid,:wrd],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod2_wrd;
+comment Product over grouped tail product on wrd
+
+command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod3_lng;
+comment Grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod2_lng;
+comment Product over grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod3_wrd;
+comment Grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod2_wrd;
+comment Product over grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod3_int;
+comment Grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:int],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod2_int;
+comment Product over grouped tail product on int
+
+command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod3_lng;
+comment Grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod2_lng;
+comment Product over grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod3_wrd;
+comment Grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod2_wrd;
+comment Product over grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod3_int;
+comment Grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod2_int;
+comment Product over grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:sht] 
+address AGGRprod3_sht;
+comment Grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:sht],e:bat[:oid,:any_1]):bat[:oid,:sht] 
+address AGGRprod2_sht;
+comment Product over grouped tail product on sht
+
+command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod3_lng;
+comment Grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:lng] 
+address AGGRprod2_lng;
+comment Product over grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod3_wrd;
+comment Grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address AGGRprod2_wrd;
+comment Product over grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod3_int;
+comment Grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:int] 
+address AGGRprod2_int;
+comment Product over grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:sht] 
+address AGGRprod3_sht;
+comment Grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:sht] 
+address AGGRprod2_sht;
+comment Product over grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:bte] 
+address AGGRprod3_bte;
+comment Grouped tail product on bte
+
+command aggr.prod(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:bte] 
+address AGGRprod2_bte;
+comment Product over grouped tail product on bte
+
 function aggr.quantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl]):any_1;
 command aggr.quantile(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],q:bat[:oid,:dbl]):bat[:oid,:any_1] 
 address AGGRquantile3;
 comment Grouped quantile aggregate
 
+pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
 command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjsoncand;
 comment Grouped aggregation of values with candidates list.
 
+pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
 command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjsoncand;
 comment Grouped aggregation of values with candidates list.
 
+pattern aggr.sum(b:bat[:oid,:dbl],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
 command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjson;
 comment Grouped aggregation of values.
 
+pattern aggr.sum(b:bat[:oid,:dbl]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
 command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit):bat[:oid,:str] 
 address JSONsubjson;
 comment Grouped aggregation of values.
+
+pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:flt],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:flt]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):flt 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid]):flt 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:flt],nil_if_empty:bit):flt 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:flt]):flt 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:lng],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:lng]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:lng],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:lng]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:wrd]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:int]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:sht]):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):dbl 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):lng 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):wrd 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):int 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):sht 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):bte 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):bte 
+address CMDBATsum;
+comment Calculate aggregate sum of B with candidate list.
+
+pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):bte 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
+
+pattern aggr.sum(b:bat[:oid,:bte]):bte 
+address CMDBATsum;
+comment Calculate aggregate sum of B.
 
 command aggr.subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:bit):bat[:oid,:any_1] 
 address AGGRsubquantilecand;
@@ -1786,427 +2126,11 @@ command aggr.sum(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRsum2_dbl;
 comment Sum over grouped tail sum on bte
 
-pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:dbl],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:dbl],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:dbl]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:flt],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:flt]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit):flt 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:flt],s:bat[:oid,:oid]):flt 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:flt],nil_if_empty:bit):flt 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:flt]):flt 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:lng],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:lng]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:lng],s:bat[:oid,:oid]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:lng],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:lng]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:wrd],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:wrd]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],s:bat[:oid,:oid]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:int],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:int]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],s:bat[:oid,:oid]):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:sht],nil_if_empty:bit):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:sht]):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):dbl 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):lng 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):wrd 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):int 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):sht 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit):bte 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],s:bat[:oid,:oid]):bte 
-address CMDBATsum;
-comment Calculate aggregate sum of B with candidate list.
-
-pattern aggr.sum(b:bat[:oid,:bte],nil_if_empty:bit):bte 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-pattern aggr.sum(b:bat[:oid,:bte]):bte 
-address CMDBATsum;
-comment Calculate aggregate sum of B.
-
-command aggr.stdevp(b:bat[:oid,:dbl]):dbl 
+command aggr.stdevp(b:bat[:oid,:any_2]):dbl 
 address ALGstdevp;
 comment Gives the standard deviation of all tail values
 
-command aggr.stdev(b:bat[:oid,:dbl]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:flt]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:flt]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:lng]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:lng]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:wrd]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:wrd]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:int]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:int]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:sht]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:sht]):dbl 
-address ALGstdev;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdevp(b:bat[:oid,:bte]):dbl 
-address ALGstdevp;
-comment Gives the standard deviation of all tail values
-
-command aggr.stdev(b:bat[:oid,:bte]):dbl 
+command aggr.stdev(b:bat[:oid,:any_2]):dbl 
 address ALGstdev;
 comment Gives the standard deviation of all tail values
 
@@ -2322,59 +2246,11 @@ command aggr.variance(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRvariance2_dbl;
 comment Grouped tail variance (sample/non-biased) on bte
 
-command aggr.variancep(b:bat[:oid,:dbl]):dbl 
+command aggr.variancep(b:bat[:oid,:any_2]):dbl 
 address ALGvariancep;
 comment Gives the variance of all tail values
 
-command aggr.variance(b:bat[:oid,:dbl]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:flt]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:flt]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:lng]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:lng]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:wrd]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:wrd]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:int]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:int]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:sht]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:sht]):dbl 
-address ALGvariance;
-comment Gives the variance of all tail values
-
-command aggr.variancep(b:bat[:oid,:bte]):dbl 
-address ALGvariancep;
-comment Gives the variance of all tail values
-
-command aggr.variance(b:bat[:oid,:bte]):dbl 
+command aggr.variance(b:bat[:oid,:any_2]):dbl 
 address ALGvariance;
 comment Gives the variance of all tail values
 
@@ -3328,78 +3204,6 @@ comment Execute the XQuery against the elements.
 command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLstr2xml;
 comment Cast the string to an xml compliant string.
-
-pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-
-pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-
-pattern batcalc.!=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-
-pattern batcalc.!=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-
-pattern batcalc.!=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-
-pattern batcalc.!=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
-
-pattern batcalc.!=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-
-pattern batcalc.!=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-
-pattern batcalc.!=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-
-pattern batcalc.!=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-
-pattern batcalc.!=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-
-pattern batcalc.!=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
-
-pattern batcalc.!=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B with candidates list
-
-pattern batcalc.!=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return V != B
-
-pattern batcalc.!=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V with candidates list
-
-pattern batcalc.!=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B != V
-
-pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2 with candidates list
-
-pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatNE;
-comment Return B1 != B2
 
 pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatNE;
@@ -4646,6 +4450,78 @@ address CMDbatNE;
 comment Return B1 != B2 with candidates list
 
 pattern batcalc.!=(b1:bat[:oid,:bit],b2:bat[:oid,:bit]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B with candidates list
+
+pattern batcalc.!=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return V != B
+
+pattern batcalc.!=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V with candidates list
+
+pattern batcalc.!=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B != V
+
+pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2 with candidates list
+
+pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return B1 != B2
 
@@ -12017,150 +11893,6 @@ pattern batcalc./(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatDIVsignal;
 comment Return B1 / B2, signal error on overflow
 
-pattern batcalc.<=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B with candidates list
-
-pattern batcalc.<=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B
-
-pattern batcalc.<=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V with candidates list
-
-pattern batcalc.<=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V
-
-pattern batcalc.<=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2 with candidates list
-
-pattern batcalc.<=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2
-
-pattern batcalc.<=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B with candidates list
-
-pattern batcalc.<=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B
-
-pattern batcalc.<=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V with candidates list
-
-pattern batcalc.<=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V
-
-pattern batcalc.<=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2 with candidates list
-
-pattern batcalc.<=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2
-
-pattern batcalc.<=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B with candidates list
-
-pattern batcalc.<=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return V <= B
-
-pattern batcalc.<=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V with candidates list
-
-pattern batcalc.<=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B <= V
-
-pattern batcalc.<=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2 with candidates list
-
-pattern batcalc.<=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatLE;
-comment Return B1 <= B2
-
-pattern batcalc.<(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B with candidates list
-
-pattern batcalc.<(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B
-
-pattern batcalc.<(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V with candidates list
-
-pattern batcalc.<(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V
-
-pattern batcalc.<(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2 with candidates list
-
-pattern batcalc.<(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2
-
-pattern batcalc.<(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B with candidates list
-
-pattern batcalc.<(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B
-
-pattern batcalc.<(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V with candidates list
-
-pattern batcalc.<(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V
-
-pattern batcalc.<(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2 with candidates list
-
-pattern batcalc.<(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2
-
-pattern batcalc.<(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B with candidates list
-
-pattern batcalc.<(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return V < B
-
-pattern batcalc.<(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V with candidates list
-
-pattern batcalc.<(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B < V
-
-pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2 with candidates list
-
-pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatLT;
-comment Return B1 < B2
-
 pattern batcalc.<=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatLE;
 comment Return V <= B with candidates list
@@ -15257,77 +14989,149 @@ pattern batcalc.<<(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatLSHsignal;
 comment Return B1 << B2, raise error on out of range second operand
 
-pattern batcalc.==(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B with candidates list
+pattern batcalc.<=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B with candidates list
 
-pattern batcalc.==(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B
+pattern batcalc.<=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B
 
-pattern batcalc.==(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V with candidates list
+pattern batcalc.<=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V with candidates list
 
-pattern batcalc.==(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V
+pattern batcalc.<=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V
 
-pattern batcalc.==(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2 with candidates list
+pattern batcalc.<=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2 with candidates list
 
-pattern batcalc.==(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2
+pattern batcalc.<=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2
 
-pattern batcalc.==(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B with candidates list
+pattern batcalc.<=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B with candidates list
 
-pattern batcalc.==(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B
+pattern batcalc.<=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B
 
-pattern batcalc.==(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V with candidates list
+pattern batcalc.<=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V with candidates list
 
-pattern batcalc.==(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V
+pattern batcalc.<=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V
 
-pattern batcalc.==(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2 with candidates list
+pattern batcalc.<=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2 with candidates list
 
-pattern batcalc.==(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2
+pattern batcalc.<=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2
 
-pattern batcalc.==(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B with candidates list
+pattern batcalc.<=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B with candidates list
 
-pattern batcalc.==(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return V == B
+pattern batcalc.<=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return V <= B
 
-pattern batcalc.==(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V with candidates list
+pattern batcalc.<=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V with candidates list
 
-pattern batcalc.==(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B == V
+pattern batcalc.<=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B <= V
 
-pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2 with candidates list
+pattern batcalc.<=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2 with candidates list
 
-pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatEQ;
-comment Return B1 == B2
+pattern batcalc.<=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2
+
+pattern batcalc.<(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B with candidates list
+
+pattern batcalc.<(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B
+
+pattern batcalc.<(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V with candidates list
+
+pattern batcalc.<(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V
+
+pattern batcalc.<(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2 with candidates list
+
+pattern batcalc.<(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2
+
+pattern batcalc.<(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B with candidates list
+
+pattern batcalc.<(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B
+
+pattern batcalc.<(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V with candidates list
+
+pattern batcalc.<(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V
+
+pattern batcalc.<(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2 with candidates list
+
+pattern batcalc.<(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2
+
+pattern batcalc.<(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B with candidates list
+
+pattern batcalc.<(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return V < B
+
+pattern batcalc.<(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V with candidates list
+
+pattern batcalc.<(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B < V
+
+pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2 with candidates list
+
+pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2
 
 pattern batcalc.==(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatEQ;
@@ -16577,149 +16381,77 @@ pattern batcalc.==(b1:bat[:oid,:bit],b2:bat[:oid,:bit]):bat[:oid,:bit]
 address CMDbatEQ;
 comment Return B1 == B2
 
-pattern batcalc.>=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B with candidates list
+pattern batcalc.==(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B with candidates list
 
-pattern batcalc.>=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B
+pattern batcalc.==(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B
 
-pattern batcalc.>=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V with candidates list
+pattern batcalc.==(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V with candidates list
 
-pattern batcalc.>=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V
+pattern batcalc.==(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V
 
-pattern batcalc.>=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2 with candidates list
+pattern batcalc.==(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2 with candidates list
 
-pattern batcalc.>=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2
+pattern batcalc.==(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2
 
-pattern batcalc.>=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B with candidates list
+pattern batcalc.==(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B with candidates list
 
-pattern batcalc.>=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B
+pattern batcalc.==(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B
 
-pattern batcalc.>=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V with candidates list
+pattern batcalc.==(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V with candidates list
 
-pattern batcalc.>=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V
+pattern batcalc.==(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V
 
-pattern batcalc.>=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2 with candidates list
+pattern batcalc.==(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2 with candidates list
 
-pattern batcalc.>=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2
+pattern batcalc.==(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2
 
-pattern batcalc.>=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B with candidates list
+pattern batcalc.==(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B with candidates list
 
-pattern batcalc.>=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return V >= B
+pattern batcalc.==(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return V == B
 
-pattern batcalc.>=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V with candidates list
+pattern batcalc.==(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V with candidates list
 
-pattern batcalc.>=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B >= V
+pattern batcalc.==(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B == V
 
-pattern batcalc.>=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2 with candidates list
+pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2 with candidates list
 
-pattern batcalc.>=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatGE;
-comment Return B1 >= B2
-
-pattern batcalc.>(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B with candidates list
-
-pattern batcalc.>(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B
-
-pattern batcalc.>(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V with candidates list
-
-pattern batcalc.>(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V
-
-pattern batcalc.>(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2 with candidates list
-
-pattern batcalc.>(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2
-
-pattern batcalc.>(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B with candidates list
-
-pattern batcalc.>(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B
-
-pattern batcalc.>(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V with candidates list
-
-pattern batcalc.>(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V
-
-pattern batcalc.>(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2 with candidates list
-
-pattern batcalc.>(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2
-
-pattern batcalc.>(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B with candidates list
-
-pattern batcalc.>(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return V > B
-
-pattern batcalc.>(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V with candidates list
-
-pattern batcalc.>(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B > V
-
-pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2 with candidates list
-
-pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatGT;
-comment Return B1 > B2
+pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2
 
 pattern batcalc.>=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatGE;
@@ -19817,6 +19549,150 @@ pattern batcalc.>>(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatRSHsignal;
 comment Return B1 >> B2, raise error on out of range second operand
 
+pattern batcalc.>=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B with candidates list
+
+pattern batcalc.>=(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B
+
+pattern batcalc.>=(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V with candidates list
+
+pattern batcalc.>=(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V
+
+pattern batcalc.>=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2 with candidates list
+
+pattern batcalc.>=(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2
+
+pattern batcalc.>=(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B with candidates list
+
+pattern batcalc.>=(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B
+
+pattern batcalc.>=(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V with candidates list
+
+pattern batcalc.>=(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V
+
+pattern batcalc.>=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2 with candidates list
+
+pattern batcalc.>=(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2
+
+pattern batcalc.>=(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B with candidates list
+
+pattern batcalc.>=(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return V >= B
+
+pattern batcalc.>=(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V with candidates list
+
+pattern batcalc.>=(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B >= V
+
+pattern batcalc.>=(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2 with candidates list
+
+pattern batcalc.>=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2
+
+pattern batcalc.>(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B with candidates list
+
+pattern batcalc.>(v:timestamp,b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B
+
+pattern batcalc.>(b:bat[:oid,:timestamp],v:timestamp,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V with candidates list
+
+pattern batcalc.>(b:bat[:oid,:timestamp],v:timestamp):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V
+
+pattern batcalc.>(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2 with candidates list
+
+pattern batcalc.>(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2
+
+pattern batcalc.>(v:daytime,b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B with candidates list
+
+pattern batcalc.>(v:daytime,b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B
+
+pattern batcalc.>(b:bat[:oid,:daytime],v:daytime,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V with candidates list
+
+pattern batcalc.>(b:bat[:oid,:daytime],v:daytime):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V
+
+pattern batcalc.>(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2 with candidates list
+
+pattern batcalc.>(b1:bat[:oid,:daytime],b2:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2
+
+pattern batcalc.>(v:date,b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B with candidates list
+
+pattern batcalc.>(v:date,b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return V > B
+
+pattern batcalc.>(b:bat[:oid,:date],v:date,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V with candidates list
+
+pattern batcalc.>(b:bat[:oid,:date],v:date):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B > V
+
+pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2 with candidates list
+
+pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2
+
 pattern batcalc.avg(b:bat[:oid,:dbl],s:bat[:oid,:oid]) (X_3:dbl,X_4:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
@@ -21741,69 +21617,293 @@ pattern batcalc.bit(b:bat[:oid,:void]):bat[:oid,:bit]
 address CMDconvertsignal_bit;
 comment cast from void to bit, signal error on overflow
 
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive with candidates list
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive with candidates list
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:bat[:oid,:any_1]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive with candidates list
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:any_1):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive with candidates list
-
-pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:bat[:oid,:any_1],v2:bat[:oid,:any_1]):bat[:oid,:bit] 
-address CMDbatBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive
-
-pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:oid,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:any_1):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:oid):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive
+comment B between LO and HI inclusive, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:oid,hi:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive
+comment B between LO and HI inclusive, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:oid,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:oid):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive
+comment B between LO and HI inclusive, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive with candidates list
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
 
-pattern batcalc.between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batcalc.between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEEN;
-comment B between LO and HI inclusive
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:dbl):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:dbl,hi:bat[:oid,:dbl]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:dbl,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:dbl):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:bat[:oid,:dbl]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:flt):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:flt,hi:bat[:oid,:flt]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:flt,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:flt):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:bat[:oid,:flt]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:lng):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:lng,hi:bat[:oid,:lng]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:lng,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:lng):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:bat[:oid,:lng]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:wrd,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:wrd):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:wrd,hi:bat[:oid,:wrd]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:wrd,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:wrd):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:bat[:oid,:wrd]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:int,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:int):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:int,hi:bat[:oid,:int]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:int,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:int):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:bat[:oid,:int]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:sht,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:sht):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:sht,hi:bat[:oid,:sht]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:sht,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:sht):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:bat[:oid,:sht]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bte,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bte):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bte,hi:bat[:oid,:bte]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bte,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bte):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bat[:oid,:bte]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bit,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bit):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bit,hi:bat[:oid,:bit]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bit,s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bit):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive with candidates list, nil border is (minus) infinity
+
+pattern batcalc.between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bat[:oid,:bit]):bat[:oid,:bit] 
+address CMDbatBETWEEN;
+comment B between LO and HI inclusive, nil border is (minus) infinity
 
 pattern batcalc.cmp(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bte] 
 address CMDbatCMP;
@@ -24860,30 +24960,6 @@ command batcalc.identity(b:bat[:oid,:any_2]):bat[:oid,:oid]
 address BATSQLidentity;
 comment Returns the unique row identitfiers.
 
-pattern batcalc.isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
 pattern batcalc.ifthenelse(b:bat[:oid,:bit],b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
@@ -25219,6 +25295,30 @@ comment Unary check for zero over the tail of the bat with candidates list
 pattern batcalc.iszero(b:bat[:oid,:bte]):bat[:oid,:bit] 
 address CMDbatISZERO;
 comment Unary check for zero over the tail of the bat
+
+pattern batcalc.isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat with candidates list
+
+pattern batcalc.isnil(b:bat[:oid,:timestamp]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat
+
+pattern batcalc.isnil(b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat with candidates list
+
+pattern batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat
+
+pattern batcalc.isnil(b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat with candidates list
+
+pattern batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatISNIL;
+comment Unary check for nil over the tail of the bat
 
 command batcalc.lng(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:lng] 
 address batlng_dec2dec_lng;
@@ -32048,22 +32148,6 @@ command bstream.read{unsafe}(s:bstream,size:int):int
 address bstream_read_wrapwrap;
 comment read at least size bytes into the buffer of s
 
-command calc.!=(v:inet,w:inet):bit 
-address INET_comp_NEQ;
-comment Inequality of two inets
-
-pattern calc.!=(v:timestamp,w:timestamp):bit 
-address CMDvarNE;
-comment Equality of two timestamps
-
-pattern calc.!=(v:daytime,w:daytime):bit 
-address CMDvarNE;
-comment Equality of two daytimes
-
-pattern calc.!=(v:date,w:date):bit 
-address CMDvarNE;
-comment Equality of two dates
-
 pattern calc.!=(v1:dbl,v2:dbl):bit 
 address CMDvarNE;
 comment Return V1 != V2
@@ -32271,6 +32355,22 @@ comment Return V1 != V2
 pattern calc.!=(v1:bit,v2:bit):bit 
 address CMDvarNE;
 comment Return V1 != V2
+
+command calc.!=(v:inet,w:inet):bit 
+address INET_comp_NEQ;
+comment Inequality of two inets
+
+pattern calc.!=(v:timestamp,w:timestamp):bit 
+address CMDvarNE;
+comment Equality of two timestamps
+
+pattern calc.!=(v:daytime,w:daytime):bit 
+address CMDvarNE;
+comment Equality of two daytimes
+
+pattern calc.!=(v:date,w:date):bit 
+address CMDvarNE;
+comment Equality of two dates
 
 pattern calc.%(v1:dbl,v2:dbl):dbl 
 address CMDvarMODsignal;
@@ -33828,38 +33928,6 @@ pattern calc./(v1:bte,v2:bte):flt
 address CMDvarDIVsignal;
 comment Return V1 / V2, signal error on overflow
 
-command calc.<=(v:inet,w:inet):bit 
-address INET_comp_LE;
-comment Whether v is less than or equal to w
-
-command calc.<(v:inet,w:inet):bit 
-address INET_comp_LT;
-comment Whether v is less than w
-
-pattern calc.<=(v:timestamp,w:timestamp):bit 
-address CMDvarLE;
-comment Equality of two timestamps
-
-pattern calc.<(v:timestamp,w:timestamp):bit 
-address CMDvarLT;
-comment Equality of two timestamps
-
-pattern calc.<=(v:daytime,w:daytime):bit 
-address CMDvarLE;
-comment Equality of two daytimes
-
-pattern calc.<(v:daytime,w:daytime):bit 
-address CMDvarLT;
-comment Equality of two daytimes
-
-pattern calc.<=(v:date,w:date):bit 
-address CMDvarLE;
-comment Equality of two dates
-
-pattern calc.<(v:date,w:date):bit 
-address CMDvarLT;
-comment Equality of two dates
-
 pattern calc.<=(v1:dbl,v2:dbl):bit 
 address CMDvarLE;
 comment Return V1 <= V2
@@ -34376,25 +34444,37 @@ pattern calc.<<(v1:bte,v2:bte):bte
 address CMDvarLSHsignal;
 comment Return V1 << V2, raise error on out of range second operand
 
-command calc.=(v:inet,w:inet):bit 
-address INET_comp_EQ;
-comment Equality of two inets
+command calc.<=(v:inet,w:inet):bit 
+address INET_comp_LE;
+comment Whether v is less than or equal to w
 
-pattern calc.==(v:timestamp,w:timestamp):bit 
-address CMDvarEQ;
+command calc.<(v:inet,w:inet):bit 
+address INET_comp_LT;
+comment Whether v is less than w
+
+pattern calc.<=(v:timestamp,w:timestamp):bit 
+address CMDvarLE;
 comment Equality of two timestamps
 
-pattern calc.==(v:daytime,w:daytime):bit 
-address CMDvarEQ;
+pattern calc.<(v:timestamp,w:timestamp):bit 
+address CMDvarLT;
+comment Equality of two timestamps
+
+pattern calc.<=(v:daytime,w:daytime):bit 
+address CMDvarLE;
 comment Equality of two daytimes
 
-pattern calc.==(v:date,w:date):bit 
-address CMDvarEQ;
+pattern calc.<(v:daytime,w:daytime):bit 
+address CMDvarLT;
+comment Equality of two daytimes
+
+pattern calc.<=(v:date,w:date):bit 
+address CMDvarLE;
 comment Equality of two dates
 
-command calc.==(l:uuid,r:uuid):bit 
-address UUIDequal;
-comment Compare two UUID values for equality
+pattern calc.<(v:date,w:date):bit 
+address CMDvarLT;
+comment Equality of two dates
 
 pattern calc.==(v1:dbl,v2:dbl):bit 
 address CMDvarEQ;
@@ -34604,37 +34684,25 @@ pattern calc.==(v1:bit,v2:bit):bit
 address CMDvarEQ;
 comment Return V1 == V2
 
-command calc.>=(v:inet,w:inet):bit 
-address INET_comp_GE;
-comment Whether v is equal to or greater than w
+command calc.=(v:inet,w:inet):bit 
+address INET_comp_EQ;
+comment Equality of two inets
 
-command calc.>(v:inet,w:inet):bit 
-address INET_comp_GT;
-comment Whether v is greater than w
-
-pattern calc.>=(v:timestamp,w:timestamp):bit 
-address CMDvarGE;
+pattern calc.==(v:timestamp,w:timestamp):bit 
+address CMDvarEQ;
 comment Equality of two timestamps
 
-pattern calc.>(v:timestamp,w:timestamp):bit 
-address CMDvarGT;
-comment Equality of two timestamps
-
-pattern calc.>=(v:daytime,w:daytime):bit 
-address CMDvarGE;
+pattern calc.==(v:daytime,w:daytime):bit 
+address CMDvarEQ;
 comment Equality of two daytimes
 
-pattern calc.>(v:daytime,w:daytime):bit 
-address CMDvarGT;
-comment Equality of two daytimes
-
-pattern calc.>=(v:date,w:date):bit 
-address CMDvarGE;
+pattern calc.==(v:date,w:date):bit 
+address CMDvarEQ;
 comment Equality of two dates
 
-pattern calc.>(v:date,w:date):bit 
-address CMDvarGT;
-comment Equality of two dates
+command calc.==(l:uuid,r:uuid):bit 
+address UUIDequal;
+comment Compare two UUID values for equality
 
 pattern calc.>=(v1:dbl,v2:dbl):bit 
 address CMDvarGE;
@@ -35152,6 +35220,38 @@ pattern calc.>>(v1:bte,v2:bte):bte
 address CMDvarRSHsignal;
 comment Return V1 >> V2, raise error on out of range second operand
 
+command calc.>=(v:inet,w:inet):bit 
+address INET_comp_GE;
+comment Whether v is equal to or greater than w
+
+command calc.>(v:inet,w:inet):bit 
+address INET_comp_GT;
+comment Whether v is greater than w
+
+pattern calc.>=(v:timestamp,w:timestamp):bit 
+address CMDvarGE;
+comment Equality of two timestamps
+
+pattern calc.>(v:timestamp,w:timestamp):bit 
+address CMDvarGT;
+comment Equality of two timestamps
+
+pattern calc.>=(v:daytime,w:daytime):bit 
+address CMDvarGE;
+comment Equality of two daytimes
+
+pattern calc.>(v:daytime,w:daytime):bit 
+address CMDvarGT;
+comment Equality of two daytimes
+
+pattern calc.>=(v:date,w:date):bit 
+address CMDvarGE;
+comment Equality of two dates
+
+pattern calc.>(v:date,w:date):bit 
+address CMDvarGT;
+comment Equality of two dates
+
 pattern calc.and(v1:lng,v2:lng):lng 
 address CMDvarAND;
 comment Return V1 AND V2
@@ -35484,10 +35584,6 @@ command calc.bte(v:void,digits:int):bte
 address nil_2num_bte;
 comment cast to bte and check for overflow
 
-command calc.blob(s:str):blob 
-address BLOBblob_fromstr;
-command calc.blob(b:blob):blob 
-address BLOBblob_blob;
 pattern calc.bte(v:str):bte 
 address CMDvarCONVERT;
 comment Cast VALUE to bte
@@ -35576,14 +35672,10 @@ pattern calc.bit(v:void):bit
 address CMDvarCONVERT;
 comment Cast VALUE to bit
 
-pattern calc.between_symmetric(b:any_1,v1:any_1,v2:any_1):bit 
-address CMDvarBETWEENsymmetric;
-comment B between V1 and V2 (or vice versa) inclusive
-
-pattern calc.between(b:any_1,lo:any_1,hi:any_1):bit 
-address CMDvarBETWEEN;
-comment B between LO and HI inclusive
-
+command calc.blob(s:str):blob 
+address BLOBblob_fromstr;
+command calc.blob(b:blob):blob 
+address BLOBblob_blob;
 function calc.curve{unsafe}(wkt:str):wkb;
 pattern calc.cmp(v1:dbl,v2:dbl):bte 
 address CMDvarCMP;
@@ -35889,20 +35981,6 @@ command calc.daytime(v:void):daytime
 address nil_2_daytime;
 comment Cast to daytime
 
-command calc.daytime(t:timestamp):daytime 
-address MTIMEtimestamp_extract_daytime_default;
-command calc.daytime(s:lng):daytime 
-address MTIMEsecs2daytime;
-command calc.daytime(d:daytime):daytime 
-address MTIMEdaytime2daytime;
-command calc.daytime(s:str):daytime 
-address MTIMEdaytime_fromstr;
-command calc.date(t:timestamp):date 
-address MTIMEtimestamp_extract_date_default;
-command calc.date(d:date):date 
-address MTIMEdate_date;
-command calc.date(s:str):date 
-address MTIMEdate_fromstr;
 pattern calc.dbl(v:str):dbl 
 address CMDvarCONVERT;
 comment Cast VALUE to dbl
@@ -36143,6 +36221,20 @@ pattern calc.div_noerror(v1:bte,v2:bte):bte
 address CMDvarDIV;
 comment Return V1 / V2, overflow causes NIL value
 
+command calc.daytime(t:timestamp):daytime 
+address MTIMEtimestamp_extract_daytime_default;
+command calc.daytime(s:lng):daytime 
+address MTIMEsecs2daytime;
+command calc.daytime(d:daytime):daytime 
+address MTIMEdaytime2daytime;
+command calc.daytime(s:str):daytime 
+address MTIMEdaytime_fromstr;
+command calc.date(t:timestamp):date 
+address MTIMEtimestamp_extract_date_default;
+command calc.date(d:date):date 
+address MTIMEdate_date;
+command calc.date(s:str):date 
+address MTIMEdate_fromstr;
 command calc.flt(s1:int,v:lng,d2:int,s2:int):flt 
 address lng_dec2dec_flt;
 comment cast decimal(lng) to decimal(flt) and check for overflow
@@ -36371,42 +36463,6 @@ command calc.isnil(v:wkb):bit
 address wkbIsnil;
 comment Nil test for wkb value
 
-command calc.isnil(v:inet):bit 
-address INET_isnil;
-comment Nil test for inet value
-
-command calc.inet(s:str):inet 
-address INET_fromstr;
-comment Convert a string to an inet
-
-command calc.inet(s:inet):inet 
-address INET_inet;
-comment Convert a inet to an inet
-
-pattern calc.isnil(v:timestamp):bit 
-address CMDvarISNIL;
-comment Nil test for timestamp value
-
-pattern calc.isnil(v:daytime):bit 
-address CMDvarISNIL;
-comment Nil test for daytime value
-
-pattern calc.isnil(v:date):bit 
-address CMDvarISNIL;
-comment Nil test for date value
-
-pattern calc.isnil(v:json):bit 
-address CMDvarISNIL;
-comment Nil test for json value
-
-command calc.isnil(v:sqlblob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
-
-command calc.isnil(v:blob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
-
 pattern calc.ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
 comment If VALUE is true return MIDDLE else RIGHT
@@ -36578,6 +36634,42 @@ comment Unary check for zero of V
 pattern calc.iszero(v:bte):bit 
 address CMDvarISZERO;
 comment Unary check for zero of V
+
+command calc.isnil(v:inet):bit 
+address INET_isnil;
+comment Nil test for inet value
+
+command calc.inet(s:str):inet 
+address INET_fromstr;
+comment Convert a string to an inet
+
+command calc.inet(s:inet):inet 
+address INET_inet;
+comment Convert a inet to an inet
+
+pattern calc.isnil(v:timestamp):bit 
+address CMDvarISNIL;
+comment Nil test for timestamp value
+
+pattern calc.isnil(v:daytime):bit 
+address CMDvarISNIL;
+comment Nil test for daytime value
+
+pattern calc.isnil(v:date):bit 
+address CMDvarISNIL;
+comment Nil test for date value
+
+pattern calc.isnil(v:json):bit 
+address CMDvarISNIL;
+comment Nil test for json value
+
+command calc.isnil(v:sqlblob):bit 
+address BLOB_isnil;
+comment Nil test for blob value
+
+command calc.isnil(v:blob):bit 
+address BLOB_isnil;
+comment Nil test for blob value
 
 command calc.json(j:json):json 
 address JSONstr2json;
@@ -36853,70 +36945,6 @@ command calc.mbr(v:mbr):mbr
 address mbrFromMBR;
 command calc.mbr{unsafe}(v:str):mbr 
 address mbrFromString;
-pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmax_no_nil;
-comment Maximum test for timestamp value
-
-pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmin_no_nil;
-comment Minimum test for timestamp value
-
-pattern calc.max(v:timestamp,w:timestamp):timestamp 
-address CALCmax;
-comment Maximum test for timestamp value
-
-pattern calc.min(v:timestamp,w:timestamp):timestamp 
-address CALCmin;
-comment Minimum test for timestamp value
-
-pattern calc.max_no_nil(v:daytime,w:daytime):daytime 
-address CALCmax_no_nil;
-comment Maximum test for daytime value
-
-pattern calc.min_no_nil(v:daytime,w:daytime):daytime 
-address CALCmin_no_nil;
-comment Minimum test for daytime value
-
-pattern calc.max(v:daytime,w:daytime):daytime 
-address CALCmax;
-comment Maximum test for daytime value
-
-pattern calc.min(v:daytime,w:daytime):daytime 
-address CALCmin;
-comment Minimum test for daytime value
-
-pattern calc.max_no_nil(v:date,w:date):date 
-address CALCmax_no_nil;
-comment Maximum test for date value
-
-pattern calc.min_no_nil(v:date,w:date):date 
-address CALCmin_no_nil;
-comment Minimum test for date value
-
-pattern calc.max(v:date,w:date):date 
-address CALCmax;
-comment Maximum test for date value
-
-pattern calc.min(v:date,w:date):date 
-address CALCmin;
-comment Minimum test for date value
-
-command calc.min_no_nil(s:str,t:str):str 
-address STRmin_no_nil;
-comment Select the minimum string in lexicographic order, ignoring nils
-
-command calc.min(s:str,t:str):str 
-address STRmin;
-comment Select the minimum string in lexicographic order
-
-command calc.max_no_nil(s:str,t:str):str 
-address STRmax_no_nil;
-comment Select the maximum string in lexicographic order, ignoring nils
-
-command calc.max(s:str,t:str):str 
-address STRmax;
-comment Select the maximum string in lexicographic order
-
 pattern calc.max_no_nil(v1:oid,v2:oid):oid 
 address CALCmax_no_nil;
 comment Return max of V1 and V2, ignoring nil values
@@ -37453,6 +37481,70 @@ pattern calc.mul_noerror(v1:bte,v2:bte):bte
 address CMDvarMUL;
 comment Return V1 * V2, overflow causes NIL value
 
+pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp 
+address CALCmax_no_nil;
+comment Maximum test for timestamp value
+
+pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp 
+address CALCmin_no_nil;
+comment Minimum test for timestamp value
+
+pattern calc.max(v:timestamp,w:timestamp):timestamp 
+address CALCmax;
+comment Maximum test for timestamp value
+
+pattern calc.min(v:timestamp,w:timestamp):timestamp 
+address CALCmin;
+comment Minimum test for timestamp value
+
+pattern calc.max_no_nil(v:daytime,w:daytime):daytime 
+address CALCmax_no_nil;
+comment Maximum test for daytime value
+
+pattern calc.min_no_nil(v:daytime,w:daytime):daytime 
+address CALCmin_no_nil;
+comment Minimum test for daytime value
+
+pattern calc.max(v:daytime,w:daytime):daytime 
+address CALCmax;
+comment Maximum test for daytime value
+
+pattern calc.min(v:daytime,w:daytime):daytime 
+address CALCmin;
+comment Minimum test for daytime value
+
+pattern calc.max_no_nil(v:date,w:date):date 
+address CALCmax_no_nil;
+comment Maximum test for date value
+
+pattern calc.min_no_nil(v:date,w:date):date 
+address CALCmin_no_nil;
+comment Minimum test for date value
+
+pattern calc.max(v:date,w:date):date 
+address CALCmax;
+comment Maximum test for date value
+
+pattern calc.min(v:date,w:date):date 
+address CALCmin;
+comment Minimum test for date value
+
+command calc.min_no_nil(s:str,t:str):str 
+address STRmin_no_nil;
+comment Select the minimum string in lexicographic order, ignoring nils
+
+command calc.min(s:str,t:str):str 
+address STRmin;
+comment Select the minimum string in lexicographic order
+
+command calc.max_no_nil(s:str,t:str):str 
+address STRmax_no_nil;
+comment Select the maximum string in lexicographic order, ignoring nils
+
+command calc.max(s:str,t:str):str 
+address STRmax;
+comment Select the maximum string in lexicographic order
+
 pattern calc.not(v:lng):lng 
 address CMDvarNOT;
 comment Unary bitwise not of V
@@ -37810,14 +37902,6 @@ address bte_dec2second_interval;
 comment cast bte decimal to a second_interval
 
 function calc.surface{unsafe}(wkt:str):wkb;
-command calc.str(s:uuid):str 
-address UUIDuuid2str;
-comment Coerce a uuid to a string type
-
-command calc.sqlblob(s:str):sqlblob 
-address BLOBsqlblob_fromstr;
-command calc.sqlblob(b:sqlblob):sqlblob 
-address BLOBblob_blob;
 pattern calc.setoid(v:lng):void 
 address CMDsetoid;
 pattern calc.setoid(v:oid):void 
@@ -38136,6 +38220,14 @@ pattern calc.sign(v:bte):bte
 address CMDvarSIGN;
 comment Unary sign (-1,0,1) of V
 
+command calc.str(s:uuid):str 
+address UUIDuuid2str;
+comment Coerce a uuid to a string type
+
+command calc.sqlblob(s:str):sqlblob 
+address BLOBsqlblob_fromstr;
+command calc.sqlblob(b:sqlblob):sqlblob 
+address BLOBblob_blob;
 command calc.timestamp(v:date,d:int):timestamp 
 address date_2_timestamp;
 comment cast date to a timestamp and check for overflow
@@ -38342,10 +38434,6 @@ pattern calc.wrd(v:void):wrd
 address CMDvarCONVERT;
 comment Cast VALUE to wrd
 
-command calc.xml(src:xml):xml 
-address XMLxml2xml;
-command calc.xml(src:str):xml 
-address XMLstr2xml;
 pattern calc.xor(v1:lng,v2:lng):lng 
 address CMDvarXOR;
 comment Return V1 XOR V2
@@ -38370,6 +38458,10 @@ pattern calc.xor(v1:bit,v2:bit):bit
 address CMDvarXOR;
 comment Return V1 XOR V2
 
+command calc.xml(src:xml):xml 
+address XMLxml2xml;
+command calc.xml(src:str):xml 
+address XMLstr2xml;
 pattern centipede.vector(b:bat[:oid,:any_1]) (X_2:oid,X_3:oid...) 
 address OPTvectorOid;
 comment Derive a series of slices values based on sampling
@@ -38764,156 +38856,6 @@ pattern fits.listdir(dirname:str):void
 address FITSdir;
 comment Attach all FITS files in the directory
 
-pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-comment Overloaded join operation
-
-pattern generator.join(b:bat[:oid,:flt],gen:bat[:oid,:flt]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-pattern generator.join(b:bat[:oid,:lng],gen:bat[:oid,:lng]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-pattern generator.join(b:bat[:oid,:int],gen:bat[:oid,:int]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-pattern generator.join(b:bat[:oid,:sht],gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-pattern generator.join(b:bat[:oid,:bte],gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address VLTgenerator_join;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
-address VLTgenerator_leftfetchjoin;
-comment Overloaded leftfetchjoin operation
-
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.parameters(first:dbl,last:dbl):bat[:oid,:dbl] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:flt,last:flt):bat[:oid,:flt] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:lng,last:lng):bat[:oid,:lng] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:int,last:int):bat[:oid,:int] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:sht,last:sht):bat[:oid,:sht] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:bte,last:bte):bat[:oid,:bte] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp] 
-address VLTgenerator_noop;
-comment Retain the table definition, but don't materialize
-
-pattern generator.parameters(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:flt,last:flt,step:flt):bat[:oid,:flt] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:lng,last:lng,step:lng):bat[:oid,:lng] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:int,last:int,step:int):bat[:oid,:int] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:sht,last:sht,step:sht):bat[:oid,:sht] 
-address VLTgenerator_noop;
-pattern generator.parameters(first:bte,last:bte,step:bte):bat[:oid,:bte] 
-address VLTgenerator_noop;
-pattern generator.subselect(b:bat[:oid,:timestamp],cand:bat[:oid,:oid],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-comment Overloaded selection routine
-
-pattern generator.subselect(b:bat[:oid,:dbl],cand:bat[:oid,:oid],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:flt],cand:bat[:oid,:oid],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:lng],cand:bat[:oid,:oid],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:int],cand:bat[:oid,:oid],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:sht],cand:bat[:oid,:oid],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:bte],cand:bat[:oid,:oid],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:timestamp],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-comment Overloaded selection routine
-
-pattern generator.subselect(b:bat[:oid,:dbl],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:flt],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:lng],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:int],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:sht],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.subselect(b:bat[:oid,:bte],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address VLTgenerator_subselect;
-pattern generator.series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp] 
-address VLTgenerator_table;
-pattern generator.series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl] 
-address VLTgenerator_table;
-comment Create and materialize a generator table
-
-pattern generator.series(first:flt,last:flt,step:flt):bat[:oid,:flt] 
-address VLTgenerator_table;
-pattern generator.series(first:lng,last:lng,step:lng):bat[:oid,:lng] 
-address VLTgenerator_table;
-pattern generator.series(first:int,last:int,step:int):bat[:oid,:int] 
-address VLTgenerator_table;
-pattern generator.series(first:sht,last:sht,step:sht):bat[:oid,:sht] 
-address VLTgenerator_table;
-pattern generator.series(first:bte,last:bte,step:bte):bat[:oid,:bte] 
-address VLTgenerator_table;
-pattern generator.series(first:dbl,last:dbl):bat[:oid,:dbl] 
-address VLTgenerator_table;
-pattern generator.series(first:flt,last:flt):bat[:oid,:flt] 
-address VLTgenerator_table;
-pattern generator.series(first:lng,last:lng):bat[:oid,:lng] 
-address VLTgenerator_table;
-pattern generator.series(first:int,last:int):bat[:oid,:int] 
-address VLTgenerator_table;
-pattern generator.series(first:sht,last:sht):bat[:oid,:sht] 
-address VLTgenerator_table;
-pattern generator.series(first:bte,last:bte):bat[:oid,:bte] 
-address VLTgenerator_table;
-pattern generator.thetasubselect(b:bat[:oid,:timestamp],cnd:bat[:oid,:oid],low:timestamp,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-comment Overloaded selection routine
-
-pattern generator.thetasubselect(b:bat[:oid,:dbl],cnd:bat[:oid,:oid],low:dbl,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:flt],cnd:bat[:oid,:oid],low:flt,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:lng],cnd:bat[:oid,:oid],low:lng,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:int],cnd:bat[:oid,:oid],low:int,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:sht],cnd:bat[:oid,:oid],low:sht,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:bte],cnd:bat[:oid,:oid],low:bte,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:timestamp],low:timestamp,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-comment Overloaded selection routine
-
-pattern generator.thetasubselect(b:bat[:oid,:dbl],low:dbl,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:flt],low:flt,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:lng],low:lng,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:int],low:int,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:sht],low:sht,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
-pattern generator.thetasubselect(b:bat[:oid,:bte],low:bte,oper:str):bat[:oid,:oid] 
-address VLTgenerator_thetasubselect;
 command geom.Area(g:wkb):dbl 
 address wkbArea;
 comment Returns the area of the geometry.
@@ -40716,12 +40658,6 @@ address OPTwrapper;
 comment Turn function into a factory
 
 pattern optimizer.factorize():str 
-address OPTwrapper;
-pattern optimizer.generator(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Sequence generator optimizer
-
-pattern optimizer.generator():str 
 address OPTwrapper;
 pattern optimizer.groups(mod:str,fcn:str):str 
 address OPTwrapper;

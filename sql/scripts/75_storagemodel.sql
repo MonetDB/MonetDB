@@ -91,6 +91,7 @@ begin
 	when nme = 'smallint' then return 2 * i;
 	when nme = 'int'	 then return 4 * i;
 	when nme = 'bigint'	 then return 8 * i;
+	when nme = 'hugeint'	 then return 16 * i;
 	when nme = 'timestamp' then return 8 * i;
 	when  nme = 'varchar' then
 		case
@@ -132,6 +133,7 @@ begin
 		or nme = 'smallint'
 		or nme = 'int'	
 		or nme = 'bigint'	
+		or nme = 'hugeint'	
 		or nme = 'decimal'	
 		or nme = 'date'
 		or nme = 'timestamp'

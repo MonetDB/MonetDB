@@ -2937,6 +2937,10 @@ zero_or_one(ptr ret, int *bid)
 		*(sht *) ret = *(sht *) p;
 	} else if (_s == 8) {
 		*(lng *) ret = *(lng *) p;
+#ifdef HAVE_HGE
+	} else if (_s == 16) {
+		*(hge *) ret = *(hge *) p;
+#endif
 	} else {
 		memcpy(ret, p, _s);
 	}
@@ -3128,7 +3132,49 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 }
 
-lng scales[20] = {
+#ifdef HAVE_HGE
+static hge scales[39] = {
+	(hge) LL_CONSTANT(1),
+	(hge) LL_CONSTANT(10),
+	(hge) LL_CONSTANT(100),
+	(hge) LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
+};
+#else
+static lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),
@@ -3149,6 +3195,7 @@ lng scales[20] = {
 	LL_CONSTANT(100000000000000000),
 	LL_CONSTANT(1000000000000000000)
 };
+#endif
 
 /*
  * The core modules of Monet provide just a limited set of
@@ -3418,6 +3465,11 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		r = (int) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.month_interval", "illegal argument");
 	}
@@ -3459,6 +3511,11 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}

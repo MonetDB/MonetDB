@@ -1,0 +1,41 @@
+stderr of test 'perl_dec38` in directory 'sql/test/mapi` itself:
+
+
+# 16:02:16 >  
+# 16:02:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34799" "--set" "mapi_usock=/var/tmp/mtest-18973/.s.monetdb.34799" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/int128/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_mapi" "--set" "mal_listing=0"
+# 16:02:16 >  
+
+# builtin opt 	gdk_dbpath = /ufs/manegold/_/Monet/HG/int128/prefix/--disable-debug_--enable-assert_--enable-optimize/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34799
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18973/.s.monetdb.34799
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/manegold/_/Monet/HG/int128/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_mapi
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:02:16 >  
+# 16:02:16 >  "./perl_dec38.SQL.sh" "perl_dec38"
+# 16:02:16 >  
+
+
+# 16:02:16 >  
+# 16:02:16 >  perl /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/int128/source/MonetDB/sql/test/mapi/Tests/perl_dec38.pl 34799 mTests_sql_test_mapi
+# 16:02:16 >  
+
+
+# 16:02:16 >  
+# 16:02:16 >  "Done."
+# 16:02:16 >  
+

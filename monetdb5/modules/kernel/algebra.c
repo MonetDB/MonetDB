@@ -2150,6 +2150,10 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 			*(sht*) ret = *(sht*) Tloc(b, pos);
 		} else if (_s == 8) {
 			*(lng*) ret = *(lng*) Tloc(b, pos);
+#ifdef HAVE_HGE
+		} else if (_s == 16) {
+			*(hge*) ret = *(hge*) Tloc(b, pos);
+#endif
 		} else {
 			memcpy(ret, Tloc(b, pos), _s);
 		}

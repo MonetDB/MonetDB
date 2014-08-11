@@ -415,7 +415,7 @@ setClass("MonetDBResult", representation("DBIResult", env="environment"))
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
   
-  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
+  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
     return("numeric")
   }
   if (dbType %in% c("CHAR", "VARCHAR", "CLOB", "STR")) {
@@ -550,7 +550,7 @@ setMethod("dbHasCompleted", "MonetDBResult", def = function(res, ...) {
 
 
 monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(8, 3, 4, 1, 1))
-names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
+names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
                        c("CHAR", "VARCHAR", "CLOB"), 
                        c("INTERVAL", "DATE", "TIME", "TIMESTAMP"), 
                        "BOOLEAN", 
