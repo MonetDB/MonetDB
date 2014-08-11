@@ -844,7 +844,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef));
+		 (getModuleId(p) == mkeyRef)) &&
+		 getModuleId(p) != rapiRef;
 }
 
 int isLikeOp(InstrPtr p){
