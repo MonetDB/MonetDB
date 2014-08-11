@@ -1,29 +1,27 @@
-stdout of test 'MAL-signatures_sphinxclient` in directory 'clients` itself:
+stdout of test 'MAL-signatures_none` in directory 'clients` itself:
 
 
-# 14:24:10 >  
-# 14:24:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31236" "--set" "mapi_usock=/var/tmp/mtest-21213/.s.monetdb.31236" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_clients" "--set" "mal_listing=2"
-# 14:24:10 >  
+# 21:42:58 >  
+# 21:42:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34571" "--set" "mapi_usock=/var/tmp/mtest-14138/.s.monetdb.34571" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_clients" "--set" "mal_listing=2"
+# 21:42:58 >  
 
-# MonetDB 5 server v11.17.0
+# MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_clients', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.591 GiB available main-memory.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.734 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:31236/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21213/.s.monetdb.31236
-# MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:34571/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14138/.s.monetdb.34571
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 14:24:10 >  
-# 14:24:10 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21213" "--port=31236"
-# 14:24:10 >  
+# 21:42:58 >  
+# 21:42:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14138" "--port=34571"
+# 21:42:58 >  
 
 #?*)
 command aggr.avg(b:bat[:oid,:hge],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
@@ -216,11 +214,11 @@ comment Return the cardinality of the BAT tail values.
 
 command aggr.count_no_nil(b:bat[:any_1,:any_2]):wrd 
 address ALGcount_no_nil;
-comment Return the number of elements currently 	in a BAT ignoring BUNs with nil-tail
+comment Return the number of elements currently	in a BAT ignoring BUNs with nil-tail
 
 command aggr.count(b:bat[:any_1,:any],ignore_nils:bit):wrd 
 address ALGcount_nil;
-comment Return the number of elements currently in a BAT ignores 		BUNs with nil-tail iff ignore_nils==TRUE.
+comment Return the number of elements currently in a BAT ignores		BUNs with nil-tail iff ignore_nils==TRUE.
 
 command aggr.count(b:bat[:any_1,:any]):wrd 
 address ALGcount_bat;
@@ -2780,7 +2778,7 @@ comment Returns the antijoin
 
 command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGantijoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
 command algebra.antiuselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
 address ALGantiuselectInclusive;
@@ -2788,19 +2786,19 @@ comment See select() but limited to head values
 
 command algebra.antiuselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
 address ALGantiuselect1;
-comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
+comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
 
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
 address ALGbandjoin;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
 
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2):bat[:any_1,:any_3] 
 address ALGbandjoin_default;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus]. Works only for the builtin numerical types, 		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus]. Works only for the builtin numerical types,		and their derivates.
 
 command algebra.bandjoin(outer:bat[:oid,:any_2],inner:bat[:oid,:any_2],minus:any_2,plus:any_2,li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGbandjoin2;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
+comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
 
 command algebra.crossproduct(left:bat[:any_1,:any_2],right:bat[:any_3,:any_4]):bat[:any_1,:any_4] 
 address ALGcross;
@@ -2808,7 +2806,7 @@ comment Returns the cross product
 
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
 command algebra.copy(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGcopy;
@@ -2844,7 +2842,7 @@ comment Calculate first N values of B
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
 address ALGfetchint;
-comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
+comment Returns the tail value of the BUN at x-th position	with 0 <= x < b.count
 
 command algebra.fetch(b:bat[:any_2,:any_1],x:lng):any_1 
 address ALGfetch;
@@ -2852,7 +2850,7 @@ command algebra.fetch(b:bat[:any_2,:any_1],x:oid):any_1
 address ALGfetchoid;
 command algebra.find(b:bat[:any_1,:any_2],h:any_1):any_2 
 address ALGfind;
-comment Returns the tail value 't' for which some [h,t] BUN 	exists in b.  If no such BUN exists, an error occurs.
+comment Returns the tail value 't' for which some [h,t] BUN	exists in b.  If no such BUN exists, an error occurs.
 
 command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid] 
 address ALGgroupby;
@@ -2878,13 +2876,13 @@ command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_
 address ALGjoin;
 command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGjoin;
-comment Returns all BUNs, consisting of a head-value from 'left' and 		a tail-value from 'right' for which there are BUNs in 'left' 		and 'right' with equal tail- resp. head-value (i.e. the join	columns are projected out).
+comment Returns all BUNs, consisting of a head-value from 'left' and		a tail-value from 'right' for which there are BUNs in 'left'		and 'right' with equal tail- resp. head-value (i.e. the join	columns are projected out).
 
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGjoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
 command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunion;
@@ -2892,15 +2890,15 @@ comment Returns the union of two BATs; looking at head-columns only.		Results in
 
 command algebra.kdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGkdiff;
-comment Returns the difference taken over only the *head* columns of two BATs. 		Results in all BUNs of 'left' that are *not* in 'right'. 		It does *not* do double-elimination over the 'left' BUNs. 		If you want this, use:	 'kdifference(left.kunique,right.kunique)' 	or: 'kdifference(left,right).kunique'.
+comment Returns the difference taken over only the *head* columns of two BATs.		Results in all BUNs of 'left' that are *not* in 'right'.		It does *not* do double-elimination over the 'left' BUNs.		If you want this, use:	 'kdifference(left.kunique,right.kunique)'	or: 'kdifference(left,right).kunique'.
 
 command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of two BATs. 	Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
+comment Returns the intersection taken over only the *head* columns of two BATs.	Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
 
 command algebra.kunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunique;
-comment Select unique tuples from the input BAT.  Double elimination is 		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
+comment Select unique tuples from the input BAT.  Double elimination is		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
 
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
@@ -2951,11 +2949,11 @@ comment "grouped mark": Produces a new BAT with per group a locally unique dense
 
 command algebra.markH(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:oid,:any_2] 
 address ALGhmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in 	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
+comment Produces a BAT with fresh unique dense sequense of OIDs in	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
 command algebra.markH(b:bat[:any_1,:any_2],base:oid):bat[:oid,:any_2] 
 address ALGmarkHead;
-comment Produces a new BAT with fresh unique dense sequense of OIDs in 		the head that starts at base (i.e. [base,..base+b.count()-1] ).
+comment Produces a new BAT with fresh unique dense sequense of OIDs in		the head that starts at base (i.e. [base,..base+b.count()-1] ).
 
 command algebra.markH(b:bat[:any_1,:any_2]):bat[:oid,:any_2] 
 address ALGmarkHead_default;
@@ -2963,7 +2961,7 @@ comment Produces a BAT with fresh OIDs in the head starting at 0@0.
 
 command algebra.markT(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
+comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
 command algebra.markT(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
 address ALGtmark_default;
@@ -2971,21 +2969,21 @@ comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
 
 command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
 address ALGtmark;
-comment Produces a BAT with fresh unique dense sequense of OIDs in 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
+comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
 
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
 
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
+comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
 
 command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1]) (c:bat[:oid,:oid],d:bat[:oid,:any_1]) 
 address ALGprejoin;
@@ -3033,7 +3031,7 @@ comment Join
 
 command algebra.semijoin(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of 		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
+comment Returns the intersection taken over only the *head* columns of		two BATs.  Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double-elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
 
 command algebra.subunique(b:bat[:oid,:any_1]):bat[:oid,:oid] 
 address ALGsubunique1;
@@ -3141,7 +3139,7 @@ comment Select all not-nil values
 
 command algebra.select(b:bat[:oid,:any_2],value:any_2):bat[:oid,:any_2] 
 address ALGselect1;
-comment Select all BUNs of a BAT with a certain 	tail value. Selection on NIL is also 	possible (it should be properly casted, 	e.g.:int(nil)).
+comment Select all BUNs of a BAT with a certain	tail value. Selection on NIL is also	possible (it should be properly casted,	e.g.:int(nil)).
 
 command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:oid,:any_2] 
 address ALGselectInclusive;
@@ -3149,7 +3147,7 @@ comment Select all BUNs that have tail values: {v| low <{=} v <{=} high}.	Bounda
 
 command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2):bat[:oid,:any_2] 
 address ALGselect;
-comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type, 				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the 				ordered domain of values, tuples with 'nil' values 				are NEVER returned by the range select.
+comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type,				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the				ordered domain of values, tuples with 'nil' values				are NEVER returned by the range select.
 
 command algebra.subselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect2;
@@ -3163,11 +3161,11 @@ command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opnam
 address ALGthetajoinEstimate;
 command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int):bat[:any_1,:any_3] 
 address ALGthetajoin;
-comment Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is 		just the same as join(). All other options do merge algorithms. 		Either using the fact that they are ordered() already (left on tail, 	right on head), or by using/creating binary search trees on the 		join columns. 
+comment Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is		just the same as join(). All other options do merge algorithms.		Either using the fact that they are ordered() already (left on tail,	right on head), or by using/creating binary search trees on the		join columns. 
 
 command algebra.thetajoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1],opname:int) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGthetajoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
+comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
 command algebra.tunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunion;
@@ -3181,7 +3179,7 @@ command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:
 address ALGtintersect;
 command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunique;
-comment Select unique tuples from the input BAT. Double elimination is 		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
+comment Select unique tuples from the input BAT. Double elimination is		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
 
 command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
 address ALGthetauselect;
@@ -3201,7 +3199,7 @@ comment Select all head values for which the tail value obeys the relation	value
 
 command algebra.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
 address ALGuselect1;
-comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
+comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
 
 command algebra.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:void] 
 address ALGuselect;
@@ -3332,10 +3330,6 @@ comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, befor
 command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte] 
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
-
-command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
-address wkbcreatepoint_bat;
-comment Construct a point-BAT from two geometry-BATs
 
 command batcolor.blue(c:bat[:oid,:color]):bat[:oid,:int] 
 address CLRbatBlue;
@@ -45698,7 +45692,6 @@ command calc.blob(s:str):blob
 address BLOBblob_fromstr;
 command calc.blob(b:blob):blob 
 address BLOBblob_blob;
-function calc.curve{unsafe}(wkt:str):wkb;
 pattern calc.cmp(v1:dbl,v2:dbl):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
@@ -46513,8 +46506,6 @@ pattern calc.flt(v:hge):flt
 address CMDvarCONVERT;
 comment Cast VALUE to flt
 
-function calc.geomcollection{unsafe}(wkt:str):wkb;
-function calc.geometry{unsafe}(wkt:str):wkb;
 command calc.hge(s1:int,v:hge,d2:int,s2:int):hge 
 address hge_dec2dec_hge;
 comment cast decimal(hge) to decimal(hge) and check for overflow
@@ -46790,10 +46781,6 @@ comment cast to int and check for overflow
 command calc.identity(X_1:any_2):oid 
 address SQLidentity;
 comment Returns a unique row identitfier.
-
-command calc.isnil(v:wkb):bit 
-address wkbIsnil;
-comment Nil test for wkb value
 
 pattern calc.ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
@@ -47123,7 +47110,6 @@ command calc.lng(v:void,digits:int):lng
 address nil_2num_lng;
 comment cast to lng and check for overflow
 
-function calc.linestring{unsafe}(wkt:str):wkb;
 command calc.length(s:str):int 
 address CMDstrlength;
 comment Length of STRING
@@ -47348,15 +47334,6 @@ command calc.month_interval(v:str,ek:int,sk:int):int
 address month_interval_str;
 comment cast str to a month_interval and check for overflow
 
-function calc.multipolygon{unsafe}(wkt:str):wkb;
-function calc.multisurface{unsafe}(wkt:str):wkb;
-function calc.multilinestring{unsafe}(wkt:str):wkb;
-function calc.multicurve{unsafe}(wkt:str):wkb;
-function calc.multipoint{unsafe}(wkt:str):wkb;
-command calc.mbr(v:mbr):mbr 
-address mbrFromMBR;
-command calc.mbr{unsafe}(v:str):mbr 
-address mbrFromString;
 pattern calc.max_no_nil(v1:oid,v2:oid):oid 
 address CALCmax_no_nil;
 comment Return max of V1 and V2, ignoring nil values
@@ -48197,8 +48174,6 @@ pattern calc.or(v1:hge,v2:hge):hge
 address CMDvarOR;
 comment Return V1 OR V2
 
-function calc.polygon{unsafe}(wkt:str):wkb;
-function calc.point{unsafe}(wkt:str):wkb;
 command calc.ptr(v:ptr):ptr 
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
@@ -48525,7 +48500,6 @@ command calc.second_interval(sc:int,v:bte,ek:int,sk:int):lng
 address bte_dec2second_interval;
 comment cast bte decimal to a second_interval
 
-function calc.surface{unsafe}(wkt:str):wkb;
 pattern calc.setoid(v:lng):void 
 address CMDsetoid;
 pattern calc.setoid(v:oid):void 
@@ -49098,10 +49072,6 @@ command calc.wrd(v:flt,digits:int,scale:int):wrd
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
-command calc.wkb(v:wkb):wkb 
-address wkbFromWKB;
-command calc.wkb{unsafe}(v:str):wkb 
-address wkbFromString;
 pattern calc.wrd(v:str):wrd 
 address CMDvarCONVERT;
 comment Cast VALUE to wrd
@@ -49556,30 +49526,6 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
-pattern fits.attach(fname:str):void 
-address FITSattach;
-comment Open a FITS file and return catalog of the table HDUs
-
-pattern fits.export(tablename:str):void 
-address FITSexportTable;
-comment Export a table to a FITS file
-
-command fits.fitstest(filename:str):int 
-address FITStest;
-comment Returns the type of first extension in the FITS file filename
-
-pattern fits.load(tablename:str):void 
-address FITSloadTable;
-comment Load a FITS table from an attached file
-
-pattern fits.listdirpattern(dirname:str,pattern:str):void 
-address FITSdirpat;
-comment Attach all FITS file in the directory, giving a pattern
-
-pattern fits.listdir(dirname:str):void 
-address FITSdir;
-comment Attach all FITS files in the directory
-
 pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
 comment Overloaded join operation
@@ -49730,148 +49676,6 @@ pattern generator.thetasubselect(b:bat[:oid,:sht],low:sht,oper:str):bat[:oid,:oi
 address VLTgenerator_thetasubselect;
 pattern generator.thetasubselect(b:bat[:oid,:bte],low:bte,oper:str):bat[:oid,:oid] 
 address VLTgenerator_thetasubselect;
-command geom.Area(g:wkb):dbl 
-address wkbArea;
-comment Returns the area of the geometry.
-
-command geom.AsText(w:wkb):str 
-address wkbAsText;
-command geom.Buffer(a:wkb,distance:dbl):wkb 
-address wkbBuffer;
-comment Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.
-
-command geom.Boundary(w:wkb):wkb 
-address wkbBoundary;
-comment Returns the closure of the combinatorial boundary of this Geometry.
-
-command geom.ConvexHull(a:wkb):wkb 
-address wkbConvexHull;
-comment Returns a geometry that represents the convex hull of this geometry.
-
-command geom.Contains(a:wkb,b:wkb):bit 
-address wkbContains;
-comment Returns true if the Geometry a 'spatially contains' Geometry b
-
-command geom.Crosses(a:wkb,b:wkb):bit 
-address wkbCrosses;
-comment Returns true if the Geometry a 'spatially crosses' Geometry b
-
-function geom.CurveFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Difference(a:wkb,b:wkb):wkb 
-address wkbDifference;
-comment Returns a geometry that represents the point set difference of Geometry a with b.
-
-command geom.Distance(a:wkb,b:wkb):dbl 
-address wkbDistance;
-comment Returns the shortest distance between any two points in the two geometries as calculated in the spatial reference system of this Geometries.
-
-command geom.Disjoint(a:wkb,b:wkb):bit 
-address wkbDisjoint;
-comment Returns true if these Geometries are 'spatially disjoint'
-
-command geom.Dimension(w:wkb):int 
-address wkbDimension;
-comment The inherent dimension of this geometry object, which must be less than or equal to the coordinate dimension. This specification is restricted to geometries in two-dimensional coordinate space.
-
-command geom.Equals(a:wkb,b:wkb):bit 
-address wkbEquals;
-comment Returns true if these Geometries are 'spatially equal'
-
-command geom.Envelope(w:wkb):wkb 
-address wkbEnvelope;
-comment The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).
-
-command geom.GeometryTypeId(w:wkb):int 
-address wkbGeometryTypeId;
-comment Returns the name of the instantiable subtype of Geometry of which this Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string.
-
-function geom.GeomCollectionFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.GeomFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Intersection(a:wkb,b:wkb):wkb 
-address wkbIntersection;
-comment Returns a geometry that represents the point set intersection of Geometry a with b.
-
-command geom.Intersect(a:wkb,b:wkb):bit 
-address wkbIntersect;
-comment Returns true if these Geometries 'spatially intersect'
-
-command geom.IsSimple(w:wkb):bit 
-address wkbIsSimple;
-comment Returns true if this Geometry has no anomalous geometric points, such as self intersection or self tangency. The description of each instantiable geometric class will include the specific conditions that cause an instance of that class to be classified as not simple.
-
-command geom.IsEmpty(w:wkb):bit 
-address wkbIsEmpty;
-comment Returns true if this Geometry is the empty geometry. If true, then this Geometry represents the empty point set, for the coordinate space.
-
-command geom.Length(g:wkb):dbl 
-address wkbLength;
-comment Returns the length of the geometry.
-
-function geom.LineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiSurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiLineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiCurveFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPointFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Overlaps(a:wkb,b:wkb):bit 
-address wkbOverlaps;
-comment Returns true if the Geometry a 'spatially overlaps' Geometry b
-
-function geom.PolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.PointFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Relate(a:wkb,b:wkb,intersectionPatternMatrix:str):bit 
-address wkbRelate;
-comment Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.
-
-command geom.SymDifference(a:wkb,b:wkb):wkb 
-address wkbSymDifference;
-comment Returns a geometry that represents the point set semmetric difference of Geometry a with b.
-
-command geom.SRID(w:wkb):int 
-address wkbSRID;
-comment Returns the Spatial Reference System ID for this Geometry.
-
-function geom.SurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
-command geom.Touches(a:wkb,b:wkb):bit 
-address wkbTouches;
-comment Returns true if these Geometries 'spatially touch' each other
-
-command geom.Union(a:wkb,b:wkb):wkb 
-address wkbUnion;
-comment Returns a geometry that represents the point set union of Geometry a with b.
-
-command geom.Within(a:wkb,b:wkb):bit 
-address wkbWithin;
-comment Returns true if the Geometry a 'spatially within' Geometry b
-
-command geom.X(g:wkb):dbl 
-address wkbgetcoordX;
-comment Returns the x-coordinate of a point geometry.
-
-command geom.Y(g:wkb):dbl 
-address wkbgetcoordY;
-comment Returns the y-coordinate of a point geometry.
-
-command geom.epilogue():void 
-address geom_epilogue;
-command geom.mbr(X_1:wkb):mbr 
-address wkbMBR;
-comment Creates the mbr for the given wkb.
-
-command geom.mbr(X_1:flt,X_2:flt,X_3:flt,X_4:flt):mbr 
-address ordinatesMBR;
-comment Creates the mbr for the given (xmin,ymin) and (xmax,ymax).
-
-command geom.mbroverlaps(a:mbr,b:mbr):bit 
-address mbroverlaps;
-comment Returns true if the two mbrs overlap
-
-command geom.prelude():void 
-address geom_prelude;
-command geom.point(x:dbl,y:dbl):wkb 
-address wkbcreatepoint;
-comment Construct a point from two geometries
-
 pattern group.multicolumn(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
 address GROUPmulticolumngroup;
 comment Derivation of a group index over multiple columns.
@@ -50706,22 +50510,6 @@ pattern mal.manifold(mod:str,fcn:str,a:any...):bat[:oid,:any]
 address MANIFOLDevaluate;
 pattern mal.multiplex(mod:str,fcn:str,a:any...):any... 
 address MANIFOLDremapMultiplex;
-command mbr.#cmp():int 
-address mbrCOMP;
-command mbr.#fromstr():mbr 
-address mbrFROMSTR;
-command mbr.#hash():int 
-address mbrHASH;
-command mbr.mbr(v:str):mbr 
-address mbrFromString;
-command mbr.#null():int 
-address mbrNULL;
-command mbr.#read():void 
-address mbrREAD;
-command mbr.#tostr():str 
-address mbrTOSTR;
-command mbr.#write():void 
-address mbrWRITE;
 command mcurl.deleterequest(s:str):str 
 address CURLdeleteRequest;
 comment Perform a http delete request
@@ -52139,15 +51927,6 @@ pattern scheduler.volumeCost(a:any):lng
 address RUNvolumeCost;
 comment A sample cost function based on materialized results
 
-function sphinx.sphinx_searchIndexLimit(q:str,i:str,l:int):bat[:oid,:lng];
-function sphinx.sphinx_searchIndex(q:str,i:str):bat[:oid,:lng];
-function sphinx.sphinx_search(q:str):bat[:oid,:lng];
-function sphinx.searchIndex(q:str,i:str):bat[:oid,:lng];
-function sphinx.search(q:str):bat[:oid,:lng];
-command sphinx.searchIndexLimit(q:str,i:str,l:int):bat[:oid,:lng] 
-address SPHINXsearchIndexLimit;
-comment Search the query on the specified index, with limit
-
 command sql.alpha(dec:dbl,theta:dbl):dbl 
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
@@ -53387,32 +53166,6 @@ comment Coerce a string to a uuid, validating its format
 
 command uuid.#write():int 
 address UUIDwrite;
-command wkb.FromText{unsafe}(w:str,type:int):wkb 
-address wkbFromText;
-command wkb.#cmp():int 
-address wkbCOMP;
-command wkb.#del():int 
-address wkbDEL;
-command wkb.#fromstr():wkb 
-address wkbFROMSTR;
-command wkb.#heap():int 
-address wkbHEAP;
-command wkb.#hash():int 
-address wkbHASH;
-command wkb.#length():int 
-address wkbLENGTH;
-command wkb.#null():int 
-address wkbNULL;
-command wkb.#put():int 
-address wkbPUT;
-command wkb.#read():void 
-address wkbREAD;
-command wkb.#tostr():str 
-address wkbTOSTR;
-command wkb.wkb{unsafe}(v:str):wkb 
-address wkbFromString;
-command wkb.#write():void 
-address wkbWRITE;
 command xml.aggr(val:bat[:oid,:xml]):xml 
 address BATXMLgroup;
 comment Aggregate the XML values.
@@ -53560,7 +53313,7 @@ address rule_fromstr;
 command zrule.#tostr():str 
 address rule_tostr;
 
-# 14:24:13 >  
-# 14:24:13 >  "Done."
-# 14:24:13 >  
+# 21:43:04 >  
+# 21:43:04 >  "Done."
+# 21:43:04 >  
 
