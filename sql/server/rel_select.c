@@ -996,7 +996,7 @@ static char * rel_get_name( sql_rel *rel )
 			return exp_name(rel->r);
 		return NULL;
 	case op_basetable: 
-		return rel->r;
+		return NULL;
 	default:
 		if (rel->l)
 			return rel_get_name(rel->l);
