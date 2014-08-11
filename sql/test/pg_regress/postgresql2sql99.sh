@@ -34,7 +34,7 @@ sed -r \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
-	-e 's/\bbool '*'\b/cast('\1' as boolean)/Ig' \
+	-e 's/\bbool ''*''\b/cast('\1' as boolean)/Ig' \
 	-e 's/\bchar 'c'/cast('c' as char)/Ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/Ig' \
 	-e 's/\bint2 '1'/cast('1' as smallint)/Ig' \
@@ -71,13 +71,17 @@ sed -r \
 	-e 's/\btimestamp with time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamptz)/Ig' \
 	-e 's/\btimestamp with time zone 'today'/cast(current_date as timestamptz)/Ig' \
 	-e 's/\btimestamp with time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamptz)/Ig' \
-	-e 's/\btimestamp with time zone '*'/cast('\1' as timestamptz)/Ig' \
+	-e 's/\btimestamp with time zone ''*''/cast('\1' as timestamptz)/Ig' \
 	-e 's/\btimestamp without time zone 'now'/cast(now as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'yesterday'/cast(sql_sub(current_date, 24*60*60.0)as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'today'/cast(current_date as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamp)/Ig' \
-	-e 's/\btimestamp without time zone '*'/cast('\1' as timestamp)/Ig' \
+	-e 's/\btimestamp without time zone ''*''/cast('\1' as timestamp)/Ig' \
 	-e 's/\btimestamp(2) without time zone/timestamp(2)/Ig' \
+	-e 's/\b(f1 interval)/(f1 interval second)/Ig' \
+	-e 's/\binterval ''*''/cast('\1' as interval second)/Ig' \
+	-e 's/\b(f1 reltime)/(f1 interval second)/Ig' \
+	-e 's/\breltime ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \
@@ -98,6 +102,7 @@ sed -r \
 	-e 's/COMMIT TRANSACTION;/COMMIT;/Ig' \
 	-e 's/^COMMENT.*;$//Ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/Ig' \
+	-e 's/SELECT * INTO TABLE * FROM *;/\CREATE TABLE \2 AS SELECT \1 FROM \3 WITH DATA;/Ig' \
 	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//Ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//Ig' \
 	-e 's/SET datestyle TO *;/\/* SET datestyle TO \1; *\//Ig' \
@@ -110,5 +115,7 @@ sed -r \
 	-e 's/\s+([^\s]+)::int8\b/ cast(\1 as bigint)/Ig' \
 	-e 's/\s+([^\s]+)::float4\b/ cast(\1 as real)/Ig' \
 	-e 's/\s+([^\s]+)::float8\b/ cast(\1 as double)/Ig' \
-	-e 's/\s+([^\s]+)::text\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::name\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::string\b/ cast(\1 as string)/Ig' \
+	-e 's/\s+([^\s]+)::text\b/ cast(\1 as text)/Ig' \
 	-e 's/\s+([^\s]+)::(\w+(\([0-9]+(,[0-9]+))\)?)\b/ cast(\1 as \2)/Ig'

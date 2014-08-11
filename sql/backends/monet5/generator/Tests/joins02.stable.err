@@ -1,0 +1,36 @@
+stderr of test 'joins02` in directory 'sql/backends/monet5/generator` itself:
+
+
+# 14:13:31 >  
+# 14:13:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39679" "--set" "mapi_usock=/var/tmp/mtest-23026/.s.monetdb.39679" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/generator//Linux/var/MonetDB/mTests_sql_backends_monet5_generator" "--set" "mal_listing=0"
+# 14:13:31 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/generator//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39679
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23026/.s.monetdb.39679
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/generator//Linux/var/MonetDB/mTests_sql_backends_monet5_generator
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:13:31 >  
+# 14:13:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23026" "--port=39679"
+# 14:13:31 >  
+
+
+# 14:13:32 >  
+# 14:13:32 >  "Done."
+# 14:13:32 >  
+

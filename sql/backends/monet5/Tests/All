@@ -1,2 +1,20 @@
 optimizers
-#Mbeddedsql5--help   disabled for now
+
+HAVE_LIBR?rapi00
+HAVE_LIBR?rapi01
+HAVE_LIBR?rapi02
+HAVE_LIBR?rapi03
+HAVE_LIBR?rapi04
+HAVE_LIBR?rapi05
+HAVE_LIBR?rapi06
+HAVE_LIBR?rapi07
+# this one will require significant work in the SQL layer, so disabled for now
+# HAVE_LIBR?rapi08
+ HAVE_LIBR?rapi09
+  HAVE_LIBR?rapi10
+
+# should this work?
+#inlineUDF
+
+# disabled for now
+#Mbeddedsql5--help   

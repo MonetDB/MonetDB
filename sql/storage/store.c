@@ -756,9 +756,10 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
 	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "sql"), rid);
-	t->sql = *(bit *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
+	t->lang = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
+	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL)?1:0;
 	t->type = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
@@ -769,7 +770,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
-	if (t->sql) {
+	 if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
 	}
@@ -884,6 +885,9 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
+		s->system = *(bit *)v;          _DELETE(v);
+		v = table_funcs.column_find_value(tr,
+			find_sql_column(tables, "system"), rid);
 		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
@@ -1046,17 +1050,17 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
-		bit sql = f->sql;
+		int lang = FUNC_LANG_INT;
 		bit se = f->side_effect;
 		sqlid id;
 		int number = 0;
 		char arg_nme[] = "arg_0";
 
 		if (f->s)
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id);
+			 table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se,&f->varres, &f->vararg, &f->s->base.id);
 		else
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &f->type, &se, &f->varres, &f->vararg, &zero);
-		
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero);
+
 		if (f->res) {
 			char res_nme[] = "res_0";
 
@@ -1358,8 +1362,10 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "name", "varchar", 256);
 	bootstrap_create_column(tr, t, "func", "varchar", 8196);
 	bootstrap_create_column(tr, t, "mod", "varchar", 8196);
-	/* sql or database internal */
-	bootstrap_create_column(tr, t, "sql", "boolean", 1);
+
+	/* language asm=0, sql=1, R=2, C=3, J=4 */
+	bootstrap_create_column(tr, t, "language", "int", 32);
+
 	/* func, proc, aggr or filter */
 	bootstrap_create_column(tr, t, "type", "int", 32);
 	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
@@ -2212,6 +2218,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	f->mod = (of->mod)?sa_strdup(sa, of->mod):NULL;
 	f->type = of->type;
 	f->query = (of->query)?sa_strdup(sa, of->query):NULL;
+	f->lang = of->lang;
 	f->sql = of->sql;
 	f->side_effect = of->side_effect;
 	f->varres = of->varres;
@@ -2939,7 +2946,7 @@ rollforward_trans(sql_trans *tr, int mode)
 				schema_number++;
 		}
 		//tr->wtime = tr->rtime = 0;
-		assert(gtrans->wstime == gtrans->wtime);
+	//	assert(gtrans->wstime == gtrans->wtime);
 	}
 	return ok;
 }
@@ -3789,7 +3796,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 }
 
 sql_func *
-create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg)
+create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -3798,7 +3805,8 @@ create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, 
 	t->imp = (impl)?sa_strdup(sa, impl):NULL;
 	t->mod = (mod)?sa_strdup(sa, mod):NULL; 
 	t->type = type;
-	t->sql = (query)?1:0;
+	t->lang = lang;
+	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL)?1:0;
 	t->side_effect = res?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -3811,21 +3819,22 @@ create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, list *res, int type, char *mod, char *impl, char *query, bit varres, bit vararg)
+sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg)
 {
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
-	bit se, sql;
+	bit se;
 
 	base_init(tr->sa, &t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
 	t->imp = (impl)?sa_strdup(tr->sa, impl):NULL;
 	t->mod = (mod)?sa_strdup(tr->sa, mod):NULL; 
 	t->type = type;
-	sql = t->sql = (query)?1:0;
+	t->lang = lang;
+	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL)?1:0;
 	se = t->side_effect = res?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -3842,7 +3851,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, lis
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &sql, &type, &se, &t->varres, &t->vararg, &s->base.id);
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &type, &se, &t->varres, &t->vararg, &s->base.id);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
@@ -3868,7 +3877,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -3901,7 +3910,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 		func = (sql_func *) n->data;
 
 		if (! list_find_id(tr->dropped, func->base.id)){ 
-			int *local_id = NEW(int);
+			int *local_id = MNEW(int);
 
 			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
@@ -3951,7 +3960,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -4182,7 +4191,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_table *t = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -4295,7 +4304,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 	sql_column *col = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -4643,7 +4652,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_key *k = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -4755,7 +4764,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);
@@ -4842,7 +4851,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_trigger *i = n->data;
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = NEW(int);
+		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
 			tr->dropped = list_create((fdestroy) GDKfree);

@@ -980,8 +980,8 @@ static char * rel_get_name( sql_rel *rel )
 		if (rel->r) 
 			return exp_name(rel->r);
 		return NULL;
-	case op_basetable:
-		return rel->r;
+	case op_basetable: 
+		return NULL;
 	default:
 		if (rel->l)
 			return rel_get_name(rel->l);
@@ -1856,8 +1856,12 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 			return rel_var_ref(sql, name, 0);
 		}
-		if (!exp && !var)
-			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		if (!exp && !var) {
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
+				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+			else
+				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+		}
 		
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -1879,8 +1883,12 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 				exp = rel_bind_column(sql, *rel, cname, f);
 			}
 		}
-		if (!exp)
-			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+		if (!exp) {
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
+				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			else
+				return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
 	}
@@ -3639,17 +3647,23 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(sql, rel, se, f);
 	}
 
-	if (!l || !r) 
-		return NULL;
-
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
 	if (type == F_FUNC) {
 		sql_subfunc *func = sql_find_func(sql->sa, s, fname, 2, F_AGGR);
-		if (func)
+		if (func) {
+			if (!l || !r) { /* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+			}
 			return _rel_aggr(sql, rel, 0, s, fname, dl->next, f);
+		}
 	}
+
+	if (!l || !r) 
+		return NULL;
+
 	return rel_binop_(sql, l, r, s, fname, ek.card);
 }
 
@@ -4955,7 +4969,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 		}
 	}
 	if (!found) {
-		sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", rel_get_name(t1)?rel_get_name(t1):"", rel_get_name(t2)?rel_get_name(t2):"");
+		sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
 		rel_destroy(rel);
 		return NULL;
 	}
@@ -5483,7 +5497,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where);
 
 			if (!ls || !rs) {
-				sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_get_name(t1)?rel_get_name(t1):"", rel_get_name(t2)?rel_get_name(t2):"", nm);
+				sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
 				rel_destroy(rel);
 				return NULL;
 			}

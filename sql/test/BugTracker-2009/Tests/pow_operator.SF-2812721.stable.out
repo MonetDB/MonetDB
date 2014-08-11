@@ -27,17 +27,17 @@ Ready.
 #select power(2,2);
 % .L # table_name
 % power_single_value # name
-% real # type
-% 15 # length
+% double # type
+% 24 # length
 [ 4	]
 #select power(2.8,2);
 % .L # table_name
 % power_single_value # name
-% real # type
-% 15 # length
-[ 7.83999968	]
+% double # type
+% 24 # length
+[ 7.84	]
 
-# 09:09:06 >  
-# 09:09:06 >  "Done."
-# 09:09:06 >  
+# 19:02:22 >  
+# 19:02:22 >  "Done."
+# 19:02:22 >  
 

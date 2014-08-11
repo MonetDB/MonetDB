@@ -1042,6 +1042,7 @@ sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops,
 	}
 	t->nr = list_length(funcs);
 	t->sql = 0;
+	t->lang = FUNC_LANG_INT;
 	t->side_effect = side_effect;
 	t->fix_scale = fix_scale;
 	t->s = NULL;
@@ -1073,6 +1074,7 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_arg 
 	}
 	t->nr = list_length(funcs);
 	t->sql = 1;
+	t->lang = FUNC_LANG_SQL;
 	t->side_effect = FALSE;
 	list_append(funcs, t);
 	return t;
@@ -1335,11 +1337,7 @@ sqltypeinit( sql_allocator *sa)
 			sql_create_func(sa, "scale_up", "calc", "*", *u, *t, *t, SCALE_NONE);
 	}
 
-	/* initial assignment to t is on purpose like this, such that the
-	 * compiler (as of gcc-4.6) "sees" that we never go below the
-	 * initial pointer, and hence don't get a
-	 * error: array subscript is below array bounds */
-	for (t = floats + (dates - floats - 1); t >= floats; t--) {
+	for (t = floats; t < dates; t++) {
 		sql_create_func(sa, "power", "mmath", "pow", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "floor", "mmath", "floor", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "ceil", "mmath", "ceil", *t, NULL, *t, SCALE_FIX);

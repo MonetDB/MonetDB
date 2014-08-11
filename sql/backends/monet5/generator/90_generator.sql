@@ -1,0 +1,58 @@
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
+
+-- (c) Author M.Kersten
+
+create function sys.generate_series(first tinyint, last tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first int, last int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first int, last int, stepsize int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint, stepsize bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first real, last real, stepsize real)
+returns table (value real)
+external name generator.series;
+
+create function sys.generate_series(first double, last double, stepsize double)
+returns table (value double)
+external name generator.series;
+
+create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
+returns table (value decimal(10,2))
+external name generator.series;
+
+create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
+returns table (value timestamp)
+external name generator.series;

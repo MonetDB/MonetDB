@@ -109,8 +109,47 @@ create function sys.hashsize(b boolean, i bigint) returns bigint begin if  b = t
 create view sys.tablestoragemodel as select "schema","table",max(count) as "count",    sum(columnsize) as columnsize,    sum(heapsize) as heapsize,    sum(hashes) as hashes,    sum(imprints) as imprints,    sum(case when sorted = false then 8 * count else 0 end) as auxillary from sys.storagemodel() group by "schema","table";
 create view sys.storagemodel as select * from sys.storagemodel();
 update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+create function sys.generate_series(first tinyint, last tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first int, last int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first int, last int, stepsize int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint, stepsize bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first real, last real, stepsize real)
+returns table (value real)
+external name generator.series;
+
+create function sys.generate_series(first double, last double, stepsize double)
+returns table (value double)
+external name generator.series;
+
+create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
+returns table (value decimal(10,2))
+external name generator.series;
+
+create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
+returns table (value timestamp)
+external name generator.series;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('hashsize', 'imprintsize', 'isauuid', 'md5', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'generate_series', 'storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 set schema "testschema";
 
 #Interpreting bte as bit.
