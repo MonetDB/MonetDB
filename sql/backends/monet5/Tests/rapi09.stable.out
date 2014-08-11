@@ -1,0 +1,89 @@
+stdout of test 'rapi09` in directory 'sql/backends/monet5` itself:
+
+
+# 11:14:59 >  
+# 11:14:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36576" "--set" "mapi_usock=/var/tmp/mtest-9729/.s.monetdb.36576" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/hannes/monetdb-rint-install/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:14:59 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bristol.ins.cwi.nl:36576/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9729/.s.monetdb.36576
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 11:15:00 >  
+# 11:15:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9729" "--port=36576"
+# 11:15:00 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION shouldbeint() RETURNS TABLE (i integer) LANGUAGE R {as.numeric(42.0)};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION throwwarning() RETURNS TABLE (i integer) LANGUAGE R {
+#	warning("this is the wrong kind of handbag")
+#	as.integer(42)
+#};
+#SELECT * FROM throwwarning();
+% . # table_name
+% i # name
+% int # type
+% 2 # length
+[ 42	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION throwerror() RETURNS TABLE (i integer) LANGUAGE R {stop("goodbye cruel world")};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION suicide() RETURNS TABLE (i integer) LANGUAGE R {quit(save="no")};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION suicide2() RETURNS TABLE (i integer) LANGUAGE R {base::quit(save="no")};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION suicide3() RETURNS TABLE (i integer) LANGUAGE R {.Internal(quit("no", 0,F))};
+#ROLLBACK;
+#SELECT 1;
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+
+# 11:15:00 >  
+# 11:15:00 >  "Done."
+# 11:15:00 >  
+

@@ -11336,10 +11336,10 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* between (any "linear" type) */
 
 #define BETWEEN(v, lo, hi, TYPE)					\
-	((v) == TYPE##_nil || ((lo) == TYPE##_nil && (hi) == TYPE##_nil) ? \
+	((v) == TYPE##_nil || (lo) == TYPE##_nil || (hi) == TYPE##_nil ? \
 	 (nils++, bit_nil) :						\
-	 (bit) (((lo) == TYPE##_nil || (v) >= (lo)) &&			\
-		((hi) == TYPE##_nil || (v) <= (hi))))
+	 (bit) (((v) >= (lo) && (v) <= (hi)) ||				\
+		(sym && (v) >= (hi) && (v) <= (lo))))
 
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
@@ -11362,7 +11362,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
 		      int tp, BUN cnt, BUN start, BUN end, const oid *cand,
-		      const oid *candend, oid seqbase,
+		      const oid *candend, oid seqbase, int sym,
 		      const char *func)
 {
 	BAT *bn;
@@ -11429,8 +11429,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     k = start * incr3,
 			     l = start;
 		     l < end;
-		     i += incr1, j += incr2, k += incr3, l++, 
-		     soff+=wd1, loff+= wd2, hoff+= wd3 ) {
+		     i += incr1, j += incr2, k += incr3, l++,
+			     soff += wd1, loff += wd2, hoff += wd3) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
 			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
@@ -11443,8 +11443,11 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 				nils++;
 				dst[l] = bit_nil;
 			} else {
-				dst[l] = (bit) ((*atomcmp)(p1, p2) >= 0 &&
-						(*atomcmp)(p1, p3) <= 0);
+				dst[l] = (bit) (((*atomcmp)(p1, p2) >= 0 &&
+						 (*atomcmp)(p1, p3) <= 0) ||
+						(sym &&
+						 (*atomcmp)(p1, p3) >= 0 &&
+						 (*atomcmp)(p1, p2) <= 0));
 			}
 		}
 		break;
@@ -11465,7 +11468,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -11488,13 +11491,15 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 		bit res;
 
 		if (b->T->seq == oid_nil ||
-		    (lo->T->seq == oid_nil && hi->T->seq == oid_nil))
+		    lo->T->seq == oid_nil ||
+		    hi->T->seq == oid_nil)
 			res = bit_nil;
 		else
-			res = (bit) ((lo->T->seq == oid_nil ||
-				      b->T->seq >= lo->T->seq) &&
-				     (hi->T->seq == oid_nil ||
-				      b->T->seq <= hi->T->seq));
+			res = (bit) ((b->T->seq >= lo->T->seq &&
+				      b->T->seq <= hi->T->seq) ||
+				     (sym &&
+				      b->T->seq >= hi->T->seq &&
+				      b->T->seq <= lo->T->seq));
 
 		return BATconst(b, TYPE_bit, &res, TRANSIENT);
 	}
@@ -11510,13 +11515,13 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 				   hi->T->width,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetween");
+				   b->H->seq, sym, "BATcalcbetween");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -11542,13 +11547,13 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweencstcst");
+				   b->H->seq, sym, "BATcalcbetweencstcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -11575,13 +11580,13 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweenbatcst");
+				   b->H->seq, sym, "BATcalcbetweenbatcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -11608,25 +11613,39 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
 				   hi->T->width,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweencstbat");
+				   b->H->seq, sym, "BATcalcbetweencstbat");
 
 	return bn;
 }
 
 int
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
-	       const ValRecord *hi)
+	       const ValRecord *hi, int sym)
 {
 	BUN nils = 0;		/* to make reusing BETWEEN macro easier */
+	int t;
+	int (*atomcmp)(const void *, const void *);
+	const void *nil;
 
-	if (ATOMstorage(v->vtype) != ATOMstorage(lo->vtype) ||
-	    ATOMstorage(v->vtype) != ATOMstorage(hi->vtype)) {
+	t = v->vtype;
+	if (t != lo->vtype || t != hi->vtype) {
 		GDKerror("VARcalcbetween: incompatible input types.\n");
 		return GDK_FAIL;
 	}
+	if (!BATatoms[t].linear) {
+		GDKerror("VARcalcbetween: non-linear input type.\n");
+		return GDK_FAIL;
+	}
+
+	nil = ATOMnilptr(t);
+	atomcmp = BATatoms[t].atomCmp;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
+		t = ATOMstorage(t);
 
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
+	switch (t) {
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);
 		break;
@@ -11651,9 +11670,18 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		ret->val.btval = BETWEEN(v->val.dval, lo->val.dval, hi->val.dval, dbl);
 		break;
 	default:
-		GDKerror("VARcalcbetween: bad input type %s.\n",
-			 ATOMname(v->vtype));
-		return GDK_FAIL;
+		if (atomcmp(VALptr(v), nil) == 0 ||
+		    atomcmp(VALptr(lo), nil) == 0 ||
+		    atomcmp(VALptr(hi), nil) == 0)
+			ret->val.btval = bit_nil;
+		else
+			ret->val.btval =
+				(bit) ((atomcmp(VALptr(v), VALptr(lo)) >= 0 &&
+					atomcmp(VALptr(v), VALptr(hi)) <= 0) ||
+				       (sym &&
+					atomcmp(VALptr(v), VALptr(hi)) >= 0 &&
+					atomcmp(VALptr(v), VALptr(lo)) <= 0));
+		break;
 	}
 	(void) nils;
 	return GDK_SUCCEED;

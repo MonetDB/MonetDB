@@ -159,6 +159,7 @@ struct OPTcatalog {
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
 {"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
 {"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
+{"generator",	0,	0,	0,	DEBUG_OPT_GENERATOR},
 {"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
 {"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
@@ -843,7 +844,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef));
+		 (getModuleId(p) == mkeyRef)) &&
+		 getModuleId(p) != rapiRef;
 }
 
 int isLikeOp(InstrPtr p){

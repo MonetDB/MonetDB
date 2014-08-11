@@ -90,6 +90,21 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	return idx;
 }
 
+static InstrPtr
+pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
+{
+	int _t;
+	ValRecord cst;
+
+	if (q == NULL)
+		return NULL;
+	cst.vtype= TYPE_ptr;
+	cst.val.pval = val;
+	cst.len = 0;
+	_t = defConstant(mb, TYPE_ptr, &cst);
+	return pushArgument(mb, q, _t);
+}
+
 static int
 argumentZero(MalBlkPtr mb, int tpe)
 {
@@ -1229,13 +1244,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (get_cmp(s) == cmp_filter) {
 					node *n;
 					char *mod, *fimp;
+					sql_func *f = s->op4.funcval->func;
 
 					if (backend_create_subfunc(sql, s->op4.funcval, NULL) < 0)
 						return -1;
-					mod = sql_func_mod(s->op4.funcval->func);
-					fimp = sql_func_imp(s->op4.funcval->func);
 
+					mod = sql_func_mod(f);
+					fimp = sql_func_imp(f);
 					q = newStmt(mb, mod, convertOperator(fimp));
+					// push pointer to the SQL structure into the MAL call
+					// allows getting argument names for example
+					 if (LANG_EXT(f->lang))
+						 q = pushPtr(mb, q, f);
+					 // f->query contains the R code to be run
+					 if (f->lang == FUNC_LANG_R)
+						 q = pushStr(mb, q, f->query);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1859,7 +1882,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
+
 			}
+			if (LANG_EXT(f->func->lang))
+				q = pushPtr(mb, q, f->func);
+			if (f->func->lang == FUNC_LANG_R)
+				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */
 			if (f->func->type == F_UNION) 
 				q = table_func_create_result(mb, q, f->func, f->res);
@@ -1975,6 +2003,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			}
+
+			if (LANG_EXT(s->op4.aggrval->aggr->lang))
+				q = pushPtr(mb, q, s->op4.aggrval->aggr);
+			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R){
+				if (!g) {
+					setVarType(mb, getArg(q, 0), restype);
+					setVarUDFtype(mb, getArg(q, 0));
+				}
+				q = pushStr(mb, q, s->op4.aggrval->aggr->query);
+			}
+
 			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
 			} else {
@@ -2780,9 +2819,27 @@ monet5_resolve_function(ptr M, sql_func *f)
 */
 }
 
-/* TODO handle aggr */
-int
-backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
+static int
+backend_create_r_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "rapi";
+		f->imp = "eval_aggr";
+		break;
+	case  F_PROC: /* no output */
+	case  F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "rapi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
+static int
+backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	sql_schema *schema = m->session->schema;
@@ -2903,6 +2960,24 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (backup)
 		c->curprg = backup;
 	return 0;
+}
+
+/* TODO handle aggr */
+int
+backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
+{
+	switch(f->lang) {
+	case FUNC_LANG_INT:
+	case FUNC_LANG_MAL:
+	case FUNC_LANG_SQL:
+		return backend_create_sql_func(be, f, restypes, ops);
+	case FUNC_LANG_R:
+		return backend_create_r_func(be, f);
+	case FUNC_LANG_C:
+	case FUNC_LANG_J:
+	default:
+		return -1;
+	}
 }
 
 static int

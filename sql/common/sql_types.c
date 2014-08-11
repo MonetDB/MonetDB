@@ -1065,6 +1065,7 @@ sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops,
 	}
 	t->nr = list_length(funcs);
 	t->sql = 0;
+	t->lang = FUNC_LANG_INT;
 	t->side_effect = side_effect;
 	t->fix_scale = fix_scale;
 	t->s = NULL;
@@ -1096,6 +1097,7 @@ sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_arg 
 	}
 	t->nr = list_length(funcs);
 	t->sql = 1;
+	t->lang = FUNC_LANG_SQL;
 	t->side_effect = FALSE;
 	list_append(funcs, t);
 	return t;

@@ -62,7 +62,7 @@ sql_create_sequence(sql_sequence *seq )
 	lng id = 0;
 	store_sequence *s = NULL;
 
-	s = NEW(store_sequence);
+	s = MNEW(store_sequence);
 	s -> seqid = seq->base.id;
 	s -> called = 0;
 	s -> cur = seq->start; 	  
@@ -169,7 +169,7 @@ seq_next_value(sql_sequence *seq, lng *val)
 
 seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
 {
-	seqbulk *sb = NEW(seqbulk);
+	seqbulk *sb = MNEW(seqbulk);
 	store_sequence *s;
 	node *n = NULL;
 

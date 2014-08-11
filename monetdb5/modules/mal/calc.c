@@ -417,7 +417,20 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]) == GDK_FAIL)
+	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], 0) == GDK_FAIL)
+		return mythrow(MAL, "calc.between", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+calc_export str CMDvarBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDvarBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], 1) == GDK_FAIL)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

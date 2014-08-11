@@ -1232,7 +1232,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		"SELECT f.func "
 		"FROM sys.schemas s, "
 		     "sys.functions f "
-		"WHERE f.sql = TRUE AND "
+		"WHERE f.language  < 3 AND "
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
@@ -1430,7 +1430,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			       "f.func AS func "
 			"FROM sys.schemas s, "
 			     "sys.functions f "
-			"WHERE f.sql = TRUE AND "
+			"WHERE f.language < 3 AND "
 			      "s.id = f.schema_id "
 			      "%s"  /* and f.id not in systemfunctions */
 			"UNION "

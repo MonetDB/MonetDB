@@ -1,0 +1,8 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Thu Apr 10 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Jacqueline, the MonetDB/JAQL frontend, has been removed.  The frontend
+  never grew beyond being experimental, and there is no interest anymore
+  to maintain the code.
+
