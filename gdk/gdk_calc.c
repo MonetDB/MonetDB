@@ -8492,13 +8492,12 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 		bit res;
 
 		if (b->T->seq == oid_nil ||
-		    (lo->T->seq == oid_nil && hi->T->seq == oid_nil))
+		    lo->T->seq == oid_nil ||
+		    hi->T->seq == oid_nil)
 			res = bit_nil;
 		else
-			res = (bit) ((lo->T->seq == oid_nil ||
-				      b->T->seq >= lo->T->seq) &&
-				     (hi->T->seq == oid_nil ||
-				      b->T->seq <= hi->T->seq));
+			res = (bit) (b->T->seq >= lo->T->seq &&
+				     b->T->seq <= hi->T->seq);
 
 		return BATconst(b, TYPE_bit, &res);
 	}
