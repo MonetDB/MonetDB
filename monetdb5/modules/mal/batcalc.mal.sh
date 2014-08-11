@@ -527,35 +527,33 @@ EOF
 done
 echo
 
-for tp in bit $numeric oid; do
-    cat <<EOF
-pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:bat[:oid,:$tp]) :bat[:oid,:bit]
+cat <<EOF
+pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:$tp) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:$tp,s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:bat[:oid,:any_1],hi:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:$tp,hi:bat[:oid,:$tp]) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:$tp,hi:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:any_1,hi:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:$tp,hi:$tp) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:any_1,hi:any_1) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:oid,:$tp],lo:$tp,hi:$tp,s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern between(b:bat[:oid,:any_1],lo:any_1,hi:any_1,s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
 
 EOF
-done
 echo
 
 for tp in $numeric; do
