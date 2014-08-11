@@ -307,14 +307,12 @@ EOF
 done
 echo
 
-# for tp in $fixtypes; do
-#     cat <<EOF
-# pattern between(b:$tp,lo:$tp,hi:$tp) :bit
-# address CMDvarBETWEEN
-# comment "B between LO and HI inclusive, nil border is (minus) infinity";
+cat <<EOF
+pattern between(b:any_1,lo:any_1,hi:any_1) :bit
+address CMDvarBETWEEN
+comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
-# EOF
-# done
+EOF
 
 for tp1 in void $alltypes; do
     for tp2 in void $alltypes; do
