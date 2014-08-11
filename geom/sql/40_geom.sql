@@ -4233,8 +4233,10 @@ CREATE FUNCTION ST_Centroid(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."
 --CREATE FUNCTION ST_ClosestPoint RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Contains(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Contains";
 --CREATE FUNCTION ST_ContainsProperly RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Covers RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_CoveredBy RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Covers(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Covers";
+--CREATE FUNCTION ST_Covers(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."Covers";
+CREATE FUNCTION ST_CoveredBy(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoveredBy";
+--CREATE FUNCTION ST_CoveredBy(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."CoveredBy";
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";

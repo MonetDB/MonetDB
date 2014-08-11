@@ -262,7 +262,11 @@ comment "Returns true if the Geometry a 'spatially related' to Geometry b, by te
 command Touches(a:wkb, b:wkb) :bit address wkbTouches
 comment "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.";
 command Within(a:wkb, b:wkb) :bit address wkbWithin
-comment "Returns true if the geometry A is completely inside geometry B";
+comment "Returns TRUE if the geometry A is completely inside geometry B";
+command Covers(a:wkb, b:wkb) :bit address wkbCovers
+comment "Returns TRUE if no point of geometry B is outside geometry A";
+command CoveredBy(a:wkb, b:wkb) :bit address wkbCoveredBy
+comment "Returns TRUE if no point of geometry A is outside geometry B";
 command GeometryN(g:wkb, n:int) :wkb address wkbGeometryN
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
 command NumGeometries(g:wkb) :int address wkbNumGeometries

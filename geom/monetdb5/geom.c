@@ -126,6 +126,9 @@ geom_export str wkbContains(bit*, wkb**, wkb**);
 geom_export str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
 geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
+geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
+geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
+
 //LocateAlong
 //LocateBetween
 
@@ -2936,6 +2939,36 @@ str wkbWithin(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 		throw(MAL, "geom.Within", "wkb2geos failed");
 	if(res == 2)
 		throw(MAL, "geom.Within", "GEOSWithin failed");
+	*out = res;
+
+	return MAL_SUCCEED;
+}
+
+str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
+	int res =  wkbspatial(geomWKB_a, geomWKB_b, GEOSCovers);
+	*out = bit_nil;
+
+	if(res == 4)
+		throw(MAL, "geom.Within", "Geometries of different SRID");
+	if(res == 3)
+		throw(MAL, "geom.Within", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.Within", "GEOSCovers failed");
+	*out = res;
+
+	return MAL_SUCCEED;
+}
+
+str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
+	int res =  wkbspatial(geomWKB_a, geomWKB_b, GEOSCoveredBy);
+	*out = bit_nil;
+
+	if(res == 4)
+		throw(MAL, "geom.Within", "Geometries of different SRID");
+	if(res == 3)
+		throw(MAL, "geom.Within", "wkb2geos failed");
+	if(res == 2)
+		throw(MAL, "geom.Within", "GEOSCoveredBy failed");
 	*out = res;
 
 	return MAL_SUCCEED;
