@@ -4274,7 +4274,7 @@ CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pa
 --CREATE FUNCTION ST_RelateMatch RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_ShortestLine RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Touches";
-CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Withis";
+CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Within";
 
 -------------------------------------------------------------------------
 ------------------------- Geometry Processing ---------------------------
