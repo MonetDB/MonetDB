@@ -155,6 +155,7 @@ geom_export str wkbNumPoints(int *out, wkb **geom);
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xmax, double* ymax, int* srid);
+geom_export str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumRings(int*, wkb**, int*);
@@ -1932,6 +1933,40 @@ str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xm
 	*out = geos2wkb(geosGeometry);
 
 	return MAL_SUCCEED;
+}
+
+str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
+	GEOSGeom geosGeometry, externalGeometry;
+
+	if(wkb_isnil(*external)){
+		*out = wkb_nil;
+		return MAL_SUCCEED;
+	}
+
+	externalGeometry = wkb2geos(*external);
+	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString) {
+		*out = wkb_nil;
+		GEOSGeom_destroy(externalGeometry);
+		throw(MAL, "geom.Polygon", "Geometries should be LineStrings");
+	}
+
+	if(internalBAT_id == NULL) {
+		geosGeometry = GEOSGeom_createPolygon(externalGeometry, NULL, 0);
+		if(geosGeometry == NULL) {
+			GEOSGeom_destroy(externalGeometry);
+			throw(MAL, "geom.Polygon", "Error creating Polygon from LinearRing");
+		}
+	} else {
+		geosGeometry = NULL;
+	}
+
+	GEOSSetSRID(geosGeometry, *srid);
+
+	*out = geos2wkb(geosGeometry);
+
+	return MAL_SUCCEED;
+
+
 }
 
 /* Returns the first or last point of a linestring */
