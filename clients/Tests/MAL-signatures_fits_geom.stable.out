@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_bam` in directory 'clients` itself:
+stdout of test 'MAL-signatures_fits_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -2849,62 +2849,6 @@ command alarm.usec{unsafe}():lng
 address ALARMusec;
 comment return cpu microseconds info
 
-command batbam.bam_flag(flags:bat[:oid,:sht],name:str):bat[:oid,:bit] 
-address bam_flag_bat;
-comment Get bat of bam flags by name.
-
-command batbam.reverse_qual(seqs:bat[:oid,:str]):bat[:oid,:str] 
-address reverse_qual_bat;
-comment Reverse a bat of DNA Quality strings.
-
-command batbam.reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str] 
-address reverse_seq_bat;
-comment Reverse a bat of DNA sequences.
-
-command batbam.seq_length(cigars:bat[:oid,:str]):bat[:oid,:int] 
-address seq_length_bat;
-comment Calculate the real length of a bat of DNA sequences, given their CIGAR string.
-
-pattern bam.bam_export(output_path:str):void 
-address bam_export;
-comment Export results in the bam.export table to a BAM file
-
-command bam.bam_flag(flag:sht,name:str):bit 
-address bam_flag;
-comment Get bam flag by name.
-
-pattern bam.bam_drop_file(file_id:lng,dbschema:sht):void 
-address bam_drop_file;
-comment Drop alignment tables and header data for the bam file with the given file_id
-
-pattern bam.bam_loader_file(bam_file:str,dbschema:sht):void 
-address bam_loader_file;
-comment Read bam_file and store it in the given dbschema
-
-pattern bam.bam_loader_files(bam_files:str,dbschema:sht,nr_threads:sht):void 
-address bam_loader_files;
-comment Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema
-
-pattern bam.bam_loader_repos(bam_repos:str,dbschema:sht,nr_threads:sht):void 
-address bam_loader_repos;
-comment Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema
-
-command bam.reverse_qual(qual:str):str 
-address reverse_qual;
-comment Reverse a DNA Quality string.
-
-command bam.reverse_seq(seq:str):str 
-address reverse_seq;
-comment Reverse a DNA sequence.
-
-pattern bam.sam_export(output_path:str):void 
-address sam_export;
-comment Export results in the bam.export table to a SAM file
-
-command bam.seq_length(cigar:str):int 
-address seq_length_bat;
-comment Calculate the real length of a DNA sequence, given its CIGAR string.
-
 command batudf.fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng] 
 address UDFBATfuse;
 comment fuse two (4-byte) int values into one (8-byte) lng value
@@ -2920,18 +2864,6 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLbat_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLcst_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
-address GSLbat_chisqProb_cst;
-comment Chi Squared probability
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -39140,10 +39072,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-command gsl.chi2prob(d:dbl,i:dbl):dbl 
-address GSLchisqProb;
-comment Chi Squared probability
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
