@@ -491,6 +491,7 @@ version of Sequence Alignment/Map) data.
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
