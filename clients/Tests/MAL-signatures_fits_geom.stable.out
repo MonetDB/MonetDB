@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_gsl` in directory 'clients` itself:
+stdout of test 'MAL-signatures_fits_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -2916,18 +2916,6 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLbat_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLcst_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
-address GSLbat_chisqProb_cst;
-comment Chi Squared probability
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -39051,10 +39039,6 @@ address GRPsubgroup1;
 pattern group.subgroup(b:bat[:oid,:any]...) (ref:bat[:oid,:oid],grp:bat[:oid,:oid],hist:bat[:oid,:any]) 
 address GROUPmulticolumn;
 comment Derivation of a group index over multiple columns.
-
-command gsl.chi2prob(d:dbl,i:dbl):dbl 
-address GSLchisqProb;
-comment Chi Squared probability
 
 command identifier.#fromstr():void 
 address IDfromString;
