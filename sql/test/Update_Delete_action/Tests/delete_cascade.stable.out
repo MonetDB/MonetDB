@@ -14,24 +14,71 @@ stdout of test 'delete_cascade` in directory 'sql/test/Update_Delete_action` its
 # Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
 
 # 16:59:17 >  
-# 16:59:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33148 
+# 16:59:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1552" "--port=38937"
 # 16:59:17 >  
 
+#create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
+#create table t2 (id int, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE CASCADE);
+#create table t3 (id int, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE CASCADE);
+#insert into t1 values(1, 'monetdb');
 [ 1	]
+#insert into t1 values(2, 'mon');
 [ 1	]
+#insert into t1 values(3, 'monb');
 [ 1	]
+#insert into t1 values(4, 'motdb');
 [ 1	]
+#insert into t1 values(5, 'mob');
 [ 1	]
+#insert into t1 values(6, 'moetdb');
 [ 1	]
+#insert into t1 values(7, 'mo');
 [ 1	]
+#insert into t2 values(1, 23);
 [ 1	]
+#insert into t2 values(2, 24);
 [ 1	]
+#insert into t2 values(3, 25);
 [ 1	]
+#insert into t2 values(4, 26);
 [ 1	]
+#insert into t2 values(5, 27);
 [ 1	]
+#insert into t3 values(3, 5);
 [ 1	]
 [ 1	]
 [ 1	]

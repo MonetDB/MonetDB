@@ -10,6 +10,8 @@
 \dSs
 \dSf
 
+\dn bam
+\dn json
 \dn tmp
 
 \dSn sys
@@ -62,6 +64,7 @@
 \dSf sys.boundary
 \dSf sys.broadcast
 \dSf sys.buffer
+\dSf sys.chi2prob
 \dSf sys.cluster1
 \dSf sys.cluster2
 \dSf sys.columnsize
@@ -93,13 +96,13 @@
 \dSf sys.dimension
 \dSf sys.disjoint
 \dSf sys.distance
-\dSf sys.dropdictionary
 \dSf sys.env
 \dSf sys.envelope
 \dSf sys.environment
 \dSf sys.equals
 \dSf sys.evalalgebra
 \dSf sys.fuse
+\dSf sys.generate_series
 \dSf sys.geomcollectionfromtext
 \dSf sys.geometrytypeid
 \dSf sys.geomfromtext
@@ -116,29 +119,17 @@
 \dSf sys.getquery
 \dSf sys.getroboturl
 \dSf sys.getuser
-\dSf sys.gzcompress
-\dSf sys.gzdecompress
-\dSf sys.gzexpand
-\dSf sys.gztruncate
+\dSf sys.hashsize
 \dSf sys.heapsize
 \dSf sys.host
 \dSf sys.hostmask
 \dSf sys.ilike
-\dSf sys.indexsize
-\dSf sys.initializedictionary
+\dSf sys.imprintsize
 \dSf sys.intersection
 \dSf sys.isaurl
 \dSf sys.isauuid
 \dSf sys.isempty
 \dSf sys.issimple
-\dSf sys.json_filter
-\dSf sys.json_filter_all
-\dSf sys.json_isvalid
-\dSf sys.json_isvalidarray
-\dSf sys.json_isvalidobject
-\dSf sys.json_length
-\dSf sys.json_path
-\dSf sys.json_text
 \dSf sys.length
 \dSf sys.like
 \dSf sys.linefromtext
@@ -156,7 +147,6 @@
 \dSf sys.ms_trunc
 \dSf sys.netmask
 \dSf sys.network
-\dSf sys.newdictionary
 \dSf sys.newurl
 \dSf sys.optimizer_stats
 \dSf sys.optimizers
