@@ -28,14 +28,8 @@ MTSAFE
 lib__rapi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = rapi.c
+	SOURCES = rapi.c rapi.h
 	LIBS = $(libr_LIBS)
-}
-
-headers_h = {
-	DIR = includedir/monetdb
-	HEADERS = h
-	SOURCES = rapi.h 
 }
 
 headers_rapi_mal = {
@@ -57,4 +51,3 @@ headers_autoload = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 50_rapi.mal rapi.mal rapi.R
