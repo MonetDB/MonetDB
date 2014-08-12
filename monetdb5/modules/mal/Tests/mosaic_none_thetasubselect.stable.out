@@ -1,9 +1,9 @@
-stdout of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_none_thetasubselect` in directory 'monetdb5/modules/mal` itself:
 
 
-# 15:21:02 >  
-# 15:21:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35015" "--set" "mapi_usock=/var/tmp/mtest-28755/.s.monetdb.35015" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_rle_subselect.mal"
-# 15:21:02 >  
+# 14:45:59 >  
+# 14:45:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38473" "--set" "mapi_usock=/var/tmp/mtest-10837/.s.monetdb.38473" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_none_thetasubselect.mal"
+# 14:45:59 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,57 +13,46 @@ stdout of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35015/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28755/.s.monetdb.35015
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38473/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10837/.s.monetdb.38473
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
 # Compression of noncompressable column 
     b := bat.new(:oid,:int);
     bat.append(b,50);
-    bat.append(b,50);
-    bat.append(b,9);
-    bat.append(b,9);
+    bat.append(b,19531015);
     bat.append(b,9);
     b := bat.append(b,b);
     io.print(b);
     x := mosaic.compress(b);
-#mosaic.dump(x); 
-    s := algebra.subselect(b,0,50,false,false,false);
+    s := algebra.thetasubselect(b,50,"<");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,false,false,false);
+    xs := mosaic.thetasubselect(x,50,"<");
     io.print(xs);
-    s := algebra.subselect(b,0,50,false,true,false);
+    s := algebra.thetasubselect(b,50,"<=");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,false,true,false);
+    xs := mosaic.thetasubselect(x,50,"<=");
     io.print(xs);
-    s := algebra.subselect(b,0,50,true,false,false);
+    s := algebra.thetasubselect(b,50,">");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,true,false,false);
+    xs := mosaic.thetasubselect(x,50,">");
     io.print(xs);
-    s := algebra.subselect(b,0,50,true,true,false);
+    s := algebra.thetasubselect(b,50,">=");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,true,true,false);
+    xs := mosaic.thetasubselect(x,50,">=");
     io.print(xs);
-    s := algebra.subselect(b,nil:int,50,false,false,false);
+    s := algebra.thetasubselect(b,50,"==");
     io.print(s);
-    xs := mosaic.subselect(x,nil:int,50,false,false,false);
+    xs := mosaic.thetasubselect(x,50,"==");
     io.print(xs);
-    s := algebra.subselect(b,50,nil:int,false,false,false);
+    s := algebra.thetasubselect(b,50,"!=");
     io.print(s);
-    xs := mosaic.subselect(x,50,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,nil:int,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,nil:int,nil:int,false,false,true);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
+    xs := mosaic.thetasubselect(x,50,"!=");
     io.print(xs);
     c := bat.new(:oid,:oid);
     bat.append(c,0@0);
-    bat.append(c,3@0);
+    bat.append(c,2@0);
     io.print(c);
     s := algebra.thetasubselect(b,c,50,"<");
     io.print(s);
@@ -95,266 +84,171 @@ end main;
 # void	int  # type
 #--------------------------#
 [ 0@0,	50  ]
-[ 1@0,	50  ]
+[ 1@0,	19531015  ]
 [ 2@0,	9  ]
-[ 3@0,	9  ]
-[ 4@0,	9  ]
-[ 5@0,	50  ]
-[ 6@0,	50  ]
-[ 7@0,	9  ]
-[ 8@0,	9  ]
-[ 9@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
 #header block version 20140808
 #index top 1
-#[0] 2 84
-#header block version 20140808
-#index top 2
-#[0] 2 84
-#[1] 5 96
-#header block version 20140808
-#index top 3
-#[0] 2 84
-#[1] 5 96
-#[2] 7 108
-#ditch entry 1
-#header block version 20140808
-#index top 3
-#[0] 2 84
-#[1] 7 108
-#[2] 10 120
+#[0] 6 104
 #type 5 todo 0
-#wins 0 14 0 0 0 0 0 
+#wins 7 0 0 0 0 0 0 
 #elms 0 0 0 0 0 0 0 
-#time 0 0 0 0 0 0 0 
+#time 1 0 0 0 0 0 0 
 #perc 0 0 0 0 0 0 0 
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
+[ 1@0,	5@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
 [ 1@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
 [ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
+[ 3@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	4@0  ]
+[ 3@0,	5@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
+[ 1@0,	2@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
+[ 1@0,	2@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
+[ 1@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# t	h  # name
-# void	void  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	void  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
 
-# 15:21:02 >  
-# 15:21:02 >  "Done."
-# 15:21:02 >  
+# 14:45:59 >  
+# 14:45:59 >  "Done."
+# 14:45:59 >  
 

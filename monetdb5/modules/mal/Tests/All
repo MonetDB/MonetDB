@@ -74,6 +74,10 @@ mosaic_mix
 mosaic_none_subselect
 mosaic_rle_subselect
 mosaic_mix_subselect
+
+mosaic_none_thetasubselect
+mosaic_rle_thetasubselect
+mosaic_mix_thetasubselect
 #HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2

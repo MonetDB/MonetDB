@@ -343,6 +343,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 			// close the non-compressed part
 			if( task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
+				task->elms[MOSAIC_NONE] += task->blk->cnt;
 				MOSskip_none(task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
@@ -353,6 +354,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= task->blk->cnt;
+			task->elms[MOSAIC_RLE] += task->blk->cnt;
 			MOSadvance_rle(task);
 			task->blk->tag = MOSAIC_EOL;
 			task->blk->cnt = 0;
@@ -656,26 +658,31 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cid = *(int*) getArgReference(stk,pci, 2);
 		idx = 3;
 	} else idx = 2;
-	low= (void*) getArgReference(stk,pci,idx+1);
-	oper= (char**) getArgReference(stk,pci,idx+2);
+	low= (void*) getArgReference(stk,pci,idx);
+	oper= (char**) getArgReference(stk,pci,idx+1);
 
 	if( !isCompressed(*bid))
 		return ALGthetasubselect1(ret,bid,low, (const char **)oper);
+	
+	b = BATdescriptor(*bid);
+	if( b == NULL)
+		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	// determine the elements in the compressed structure
 	last = b->T->heap.count;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 
 	// accumulator for the oids
 	bn = BATnew(TYPE_void, TYPE_oid, last, TRANSIENT);
 	if( bn == NULL){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
+	BATseqbase(bn,0);
 	task->lb = (oid*) Tloc(bn,BUNfirst(bn));
 
 	MOSinit(task,b);

@@ -331,7 +331,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 
 	switch(task->type){
 	case TYPE_int:
-		{ 	int low,hgh;
+		{ 	int low,hgh,*v;
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -348,17 +348,26 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 				low = *(int*) val;
 			} else
 			if ( strcmp(oper,"!=") == 0){
-				hgh = *(int*) val;
+				low = hgh = *(int*) val;
 				anti++;
 			} else
 			if ( strcmp(oper,"==") == 0){
 				hgh= low= *(int*) val;
 			} 
-			if( ((low == int_nil || *(int*)val >= low) && ( *(int*)val <= hgh || hgh == int_nil)) || anti)
-			for( ; first < last; first++){
-				MOSskipit();
-				*o++ = (oid) first;
-			} 
+			v = (int*) (((char*)task->blk) + MosaicBlkSize);
+			if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
+					if ( !anti) {
+						for( ; first < last; first++){
+							MOSskipit();
+							*o++ = (oid) first;
+						}
+					}
+			} else
+			if( anti)
+				for( ; first < last; first++){
+					MOSskipit();
+					*o++ = (oid) first;
+				}
 		}
 		break;
 	}

@@ -1,9 +1,9 @@
-stderr of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself:
+stderr of test 'mosaic_rle_thetasubselect` in directory 'monetdb5/modules/mal` itself:
 
 
-# 15:21:02 >  
-# 15:21:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35015" "--set" "mapi_usock=/var/tmp/mtest-28755/.s.monetdb.35015" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_rle_subselect.mal"
-# 15:21:02 >  
+# 15:35:05 >  
+# 15:35:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30593" "--set" "mapi_usock=/var/tmp/mtest-29948/.s.monetdb.30593" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_rle_thetasubselect.mal"
+# 15:35:05 >  
 
 # builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,14 +17,14 @@ stderr of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 35015
-# cmdline opt 	mapi_usock = /var/tmp/mtest-28755/.s.monetdb.35015
+# cmdline opt 	mapi_port = 30593
+# cmdline opt 	mapi_usock = /var/tmp/mtest-29948/.s.monetdb.30593
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal
 # cmdline opt 	gdk_debug = 536870922
 
-# 15:21:02 >  
-# 15:21:02 >  "Done."
-# 15:21:02 >  
+# 15:35:05 >  
+# 15:35:05 >  "Done."
+# 15:35:05 >  
 

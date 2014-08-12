@@ -260,7 +260,6 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 	case TYPE_int:
 		{ 	int low,hgh, *v;
 			low= hgh = int_nil;
-			v = (int*) val;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
 				hgh = PREVVALUEint(hgh);
@@ -276,14 +275,21 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 				low = *(int*) val;
 			} else
 			if ( strcmp(oper,"!=") == 0){
-				hgh = *(int*) val;
+				hgh= low= *(int*) val;
 				anti++;
 			} else
 			if ( strcmp(oper,"==") == 0){
 				hgh= low= *(int*) val;
 			} 
+			v = (int*) (((char*)task->blk) + MosaicBlkSize);
 			for( ; first < last; first++, v++){
-				if( ((low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil)) || anti){
+				if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
+					if ( !anti) {
+						MOSskipit();
+						*o++ = (oid) first;
+					}
+				} else
+				if( anti){
 					MOSskipit();
 					*o++ = (oid) first;
 				}

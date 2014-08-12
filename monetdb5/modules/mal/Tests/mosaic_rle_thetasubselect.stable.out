@@ -1,9 +1,9 @@
-stdout of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_rle_thetasubselect` in directory 'monetdb5/modules/mal` itself:
 
 
-# 15:21:02 >  
-# 15:21:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35015" "--set" "mapi_usock=/var/tmp/mtest-28755/.s.monetdb.35015" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_rle_subselect.mal"
-# 15:21:02 >  
+# 15:35:05 >  
+# 15:35:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30593" "--set" "mapi_usock=/var/tmp/mtest-29948/.s.monetdb.30593" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_rle_thetasubselect.mal"
+# 15:35:05 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'mosaic_rle_subselect` in directory 'monetdb5/modules/mal` itself
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35015/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28755/.s.monetdb.35015
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30593/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29948/.s.monetdb.30593
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
@@ -28,38 +28,29 @@ function user.main():void;
     b := bat.append(b,b);
     io.print(b);
     x := mosaic.compress(b);
-#mosaic.dump(x); 
-    s := algebra.subselect(b,0,50,false,false,false);
+    s := algebra.thetasubselect(b,50,"<");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,false,false,false);
+    xs := mosaic.thetasubselect(x,50,"<");
     io.print(xs);
-    s := algebra.subselect(b,0,50,false,true,false);
+    s := algebra.thetasubselect(b,50,"<=");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,false,true,false);
+    xs := mosaic.thetasubselect(x,50,"<=");
     io.print(xs);
-    s := algebra.subselect(b,0,50,true,false,false);
+    s := algebra.thetasubselect(b,50,">");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,true,false,false);
+    xs := mosaic.thetasubselect(x,50,">");
     io.print(xs);
-    s := algebra.subselect(b,0,50,true,true,false);
+    s := algebra.thetasubselect(b,50,">=");
     io.print(s);
-    xs := mosaic.subselect(x,0,50,true,true,false);
+    xs := mosaic.thetasubselect(x,50,">=");
     io.print(xs);
-    s := algebra.subselect(b,nil:int,50,false,false,false);
+    s := algebra.thetasubselect(b,50,"==");
     io.print(s);
-    xs := mosaic.subselect(x,nil:int,50,false,false,false);
+    xs := mosaic.thetasubselect(x,50,"==");
     io.print(xs);
-    s := algebra.subselect(b,50,nil:int,false,false,false);
+    s := algebra.thetasubselect(b,50,"!=");
     io.print(s);
-    xs := mosaic.subselect(x,50,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,nil:int,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,nil:int,nil:int,false,false,true);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
+    xs := mosaic.thetasubselect(x,50,"!=");
     io.print(xs);
     c := bat.new(:oid,:oid);
     bat.append(c,0@0);
@@ -179,6 +170,46 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	5@0  ]
+[ 3@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	5@0  ]
+[ 3@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	5@0  ]
+[ 3@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	5@0  ]
+[ 3@0,	6@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
 [ 0@0,	2@0  ]
 [ 1@0,	3@0  ]
 [ 2@0,	4@0  ]
@@ -195,98 +226,6 @@ end main;
 [ 3@0,	7@0  ]
 [ 4@0,	8@0  ]
 [ 5@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	7@0  ]
-[ 4@0,	8@0  ]
-[ 5@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# t	h  # name
-# void	void  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
-#--------------------------#
-# h	t  # name
-# void	void  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -354,7 +293,7 @@ end main;
 #--------------------------#
 [ 0@0,	3@0  ]
 
-# 15:21:02 >  
-# 15:21:02 >  "Done."
-# 15:21:02 >  
+# 15:35:05 >  
+# 15:35:05 >  "Done."
+# 15:35:05 >  
 
