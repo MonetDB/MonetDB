@@ -62,6 +62,7 @@
 \dSf sys.boundary
 \dSf sys.broadcast
 \dSf sys.buffer
+\dSf sys.chi2prob
 \dSf sys.cluster1
 \dSf sys.cluster2
 \dSf sys.columnsize
