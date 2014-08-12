@@ -797,6 +797,7 @@ begin
 		or nme = 'smallint'
 		or nme = 'int'	
 		or nme = 'bigint'	
+		or nme = 'hugeint'	
 		or nme = 'decimal'	
 		or nme = 'date'
 		or nme = 'timestamp'
