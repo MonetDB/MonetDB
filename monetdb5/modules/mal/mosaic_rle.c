@@ -374,13 +374,28 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 	task->lb =o;
 	return MAL_SUCCEED;
 }
-/*
+
 static str
-MOSleftfetchjoin_rle(Client cntxt,  MOStask task){
+MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
+{
 	(void) cntxt;
-	(void) task;
+
+	switch(task->type){
+		case TYPE_int:
+		{	int *val, *v;
+			v= (int*) task->src;
+			val = (int*) (((char*) task->hdr) + MosaicBlkSize);
+			for(; first < last; first++, val++){
+				MOSskipit();
+				*v++ = *val;
+				task->n--;
+			}
+			task->src = (char*) v;
+		}
+	}
 	return MAL_SUCCEED;
 }
+/*
 static str
 MOSjoin_rle(Client cntxt,  MOStask task){
 	(void) cntxt;

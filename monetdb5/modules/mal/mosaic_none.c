@@ -300,13 +300,28 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 	task->lb =o;
 	return MAL_SUCCEED;
 }
-/*
+
 static str
-MOSleftfetchjoin_none(Client cntxt,  MOStask task){
+MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
+{
 	(void) cntxt;
-	(void) task;
+
+	switch(task->type){
+		case TYPE_int:
+		{	int *val, *v;
+			v= (int*) task->src;
+			val = (int*) (((char*) task->hdr) + MosaicBlkSize);
+			for(; first < last; first++, val++){
+				MOSskipit();
+				*v++ = *val;
+				task->n--;
+			}
+			task->src = (char*) v;
+		}
+	}
 	return MAL_SUCCEED;
 }
+/*
 static str
 MOSjoin_none(Client cntxt,  MOStask task){
 	(void) cntxt;

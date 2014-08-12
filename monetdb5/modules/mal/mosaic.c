@@ -276,12 +276,12 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 
 	if ( b->ttype == TYPE_void){
 		// void columns are already compressed
-		BBPreleaseref(*ret = b->batCacheid);
+		BBPkeepref(*ret = b->batCacheid);
 		return msg;
 	}
 
 	if (b->T->heap.compressed) {
-		BBPreleaseref(b->batCacheid);
+		BBPkeepref(*ret = b->batCacheid);
 		return msg;	// don't compress twice
 	}
 
@@ -343,6 +343,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 			// close the non-compressed part
 			if( task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
+				task->wins[MOSAIC_NONE] ++;
 				task->elms[MOSAIC_NONE] += task->blk->cnt;
 				MOSskip_none(task);
 				// always start with an EOL block
@@ -354,6 +355,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= task->blk->cnt;
+			task->wins[MOSAIC_RLE]++;
 			task->elms[MOSAIC_RLE] += task->blk->cnt;
 			MOSadvance_rle(task);
 			task->blk->tag = MOSAIC_EOL;
@@ -692,7 +694,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (cand == NULL){
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(bn->batCacheid);
-			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
 		task->n = BATcount(cand);
@@ -736,14 +738,11 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-#define MOSleftfetchjoin_(TPE) {\
-}
-
 str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *bid =0, *cid=0, c= 0;
-	BAT *b, *bn = NULL;
-	BUN cnt;
+	int *ret, *lid =0, *rid=0;
+	BAT *bl = NULL, *br = NULL, *bn;
+	BUN cnt, first;
 	oid *ol =0, o = 0;
 	str msg= MAL_SUCCEED;
 	MOStask task;
@@ -752,53 +751,81 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	ret = (int*) getArgReference(stk,pci,0);
-	bid = (int*) getArgReference(stk,pci,1);
-	cid = (int*) getArgReference(stk,pci,2);
+	lid = (int*) getArgReference(stk,pci,1);
+	rid = (int*) getArgReference(stk,pci,2);
 
-	if( !isCompressed(*cid))
-		return ALGleftfetchjoin(ret,bid,cid);
+	if( !isCompressed(*rid))
+		return ALGleftfetchjoin(ret,lid,rid);
 
-	b = BATdescriptor(*bid);
-	if( b == NULL)
+	bl = BATdescriptor(*lid);
+	if( bl == NULL)
 		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
-	cnt = BATcount(b);
-	if ( b->ttype == TYPE_void)
-		o = b->tseqbase;
-	else
-		ol = (oid*) Tloc(b,BUNfirst(b));
+	br = BATdescriptor(*rid);
+	if( br == NULL){
+		BBPreleaseref(*rid);
+		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+	}
+	cnt = BATcount(bl);
+	bn = BATnew(TYPE_void,br->ttype, cnt, TRANSIENT);
+	if ( bn == NULL){
+		BBPreleaseref(*lid);
+		BBPreleaseref(*rid);
+		throw(MAL,"mosaic.leftfetchjoin",MAL_MALLOC_FAIL);
+	}
 
-	(void) cnt;
-	(void) ol;
+	if ( bl->ttype == TYPE_void)
+		o = bl->tseqbase;
+	else
+		ol = (oid*) Tloc(bl,BUNfirst(bl));
+
 	(void) o;
+
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bl->batCacheid);
+		BBPreleaseref(br->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
-	MOSinit(task,b);
-	MOSfindChunk(cntxt,task,0);
+	MOSinit(task,br);
+	task->src = (char*) Tloc(bn,BUNfirst(bn));
 
-	// loop thru all the chunks and collect the results
+	task->cl = ol;
+	task->n = cnt;
+	if( cnt) 
+		first = *ol;
+
+	first = MOSfindChunk(cntxt,task,first);
+
+	// loop thru all the chunks and fetch all results
 	while(task->blk )
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
+			MOSleftfetchjoin_rle(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
 		case MOSAIC_NONE:
-		default:
+			MOSleftfetchjoin_none(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
 			MOSskip_none(task);
 		}
 
 	/* adminstrative wrapup of the leftfetchjoin */
-	BBPreleaseref(*bid);
-	if( bn){
-		BATsetcount(bn,c);
-		bn->hdense = 1;
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		BATderiveProps(bn,0);
-		BBPkeepref(*ret = bn->batCacheid);
-	}
+	BBPreleaseref(*lid);
+	BBPreleaseref(*rid);
+
+	BATsetcount(bn,cnt);
+	bn->hdense = 1;
+	bn->hseqbase = 0;
+	bn->hkey = 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	bn->tsorted = 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tkey = 1;
+	BATderiveProps(bn,0);
+	BBPkeepref(*ret = bn->batCacheid);
+	
 	return msg;
 }
 

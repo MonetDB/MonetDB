@@ -1,0 +1,24 @@
+# Compression of noncompressable column
+
+
+b:= bat.new(:oid,:int);
+bat.append(b,50);
+bat.append(b,19531015);
+bat.append(b,9);
+b:= bat.append(b,b);
+
+io.print(b);
+x:= mosaic.compress(b);
+
+c:= bat.new(:oid,:oid);
+bat.append(c,0@0);
+bat.append(c,2@0);
+bat.append(c,5@0);
+io.print(c);
+
+#mosaic.dump(x);
+s:= algebra.leftfetchjoin(c,b);
+io.print(s);
+xs:= mosaic.leftfetchjoin(c,b);
+io.print(xs);
+
