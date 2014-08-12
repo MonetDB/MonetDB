@@ -39,3 +39,4 @@ mbr_overlap_or_below
 mbr_distance
 covers
 coveredBy
+makeBox2D

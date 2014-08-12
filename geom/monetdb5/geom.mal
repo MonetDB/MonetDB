@@ -278,6 +278,8 @@ comment "Transforms a geometry from one srid to another";
 
 command mbr(:wkb) :mbr address wkbMBR
 comment "Creates the mbr for the given wkb.";
+command MakeBox2D(:wkb,:wkb) :mbr address wkbBox2D
+comment "Creates an mbr from the two 2D points";
 
 command mbrOverlaps(geom1:wkb, geom2:wkb) :bit address mbrOverlaps_wkb
 comment "Returns true if the mbr of geom1 overlaps the mbr of geom2";

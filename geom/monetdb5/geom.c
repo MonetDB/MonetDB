@@ -183,6 +183,7 @@ geom_export str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, 
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
 geom_export str wkbMBR_bat(int* outBAT_id, int* inBAT_id);
+geom_export str wkbBox2D(mbr** box, wkb** point1, wkb** point2);
 
 geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
@@ -3104,7 +3105,55 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 	return MAL_SUCCEED;
 }
 
-/*returns true if the two mbrs overlap */
+str wkbBox2D(mbr** box, wkb** point1, wkb** point2) {
+	GEOSGeom point1_geom, point2_geom;	
+	double xmin=0.0, ymin=0.0, xmax=0.0, ymax=0.0;
+
+	//check null input
+	if(wkb_isnil(*point1) || wkb_isnil(*point2)) {
+		*box=mbr_nil;
+		return MAL_SUCCEED;		
+	}
+	
+	//check input not point geometries
+	point1_geom = wkb2geos(*point1);
+	if((GEOSGeomTypeId(point1_geom)+1) != wkbPoint) {
+		GEOSGeom_destroy(point1_geom);
+		*box = mbr_nil;
+		throw(MAL, "geom.MakeBox2D", "Geometries should be points");
+	}
+
+	point2_geom = wkb2geos(*point2);	
+	if((GEOSGeomTypeId(point2_geom)+1) != wkbPoint) {
+		GEOSGeom_destroy(point1_geom);
+		GEOSGeom_destroy(point2_geom);
+		*box = mbr_nil;
+		throw(MAL, "geom.MakeBox2D", "Geometries should be points");	
+	}
+
+	if(GEOSGeomGetX(point1_geom, &xmin) == -1 ||
+		GEOSGeomGetY(point1_geom, &ymin) == -1 ||
+		GEOSGeomGetX(point2_geom, &xmax) == -1 ||
+		GEOSGeomGetY(point2_geom, &ymax) == -1) {
+		
+		GEOSGeom_destroy(point1_geom);
+		GEOSGeom_destroy(point2_geom);
+		*box = mbr_nil;
+		throw(MAL, "geom.MakeBox2D", "Error in reading the points' coordinates");	
+
+	}
+
+	*box = (mbr*) GDKmalloc(sizeof(mbr));
+	(*box)->xmin = (float) xmin;
+	(*box)->ymin = (float) ymin;
+	(*box)->xmax = (float) xmax;
+	(*box)->ymax = (float) ymax;
+
+	return MAL_SUCCEED;
+} 
+
+/*returns true if the two 
+ * 	mbrs overlap */
 str mbrOverlaps(bit *out, mbr **b1, mbr **b2) {
 	if (mbr_isnil(*b1) || mbr_isnil(*b2))
 		*out = 0;
