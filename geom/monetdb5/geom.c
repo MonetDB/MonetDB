@@ -154,6 +154,7 @@ geom_export str wkbEndPoint(wkb **out, wkb **geom);
 geom_export str wkbNumPoints(int *out, wkb **geom);
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
+geom_export str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xmax, double* ymax, int* srid);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumRings(int*, wkb**, int*);
@@ -1895,6 +1896,42 @@ str wkbBoundary(wkb **boundaryWKB, wkb **geomWKB) {
 
 str wkbEnvelope(wkb **out, wkb **geom) {
 	return wkbBasic(out, geom, GEOSEnvelope, "geom.Envelope");
+}
+
+str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xmax, double* ymax, int* srid) {
+	GEOSGeom geosGeometry, linearRingGeometry;
+ 	
+	//create the coordinates sequence
+	GEOSCoordSeq coordSeq = GEOSCoordSeq_create(5, 2);
+	
+	//set the values
+	GEOSCoordSeq_setX(coordSeq, 0, *xmin);	
+	GEOSCoordSeq_setY(coordSeq, 0, *ymin);
+	GEOSCoordSeq_setX(coordSeq, 1, *xmin);	
+	GEOSCoordSeq_setY(coordSeq, 1, *ymax);
+	GEOSCoordSeq_setX(coordSeq, 2, *xmax);	
+	GEOSCoordSeq_setY(coordSeq, 2, *ymax);
+	GEOSCoordSeq_setX(coordSeq, 3, *xmax);	
+	GEOSCoordSeq_setY(coordSeq, 3, *ymin);
+	GEOSCoordSeq_setX(coordSeq, 4, *xmin);	
+	GEOSCoordSeq_setY(coordSeq, 4, *ymin);
+
+	linearRingGeometry = GEOSGeom_createLinearRing(coordSeq);
+
+	if(linearRingGeometry == NULL) {
+		//Gives segmentation fault GEOSCoordSeq_destroy(coordSeq);
+		throw(MAL, "geom.MakeEnvelope", "Error creating LinearRing from coordinates");
+	}
+	geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
+	if(geosGeometry == NULL) {
+		GEOSGeom_destroy(linearRingGeometry);
+		throw(MAL, "geom.MakeEnvelope", "Error creating Polygon from LinearRing");
+	}
+	GEOSSetSRID(geosGeometry, *srid);
+
+	*out = geos2wkb(geosGeometry);
+
+	return MAL_SUCCEED;
 }
 
 /* Returns the first or last point of a linestring */

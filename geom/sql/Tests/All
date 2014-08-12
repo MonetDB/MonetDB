@@ -40,3 +40,4 @@ mbr_distance
 covers
 coveredBy
 makeBox2D
+makeEnvelope
