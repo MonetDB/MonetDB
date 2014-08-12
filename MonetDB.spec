@@ -40,6 +40,10 @@
 %define with_samtools 1
 %endif
 
+%if %{?_with_rintegration:1}%{!?_with_rintegration:0}
+%define with_rintegration 1
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -84,6 +88,9 @@ BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 %if %{?with_samtools:1}%{!?with_samtools:0}
 BuildRequires: samtools-devel
+%endif
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+BuildRequires: R-core-devel
 %endif
 
 # need to define python_sitelib on RHEL 5 and older
@@ -479,6 +486,34 @@ version of Sequence Alignment/Map) data.
 %{_libdir}/monetdb5/lib_bam.so
 %endif
 
+%if %{?_with_rintegration:1}%{!?_with_rintegration:0}
+%package R
+Summary: MonetDB5 SQL interface to the bam library
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description R
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to use the R language from within
+SQL queries.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files R
+%defattr(-,root,root)
+%{_includedir}/monetdb/rapi*.h
+%{_libdir}/monetdb5/rapi.*
+%{_libdir}/monetdb5/autoload/*_rapi.mal
+%{_libdir}/monetdb5/lib_rapi.so
+%endif
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -528,6 +563,9 @@ fi
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
+%if %{?_with_rintegration:1}%{!?_with_rintegration:0}
+%exclude %{_libdir}/monetdb5/rapi.mal
+%endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
@@ -535,6 +573,9 @@ fi
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+%if %{?_with_rintegration:1}%{!?_with_rintegration:0}
+%exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
+%endif
 # %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
 %exclude %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/autoload/*.mal
@@ -542,6 +583,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?_with_rintegration:1}%{!?_with_rintegration:0}
+%exclude %{_libdir}/monetdb5/lib_rapi.so
+%endif
 %if %{?_with_samtools:1}%{!?_with_samtools:0}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
@@ -783,6 +827,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rdf=no \
+	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \

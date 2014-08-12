@@ -240,6 +240,7 @@ SYSTEM FUNCTION  sys.y
 SYSTEM FUNCTION  sys.zorder_decode_x
 SYSTEM FUNCTION  sys.zorder_decode_y
 SYSTEM FUNCTION  sys.zorder_encode
+CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "tmp";
 CREATE SCHEMA "sys";
 CREATE TABLE "sys"."_columns" (
@@ -685,6 +686,55 @@ returns integer external name udf.fuse;
 -- fuse two (4-byte) integer values into one (8-byte) bigint value
 create function fuse(one integer, two integer)
 returns bigint external name udf.fuse;
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2014 MonetDB B.V.
+-- All Rights Reserved.
+
+-- (c) Author M.Kersten
+
+create function sys.generate_series(first tinyint, last tinyint)
+returns table (value tinyint)
+external name generator.series;
+create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
+returns table (value tinyint)
+external name generator.series;
+create function sys.generate_series(first int, last int)
+returns table (value int)
+external name generator.series;
+create function sys.generate_series(first int, last int, stepsize int)
+returns table (value int)
+external name generator.series;
+create function sys.generate_series(first bigint, last bigint)
+returns table (value bigint)
+external name generator.series;
+create function sys.generate_series(first bigint, last bigint, stepsize bigint)
+returns table (value bigint)
+external name generator.series;
+create function sys.generate_series(first real, last real, stepsize real)
+returns table (value real)
+external name generator.series;
+create function sys.generate_series(first double, last double, stepsize double)
+returns table (value double)
+external name generator.series;
+create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
+returns table (value decimal(10,2))
+external name generator.series;
+create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
+returns table (value timestamp)
+external name generator.series;
 create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
 create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
 -- The srid in the *FromText Functions is currently not used
@@ -715,6 +765,16 @@ create function getroboturl(theurl url) returns string
 	external name url."getRobotURL";
 create function getuser(theurl url) returns string       
 	external name url."getUser";
+create function sys.hashsize(b boolean, i bigint)
+returns bigint
+begin
+	-- assume non-compound keys
+	if  b = true
+	then
+		return 8 * i;
+	end if;
+	return 0;
+end;
 create function sys.heapsize(tpe string, i bigint, w int)
 returns bigint
 begin
@@ -729,6 +789,25 @@ create function "host" (p inet) returns clob
 create function "hostmask" (p inet) returns inet
 	external name inet."hostmask";
 create filter function "ilike"(val string, pat string, esc string) external name algebra.ilikesubselect;
+create function sys.imprintsize(i bigint, nme string)
+returns bigint
+begin
+	if nme = 'boolean'
+		or nme = 'tinyint'
+		or nme = 'smallint'
+		or nme = 'int'	
+		or nme = 'bigint'	
+		or nme = 'hugeint'	
+		or nme = 'decimal'	
+		or nme = 'date'
+		or nme = 'timestamp'
+		or nme = 'real'
+		or nme = 'double'
+	then
+		return cast( i * 0.12 as bigint);
+	end if ;
+	return 0;
+end;
 create function intersection(a geometry, b geometry) returns geometry external name geom."Intersection";
 create function isaurl(theurl url) returns bool
 	external name url."isaURL";
