@@ -3479,7 +3479,6 @@ for comp in \
 	'gdk         ' \
 	'monetdb5    ' \
 	'sql         ' \
-	'jaql        ' \
 	'geom        ' \
 	'gsl         ' \
 	'fits        ' \
