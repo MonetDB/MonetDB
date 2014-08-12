@@ -856,9 +856,9 @@ external name sql.analyze;\n");
 }
 
 static str
-sql_update_default(Client c)
+sql_update_oct2014(Client c)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
@@ -875,13 +875,17 @@ sql_update_default(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id not in (select id from _tables);\n");
 
 	/* add new columns */
-	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'system', 'boolean', 1, 0, (select id from _tables where name = 'schemas'), NULL, true, 4, NULL);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'varres', 'boolean', 1, 0, (select id from _tables where name = 'functions'), NULL, true, 7, NULL);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'vararg', 'boolean', 1, 0, (select id from _tables where name = 'functions'), NULL, true, 8, NULL);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'inout', 'tinyint', 8, 0, (select id from _tables where name = 'args'), NULL, true, 6, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'system', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='schemas'), NULL, true, 4, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'varres', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 7, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'vararg', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 8, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'inout', 'tinyint', 8, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='args'), NULL, true, 6, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into _columns values( (select max(id)+1 from _columns), 'language', 'int', 32, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 9, NULL);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions') and name='sql';\n");
+
 	/* correct column numbers */
-	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='9' where name = 'schema_id' and table_id in (select id from _tables where name = 'functions');\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='7' where name = 'number' and table_id in (select id from _tables where name = 'args');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='9' where name = 'schema_id' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='7' where name = 'number' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='args');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update _columns set number='4' where name = 'language' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions');\n");
 
  	/* remove table return types (#..), ie tt_generated from
 	 * _tables/_columns */
@@ -1011,7 +1015,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 "		I.sorted"
 "		from sys.storagemodelinput I;"
 "	end;\n");
-	pos += snprintf(buf + pos, bufsize - pos, 
+	pos += snprintf(buf + pos, bufsize - pos,
 "create view sys.tablestoragemodel"
 " as select \"schema\",\"table\",max(count) as \"count\","
 "    sum(columnsize) as columnsize,"
@@ -1246,7 +1250,7 @@ SQLinitClient(Client c)
 		 * update */
 		sql_find_subtype(&tp, "clob", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
-			if ((err = sql_update_default(c)) !=NULL) {
+			if ((err = sql_update_oct2014(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
