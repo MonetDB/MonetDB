@@ -1,0 +1,457 @@
+stdout of test 'mosaic_mix_subselect` in directory 'monetdb5/modules/mal` itself:
+
+
+# 07:37:53 >  
+# 07:37:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30570" "--set" "mapi_usock=/var/tmp/mtest-327/.s.monetdb.30570" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_mix_subselect.mal"
+# 07:37:53 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30570/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-327/.s.monetdb.30570
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# OID list compressions 
+    o := 19531025:int;
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
+    bat.append(b,188);
+    bat.append(b,50);
+    bat.append(b,50);
+    bat.append(b,48);
+    bat.append(b,1003);
+    bat.append(b,1002);
+    bat.append(b,1290);
+    bat.append(b,o);
+    bat.append(b,o);
+    bat.append(b,o);
+    bat.append(b,9);
+    bat.append(b,9);
+    bat.append(b,9);
+    io.print(b);
+    x := mosaic.compress(b);
+    mosaic.dump(x);
+    s := algebra.subselect(b,0,50,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,0,50,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,0,50,false,true,false);
+    io.print(s);
+    xs := mosaic.subselect(x,0,50,false,true,false);
+    io.print(xs);
+    s := algebra.subselect(b,0,50,true,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,0,50,true,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,0,50,true,true,false);
+    io.print(s);
+    xs := mosaic.subselect(x,0,50,true,true,false);
+    io.print(xs);
+    s := algebra.subselect(b,nil:int,50,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,nil:int,50,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,50,nil:int,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,50,nil:int,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,nil:int,nil:int,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,nil:int,nil:int,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,nil:int,nil:int,false,false,true);
+    io.print(s);
+    xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
+    io.print(xs);
+# using candidatelists 
+    c := bat.new(:oid,:oid);
+    bat.append(c,2@0);
+    bat.append(c,5@0);
+    io.print(c);
+    s := algebra.subselect(b,c,0,50,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,0,50,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,0,50,false,true,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,0,50,false,true,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,0,50,true,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,0,50,true,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,0,50,true,true,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,0,50,true,true,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,nil:int,50,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,nil:int,50,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,50,nil:int,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,50,nil:int,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,nil:int,nil:int,false,false,false);
+    io.print(s);
+    xs := mosaic.subselect(x,c,nil:int,nil:int,false,false,false);
+    io.print(xs);
+    s := algebra.subselect(b,c,nil:int,nil:int,false,false,true);
+    io.print(s);
+    xs := mosaic.subselect(x,c,nil:int,nil:int,false,false,true);
+    io.print(xs);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	1  ]
+[ 2@0,	2  ]
+[ 3@0,	3  ]
+[ 4@0,	188  ]
+[ 5@0,	50  ]
+[ 6@0,	50  ]
+[ 7@0,	48  ]
+[ 8@0,	1003  ]
+[ 9@0,	1002  ]
+[ 10@0,	1290  ]
+[ 11@0,	19531025  ]
+[ 12@0,	19531025  ]
+[ 13@0,	19531025  ]
+[ 14@0,	9  ]
+[ 15@0,	9  ]
+[ 16@0,	9  ]
+#header block version 20140808
+#index top 1
+#[0] 5 100
+#header block version 20140808
+#index top 2
+#[0] 5 100
+#[1] 7 112
+#header block version 20140808
+#index top 3
+#[0] 5 100
+#[1] 7 112
+#[2] 11 136
+#ditch entry 1
+#header block version 20140808
+#index top 3
+#[0] 5 100
+#[1] 11 136
+#[2] 14 148
+#ditch entry 2
+#header block version 20140808
+#index top 3
+#[0] 5 100
+#[1] 11 136
+#[2] 17 160
+#type 5 todo 0
+#wins 11 11 0 0 0 0 0 
+#elms 0 0 0 0 0 0 0 
+#time 0 0 0 0 0 0 0 
+#perc 0 0 0 0 0 0 0 
+#none 5
+#rle 2 int 50
+#none 4
+#rle 3 int 19531025
+#rle 3 int 9
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	7@0  ]
+[ 4@0,	14@0  ]
+[ 5@0,	15@0  ]
+[ 6@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	7@0  ]
+[ 4@0,	14@0  ]
+[ 5@0,	15@0  ]
+[ 6@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	7@0  ]
+[ 6@0,	14@0  ]
+[ 7@0,	15@0  ]
+[ 8@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	7@0  ]
+[ 6@0,	14@0  ]
+[ 7@0,	15@0  ]
+[ 8@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	7@0  ]
+[ 5@0,	14@0  ]
+[ 6@0,	15@0  ]
+[ 7@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	7@0  ]
+[ 5@0,	14@0  ]
+[ 6@0,	15@0  ]
+[ 7@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	14@0  ]
+[ 8@0,	15@0  ]
+[ 9@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	14@0  ]
+[ 8@0,	15@0  ]
+[ 9@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	7@0  ]
+[ 5@0,	14@0  ]
+[ 6@0,	15@0  ]
+[ 7@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	7@0  ]
+[ 5@0,	14@0  ]
+[ 6@0,	15@0  ]
+[ 7@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	8@0  ]
+[ 2@0,	9@0  ]
+[ 3@0,	10@0  ]
+[ 4@0,	11@0  ]
+[ 5@0,	12@0  ]
+[ 6@0,	13@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	4@0  ]
+[ 1@0,	8@0  ]
+[ 2@0,	9@0  ]
+[ 3@0,	10@0  ]
+[ 4@0,	11@0  ]
+[ 5@0,	12@0  ]
+[ 6@0,	13@0  ]
+#--------------------------#
+# t	h  # name
+# void	void  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	4@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	6@0  ]
+[ 7@0,	7@0  ]
+[ 8@0,	8@0  ]
+[ 9@0,	9@0  ]
+[ 10@0,	10@0  ]
+[ 11@0,	11@0  ]
+[ 12@0,	12@0  ]
+[ 13@0,	13@0  ]
+[ 14@0,	14@0  ]
+[ 15@0,	15@0  ]
+[ 16@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	4@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	6@0  ]
+[ 7@0,	7@0  ]
+[ 8@0,	8@0  ]
+[ 9@0,	9@0  ]
+[ 10@0,	10@0  ]
+[ 11@0,	11@0  ]
+[ 12@0,	12@0  ]
+[ 13@0,	13@0  ]
+[ 14@0,	14@0  ]
+[ 15@0,	15@0  ]
+[ 16@0,	16@0  ]
+#--------------------------#
+# h	t  # name
+# void	void  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	void  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+
+# 07:37:53 >  
+# 07:37:53 >  "Done."
+# 07:37:53 >  
+

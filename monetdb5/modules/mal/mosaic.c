@@ -61,7 +61,7 @@ typedef struct MOSAICHEADER{
 	int version;
 	int top;
 	oid index[MOSAICINDEX];
-	lng offset[MOSAICINDEX];
+	BUN offset[MOSAICINDEX];
 } * MosaicHdr;
 
 typedef struct MOSAICBLOCK{
@@ -87,12 +87,12 @@ typedef struct MOSTASK{
 
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
-	oid offset;		// seqbase offset
 	lng	n;			// element count in candidate list
 
 	// collect compression statistics for the particular task
 	lng time[MOSAIC_METHODS];
 	lng wins[MOSAIC_METHODS];	
+	lng elms[MOSAIC_METHODS];	
 	int perc[MOSAIC_METHODS]; // compression size for the last batch 0..100 percent
 } *MOStask;
 
@@ -158,6 +158,9 @@ MOSdumpTask(Client cntxt,MOStask task)
 	mnstr_printf(cntxt->fdout,"#wins ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout,LLFMT " ",task->wins[i]);
+	mnstr_printf(cntxt->fdout,"\n#elms ");
+	for(i=0; i< MOSAIC_METHODS; i++)
+		mnstr_printf(cntxt->fdout,LLFMT " ",task->elms[i]);
 	mnstr_printf(cntxt->fdout,"\n#time ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout, LLFMT" ",task->time[i]);
@@ -598,15 +601,12 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
 		task->n = BATcount(cand);
-		task->offset = cand->tseqbase;
-		first = *(oid*) task->src;
-	} else 
-		first = 0;
+	} 
 
 	// loop thru all the chunks and collect the partial results
 	if ( task->cl && task->n && *task->cl > (oid) first)
 		first = (BUN)  *task->cl;
-	MOSfindChunk(cntxt,task,first);
+	first = MOSfindChunk(cntxt,task,first);
 	while(task->blk && first < last ){
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
@@ -642,7 +642,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, cid =0,  *ret, *bid;
 	BAT *b = 0, *cand = 0, *bn = NULL;
-	lng first,last, cnt=0;
+	lng first = 0,last = 0, cnt=0;
 	str msg= MAL_SUCCEED;
 	char **oper;
 	void *low;
@@ -688,16 +688,13 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
-		task->offset = cand->tseqbase;
 		task->n = BATcount(cand);
-		first = *(oid*) task->src;
-	} else 
-		first = 0;
+	} 
 
 	// loop thru all the chunks and collect the partial results
 	if ( task->cl && task->n && *task->cl > (oid) first)
 		first = (BUN)  *task->cl;
-	MOSfindChunk(cntxt,task,first);
+	first = MOSfindChunk(cntxt,task,first);
 
 	while(task->blk && first < last ){
 		switch(task->blk->tag){

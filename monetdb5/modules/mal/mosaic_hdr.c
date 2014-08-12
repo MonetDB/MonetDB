@@ -31,7 +31,7 @@ MOSdumpHeader(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"#header block version %d\n", hdr->version);
 	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
 	for(i= 0; i< hdr->top; i++)
-		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " LLFMT "\n",i, hdr->index[i], hdr->offset[i]);
+		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->index[i], hdr->offset[i]);
 }
 
 // add the chunk to the index to facilitate 'fast' OID-based access
@@ -39,11 +39,12 @@ static void
 MOSupdateHeader(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	lng minsize = -1;
+	BUN minsize;
 	int i, j;
 
 	(void) cntxt;
     task->wins[task->blk->tag]++;
+    task->wins[task->blk->tag] += task->blk->cnt;
 	if( hdr->top < MOSAICINDEX-1 ){
 		if( hdr->top == 0)
 			hdr->index[hdr->top] = task->blk->cnt;
@@ -82,7 +83,7 @@ MOSinitHeader(MOStask task)
 
 // determine the index of the chunk that contains 
 // the value of a specific oid, update the task
-static void
+static BUN
 MOSfindChunk(Client cntxt, MOStask task, oid o)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
@@ -94,4 +95,5 @@ MOSfindChunk(Client cntxt, MOStask task, oid o)
 		if ( hdr->index[i+1] > o)
 			break;
 	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + (i ? hdr->offset[i]:0));
+	return i?hdr->index[hdr->top-1] :0;
 }

@@ -136,13 +136,14 @@ MOSdecompress_none( MOStask task)
 // skip until you hit a candidate
 #define MOSskipit()\
 if ( task->cl && task->n){\
-	if ( *task->cl < first + task->offset )\
+	while( *task->cl < (oid) first)\
+		{task->cl++; task->n--;}\
+	if ( *task->cl > (oid) first  || task->n ==0)\
 		continue;\
-	if ( *task->cl == first + task->offset ){\
-		task->cl++;\
-		task->n--;\
+	if ( *task->cl == (oid) first ){\
+		task->cl++; task->n--;\
 	}\
-}
+} else if (task->cl) continue;
 
 #define MOSselect_none(TPE)/* TBD */
 
@@ -177,7 +178,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) low == int_nil ){
@@ -185,7 +186,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					MOSskipit();
 					cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
 					if (cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -193,7 +194,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					MOSskipit();
 					cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 					if (cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			} else{
 				for( ; first < last; first++, val++){
@@ -201,7 +202,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
 							((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 					if (cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			}
 		} else {
@@ -213,7 +214,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					MOSskipit();
 					cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
 					if ( !cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -221,7 +222,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					MOSskipit();
 					cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 					if ( !cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			} else{
 				for( ; first < last; first++, val++){
@@ -229,7 +230,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 					cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
 							((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 					if ( !cmp )
-						*o++ = (oid) first + task->offset;
+						*o++ = (oid) first;
 				}
 			}
 		}
@@ -284,7 +285,7 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 			for( ; first < last; first++, v++){
 				if( ((low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil)) || anti){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			}
 		} 

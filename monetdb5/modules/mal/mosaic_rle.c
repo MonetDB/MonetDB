@@ -251,7 +251,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) low == int_nil ){
@@ -259,7 +259,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -267,7 +267,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else{
 				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
@@ -275,7 +275,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if (cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			}
 		} else {
@@ -287,7 +287,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if ( !cmp )
 				for( ; first < last; first++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
@@ -295,7 +295,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if ( !cmp )
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			} else{
 				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
@@ -303,7 +303,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				if (!cmp)
 				for( ; first < last; first++, val++){
 					MOSskipit();
-					*o++ = (oid) first + task->offset;
+					*o++ = (oid) first;
 				}
 			}
 		}
@@ -357,7 +357,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 			if( ((low == int_nil || *(int*)val >= low) && ( *(int*)val <= hgh || hgh == int_nil)) || anti)
 			for( ; first < last; first++){
 				MOSskipit();
-				*o++ = (oid) first + task->offset;
+				*o++ = (oid) first;
 			} 
 		}
 		break;
