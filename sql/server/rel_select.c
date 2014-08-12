@@ -5502,8 +5502,12 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				return NULL;
 			}
 			rel = rel_compare_exp(sql, rel, ls, rs, "=", NULL, TRUE);
-			cond = rel_unop_(sql, ls, NULL, "isnull", card_value);
-			ls = rel_nop_(sql, cond, rs, ls, NULL, NULL, "ifthenelse", card_value);
+			if (op != op_join) {
+				cond = rel_unop_(sql, ls, NULL, "isnull", card_value);
+				if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)
+					return NULL;
+				ls = rel_nop_(sql, cond, rs, ls, NULL, NULL, "ifthenelse", card_value);
+			}
 			exp_setname(sql->sa, ls, rnme, nm);
 			append(outexps, ls);
 			if (!rel) 
