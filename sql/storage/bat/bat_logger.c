@@ -155,7 +155,7 @@ bl_postversion( void *lg)
 			BUNappend(b2, &v, TRUE);
 
 			/* this should be value of functions_sql + 1*/
-			type = *(int*) BUNtloc(bi,p) + 1;
+			type = *(bit*) BUNtloc(bi,p) + 1;
 			BUNappend(b3, &type, TRUE);
 
 		}
