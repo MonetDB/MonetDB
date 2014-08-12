@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_nocfitsio` in directory 'clients` itself:
+stdout of test 'MAL-signatures_fits_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -38619,6 +38619,30 @@ comment Retrieve the names for all active factories.
 pattern factories.shutdown(m:str,f:str):void 
 address FCTshutdown;
 comment Close a factory.
+
+pattern fits.attach(fname:str):void 
+address FITSattach;
+comment Open a FITS file and return catalog of the table HDUs
+
+pattern fits.export(tablename:str):void 
+address FITSexportTable;
+comment Export a table to a FITS file
+
+command fits.fitstest(filename:str):int 
+address FITStest;
+comment Returns the type of first extension in the FITS file filename
+
+pattern fits.load(tablename:str):void 
+address FITSloadTable;
+comment Load a FITS table from an attached file
+
+pattern fits.listdirpattern(dirname:str,pattern:str):void 
+address FITSdirpat;
+comment Attach all FITS file in the directory, giving a pattern
+
+pattern fits.listdir(dirname:str):void 
+address FITSdir;
+comment Attach all FITS files in the directory
 
 pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;

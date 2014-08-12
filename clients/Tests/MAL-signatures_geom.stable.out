@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_R` in directory 'clients` itself:
+stdout of test 'MAL-signatures_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -2729,62 +2729,6 @@ command alarm.usec{unsafe}():lng
 address ALARMusec;
 comment return cpu microseconds info
 
-command batbam.bam_flag(flags:bat[:oid,:sht],name:str):bat[:oid,:bit] 
-address bam_flag_bat;
-comment Get bat of bam flags by name.
-
-command batbam.reverse_qual(seqs:bat[:oid,:str]):bat[:oid,:str] 
-address reverse_qual_bat;
-comment Reverse a bat of DNA Quality strings.
-
-command batbam.reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str] 
-address reverse_seq_bat;
-comment Reverse a bat of DNA sequences.
-
-command batbam.seq_length(cigars:bat[:oid,:str]):bat[:oid,:int] 
-address seq_length_bat;
-comment Calculate the real length of a bat of DNA sequences, given their CIGAR string.
-
-pattern bam.bam_export(output_path:str):void 
-address bam_export;
-comment Export results in the bam.export table to a BAM file
-
-command bam.bam_flag(flag:sht,name:str):bit 
-address bam_flag;
-comment Get bam flag by name.
-
-pattern bam.bam_drop_file(file_id:lng,dbschema:sht):void 
-address bam_drop_file;
-comment Drop alignment tables and header data for the bam file with the given file_id
-
-pattern bam.bam_loader_file(bam_file:str,dbschema:sht):void 
-address bam_loader_file;
-comment Read bam_file and store it in the given dbschema
-
-pattern bam.bam_loader_files(bam_files:str,dbschema:sht,nr_threads:sht):void 
-address bam_loader_files;
-comment Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema
-
-pattern bam.bam_loader_repos(bam_repos:str,dbschema:sht,nr_threads:sht):void 
-address bam_loader_repos;
-comment Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema
-
-command bam.reverse_qual(qual:str):str 
-address reverse_qual;
-comment Reverse a DNA Quality string.
-
-command bam.reverse_seq(seq:str):str 
-address reverse_seq;
-comment Reverse a DNA sequence.
-
-pattern bam.sam_export(output_path:str):void 
-address sam_export;
-comment Export results in the bam.export table to a SAM file
-
-command bam.seq_length(cigar:str):int 
-address seq_length_bat;
-comment Calculate the real length of a DNA sequence, given its CIGAR string.
-
 command batudf.fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng] 
 address UDFBATfuse;
 comment fuse two (4-byte) int values into one (8-byte) lng value
@@ -2800,30 +2744,6 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLbat_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLcst_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
-address GSLbat_chisqProb_cst;
-comment Chi Squared probability
-
-pattern batrapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalAggr;
-comment grouped aggregates through R
-
-pattern batrapi.eval(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalStd;
-comment Execute a simple R script value
-
-pattern batrapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalAggr;
-comment Execute a simple R script value
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -38700,30 +38620,6 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
-pattern fits.attach(fname:str):void 
-address FITSattach;
-comment Open a FITS file and return catalog of the table HDUs
-
-pattern fits.export(tablename:str):void 
-address FITSexportTable;
-comment Export a table to a FITS file
-
-command fits.fitstest(filename:str):int 
-address FITStest;
-comment Returns the type of first extension in the FITS file filename
-
-pattern fits.load(tablename:str):void 
-address FITSloadTable;
-comment Load a FITS table from an attached file
-
-pattern fits.listdirpattern(dirname:str,pattern:str):void 
-address FITSdirpat;
-comment Attach all FITS file in the directory, giving a pattern
-
-pattern fits.listdir(dirname:str):void 
-address FITSdir;
-comment Attach all FITS files in the directory
-
 pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
 comment Overloaded join operation
@@ -39032,10 +38928,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-command gsl.chi2prob(d:dbl,i:dbl):dbl 
-address GSLchisqProb;
-comment Chi Squared probability
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -41078,24 +40970,6 @@ comment Turn on the query logger
 command querylog.isset():int 
 address QLOGissetFcn;
 comment Return status of query logger
-
-pattern rapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalAggr;
-comment grouped aggregates through R
-
-pattern rapi.eval(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalStd;
-comment Execute a simple R script value
-
-pattern rapi.eval(fptr:ptr,expr:str):any 
-address RAPIevalStd;
-comment Execute a simple R script returning a single value
-
-command rapi.prelude():void 
-address RAPIprelude;
-pattern rapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
-address RAPIevalAggr;
-comment grouped aggregates through R
 
 function remote.bind_idxbat{inline}(dbconn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
 function remote.bind{inline}(dbconn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
