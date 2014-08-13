@@ -81,8 +81,9 @@ mosaic_none_thetasubselect
 mosaic_rle_thetasubselect
 mosaic_mix_thetasubselect
 
-mosaic_none_fetchjoin
-mosaic_rle_fetchjoin
+mosaic_none_joins
+mosaic_rle_joins
+mosaic_mix_joins
 
 #HAVE_RAPTOR?rdf
 

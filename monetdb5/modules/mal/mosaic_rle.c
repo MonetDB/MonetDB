@@ -395,11 +395,25 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 	}
 	return MAL_SUCCEED;
 }
-/*
 static str
-MOSjoin_rle(Client cntxt,  MOStask task){
+MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
+{
+	BUN n;
+	oid o, oo;
 	(void) cntxt;
-	(void) task;
+
+	switch(task->type){
+		case TYPE_int:
+		{	int *v, *w;
+			v = (int*) (((char*) task->blk) + MosaicBlkSize);
+			w = (int*) task->src;
+			for(n = task->elm, o = 0; n -- > 0; w++,o++)
+			if ( *w == *v)
+				for(oo= (oid) first; oo < (oid) last; v++, oo++){
+					BUNappend(task->lbat, &oo, FALSE);
+					BUNappend(task->rbat, &o, FALSE);
+				}
+		}
+	}
 	return MAL_SUCCEED;
 }
-*/

@@ -89,6 +89,8 @@ typedef struct MOSTASK{
 	oid *cl;		// candidate admin
 	lng	n;			// element count in candidate list
 
+	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
+
 	// collect compression statistics for the particular task
 	lng time[MOSAIC_METHODS];
 	lng wins[MOSAIC_METHODS];	
@@ -509,6 +511,8 @@ isCompressed(int bid)
 {
 	BAT *b;
 	int r=0;
+	if( bid == 0)
+		return 0;
 	b = BATdescriptor(bid);
 	r = b->T->heap.compressed;
 	BBPreleaseref(bid);
@@ -605,7 +609,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
 		task->n = BATcount(cand);
-	} 
+	}
 
 	// loop thru all the chunks and collect the partial results
 	if ( task->cl && task->n && *task->cl > (oid) first)
@@ -698,7 +702,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
 		task->n = BATcount(cand);
-	} 
+	}
 
 	// loop thru all the chunks and collect the partial results
 	if ( task->cl && task->n && *task->cl > (oid) first)
@@ -791,7 +795,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task->cl = ol;
 	task->n = cnt;
-	if( cnt) 
+	if( cnt)
 		first = *ol;
 
 	first = MOSfindChunk(cntxt,task,first);
@@ -808,6 +812,9 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSleftfetchjoin_none(cntxt, task, first, first + task->blk->cnt);
 			first += task->blk->cnt;
 			MOSskip_none(task);
+			break;
+		default:
+			assert(0);
 		}
 
 	/* adminstrative wrapup of the leftfetchjoin */
@@ -825,108 +832,103 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = 1;
 	BATderiveProps(bn,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	
 	return msg;
 }
 
-/* The operands of a join operation can either be defined on a generator */
-#define MOSjoin_(TPE, ABS) {\
-	}
 
-str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret,*bid,*cid;
-	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
-	BUN cnt,c =0;
-	oid o, *ol, *or;
-	int incr=0;
-	InstrPtr p = NULL, q = NULL;
+	int *ret,*lid,*rid;
+	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
+	BUN cnt = 0, first;
+	int swapped = 0;
 	str msg = MAL_SUCCEED;
 	MOStask task;
 
-	ret = (int*) getArgReference(stk,pci,0);
-	bid = (int*) getArgReference(stk,pci,1);
-	cid = (int*) getArgReference(stk,pci,2);
-
-	if( !isCompressed(*bid) && !isCompressed(*cid))
-		return ALGjoin(ret,bid,cid);
 	(void) cntxt;
 	(void) mb;
-	// we assume at most one of the arguments to refer to the generator
-		bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
-		if( bl == NULL)
-			throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
-		br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
-		if( br == NULL){
-			BBPreleaseref(bl->batCacheid);
-			throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
-		}
+	ret = (int*) getArgReference(stk,pci,0);
+	lid = (int*) getArgReference(stk,pci,2);
+	rid = (int*) getArgReference(stk,pci,3);
 
-	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first
-	// or implement more knowledge, postponed
-	assert(!( p && q));
-	assert(p || q);
+	if( !isCompressed(*lid) && !isCompressed(*rid))
+		return ALGjoin(ret,lid,rid);
 
-	// switch roles to have a single target bat[:oid,:any] designated
-	// by b and reference instruction p for the generator
-	b = q? bl : br;
-	p = q? q : p;
-	cnt = BATcount(b);
-	o= b->hseqbase;
-	
+	bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
+	if( bl == NULL)
+		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
+	br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
+	if( br == NULL){
+		BBPreleaseref(bl->batCacheid);
+		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
+	}
+
+	// we assume on compressed argument
+	if (bl->T->heap.compressed && br->T->heap.compressed ){
+		BBPreleaseref(bl->batCacheid);
+		BBPreleaseref(br->batCacheid);
+		throw(MAL,"mosaic.join","Join over generator pairs not supported");
+    }
+
+	// result set preparation
 	bln = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
-	if( bln == NULL || brn == NULL){
-		if(bln) BBPreleaseref(bln->batCacheid);
-		if(brn) BBPreleaseref(brn->batCacheid);
-		if(bl) BBPreleaseref(bl->batCacheid);
-		if(br) BBPreleaseref(br->batCacheid);
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( bln == NULL || brn == NULL || task == NULL){
+		if( bln) BBPreleaseref(bln->batCacheid);
+		if( brn) BBPreleaseref(brn->batCacheid);
+		BBPreleaseref(bl->batCacheid);
+		BBPreleaseref(br->batCacheid);
 		throw(MAL,"mosaic.join",MAL_MALLOC_FAIL);
 	}
-	ol = (oid*) Tloc(bln,BUNfirst(bln));
-	or = (oid*) Tloc(brn,BUNfirst(brn));
 
-	(void) o;
-	(void)ol;
-	(void)or;
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL){
-		if(bln) BBPreleaseref(bln->batCacheid);
-		if(brn) BBPreleaseref(brn->batCacheid);
-		if(bl) BBPreleaseref(bl->batCacheid);
-		if(br) BBPreleaseref(br->batCacheid);
-		BBPreleaseref(b->batCacheid);
+	if ( bl->T->heap.compressed){
+		MOSinit(task,bl);
+		task->elm = BATcount(br);
+		task->src= Tloc(br,BUNfirst(br));
+	} else {
+		MOSinit(task,br);
+		task->elm = BATcount(bl);
+		task->src= Tloc(bl,BUNfirst(bl));
+		swapped=1;
 	}
-	MOSinit(task,b);
-	MOSfindChunk(cntxt,task,0);
+	task->lbat = bln;
+	task->rbat = brn;
+	first = MOSfindChunk(cntxt,task,0);
+	(void)first;
 
 	// loop thru all the chunks and collect the results
 	while(task->blk )
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
+			MOSjoin_rle(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
 		case MOSAIC_NONE:
-		default:
+			MOSjoin_none(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
 			MOSskip_none(task);
+			break;
+		default:
+			assert(0);
 		}
 
-    BATsetcount(bln,c);
     bln->hdense = 1;
     bln->hseqbase = 0;
     bln->hkey = 1;
-    bln->tsorted = incr || c <= 1;              \
-    bln->trevsorted = !incr || c <= 1;          \
+    bln->tsorted = cnt <= 1;
+    bln->trevsorted = cnt <= 1;
     BATderiveProps(bln,0);
 
-    BATsetcount(brn,c);
     brn->hdense = 1;
     brn->hseqbase = 0;
     brn->hkey = 1;
-    brn->tsorted = incr || c <= 1;              \
-    brn->trevsorted = !incr || c <= 1;          \
+    brn->tsorted = cnt<= 1;
+    brn->trevsorted = cnt <= 1;
     BATderiveProps(brn,0);
-    if( q){
+    if( swapped){
         BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
         BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
     } else {

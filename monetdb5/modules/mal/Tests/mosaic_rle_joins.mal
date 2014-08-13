@@ -19,6 +19,19 @@ io.print(c);
 #mosaic.dump(x);
 s:= algebra.leftfetchjoin(c,b);
 io.print(s);
-xs:= mosaic.leftfetchjoin(c,b);
+xs:= mosaic.leftfetchjoin(c,x);
 io.print(xs);
 
+d:= bat.new(:oid,:int);
+bat.append(d,9);
+bat.append(d,11);
+
+(jl,jr):= algebra.join(b,d);
+io.print(jl,jr);
+(ml,mr):= mosaic.join(x,d);
+io.print(ml,mr);
+
+(jl,jr):= algebra.join(d,b);
+io.print(jl,jr);
+(ml,mr):= mosaic.join(d,x);
+io.print(ml,mr);

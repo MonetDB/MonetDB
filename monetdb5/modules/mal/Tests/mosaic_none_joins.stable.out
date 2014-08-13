@@ -1,4 +1,4 @@
-stdout of test 'mosaic_none_fetchjoin` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_none_joins` in directory 'monetdb5/modules/mal` itself:
 
 
 # 20:46:33 >  
@@ -36,6 +36,17 @@ function user.main():void;
     io.print(s);
     xs := mosaic.leftfetchjoin(c,b);
     io.print(xs);
+    d := bat.new(:oid,:int);
+    bat.append(d,9);
+    bat.append(d,11);
+    (jl,jr) := algebra.join(b,d);
+    io.print(jl,jr);
+    (ml,mr) := mosaic.join(x,d);
+    io.print(ml,mr);
+    (jl,jr) := algebra.join(d,b);
+    io.print(jl,jr);
+    (ml,mr) := mosaic.join(d,x);
+    io.print(ml,mr);
 end main;
 #--------------------------#
 # h	t  # name
@@ -76,6 +87,30 @@ end main;
 [ 0@0,	50  ]
 [ 1@0,	9  ]
 [ 2@0,	9  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	2@0,	0@0  ]
+[ 1@0,	5@0,	0@0  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	2@0,	0@0  ]
+[ 1@0,	5@0,	0@0  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	2@0  ]
+[ 1@0,	0@0,	5@0  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	2@0  ]
+[ 1@0,	0@0,	5@0  ]
 
 # 20:46:33 >  
 # 20:46:33 >  "Done."
