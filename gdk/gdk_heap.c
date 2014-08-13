@@ -268,6 +268,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 					HEAPfree(&bak);
 					return 0;
 				}
+				/* coverity[assigned_pointer] */
 				failure = "h->storage == STORE_MEM && can_map && !h->base";
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
