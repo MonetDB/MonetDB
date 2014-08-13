@@ -79,8 +79,14 @@ json_export str JSONjson2number(dbl *ret, json *arg);
 json_export str JSONjson2integer(lng *ret, json *arg);
 
 json_export str JSONfilter( json *ret, json *js, str *expr);
-json_export str JSONfilterArray(json *ret, json *j, int *index);
-json_export str JSONfilterArrayDefault(json *ret, json *j, int *index, str *other);
+json_export str JSONfilterArray_bte(json *ret, json *j, bte *index);
+json_export str JSONfilterArrayDefault_bte(json *ret, json *j, bte *index, str *other);
+json_export str JSONfilterArray_sht(json *ret, json *j, sht *index);
+json_export str JSONfilterArrayDefault_sht(json *ret, json *j, sht *index, str *other);
+json_export str JSONfilterArray_int(json *ret, json *j, int *index);
+json_export str JSONfilterArrayDefault_int(json *ret, json *j, int *index, str *other);
+json_export str JSONfilterArray_lng(json *ret, json *j, lng *index);
+json_export str JSONfilterArrayDefault_lng(json *ret, json *j, lng *index, str *other);
 
 json_export str JSONisvalid(bit *ret, json *j);
 json_export str JSONisobject(bit *ret, json *j);

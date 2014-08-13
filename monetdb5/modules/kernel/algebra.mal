@@ -589,22 +589,22 @@ pattern project(b:bat[:any_2,:any_1],v:any_3) :bat[:any_2,:any_3]
 address ALGprojecttail
 comment "Fill the tail with a constant, e.g. [0~b]";
 
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 

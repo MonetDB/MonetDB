@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures` in directory 'clients` itself:
+stdout of test 'MAL-signatures_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -49556,30 +49556,6 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
-pattern fits.attach(fname:str):void 
-address FITSattach;
-comment Open a FITS file and return catalog of the table HDUs
-
-pattern fits.export(tablename:str):void 
-address FITSexportTable;
-comment Export a table to a FITS file
-
-command fits.fitstest(filename:str):int 
-address FITStest;
-comment Returns the type of first extension in the FITS file filename
-
-pattern fits.load(tablename:str):void 
-address FITSloadTable;
-comment Load a FITS table from an attached file
-
-pattern fits.listdirpattern(dirname:str,pattern:str):void 
-address FITSdirpat;
-comment Attach all FITS file in the directory, giving a pattern
-
-pattern fits.listdir(dirname:str):void 
-address FITSdir;
-comment Attach all FITS files in the directory
-
 pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
 comment Overloaded join operation
@@ -50211,23 +50187,23 @@ address JSONfold;
 comment Combine the key-value pairs into a single json object list.
 
 command json.filter(name:json,idx:lng,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_lng;
 comment Extract a single array element
 
 command json.filter(name:json,idx:lng):json 
-address JSONfilterArray;
+address JSONfilterArray_lng;
 command json.filter(name:json,idx:int,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_int;
 command json.filter(name:json,idx:int):json 
-address JSONfilterArray;
+address JSONfilterArray_int;
 command json.filter(name:json,idx:sht,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_sht;
 command json.filter(name:json,idx:sht):json 
-address JSONfilterArray;
+address JSONfilterArray_sht;
 command json.filter(name:json,idx:bte,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_bte;
 command json.filter(name:json,idx:bte):json 
-address JSONfilterArray;
+address JSONfilterArray_bte;
 command json.filter(name:json,pathexpr:str):json 
 address JSONfilter;
 comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.

@@ -98,7 +98,7 @@ end qry1;
 function user.main():void;
 #TPCH query 1 
 # the basis for further optimizer tests 
-#don;t depend on SQL library 
+#don't depend on SQL library 
     mdb.List("user","qry1");
 end main;
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;#  0 qry1:bit := user.qry1(A0:sht, A1:sht, A2:sht, A3:date, A4:int) {G}

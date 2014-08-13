@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_nocfitsio` in directory 'clients` itself:
+stdout of test 'MAL-signatures_fits_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -2302,27 +2302,27 @@ command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B
 
@@ -38620,6 +38620,30 @@ pattern factories.shutdown(m:str,f:str):void
 address FCTshutdown;
 comment Close a factory.
 
+pattern fits.attach(fname:str):void 
+address FITSattach;
+comment Open a FITS file and return catalog of the table HDUs
+
+pattern fits.export(tablename:str):void 
+address FITSexportTable;
+comment Export a table to a FITS file
+
+command fits.fitstest(filename:str):int 
+address FITStest;
+comment Returns the type of first extension in the FITS file filename
+
+pattern fits.load(tablename:str):void 
+address FITSloadTable;
+comment Load a FITS table from an attached file
+
+pattern fits.listdirpattern(dirname:str,pattern:str):void 
+address FITSdirpat;
+comment Attach all FITS file in the directory, giving a pattern
+
+pattern fits.listdir(dirname:str):void 
+address FITSdir;
+comment Attach all FITS files in the directory
+
 pattern generator.join(b:bat[:oid,:dbl],gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
 comment Overloaded join operation
@@ -39245,23 +39269,23 @@ address JSONfold;
 comment Combine the key-value pairs into a single json object list.
 
 command json.filter(name:json,idx:lng,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_lng;
 comment Extract a single array element
 
 command json.filter(name:json,idx:lng):json 
-address JSONfilterArray;
+address JSONfilterArray_lng;
 command json.filter(name:json,idx:int,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_int;
 command json.filter(name:json,idx:int):json 
-address JSONfilterArray;
+address JSONfilterArray_int;
 command json.filter(name:json,idx:sht,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_sht;
 command json.filter(name:json,idx:sht):json 
-address JSONfilterArray;
+address JSONfilterArray_sht;
 command json.filter(name:json,idx:bte,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_bte;
 command json.filter(name:json,idx:bte):json 
-address JSONfilterArray;
+address JSONfilterArray_bte;
 command json.filter(name:json,pathexpr:str):json 
 address JSONfilter;
 comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.

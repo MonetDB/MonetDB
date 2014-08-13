@@ -89,7 +89,7 @@ start_sql_server(void *arg)
 						     "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");
 		}
 		Monet_init(&embedded_set, embedded_len);
-		/* you don;t need the commandline arguments anymore */
+		/* you don't need the commandline arguments anymore */
 		mo_free_options(embedded_set, embedded_len);
 		if (mal_init())
 			return 0;
