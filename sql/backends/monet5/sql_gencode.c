@@ -1018,9 +1018,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				c = k;
 			}
 			if (s->flag&1) {
-				int topn = 0, flag = s->flag, grps = flag & 2;
-
-				flag >>= 2;
+				int topn = 0, flag = s->flag;
+				int last = (flag & 2);
+				int dir = (flag & 4);
+				int distinct = (flag & 8);
 
 				q = newStmt1(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
@@ -1030,7 +1031,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				topn = getDestVar(q);
 
 				q = newStmt(mb, algebraRef, firstnRef);
-				if (grps) /* we need the groups for the next firstn */
+				if (!last) /* we need the groups for the next firstn */
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
 				if (p)
@@ -1038,13 +1039,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (g)
 					q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, topn);
-				q = pushBit(mb, q, flag != 0);
-/* TODO: pass "distinct" flag somehow */ q = pushBit(mb, q, 1);
+				q = pushBit(mb, q, dir != 0);
+				q = pushBit(mb, q, distinct?1:0);
 
 				if (q == NULL)
 					return -1;
 				s->nr = getArg(q, 0);
-				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+				if (!last)
+					renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 				l = getDestVar(q);
 			} else {
 				q = newStmt1(mb, calcRef, "+");
