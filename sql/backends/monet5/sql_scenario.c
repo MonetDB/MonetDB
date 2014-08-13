@@ -1446,7 +1446,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		 * to the next statement (if any).
 		 * Now is the time to also perform the semantic analysis,
 		 * optimize and produce code.
-		 * We don;t search the cache for a previous incarnation yet.
+		 * We don't search the cache for a previous incarnation yet.
 		 */
 		MSinitClientPrg(c, "user", nme);
 		oldvtop = c->curprg->def->vtop;

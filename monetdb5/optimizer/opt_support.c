@@ -287,7 +287,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 				/* all optimizers should behave like patterns */
-				/* However, we don;t have a stack now */
+				/* However, we don't have a stack now */
 				qot++;
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {

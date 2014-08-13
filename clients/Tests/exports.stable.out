@@ -116,7 +116,7 @@ void BATderiveHeadProps(BAT *b, int expensive);
 void BATderiveProps(BAT *b, int expensive);
 BAT *BATextend(BAT *b, BUN newcap);
 BAT *BATfakeCommit(BAT *b);
-gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc);
+gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc, int distinct);
 int BATgetaccess(BAT *b);
 PROPrec *BATgetprop(BAT *b, int idx);
 gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
