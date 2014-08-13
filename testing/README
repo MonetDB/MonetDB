@@ -263,7 +263,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   MAL Example:
 	io.printf("#~BeginVariableOutput~#\n");
 	io.print(somebat);
-	io.printf("#~EndVariableOutput~#\n);
+	io.printf("#~EndVariableOutput~#\n");
 
 
 - A tool Mapprove.py is provided to copy the recent output from
