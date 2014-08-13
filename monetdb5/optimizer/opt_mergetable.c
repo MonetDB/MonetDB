@@ -556,8 +556,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		}
 	} else {
 		int mv = (m>=0)?m:n;
-		int av = (m>=0)?0:1;
-		int bv = (m>=0)?1:0;
+		int av = (m<0);
+		int bv = (m>=0);
 
 		for(k=1; k<mat[mv].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
@@ -622,8 +622,8 @@ mat_join3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
 		}
 	} else {
 		int mv = (m>=0)?m:n;
-		int av = (m>=0)?0:1;
-		int bv = (m>=0)?1:0;
+		int av = (m<0);
+		int bv = (m>=0);
 
 		for(k=1; k<mat[mv].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);

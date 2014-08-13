@@ -759,7 +759,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
 	t->lang = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
-	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL)?1:0;
+	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
 	t->type = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
@@ -3807,7 +3807,7 @@ create_sql_func(sql_allocator *sa, char *func, list *args, list *res, int type, 
 	t->mod = (mod)?sa_strdup(sa, mod):NULL; 
 	t->type = type;
 	t->lang = lang;
-	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL)?1:0;
+	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
 	t->side_effect = res?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -3835,7 +3835,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, lis
 	t->mod = (mod)?sa_strdup(tr->sa, mod):NULL; 
 	t->type = type;
 	t->lang = lang;
-	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL)?1:0;
+	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
 	se = t->side_effect = res?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;

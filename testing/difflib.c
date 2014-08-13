@@ -583,7 +583,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 				char nl = line[sl], l0, l1;
 
 				if (newline_ || newline)
-					Minor |= (minor = (strchr("#=\n\2", line[1]) ? 1 : 0));
+					Minor |= (minor = (strchr("#=\n\2", line[1]) != NULL));
 				line[sl] = '\0';
 				if (line[1] == '\2')
 					sprintf(line + 1, " ");
@@ -833,7 +833,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 	}
 
 	fclose(lwc_diff_fp);
-	return (Major ? 2 : (Minor ? 1 : 0));
+	return (Major ? 2 : (Minor != 0));
 }
 
 /* lwc_diff2html */

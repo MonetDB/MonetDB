@@ -225,11 +225,14 @@ extern stmt *stmt_reverse(sql_allocator *sa, stmt *s);
 extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);
 extern stmt *stmt_result(sql_allocator *sa, stmt *s, int nr);
 
-/* dir: direction of the ordering, ie 1 Ascending, 0 decending
- * order: is order important or not (topn vs slice)
- * before_project(or distinct): intermediate step (or after this distinct is still needed) or last step (ie and no distinct) */
-#define LIMIT_DIRECTION(dir,order,before_project) \
-		(dir<<2)+(before_project<<1)+(order)
+/* 
+ * distinct: compute topn on unique groups
+ * dir:      direction of the ordering, ie 1 Ascending, 0 decending
+ * last:     intermediate step or last step 
+ * order:    is order important or not (firstn vs slice)
+ */ 
+#define LIMIT_FLAG(distinct,dir,last,order) \
+		((distinct<<3)+(dir<<2)+(last<<1)+(order))
 extern stmt *stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction);
 extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int direction);
 extern stmt *stmt_sample(sql_allocator *sa, stmt *s, stmt *sample);

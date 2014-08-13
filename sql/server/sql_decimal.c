@@ -59,7 +59,7 @@ decimal_to_str(lng v, sql_subtype *t)
 #endif
 {
 	char buf[64];
-	int scale = t->scale, cur = 63, neg = (v<0)?1:0, i, done = 0;
+	int scale = t->scale, cur = 63, neg = (v<0), i, done = 0;
 
 	if (v<0) v = -v;
 

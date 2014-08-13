@@ -85,7 +85,7 @@ sql_update_var(mvc *m, char *name, char *sval, lng sgn)
 		m->cache = (int) sgn;
 	} else if (strcmp(name, "history") == 0) {
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		m->history = (int) (sgn)?1:0;
+		m->history = (sgn != 0);
 	} 
 	return NULL;
 }
