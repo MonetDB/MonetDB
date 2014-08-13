@@ -145,7 +145,69 @@ if ( task->cl && task->n){\
 	}\
 } else if (task->cl) continue;
 
-#define MOSselect_none(TPE)/* TBD */
+#define subselect_none(TPE) {\
+		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+		if( !*anti){\
+			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					*o++ = (oid) first;\
+				}\
+			} else\
+			if( *(TPE*) low == TPE##_nil ){\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else\
+			if( *(TPE*) hgh == TPE##_nil ){\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else{\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
+							((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			}\
+		} else {\
+			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+				/* nothing is matching */\
+			} else\
+			if( *(TPE*) low == TPE##_nil ){\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
+					if ( !cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else\
+			if( *(TPE*) hgh == TPE##_nil ){\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
+					if ( !cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else{\
+				for( ; first < last; first++, val++){\
+					MOSskipit();\
+					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
+							((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
+					if ( !cmp )\
+						*o++ = (oid) first;\
+				}\
+			}\
+		}\
+	}
 
 static str
 MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
@@ -163,13 +225,13 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 		last = task->blk->cnt;
 	o = task->lb;
 
-	switch(task->type){
-	case TYPE_bit: MOSselect_none(bit); break;
-	case TYPE_bte: MOSselect_none(bte); break;
-	case TYPE_sht: MOSselect_none(sht); break;
-	case TYPE_lng: MOSselect_none(lng); break;
-	case TYPE_flt: MOSselect_none(flt); break;
-	case TYPE_dbl: MOSselect_none(dbl); break;
+	switch(ATOMstorage(task->type)){
+	case TYPE_bit: subselect_none(bit); break;
+	case TYPE_bte: subselect_none(bte); break;
+	case TYPE_sht: subselect_none(sht); break;
+	case TYPE_lng: subselect_none(lng); break;
+	case TYPE_flt: subselect_none(flt); break;
+	case TYPE_dbl: subselect_none(dbl); break;
 	case TYPE_int:
 	// Expanded MOSselect_none for debugging
 	{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
@@ -245,6 +307,45 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 	return MAL_SUCCEED;
 }
 
+#define thetasubselect_none(TPE)\
+{ 	TPE low,hgh, *v;\
+	low= hgh = TPE##_nil;\
+	if ( strcmp(oper,"<") == 0){\
+		hgh= *(TPE*) val;\
+		hgh = PREVVALUE##TPE(hgh);\
+	} else\
+	if ( strcmp(oper,"<=") == 0){\
+		hgh= *(TPE*) val;\
+	} else\
+	if ( strcmp(oper,">") == 0){\
+		low = *(TPE*) val;\
+		low = NEXTVALUE##TPE(low);\
+	} else\
+	if ( strcmp(oper,">=") == 0){\
+		low = *(TPE*) val;\
+	} else\
+	if ( strcmp(oper,"!=") == 0){\
+		hgh= low= *(TPE*) val;\
+		anti++;\
+	} else\
+	if ( strcmp(oper,"==") == 0){\
+		hgh= low= *(TPE*) val;\
+	} \
+	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
+	for( ; first < last; first++, v++){\
+		if( (low == TPE##_nil || * v >= low) && (* v <= hgh || hgh == TPE##_nil) ){\
+			if ( !anti) {\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		} else\
+		if( anti){\
+			MOSskipit();\
+			*o++ = (oid) first;\
+		}\
+	}\
+} 
+
 static str
 MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *val, str oper)
 {
@@ -256,7 +357,13 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 		last = task->blk->cnt;
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
+	case TYPE_bit: thetasubselect_none(bit); break;
+	case TYPE_bte: thetasubselect_none(bte); break;
+	case TYPE_sht: thetasubselect_none(sht); break;
+	case TYPE_lng: thetasubselect_none(lng); break;
+	case TYPE_flt: thetasubselect_none(flt); break;
+	case TYPE_dbl: thetasubselect_none(dbl); break;
 	case TYPE_int:
 		{ 	int low,hgh, *v;
 			low= hgh = int_nil;
@@ -301,12 +408,30 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *v
 	return MAL_SUCCEED;
 }
 
+#define leftfetchjoin_none(TPE)\
+{	TPE *val, *v;\
+	v= (TPE*) task->src;\
+	val = (TPE*) (((char*) task->hdr) + MosaicBlkSize);\
+	for(; first < last; first++, val++){\
+		MOSskipit();\
+		*v++ = *val;\
+		task->n--;\
+	}\
+	task->src = (char*) v;\
+}
+
 static str
 MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	(void) cntxt;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
+		case TYPE_bit: leftfetchjoin_none(bit); break;
+		case TYPE_bte: leftfetchjoin_none(bte); break;
+		case TYPE_sht: leftfetchjoin_none(sht); break;
+		case TYPE_lng: leftfetchjoin_none(lng); break;
+		case TYPE_flt: leftfetchjoin_none(flt); break;
+		case TYPE_dbl: leftfetchjoin_none(dbl); break;
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
@@ -322,6 +447,19 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 	return MAL_SUCCEED;
 }
 
+#define join_none(TPE)\
+{	TPE *v, *w;\
+	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	for(oo= (oid) first; first < last; first++, v++, oo++){\
+		w = (TPE*) task->src;\
+		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
+		if ( *w == *v){\
+			BUNappend(task->lbat, &oo, FALSE);\
+			BUNappend(task->rbat, &o, FALSE);\
+		}\
+	}\
+}
+
 static str
 MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 {
@@ -329,7 +467,13 @@ MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 	oid o, oo;
 	(void) cntxt;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
+		case TYPE_bit: join_none(bit); break;
+		case TYPE_bte: join_none(bte); break;
+		case TYPE_sht: join_none(sht); break;
+		case TYPE_lng: join_none(lng); break;
+		case TYPE_flt: join_none(flt); break;
+		case TYPE_dbl: join_none(dbl); break;
 		case TYPE_int:
 		{	int *v, *w;
 			v = (int*) (((char*) task->blk) + MosaicBlkSize);

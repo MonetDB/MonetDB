@@ -24,6 +24,7 @@ io.print(xs);
 d:= bat.new(:oid,:int);
 bat.append(d,9);
 bat.append(d,11);
+bat.append(d,nil:int);
 
 (jl,jr):= algebra.join(b,d);
 io.print(jl,jr);

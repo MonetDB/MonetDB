@@ -113,6 +113,7 @@ typedef struct MOSINDEX{
 float nextafterf(float x, float y);
 #endif
 
+#define PREVVALUEbit(x) ((x) - 1)
 #define PREVVALUEbte(x) ((x) - 1)
 #define PREVVALUEsht(x) ((x) - 1)
 #define PREVVALUEint(x) ((x) - 1)
@@ -121,6 +122,7 @@ float nextafterf(float x, float y);
 #define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
 #define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
 
+#define NEXTVALUEbit(x) ((x) + 1)
 #define NEXTVALUEbte(x) ((x) + 1)
 #define NEXTVALUEsht(x) ((x) + 1)
 #define NEXTVALUEint(x) ((x) + 1)
@@ -746,7 +748,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret, *lid =0, *rid=0;
 	BAT *bl = NULL, *br = NULL, *bn;
-	BUN cnt, first;
+	BUN cnt, first=0;
 	oid *ol =0, o = 0;
 	str msg= MAL_SUCCEED;
 	MOStask task;
@@ -841,7 +843,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret,*lid,*rid;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
-	BUN cnt = 0, first;
+	BUN cnt = 0, first= 0;
 	int swapped = 0;
 	str msg = MAL_SUCCEED;
 	MOStask task;
@@ -903,12 +905,12 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		switch(task->blk->tag){
 		case MOSAIC_RLE:
 			MOSjoin_rle(cntxt, task, first, first + task->blk->cnt);
-			first += task->blk->cnt;
+			first += (BUN) task->blk->cnt;
 			MOSskip_rle(task);
 			break;
 		case MOSAIC_NONE:
 			MOSjoin_none(cntxt, task, first, first + task->blk->cnt);
-			first += task->blk->cnt;
+			first += (BUN) task->blk->cnt;
 			MOSskip_none(task);
 			break;
 		default:
