@@ -1004,12 +1004,14 @@ BBPaddfarm(const char *dirname, int rolemask)
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
 		GDKfatal("BBPaddfarm: bad rolemask\n");
 	}
-	if (stat(dirname, &st) == -1) {
-		if (mkdir(dirname, 0755) < 0) {
+	if (mkdir(dirname, 0755) < 0) {
+		if (errno == EEXIST) {
+			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
+				GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
+			}
+		} else {
 			GDKfatal("BBPaddfarm: %s: cannot create directory\n", dirname);
 		}
-	} else if (!S_ISDIR(st.st_mode)) {
-		GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
 	}
 	for (i = 0; i < MAXFARMS; i++) {
 		if (BBPfarms[i].dirname == NULL) {
