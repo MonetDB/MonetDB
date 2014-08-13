@@ -1040,7 +1040,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, topn);
 				q = pushBit(mb, q, dir != 0);
-				q = pushBit(mb, q, distinct?1:0);
+				q = pushBit(mb, q, distinct != 0);
 
 				if (q == NULL)
 					return -1;
@@ -1102,7 +1102,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_order:{
 			int l = _dumpstmt(sql, mb, s->op1);
-			int reverse = (s->flag > 0) ? 0 : 1;
+			int reverse = (s->flag <= 0);
 
 			if (l < 0)
 				return -1;
@@ -1132,7 +1132,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if ((ogrp = _dumpstmt(sql, mb, s->op3)) < 0)
 				return -1;
-			reverse = (s->flag > 0) ? 0 : 1;
+			reverse = (s->flag <= 0);
 
 			q = newStmt1(mb, algebraRef, "subsort");
 			/* both ordered result and oid's order en subgroups */

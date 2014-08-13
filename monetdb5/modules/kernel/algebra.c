@@ -2202,7 +2202,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	}
 	derefStr(b, h, val);
 	q = BUNfnd(BATmirror(b), val);
-	*ret = (q != BUN_NONE) ? 1 : 0;
+	*ret = (q != BUN_NONE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -47,7 +47,7 @@ char *
 decimal_to_str(lng v, sql_subtype *t) 
 {
 	char buf[32];
-	int scale = t->scale, cur = 31, neg = (v<0)?1:0, i, done = 0;
+	int scale = t->scale, cur = 31, neg = (v<0), i, done = 0;
 
 	if (v<0) v = -v;
 

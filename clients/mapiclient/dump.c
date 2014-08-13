@@ -1284,7 +1284,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	if (schema)
 		free(schema);
 	mapi_close_handle(hdl);
-	return mnstr_errnr(toConsole) ? 1 : 0;
+	return mnstr_errnr(toConsole) != 0;
 
   bailout:
 	if (schema)
