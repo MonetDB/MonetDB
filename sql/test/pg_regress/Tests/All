@@ -1,112 +1,112 @@
 load
 
-# pgregress set; in order as given by
-# http://git.postgresql.org/gitweb/?p=postgresql.git;a=blob_plain;f=src/test/regress/serial_schedule;hb=HEAD
+# # pgregress set; in order as given by
+# # http://git.postgresql.org/gitweb/?p=postgresql.git;a=blob_plain;f=src/test/regress/serial_schedule;hb=HEAD
 
-boolean
-char
-#name This is a special PostgresSQL datatype NOT supported in MonetDB.
-# See also: http://www.postgresql.org/docs/9.3/static/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
-varchar
-text
+# boolean
+# char
+# #name This is a special PostgresSQL datatype NOT supported in MonetDB.
+# # See also: http://www.postgresql.org/docs/9.3/static/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
+# varchar
+# text
 
-# these three are not in the pgregress set;
-# no idea where they come from;
-# but the need to be executed after the tests above
-strings_concat
-strings_cast
-strings_like
+# # these three are not in the pgregress set;
+# # no idea where they come from;
+# # but the need to be executed after the tests above
+# strings_concat
+# strings_cast
+# strings_like
 
-int2
-int4
-int8
-oid
-float4
-float8
-# bit NOT supported in MonetDB. BIT is also not standard SQL so exclude this test
-numeric
-strings
-numerology
-point
-lseg
-box
-path
-polygon
-circle
-date
-time
-timetz
-timestamp
-timestamptz
-interval
-# abstime NOT supported ABSTIME, deprecated in Postgresql
-reltime
-# tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
-inet
-comments
-geometry
-horology
-oidjoins
-type_sanity
-opr_sanity
-insert
-create_type
-create_table
-create_misc
-create_operator
-create_index
-create_view
-create_aggregate
-triggers
-inherit
-vacuum
-sanity_check
-errors
-select
-select_into
-select_distinct
-select_distinct_on
-select_implicit
-select_having
-subselect
-union
-case
-join
-aggregates
-transactions
-random
-portals
-arrays
-btree_index
-hash_index
-update
-namespace
-privileges
-rules
-select_views
-portals_p2
-foreign_key
-cluster
-limit
-plpgsql
-copy2
-temp
-domain
-rangefuncs
-prepare
-without_oid
-conversion
-truncate
-alter_table
-sequence
-polymorphism
-rowtypes
-stats
+# int2
+# int4
+# int8
+# oid
+# float4
+# float8
+# # bit NOT supported in MonetDB. BIT is also not standard SQL so exclude this test
+# numeric
+# strings
+# numerology
+# point
+# lseg
+# box
+# path
+# polygon
+# circle
+# date
+# time
+# timetz
+# timestamp
+# timestamptz
+# interval
+# # abstime NOT supported ABSTIME, deprecated in Postgresql
+# reltime
+# # tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
+# inet
+# comments
+# geometry
+# horology
+# oidjoins
+# type_sanity
+# opr_sanity
+# insert
+# create_type
+# create_table
+# create_misc
+# create_operator
+# create_index
+# create_view
+# create_aggregate
+# triggers
+# inherit
+# vacuum
+# sanity_check
+# errors
+# select
+# select_into
+# select_distinct
+# select_distinct_on
+# select_implicit
+# select_having
+# subselect
+# union
+# case
+# join
+# aggregates
+# transactions
+# random
+# portals
+# arrays
+# btree_index
+# hash_index
+# update
+# namespace
+# privileges
+# rules
+# select_views
+# portals_p2
+# foreign_key
+# cluster
+# limit
+# plpgsql
+# copy2
+# temp
+# domain
+# rangefuncs
+# prepare
+# without_oid
+# conversion
+# truncate
+# alter_table
+# sequence
+# polymorphism
+# rowtypes
+# stats
 
-# these four were in a 2005 pgregress set, but are no longer
-# in the 2014 v9.3.4 pgregress set; not sure when/where they
-# should be run; keep them for last for now
-drop
-mule_internal
-numeric_big
-sql_ascii
+# # these four were in a 2005 pgregress set, but are no longer
+# # in the 2014 v9.3.4 pgregress set; not sure when/where they
+# # should be run; keep them for last for now
+# drop
+# mule_internal
+# numeric_big
+# sql_ascii
