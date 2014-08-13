@@ -28,6 +28,8 @@
 #include "rel_optimizer.h"
 #include "sql_env.h"
 
+#define OUTER_ZERO 64
+
 static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
 static stmt *
@@ -526,6 +528,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			}
 		}
 		s = stmt_aggr(sql->sa, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/ );
+		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
+			s->flag |= OUTER_ZERO;
 		/* HACK: correct cardinality for window functions */
 		if (e->card > CARD_AGGR)
 			s->nrcols = 2;
@@ -1083,6 +1087,7 @@ stmt_rename(mvc *sql, sql_rel *rel, sql_exp *exp, stmt *s )
 {
 	char *name = exp->name;
 	char *rname = exp->rname;
+	stmt *o = s;
 
 	(void)rel;
 	if (!name && exp->type == e_column && exp->r)
@@ -1094,6 +1099,8 @@ stmt_rename(mvc *sql, sql_rel *rel, sql_exp *exp, stmt *s )
 	if (!rname)
 		rname = table_name(sql->sa, s);
 	s = stmt_alias(sql->sa, s, rname, name);
+	if (o->flag & OUTER_ZERO)
+		s->flag |= OUTER_ZERO;
 	return s;
 }
 
@@ -1645,7 +1652,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full)
 			s = stmt_append(sql->sa, s, stmt_project(sql->sa, ld, c));
 		if (rel->op == op_right || rel->op == op_full) 
-			s = stmt_append(sql->sa, s, stmt_const(sql->sa, rd, stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(sql->sa, s, stmt_const(sql->sa, rd, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
 
 		s = stmt_alias(sql->sa, s, rnme, nme);
 		list_append(l, s);
@@ -1660,7 +1667,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
 			s = Column(sql->sa, s);
 		if (rel->op == op_left || rel->op == op_full) 
-			s = stmt_append(sql->sa, s, stmt_const(sql->sa, ld, stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(sql->sa, s, stmt_const(sql->sa, ld, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(sql->sa, s, stmt_project(sql->sa, rd, c));
 

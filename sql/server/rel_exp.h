@@ -116,7 +116,11 @@ extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e);
 
+/* returns 0 when the relation contain the passed expression else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);
+/* return 0 when the relation contain atleast one of the passed expressions else < 0 */
+extern int rel_has_exps(sql_rel *rel, list *e);
+
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
