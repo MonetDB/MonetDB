@@ -1694,7 +1694,7 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
 		BBPreleaseref(b1->batCacheid);
 		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
-	*ret = ALIGNsynced(b1, b2) ? 1 : 0;
+	*ret = ALIGNsynced(b1, b2) != 0;
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
 	return MAL_SUCCEED;

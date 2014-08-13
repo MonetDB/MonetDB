@@ -414,7 +414,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "basket.grab", "too early");
 			}
 
-			bn = BATcopy(b, b->htype, b->ttype, TRUE);
+			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			v = BATslice(bn, baskets[bskt].winstride, BATcount(bn));
 			b = BATsetaccess(b, BAT_WRITE);
 			BATclear(b, TRUE);
@@ -432,7 +432,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < baskets[bskt].colcount; i++) {
 			ret = (int *) getArgReference(stk, pci, i);
 			b = baskets[bskt].primary[i];
-			bn = BATcopy(b, b->htype, b->ttype, TRUE);
+			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			cnt = (int) BATcount(b);
 			BATclear(b, TRUE);
 			*ret = bn->batCacheid;

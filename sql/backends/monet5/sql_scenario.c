@@ -1997,7 +1997,7 @@ SQLparser(Client c)
 			int commit;
 			v = (int) strtol(in->buf + in->pos + 12, NULL, 10);
 			commit = (!m->session->auto_commit && v);
-			m->session->auto_commit = (v) ? 1 : 0;
+			m->session->auto_commit = (v) != 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
