@@ -600,7 +600,7 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 	int valueType = 0;
 	
 	int valueSRID = (*valueWKB)->srid;
-//fprintf(stderr, "in geom_2_geom\n");
+
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*valueWKB);
 	/* get the number of coordinates the geometry has */
@@ -784,7 +784,7 @@ wkb* geos2wkb(const GEOSGeometry* geosGeometry) {
 	geomWKB->srid = GEOSGetSRID(geosGeometry);
 	memcpy(&geomWKB->data, w, wkbLen);
 	GEOSFree(w);
-	
+
 	return geomWKB;
 }
 
@@ -1944,13 +1944,13 @@ str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
 	}
 
 	externalGeometry = wkb2geos(*external);
-	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString) {
+	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLinearRing) {
 		*out = wkb_nil;
 		GEOSGeom_destroy(externalGeometry);
-		throw(MAL, "geom.Polygon", "Geometries should be LineStrings");
+		throw(MAL, "geom.Polygon", "Geometries should be LinearRings");
 	}
 
-	if(internalBAT_id == NULL) {
+	if(*internalBAT_id == 0) {
 		geosGeometry = GEOSGeom_createPolygon(externalGeometry, NULL, 0);
 		if(geosGeometry == NULL) {
 			GEOSGeom_destroy(externalGeometry);

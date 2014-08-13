@@ -4070,9 +4070,9 @@ CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXT
 --CREATE FUNCTION ST_LineFromMultiPoint(pointGeom Geometry) RETURNS Geometry external name geom."LineFromMultiPoint"; --gets mutlipoint returns linestring
 CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double, srid integer) RETURNS Geometry external name geom."MakeEnvelope";
 CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double) RETURNS Geometry external name geom."MakeEnvelope";
---CREATE FUNCTION ST_MakePolygon(geom Geometry) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
---CREATE FUNCTION ST_MakePolygon(outerGeom Geometry, interiorGeoms Geometry[]) RETURNS Geometry external name geom."MakePolygon"; --gets linestrings
---CREATE FUNCTION ST_Polygon(geom Geometry, srid integer) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
+CREATE FUNCTION ST_MakePolygon(geom Geometry) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
+--CREATE FUNCTION ST_MakePolygon(outerGeom Geometry, interiorGeoms table(g Geometry)) RETURNS Geometry external name geom."MakePolygon"; --gets linestrings
+CREATE FUNCTION ST_Polygon(geom Geometry, srid integer) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
 CREATE FUNCTION ST_MakeBox2D(lowLeftPointGeom Geometry, upRightPointGeom Geometry) RETURNS mbr external name geom."MakeBox2D"; --gets 2d points
 --CREATE FUNCTION ST_3DMakeBox(lowLeftPointGeom Geometry, upRightPointGeom Geometry) RETURNS mbr external name geom."MakeBox3D"; --gets 3d points
 
