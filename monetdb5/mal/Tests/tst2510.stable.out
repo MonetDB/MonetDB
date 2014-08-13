@@ -37,12 +37,12 @@ exit always;
 #exit MALException; 
     return tryme := false;
 end tryme;
-#user.tryme();    # shouldn;t hang when you forget the exception
+#user.tryme();    # shouldn't hang when you forget the exception
 #
 function user.main():void;
 # A exception in a factory should terminate it  
     user.tryme();
-# shouldn;t hang when you forget the exception 
+# shouldn't hang when you forget the exception 
 end main;
 
 # 08:58:58 >  

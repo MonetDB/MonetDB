@@ -123,7 +123,7 @@ function user.qry1():void;
 end qry1;
 function user.main():void;
 # TPCH Q1 non-optimized 
-#don;t depend on SQL library 
+#don't depend on SQL library 
     mdb.List("user","qry1");
 end main;
 function user.qry1():void;              #  0 qry1:void := user.qry1() {G}

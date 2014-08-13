@@ -86,6 +86,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      required by the test  (optional)                       (TST.modules)  (^,`)
   + a file that contains a list of tests (one per line) that must
      have run successfully prior to the test (optional)     (TST.reqtests)
+  + a file that if it exists indicates that the --forcemito flag
+     must not be passed to the server                       (TST.nomito)
   + a set of files used by the arbitrary executable
      (optional)                                              (TST.*)        (^,`)
   + stable (i.e. correct) versions of stdout and stderr

@@ -2331,7 +2331,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-/* You don;t have to materialize the oids.
+/* You don't have to materialize the oids.
 This is taken care upon access */
 str
 ALGidentity(int *ret, int *bid)
