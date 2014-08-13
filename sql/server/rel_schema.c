@@ -335,7 +335,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	case SQL_NOT_NULL:
 	case SQL_NULL: {
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
@@ -403,7 +403,7 @@ column_option(
 	} 	break;
 	case SQL_NOT_NULL:
 	case SQL_NULL: {
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
@@ -693,7 +693,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dnode *n = s->data.lval->h;
 		char *cname = n->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		if (!c) {
 			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
