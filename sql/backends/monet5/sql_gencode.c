@@ -1043,6 +1043,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, topn);
 				q = pushBit(mb, q, flag != 0);
+/* TODO: pass "distinct" flag somehow */ q = pushBit(mb, q, 1);
 
 				if (q == NULL)
 					return -1;

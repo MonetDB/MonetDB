@@ -1,6 +1,6 @@
 # TPCH Q1 non-optimized
 
-#don;t depend on SQL library
+#don't depend on SQL library
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
 	return bat.new(:any_1,:any_2);
 end bind;

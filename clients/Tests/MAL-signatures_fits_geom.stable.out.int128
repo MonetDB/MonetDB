@@ -1,4 +1,4 @@
-stdout of test 'MAL-signatures_gsl` in directory 'clients` itself:
+stdout of test 'MAL-signatures_fits_geom` in directory 'clients` itself:
 
 
 # 14:24:10 >  
@@ -3264,18 +3264,6 @@ comment fuse two (1-byte) bte values into one (2-byte) sht value
 command batudf.reverse(b:bat[:oid,:str]):bat[:oid,:str] 
 address UDFBATreverse;
 comment Reverse a BAT of strings
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLbat_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:dbl,i:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address GSLcst_chisqProb_bat;
-comment Chi Squared probability
-
-command batgsl.chi2prob(d:bat[:oid,:dbl],i:dbl):bat[:oid,:dbl] 
-address GSLbat_chisqProb_cst;
-comment Chi Squared probability
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
@@ -49900,10 +49888,6 @@ command group.subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oi
 address GRPsubgroup2;
 command group.subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd]) 
 address GRPsubgroup1;
-command gsl.chi2prob(d:dbl,i:dbl):dbl 
-address GSLchisqProb;
-comment Chi Squared probability
-
 command identifier.#fromstr():void 
 address IDfromString;
 comment Convert a string to an identifier without any check
@@ -50227,23 +50211,23 @@ address JSONfold;
 comment Combine the key-value pairs into a single json object list.
 
 command json.filter(name:json,idx:lng,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_lng;
 comment Extract a single array element
 
 command json.filter(name:json,idx:lng):json 
-address JSONfilterArray;
+address JSONfilterArray_lng;
 command json.filter(name:json,idx:int,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_int;
 command json.filter(name:json,idx:int):json 
-address JSONfilterArray;
+address JSONfilterArray_int;
 command json.filter(name:json,idx:sht,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_sht;
 command json.filter(name:json,idx:sht):json 
-address JSONfilterArray;
+address JSONfilterArray_sht;
 command json.filter(name:json,idx:bte,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_bte;
 command json.filter(name:json,idx:bte):json 
-address JSONfilterArray;
+address JSONfilterArray_bte;
 command json.filter(name:json,pathexpr:str):json 
 address JSONfilter;
 comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.
