@@ -3200,6 +3200,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(sql, &rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(sql, &rel, ro2, f, ek);
+		int flag = 0;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) 
@@ -3212,7 +3213,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!re1 || !re2) 
 			return NULL;
 
-		if (symmetric) {
+		/* for between 3 columns we use the between operator */
+		if (symmetric && re1->card == CARD_ATOM && re2->card == CARD_ATOM) {
 			sql_exp *tmp = NULL;
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
@@ -3223,7 +3225,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			tmp = exp_binop(sql->sa, re1, re2, min);
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;
+			symmetric = 0;
 		}
+
+		flag = (symmetric)?CMP_SYMMETRIC:0;
 
 		if (le->card == CARD_ATOM) {
 			sql_exp *e1, *e2;
@@ -3244,9 +3249,9 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			e2 = exp_atom_bool(sql->sa, 1);
 			rel = rel_select(sql->sa, rel, exp_compare(sql->sa,  e1, e2, cmp_equal));
 		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 1);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 1);
 		} else {
-			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 0);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 0);
 		}
 		return rel;
 	}

@@ -1371,7 +1371,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 
 			if ((s->op2->nrcols > 0 || s->op3->nrcols) && (s->type == st_uselect2)) {
-				int k;
+				int k, symmetric = s->flag&CMP_SYMMETRIC;
 				char *mod = calcRef;
 				char *op1 = "<", *op2 = "<";
 
@@ -1385,17 +1385,28 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag & 2)
 					op2 = "<=";
 
-				if ((q = multiplex2(mb, mod, convertOperator(op1), l, r1, TYPE_bit)) == NULL)
-					return -1;
+				if (s->flag&1 && s->flag&2) {
+					if (symmetric)
+						p = newStmt1(mb, batcalcRef, "between_symmetric");
+					else
+						p = newStmt1(mb, batcalcRef, "between");
+					p = pushArgument(mb, p, l);
+					p = pushArgument(mb, p, r1);
+					p = pushArgument(mb, p, r2);
+					k = getDestVar(p);
+				} else {
+					if ((q = multiplex2(mb, mod, convertOperator(op1), l, r1, TYPE_bit)) == NULL)
+						return -1;
 
-				if ((r = multiplex2(mb, mod, convertOperator(op2), l, r2, TYPE_bit)) == NULL)
-					return -1;
-				p = newStmt1(mb, batcalcRef, "and");
-				p = pushArgument(mb, p, getDestVar(q));
-				p = pushArgument(mb, p, getDestVar(r));
-				if (p == NULL)
-					return -1;
-				k = getDestVar(p);
+					if ((r = multiplex2(mb, mod, convertOperator(op2), l, r2, TYPE_bit)) == NULL)
+						return -1;
+					p = newStmt1(mb, batcalcRef, "and");
+					p = pushArgument(mb, p, getDestVar(q));
+					p = pushArgument(mb, p, getDestVar(r));
+					if (p == NULL)
+						return -1;
+					k = getDestVar(p);
+				}
 
 				q = newStmt1(mb, algebraRef, "subselect");
 				q = pushArgument(mb, q, k);

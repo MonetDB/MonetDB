@@ -690,7 +690,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 					s = stmt_binop(sql->sa, 
 						stmt_binop(sql->sa, l, r, lf), 
 						stmt_binop(sql->sa, l, r2, rf), a);
-				} else if (l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
+				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
 					s = stmt_uselect(sql->sa, l, r, range2lcompare(e->flag),
 					    stmt_uselect(sql->sa, l, r2, range2rcompare(e->flag), sel));
 				} else {
