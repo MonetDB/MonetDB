@@ -1431,7 +1431,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 }
 
 /*
- * Sometimes it helps to release a BAT when it won;t be used anymore.
+ * Sometimes it helps to release a BAT when it won't be used anymore.
  * In this case, we have to assure that all references are cleared
  * as well. The routine below performs this action in the local
  * stack frame and its parents only.
