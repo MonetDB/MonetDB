@@ -66,21 +66,21 @@ comment "Filter all members of an object by a path expression, returning an arra
 Non-matching elements are skipped.";
 
 command filter(name:json, idx:bte) :json
-address JSONfilterArray;
+address JSONfilterArray_bte;
 command filter(name:json, idx:bte,other:str) :json
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_bte;
 command filter(name:json, idx:sht) :json
-address JSONfilterArray;
+address JSONfilterArray_sht;
 command filter(name:json, idx:sht,other:str) :json
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_sht;
 command filter(name:json, idx:int) :json
-address JSONfilterArray;
+address JSONfilterArray_int;
 command filter(name:json, idx:int, other:str) :json
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_int;
 command filter(name:json, idx:lng) :json
-address JSONfilterArray;
+address JSONfilterArray_lng;
 command filter(name:json, idx:lng, other:str) :json
-address JSONfilterArrayDefault
+address JSONfilterArrayDefault_lng
 comment "Extract a single array element";
 
 command isvalid(val:json):bit
