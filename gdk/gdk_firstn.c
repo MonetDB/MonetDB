@@ -472,7 +472,6 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	} *groups;
 
 	assert(topn);
-	assert(gids);
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -651,15 +650,18 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		bn->T->nil = 0;
 		bn->T->nonil = 1;
 	}
-	BATsetcount(gn, ncnt);
-	BATseqbase(gn, 0);
-	gn->tkey = ncnt == top;
-	gn->tsorted = ncnt <= 1;
-	gn->trevsorted = ncnt <= 1;
-	gn->T->nil = 0;
-	gn->T->nonil = 1;
+	if (gids) {
+		BATsetcount(gn, ncnt);
+		BATseqbase(gn, 0);
+		gn->tkey = ncnt == top;
+		gn->tsorted = ncnt <= 1;
+		gn->trevsorted = ncnt <= 1;
+		gn->T->nil = 0;
+		gn->T->nonil = 1;
+		*gids = gn;
+	} else
+		BBPreclaim(gn);
 	*topn = bn;
-	*gids = gn;
 	return GDK_SUCCEED;
 }
 
@@ -747,20 +749,20 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	} *groups;
 
 	assert(topn);
-	assert(gids);
 
 	if (BATtdense(g)) {
 		/* trivial: g determines ordering, return initial
 		 * slice of s */
 		bn = BATslice(s, 0, n);
-		gn = BATslice(g, 0, n);
-		if (bn == NULL || gn == NULL) {
+		gn = gids ? BATslice(g, 0, n) : NULL;
+		if (bn == NULL || (gids != NULL && gn == NULL)) {
 			BBPreclaim(bn);
 			BBPreclaim(gn);
 			return GDK_FAIL;
 		}
 		*topn = bn;
-		*gids = gn;
+		if (gids)
+			*gids = gn;
 		return GDK_SUCCEED;
 	}
 
@@ -944,15 +946,18 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		bn->T->nil = 0;
 		bn->T->nonil = 1;
 	}
-	BATsetcount(gn, ncnt);
-	BATseqbase(gn, 0);
-	gn->tkey = ncnt == top;
-	gn->tsorted = ncnt <= 1;
-	gn->trevsorted = ncnt <= 1;
-	gn->T->nil = 0;
-	gn->T->nonil = 1;
+	if (gids) {
+		BATsetcount(gn, ncnt);
+		BATseqbase(gn, 0);
+		gn->tkey = ncnt == top;
+		gn->tsorted = ncnt <= 1;
+		gn->trevsorted = ncnt <= 1;
+		gn->T->nil = 0;
+		gn->T->nonil = 1;
+		*gids = gn;
+	} else
+		BBPreclaim(gn);
 	*topn = bn;
-	*gids = gn;
 	return GDK_SUCCEED;
 }
 
@@ -995,13 +1000,13 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 	}
 
 	if (g == NULL) {
-		if (gids == NULL) {
+		if (gids == NULL && !distinct) {
 			*topn = BATfirstn_unique(b, s, n, asc);
 			return *topn ? GDK_SUCCEED : GDK_FAIL;
 		}
 		return BATfirstn_grouped(topn, gids, b, s, n, asc, distinct);
 	}
-	if (gids == NULL) {
+	if (gids == NULL && !distinct) {
 		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc);
 		return *topn ? GDK_SUCCEED : GDK_FAIL;
 	}

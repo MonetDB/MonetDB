@@ -37,12 +37,12 @@ typedef struct {
 #define IMPScnt(X)           ((X) & 16777215) /* 24 bits for cnt   */
 #define IMPSsetcnt(X,Y)      ((X) = (Y))      /* no overflow check */
 #define IMPScnt_inc(X)       ((X)++)          /* no overflow check */
-#define IMPSrepeat(X)        (((X) & 16777216)?1:0)
+#define IMPSrepeat(X)        (((X) & 16777216) != 0)
 #define IMPSsetrepeat(X)     ((X) |= 16777216)
 #define IMPSunsetrepeat(X)   ((X) &= (~16777216))
 #define IMPSsetBit(B,X,Y)      ((((uint##B##_t)1)<<(Y))|(X))
 #define IMPSunsetBit(B,X,Y)    ((~(((uint##B##_t)1)<<(Y)))&(X))
-#define IMPSisSet(B,X,Y)       (((((uint##B##_t)1)<<Y)&X)?1:0)
+#define IMPSisSet(B,X,Y)       (((((uint##B##_t)1)<<Y)&X) != 0)
 #define IMPSmod2(X,Y)        ((X)&((Y)-1))
 
 #endif /* GDK_IMPS_H */

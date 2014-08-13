@@ -257,12 +257,12 @@ mbrCOMP(mbr *l, mbr *r)
 	/* simple lexicographical ordering on (x,y) */
 	int res;
 	if (l->xmin == r->xmin)
-		res = (l->ymin < r->ymin) ? -1 : (l->ymin == r->ymin) ? 0 : 1;
+		res = (l->ymin < r->ymin) ? -1 : (l->ymin != r->ymin);
 	else
 		res = (l->xmin < r->xmin) ? -1 : 1;
 	if (res == 0) {
 		if (l->xmax == r->xmax)
-			res = (l->ymax < r->ymax) ? -1 : (l->ymax == r->ymax) ? 0 : 1;
+			res = (l->ymax < r->ymax) ? -1 : (l->ymax != r->ymax);
 		else
 			res = (l->xmax < r->xmax) ? -1 : 1;
 	}

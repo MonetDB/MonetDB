@@ -120,7 +120,7 @@ memoitem_create( list *memo, sql_allocator *sa, char *lname, char *rname, int le
        	mi = SA_NEW(sa, memoitem); 
 	mi->name = sa_strdup(sa, name);
 	mi->joins = (rname)?sa_list(sa):NULL;
-	mi->done = (rname)?0:1;
+	mi->done = (rname == NULL);
 	mi->level = level;
 	mi->count = 0;
 	mi->cost = 0;

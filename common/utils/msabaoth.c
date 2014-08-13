@@ -804,7 +804,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 					memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
 					memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
 					avg10[9] = avg30[29] = ret->crashavg1 = 
-						(start != 0 ? 1 : 0);
+						(start != 0);
 					*p = '\0';
 					ret->laststart = start = (time_t)atol(data);
 					p = data;
@@ -834,9 +834,9 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
 		memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
 		avg10[9] = avg30[29] = ret->crashavg1 =
-			(start != 0 ? (db->state != SABdbRunning ? 1 : 0) : 0);
+			(start != 0 ? (db->state != SABdbRunning) : 0);
 		ret->crashcntr =
-			ret->startcntr - (db->state == SABdbRunning ? 1 : 0) -
+			ret->startcntr - (db->state == SABdbRunning) -
 			ret->stopcntr;
 		for (i = 0; i < 10; i++)
 			ret->crashavg10 += avg10[i];
