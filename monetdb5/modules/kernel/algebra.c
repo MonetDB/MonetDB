@@ -935,7 +935,8 @@ ALGsubthetajoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, int 
  *                [ s:bat[:oid,:oid],
  *                [ g:bat[:oid,:oid], ] ]
  *                n:wrd,
- *                asc:bit)
+ *                asc:bit,
+ *                distinct:bit)
  * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
  */
 str
@@ -946,16 +947,16 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn, *gn;
 	wrd n;
-	bit asc;
+	bit asc, distinct;
 	gdk_return rc;
 
 	(void) cntxt;
 	(void) mb;
 
 	assert(pci->retc == 1 || pci->retc == 2);
-	assert(pci->argc - pci->retc >= 3 && pci->argc - pci->retc <= 5);
+	assert(pci->argc - pci->retc >= 4 && pci->argc - pci->retc <= 6);
 
-	n = * (wrd *) getArgReference(stk, pci, pci->argc - 2);
+	n = * (wrd *) getArgReference(stk, pci, pci->argc - 3);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference(stk, pci, 0);
@@ -964,13 +965,13 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = * (bat *) getArgReference(stk, pci, pci->retc);
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
-	if (pci->argc - pci->retc > 3) {
+	if (pci->argc - pci->retc > 4) {
 		sid = * (bat *) getArgReference(stk, pci, pci->retc + 1);
 		if ((s = BATdescriptor(sid)) == NULL) {
 			BBPreleaseref(bid);
 			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
 		}
-		if (pci->argc - pci->retc > 4) {
+		if (pci->argc - pci->retc > 5) {
 			gid = * (bat *) getArgReference(stk, pci, pci->retc + 2);
 			if ((g = BATdescriptor(gid)) == NULL) {
 				BBPreleaseref(bid);
@@ -979,8 +980,9 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	asc = * (bit *) getArgReference(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc);
+	asc = * (bit *) getArgReference(stk, pci, pci->argc - 2);
+	distinct = * (bit *) getArgReference(stk, pci, pci->argc - 1);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, distinct);
 	BBPreleaseref(b->batCacheid);
 	if (s)
 		BBPreleaseref(s->batCacheid);

@@ -2422,27 +2422,27 @@ command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B
 
