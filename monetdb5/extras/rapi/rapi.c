@@ -387,10 +387,16 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			BAT_TO_REALSXP(b, dbl, varvalue)
 			;
 			break;
-		case TYPE_lng: /* R's integers are stored as int, so we cannot be sure long will fit */
+		case TYPE_lng: /* R's integers are stored as int, so we cannot be sure lng will fit */
 			BAT_TO_REALSXP(b, lng, varvalue)
 			;
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
+			BAT_TO_REALSXP(b, hge, varvalue)
+			;
+			break;
+#endif
 		case TYPE_str: { // there is only one string type, thus no macro here
 			BUN p = 0, q = 0, j = 0;
 			BATiter li;
@@ -494,6 +500,19 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			SXP_TO_BAT(lng, INTEGER_POINTER, *p==NA_INTEGER);
 			break;
 		}
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			if (!IS_INTEGER(ret_col)) {
+				msg =
+						createException(MAL, "rapi.eval",
+								"wrong R column type for column %d, expected INTeger, got %s.",
+								i, rtypename(TYPEOF(ret_col)));
+				goto wrapup;
+			}
+			SXP_TO_BAT(hge, INTEGER_POINTER, *p==NA_INTEGER);
+			break;
+		}
+#endif
 		case TYPE_bte: { // only R logical types fit into bte BATs
 			if (!IS_LOGICAL(ret_col)) {
 				msg =

@@ -841,21 +841,60 @@ JSONlength(int *ret, json *j)
 	return MAL_SUCCEED;
 }
 
-str
-JSONfilterArray(json *ret, json *js, int *index)
+static str
+JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 {
-	
 	char expr[BUFSIZ], *s = expr;
-	snprintf(expr,BUFSIZ,"[%d]",*index);
-	return JSONfilterInternal(ret, js, &s, 0);
+	snprintf(expr,BUFSIZ,"["LLFMT"]",index);
+	return JSONfilterInternal(ret, js, &s, other);
 }
 
 str
-JSONfilterArrayDefault(json *ret, json *js, int *index, str *other)
+JSONfilterArray_bte(json *ret, json *js, bte *index)
 {
-	char expr[BUFSIZ], *s = expr;
-	snprintf(expr,BUFSIZ,"[%d]",*index);
-	return JSONfilterInternal(ret, js, &s, *other);
+	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+}
+
+str
+JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+}
+
+str
+JSONfilterArray_sht(json *ret, json *js, sht *index)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+}
+
+str
+JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+}
+
+str
+JSONfilterArray_int(json *ret, json *js, int *index)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+}
+
+str
+JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+}
+
+str
+JSONfilterArray_lng(json *ret, json *js, lng *index)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+}
+
+str
+JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
+{
+	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 str

@@ -21,13 +21,28 @@ stdout of test 'rapi08` in directory 'monetdb5/extras/rapi` itself:
 
 Ready.
 
-# 20:20:46 >  
-# 20:20:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2827" "--port=38117"
-# 20:20:46 >  
+# 13:27:36 >  
+# 13:27:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9249" "--port=37225"
+# 13:27:36 >  
 
-= ! correct/expected output needs to be verifed & approved ! =
+#io.print(X_9);
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0	]
+[ 1@0,	0@0	]
+[ 2@0,	1@0	]
+[ 3@0,	1@0	]
+#io.print(X_16);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	63	]
+[ 1@0,	31	]
 
-# 20:20:46 >  
-# 20:20:46 >  "Done."
-# 20:20:46 >  
+# 13:27:36 >  
+# 13:27:36 >  "Done."
+# 13:27:36 >  
 

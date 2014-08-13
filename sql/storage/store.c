@@ -1080,6 +1080,7 @@ static void
 insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
 	int zero = 0;
+	int lang = FUNC_LANG_INT;
 	bit F = FALSE;
 	node *n = NULL;
 
@@ -1092,9 +1093,9 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int number = 0;
 
 		if (aggr->s)
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id);
 		else
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero);
 		
 		res = aggr->res->h->data;
 		id = next_oid();

@@ -3482,6 +3482,7 @@ for comp in \
 	'geom        ' \
 	'gsl         ' \
 	'fits        ' \
+	'jsonstore   ' \
 	'rdf         ' \
 	'rintegration' \
 	'datacell    ' \

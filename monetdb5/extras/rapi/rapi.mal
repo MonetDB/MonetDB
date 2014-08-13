@@ -49,7 +49,7 @@ comment "Execute a simple R script value";
 
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address RAPIevalAggr
-comment "Execute a simple R script value";
+comment "grouped aggregates through R";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address RAPIevalAggr

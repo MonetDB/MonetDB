@@ -1672,7 +1672,7 @@ parseAssign(Client cntxt, int cntrl)
 		if (l == 0 || i) {
 			/* we haven't seen a target variable */
 			/* flow of control statements may end here. */
-			/* shouldn;t allow for nameless controls todo*/
+			/* shouldn't allow for nameless controls todo*/
 			if (i && cst.vtype == TYPE_str)
 				GDKfree(cst.val.sval);
 			if (cntrl == LEAVEsymbol || cntrl == REDOsymbol ||

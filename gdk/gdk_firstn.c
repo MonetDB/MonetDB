@@ -46,9 +46,9 @@
  *
  * Note that BATfirstn can be called in cascading fashion to calculate
  * the first n values of a table of multiple columns:
- *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc);
- *      BATfirstn(&s2, &g2, b2, s1, g1, n, asc);
- *      BATfirstn(&s3, NULL, b3, s2, g2, n, asc);
+ *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc, distinct);
+ *      BATfirstn(&s2, &g2, b2, s1, g1, n, asc, distinct);
+ *      BATfirstn(&s3, NULL, b3, s2, g2, n, asc, distinct);
  * If the input BATs b1, b2, b3 are large enough, s3 will contain the
  * OIDs of the smallest (largest) n elements in the table consisting
  * of the columns b1, b2, b3 when ordered in ascending order with b1
@@ -455,7 +455,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	} while (0)
 
 static gdk_return
-BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
+BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int distinct)
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
@@ -466,7 +466,6 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	int c;
 	int (*cmp)(const void *, const void *);
 	BUN ncnt;
-	int distinct = 0;
 	struct group {
 		BUN bun;
 		BUN cnt;
@@ -730,7 +729,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	} while (0)
 
 static gdk_return
-BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
+BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
@@ -741,7 +740,6 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	int c;
 	int (*cmp)(const void *, const void *);
 	BUN ncnt;
-	int distinct = 0;
 	struct group {
 		BUN bun;
 		BUN cnt;
@@ -959,7 +957,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 }
 
 gdk_return
-BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
+BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
 {
 	assert(topn != NULL);
 	if (b == NULL) {
@@ -1001,11 +999,11 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
 			*topn = BATfirstn_unique(b, s, n, asc);
 			return *topn ? GDK_SUCCEED : GDK_FAIL;
 		}
-		return BATfirstn_grouped(topn, gids, b, s, n, asc);
+		return BATfirstn_grouped(topn, gids, b, s, n, asc, distinct);
 	}
 	if (gids == NULL) {
 		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc);
 		return *topn ? GDK_SUCCEED : GDK_FAIL;
 	}
-	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc);
+	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc, distinct);
 }
