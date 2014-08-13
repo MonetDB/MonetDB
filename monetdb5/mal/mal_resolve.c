@@ -281,7 +281,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			for (k = 0; k < limit; k++)
 				polytype[k] = TYPE_any;
 			/*
-			 * Most polymorphic functions don;t have a variable argument
+			 * Most polymorphic functions don't have a variable argument
 			 * list. So we save some instructions factoring this caise out.
 			 * Be careful, the variable number of return arguments should
 			 * be considered as well.
@@ -312,7 +312,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				formal = getPolyType(formal, polytype);
 				/*
 				 * Collect the polymorphic types and resolve them.
-				 * If it fails, we know this isn;t the function we are
+				 * If it fails, we know this isn't the function we are
 				 * looking for.
 				 */
 				if (resolveType(formal, actual) == -1) {

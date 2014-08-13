@@ -181,7 +181,7 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 				callMALinterpreter++;
 				if (p->fcn)
 					/* all schedulers should behave like patterns */
-					/* However, we don;t have a stack now */
+					/* However, we don't have a stack now */
 					msg = (str) (*p->fcn) (mb, 0, p);
 				if (msg)
 					return msg;

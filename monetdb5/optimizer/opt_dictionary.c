@@ -624,7 +624,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
-        /* Simple ignore the binding if you can;t find the bat */
+        /* Simple ignore the binding if you can't find the bat */
         throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
 
 	/* compression is only relevant for larger tables */

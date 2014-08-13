@@ -1,5 +1,5 @@
 # The micro test for managing the dictionary tables
-# don;t depend on SQL library
+# don't depend on SQL library
 i:bat[:int,:str]:= bbp.bind("dictIndex");
 j:bat[:int,:str]:= bbp.bind("dictValue");
 bat.delete(i);

@@ -208,7 +208,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* make sure you load the descriptors and heaps */
 	b = (BAT *) BATdescriptor(i);
 	if (b == 0)
-		/* Simple ignore the binding if you can;t find the bat */
+		/* Simple ignore the binding if you can't find the bat */
 		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
 
 	/* check conformity of the actual type and the one requested */
