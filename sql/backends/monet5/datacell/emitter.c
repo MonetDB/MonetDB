@@ -126,7 +126,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 			throw(MAL, "receptor.new", "Could not access descriptor");
 		}
 
-		em->table.format[j].c = BATcopy(b, b->htype, b->ttype, FALSE);
+		em->table.format[j].c = BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT);
 		em->table.format[j].ci = bat_iterator(em->table.format[j].c);
 		em->table.format[j].name = baskets[idx].cols[i];
 		em->table.format[j].sep = ",";
@@ -327,7 +327,7 @@ bodyRestart:
 			if (em->table.format[k].c)
 				BBPunfix(em->table.format[k].c->batCacheid);
 			b = baskets[em->bskt].primary[k];
-			em->table.format[k].c = BATcopy(b, b->htype, b->ttype, TRUE);
+			em->table.format[k].c = BATcopy(b, b->htype, b->ttype, TRUE,TRANSIENT);
 			em->table.format[k].ci = bat_iterator(b);
 			BATclear(b, FALSE);
 		}
