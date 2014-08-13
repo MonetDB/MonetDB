@@ -106,7 +106,7 @@ geom_export str wkbGeometryType(char**, wkb**, int*);
 geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
 geom_export str wkbAsText(char**, wkb**, int*);
-//AsBinary
+geom_export str wkbAsBinary(char**, wkb**);
 geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsSimple(bit*, wkb**);
 //Is3D
@@ -994,6 +994,31 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	return (int)strlen(geomWKT);
 }
 
+//Returns the wkb in a hex representation */
+static char hexit[] = "0123456789ABCDEF";
+
+str wkbAsBinary(char **tostr, wkb **geomWKB) {
+	char *s;
+	int i;
+
+	if(wkb_isnil(*geomWKB)) {
+		*tostr = (str) GDKmalloc(1);
+		**tostr = '\0';
+		return MAL_SUCCEED;
+	}
+	*tostr = (str) GDKmalloc(1+((*geomWKB)->len)*2);
+
+	s = *tostr;
+	for (i = 0; i < (*geomWKB)->len; i++) {
+		int val = ((*geomWKB)->data[i] >> 4) & 0xf;
+		*s++ = hexit[val];
+		val = (*geomWKB)->data[i] & 0xf;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return MAL_SUCCEED;
+}
+
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
 int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
@@ -1031,6 +1056,8 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 
 	return (int) dstStrLen;
 }
+
+
 
 /* read mbr from disk */
 mbr* mbrREAD(mbr *a, stream *s, size_t cnt) {

@@ -41,3 +41,4 @@ covers
 coveredBy
 makeBox2D
 makeEnvelope
+asBinary

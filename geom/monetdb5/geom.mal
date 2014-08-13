@@ -64,6 +64,10 @@ comment "Returns the number of interior rings+exterior on the first polygon of t
 
 
 #Geometry Constructors
+command AsBinary(w:wkb) :str address wkbAsBinary
+comment "Returns the wkb representation into HEX format";
+
+
 #command AsText(w:wkb) :str address wkbAsText
 #comment "Creates the text representation of the Geometry.";
 #command AsEWKT(w:wkb) :str address wkbAsEWKT
@@ -495,7 +499,7 @@ comment "Called when inserting values to a table in order to check if the insert
 
 
 
-module geom;
+#module geom;
 command calc.isnil(v:wkb):bit
 address wkbIsnil
 comment "Nil test for wkb value";

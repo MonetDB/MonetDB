@@ -4199,7 +4199,7 @@ END;
 -------------------------------------------------------------------------
 --------------------------- Geometry Outputs ----------------------------
 -------------------------------------------------------------------------
---CREATE FUNCTION ST_AsBinary RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_AsBinary(geom Geometry) RETURNS string EXTERNAL NAME geom."AsBinary";
 --CREATE FUNCTION ST_AsEWKB RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_AsEWKT(geom Geometry) RETURNS string EXTERNAL NAME geom."AsEWKT";
 --CREATE FUNCTION ST_AsGeoJSON RETURNS EXTERNAL NAME
