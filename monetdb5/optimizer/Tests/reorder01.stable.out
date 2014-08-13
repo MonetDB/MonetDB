@@ -216,7 +216,7 @@ function user.s0_0():void;
 end s0_0;
 function user.main():void;
 #select count(*) from (select * from tables union select * from tables ); 
-#don;t depend on SQL library 
+#don't depend on SQL library 
     mdb.list("user","s0_0");
 end main;
 function user.s0_0():void;

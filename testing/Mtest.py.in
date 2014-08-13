@@ -1855,6 +1855,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
+    nomito = os.path.isfile(TST + '.nomito')
+
 
     os.chdir(TSTTRGDIR)
 
@@ -2048,7 +2050,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2681,7 +2683,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2749,6 +2751,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     DBINIT = ['--dbinit=%s' % dbinit]
 
             Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF
+            if nomito:
+                try:
+                    Srvr.remove('--forcemito')
+                except ValueError:
+                    pass
             Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
@@ -3024,7 +3031,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
@@ -3470,6 +3477,8 @@ def main(argv) :
              'run tests as if for a release test'),
             ('multifarm', None, 'multifarm', None,
              'use multiple dbfarms (developers only)'),
+            ('nomito', None, 'nomito', None,
+             'Do not pass --forcemito to server'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3538,6 +3547,7 @@ def main(argv) :
     procdebug = opts.get('procdebug', False)
     global releaserun
     releaserun = opts.get('releaserun', releaserun)
+    nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
@@ -3822,8 +3832,8 @@ def main(argv) :
 
             exe = {}
             exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
-                                                                   (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s --set mal_listing=2 %s' % \
+                                                                   (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
             exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
