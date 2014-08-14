@@ -186,6 +186,15 @@ GEOS_INCS = -I$(LIBGEOS)\include
 RUBY_DIR = lib\ruby\gems\1.9.1
 !ENDIF
 
+!IFDEF HAVE_LIBR
+# This is the location of the R library
+!IFNDEF LIBR
+LIBR = "c:\Program Files\R\R-3.1.0\"
+!ENDIF
+R_LIBS = "$(LIBR)\bin\x64\R.dll" # not sure...
+R_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
+!ENDIF
+
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems
