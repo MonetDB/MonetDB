@@ -1366,8 +1366,10 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		}
 
 		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs), TRANSIENT);
-		if( r==NULL)
+		if( r==NULL) {
+			GDKfree(ppat);
 			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
+		}
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
