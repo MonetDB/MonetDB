@@ -932,11 +932,6 @@ OPTmapreduceImplementation(
 			case STICK:
 				trackstack_push(&tracker, i);
 			break;
-			case SINGLE_DUP:
-				copy = STICK;
-				pushInstruction(map, omap[i]);
-				trackstack_push(&tracker, i);
-			break;
 			case DUP:
 				pushInstruction(map, omap[i]);
 				pushInstruction(reduce, p);
@@ -944,9 +939,7 @@ OPTmapreduceImplementation(
 			case cNONE:
 				copy = STICK;
 			break;
-			case SINGLE:
-			case FREE:
-			case LEAVE:
+			default:
 				assert(0); /* make GCC happy */
 			break;
 		}
