@@ -699,12 +699,14 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		tail = getTypeIdentifier(getColumnType(type));
 
 		bid = *(int *)value;
-		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
-			MT_lock_unset(&c->lock, "remote.put");
-			GDKfree(tail);
-			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+		if (bid != 0) {
+			if ((b = BATdescriptor(bid)) == NULL){
+				MT_lock_unset(&c->lock, "remote.put");
+				GDKfree(tail);
+				throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+			}
+			assert(b->htype == TYPE_void);
 		}
-		assert(b->htype == TYPE_void);
 
 		/* bypass Mapi from this point to efficiently write all data to
 		 * the server */
