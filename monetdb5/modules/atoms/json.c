@@ -1606,13 +1606,15 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
+	assert(pci->retc == 1);
 	if (pci->argc - pci->retc == 1) {
 		val = (int *) getArgReference(stk, pci, 1);
 	} else if (pci->argc - pci->retc == 2) {
 		id = 0;
 		key = (int *) getArgReference(stk, pci, 1);
 		val = (int *) getArgReference(stk, pci, 2);
-	} else if (pci->argc - pci->retc == 3) {
+	} else {
+		assert(pci->argc - pci->retc == 3);
 		id = (int *) getArgReference(stk, pci, 1);
 		key = (int *) getArgReference(stk, pci, 2);
 		val = (int *) getArgReference(stk, pci, 3);
