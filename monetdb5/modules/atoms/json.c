@@ -441,7 +441,7 @@ JSONglue(str res, str r, char sep)
 	str n;
 	if( r== 0 || *r == 0)
 		return res;
-	len =  r?strlen(r):0;
+	len = strlen(r);
 	if ( res == 0)
 		res = GDKstrdup(r);
 	else {
