@@ -1023,12 +1023,14 @@ BBPaddfarm(const char *dirname, int rolemask)
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
 		GDKfatal("BBPaddfarm: bad rolemask\n");
 	}
-	if (stat(dirname, &st) == -1) {
-		if (mkdir(dirname, 0755) < 0) {
+	if (mkdir(dirname, 0755) < 0) {
+		if (errno == EEXIST) {
+			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
+				GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
+			}
+		} else {
 			GDKfatal("BBPaddfarm: %s: cannot create directory\n", dirname);
 		}
-	} else if (!S_ISDIR(st.st_mode)) {
-		GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
 	}
 	for (i = 0; i < MAXFARMS; i++) {
 		if (BBPfarms[i].dirname == NULL) {
@@ -1341,7 +1343,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 {
 	FILE *fp;
 	stream *s = NULL;
-	bat i, j = 1;
+	bat j = 1;
 	char buf[3000];
 	char *p;
 	int n;
@@ -1386,7 +1388,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if (BBPdir_header(s, n) < 0)
 		goto bailout;
 	n = 0;
-	i = 1;
 	for (;;) {
 		/* but for subcommits, all except the bats in the list
 		 * retain their existing mode */
@@ -1400,7 +1401,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		if (j == cnt && n == 0)
 			break;
 		if (j < cnt && (n == 0 || subcommit[j] <= n || fp == NULL)) {
-			i = subcommit[j];
+			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
 				if (new_bbpentry(s, i) < 0)
@@ -1414,7 +1415,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				j++;
 			while (j < cnt && subcommit[j] == i);
 		} else {
-			i = n;
 			if (mnstr_printf(s, "%s", buf) < 0)
 				goto bailout;
 			IODEBUG mnstr_printf(GDKstdout, "%s", buf);

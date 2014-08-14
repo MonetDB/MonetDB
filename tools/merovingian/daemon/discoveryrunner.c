@@ -449,6 +449,7 @@ discoveryRunner(void *d)
 			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
+			/* coverity[dont_call] */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
 			sleep_ms(c);
 			/* force an announcement round by dropping the deadline */

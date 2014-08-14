@@ -137,9 +137,11 @@ openConnectionUDP(int *ret, unsigned short port)
 		close(sock);
 	}
 
-	if (rp == NULL)
+	if (rp == NULL) {
+		freeaddrinfo(result);
 		return(newErr("binding to datagram socket port %hu failed: "
 					"no available address", port));
+	}
 
 	/* retrieve information from the socket */
 	getnameinfo(rp->ai_addr, rp->ai_addrlen,

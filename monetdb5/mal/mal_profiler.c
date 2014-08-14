@@ -241,16 +241,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	if (stk == NULL) return;
 	if (pci == NULL) return;
-	if (profileCounter[PROFdot].status == 1 && start && pci == NULL){
-		if (mb->dotfile == 0){
-			MT_lock_set(&mal_profileLock, "profilerEvent");
-			showFlowGraph(mb,stk,"stethoscope");
-			MT_lock_unset(&mal_profileLock, "profilerEvent");
-		}
-	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
-	if ( !start && pci && pci->token == ENDsymbol)
+	if ( !start && pci->token == ENDsymbol)
 		profilerHeartbeatEvent("ping", 0);
 	if (myname == 0)
 		myname = putName("profiler", 8);
