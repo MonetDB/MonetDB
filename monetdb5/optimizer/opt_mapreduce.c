@@ -123,6 +123,8 @@ MRcloudSize(str mrcluster)
 		return 0;
 	}
 	cloud = BATdescriptor(bid);
+	if (cloud == NULL)
+		return 0;
 	cnt = (int)BATcount(cloud);
 	BBPreleaseref(bid); /* we're done with it */
 	return(cnt);
