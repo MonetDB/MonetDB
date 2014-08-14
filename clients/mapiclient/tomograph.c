@@ -1875,7 +1875,7 @@ parser(char *row)
 		/* convert time to epoch in seconds*/
 		memset(&stm, 0, sizeof(struct tm));
 		c = strptime(c + 1, "%H:%M:%S", &stm);
-		clkticks = (((lng) (stm.tm_hour * 60) + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
+		clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
 		if (c == 0)
 			return -11;
 		if (*c == '.') {
