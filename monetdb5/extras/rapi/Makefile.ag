@@ -29,7 +29,9 @@ lib__rapi = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = rapi.c rapi.h
-	LIBS = $(libr_LIBS)
+	LIBS = ../../tools/libmonetdb5 \
+	../../../gdk/libbat \
+	$(MALLOC_LIBS) $(libr_LIBS)
 }
 
 headers_rapi_mal = {

@@ -188,11 +188,26 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 
 !IFDEF HAVE_LIBR
 # This is the location of the R library
+libr_LIBDEP = R.lib
 !IFNDEF LIBR
-LIBR = "c:\Program Files\R\R-3.1.0\"
+LIBR = c:\Program Files\R\R-3.1.0
+!IF $(bits) == 32
+libr_DLL=$(LIBR)\bin\i386\R.dll
+!ELSE
+libr_DLL=$(LIBR)\bin\x64\R.dll
 !ENDIF
-R_LIBS = "$(LIBR)\bin\x64\R.dll" # not sure...
-R_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
+!ENDIF
+libr_LIBS = C:\cygwin\home\hannes\R.lib
+libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
+
+R.lib: $(libr_DLL)
+	# generate R.lib from R.dll, needed for linking
+	echo LIBRARY R> R.def
+	echo EXPORTS>> R.def
+	dumpbin /exports "$(libr_DLL)" | grep -Po "^\s*\d+\s+\w+\s+\w+\s+\K\w+" >> R.def
+	lib /def:R.def /out:R.lib
+	rm R.def
+	
 !ENDIF
 
 # some programs we use, probably no need to edit
@@ -223,7 +238,7 @@ COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
 # add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
 !ENDIF
-CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(R_CFLAGS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
 
 # No general LDFLAGS needed
 INSTALL = copy

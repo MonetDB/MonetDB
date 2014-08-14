@@ -229,6 +229,7 @@ static int RAPIinitialize(void) {
 /* Completely different Windows initialization */
 /* Gratefully inspired by the JRI code by Simon Urbanek (LGPL)  */
 
+/* R likes this spelling better */
 #define Win32
 
 #define NONAMELESSUNION
@@ -284,7 +285,7 @@ static void my_onintr(int sig)
     UserBreak = 1;
 }
 
-extern Rboolean R_LoadRconsole;
+//extern Rboolean R_LoadRconsole;
 
 int RAPIinitialize(void) {
 	 structRstart rp;
@@ -325,7 +326,7 @@ int RAPIinitialize(void) {
 
 	signal(SIGBREAK, my_onintr);
 	//GA_initapp(0, 0);
-	R_LoadRconsole = FALSE;
+	//R_LoadRconsole = FALSE;
 	setup_Rmainloop();
 
     return RAPIinstalladdons();
@@ -440,7 +441,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// first argument after the return contains the pointer to the sql_func structure
 	// NEW macro temporarily renamed to MNEW to allow including sql_catalog.h
 
-	if (sqlfun != NULL && !list_empty(sqlfun->ops)) {
+	if (sqlfun != NULL && sqlfun->ops->cnt > 0) {
 		int carg = pci->retc + 2;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
