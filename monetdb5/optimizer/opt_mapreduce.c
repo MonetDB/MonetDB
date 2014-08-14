@@ -84,6 +84,8 @@ MRgetCloud(int *ret, str *mrcluster)
 
 	MT_lock_set(&mal_contextLock, "mapreduce");
 	cloud = BATdescriptor(*ret); /* should succeed */
+	if (cloud == NULL)
+		throw(MAL, "mapreduce.getCloud", RUNTIME_OBJECT_MISSING);
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
 	if (mapnodes == NULL) {
