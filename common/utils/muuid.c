@@ -26,7 +26,8 @@
 #include <string.h> /* strdup */
 #ifdef HAVE_UUID_UUID_H
 # include <uuid/uuid.h>
-#else
+#endif
+#ifndef HAVE_UUID
 # include <openssl/rand.h>
 #endif
 
