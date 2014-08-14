@@ -1684,12 +1684,14 @@ JSONgroupStr(str *ret, const bat *bid)
 			continue;
 		len = strlen(t) + 1;
 		if (len >= size - offset) {
+			str nbuf;
 			size += len + 128;
-			buf = GDKrealloc(buf, size);
-			if (buf == NULL) {
+			nbuf = GDKrealloc(buf, size);
+			if (nbuf == NULL) {
 				err= MAL_MALLOC_FAIL;
 				goto failed;
 			}
+			buf = nbuf;
 		}
 		switch (b->ttype) {
 		case TYPE_str:
@@ -1730,8 +1732,7 @@ JSONgroupStr(str *ret, const bat *bid)
 	return MAL_SUCCEED;
   failed:
 	BBPreleaseref(b->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "json.agg", "%s", err);
 }
 
