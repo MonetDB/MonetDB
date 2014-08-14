@@ -820,7 +820,7 @@ initcolors(FILE *map)
 
 	if (map) {
 		/* read the color map */
-		while (fscanf(map,"%s\t%s\t%s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS) {
+		while (fscanf(map,"%127s\t%127s\t%127s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS) {
 			colors[i].mod = strdup(buf[0]);
 			colors[i].fcn = strdup(buf[1]);
 			colors[i].freq = 0;
