@@ -3122,19 +3122,18 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_groupby && list_length(gbe) == 1 && is_join(j->op)) {
 		sql_rel *jl = j->l, *jr = j->r, *cr;
 		sql_exp *gb = gbe->h->data, *e;
-		prop *p;
 		node *n;
 		int left = 1;
 		list *aggrs, *gbe;
 
 		if (jl->op == op_project &&
 		    (e = list_find_exp( jl->exps, gb)) != NULL &&
-		    (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+		     find_prop(e->p, PROP_HASHCOL) != NULL) {
 			left = 0;
 			cr = jr;
 		} else if (jr->op == op_project &&
 		    (e = list_find_exp( jr->exps, gb)) != NULL &&
-		    (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+		     find_prop(e->p, PROP_HASHCOL) != NULL) {
 			left = 1;
 			cr = jl;
 		} else {
