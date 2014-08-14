@@ -31,7 +31,13 @@
 #define skipblancs(J) for(; *(J); (J)++) \
 	if( *(J) != ' ' && *(J) != '\n' && *(J) != '\t' && *(J) != '\f' && *(J) != '\r'  ) break;
 
-#define hex(J) if ( *(J) >='0' && *(J) <='7') (J)++;
+#define hex(J)									\
+	do {										\
+		if ((*(J) >='0' && *(J) <='9') ||		\
+			(*(J) >='a' && *(J) <='f') ||		\
+			(*(J) >='A' && *(J) <='F'))			\
+			(J)++;								\
+	} while (0)
 
 #define SEPARATOR ' '
 
