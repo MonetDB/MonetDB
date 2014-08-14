@@ -908,44 +908,51 @@ JSONfilter(json *ret, json *js, str *expr)
 // The json string should be valid
 
 static char * 
-JSONplaintext(char *r, JSON *jt, int idx, char sep)
+JSONplaintext(char *r, size_t *l, JSON *jt, int idx, char sep)
 {
 	int i;
 	size_t j;
 	switch(jt->elm[idx].kind){
 	case JSON_OBJECT:
 		for( i= jt->elm[idx].next; i; i= jt->elm[i].next)
-		if( jt->elm[i].child)
-			r = JSONplaintext(r, jt,jt->elm[i].child,sep );
+			if( jt->elm[i].child)
+				r = JSONplaintext(r, l, jt,jt->elm[i].child,sep );
 		break;
 	case JSON_ARRAY:
 		for( i= jt->elm[idx].next; i; i= jt->elm[i].next)
-			r = JSONplaintext(r, jt,i,sep);
+			r = JSONplaintext(r, l, jt,i,sep);
 		break;
 	case JSON_ELEMENT:
 	case JSON_VALUE:
 		if( jt->elm[idx].child)
-			r = JSONplaintext(r, jt,jt->elm[idx].child,sep);
+			r = JSONplaintext(r, l, jt,jt->elm[idx].child,sep);
 		break;
 	case JSON_STRING:
-		for(j=1; j< jt->elm[idx].valuelen-1; j++){
+		for(j=1; *l > 1 && j< jt->elm[idx].valuelen-1; j++){
 			if ( jt->elm[idx].value[j] == '\\')
 				*r = jt->elm[idx].value[++j];
 			else
 				*r = jt->elm[idx].value[j];
 			r++;
+			(*l)--;
 		}
-		if(sep)
+		if(*l > 1 && sep) {
 			*r++= sep;
+			(*l)--;
+		}
 		break;
 	default:
-		for(j=0; j< jt->elm[idx].valuelen; j++){
+		for(j=0; *l > 1 && j< jt->elm[idx].valuelen; j++){
 			*r = jt->elm[idx].value[j];
 			r++;
+			(*l)--;
 		}
-		if(sep)
+		if(*l > 1 && sep) {
 			*r++= sep;
+			(*l)--;
+		}
 	}
+	assert(*l > 0);
 	*r = 0;
 	return r;
 }
@@ -959,8 +966,9 @@ JSONjson2text(str *ret, json *js)
 
 	jt = JSONparse(*js,0);
 
-	s = GDKzalloc(strlen(*js));
-	JSONplaintext(s,jt,0,' ');
+	l = strlen(*js) + 1;
+	s = GDKmalloc(l);
+	JSONplaintext(s,&l,jt,0,' ');
 	l = strlen(s);
 	if ( l) s[l-1]= 0;
 	*ret = s;
@@ -977,8 +985,9 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 
 	jt = JSONparse(*js,0);
 
-	s = GDKzalloc(strlen(*js));
-	JSONplaintext(s,jt,0,**sep);
+	l = strlen(*js) + 1;
+	s = GDKmalloc(l);
+	JSONplaintext(s,&l,jt,0,**sep);
 	l = strlen(s);
 	if ( l) s[l-1]= 0;
 	*ret = s;
