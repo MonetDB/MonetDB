@@ -2421,7 +2421,7 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 		throw(MAL, "str.substitute", "Allocation failed");
 	end = buf + l;
 	fnd = buf;
-	strcpy(buf, s);
+	strcpy(buf, s ? s : "");
 	if (lsrc == 0)
 		return MAL_SUCCEED;
 	do {
