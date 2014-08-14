@@ -20,7 +20,7 @@ INCLUDES = ../../mal \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../gdk \
-		   $(libxml2_CFLAGS) $(curl_CFLAGS)
+		   $(libxml2_CFLAGS) $(curl_CFLAGS) $(openssl_CFLAGS)
 MTSAFE
 
 lib_atoms = {
