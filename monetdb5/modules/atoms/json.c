@@ -712,7 +712,8 @@ JSONtoken(JSON *jt, char *j, char **next, int silent)
 				jt->elm[k].kind = JSON_OBJECT;
 				jt->elm[k].child = nxt;
 				nxt = k;
-				} 
+				}
+				/* fall through */
 			case JSON_OBJECT:
 			case JSON_ARRAY:
 				if ( jt->elm[nxt].kind == JSON_OBJECT || jt->elm[nxt].kind == JSON_ARRAY){
