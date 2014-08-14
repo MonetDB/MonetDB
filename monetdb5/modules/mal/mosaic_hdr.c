@@ -28,7 +28,7 @@ MOSdumpHeader(Client cntxt, MOStask task)
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	int i;
 
-	mnstr_printf(cntxt->fdout,"#header block version %d\n", hdr->version);
+	mnstr_printf(cntxt->fdout,"#header block "LLFMT" version %d\n", (lng)hdr, hdr->version);
 	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
 	for(i= 0; i< hdr->top; i++)
 		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->index[i], hdr->offset[i]);
@@ -44,7 +44,7 @@ MOSupdateHeader(Client cntxt, MOStask task)
 
 	(void) cntxt;
     task->wins[task->blk->tag]++;
-    task->wins[task->blk->tag] += task->blk->cnt;
+    task->elms[task->blk->tag] += task->blk->cnt;
 	if( hdr->top < MOSAICINDEX-1 ){
 		if( hdr->top == 0)
 			hdr->index[hdr->top] = task->blk->cnt;

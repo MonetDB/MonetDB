@@ -63,6 +63,7 @@ MOSadvance_rle(MOStask task)
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl))); break;
 	default:
 		if( task->type == TYPE_timestamp){
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp))); 
 		}
 	}
 }
@@ -90,26 +91,17 @@ MOSestimate_rle(Client cntxt, MOStask task)
 	lng chunksize = 0;
 	(void) cntxt;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: Estimate(bte); break;
 	case TYPE_bit: Estimate(bit); break;
 	case TYPE_sht: Estimate(sht); break;
-	case TYPE_int:
-	{	int val = *(int*)task->src;
-		for(i =1; i<task->elm; i++)
-		if ( ((int*)task->src)[i] != val)
-			break;
-		chunksize = i;
-	}
-	break;
 	case TYPE_lng: Estimate(lng); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
-	default:
-		if( task->type == TYPE_timestamp)
-		{	timestamp val = *(timestamp*) task->src;
+	case TYPE_int:
+		{	int val = *(int*)task->src;
 			for(i =1; i<task->elm; i++)
-			if ( !( ((timestamp*)task->src)[i].days == val.days && ((timestamp*)task->src)[i].msecs == val.msecs))
+			if ( ((int*)task->src)[i] != val)
 				break;
 			chunksize = i;
 		}
@@ -141,36 +133,25 @@ MOScompress_rle(Client cntxt, MOStask task)
 	blk->cnt =  0;
 	task->time[MOSAIC_RLE] = GDKusec();
 
-	switch(task->type){
-	case TYPE_bte: RLEcompress(bte); break ;
+	switch(ATOMstorage(task->type)){
+	case TYPE_bte: RLEcompress(bte); break;
 	case TYPE_bit: RLEcompress(bit); break;
 	case TYPE_sht: RLEcompress(sht); break;
-	case TYPE_int:
-	{	int val = *(int*) task->src;
-		int *dst = (int*) task->dst;
-		*dst = val;
-		for(i =1; i<task->elm; i++)
-		if ( ((int*)task->src)[i] != val)
-			break;
-		blk->cnt = i;
-		task->dst +=  sizeof(int);
-		task->src += i * sizeof(int);
-	}
-		break;
 	case TYPE_lng: RLEcompress(lng); break;
 	case TYPE_flt: RLEcompress(flt); break;
 	case TYPE_dbl: RLEcompress(dbl); break;
-	default:
-		if( task->type == TYPE_timestamp){
-			timestamp val = *(timestamp*) task->src;
-			timestamp *dst = (timestamp*) task->dst;
+	case TYPE_int:
+		{	int val = *(int*) task->src;
+			int *dst = (int*) task->dst;
 			*dst = val;
 			for(i =1; i<task->elm; i++)
-			if ( !(((timestamp*)task->src)[i].days == val.days && ((timestamp*)task->src)[i].msecs == val.msecs))
+			if ( ((int*)task->src)[i] != val)
 				break;
 			blk->cnt = i;
-			task->src += i * sizeof(timestamp);
+			task->dst +=  sizeof(int);
+			task->src += i * sizeof(int);
 		}
+		break;
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_rle(cntxt, task);
@@ -187,35 +168,27 @@ MOScompress_rle(Client cntxt, MOStask task)
 }
 
 static void
-MOSdecompress_rle( MOStask task)
+MOSdecompress_rle(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
 	lng clk = GDKusec();
 	char *compressed;
+	(void) cntxt;
 
 	compressed = (char*) blk + MosaicBlkSize;
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: RLEdecompress(bte); break ;
 	case TYPE_bit: RLEdecompress(bit); break ;
 	case TYPE_sht: RLEdecompress(sht); break;
-	case TYPE_int:
-	{	int val = *(int*) compressed ;
-		for(i = 0; i < (BUN) blk->cnt; i++)
-			((int*)task->src)[i] = val;
-		task->src += i * sizeof(int);
-	}
-		break;
 	case TYPE_lng: RLEdecompress(lng); break;
 	case TYPE_flt: RLEdecompress(flt); break;
 	case TYPE_dbl: RLEdecompress(dbl); break;
-	default:
-		if( task->type == TYPE_timestamp)
-		{	timestamp val = *(timestamp*) compressed;
-
+	case TYPE_int:
+		{	int val = *(int*) compressed ;
 			for(i = 0; i < (BUN) blk->cnt; i++)
-				((timestamp*)task->src)[i] = val;
-			task->src += i * sizeof(timestamp);
+				((int*)task->src)[i] = val;
+			task->src += i * sizeof(int);
 		}
 	}
 	task->time[MOSAIC_RLE] = GDKusec() - clk;
@@ -229,7 +202,7 @@ MOSdecompress_rle( MOStask task)
 \
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
-			for( ; first < last; first++, val++){\
+			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
@@ -312,7 +285,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-				for( ; first < last; first++, val++){
+				for( ; first < last; first++){
 					MOSskipit();
 					*o++ = (oid) first;
 				}
@@ -356,7 +329,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 			if( *(int*) hgh == int_nil ){
 				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 				if ( !cmp )
-				for( ; first < last; first++, val++){
+				for( ; first < last; first++){
 					MOSskipit();
 					*o++ = (oid) first;
 				}
@@ -364,7 +337,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
 						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
 				if (!cmp)
-				for( ; first < last; first++, val++){
+				for( ; first < last; first++){
 					MOSskipit();
 					*o++ = (oid) first;
 				}
@@ -479,6 +452,8 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 				}
 		}
 		break;
+	default:
+		assert(0);
 	}
 	task->lb =o;
 	return MAL_SUCCEED;
@@ -519,6 +494,9 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 			}
 			task->src = (char*) v;
 		}
+		break;
+	default:
+		assert(0);
 	}
 	return MAL_SUCCEED;
 }
@@ -550,16 +528,19 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_flt: join_rle(flt); break;
 		case TYPE_dbl: join_rle(dbl); break;
 		case TYPE_int:
-		{	int *v, *w;
-			v = (int*) (((char*) task->blk) + MosaicBlkSize);
-			w = (int*) task->src;
-			for(n = task->elm, o = 0; n -- > 0; w++,o++)
-			if ( *w == *v)
-				for(oo= (oid) first; oo < (oid) last; v++, oo++){
-					BUNappend(task->lbat, &oo, FALSE);
-					BUNappend(task->rbat, &o, FALSE);
-				}
-		}
+			{	int *v, *w;
+				v = (int*) (((char*) task->blk) + MosaicBlkSize);
+				w = (int*) task->src;
+				for(n = task->elm, o = 0; n -- > 0; w++,o++)
+				if ( *w == *v)
+					for(oo= (oid) first; oo < (oid) last; v++, oo++){
+						BUNappend(task->lbat, &oo, FALSE);
+						BUNappend(task->rbat, &o, FALSE);
+					}
+			}
+		break;
+		default:
+			assert(0);
 	}
 	return MAL_SUCCEED;
 }

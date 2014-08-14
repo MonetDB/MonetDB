@@ -20,6 +20,7 @@
 /*
  * (c) 2014 author Martin Kersten
  * Adaptive compression scheme to reduce the storage footprint for stable persistent data.
+ * The permissible compression techniques can be controlled thru an argument list
 */
 
 #include "monetdb_config.h"
@@ -37,16 +38,16 @@
 #define MIN_INPUT_COUNT 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	7
+#define MOSAIC_METHODS	6
 #define MOSAIC_NONE     0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
-#define MOSAIC_FRONT    2		// use front compression for >=4 byte fields
+#define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
-#define MOSAIC_BITMAPS  4		// use limited set of bitmaps
+#define MOSAIC_BITMAP 	4		// use limited set of bitmaps
 #define MOSAIC_RANGE    5		// use linear model
-#define MOSAIC_GUASSIAN 6		// use guassian model fitting
-#define MOSAIC_EOL		7		// marker for the last block
+#define MOSAIC_EOL		6		// marker for the last block
 
+static char *filtername[]={"none","rle","dict","delta","bitmap","range","EOL"};
 #define MOSAIC_BITS 48			// maximum number of elements to compress
 
 //Compression should have a significant reduction to apply.
@@ -65,15 +66,15 @@ typedef struct MOSAICHEADER{
 } * MosaicHdr;
 
 typedef struct MOSAICBLOCK{
-	lng tag:4,		// method applied in chunk
-	cnt:MOSAIC_BITS;	// compression specific information
+	bte tag;		// method applied in chunk
+	BUN cnt:MOSAIC_BITS;// compression specific information
 } *MosaicBlk;
-
-#define MosaicHdrSize  sizeof(struct MOSAICHEADER)
-#define MosaicBlkSize  sizeof(struct MOSAICBLOCK)
 
 #define wordaligned(SZ) \
 	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(int)) : 0))
+
+#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER))
+#define MosaicBlkSize  wordaligned(sizeof(struct MOSAICBLOCK))
 
 
 typedef struct MOSTASK{
@@ -95,7 +96,6 @@ typedef struct MOSTASK{
 	lng time[MOSAIC_METHODS];
 	lng wins[MOSAIC_METHODS];	
 	lng elms[MOSAIC_METHODS];	
-	int perc[MOSAIC_METHODS]; // compression size for the last batch 0..100 percent
 } *MOStask;
 
 /* we keep a condensed OID index anchored to the compressed blocks */
@@ -135,6 +135,7 @@ float nextafterf(float x, float y);
 #include "mosaic_hdr.c"
 #include "mosaic_none.c"
 #include "mosaic_rle.c"
+#include "mosaic_dict.c"
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -146,6 +147,7 @@ MOSinit(MOStask task, BAT *b){
 	task->dst = base + MosaicBlkSize;
 }
 
+/*
 static void
 MOSclose(MOStask task){
 	if( task->blk->cnt == 0){
@@ -153,24 +155,28 @@ MOSclose(MOStask task){
 		return;
 	}
 }
+*/
 
 static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
-	mnstr_printf(cntxt->fdout,"#type %d todo "BUNFMT"\n", task->type, task->elm);
+	lng cnt = 0;
+	mnstr_printf(cntxt->fdout,"#blk "BUNFMT" type %d todo "BUNFMT"\n", (BUN)task->blk, task->type, task->elm);
 	mnstr_printf(cntxt->fdout,"#wins ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout,LLFMT " ",task->wins[i]);
 	mnstr_printf(cntxt->fdout,"\n#elms ");
-	for(i=0; i< MOSAIC_METHODS; i++)
+	for(i=0; i< MOSAIC_METHODS; i++){
 		mnstr_printf(cntxt->fdout,LLFMT " ",task->elms[i]);
+		cnt += task->elms[i];
+	}
 	mnstr_printf(cntxt->fdout,"\n#time ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout, LLFMT" ",task->time[i]);
 	mnstr_printf(cntxt->fdout,"\n#perc ");
 	for(i=0; i< MOSAIC_METHODS; i++)
-		mnstr_printf(cntxt->fdout, "%d ",task->perc[i]);
+		mnstr_printf(cntxt->fdout, "%d ",(int)((100.0 *task->elms[i])/cnt));
 	mnstr_printf(cntxt->fdout,"\n");
 }
 
@@ -192,6 +198,10 @@ MOSdumpInternal(Client cntxt, BAT *b){
 		case MOSAIC_RLE:
 			MOSdump_rle(cntxt,task);
 			MOSskip_rle(task);
+			break;
+		case MOSAIC_DICT:
+			MOSdump_dict(cntxt,task);
+			MOSskip_dict(task);
 			break;
 		default: assert(0);
 		}
@@ -264,17 +274,24 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
  */
 
 str
-MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
+MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 {
 	BAT *b, *bn;
 	BUN cnt;
+	int i;
 	str msg = MAL_SUCCEED;
 	MOStask task;
 	int cand;
 	lng chunksize=0, ch;
+	int filter[MOSAIC_METHODS];
+	
+	if( properties)
+		for( i = 0; i< MOSAIC_METHODS; i++)
+			filter[i]= strstr(properties,filtername[i]) != 0;
+	else
+		for( i = 0; i< MOSAIC_METHODS; i++)
+			filter[i]= 1;
 
-	if( threshold == 0)
-		threshold = COMPRESS_THRESHOLD;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
@@ -297,13 +314,13 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 	}
 
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#compress bat %d threshold %d\n",*bid,threshold);
+	mnstr_printf(cntxt->fdout,"#compress bat %d properties %s\n",*bid,properties?properties:"");
 #endif
 	// allocate space for the compressed version.
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
-	// use a small size overshoot
-	bn = BATnew( TYPE_void, b->ttype, cnt+MosaicBlkSize, TRANSIENT);
+	// use a size overshoot. Also be aware of possible dictionary headers
+	bn = BATnew( TYPE_void, b->ttype, 2*cnt+MosaicBlkSize, TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
@@ -331,36 +348,60 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 	while(task->elm > 0){
 		// default is to extend the non-compressed block
 		cand = MOSAIC_NONE;
+		ch =0;
 		chunksize = 1;
 		// collect the opportunities for compression
-		ch = MOSestimate_rle(cntxt,task);
+		if (filter[MOSAIC_RLE])
+			ch = MOSestimate_rle(cntxt,task);
 		// select candidate amongst those
 		if ( ch > chunksize){
-		// If it is smaller then the non-compressed version then do that.
 			cand = MOSAIC_RLE;
+			chunksize = ch;
+		}
+		if (filter[MOSAIC_DICT])
+			ch = MOSestimate_dict(cntxt,task);
+		if ( ch > chunksize){
+			cand = MOSAIC_DICT;
 			chunksize = ch;
 		}
 
 		// apply the compression to a chunk
 		switch(cand){
-		case MOSAIC_RLE:
+		case MOSAIC_DICT:
 			// close the non-compressed part
-			if( task->blk->cnt ){
+			if(task->blk->tag == MOSAIC_NONE && task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
-				task->wins[MOSAIC_NONE] ++;
-				task->elms[MOSAIC_NONE] += task->blk->cnt;
 				MOSskip_none(task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				task->blk->tag = MOSAIC_EOL;
 				task->blk->cnt = 0;
 			}
+			mnstr_printf(cntxt->fdout,"#encode block "BUNFMT" \n", (BUN)task->blk);
+			MOScompress_dict(cntxt,task);
+			MOSupdateHeader(cntxt,task);
+			//prepare new block header
+			task->elm -= task->blk->cnt;
+			MOSadvance_dict(task);
+			task->blk->tag = MOSAIC_EOL;
+			task->blk->cnt = 0;
+			task->dst = ((char*) task->blk)+ MosaicBlkSize;
+			break;
+		case MOSAIC_RLE:
+			// close the non-compressed part
+			if(task->blk->tag == MOSAIC_NONE && task->blk->cnt ){
+				MOSupdateHeader(cntxt,task);
+				MOSskip_none(task);
+				// always start with an EOL block
+				task->dst = ((char*) task->blk)+ MosaicBlkSize;
+				task->blk->tag = MOSAIC_EOL;
+				task->blk->cnt = 0;
+			}
+			mnstr_printf(cntxt->fdout,"#encode block "BUNFMT" \n", (BUN)task->blk);
 			MOScompress_rle(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= task->blk->cnt;
-			task->wins[MOSAIC_RLE]++;
-			task->elms[MOSAIC_RLE] += task->blk->cnt;
 			MOSadvance_rle(task);
 			task->blk->tag = MOSAIC_EOL;
 			task->blk->cnt = 0;
@@ -371,17 +412,16 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 			MOScompress_none(cntxt,task);
 		}
 	}
-	if( task->blk->tag == MOSAIC_NONE){
-		MOSclose(task);
+	if( task->blk->tag == MOSAIC_NONE && task->blk->cnt){
 		MOSupdateHeader(cntxt,task);
-		task->blk = (MosaicBlk) task->dst;
+		MOSadvance_none(task);
+		task->dst = ((char*) task->blk)+ MosaicBlkSize;
 		task->blk->tag = MOSAIC_EOL;
 		task->blk->cnt = 0;
 	}
 //#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
 //#endif
-	(void) threshold;
 
 	BATsetcount(bn, cnt);
 	BATseqbase(bn,b->hseqbase);
@@ -406,11 +446,11 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold)
 str
 MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	int threshold = COMPRESS_THRESHOLD;
+	str prop = NULL;
 	(void) mb;
-	if( pci->argc == 4)
-		threshold = *(int*) getArgReference(stk,pci,3);
-	return MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), threshold);
+	if( pci->argc == 3)
+		prop = *(str*) getArgReference(stk,pci,2);
+	return MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), prop);
 }
 
 // bulk decompress a heap
@@ -464,13 +504,18 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	MOSinit(task,b);;
 	task->src = Tloc(bn, BUNfirst(bn));
 	while(task->blk){
+		mnstr_printf(cntxt->fdout,"#decode block "BUNFMT" tag %d \n", (BUN)task->blk, task->blk->tag);
 		switch(task->blk->tag){
+		case MOSAIC_DICT:
+			MOSdecompress_dict(cntxt,task);
+			MOSskip_dict(task);
+			break;
 		case MOSAIC_NONE:
-			MOSdecompress_none(task);
+			MOSdecompress_none(cntxt,task);
 			MOSskip_none(task);
 			break;
 		case MOSAIC_RLE:
-			MOSdecompress_rle(task);
+			MOSdecompress_rle(cntxt,task);
 			MOSskip_rle(task);
 			break;
 		default: assert(0);
@@ -624,6 +669,11 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
+		case MOSAIC_DICT:
+			MOSsubselect_dict(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
+			first += task->blk->cnt;
+			MOSskip_rle(task);
+			break;
 		case MOSAIC_NONE:
 		default:
 			MOSsubselect_none(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
@@ -718,6 +768,11 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			first += task->blk->cnt;
 			MOSskip_rle(task);
 			break;
+		case MOSAIC_DICT:
+			MOSthetasubselect_dict(cntxt,task,first,first + task->blk->cnt,low,*oper);
+			first += task->blk->cnt;
+			MOSskip_dict(task);
+			break;
 		case MOSAIC_NONE:
 		default:
 			MOSthetasubselect_none(cntxt,task,first,first + task->blk->cnt,low,*oper);
@@ -809,6 +864,11 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSleftfetchjoin_rle(cntxt, task, first, first + task->blk->cnt);
 			first += task->blk->cnt;
 			MOSskip_rle(task);
+			break;
+		case MOSAIC_DICT:
+			MOSleftfetchjoin_dict(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
+			MOSskip_dict(task);
 			break;
 		case MOSAIC_NONE:
 			MOSleftfetchjoin_none(cntxt, task, first, first + task->blk->cnt);
@@ -907,6 +967,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSjoin_rle(cntxt, task, first, first + task->blk->cnt);
 			first += (BUN) task->blk->cnt;
 			MOSskip_rle(task);
+			break;
+		case MOSAIC_DICT:
+			MOSjoin_dict(cntxt, task, first, first + task->blk->cnt);
+			first += (BUN) task->blk->cnt;
+			MOSskip_dict(task);
 			break;
 		case MOSAIC_NONE:
 			MOSjoin_none(cntxt, task, first, first + task->blk->cnt);

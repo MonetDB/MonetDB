@@ -90,6 +90,7 @@ insert into tmp3 values
 
 alter table tmp3 set read only;
 
+select * from tmp3;
 select * from storage where "table" = 'tmp3';
 
 call sys.compress('sys','tmp3');

@@ -37,7 +37,7 @@
 #endif
 
 mos_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOScompressInternal(Client cntxt, int *ret, int *bid, int threshold);
+mos_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties);
 mos_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mos_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid);
 mos_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

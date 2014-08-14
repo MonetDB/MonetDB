@@ -1,5 +1,9 @@
 module mosaic;
 
+pattern compress(b:bat[:oid,:any_1], prop:str) :bat[:oid,:any_1]
+address MOScompress
+comment "Apply dynamic compression over chunks";
+
 pattern compress(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address MOScompress
 comment "Apply dynamic compression over chunks";

@@ -70,6 +70,7 @@ manifoldstr
 mosaic_none
 mosaic_rle
 mosaic_mix
+mosaic_dict
 
 mosaic_none_double
 

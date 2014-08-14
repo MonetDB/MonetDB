@@ -3981,7 +3981,7 @@ SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (b == NULL)
 			throw(SQL, "sql.compress", "Can not access descriptor");
 		// simplified test case
-		bn = BATcopy(b,b->htype, b->ttype,0,TRANSIENT);
+		bn = BATcopy(b,b->htype, b->ttype,0,PERSISTENT);
 		BBPkeepref(bn->batCacheid);
 		bid = bn->batCacheid;
 		//msg =MOScompressInternal(cntxt, &bid, &b->batCacheid,0);
@@ -3993,9 +3993,9 @@ SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPdecref(d->bid, TRUE);
 		if (d->ibid)
 			BBPdecref(d->ibid, TRUE);
-		d->bid = bid;
+		d->bid = 0;
 		d->ibase = 0;
-		d->ibid = 0;	/* use the insert bat */
+		d->ibid = bid;	/* use the insert bat */
 		c->base.wtime = tr->wstime;
 		c->base.rtime = tr->stime;
 	}
@@ -4043,7 +4043,7 @@ SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (b == NULL)
 			throw(SQL, "sql.decompress", "Can not access descriptor");
 		// simplified test case
-		bn = BATcopy(b,b->htype, b->ttype,0,TRANSIENT);
+		bn = BATcopy(b,b->htype, b->ttype,0,PERSISTENT);
 		BBPkeepref(bn->batCacheid);
 		bid = bn->batCacheid;
 		//msg =MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
@@ -4055,9 +4055,9 @@ SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPdecref(d->bid, TRUE);
 		if (d->ibid)
 			BBPdecref(d->ibid, TRUE);
-		d->bid = bid;
+		d->bid = 0;
 		d->ibase = 0;
-		d->ibid = 0;	/* use the insert bat */
+		d->ibid = bid;	/* use the insert bat */
 		c->base.wtime = tr->wstime;
 		c->base.rtime = tr->stime;
 	}

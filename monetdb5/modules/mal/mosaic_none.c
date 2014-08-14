@@ -30,7 +30,7 @@ MOSdump_none(Client cntxt, MOStask task)
 }
 
 static void
-MOSskip_none(MOStask task)
+MOSadvance_none(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	switch(task->type){
@@ -40,8 +40,17 @@ MOSskip_none(MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); 
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); break;
+	default:
+		if( task->type == TYPE_timestamp)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* blk->cnt)); 
 	}
+}
+
+static void
+MOSskip_none(MOStask task)
+{
+	MOSadvance_none(task);
 	if ( task->blk->tag == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -67,7 +76,7 @@ MOScompress_none(Client cntxt, MOStask task)
 	blk->tag = MOSAIC_NONE;
     task->time[MOSAIC_NONE] = GDKusec();
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: NONEcompress(bte); break ;
 	case TYPE_bit: NONEcompress(bit); break ;
 	case TYPE_sht: NONEcompress(sht); break;
@@ -82,9 +91,6 @@ MOScompress_none(Client cntxt, MOStask task)
 	case TYPE_lng: NONEcompress(lng); break;
 	case TYPE_flt: NONEcompress(flt); break;
 	case TYPE_dbl: NONEcompress(dbl); break;
-	default:
-		if( task->type == TYPE_timestamp)
-			NONEcompress(timestamp); 
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_none_(cntxt, task);
@@ -100,12 +106,13 @@ MOScompress_none(Client cntxt, MOStask task)
 }
 
 static void
-MOSdecompress_none( MOStask task)
+MOSdecompress_none(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 	lng clk = GDKusec();
 	char *compressed;
+	(void) cntxt;
 
 	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(task->type){
@@ -149,7 +156,7 @@ if ( task->cl && task->n){\
 		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		if( !*anti){\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
-				for( ; first < last; first++, val++){\
+				for( ; first < last; first++){\
 					MOSskipit();\
 					*o++ = (oid) first;\
 				}\
