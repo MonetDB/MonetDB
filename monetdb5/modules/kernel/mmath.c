@@ -275,6 +275,7 @@ MATHunary_FINITE(bit *res, dbl *a)
 str
 MATHrandint(int *res)
 {
+	/* coverity[dont_call] */
 	*res = rand();
 	return MAL_SUCCEED;
 }
@@ -290,6 +291,7 @@ str
 MATHsqlrandint(int *res, int *seed)
 {
 	srand(*seed);
+	/* coverity[dont_call] */
 	*res = rand();
 	return MAL_SUCCEED;
 }
