@@ -996,9 +996,6 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* skip over this line */
 		fdin->pos = ++len;
 
-		if (var == NULL) 
-			var ="nil";
-
 		s = 0;
 		r = NULL;
 		ATOMfromstr(t, &r, &s, var);
