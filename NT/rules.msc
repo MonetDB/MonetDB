@@ -223,7 +223,7 @@ COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
 # add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
 !ENDIF
-CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(R_CFLAGS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
 
 # No general LDFLAGS needed
 INSTALL = copy

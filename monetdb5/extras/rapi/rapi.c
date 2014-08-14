@@ -129,6 +129,7 @@ static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
 
+
 // helper function to translate R TYPEOF() return values to something readable
 char* rtypename(int rtypeid) {
 	if (rtypeid < 0 || rtypeid > 25) {
@@ -157,17 +158,20 @@ void clearRErrConsole(void) {
 int RAPIinstalladdons(void);
 
 /* UNIX-like initialization */
-#ifndef Win32
+#ifndef WIN32
 
 #define R_INTERFACE_PTRS 1
 #define CSTACK_DEFNS 1
 #include <Rinterface.h>
 
 static int RAPIinitialize(void) {
-
+// TODO: check for header/library version mismatch?
 #ifdef RIF_HAS_RSIGHAND
 	R_SignalHandlers=0;
 #endif
+	// set R_HOME for packages etc. We know this from our configure script
+	setenv("R_HOME", RHOME, TRUE);
+
 	// set some command line arguments
 	{
 		structRstart rp;
@@ -223,8 +227,9 @@ static int RAPIinitialize(void) {
 }
 #else
 /* Completely different Windows initialization */
-/* Gratefully lifted from the JRI code by Simon Urbanek (LGPL)  */
+/* Gratefully inspired by the JRI code by Simon Urbanek (LGPL)  */
 
+#define Win32
 
 #define NONAMELESSUNION
 #include <windows.h>
@@ -241,11 +246,13 @@ static int RAPIinitialize(void) {
 #endif
 
 #include "R_ext/RStartup.h"
+#include "Rversion.h"
 
-#ifndef WIN64
+#ifndef _WIN64
 /* according to fixed/config.h Windows has uintptr_t, my windows hasn't */
 #if !defined(HAVE_UINTPTR_T) && !defined(uintptr_t) && !defined(_STDINT_H)
-typedef unsigned uintptr_t;
+//typedef unsigned uintptr_t;
+// TODO: win64? how do we know?
 #endif
 #endif
 extern __declspec(dllimport) uintptr_t R_CStackLimit; /* C stack limit */
@@ -254,6 +261,8 @@ extern __declspec(dllimport) uintptr_t R_CStackStart; /* Initial stack address *
 /* for signal-handling code */
 /* #include "psignal.h" - it's not included, so just get SIGBREAK */
 #define	SIGBREAK 21	/* to readers pgrp upon background tty read */
+
+#define	S_IRWXU		0000700
 
 /* one way to allow user interrupts: called in ProcessEvents */
 #ifdef _MSC_VER
@@ -265,150 +274,59 @@ __declspec(dllimport) int UserBreak;
 extern int UserBreak;
 #endif
 
-/* calls into the R DLL */
-extern char *getDLLVersion();
-extern void R_DefParams(Rstart);
-extern void R_SetParams(Rstart);
-extern void setup_term_ui(void);
+extern char *getDLLVersion(), *getRUser(), *get_R_HOME();
+extern void R_DefParams(Rstart), R_SetParams(Rstart), R_setStartTime();
 extern void ProcessEvents(void);
-extern void end_Rmainloop(void), R_ReplDLLinit(void);
 extern int R_ReplDLLdo1();
-extern void run_Rmainloop(void);
-
-void myCallBack()
-{
-    /* called during i/o, eval, graphics in ProcessEvents */
-}
-
-#ifndef YES
-#define YES    1
-#endif
-#ifndef NO
-#define NO    -1
-#endif
-#ifndef CANCEL
-#define CANCEL 0
-#endif
-
-int myYesNoCancel(char *s)
-{
-    char  ss[128];
-    unsigned char a[3];
-
-    sprintf(ss, "%s [y/n/c]: ", s);
-    Re_ReadConsole(ss, a, 3, 0);
-    switch (a[0]) {
-    case 'y':
-    case 'Y':
-	return YES;
-    case 'n':
-    case 'N':
-	return NO;
-    default:
-	return CANCEL;
-    }
-}
 
 static void my_onintr(int sig)
 {
     UserBreak = 1;
 }
 
-static char Rversion[25], RUser[MAX_PATH], RHome[MAX_PATH];
+extern Rboolean R_LoadRconsole;
 
-int RAPIinitialize(void)
-{
-    structRstart rp;
-    Rstart Rp = &rp;
-    char *p;
-    char rhb[MAX_PATH+10];
-    DWORD t, s = MAX_PATH;
-    HKEY k;
-    int cvl;
+int RAPIinitialize(void) {
+	 structRstart rp;
+	Rstart Rp = &rp;
+	char Rversion[25], *RHome;
 
-    sprintf(Rversion, "%s.%s", R_MAJOR, R_MINOR);
-    cvl=strlen(R_MAJOR)+2;
-    if(strncmp(getDLLVersion(), Rversion, cvl) != 0) {
-        char msg[512];
-	sprintf(msg, "Error: R.DLL version does not match (DLL: %s, expecting: %s)\n", getDLLVersion(), Rversion);
-	fprintf(stderr, msg);
-	MessageBox(0, msg, "Version mismatch", MB_OK|MB_ICONERROR);
-	return -1;
-    }
+	snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
+	if(strncmp(getDLLVersion(), Rversion, 25) != 0) {
+	fprintf(stderr, "Error: R.DLL version does not match\n");
+	exit(1);
+	}
 
-    R_DefParams(Rp);
-    if(getenv("R_HOME")) {
-	strcpy(RHome, getenv("R_HOME"));
-    } else { /* fetch R_HOME from the registry - try preferred architecture first */
-#ifdef WIN64
-      const char *pref_path = "SOFTWARE\\R-core\\R64";
-#else
-      const char *pref_path = "SOFTWARE\\R-core\\R32";
-#endif
-      if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-	   RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_CURRENT_USER, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-           RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-	   RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-           RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS)) {
-	fprintf(stderr, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n");
-	MessageBox(0, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n", "Can't find R home", MB_OK|MB_ICONERROR);
-	return -2;
-      }
-      sprintf(rhb,"R_HOME=%s",RHome);
-      putenv(rhb);
-    }
-    /* on Win32 this should set R_Home (in R_SetParams) as well */
-    Rp->rhome = RHome;
-    /*
-     * try R_USER then HOME then working directory
-     */
-    if (getenv("R_USER")) {
-	strcpy(RUser, getenv("R_USER"));
-    } else if (getenv("HOME")) {
-	strcpy(RUser, getenv("HOME"));
-    } else if (getenv("HOMEDIR")) {
-	strcpy(RUser, getenv("HOMEDIR"));
-	strcat(RUser, getenv("HOMEPATH"));
-    } else
-	GetCurrentDirectory(MAX_PATH, RUser);
-    p = RUser + (strlen(RUser) - 1);
-    if (*p == '/' || *p == '\\') *p = '\0';
-    Rp->home = RUser;
-    Rp->ReadConsole = Re_ReadConsole;
-    Rp->WriteConsole = NULL;
-    Rp->WriteConsoleEx = Re_WriteConsoleEx;
+	R_setStartTime();
+	R_DefParams(Rp);
+	if((RHome = get_R_HOME()) == NULL) {
+	fprintf(stderr,
+		"R_HOME must be set in the environment or Registry\n");
+	exit(2);
+	}
+	Rp->rhome = RHome;
+	Rp->home = getRUser();
+	Rp->CharacterMode = LinkDLL;
+	//Rp->ReadConsole = w;
+	Rp->WriteConsole = writeConsole;
+	//Rp->CallBack = myCallBack;
+	//Rp->ShowMessage = askok;
+	//Rp->YesNoCancel = askyesnocancel;
+	//Rp->Busy = myBusy;
 
-    Rp->Busy = Re_Busy;
-    Rp->ShowMessage = Re_ShowMessage;
-    Rp->YesNoCancel = myYesNoCancel;
-    Rp->CallBack = myCallBack;
-    Rp->CharacterMode = LinkDLL;
+	Rp->R_Quiet = TRUE;
+	Rp->R_Interactive = TRUE;
+	Rp->RestoreAction = SA_RESTORE;
+	Rp->SaveAction = SA_NOSAVE;
+	R_SetParams(Rp);
+	//R_set_command_line_arguments(argc, argv);
 
-    Rp->R_Quiet = FALSE;
-    Rp->R_Interactive = TRUE;
-    Rp->RestoreAction = SA_RESTORE;
-    Rp->SaveAction = SA_SAVEASK;
-    /* process common command line options */
-    R_common_command_line(&argc, argv, Rp);
-    /* what is left should be assigned to args */
-    R_set_command_line_arguments(argc, argv);
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 
-    R_SetParams(Rp); /* so R_ShowMessage is set */
-    R_SizeFromEnv(Rp);
-    R_SetParams(Rp);
-
-    /* R_SetParams implicitly calls R_SetWin32 which sets the
-       stack start/limit which we need to override */
-    R_CStackLimit = (uintptr_t) -1;
-
-    FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
-
-    signal(SIGBREAK, my_onintr);
-    setup_term_ui();
-    setup_Rmainloop();
+	signal(SIGBREAK, my_onintr);
+	//GA_initapp(0, 0);
+	R_LoadRconsole = FALSE;
+	setup_Rmainloop();
 
     return RAPIinstalladdons();
 }
@@ -803,8 +721,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 str RAPIprelude(void) {
 	MT_lock_init(&rapiLock, "rapi_lock");
-	// set R_HOME for packages etc. We know this from our configure script
-	setenv("R_HOME", RHOME, TRUE);
 
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock, "rapi.evaluate");
