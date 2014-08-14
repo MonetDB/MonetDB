@@ -1914,11 +1914,11 @@ parser(char *row)
 	numa = c+1;
 	for(c++; *c && *c !='"'; c++)
 		;
-	if (*c == '"'){
-		*c = 0;
-		numa= strdup(numa);
-		*c = '"';
-	}
+	if (*c == 0)
+		return -1;
+	*c = 0;
+	numa= strdup(numa);
+	*c = '"';
 	c = strchr(c + 1, ',');
 
 #ifdef FOOTPRINT
@@ -1932,16 +1932,22 @@ parser(char *row)
 
 	reads = strtoll(c + 1, NULL, 10);
 	c = strchr(c + 1, ',');
-	if (c == 0)
+	if (c == 0) {
+		free(numa);
 		return -8;
+	}
 	writes = strtoll(c + 1, NULL, 10);
 
 	/* check basic validity */
-	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0) {
+		free(numa);
 		return -1;
+	}
 	c = strchr(c + 1, ',');
-	if (c == 0)
+	if (c == 0) {
+		free(numa);
 		return -9;
+	}
 	c++;
 	fcn = c;
 	stmt = strdup(fcn);
@@ -1954,6 +1960,7 @@ parser(char *row)
 			fcn++;
 		if (strchr(fcn, '.') == 0) {
 			free(stmt);
+			free(numa);
 			return -10;
 		}
 	} else {
@@ -1972,6 +1979,7 @@ parser(char *row)
 wrapup:
 #endif
 	update(state, thread, clkticks, ticks, memory, numa, footprint, reads, writes, fcn, stmt);
+	free(numa);
 #else
 	(void) row;
 #endif
