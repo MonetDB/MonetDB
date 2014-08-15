@@ -954,6 +954,19 @@ rel_has_exp(sql_rel *rel, sql_exp *e)
 	return -1;
 }
 
+int
+rel_has_exps(sql_rel *rel, list *exps)
+{
+	node *n;
+
+	if (!exps)
+		return -1;
+	for (n = exps->h; n; n = n->next)
+		if (rel_has_exp(rel, n->data) >= 0)
+			return 0;
+	return -1;
+}
+
 sql_rel *
 find_rel(list *rels, sql_exp *e)
 {

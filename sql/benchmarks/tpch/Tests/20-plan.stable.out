@@ -71,24 +71,22 @@ project (
 | | | | group by (
 | | | | | select (
 | | | | | | project (
-| | | | | | | group by (
-| | | | | | | | join (
+| | | | | | | join (
+| | | | | | | | semijoin (
+| | | | | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  ] COUNT ,
 | | | | | | | | | project (
-| | | | | | | | | | semijoin (
-| | | | | | | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  ] COUNT ,
-| | | | | | | | | | | project (
-| | | | | | | | | | | | select (
-| | | | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL ] COUNT 
-| | | | | | | | | | | | ) [ char[part.p_name NOT NULL] FILTER like (char[char(7) "forest%"], char "") ]
-| | | | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  as L11.L10 ]
-| | | | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  = L11.L10 NOT NULL HASHCOL  ]
-| | | | | | | | | ) [ partsupp.ps_partkey NOT NULL, partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL, sys.identity(partsupp.ps_partkey NOT NULL HASHCOL ) as L17.L17 ],
+| | | | | | | | | | select (
+| | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL ] COUNT 
+| | | | | | | | | | ) [ char[part.p_name NOT NULL] FILTER like (char[char(7) "forest%"], char "") ]
+| | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  as L11.L10 ]
+| | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  = L11.L10 NOT NULL HASHCOL  ],
+| | | | | | | | group by (
 | | | | | | | | | select (
 | | | | | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L16.l_partkey, lineitem.l_suppkey NOT NULL as L16.l_suppkey, lineitem.l_quantity NOT NULL as L16.l_quantity, lineitem.l_shipdate NOT NULL as L16.l_shipdate ] COUNT 
 | | | | | | | | | ) [ date "1994-01-01" <= L16.l_shipdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12") ]
-| | | | | | | | ) [ partsupp.ps_partkey NOT NULL = L16.l_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL = L16.l_suppkey NOT NULL HASHCOL  ]
-| | | | | | | ) [ L17.L17 ] [ partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, L17.L17, sys.sum no nil (L16.l_quantity NOT NULL as lineitem.l_quantity) NOT NULL as L12.L12 ]
-| | | | | | ) [ partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, sys.sql_mul(decimal(11,1)[decimal(2,1) "5"], decimal(11,1)[L12 NOT NULL] as L12) as L13.L13 ]
+| | | | | | | | ) [ L16.l_partkey NOT NULL, L16.l_suppkey NOT NULL ] [ L16.l_partkey NOT NULL, L16.l_suppkey NOT NULL, sys.sum no nil (L16.l_quantity NOT NULL as lineitem.l_quantity) NOT NULL as L12.L12 ]
+| | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  = L16.l_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL = L16.l_suppkey NOT NULL HASHCOL  ]
+| | | | | | ) [ partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, sys.sql_mul(decimal(11,1)[decimal(2,1) "5"], decimal(11,1)[L12.L12 NOT NULL] as L12.L12) as L13.L13 ]
 | | | | | ) [ decimal(19,2)[partsupp.ps_availqty NOT NULL] > L13.L13 ]
 | | | | ) [ partsupp.ps_suppkey NOT NULL as L15.L14 ] [ L15.L14 NOT NULL ]
 | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  = L15.L14 NOT NULL ],

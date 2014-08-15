@@ -385,7 +385,11 @@ static void ctl_handle_client(
 							int setlen = 0;
 							char *sadbfarm;
 
-							msab_getDBfarm(&sadbfarm);
+							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
+								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
+										 origin, err);
+								exit(0);
+							}
 							snprintf(buf2, sizeof(buf2), "%s/%s", sadbfarm, q);
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
@@ -418,11 +422,11 @@ static void ctl_handle_client(
 							}
 							GDKinit(set, setlen);
 							vaultkey = buf2;
-							AUTHunlockVault(&vaultkey);
-							err = AUTHinitTables(&p);
-							if (err != NULL) {
+							if ((err = AUTHunlockVault(&vaultkey)) != NULL ||
+								(err = AUTHinitTables(&p)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: could not setup "
 										"database '%s': %s\n", origin, q, err);
+								GDKfree(err);
 							} else {
 								/* don't start locked */
 								unlink(".maintenance");

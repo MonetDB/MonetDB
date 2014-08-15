@@ -27,6 +27,9 @@
 #ifdef HAVE_UUID_UUID_H
 # include <uuid/uuid.h>
 #endif
+#ifndef HAVE_UUID
+# include <openssl/rand.h>
+#endif
 
 /**
  * Shallow wrapper around uuid, that comes up with some random pseudo
@@ -49,14 +52,27 @@ generateUUID(void)
 	/* try to do some pseudo interesting stuff, and stash it in the
 	 * format of a UUID to at least return some uniform answer */
 	char out[37];
+	union {
+		unsigned char randbuf[16];
+		unsigned short s[8];
+	} r;
 
-	/* generate something like this:
-	 * cefa7a9c-1dd2-11b2-8350-880020adbeef ("%08x-%04x-%04x-%04x-%012x") */
-	snprintf(out, sizeof(out), "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
-		 rand() % 65536, rand() % 65536,
-		 rand() % 65536, rand() % 65536,
-		 rand() % 65536, rand() % 65536,
-		 rand() % 65536, rand() % 65536);
+	if (RAND_bytes(r.randbuf, 16) >= 0) {
+		snprintf(out, sizeof(out),
+			 "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+			 r.s[0], r.s[1], r.s[2], r.s[3],
+			 r.s[4], r.s[5], r.s[6], r.s[7]);
+	} else {
+		/* generate something like this:
+		 * cefa7a9c-1dd2-11b2-8350-880020adbeef
+		 * ("%08x-%04x-%04x-%04x-%012x") */
+		snprintf(out, sizeof(out),
+			 "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+			 rand() % 65536, rand() % 65536,
+			 rand() % 65536, rand() % 65536,
+			 rand() % 65536, rand() % 65536,
+			 rand() % 65536, rand() % 65536);
+	}
 #endif
 	return strdup(out);
 }

@@ -31,6 +31,9 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
+#ifndef HAVE_UUID
+#include <openssl/rand.h>		/* for RAND_bytes */
+#endif
 
 #ifdef HAVE_UUID
 #define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
@@ -178,7 +181,8 @@ UUIDgenerateUuid(uuid **retval)
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
-	{
+	if (RAND_bytes(u->u, 16) < 0) {
+		/* if it failed, use rand */
 		int i, r;
 
 		for (i = 0; i < UUID_SIZE;) {
