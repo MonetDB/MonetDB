@@ -40,10 +40,12 @@ bits=32
 !IF $(bits) == 32
 !IFNDEF BITS32
 BITS32=True
+BITSMCHN=X86
 !ENDIF
 !ELSEIF $(bits) == 64
 !IFNDEF BITS64
 BITS64=True
+BITSMCHN=X48
 !ENDIF
 !ENDIF
 
@@ -191,13 +193,14 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 libr_LIBDEP = R.lib
 !IFNDEF LIBR
 LIBR = c:\Program Files\R\R-3.1.0
-!IF $(bits) == 32
+!IFDEF BITS32
 libr_DLL=$(LIBR)\bin\i386\R.dll
 !ELSE
 libr_DLL=$(LIBR)\bin\x64\R.dll
 !ENDIF
 !ENDIF
-libr_LIBS = C:\cygwin\home\hannes\R.lib
+libr_LIBS = $(libr_LIBDEP)
+# C:\cygwin\home\hannes\R.lib
 libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 
 R.lib: $(libr_DLL)
@@ -205,8 +208,7 @@ R.lib: $(libr_DLL)
 	echo LIBRARY R> R.def
 	echo EXPORTS>> R.def
 	dumpbin /exports "$(libr_DLL)" | grep -Po "^\s*\d+\s+\w+\s+\w+\s+\K\w+" >> R.def
-	lib /def:R.def /out:R.lib
-	rm R.def
+	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 	
 !ENDIF
 

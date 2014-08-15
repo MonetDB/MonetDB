@@ -28,7 +28,7 @@ MTSAFE
 lib__rapi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = rapi.c rapi.h
+	SOURCES = rapi.c rapi.h $(libr_LIBDEP)
 	LIBS = ../../tools/libmonetdb5 \
 	../../../gdk/libbat \
 	$(MALLOC_LIBS) $(libr_LIBS)
