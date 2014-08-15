@@ -2065,7 +2065,7 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 			if (!ne)
 				return 0;
 			if (ne && ne->type != e_column) {
-				lng used = (1<<list_position(shared, ne));
+				lng used = (lng) 1 << list_position(shared, ne);
 				if (used & *uses)
 					return 1;
 				*uses &= used;
