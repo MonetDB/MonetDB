@@ -297,7 +297,7 @@ DFLOWworker(void *T)
 	int id = (int) (t - workers);
 	Thread thr;
 	str error = 0;
-	int i,last, tid;
+	int i,last;
 	Client cntxt;
 	InstrPtr p;
 
@@ -312,7 +312,6 @@ DFLOWworker(void *T)
 		/* wait until we are allowed to start working */
 		MT_sema_down(&t->s, "DFLOWworker");
 	}
-	tid = THRgettid();
 	while (1) {
 		if (fnxt == 0) {
 			MT_lock_set(&dataflowLock, "DFLOWworker");
@@ -370,7 +369,7 @@ DFLOWworker(void *T)
 			/* update the numa information. keep the thread-id producing the value */
 			p= getInstrPtr(flow->mb,fe->pc);
 			for( i = 0; i < p->argc; i++)
-				flow->mb->var[getArg(p,i)]->worker = tid;
+				flow->mb->var[getArg(p,i)]->worker = thr->tid;
 
 			MT_lock_set(&flow->flowlock, "DFLOWworker");
 			fe->state = DFLOWwrapup;

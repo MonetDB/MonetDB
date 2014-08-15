@@ -182,6 +182,7 @@ BATsample(BAT *b, BUN n) {
 			struct oidtreenode* ttree;
 			do {
 				/* generate a new random OID */
+				/* coverity[dont_call] */
 				candoid = (BUN) (minoid + DRAND * (maxoid - minoid));
 				/* if that candidate OID was already generated, try again */
 			} while (OIDTreeLookup(tree, candoid));

@@ -840,7 +840,7 @@ IMPSimprintsize(BAT *b)
 {
 	lng sz=0;
 	if( b->T->imprints){
-		sz = b->T->imprints->impcnt * sizeof(IMPS_PAGE/8);
+		sz = b->T->imprints->impcnt * b->T->imprints->bits / 8;
 		sz += b->T->imprints->dictcnt * sizeof(cchdc_t);
 	}
 	return sz;

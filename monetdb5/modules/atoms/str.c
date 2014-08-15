@@ -2291,16 +2291,22 @@ STRLpad2(str *res, str *arg1, int *len, str *arg2)
 		const char *s2 = *arg2, *s2_tmp = *arg2;
 		char *r = NULL;
 		const unsigned char *u = NULL;
-		int i = 0, c = 0, sz = 0,
-			s2_cnt = UTF8_strlen(s2),
-			nr_repeat = pad_cnt / s2_cnt,
-			nr_residual = pad_cnt % s2_cnt;
-		size_t s_len = strlen(s),
-			s2_len = strlen(s2),
-			repeat_len = s2_len * nr_repeat,
-			residual_len = 0,
-			res_len = s_len + repeat_len;
+		int i, c, sz, s2_cnt, nr_repeat, nr_residual;
+		size_t s_len, s2_len, repeat_len, residual_len, res_len;
 
+		i = 0;
+		c = 0;
+		sz = 0;
+		s2_cnt = UTF8_strlen(s2);
+		if (s2_cnt == 0)
+			throw(MAL, "str.lpad", ILLEGAL_ARGUMENT ": pad string is empty");
+		nr_repeat = pad_cnt / s2_cnt;
+		nr_residual = pad_cnt % s2_cnt;
+		s_len = strlen(s);
+		s2_len = strlen(s2);
+		repeat_len = s2_len * nr_repeat;
+		residual_len = 0;
+		res_len = s_len + repeat_len;
 		u = (const unsigned char *) s2_tmp;
 		for (i = 0; i < nr_residual; i++) {
 			UTF8_GETCHAR_SZ(c, sz, u);
@@ -2350,16 +2356,22 @@ STRRpad2(str *res, str *arg1, int *len, str *arg2)
 		const char *s2 = *arg2, *s2_tmp = *arg2;
 		char *r = NULL;
 		const unsigned char *u = NULL;
-		int i = 0, c = 0, sz = 0,
-			s2_cnt = UTF8_strlen(s2),
-			nr_repeat = pad_cnt / s2_cnt,
-			nr_residual = pad_cnt % s2_cnt;
-		size_t s_len = strlen(s),
-			s2_len = strlen(s2),
-			repeat_len = s2_len * nr_repeat,
-			residual_len = 0,
+		int i, c, sz, s2_cnt, nr_repeat, nr_residual;
+		size_t s_len, s2_len, repeat_len, residual_len, res_len;
 
-			res_len = s_len + repeat_len;
+		i = 0;
+		c = 0;
+		sz = 0;
+		s2_cnt = UTF8_strlen(s2);
+		if (s2_cnt == 0)
+			throw(MAL, "str.rpad", ILLEGAL_ARGUMENT ": pad string is empty");
+		nr_repeat = pad_cnt / s2_cnt;
+		nr_residual = pad_cnt % s2_cnt;
+		s_len = strlen(s);
+		s2_len = strlen(s2);
+		repeat_len = s2_len * nr_repeat;
+		residual_len = 0;
+		res_len = s_len + repeat_len;
 
 		u = (const unsigned char *)s2_tmp;
 		for (i = 0; i < nr_residual; i++) {
@@ -2409,7 +2421,7 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 		throw(MAL, "str.substitute", "Allocation failed");
 	end = buf + l;
 	fnd = buf;
-	strcpy(buf, s);
+	strcpy(buf, s ? s : "");
 	if (lsrc == 0)
 		return MAL_SUCCEED;
 	do {

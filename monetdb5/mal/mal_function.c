@@ -286,8 +286,9 @@ int getBarrierEnvelop(MalBlkPtr mb){
 static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
-	mnstr_printf(GDKout,"replace type _%d by type %s\n",v,
-		getTypeName(t));
+	char *tpenme = getTypeName(t);
+	mnstr_printf(GDKout,"replace type _%d by type %s\n",v, tpenme);
+	GDKfree(tpenme);
 #endif
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
@@ -317,18 +318,28 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
-		mnstr_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+			{
+				char *xnme = getTypeName(x), *ynme = getTypeName(y);
+				mnstr_printf(GDKout," %d replaced %s->%s \n",i,xnme,ynme);
+				GDKfree(xnme);
+				GDKfree(ynme);
+			}
 #endif
 		} else
 		if(getColumnIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
-		mnstr_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
+			char *xnme = getTypeName(x);
+			mnstr_printf(GDKout," replace x= %s polymorphic\n",xnme);
+			GDKfree(xnme);
 #endif
 			setArgType(mb,p,i,t);
 		}
 #ifdef DEBUG_MAL_FCN
-		else
-		mnstr_printf(GDKout," non x= %s %d\n",getTypeName(x),getColumnIndex(x));
+		else {
+			char *xnme = getTypeName(x);
+			mnstr_printf(GDKout," non x= %s %d\n",xnme,getColumnIndex(x));
+			GDKfree(xnme);
+		}
 #endif
 	}
 #ifdef DEBUG_MAL_FCN
@@ -417,8 +428,11 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 				replaceTypeVar(new->def, pp, getColumnIndex(v), t);
 		}
 #ifdef DEBUG_MAL_FCN
-		else
-			mnstr_printf(out,"%d remains %s\n", i, getTypeName(v));
+		else {
+			char *tpenme = getTypeName(v);
+			mnstr_printf(out,"%d remains %s\n", i, tpenme);
+			GDKfree(tpenme);
+		}
 #endif
 	/* include the function at the proper place in the scope */
 	insertSymbolBefore(scope, new, proc);

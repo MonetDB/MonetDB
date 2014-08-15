@@ -488,8 +488,12 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v = getArgReference(stk, pci, 0);
 
 	if (rtype == TYPE_any || isAnyExpression(rtype)) {
-		throw(MAL, "remote.get", ILLEGAL_ARGUMENT ": unsupported any type: %s",
-				getTypeName(rtype));
+		char *tpe, *msg;
+		tpe = getTypeName(rtype);
+		msg = createException(MAL, "remote.get", ILLEGAL_ARGUMENT ": unsupported any type: %s",
+							  tpe);
+		GDKfree(tpe);
+		return msg;
 	}
 	/* check if the remote type complies with what we expect.
 	   Since the put() encodes the type as known to the remote site
@@ -682,9 +686,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
 	if (type == TYPE_any || isAnyExpression(type)) {
+		char *tpe, *msg;
 		MT_lock_unset(&c->lock, "remote.put");
-		throw(MAL, "remote.put", "unsupported type: %s",
-				getTypeName(type));
+		tpe = getTypeName(type);
+		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
+		GDKfree(tpe);
+		return msg;
 	} else if (isaBatType(type)) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
@@ -699,12 +706,14 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		tail = getTypeIdentifier(getColumnType(type));
 
 		bid = *(int *)value;
-		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
-			MT_lock_unset(&c->lock, "remote.put");
-			GDKfree(tail);
-			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+		if (bid != 0) {
+			if ((b = BATdescriptor(bid)) == NULL){
+				MT_lock_unset(&c->lock, "remote.put");
+				GDKfree(tail);
+				throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+			}
+			assert(b->htype == TYPE_void);
 		}
-		assert(b->htype == TYPE_void);
 
 		/* bypass Mapi from this point to efficiently write all data to
 		 * the server */
@@ -995,9 +1004,6 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		var = &fdin->buf[fdin->pos];
 		/* skip over this line */
 		fdin->pos = ++len;
-
-		if (var == NULL) 
-			var ="nil";
 
 		s = 0;
 		r = NULL;
