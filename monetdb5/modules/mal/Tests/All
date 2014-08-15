@@ -76,10 +76,12 @@ mosaic_none_double
 
 mosaic_none_subselect
 mosaic_rle_subselect
+mosaic_dict_subselect
 mosaic_mix_subselect
 
 mosaic_none_thetasubselect
 mosaic_rle_thetasubselect
+mosaic_dict_thetasubselect
 mosaic_mix_thetasubselect
 
 mosaic_none_joins

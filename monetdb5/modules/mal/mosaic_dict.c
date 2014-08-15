@@ -38,7 +38,7 @@ MOSdump_dict(Client cntxt, MOStask task)
 	void *val = (void*)(((char*) blk) + MosaicBlkSize);
 
 	size = (lng*) (((char*)blk) + MosaicBlkSize);
-	mnstr_printf(cntxt->fdout,"#rle "LLFMT" ", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#dict "LLFMT" ", (lng)(blk->cnt));
 	switch(task->type){
 	case TYPE_sht:
 		for(i=0; i< *size; i++)
@@ -60,9 +60,9 @@ static void
 MOSadvance_dict(MOStask task)
 {
 	switch(ATOMstorage(task->type)){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + wordaligned(DICTSIZE * sizeof(sht)+ sizeof(bte) * task->blk->cnt)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + wordaligned(DICTSIZE * sizeof(int)+ sizeof(int) * task->blk->cnt)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + wordaligned(DICTSIZE * sizeof(lng)+ sizeof(lng) * task->blk->cnt)); 
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(sht)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(int)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(lng)+ wordaligned(sizeof(bte) * task->blk->cnt)); 
 	}
 }
 
@@ -120,10 +120,10 @@ MOSestimate_dict(Client cntxt, MOStask task)
 			}
 		}
 	}
-	return cnt >DICTSIZE? cnt-DICTSIZE:0;
+	return cnt; // for later cnt >DICTSIZE? cnt-DICTSIZE:0;
 }
 
-// insert a series of values into the compressor block using rle.
+// insert a series of values into the compressor block using dictionary
 #define DICTcompress(TPE)\
 {	TPE *val = (TPE*)task->src;\
 	TPE *dict = (TPE*)((char*)task->blk+ 2 * MosaicBlkSize);\
@@ -219,7 +219,7 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	compressed = (char*) blk + 2 * MosaicBlkSize;
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_lng: DICTdecompress(lng); break;
 	case TYPE_int:
@@ -231,7 +231,8 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 		}
 		break;
 	default:
-		assert(0);
+		if( task->type == TYPE_timestamp)
+			DICTdecompress(timestamp);
 	}
 	task->time[MOSAIC_DICT] = GDKusec() - clk;
 }
@@ -389,11 +390,74 @@ MOSsubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 			}
 		}
 	}
-		break;
+	break;
 	default:
-		if( task->type == TYPE_timestamp){
-			assert(0);
-			//MOSselect_dict(timestamp);
+		if( task->type == TYPE_timestamp)
+		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize );
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(lng));
+			int lownil = timestamp_isnil(*(timestamp*)low);
+			int hghnil = timestamp_isnil(*(timestamp*)hgh);
+
+			if( !*anti){
+				if( lownil && hghnil){
+					for( ; first < last; first++){
+						MOSskipit();
+						*o++ = (oid) first;
+					}
+				} else
+				if( lownil){
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*hi && dict[*idx] <= * (lng*)hgh ) || (!*hi && dict[*idx] < *(lng*)hgh ));
+						if (cmp )
+							*o++ = (oid) first;
+					}
+				} else
+				if( hghnil){
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*li && dict[*idx] >= * (lng*)low ) || (!*li && dict[*idx] > *(lng*)low ));
+						if (cmp )
+							*o++ = (oid) first;
+					}
+				} else{
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*hi && dict[*idx] <= * (lng*)hgh ) || (!*hi && dict[*idx] < *(lng*)hgh )) &&
+								((*li && dict[*idx] >= * (lng*)low ) || (!*li && dict[*idx] > *(lng*)low ));
+						if (cmp )
+							*o++ = (oid) first;
+					}
+				}
+			} else {
+				if( lownil && hghnil){
+					/* nothing is matching */
+				} else
+				if( lownil){
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*hi && dict[*idx] <= * (lng*)hgh ) || (!*hi && dict[*idx] < *(lng*)hgh ));
+						if ( !cmp )
+							*o++ = (oid) first;
+					}
+				} else
+				if( hghnil){
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*li && dict[*idx] >= * (lng*)low ) || (!*li && dict[*idx] > *(lng*)low ));
+						if ( !cmp )
+							*o++ = (oid) first;
+					}
+				} else{
+					for( ; first < last; first++, idx++){
+						MOSskipit();
+						cmp  =  ((*hi && dict[*idx] <= * (lng*)hgh ) || (!*hi && dict[*idx] < *(lng*)hgh )) &&
+								((*li && dict[*idx] >= * (lng*)low ) || (!*li && dict[*idx] > *(lng*)low ));
+						if ( !cmp )
+							*o++ = (oid) first;
+					}
+				}
+			}
 		}
 	}
 	task->lb = o;
@@ -480,19 +544,59 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 				hgh= low= *(int*) val;
 			} 
 			for( ; first < last; first++, idx++){
+				MOSskipit();
 				if( (low == int_nil || dict[*idx] >= low) && (dict[*idx] <= hgh || hgh == int_nil) ){
 					if ( !anti) {
-						MOSskipit();
 						*o++ = (oid) first;
 					}
 				} else
 				if( anti){
-					MOSskipit();
 					*o++ = (oid) first;
 				}
 			}
 		} 
 		break;
+	default:
+		if( task->type == TYPE_timestamp){
+		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize );
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(lng));
+			lng low,hgh;
+
+			low= hgh = int_nil;
+			if ( strcmp(oper,"<") == 0){
+				hgh= *(lng*) val;
+				hgh = PREVVALUElng(hgh);
+			} else
+			if ( strcmp(oper,"<=") == 0){
+				hgh= *(lng*) val;
+			} else
+			if ( strcmp(oper,">") == 0){
+				low = *(lng*) val;
+				low = NEXTVALUElng(low);
+			} else
+			if ( strcmp(oper,">=") == 0){
+				low = *(lng*) val;
+			} else
+			if ( strcmp(oper,"!=") == 0){
+				hgh= low= *(lng*) val;
+				anti++;
+			} else
+			if ( strcmp(oper,"==") == 0){
+				hgh= low= *(lng*) val;
+			} 
+			for( ; first < last; first++, idx++){
+				MOSskipit();
+				if( (low == int_nil || dict[*idx] >= low) && (dict[*idx] <= hgh || hgh == int_nil) ){
+					if ( !anti) {
+						*o++ = (oid) first;
+					}
+				} else
+				if( anti){
+					*o++ = (oid) first;
+				}
+			}
+		} 
+		}
 	}
 	task->lb =o;
 	return MAL_SUCCEED;
@@ -516,7 +620,7 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 		case TYPE_sht: leftfetchjoin_dict(sht); break;
 		case TYPE_lng: leftfetchjoin_dict(lng); break;
 		case TYPE_int:
@@ -531,6 +635,11 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 			}
 			task->src = (char*) v;
 		}
+		break;
+		default:
+			if( task->type == TYPE_timestamp){
+				leftfetchjoin_dict(timestamp); 
+			}
 	}
 	return MAL_SUCCEED;
 }
@@ -556,7 +665,7 @@ MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 	oid o, oo;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 		case TYPE_sht: join_dict(sht); break;
 		case TYPE_lng: join_dict(lng); break;
 		case TYPE_int:
@@ -572,6 +681,11 @@ MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 				}
 			}
 		}
+		break;
+		default:
+			if( task->type == TYPE_timestamp){
+				join_dict(lng); 
+			}
 	}
 	return MAL_SUCCEED;
 }

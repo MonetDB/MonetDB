@@ -344,10 +344,10 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 			}
 		}
 	}
-		break;
+	break;
 	default:
 		if( task->type == TYPE_timestamp){
-			//MOSselect_rle(timestamp);
+			subselect_rle(lng); 
 		}
 	}
 	task->lb = o;
@@ -453,7 +453,9 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *va
 		}
 		break;
 	default:
-		assert(0);
+		if( task->type == TYPE_timestamp){
+			thetasubselect_rle(lng); 
+		}
 	}
 	task->lb =o;
 	return MAL_SUCCEED;
@@ -495,8 +497,10 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 			task->src = (char*) v;
 		}
 		break;
-	default:
-		assert(0);
+		default:
+			if( task->type == TYPE_timestamp){
+				leftfetchjoin_rle(lng); 
+			}
 	}
 	return MAL_SUCCEED;
 }
@@ -540,7 +544,9 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 			}
 		break;
 		default:
-			assert(0);
+			if( task->type == TYPE_timestamp){
+				join_rle(lng); 
+			}
 	}
 	return MAL_SUCCEED;
 }
