@@ -377,7 +377,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 				task->blk->tag = MOSAIC_EOL;
 				task->blk->cnt = 0;
 			}
-			mnstr_printf(cntxt->fdout,"#encode block "BUNFMT" \n", (BUN)task->blk);
+			mnstr_printf(cntxt->fdout,"#encode block "PTRFMT" \n", PTRFMTCAST task->blk);
 			MOScompress_dict(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
@@ -397,7 +397,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 				task->blk->tag = MOSAIC_EOL;
 				task->blk->cnt = 0;
 			}
-			mnstr_printf(cntxt->fdout,"#encode block "BUNFMT" \n", (BUN)task->blk);
+			mnstr_printf(cntxt->fdout,"#encode block "PTRFMT" \n", PTRFMTCAST task->blk);
 			MOScompress_rle(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
@@ -504,7 +504,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	MOSinit(task,b);;
 	task->src = Tloc(bn, BUNfirst(bn));
 	while(task->blk){
-		mnstr_printf(cntxt->fdout,"#decode block "BUNFMT" tag %d \n", (BUN)task->blk, task->blk->tag);
+		mnstr_printf(cntxt->fdout,"#decode block "PTRFMT" tag %d \n", PTRFMTCAST task->blk, task->blk->tag);
 		switch(task->blk->tag){
 		case MOSAIC_DICT:
 			MOSdecompress_dict(cntxt,task);

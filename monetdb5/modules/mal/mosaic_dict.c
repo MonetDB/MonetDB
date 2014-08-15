@@ -440,7 +440,7 @@ MOSsubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 } 
 
 static str
-MOSthetasubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *val, str oper)
+MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
 {
 	oid *o;
 	int anti=0;

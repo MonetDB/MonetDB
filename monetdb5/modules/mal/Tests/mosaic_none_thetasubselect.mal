@@ -7,7 +7,7 @@ bat.append(b,9);
 b:= bat.append(b,b);
 
 io.print(b);
-x:= mosaic.compress(b);
+x:= mosaic.compress(b,"none");
 
 s:= algebra.thetasubselect(b,50,"<");
 io.print(s);

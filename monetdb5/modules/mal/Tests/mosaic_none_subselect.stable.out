@@ -25,7 +25,7 @@ function user.main():void;
     bat.append(b,9);
     b := bat.append(b,b);
     io.print(b);
-    x := mosaic.compress(b);
+    x := mosaic.compress(b,"none");
 #mosaic.dump(x); 
     s := algebra.subselect(b,0,50,false,false,false);
     io.print(s);

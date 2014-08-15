@@ -7,7 +7,7 @@ bat.append(b,9);
 b:= bat.append(b,b);
 
 io.print(b);
-x:= mosaic.compress(b);
+x:= mosaic.compress(b,"none");
 
 c:= bat.new(:oid,:oid);
 bat.append(c,0@0);
