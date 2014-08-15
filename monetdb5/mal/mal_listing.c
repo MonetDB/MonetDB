@@ -499,11 +499,14 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 							snprintf(ct, 1024+strlen(cv), "=%s", cv);
 						else
 							snprintf(ct, 1024+strlen(cv), "=\"%s\"", cv);
-					} else
-					if ( strcmp(cv,"nil") == 0)
-						snprintf(ct, 1024+strlen(cv), "=%s:%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
-					else
-						snprintf(ct, 1024+strlen(cv), "=\"%s\":%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
+					} else {
+						char *tpe = getTypeName(getColumnType(getArgType(mb,p,i)));
+						if ( strcmp(cv,"nil") == 0)
+							snprintf(ct, 1024+strlen(cv), "=%s:%s", cv, tpe);
+						else
+							snprintf(ct, 1024+strlen(cv), "=\"%s\":%s", cv, tpe);
+						GDKfree(tpe);
+					}
 					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
@@ -525,11 +528,14 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 							snprintf(ct, 1024+strlen(cv), "%s", cv);
 						else
 							snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
-					} else
-					if ( strcmp(cv,"nil") == 0)
-						snprintf(ct, 1024+strlen(cv), "%s:%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
-					else
-						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getColumnType(getArgType(mb,p,i))));
+					} else {
+						char *tpe = getTypeName(getColumnType(getArgType(mb,p,i)));
+						if ( strcmp(cv,"nil") == 0)
+							snprintf(ct, 1024+strlen(cv), "%s:%s", cv, tpe);
+						else
+							snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, tpe);
+						GDKfree(tpe);
+					}
 					if( cv) GDKfree(cv);
 					cv= ct;
 				} else

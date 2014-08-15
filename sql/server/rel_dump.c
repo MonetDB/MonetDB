@@ -177,6 +177,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 				mnstr_printf(fout, " ! ");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, 0, 0);
+			if (e->flag & CMP_SYMMETRIC)
+				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))

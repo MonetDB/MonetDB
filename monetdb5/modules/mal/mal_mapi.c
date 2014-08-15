@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <stream_socket.h>
 #include <mapi.h>
+#include <openssl/rand.h>		/* RAND_bytes() */
 
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
@@ -86,12 +87,18 @@ static void generateChallenge(str buf, int min, int max) {
 
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
-	size = rand();
+	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+		size = rand();
 	size = (size % (max - min)) + min;
-	for (i = 0; i < size; i++) {
-		bte = rand();
-		bte %= 62;
-		buf[i] = seedChars[bte];
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+		for (i = 0; i < size; i++)
+			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
+	} else {
+		for (i = 0; i < size; i++) {
+			bte = rand();
+			bte %= 62;
+			buf[i] = seedChars[bte];
+		}
 	}
 	buf[i] = '\0';
 }
