@@ -34,6 +34,8 @@ sed -r \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
+	-e 's/\bbool 'f'\b/cast('false' as boolean)/Ig' \
+	-e 's/\bbool 't'\b/cast('true' as boolean)/Ig' \
 	-e 's/\bbool ''*''\b/cast('\1' as boolean)/Ig' \
 	-e 's/\bchar 'c'/cast('c' as char)/Ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/Ig' \
