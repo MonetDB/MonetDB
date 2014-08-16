@@ -217,7 +217,7 @@ if ( task->cl && task->n){\
 	}
 
 static str
-MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	int cmp;
@@ -417,7 +417,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 } 
 
 static str
-MOSthetasubselect_none(Client cntxt,  MOStask task, lng first, lng last, void *val, str oper)
+MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -544,7 +544,7 @@ MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 	oid o, oo;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 		case TYPE_bit: join_none(bit); break;
 		case TYPE_bte: join_none(bte); break;
 		case TYPE_sht: join_none(sht); break;

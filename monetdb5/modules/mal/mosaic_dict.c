@@ -60,10 +60,13 @@ MOSdump_dict(Client cntxt, MOStask task)
 static void
 MOSadvance_dict(MOStask task)
 {
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * task->blk->cnt)); 
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
+	default:
+		if( task->type == TYPE_timestamp)
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * task->blk->cnt)); 
 	}
 }
 

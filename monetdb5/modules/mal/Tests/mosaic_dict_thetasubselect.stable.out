@@ -1,9 +1,9 @@
-stdout of test 'mosaic_dict_subselect` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_dict_thetasubselect` in directory 'monetdb5/modules/mal` itself:
 
 
-# 23:13:20 >  
-# 23:13:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33063" "--set" "mapi_usock=/var/tmp/mtest-10820/.s.monetdb.33063" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict_subselect.mal"
-# 23:13:20 >  
+# 07:31:37 >  
+# 07:31:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33117" "--set" "mapi_usock=/var/tmp/mtest-11096/.s.monetdb.33117" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict_thetasubselect.mal"
+# 07:31:37 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,11 +13,12 @@ stdout of test 'mosaic_dict_subselect` in directory 'monetdb5/modules/mal` itsel
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33063/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10820/.s.monetdb.33063
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33117/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11096/.s.monetdb.33117
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
+# Compression of noncompressable column 
     b := bat.new(:oid,:timestamp);
     bat.append(b,"2014-08-14 12:00:00.000":timestamp);
     bat.append(b,"2014-08-14 12:00:00.000":timestamp);
@@ -30,37 +31,57 @@ function user.main():void;
 #mosaic.dump(x); 
     z := mosaic.decompress(x);
     io.print(z);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,false,false);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,"<");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,false,false);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,"<");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,false,false);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,"<=");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,false,false);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,"<=");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,true,false);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,">");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,true,false);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,">");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,true,false);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,">=");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,true,false);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,">=");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,false,true);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,"==");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,false,true);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,"==");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,false,true);
+    s := algebra.thetasubselect(b,"2014-08-14 12:01:00.000":timestamp,"!=");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,false,true);
+    xs := mosaic.thetasubselect(x,"2014-08-14 12:01:00.000":timestamp,"!=");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,true,true);
+    c := bat.new(:oid,:oid);
+    bat.append(c,0@0);
+    bat.append(c,3@0);
+    io.print(c);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,"<");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,false,true,true);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,"<");
     io.print(xs);
-    s := algebra.subselect(b,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,true,true);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,"<=");
     io.print(s);
-    xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,true,true);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,"<=");
+    io.print(xs);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,">");
+    io.print(s);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,">");
+    io.print(xs);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,">=");
+    io.print(s);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,">=");
+    io.print(xs);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,"==");
+    io.print(s);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,"==");
+    io.print(xs);
+    s := algebra.thetasubselect(b,c,"2014-08-14 12:01:00.000":timestamp,"!=");
+    io.print(s);
+    xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,"!=");
     io.print(xs);
 end main;
 #--------------------------#
@@ -77,28 +98,28 @@ end main;
 [ 7@0,	2014-08-14 12:01:00.000  ]
 [ 8@0,	2014-08-14 12:02:00.000  ]
 [ 9@0,	2014-08-14 12:00:00.000  ]
-#header block 1cf0840 version 20140808
+#header block 1e15870 version 20140808
 #index top 1
 #[0] 3 111
-#header block 1cf0840 version 20140808
+#header block 1e15870 version 20140808
 #index top 2
 #[0] 3 111
 #[1] 7 144
-#header block 1cf0840 version 20140808
+#header block 1e15870 version 20140808
 #index top 3
 #[0] 3 111
 #[1] 7 144
 #[2] 9 178
 #ditch entry 3
-#header block 1cf0840 version 20140808
+#header block 1e15870 version 20140808
 #index top 3
 #[0] 3 111
 #[1] 7 144
 #[2] 9 178
-#blk 30345476 type 24 todo 0
+#blk 31545652 type 24 todo 0
 #wins 1 0 3 0 0 0 
 #elms 1 0 9 0 0 0 
-#time 1 0 1 0 0 0 
+#time 1 0 0 0 0 0 
 #perc 10 0 90 0 0 0 
 #--------------------------#
 # h	t  # name
@@ -118,14 +139,22 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	7@0  ]
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	4@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	7@0  ]
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	4@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -154,10 +183,14 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	3@0  ]
-[ 2@0,	7@0  ]
-[ 3@0,	8@0  ]
+[ 0@0,	3@0  ]
+[ 1@0,	8@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+[ 1@0,	8@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -170,30 +203,22 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
+[ 0@0,	2@0  ]
+[ 1@0,	3@0  ]
+[ 2@0,	7@0  ]
+[ 3@0,	8@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	2@0  ]
-[ 3@0,	3@0  ]
-[ 4@0,	4@0  ]
-[ 5@0,	5@0  ]
-[ 6@0,	6@0  ]
-[ 7@0,	7@0  ]
-[ 8@0,	8@0  ]
-[ 9@0,	9@0  ]
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -222,34 +247,48 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	3@0  ]
-[ 1@0,	8@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-[ 1@0,	8@0  ]
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	5@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	5@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	9@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -258,8 +297,20 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
 
-# 23:13:20 >  
-# 23:13:20 >  "Done."
-# 23:13:20 >  
+# 07:31:37 >  
+# 07:31:37 >  "Done."
+# 07:31:37 >  
 

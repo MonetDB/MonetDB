@@ -263,7 +263,7 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 }
 
 static str
-MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
 	(void) cntxt;
@@ -395,7 +395,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *low, vo
 }
 
 static str
-MOSthetasubselect_rle(Client cntxt,  MOStask task, lng first, lng last, void *val, str oper)
+MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -478,7 +478,7 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 		case TYPE_bit: leftfetchjoin_rle(bit); break;
 		case TYPE_bte: leftfetchjoin_rle(bte); break;
 		case TYPE_sht: leftfetchjoin_rle(sht); break;
@@ -498,8 +498,16 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
-			if( task->type == TYPE_timestamp){
-				leftfetchjoin_rle(lng); 
+			if( task->type == TYPE_timestamp)
+			{	timestamp *val, *v;
+				v= (timestamp*) task->src;
+				val = (timestamp*) (((char*) task->hdr) + MosaicBlkSize);
+				for(; first < last; first++, val++){
+					MOSskipit();
+					*v++ = *val;
+					task->n--;
+				}
+				task->src = (char*) v;
 			}
 	}
 	return MAL_SUCCEED;
@@ -524,7 +532,7 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 	oid o, oo;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 		case TYPE_bit: join_rle(bit); break;
 		case TYPE_bte: join_rle(bte); break;
 		case TYPE_sht: join_rle(sht); break;
@@ -545,7 +553,16 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		break;
 		default:
 			if( task->type == TYPE_timestamp){
-				join_rle(lng); 
+			{	timestamp *v, *w;
+				v = (timestamp*) (((char*) task->blk) + MosaicBlkSize);
+				w = (timestamp*) task->src;
+				for(n = task->elm, o = 0; n -- > 0; w++,o++)
+				if ( w->days == v->days && w->msecs == v->msecs)
+					for(oo= (oid) first; oo < (oid) last; v++, oo++){
+						BUNappend(task->lbat, &oo, FALSE);
+						BUNappend(task->rbat, &o, FALSE);
+					}
+			}
 			}
 	}
 	return MAL_SUCCEED;

@@ -86,6 +86,7 @@ mosaic_mix_thetasubselect
 
 mosaic_none_joins
 mosaic_rle_joins
+mosaic_dict_joins
 mosaic_mix_joins
 
 #HAVE_RAPTOR?rdf

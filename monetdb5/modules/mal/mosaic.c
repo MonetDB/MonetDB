@@ -44,11 +44,10 @@
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
 #define MOSAIC_BITMAP 	4		// use limited set of bitmaps
-#define MOSAIC_RANGE    5		// use linear model
+#define MOSAIC_ZONES    5		// zone map over non-compressed data
 #define MOSAIC_EOL		6		// marker for the last block
 
-static char *filtername[]={"none","rle","dict","delta","bitmap","range","EOL"};
-#define MOSAIC_BITS 48			// maximum number of elements to compress
+static char *filtername[]={"none","rle","dict","delta","bitmap","zones","EOL"};
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
@@ -66,8 +65,8 @@ typedef struct MOSAICHEADER{
 } * MosaicHdr;
 
 typedef struct MOSAICBLOCK{
-	bte tag;		// method applied in chunk
-	BUN cnt:MOSAIC_BITS;// compression specific information
+	bte tag;	// method applied in chunk
+	BUN cnt;	// compression specific information
 } *MosaicBlk;
 
 #define wordaligned(SZ) \
@@ -162,7 +161,7 @@ MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
 	lng cnt = 0;
-	mnstr_printf(cntxt->fdout,"#blk "BUNFMT" type %d todo "BUNFMT"\n", (BUN)task->blk, task->type, task->elm);
+	mnstr_printf(cntxt->fdout,"#blk  type %d todo "BUNFMT"\n", task->type, task->elm);
 	mnstr_printf(cntxt->fdout,"#wins ");
 	for(i=0; i< MOSAIC_METHODS; i++)
 		mnstr_printf(cntxt->fdout,LLFMT " ",task->wins[i]);
@@ -279,6 +278,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	BAT *b, *bn;
 	BUN cnt;
 	int i;
+	char *c;
 	str msg = MAL_SUCCEED;
 	MOStask task;
 	int cand;
@@ -291,6 +291,12 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	else
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= 1;
+	if( properties && (c = strstr(properties,"test")) ){
+		if ( atoi(c+4) < DICTSIZE)
+			dictsize = atoi(c+4);
+		else
+			dictsize = 2;
+	}
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
@@ -699,7 +705,8 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, cid =0,  *ret, *bid;
 	BAT *b = 0, *cand = 0, *bn = NULL;
-	lng first = 0,last = 0, cnt=0;
+	lng first = 0,last = 00;
+	BUN cnt=0;
 	str msg= MAL_SUCCEED;
 	char **oper;
 	void *low;
