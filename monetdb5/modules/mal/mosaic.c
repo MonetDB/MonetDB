@@ -66,6 +66,7 @@ typedef struct MOSAICHEADER{
 
 typedef struct MOSAICBLOCK{
 	bte tag;	// method applied in chunk
+	bte prop[7];// properties needed by compression scheme.
 	BUN cnt;	// compression specific information
 } *MosaicBlk;
 

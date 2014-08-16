@@ -484,7 +484,7 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 #define leftfetchjoin_none(TPE)\
 {	TPE *val, *v;\
 	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->hdr) + MosaicBlkSize);\
+	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(; first < last; first++, val++){\
 		MOSskipit();\
 		*v++ = *val;\
@@ -508,7 +508,7 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
-			val = (int*) (((char*) task->hdr) + MosaicBlkSize);
+			val = (int*) (((char*) task->blk) + MosaicBlkSize);
 			for(; first < last; first++, val++){
 				MOSskipit();
 				*v++ = *val;

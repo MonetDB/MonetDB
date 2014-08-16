@@ -464,7 +464,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 #define leftfetchjoin_rle(TPE)\
 {	TPE *val, *v;\
 	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->hdr) + MosaicBlkSize);\
+	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(; first < last; first++, val++){\
 		MOSskipit();\
 		*v++ = *val;\
@@ -488,8 +488,8 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
-			val = (int*) (((char*) task->hdr) + MosaicBlkSize);
-			for(; first < last; first++, val++){
+			val = (int*) (((char*) task->blk) + MosaicBlkSize);
+			for(; first < last; first++){
 				MOSskipit();
 				*v++ = *val;
 				task->n--;
@@ -501,7 +501,7 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 			if( task->type == TYPE_timestamp)
 			{	timestamp *val, *v;
 				v= (timestamp*) task->src;
-				val = (timestamp*) (((char*) task->hdr) + MosaicBlkSize);
+				val = (timestamp*) (((char*) task->blk) + MosaicBlkSize);
 				for(; first < last; first++, val++){
 					MOSskipit();
 					*v++ = *val;
