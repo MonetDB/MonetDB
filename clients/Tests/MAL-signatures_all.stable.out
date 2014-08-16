@@ -2943,7 +2943,7 @@ comment Execute a simple R script value
 
 pattern batrapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
 address RAPIevalAggr;
-comment Execute a simple R script value
+comment grouped aggregates through R
 
 command batsql.alpha(dec:dbl,theta:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address SQLcst_alpha_bat;
