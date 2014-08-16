@@ -26,7 +26,8 @@
  * Floating points are not expected to be replicated 
  */
 
-#define DICTSIZE 2
+#define DICTSIZE 128 
+static int dictsize = DICTSIZE;
 
 /* Beware, the dump routines use the compressed part of the task */
 static void
@@ -60,9 +61,9 @@ static void
 MOSadvance_dict(MOStask task)
 {
 	switch(ATOMstorage(task->type)){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(sht)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(int)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + DICTSIZE * sizeof(lng)+ wordaligned(sizeof(bte) * task->blk->cnt)); 
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * task->blk->cnt)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * task->blk->cnt)); 
 	}
 }
 
@@ -81,7 +82,7 @@ MOSskip_dict(MOStask task)
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == val) {cnt++;break;}\
 		if ( j == *size){\
-			if ( *size == DICTSIZE)\
+			if ( *size == dictsize)\
 				break;\
 			dict[j] = val;\
 			*size= *size+1;\
@@ -111,7 +112,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 				for(j= 0; j< *size; j++)
 					if( dict[j] == val) {cnt++;break;}
 				if ( j == *size){
-					if ( *size == DICTSIZE)
+					if ( *size == dictsize)
 						break;
 					dict[j] = val;
 					*size= *size+1;
@@ -120,14 +121,14 @@ MOSestimate_dict(Client cntxt, MOStask task)
 			}
 		}
 	}
-	return cnt; // for later cnt >DICTSIZE? cnt-DICTSIZE:0;
+	return cnt; // for later cnt >dictsize? cnt-dictsize:0;
 }
 
 // insert a series of values into the compressor block using dictionary
 #define DICTcompress(TPE)\
 {	TPE *val = (TPE*)task->src;\
 	TPE *dict = (TPE*)((char*)task->blk+ 2 * MosaicBlkSize);\
-	task->dst = ((char*) dict)+ sizeof(TPE)*DICTSIZE;\
+	task->dst = ((char*) dict)+ sizeof(TPE)*dictsize;\
 	for(i =0; i<task->elm; i++, val++){\
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == *val) {\
@@ -136,7 +137,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 				break;\
 			}\
 		if ( j == *size){\
-			if ( *size == DICTSIZE)\
+			if ( *size == dictsize)\
 				break;\
 			dict[j] = *val;\
 			*size = *size+1;\
@@ -168,7 +169,7 @@ MOScompress_dict(Client cntxt, MOStask task)
 	case TYPE_lng:
 		{	lng *val = (lng*)task->src;
 			lng *dict = (lng*)((char*)task->blk+ 2 * MosaicBlkSize);
-			task->dst = ((char*) dict)+ sizeof(lng)*DICTSIZE;
+			task->dst = ((char*) dict)+ sizeof(lng)*dictsize;
 			for(i =0; i<task->elm; i++, val++){
 				for(j= 0; j< *size; j++)
 					if( dict[j] == *val) {
@@ -177,7 +178,7 @@ MOScompress_dict(Client cntxt, MOStask task)
 						break;
 					}
 				if ( j == *size){
-					if ( *size == DICTSIZE){
+					if ( *size == dictsize){
 						// align on word boundary
 						task->dst += wordaligned(blk->cnt %2);
 						break;
@@ -202,7 +203,7 @@ MOScompress_dict(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define DICTdecompress(TPE)\
-{	bte *idx = (bte*)(compressed + DICTSIZE * sizeof(TPE));\
+{	bte *idx = (bte*)(compressed + dictsize * sizeof(TPE));\
 	TPE *dict = (TPE*) compressed;\
 	for(i = 0; i < (BUN) blk->cnt; i++,idx++)\
 		((TPE*)task->src)[i] = dict[ (bte)*idx];\
@@ -223,7 +224,7 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_lng: DICTdecompress(lng); break;
 	case TYPE_int:
-		{	bte *idx = (bte*)(compressed + DICTSIZE * sizeof(int));
+		{	bte *idx = (bte*)(compressed + dictsize * sizeof(int));
 			int *dict = (int*) compressed;
 			for(i = 0; i < (BUN) blk->cnt; i++,idx++)
 				((int*)task->src)[i] = dict[ (bte)*idx];
@@ -242,7 +243,7 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 
 #define subselect_dict(TPE) {\
  	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize );\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(TPE));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(TPE));\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 			for( ; first < last; first++, idx++){\
@@ -306,7 +307,7 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 }
 
 static str
-MOSsubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSsubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	int cmp;
@@ -327,7 +328,7 @@ MOSsubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 	case TYPE_int:
 	// Expanded MOSselect_dict for debugging
 	{ 	int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize );
-		bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(int));
+		bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
 
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -394,7 +395,7 @@ MOSsubselect_dict(Client cntxt,  MOStask task, lng first, lng last, void *low, v
 	default:
 		if( task->type == TYPE_timestamp)
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize );
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(lng));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));
 			int lownil = timestamp_isnil(*(timestamp*)low);
 			int hghnil = timestamp_isnil(*(timestamp*)hgh);
 
@@ -514,13 +515,13 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 		last = task->blk->cnt;
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(task->type){
 	case TYPE_sht: thetasubselect_dict(sht); break;
 	case TYPE_lng: thetasubselect_dict(lng); break;
 	case TYPE_int:
 		{ 	int low,hgh;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize );
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -559,7 +560,7 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	default:
 		if( task->type == TYPE_timestamp){
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize );
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(lng));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));
 			lng low,hgh;
 
 			low= hgh = int_nil;
@@ -605,7 +606,7 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 #define leftfetchjoin_dict(TPE)\
 {	TPE *v;\
 	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize );\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(TPE));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(TPE));\
 	v= (TPE*) task->src;\
 	for(; first < last; first++, idx++){\
 		MOSskipit();\
@@ -626,7 +627,7 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int *v;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize );
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
 			v= (int*) task->src;
 			for(; first < last; first++, idx++){
 				MOSskipit();
@@ -647,7 +648,7 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 #define join_dict(TPE)\
 {	TPE  *w;\
 	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize );\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(int));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));\
 	for(oo= (oid) first; first < last; first++, idx++, oo++){\
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
@@ -671,7 +672,7 @@ MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int  *w;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize );
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + DICTSIZE * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
 			for(oo= (oid) first; first < last; first++, idx++, oo++){
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
@@ -683,8 +684,18 @@ MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
-			if( task->type == TYPE_timestamp){
-				join_dict(lng); 
+			if( task->type == TYPE_timestamp)
+			{	timestamp  *w;
+				timestamp *dict= (timestamp*) (((char*) task->blk) + 2 * MosaicBlkSize );
+				bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(timestamp));
+				for(oo= (oid) first; first < last; first++, idx++, oo++){
+					w = (timestamp*) task->src;
+					for(n = task->elm, o = 0; n -- > 0; w++,o++)
+					if ( w->days == dict[*idx].days && w->msecs == dict[*idx].msecs){
+						BUNappend(task->lbat, &oo, FALSE);
+						BUNappend(task->rbat, &o, FALSE);
+					}
+				}
 			}
 	}
 	return MAL_SUCCEED;
