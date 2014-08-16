@@ -212,19 +212,20 @@ no-auto)
 	;;
 esac
 
-dft_microhttpd=no
-AC_ARG_ENABLE(microhttpd,
-	AS_HELP_STRING([--enable-microhttpd],
-		[enable support for the builtin MircoHTTPD daemon (default=no)]),
-	enable_microhttpd=$enableval,
-	enable_microhttpd=$dft_microhttpd)
-
 dft_jsonstore=no
 AC_ARG_ENABLE(jsonstore,
 	AS_HELP_STRING([--enable-jsonstore],
 		[enable support for MonetDB/jsonstore (default=no)]),
 	enable_jsonstore=$enableval,
 	enable_jsonstore=$dft_jsonstore)
+
+dft_microhttpd=$enable_jsonstore
+AC_ARG_ENABLE(microhttpd,
+	AS_HELP_STRING([--enable-microhttpd],
+		[enable support for the builtin MircoHTTPD daemon (default: implied by --enable-jsonstore)]),
+	enable_microhttpd=$enableval,
+	enable_microhttpd=$dft_microhttpd)
+
 case "$enable_jsonstore-$enable_microhttpd" in
 yes-no)
 	AC_MSG_ERROR([jsonstore require microhttpd])
