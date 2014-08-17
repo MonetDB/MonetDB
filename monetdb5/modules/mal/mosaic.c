@@ -311,6 +311,13 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		case MOSAIC_ZONE:
 			if( task->blk->cnt == 0)
 				task->dst += 2 * MosaicBlkSize;
+			if ( task->blk->cnt > MAXZONESIZE){
+				MOSupdateHeader(cntxt,task);
+				MOSadvance_zone(task);
+				task->dst = ((char*) task->blk)+ MosaicBlkSize;
+				task->blk->tag = MOSAIC_EOL;
+				task->blk->cnt = 0;
+			}
 			MOScompress_zone(cntxt,task);
 			break;
 		default :
@@ -588,6 +595,11 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			first += task->blk->cnt;
 			MOSskip_dict(task);
 			break;
+		case MOSAIC_ZONE:
+			MOSsubselect_zone(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
+			first += task->blk->cnt;
+			MOSskip_zone(task);
+			break;
 		case MOSAIC_NONE:
 		default:
 			MOSsubselect_none(cntxt,task,first,first + task->blk->cnt,low,hgh,li,hi,anti);
@@ -688,6 +700,11 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			first += task->blk->cnt;
 			MOSskip_dict(task);
 			break;
+		case MOSAIC_ZONE:
+			MOSthetasubselect_zone(cntxt,task,first,first + task->blk->cnt,low,*oper);
+			first += task->blk->cnt;
+			MOSskip_zone(task);
+			break;
 		case MOSAIC_NONE:
 		default:
 			MOSthetasubselect_none(cntxt,task,first,first + task->blk->cnt,low,*oper);
@@ -784,6 +801,11 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSleftfetchjoin_dict(cntxt, task, first, first + task->blk->cnt);
 			first += task->blk->cnt;
 			MOSskip_dict(task);
+			break;
+		case MOSAIC_ZONE:
+			MOSleftfetchjoin_zone(cntxt, task, first, first + task->blk->cnt);
+			first += task->blk->cnt;
+			MOSskip_zone(task);
 			break;
 		case MOSAIC_NONE:
 			MOSleftfetchjoin_none(cntxt, task, first, first + task->blk->cnt);
@@ -887,6 +909,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSjoin_dict(cntxt, task, first, first + task->blk->cnt);
 			first += (BUN) task->blk->cnt;
 			MOSskip_dict(task);
+			break;
+		case MOSAIC_ZONE:
+			MOSjoin_zone(cntxt, task, first, first + task->blk->cnt);
+			first += (BUN) task->blk->cnt;
+			MOSskip_zone(task);
 			break;
 		case MOSAIC_NONE:
 			MOSjoin_none(cntxt, task, first, first + task->blk->cnt);

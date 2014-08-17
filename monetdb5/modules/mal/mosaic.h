@@ -85,6 +85,8 @@ typedef struct MOSTASK{
 	BUN	elm;		// elements left to compress
 	char *src;		// read pointer into source
 
+	void *min, *max;// space for zones
+
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
 	lng	n;			// element count in candidate list

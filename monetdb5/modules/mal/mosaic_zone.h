@@ -29,6 +29,9 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
+// limit the size of a zone based on count 
+#define MAXZONESIZE 32*1024
+
 mosaic_export void MOSdump_zone(Client cntxt, MOStask task);
 mosaic_export void MOSadvance_zone(MOStask task);
 mosaic_export void MOSskip_zone(MOStask task);

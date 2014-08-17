@@ -98,6 +98,14 @@ MOSestimate_zone(Client cntxt, MOStask task)
 	return 2;
 }
 
+#define ZONEbreak(TPE)\
+{	TPE *min,*max;\
+	min = (TPE*)zone_min(blk);\
+	max = (TPE*)zone_max(blk);\
+	if ( task->min ==0 || *(TPE*)task->min > *min) task->min = (void*) min;\
+	if ( task->max ==0 || *(TPE*)task->max < *max ) task->max = (void*) max;\
+}
+
 // rather expensive simple value non-compressed store
 void
 MOScompress_zone(Client cntxt, MOStask task)
@@ -129,6 +137,25 @@ MOScompress_zone(Client cntxt, MOStask task)
 	case TYPE_flt: ZONEcompress(flt); break;
 	case TYPE_dbl: ZONEcompress(dbl); break;
 	}
+	// maintain a global min-max pair
+	// break the zone when it covers too many elements
+	switch(ATOMstorage(task->type)){
+	case TYPE_bte: ZONEbreak(bte); break ;
+	case TYPE_bit: ZONEbreak(bit); break ;
+	case TYPE_sht: ZONEbreak(sht); break;
+	case TYPE_int:
+	{	int *min,*max;
+		min = (int*)zone_min(blk);
+		max = (int*)zone_max(blk);
+		if ( task->min ==0 || *(int*)task->min > *min) task->min = (void*) min;
+		if ( task->max ==0 || *(int*)task->max < *max ) task->max = (void*) max;
+	}
+		break;
+	case TYPE_lng: ZONEbreak(lng); break;
+	case TYPE_flt: ZONEbreak(flt); break;
+	case TYPE_dbl: ZONEbreak(dbl); break;
+	}
+	
 	MOSdump_zone(cntxt, task);
 #ifdef _DEBUG_MOSAIC_
 #endif
@@ -183,7 +210,7 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 		min = (TPE*)zone_min(task->blk);\
 		max = (TPE*)zone_max(task->blk);\
 		if( !*anti){\
-			if ( *(int*)low > *max || *(int*) hgh < *min)\
+			if ( (*(TPE*)low != TPE##_nil && *(TPE *)low > *max) || (*(TPE *)hgh != TPE##_nil && *(TPE *) hgh < *min))\
 				break;\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 				for( ; first < last; first++){\
@@ -216,7 +243,7 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 				}\
 			}\
 		} else {\
-			if ( *(int*)low >= *min && *(int*) hgh <= *max)\
+			if ( *(TPE*)low != TPE##_nil && *(TPE*)low >= *min && *(TPE*)hgh != TPE##_nil && *(TPE*) hgh <= *max)\
 				break;\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 				/* nothing is matching */\
@@ -280,7 +307,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 
 			if( !*anti){
 				// prefilter based on zone map
-				if ( *(int*)low > *max || *(int*) hgh < *min)
+				if ( (*(int*) low != int_nil && *(int*)low > *max) || (*(int*)hgh != int_nil && *(int*) hgh < *min))
 					break;
 
 				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -315,7 +342,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 				}
 			} else {
 				// prefilter based on zone map
-				if ( *(int*)low >= *min && *(int*) hgh <= *max)
+				if ( *(int*)low != int_nil && *(int*)low >= *min && *(int*)hgh != int_nil && *(int*) hgh <= *max)
 					break;
 				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 					/* nothing is matching */
@@ -446,10 +473,10 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 		hgh= low= *(TPE*) val;\
 	} \
 	if(!anti){\
-		if  (*min > hgh || low < *max )\
+		if  ( (hgh != TPE##_nil && *min > hgh) || (low !=TPE##_nil && *max <low) )\
 			break;\
 	} else{\
-		if  (*min >= low && hgh <= *max )\
+		if  ( low != TPE##_nil && *min >= low && hgh != TPE##_nil && hgh <= *max )\
 			break;\
 	}\
 	v = (TPE*) (((char*)task->blk) + 3 * MosaicBlkSize);\
@@ -514,10 +541,10 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 				hgh= low= *(int*) val;
 			} 
 			if(!anti){
-				if  (*min > hgh || low < *max )
+				if  ( (hgh != int_nil && *min > hgh) || (low !=int_nil && *max <low) )
 					break;
 			} else{
-				if  (*min >= low && hgh <= *max )
+				if  ( low != int_nil && *min >= low && hgh != int_nil && hgh <= *max )
 					break;
 			}
 			v = (int*) (((char*)task->blk) + 3 * MosaicBlkSize);
