@@ -560,6 +560,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
 extern list *find_all_sql_func(sql_schema * s, char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
+extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
 #endif /* SQL_CATALOG_H */
