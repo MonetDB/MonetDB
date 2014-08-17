@@ -33,7 +33,7 @@ void
 MOSdump_zone(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#zone "LLFMT" ", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#zone "LLFMT" elms ", (lng)(blk->cnt));
 	switch(task->type){
 	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
 	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
@@ -81,8 +81,8 @@ MOSskip_zone(MOStask task)
 {	TPE *min,*max;\
 	min = (TPE*)zone_min(blk);\
 	max = (TPE*)zone_max(blk);\
-	if ( *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
-	if ( *max == TPE##_nil || *max > *(TPE*)task->src) *max = *(TPE*)task->src;\
+	if ( blk->cnt == 0 || *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
+	if ( blk->cnt == 0 || *max == TPE##_nil || *max < *(TPE*)task->src) *max = *(TPE*)task->src;\
 	*(TPE*) task->dst = *(TPE*) task->src;\
 	task->src += sizeof(TPE);\
 	task->dst += sizeof(TPE);\
@@ -117,7 +117,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 		min = (int*)zone_min(blk);
 		max = (int*)zone_max(blk);
 		if (blk->cnt == 0 || *min == int_nil || *min > *(int*)task->src) *min = *(int*)task->src;
-		if (blk->cnt == 0 || *max == int_nil || *max > *(int*)task->src) *max = *(int*)task->src;
+		if (blk->cnt == 0 || *max == int_nil || *max < *(int*)task->src) *max = *(int*)task->src;
 		*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
 		task->dst += sizeof(int);
@@ -178,8 +178,13 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 
 	
 #define subselect_zone(TPE) {\
-		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+		TPE *val= (TPE*) (((char*) task->blk) + 3 * MosaicBlkSize);\
+		TPE *min,*max;\
+		min = (TPE*)zone_min(task->blk);\
+		max = (TPE*)zone_max(task->blk);\
 		if( !*anti){\
+			if ( *(int*)low > *max || *(int*) hgh < *min)\
+				break;\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 				for( ; first < last; first++){\
 					MOSskipit();\
@@ -211,6 +216,8 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 				}\
 			}\
 		} else {\
+			if ( *(int*)low >= *min && *(int*) hgh <= *max)\
+				break;\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 				/* nothing is matching */\
 			} else\
@@ -266,7 +273,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	case TYPE_dbl: subselect_zone(dbl); break;
 	case TYPE_int:
 	// Expanded MOSselect_zone for debugging
-		{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
+		{ 	int *val= (int*) (((char*) task->blk) + 3 * MosaicBlkSize);
 			int *min,*max;
 			min = (int*)zone_min(task->blk);
 			max = (int*)zone_max(task->blk);
@@ -307,6 +314,9 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 					}
 				}
 			} else {
+				// prefilter based on zone map
+				if ( *(int*)low >= *min && *(int*) hgh <= *max)
+					break;
 				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 					/* nothing is matching */
 				} else
@@ -339,7 +349,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 			break;
 		default:
 			if( task->type == TYPE_timestamp)
-				{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
+				{ 	lng *val= (lng*) (((char*) task->blk) + 3 * MosaicBlkSize);
 					int lownil = timestamp_isnil(*(timestamp*)low);
 					int hghnil = timestamp_isnil(*(timestamp*)hgh);
 
@@ -349,8 +359,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 								MOSskipit();
 								*o++ = (oid) first;
 							}
-						} else
-						if( lownil){
+						} else if( lownil){
 							for( ; first < last; first++, val++){
 								MOSskipit();
 								cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh ));
@@ -411,6 +420,9 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 
 #define thetasubselect_zone(TPE)\
 { 	TPE low,hgh, *v;\
+	TPE *min,*max;\
+	min = (TPE*)zone_min(task->blk);\
+	max = (TPE*)zone_max(task->blk);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -433,7 +445,14 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
+	if(!anti){\
+		if  (*min > hgh || low < *max )\
+			break;\
+	} else{\
+		if  (*min >= low && hgh <= *max )\
+			break;\
+	}\
+	v = (TPE*) (((char*)task->blk) + 3 * MosaicBlkSize);\
 	for( ; first < last; first++, v++){\
 		if( (low == TPE##_nil || * v >= low) && (* v <= hgh || hgh == TPE##_nil) ){\
 			if ( !anti) {\
@@ -468,6 +487,10 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	case TYPE_dbl: thetasubselect_zone(dbl); break;
 	case TYPE_int:
 		{ 	int low,hgh, *v;
+			int *min,*max;
+			min = (int*)zone_min(task->blk);
+			max = (int*)zone_max(task->blk);
+
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -490,7 +513,14 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 			if ( strcmp(oper,"==") == 0){
 				hgh= low= *(int*) val;
 			} 
-			v = (int*) (((char*)task->blk) + MosaicBlkSize);
+			if(!anti){
+				if  (*min > hgh || low < *max )
+					break;
+			} else{
+				if  (*min >= low && hgh <= *max )
+					break;
+			}
+			v = (int*) (((char*)task->blk) + 3 * MosaicBlkSize);
 			for( ; first < last; first++, v++){
 				if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
 					if ( !anti) {
@@ -516,7 +546,7 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 #define leftfetchjoin_zone(TPE)\
 {	TPE *val, *v;\
 	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	val = (TPE*) (((char*) task->blk) + 3 * MosaicBlkSize);\
 	for(; first < last; first++, val++){\
 		MOSskipit();\
 		*v++ = *val;\
@@ -540,7 +570,7 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
-			val = (int*) (((char*) task->blk) + MosaicBlkSize);
+			val = (int*) (((char*) task->blk) + 3 * MosaicBlkSize);
 			for(; first < last; first++, val++){
 				MOSskipit();
 				*v++ = *val;
@@ -558,7 +588,7 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 
 #define join_zone(TPE)\
 {	TPE *v, *w;\
-	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	v = (TPE*) (((char*) task->blk) + 3 * MosaicBlkSize);\
 	for(oo= (oid) first; first < last; first++, v++, oo++){\
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
@@ -585,7 +615,7 @@ MOSjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_dbl: join_zone(dbl); break;
 		case TYPE_int:
 		{	int *v, *w;
-			v = (int*) (((char*) task->blk) + MosaicBlkSize);
+			v = (int*) (((char*) task->blk) + 3 * MosaicBlkSize);
 			for(oo= (oid) first; first < last; first++, v++, oo++){
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)

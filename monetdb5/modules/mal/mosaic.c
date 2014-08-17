@@ -272,7 +272,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		switch(cand){
 		case MOSAIC_DICT:
 			// close the non-compressed part
-			if(task->blk->tag == MOSAIC_NONE && task->blk->cnt ){
+			if( (task->blk->tag == MOSAIC_NONE || task->blk->tag == MOSAIC_ZONE) && task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
 				MOSskip_none(task);
 				// always start with an EOL block
@@ -291,7 +291,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			break;
 		case MOSAIC_RLE:
 			// close the non-compressed part
-			if(task->blk->tag == MOSAIC_NONE && task->blk->cnt ){
+			if( (task->blk->tag == MOSAIC_NONE || task->blk->tag == MOSAIC_ZONE) && task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
 				MOSskip_none(task);
 				// always start with an EOL block
@@ -309,6 +309,8 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_ZONE:
+			if( task->blk->cnt == 0)
+				task->dst += 2 * MosaicBlkSize;
 			MOScompress_zone(cntxt,task);
 			break;
 		default :
@@ -318,8 +320,13 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	}
 	if( (task->blk->tag == MOSAIC_NONE || task->blk->tag == MOSAIC_ZONE) && task->blk->cnt){
 		MOSupdateHeader(cntxt,task);
-		MOSadvance_none(task);
-		task->dst = ((char*) task->blk)+ MosaicBlkSize;
+		if( task->blk->tag == MOSAIC_NONE ){
+			MOSadvance_none(task);
+			task->dst = ((char*) task->blk)+ MosaicBlkSize;
+		} else{
+			MOSadvance_zone(task);
+			task->dst = ((char*) task->blk)+ 3 * MosaicBlkSize;
+		}
 		task->blk->tag = MOSAIC_EOL;
 		task->blk->cnt = 0;
 	}
