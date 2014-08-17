@@ -3133,8 +3133,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			/* list through all left/right expressions */
 			rexps = right->exps;
-			if (!is_project(right->op) || list_length(ll) != list_length(rexps))
+			if (!is_project(right->op) || list_length(ll) != list_length(rexps)) {
+				if (list_length(ll) == 1)
+					return sql_error(sql, 02, "IN: iinner query should return a single column");
 				return NULL;
+			}
 
 			for (n=ll->h, m=rexps->h; n && m; n = n->next, m = m->next) {
 				sql_exp *l = n->data;
