@@ -1069,7 +1069,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 			F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'generate_series', 'storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'db_users', 'env', 'generate_series', 'storage', 'storagemodel', 'var') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);
 
 	if (schema) {
