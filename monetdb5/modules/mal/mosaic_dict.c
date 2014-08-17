@@ -26,11 +26,14 @@
  * Floating points are not expected to be replicated 
  */
 
-#define DICTSIZE 128 
-static int dictsize = DICTSIZE;
+#include "monetdb_config.h"
+#include "mosaic.h"
+#include "mosaic_dict.h"
+
+int dictsize = DICTSIZE;
 
 /* Beware, the dump routines use the compressed part of the task */
-static void
+void
 MOSdump_dict(Client cntxt, MOStask task)
 {
 	MosaicBlk blk= task->blk;
@@ -57,7 +60,7 @@ MOSdump_dict(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"\n");
 }
 
-static void
+void
 MOSadvance_dict(MOStask task)
 {
 	switch(task->type){
@@ -70,7 +73,7 @@ MOSadvance_dict(MOStask task)
 	}
 }
 
-static void
+void
 MOSskip_dict(MOStask task)
 {
 	MOSadvance_dict(task);
@@ -95,7 +98,7 @@ MOSskip_dict(MOStask task)
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
-static lng
+lng
 MOSestimate_dict(Client cntxt, MOStask task)
 {	BUN i = -1;
 	int cnt =0,j;
@@ -151,7 +154,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 	task->src = (char*) val;\
 }
 
-static void
+void
 MOScompress_dict(Client cntxt, MOStask task)
 {
 	BUN i ;
@@ -213,7 +216,7 @@ MOScompress_dict(Client cntxt, MOStask task)
 	task->src += i * sizeof(TPE);\
 }
 
-static void
+void
 MOSdecompress_dict(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
@@ -309,20 +312,17 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 	}\
 }
 
-static str
+str
 MOSsubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	int cmp;
 	(void) cntxt;
-	(void) low;
-	(void) hgh;
-	(void) li;
-	(void) hi;
-	(void) anti;
 
 	if ( first + task->blk->cnt > last)
 		last = task->blk->cnt;
+	if (task->cl && *task->cl > last)
+		return MAL_SUCCEED;
 	o = task->lb;
 
 	switch(task->type){
@@ -507,7 +507,7 @@ MOSsubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	}\
 } 
 
-static str
+str
 MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
 {
 	oid *o;
@@ -516,6 +516,8 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	
 	if ( first + task->blk->cnt > last)
 		last = task->blk->cnt;
+	if (task->cl && *task->cl > last)
+		return MAL_SUCCEED;
 	o = task->lb;
 
 	switch(task->type){
@@ -619,7 +621,7 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	task->src = (char*) v;\
 }
 
-static str
+str
 MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	(void) cntxt;
@@ -662,7 +664,7 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 	}\
 }
 
-static str
+str
 MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	BUN n;

@@ -22,7 +22,11 @@
  * The header block contains the mapping from OIDs to chunks
  */
 
-static void
+#include "monetdb_config.h"
+#include "mosaic.h"
+#include "mosaic_hdr.h"
+
+void
 MOSdumpHeader(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
@@ -35,7 +39,7 @@ MOSdumpHeader(Client cntxt, MOStask task)
 }
 
 // add the chunk to the index to facilitate 'fast' OID-based access
-static void
+void
 MOSupdateHeader(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
@@ -73,7 +77,7 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	MOSdumpHeader(cntxt,task);
 }
 
-static void
+void
 MOSinitHeader(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
@@ -83,7 +87,7 @@ MOSinitHeader(MOStask task)
 
 // determine the index of the chunk that contains 
 // the value of a specific oid, update the task
-static BUN
+BUN
 MOSfindChunk(Client cntxt, MOStask task, oid o)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;

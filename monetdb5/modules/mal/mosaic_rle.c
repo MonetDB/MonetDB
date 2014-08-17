@@ -22,8 +22,12 @@
  * Run-length encoding framework for a single chunk
  */
 
+#include "monetdb_config.h"
+#include "mosaic.h"
+#include "mosaic_rle.h"
+
 /* Beware, the dump routines use the compressed part of the task */
-static void
+void
 MOSdump_rle(Client cntxt, MOStask task)
 {
 	MosaicBlk blk= task->blk;
@@ -50,7 +54,7 @@ MOSdump_rle(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"\n");
 }
 
-static void
+void
 MOSadvance_rle(MOStask task)
 {
 	switch(task->type){
@@ -68,7 +72,7 @@ MOSadvance_rle(MOStask task)
 	}
 }
 
-static void
+void
 MOSskip_rle(MOStask task)
 {
 	MOSadvance_rle(task);
@@ -85,7 +89,7 @@ MOSskip_rle(MOStask task)
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
-static lng
+lng
 MOSestimate_rle(Client cntxt, MOStask task)
 {	BUN i = -1;
 	lng chunksize = 0;
@@ -122,7 +126,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 		task->src += i * sizeof(TYPE);\
 	}
 
-static void
+void
 MOScompress_rle(Client cntxt, MOStask task)
 {
 	BUN i ;
@@ -167,7 +171,7 @@ MOScompress_rle(Client cntxt, MOStask task)
 	task->src += i * sizeof(TYPE);\
 }
 
-static void
+void
 MOSdecompress_rle(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
@@ -262,7 +266,7 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 	}\
 }
 
-static str
+str
 MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
@@ -270,6 +274,8 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 
 	if ( first + task->blk->cnt > last)
 		last = task->blk->cnt;
+	if (task->cl && *task->cl > last)
+		return MAL_SUCCEED;
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
@@ -394,7 +400,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 		}\
 }
 
-static str
+str
 MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
 {
 	oid *o;
@@ -403,6 +409,8 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 	
 	if ( first + task->blk->cnt > last)
 		last = task->blk->cnt;
+	if (task->cl && *task->cl > last)
+		return MAL_SUCCEED;
 	o = task->lb;
 
 	switch(task->type){
@@ -473,7 +481,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 	task->src = (char*) v;\
 }
 
-static str
+str
 MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	(void) cntxt;
@@ -525,7 +533,7 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		}\
 }
 
-static str
+str
 MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 {
 	BUN n;

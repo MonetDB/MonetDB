@@ -26,25 +26,141 @@
 #include "mal_exception.h"
 #include "mal_function.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define mos_export extern __declspec(dllimport)
-#else
-#define mos_export extern __declspec(dllexport)
-#endif
-#else
-#define mos_export extern
+#include "mtime.h"
+#include "math.h"
+#include "opt_prelude.h"
+#include "algebra.h"
+
+//#define _DEBUG_MOSAIC_
+
+#define MOSAIC_VERSION 20140808
+
+/* do not invest in compressing BATs smaller than this */
+#define MIN_INPUT_COUNT 1
+
+/* The compressor kinds currently hardwired */
+#define MOSAIC_METHODS	6
+#define MOSAIC_NONE     0		// no compression at all
+#define MOSAIC_RLE      1		// use run-length encoding
+#define MOSAIC_DICT     2		// local dictionary encoding
+#define MOSAIC_DELTA	3		// use delta encoding
+#define MOSAIC_BITMAP 	4		// use limited set of bitmaps
+#define MOSAIC_ZONE		5		// adaptive zone map over non-compressed data
+#define MOSAIC_EOL		6		// marker for the last block
+
+//Compression should have a significant reduction to apply.
+#define COMPRESS_THRESHOLD 50   //percent
+
+/*
+ * The header is reserved for meta information, e.g. oid indices.
+ * The block header encodes the information needed for the chunk decompressor
+ */
+#define MOSAICINDEX 4  //> 2 elements
+typedef struct MOSAICHEADER{
+	int version;
+	int top;
+	oid index[MOSAICINDEX];
+	BUN offset[MOSAICINDEX];
+} * MosaicHdr;
+
+typedef struct MOSAICBLOCK{
+	bte tag;	// method applied in chunk
+	bte prop[7];// properties needed by compression scheme.
+	BUN cnt;	// compression specific information
+} *MosaicBlk;
+
+#define wordaligned(SZ) \
+	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(int)) : 0))
+
+#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER))
+#define MosaicBlkSize  wordaligned(sizeof(struct MOSAICBLOCK))
+
+
+typedef struct MOSTASK{
+	int type;		// one of the permissible types
+	MosaicHdr hdr;	// start of the destination heap
+	MosaicBlk blk;	// current block header
+	char *dst;		// write pointer into current compressed blocks
+
+	BUN	elm;		// elements left to compress
+	char *src;		// read pointer into source
+
+	oid *lb, *rb;	// Collected oids from operations
+	oid *cl;		// candidate admin
+	lng	n;			// element count in candidate list
+
+	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
+
+	// collect compression statistics for the particular task
+	lng time[MOSAIC_METHODS];
+	lng wins[MOSAIC_METHODS];	
+	lng elms[MOSAIC_METHODS];	
+} *MOStask;
+
+/* we keep a condensed OID index anchored to the compressed blocks */
+
+typedef struct MOSINDEX{
+	lng offset;		// header location within compressed heap
+	lng nullcnt;	// number of nulls encountered
+	ValRecord low,hgh; // zone value markers for fix-length types
+} *mosaicindex;
+
+/* Run through a column to produce a compressed version */
+
+#ifdef _MSC_VER
+#define nextafter   _nextafter
+float nextafterf(float x, float y);
 #endif
 
-mos_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties);
-mos_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid);
-mos_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mos_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#define PREVVALUEbit(x) ((x) - 1)
+#define PREVVALUEbte(x) ((x) - 1)
+#define PREVVALUEsht(x) ((x) - 1)
+#define PREVVALUEint(x) ((x) - 1)
+#define PREVVALUElng(x) ((x) - 1)
+#define PREVVALUEoid(x) ((x) - 1)
+#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
+#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
+
+#define NEXTVALUEbit(x) ((x) + 1)
+#define NEXTVALUEbte(x) ((x) + 1)
+#define NEXTVALUEsht(x) ((x) + 1)
+#define NEXTVALUEint(x) ((x) + 1)
+#define NEXTVALUElng(x) ((x) + 1)
+#define NEXTVALUEoid(x) ((x) + 1)
+#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
+#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
+
+// skip until you hit a candidate
+#define MOSskipit()\
+if ( task->cl && task->n){\
+	while( *task->cl < (oid) first)\
+		{task->cl++; task->n--;}\
+	if ( *task->cl > (oid) first  || task->n ==0)\
+		continue;\
+	if ( *task->cl == (oid) first ){\
+		task->cl++; task->n--;\
+	}\
+} else if (task->cl) continue;
+
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define mosaic_export extern __declspec(dllimport)
+#else
+#define mosaic_export extern __declspec(dllexport)
+#endif
+#else
+#define mosaic_export extern
+#endif
+
+mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties);
+mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid);
+mosaic_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _MOSLIST_H */

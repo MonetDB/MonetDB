@@ -25,117 +25,13 @@
 
 #include "monetdb_config.h"
 #include "mosaic.h"
-#include "mtime.h"
-#include "math.h"
-#include "opt_prelude.h"
-#include "algebra.h"
+#include "mosaic_hdr.h"
+#include "mosaic_none.h"
+#include "mosaic_rle.h"
+#include "mosaic_dict.h"
+#include "mosaic_zone.h"
 
-//#define _DEBUG_MOSAIC_
-
-#define MOSAIC_VERSION 20140808
-
-/* do not invest in compressing BATs smaller than this */
-#define MIN_INPUT_COUNT 1
-
-/* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	6
-#define MOSAIC_NONE     0		// no compression at all
-#define MOSAIC_RLE      1		// use run-length encoding
-#define MOSAIC_DICT     2		// local dictionary encoding
-#define MOSAIC_DELTA	3		// use delta encoding
-#define MOSAIC_BITMAP 	4		// use limited set of bitmaps
-#define MOSAIC_ZONES    5		// zone map over non-compressed data
-#define MOSAIC_EOL		6		// marker for the last block
-
-static char *filtername[]={"none","rle","dict","delta","bitmap","zones","EOL"};
-
-//Compression should have a significant reduction to apply.
-#define COMPRESS_THRESHOLD 50   //percent
-
-/*
- * The header is reserved for meta information, e.g. oid indices.
- * The block header encodes the information needed for the chunk decompressor
- */
-#define MOSAICINDEX 4  //> 2 elements
-typedef struct MOSAICHEADER{
-	int version;
-	int top;
-	oid index[MOSAICINDEX];
-	BUN offset[MOSAICINDEX];
-} * MosaicHdr;
-
-typedef struct MOSAICBLOCK{
-	bte tag;	// method applied in chunk
-	bte prop[7];// properties needed by compression scheme.
-	BUN cnt;	// compression specific information
-} *MosaicBlk;
-
-#define wordaligned(SZ) \
-	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(int)) : 0))
-
-#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER))
-#define MosaicBlkSize  wordaligned(sizeof(struct MOSAICBLOCK))
-
-
-typedef struct MOSTASK{
-	int type;		// one of the permissible types
-	MosaicHdr hdr;	// start of the destination heap
-	MosaicBlk blk;	// current block header
-	char *dst;		// write pointer into current compressed blocks
-
-	BUN	elm;		// elements left to compress
-	char *src;		// read pointer into source
-
-	oid *lb, *rb;	// Collected oids from operations
-	oid *cl;		// candidate admin
-	lng	n;			// element count in candidate list
-
-	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
-
-	// collect compression statistics for the particular task
-	lng time[MOSAIC_METHODS];
-	lng wins[MOSAIC_METHODS];	
-	lng elms[MOSAIC_METHODS];	
-} *MOStask;
-
-/* we keep a condensed OID index anchored to the compressed blocks */
-
-typedef struct MOSINDEX{
-	lng offset;		// header location within compressed heap
-	lng nullcnt;	// number of nulls encountered
-	ValRecord low,hgh; // zone value markers for fix-length types
-} *mosaicindex;
-
-/* Run through a column to produce a compressed version */
-
-#ifdef _MSC_VER
-#define nextafter   _nextafter
-float nextafterf(float x, float y);
-#endif
-
-#define PREVVALUEbit(x) ((x) - 1)
-#define PREVVALUEbte(x) ((x) - 1)
-#define PREVVALUEsht(x) ((x) - 1)
-#define PREVVALUEint(x) ((x) - 1)
-#define PREVVALUElng(x) ((x) - 1)
-#define PREVVALUEoid(x) ((x) - 1)
-#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
-#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
-
-#define NEXTVALUEbit(x) ((x) + 1)
-#define NEXTVALUEbte(x) ((x) + 1)
-#define NEXTVALUEsht(x) ((x) + 1)
-#define NEXTVALUEint(x) ((x) + 1)
-#define NEXTVALUElng(x) ((x) + 1)
-#define NEXTVALUEoid(x) ((x) + 1)
-#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
-#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
-
-/* simple include the details of the hardwired compressors */
-#include "mosaic_hdr.c"
-#include "mosaic_none.c"
-#include "mosaic_rle.c"
-#include "mosaic_dict.c"
+static char *filtername[]={"none","rle","dict","delta","bitmap","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -146,16 +42,6 @@ MOSinit(MOStask task, BAT *b){
 	task->blk = (MosaicBlk)  base;
 	task->dst = base + MosaicBlkSize;
 }
-
-/*
-static void
-MOSclose(MOStask task){
-	if( task->blk->cnt == 0){
-		task->dst -= MosaicBlkSize;
-		return;
-	}
-}
-*/
 
 static void
 MOSdumpTask(Client cntxt,MOStask task)
@@ -202,6 +88,10 @@ MOSdumpInternal(Client cntxt, BAT *b){
 		case MOSAIC_DICT:
 			MOSdump_dict(cntxt,task);
 			MOSskip_dict(task);
+			break;
+		case MOSAIC_ZONE:
+			MOSdump_zone(cntxt,task);
+			MOSskip_zone(task);
 			break;
 		default: assert(0);
 		}
@@ -357,10 +247,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		cand = MOSAIC_NONE;
 		ch =0;
 		chunksize = 1;
-		// collect the opportunities for compression
+		
+		// select candidate amongst those
 		if (filter[MOSAIC_RLE])
 			ch = MOSestimate_rle(cntxt,task);
-		// select candidate amongst those
 		if ( ch > chunksize){
 			cand = MOSAIC_RLE;
 			chunksize = ch;
@@ -369,6 +259,12 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			ch = MOSestimate_dict(cntxt,task);
 		if ( ch > chunksize){
 			cand = MOSAIC_DICT;
+			chunksize = ch;
+		}
+		if (filter[MOSAIC_ZONE])
+			ch = MOSestimate_zone(cntxt,task);
+		if ( ch > chunksize){
+			cand = MOSAIC_ZONE;
 			chunksize = ch;
 		}
 
@@ -412,12 +308,15 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			task->blk->cnt = 0;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
+		case MOSAIC_ZONE:
+			MOScompress_zone(cntxt,task);
+			break;
 		default :
 			// continue to use the last block header.
 			MOScompress_none(cntxt,task);
 		}
 	}
-	if( task->blk->tag == MOSAIC_NONE && task->blk->cnt){
+	if( (task->blk->tag == MOSAIC_NONE || task->blk->tag == MOSAIC_ZONE) && task->blk->cnt){
 		MOSupdateHeader(cntxt,task);
 		MOSadvance_none(task);
 		task->dst = ((char*) task->blk)+ MosaicBlkSize;
@@ -521,6 +420,10 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		case MOSAIC_RLE:
 			MOSdecompress_rle(cntxt,task);
 			MOSskip_rle(task);
+			break;
+		case MOSAIC_ZONE:
+			MOSdecompress_zone(cntxt,task);
+			MOSskip_zone(task);
 			break;
 		default: assert(0);
 		}
