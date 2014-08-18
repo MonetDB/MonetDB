@@ -185,6 +185,7 @@ struct OPTcatalog {
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
 {"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
+{"geospatial",	0,	0,	0,	DEBUG_OPT_GEOSPATIAL},
 { 0,	0,	0,	0,	0}
 };
 

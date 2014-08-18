@@ -73,6 +73,8 @@
 #include "opt_reorder.h"
 #include "opt_statistics.h"
 #include "opt_strengthReduction.h"
+#include "opt_geospatial.h"
+
 
 struct{
 	str nme;
@@ -113,6 +115,7 @@ struct{
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
 	{"strengthReduction", &OPTstrengthReductionImplementation},
+	{"geospatial", &OPTgeospatialImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

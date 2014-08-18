@@ -457,4 +457,12 @@ pattern optimizer.pushselect(mod:str, fcn:str):str
 address OPTwrapper
 comment "Push selects down projections";
 
+#opt_geospatial.mal
+
+pattern optimizer.geospatial():str
+address OPTwrapper;
+pattern optimizer.geospatial(mod:str, frcn:str):str
+address OPTwrapper
+comment "filter results before calling geo functions";
+
 optimizer.prelude();

@@ -69,6 +69,7 @@ lib_optimizer = {
 		opt_support.c opt_support.h \
 		opt_centipede.c opt_centipede.h \
 		opt_pushselect.c opt_pushselect.h \
+		opt_geospatial.c opt_geospatial.h \
 		opt_wrapper.c
 }
 

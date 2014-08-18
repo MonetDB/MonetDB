@@ -251,6 +251,18 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
 #endif
+
+	/*geom pipe*/
+	{"geom_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.deadcode();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.geospatial();"
+	 "optimizer.garbageCollector();",
+	 "experimental", NULL, NULL, 1},
+
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
