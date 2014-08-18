@@ -45,7 +45,7 @@ BITSMCHN=X86
 !ELSEIF $(bits) == 64
 !IFNDEF BITS64
 BITS64=True
-BITSMCHN=X48
+BITSMCHN=X64
 !ENDIF
 !ENDIF
 
@@ -193,23 +193,19 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 libr_LIBDEP = R.lib
 !IFNDEF LIBR
 LIBR = c:\Program Files\R\R-3.1.0
+!ENDIF
 !IFDEF BITS32
 libr_DLL=$(LIBR)\bin\i386\R.dll
 !ELSE
 libr_DLL=$(LIBR)\bin\x64\R.dll
 !ENDIF
-!ENDIF
 libr_LIBS = $(libr_LIBDEP)
-# C:\cygwin\home\hannes\R.lib
 libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 
-R.lib: $(libr_DLL)
-	# generate R.lib from R.dll, needed for linking
-	echo LIBRARY R> R.def
-	echo EXPORTS>> R.def
-	dumpbin /exports "$(libr_DLL)" | grep -Po "^\s*\d+\s+\w+\s+\w+\s+\K\w+" >> R.def
+# generate R.lib from R.dll, needed for linking
+R.lib: "$(libr_DLL)"
+	dumpbin /exports "$(libr_DLL)" | python "$(TOPDIR)\..\NT\makelibdef.py" > R.def
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
-	
 !ENDIF
 
 # some programs we use, probably no need to edit
