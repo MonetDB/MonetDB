@@ -127,7 +127,7 @@ pattern fold(k:bat[:oid,:str],v:bat[:oid,:any]):json
 address JSONfold
 comment "Combine the key-value pairs into a single json object list.";
 
-pattern fold(k:bat[:oid,:any]):json
+pattern fold(v:bat[:oid,:any]):json
 address JSONfold
 comment "Combine the value list into a single json array object.";
 

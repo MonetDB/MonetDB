@@ -1037,6 +1037,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 					stk->cmd = 'n';
 				}
 				GDKfree(nme);
+				GDKfree(nmeOnStk);
 			}
 		}
 	}
