@@ -625,7 +625,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
     MT_lock_set(&mal_contextLock, "clients.sessions");
 	
-    for (c = mal_clients + (GDKgetenv_isyes("monet_daemon")?1:0); c < mal_clients + MAL_MAXCLIENTS; c++) 
+    for (c = mal_clients + (GDKgetenv_isyes("monet_daemon") != 0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
 		BUNappend(user, &usrname, FALSE);
 		msg = MTIMEunix_epoch(&ts);

@@ -84,6 +84,8 @@ MRgetCloud(int *ret, str *mrcluster)
 
 	MT_lock_set(&mal_contextLock, "mapreduce");
 	cloud = BATdescriptor(*ret); /* should succeed */
+	if (cloud == NULL)
+		throw(MAL, "mapreduce.getCloud", RUNTIME_OBJECT_MISSING);
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
 	if (mapnodes == NULL) {
@@ -121,6 +123,8 @@ MRcloudSize(str mrcluster)
 		return 0;
 	}
 	cloud = BATdescriptor(bid);
+	if (cloud == NULL)
+		return 0;
 	cnt = (int)BATcount(cloud);
 	BBPreleaseref(bid); /* we're done with it */
 	return(cnt);
@@ -932,11 +936,6 @@ OPTmapreduceImplementation(
 			case STICK:
 				trackstack_push(&tracker, i);
 			break;
-			case SINGLE_DUP:
-				copy = STICK;
-				pushInstruction(map, omap[i]);
-				trackstack_push(&tracker, i);
-			break;
 			case DUP:
 				pushInstruction(map, omap[i]);
 				pushInstruction(reduce, p);
@@ -944,9 +943,7 @@ OPTmapreduceImplementation(
 			case cNONE:
 				copy = STICK;
 			break;
-			case SINGLE:
-			case FREE:
-			case LEAVE:
+			default:
 				assert(0); /* make GCC happy */
 			break;
 		}
