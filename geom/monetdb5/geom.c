@@ -129,6 +129,8 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 
+geom_export str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
+
 //LocateAlong
 //LocateBetween
 
@@ -2899,6 +2901,81 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	GDKfree(bMBR);
 
 	return MAL_SUCCEED;
+
+}
+
+str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	wkb *aWKB = NULL, *bWKB = NULL;
+	bit outBIT;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i=0;
+
+	mbr *aMBR=NULL, *bMBR=NULL;
+
+	//get the descriptor of the BAT
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
+	}
+	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPreleaseref(aBAT->batCacheid);
+		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( aBAT->htype != TYPE_void || //header type of aBAT not void
+		 bBAT->htype != TYPE_void || //header type of bBAT not void
+	    aBAT->hseqbase != bBAT->hseqbase || //the idxs of the headers of the BATs are not the same
+	    BATcount(aBAT) != BATcount(bBAT)) { //the number of valid elements in the BATs are not the same
+		BBPreleaseref(aBAT->batCacheid);
+		BBPreleaseref(bBAT->batCacheid);
+		throw(MAL, "batgeom.MBRfilter", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(aBAT->batCacheid);
+		BBPreleaseref(bBAT->batCacheid);
+		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL;
+		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+			str msg;
+			BBPreleaseref(aBAT->batCacheid);
+			BBPreleaseref(bBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.MBRfilter", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		if(outBIT)
+			BUNappend(outBAT,&bWKB, TRUE); //add the result to the outBAT
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(aBAT));
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(aBAT->batCacheid);
+	BBPreleaseref(bBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	//free the MBRs
+	GDKfree(aMBR);
+	GDKfree(bMBR);
+
+	return MAL_SUCCEED;
+
 
 }
 
