@@ -8,7 +8,7 @@ dv:= bat.new(:oid,:int);
 bat.append(dv,42);
 bat.append(dv,84);
 bat.append(dv,42);
-bat.append(dv,21);
+bat.append(dv,20);
 
 # tuple identifiers
 ti:= bat.new(:oid,:oid);
