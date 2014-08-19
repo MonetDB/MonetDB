@@ -2832,6 +2832,7 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
+	int remainingElements =0;
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
@@ -2857,14 +2858,15 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
-	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
+
 	//set the first idx of the output BATs equal to that of the aBAT
 	BATseqbase(aBATfiltered, aBAT->hseqbase);
-	BATseqbase(bBATfiltered, aBAT->hseqbase);
+	BATseqbase(bBATfiltered, bBAT->hseqbase);
 
 	//iterator over the BATs	
 	aBAT_iter = bat_iterator(aBAT);
@@ -2874,7 +2876,7 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 		str err = NULL;
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
-
+		
 		//check the containment of the MBRs
 		if((err = mbrContains_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			str msg;
@@ -2887,17 +2889,18 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 			return msg;
 		}
 		if(outBIT) {
-			BUNappend(aBATfiltered,&aWKB, TRUE); //add the result to the aBAT
-			BUNappend(bBATfiltered,&bWKB, TRUE); //add the result to the bBAT
+			BUNappend(aBATfiltered,aWKB, TRUE); //add the result to the aBAT
+			BUNappend(bBATfiltered,bWKB, TRUE); //add the result to the bBAT
+			remainingElements++;
 		}
 	}
 
 	//set some properties of the new BATs
-	BATsetcount(aBATfiltered, BATcount(aBAT));
+	BATsetcount(aBATfiltered, remainingElements);
     	BATsettrivprop(aBATfiltered);
     	BATderiveProps(aBATfiltered,FALSE);
 	
-	BATsetcount(bBATfiltered, BATcount(aBAT));
+	BATsetcount(bBATfiltered, remainingElements);
     	BATsettrivprop(bBATfiltered);
     	BATderiveProps(bBATfiltered,FALSE);
 	
