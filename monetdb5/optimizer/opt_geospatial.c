@@ -29,7 +29,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains") == 0) {
 
 				//create the new instruction
-				newInstrPtr = newStmt(mb, "batgeom", "MBRfilter");
+				newInstrPtr = newStmt(mb, "batgeom", "ContainsFilter");
 				//create the return variables of the new instruction
 				aBATreturnId = newVariable(mb, GDKstrdup("aBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],1)));
 				bBATreturnId = newVariable(mb, GDKstrdup("bBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],2)));

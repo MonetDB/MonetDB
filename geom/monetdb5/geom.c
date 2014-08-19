@@ -129,7 +129,7 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 
-geom_export str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
+geom_export str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
 
 //LocateAlong
 //LocateBetween
@@ -2826,14 +2826,12 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
-str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id) {
+str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id) {
 	BAT *aBATfiltered = NULL, *bBATfiltered = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL;
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
-
-	mbr *aMBR=NULL, *bMBR=NULL;
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
@@ -2877,30 +2875,8 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		//create the MBRs of the two geometries
-		if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(aBAT->batCacheid);
-			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(aBATfiltered->batCacheid);
-			BBPreleaseref(bBATfiltered->batCacheid);
-			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-		if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(aBAT->batCacheid);
-			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(aBATfiltered->batCacheid);
-			BBPreleaseref(bBATfiltered->batCacheid);
-			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-			GDKfree(err);
-			GDKfree(aMBR);
-			return msg;
-		}
 		//check the containment of the MBRs
-		if((err = mbrContains(&outBIT, &aMBR, &bMBR)) != MAL_SUCCEED) {
+		if((err = mbrContains_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(aBAT->batCacheid);
 			BBPreleaseref(bBAT->batCacheid);
@@ -2908,8 +2884,6 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 			BBPreleaseref(bBATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
-			GDKfree(aMBR);
-			GDKfree(bMBR);
 			return msg;
 		}
 		if(outBIT) {
@@ -2932,10 +2906,6 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
 	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
 	
-	//free the MBRs
-	GDKfree(aMBR);
-	GDKfree(bMBR);
-
 	return MAL_SUCCEED;
 
 
