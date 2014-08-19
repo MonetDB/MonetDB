@@ -10,7 +10,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	InstrPtr *oldInstrPtr = mb->stmt; //pointer to the first instruction
 	int slimit = mb->ssize; //what is this?
 	InstrPtr newInstrPtr;
-	int newInstrReturnValue;
+	int aBATreturnId, bBATreturnId;
 
 	(void) pci;
 	(void) stk;	
@@ -21,7 +21,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		return 0;
 	
 
-	//iterate over the instructions and put them back in the stach
+	//iterate over the instructions
 	for(i=0; i<nextFreeSlot; i++) {
 
 		//chech the module and function name
@@ -30,20 +30,25 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 				//create the new instruction
 				newInstrPtr = newStmt(mb, "batgeom", "MBRfilter");
-				//create the return variable of the new instruction
-				newInstrReturnValue = newVariable(mb, GDKstrdup("result"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],2)));
+				//create the return variables of the new instruction
+				aBATreturnId = newVariable(mb, GDKstrdup("aBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],1)));
+				bBATreturnId = newVariable(mb, GDKstrdup("bBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],2)));
 				//set the return and input arguments of the new instruction
-				setReturnArgument(newInstrPtr, newInstrReturnValue);
+				setReturnArgument(newInstrPtr, aBATreturnId); //set the first return argument
+				newInstrPtr = pushReturn(mb, newInstrPtr, bBATreturnId); //push a second return argument
 				newInstrPtr = pushArgument(mb, newInstrPtr, getArg(oldInstrPtr[i],1));
 				newInstrPtr = pushArgument(mb, newInstrPtr, getArg(oldInstrPtr[i],2));
-			
-				//replace the second argument of the contains function with the results of the new instruction (the filtered results) 
+
+				//replace the arguments of the contains function with the results of the new instructions (the filtered results) 
+				delArgument(oldInstrPtr[i], 1);
 				delArgument(oldInstrPtr[i], 2);
 				pushInstruction(mb, oldInstrPtr[i]);
-				setArgument(mb, oldInstrPtr[i], 2, newInstrReturnValue);
+				setArgument(mb, oldInstrPtr[i], 1, aBATreturnId);
+				setArgument(mb, oldInstrPtr[i], 2, bBATreturnId);
 				
-				actions++;
-			}
+				actions+=3; //three changes
+			} else //put back all other instructions from batgeom
+				pushInstruction(mb, oldInstrPtr[i]);
 		} else //put all other instructions back
 			pushInstruction(mb, oldInstrPtr[i]);
 	}

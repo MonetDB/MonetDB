@@ -414,8 +414,8 @@ geom.prelude();
 
 module batgeom;
 
-command MBRfilter{unsafe}(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFilter_bat
-comment "Filters the points in the second bat according to the MBR of the first bat. First bat shoud contain only one geometry in order for the filtering to be possible.";
+command MBRfilter{unsafe}(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbFilter_bat
+comment "Filters the points in the bats according to the MBR of the other bat. The BAT with more that one geometries is the one filtered";
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
 #comment "Construct a point-BAT from two geometry-BATs";

@@ -2903,7 +2903,11 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	return MAL_SUCCEED;
 
 }
-
+/**
+ * It filters the geometries on one BAT with respect to the MBR of the geometry in the other BAT.
+ * The BAT with single geometry is the one used to create the filtering condition.
+ * If both BATs have more than one geometries, no filtering is performed.
+ **/
 str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL;

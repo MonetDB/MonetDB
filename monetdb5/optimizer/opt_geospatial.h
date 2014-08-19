@@ -17,13 +17,10 @@
  * All Rights Reserved.
  */
 
-#ifndef _OPT_GEOM_
-#define _OPT_GEOM_
-#include "opt_prelude.h"
+#ifndef _OPT_GEOSPATIAL_
+#define _OPT_GEOSPATIAL_
 #include "opt_support.h"
 #include "mal_interpreter.h"
-#include "mal_instruction.h"
-#include "mal_function.h"
 
 opt_export int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
