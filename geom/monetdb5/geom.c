@@ -2384,15 +2384,19 @@ str wkbArea(dbl *out, wkb** geomWKB) {
 /* returns the centroid of the geometry */
 str wkbCentroid(wkb **out, wkb **geom) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
+	GEOSGeom outGeometry;
 
 	if (!geosGeometry) {
 		*out = wkb_nil;
 		return MAL_SUCCEED;
 	}
 
-	*out = geos2wkb(GEOSGetCentroid(geosGeometry));
+	outGeometry = GEOSGetCentroid(geosGeometry); 
+	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry)); //the centroid has the same SRID with the the input geometry
+	*out = geos2wkb(outGeometry);
 
 	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(outGeometry);
 
 	return MAL_SUCCEED;
 
