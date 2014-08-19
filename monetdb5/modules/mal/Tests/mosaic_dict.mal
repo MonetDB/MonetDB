@@ -7,7 +7,7 @@ bat.append(b,"2014-08-14 12:00:00":timestamp);
 b:= bat.append(b,b);
 
 io.print(b);
-x:= mosaic.compress(b,"dict test");
+x:= mosaic.compress(b,"dict test 100");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);
 io.print(z);

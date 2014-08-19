@@ -32,7 +32,7 @@
 mosaic_export void MOSdump_rle(Client cntxt, MOStask task);
 mosaic_export void MOSadvance_rle(MOStask task);
 mosaic_export void MOSskip_rle(MOStask task);
-mosaic_export lng MOSestimate_rle(Client cntxt, MOStask task);
+mosaic_export int MOSestimate_rle(Client cntxt, MOStask task);
 mosaic_export void MOScompress_rle(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_rle(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);

@@ -64,13 +64,13 @@ MOSskip_delta(MOStask task)
 			break;\
 		val = *w;\
 	}\
-	chunksize = i;\
+	percentage = 100 * (sizeof(TYPE)+(int)i-1) / ((int)i * sizeof(TYPE));\
 }
 
-lng
+int
 MOSestimate_delta(Client cntxt, MOStask task)
 {	BUN i = -1;
-	lng chunksize = 0;
+	int percentage = 0;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -84,10 +84,11 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			chunksize = i;
+			percentage = 100 * (sizeof(int)+(int)i-1) / ((int)i * sizeof(int));
 		}
 	}
-	return chunksize;
+	mnstr_printf(cntxt->fdout,"#estimate delta %d elm %d perc\n",(int)i,percentage);
+	return percentage;
 }
 
 #define DELTAcompress(TYPE)\

@@ -90,12 +90,12 @@ MOSskip_zone(MOStask task)
 	task->elm--;\
 }
 
-lng
+int
 MOSestimate_zone(Client cntxt, MOStask task)
 {	
 	(void) cntxt;
 	(void) task;
-	return 2;
+	return 100;
 }
 
 #define ZONEbreak(TPE)\

@@ -85,14 +85,14 @@ MOSskip_rle(MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
-	chunksize = i;\
+	percentage = 100 * sizeof(TYPE)/ ( (int)i * sizeof(TYPE));\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
-lng
+int
 MOSestimate_rle(Client cntxt, MOStask task)
 {	BUN i = -1;
-	lng chunksize = 0;
+	int percentage = 0;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -107,10 +107,11 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
-			chunksize = i;
+			percentage = 100 * sizeof(int)/ ( i * sizeof(int));
 		}
 	}
-	return chunksize;
+	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %d perc\n",(int)i,percentage);
+	return percentage;
 }
 
 // insert a series of values into the compressor block using rle.

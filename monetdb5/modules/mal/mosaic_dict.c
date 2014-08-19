@@ -95,14 +95,16 @@ MOSskip_dict(MOStask task)
 			cnt++;\
 		}\
 	}\
+	if(i) percentage = 100 * sizeof(TYPE) * dictsize / ((int)i * sizeof(TYPE));\
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
-lng
+int
 MOSestimate_dict(Client cntxt, MOStask task)
 {	BUN i = -1;
 	int cnt =0,j;
 	lng *size;
+	int percentage= 99;
 	(void) cntxt;
 
 	// use the dst to avoid overwriting noneblocked
@@ -125,9 +127,11 @@ MOSestimate_dict(Client cntxt, MOStask task)
 					cnt++;
 				}
 			}
+			if(i) percentage = 100 * sizeof(int) * dictsize / ((int)i * sizeof(int));
 		}
 	}
-	return cnt; // for later cnt >dictsize? cnt-dictsize:0;
+	mnstr_printf(cntxt->fdout,"#estimate dict %d elm %d perc\n",(int)i,percentage);
+	return percentage; 
 }
 
 // insert a series of values into the compressor block using dictionary

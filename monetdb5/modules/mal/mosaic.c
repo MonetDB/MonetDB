@@ -178,7 +178,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	str msg = MAL_SUCCEED;
 	MOStask task;
 	int cand;
-	lng chunksize=0, ch;
+	lng percentage=0, perc;
 	int filter[MOSAIC_METHODS];
 	
 	if( properties)
@@ -188,9 +188,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= 1;
 	if( properties && (c = strstr(properties,"test")) ){
-		if ( atoi(c+4) < DICTSIZE)
-			dictsize = atoi(c+4);
-		else
+		if ( atoi(c+4) < DICTSIZE){
+			if( atoi(c+4))
+				dictsize = atoi(c+4);
+		} else
 			dictsize = 2;
 	}
 
@@ -250,33 +251,33 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	while(task->elm > 0){
 		// default is to extend the non-compressed block
 		cand = MOSAIC_NONE;
-		ch =0;
-		chunksize = 1;
+		perc = 100;
+		percentage = 100;
 		
 		// select candidate amongst those
 		if (filter[MOSAIC_RLE])
-			ch = MOSestimate_rle(cntxt,task);
-		if ( ch > chunksize){
+			perc = MOSestimate_rle(cntxt,task);
+		if ( perc < percentage){
 			cand = MOSAIC_RLE;
-			chunksize = ch;
+			percentage = perc;
 		}
 		if (filter[MOSAIC_DICT])
-			ch = MOSestimate_dict(cntxt,task);
-		if ( ch > chunksize){
+			perc = MOSestimate_dict(cntxt,task);
+		if ( perc <= percentage){
 			cand = MOSAIC_DICT;
-			chunksize = ch;
+			percentage = perc;
 		}
 		if (filter[MOSAIC_ZONE])
-			ch = MOSestimate_zone(cntxt,task);
-		if ( ch > chunksize){
+			perc = MOSestimate_zone(cntxt,task);
+		if ( perc < percentage){
 			cand = MOSAIC_ZONE;
-			chunksize = ch;
+			percentage = perc;
 		}
 		if (filter[MOSAIC_DELTA])
-			ch = MOSestimate_delta(cntxt,task);
-		if ( ch > chunksize){
+			perc = MOSestimate_delta(cntxt,task);
+		if ( perc < percentage){
 			cand = MOSAIC_DELTA;
-			chunksize = ch;
+			percentage = perc;
 		}
 
 		// apply the compression to a chunk

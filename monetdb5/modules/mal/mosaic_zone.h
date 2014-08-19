@@ -35,7 +35,7 @@
 mosaic_export void MOSdump_zone(Client cntxt, MOStask task);
 mosaic_export void MOSadvance_zone(MOStask task);
 mosaic_export void MOSskip_zone(MOStask task);
-mosaic_export lng MOSestimate_zone(Client cntxt, MOStask task);
+mosaic_export int MOSestimate_zone(Client cntxt, MOStask task);
 mosaic_export void MOScompress_zone(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_zone(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);

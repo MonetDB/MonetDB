@@ -32,7 +32,7 @@
 mosaic_export void MOSdump_delta(Client cntxt, MOStask task);
 mosaic_export void MOSadvance_delta(MOStask task);
 mosaic_export void MOSskip_delta(MOStask task);
-mosaic_export lng MOSestimate_delta(Client cntxt, MOStask task);
+mosaic_export int MOSestimate_delta(Client cntxt, MOStask task);
 mosaic_export void MOScompress_delta(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_delta(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);
