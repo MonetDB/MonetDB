@@ -1,0 +1,42 @@
+# Delta compression
+b:= bat.new(:oid,:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,-1);
+bat.append(b,-3);
+bat.append(b,1000);
+bat.append(b,1001);
+bat.append(b,1004);
+bat.append(b,999);
+bat.append(b,977);
+
+io.print(b);
+x:= mosaic.compress(b,"delta");
+
+c:= bat.new(:oid,:oid);
+bat.append(c,0@0);
+bat.append(c,2@0);
+bat.append(c,5@0);
+io.print(c);
+
+#mosaic.dump(x);
+s:= algebra.leftfetchjoin(c,b);
+io.print(s);
+xs:= mosaic.leftfetchjoin(c,b);
+io.print(xs);
+
+d:= bat.new(:oid,:int);
+bat.append(d,4);
+bat.append(d,-1);
+bat.append(d,nil:int);
+
+(jl,jr):= algebra.join(b,d);
+io.print(jl,jr);
+(ml,mr):= mosaic.join(x,d);
+io.print(ml,mr);
+
+(jl,jr):= algebra.join(d,b);
+io.print(jl,jr);
+(ml,mr):= mosaic.join(d,x);
+io.print(ml,mr);

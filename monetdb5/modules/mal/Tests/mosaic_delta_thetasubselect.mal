@@ -1,0 +1,81 @@
+# Delta compression
+b:= bat.new(:oid,:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,-1);
+bat.append(b,-3);
+bat.append(b,1000);
+bat.append(b,1001);
+bat.append(b,1004);
+bat.append(b,999);
+bat.append(b,977);
+
+io.print(b);
+x:= mosaic.compress(b,"delta");
+
+s:= algebra.thetasubselect(b,4,"<");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,"<");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,4,"<=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,"<=");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,4,">");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,">");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,4,">=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,">=");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,4,"==");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,"==");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,4,"!=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,4,"!=");
+io.print(xs);
+
+c:= bat.new(:oid,:oid);
+bat.append(c,0@0);
+bat.append(c,2@0);
+io.print(c);
+
+s:= algebra.thetasubselect(b,c,4,"<");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,"<");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,c,4,"<=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,"<=");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,c,4,">");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,">");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,c,4,">=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,">=");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,c,4,"==");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,"==");
+io.print(xs);
+
+s:= algebra.thetasubselect(b,c,4,"!=");
+io.print(s);
+xs:= mosaic.thetasubselect(x,c,4,"!=");
+io.print(xs);
+

@@ -1,0 +1,18 @@
+# Delta compression
+b:= bat.new(:oid,:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,-1);
+bat.append(b,-3);
+bat.append(b,1000);
+bat.append(b,1001);
+bat.append(b,1004);
+bat.append(b,999);
+bat.append(b,977);
+
+io.print(b);
+x:= mosaic.compress(b,"delta");
+#mosaic.dump(x);
+z:= mosaic.decompress(x);
+io.print(z);

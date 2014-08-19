@@ -68,6 +68,7 @@ lib_mal = {
 		mosaic_rle.c mosaic_rle.h \
 		mosaic_dict.c mosaic_dict.h \
 		mosaic_zone.c mosaic_zone.h \
+		mosaic_delta.c mosaic_delta.h \
 		calc.c batcalc.c
 }
 
