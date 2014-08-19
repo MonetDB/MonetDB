@@ -44,377 +44,367 @@
 #define left(Z,X,W)  if ((X) < bins[W+1])
 #define right(Z,X,W) if ((X) >= bins[W])
 
-#define GETBIN64(Z,X) \
-	right(Z,X,32) { \
-		right(Z,X,48) { \
-			right(Z,X,56) {\
-				right(Z,X,60){ \
-					right(Z,X,62) {\
-						Z = 62;\
-						right(Z,X,63) {\
-							Z = 63;\
-						}\
-					}\
-					check(Z,X,61) \
-					left(Z,X,60) {\
-						Z = 60; \
-					}\
-				}\
-				check(Z,X,59)\
-				left(Z,X,58) {\
-					right(Z,X,58) {\
-						Z = 58;\
-					}\
-					check(Z,X,57)\
-					left(Z,X,56) {\
-						Z = 56; \
-					}\
-				}\
-			}\
-			check(Z,X,55)\
-			left(Z,X,54) { \
-				right(Z,X,52){ \
-					right(Z,X,54) {\
-						Z = 54;\
-					}\
-					check(Z,X,53)\
-					left(Z,X,52) {\
-						Z = 52; \
-					}\
-				}\
-				check(Z,X,51)\
-				left(Z,X,50) {\
-					right(Z,X,50) {\
-						Z = 50;\
-					}\
-					check(Z,X,49)\
-					left(Z,X,48) {\
-						Z = 48; \
-					}\
-				}\
-			}\
-		}\
-		check(Z,X,47)\
-		left(Z,X,46) { \
-			right(Z,X,40) {\
-				right(Z,X,44){ \
-					right(Z,X,46) {\
-						Z = 46;\
-					}\
-					check(Z,X,45) \
-					left(Z,X,44) {\
-						Z = 44; \
-					}\
-				}\
-				check(Z,X,43)\
-				left(Z,X,42) {\
-					right(Z,X,42) {\
-						Z = 42;\
-					}\
-					check(Z,X,41)\
-					left(Z,X,40) {\
-						Z = 40; \
-					}\
-				}\
-			}\
-			check(Z,X,39)\
-			left(Z,X,38) { \
-				right(Z,X,36){ \
-					right(Z,X,38) {\
-						Z = 38;\
-					}\
-					check(Z,X,37)\
-					left(Z,X,36) {\
-						Z = 36; \
-					}\
-				}\
-				check(Z,X,35)\
-				left(Z,X,34) {\
-					right(Z,X,34) {\
-						Z = 34;\
-					}\
-					check(Z,X,33)\
-					left(Z,X,32) {\
-						Z = 32; \
-					}\
-				}\
-			}\
-		}\
-	}\
-	check(Z,X,31)\
-	left(Z,X,30) { \
-		right(Z,X,16) { \
-			right(Z,X,24) {\
-				right(Z,X,28){ \
-					right(Z,X,30) {\
-						Z = 30;\
-					}\
-					check(Z,X,29) \
-					left(Z,X,28) {\
-						Z = 28; \
-					}\
-				}\
-				check(Z,X,27)\
-				left(Z,X,26) {\
-					right(Z,X,26) {\
-						Z = 26;\
-					}\
-					check(Z,X,25)\
-					left(Z,X,24) {\
-						Z = 24;\
-					}\
-				}\
-			}\
-			check(Z,X,23)\
-			left(Z,X,22) { \
-				right(Z,X,20){ \
-					right(Z,X,22) {\
-						Z = 22;\
-					}\
-					check(Z,X,21)\
-					left(Z,X,20) {\
-						Z = 20; \
-					}\
-				}\
-				check(Z,X,19)\
-				left(Z,X,18) {\
-					right(Z,X,18) {\
-						Z = 18;\
-					}\
-					check(Z,X,17)\
-					left(Z,X,16) {\
-						Z = 16; \
-					}\
-				}\
-			}\
-		}\
-		check(Z,X,15)\
-		left(Z,X,14) { \
-			right(Z,X,8) {\
-				right(Z,X,12){ \
-					right(Z,X,14) {\
-						Z = 14;\
-					}\
-					check(Z,X,13)\
-					left(Z,X,12) {\
-						Z = 12; \
-					}\
-				}\
-				check(Z,X,11)\
-				left(Z,X,10) {\
-					right(Z,X,10) {\
-						Z = 10;\
-					}\
-					check(Z,X,9)\
-					left(Z,X,8) {\
-						Z = 8; \
-					}\
-				}\
-			}\
-			check(Z,X,7)\
-			left(Z,X,6) { \
-				right(Z,X,4){ \
-					right(Z,X,6) {\
-						Z = 6;\
-					}\
-					check(Z,X,5)\
-					left(Z,X,4) {\
-						Z = 4; \
-					}\
-				}\
-				check(Z,X,3)\
-				left(Z,X,2) {\
-					right(Z,X,2) {\
-						Z = 2;\
-					}\
-					check(Z,X,1)\
-					left(Z,X,0) {\
-						Z = 0; \
-					}\
-				}\
-			}\
-		}\
+#define GETBIN64(Z,X)						\
+	right(Z,X,32) {						\
+		right(Z,X,48) {					\
+			right(Z,X,56) {				\
+				right(Z,X,60){			\
+					right(Z,X,62) {		\
+						Z = 62;		\
+						right(Z,X,63) {	\
+							Z = 63;	\
+						}		\
+					}			\
+					check(Z,X,61)		\
+					left(Z,X,60) {		\
+						Z = 60;		\
+					}			\
+				}				\
+				check(Z,X,59)			\
+				left(Z,X,58) {			\
+					right(Z,X,58) {		\
+						Z = 58;		\
+					}			\
+					check(Z,X,57)		\
+					left(Z,X,56) {		\
+						Z = 56;		\
+					}			\
+				}				\
+			}					\
+			check(Z,X,55)				\
+			left(Z,X,54) {				\
+				right(Z,X,52){			\
+					right(Z,X,54) {		\
+						Z = 54;		\
+					}			\
+					check(Z,X,53)		\
+					left(Z,X,52) {		\
+						Z = 52;		\
+					}			\
+				}				\
+				check(Z,X,51)			\
+				left(Z,X,50) {			\
+					right(Z,X,50) {		\
+						Z = 50;		\
+					}			\
+					check(Z,X,49)		\
+					left(Z,X,48) {		\
+						Z = 48;		\
+					}			\
+				}				\
+			}					\
+		}						\
+		check(Z,X,47)					\
+		left(Z,X,46) {					\
+			right(Z,X,40) {				\
+				right(Z,X,44){			\
+					right(Z,X,46) {		\
+						Z = 46;		\
+					}			\
+					check(Z,X,45)		\
+					left(Z,X,44) {		\
+						Z = 44;		\
+					}			\
+				}				\
+				check(Z,X,43)			\
+				left(Z,X,42) {			\
+					right(Z,X,42) {		\
+						Z = 42;		\
+					}			\
+					check(Z,X,41)		\
+					left(Z,X,40) {		\
+						Z = 40;		\
+					}			\
+				}				\
+			}					\
+			check(Z,X,39)				\
+			left(Z,X,38) {				\
+				right(Z,X,36){			\
+					right(Z,X,38) {		\
+						Z = 38;		\
+					}			\
+					check(Z,X,37)		\
+					left(Z,X,36) {		\
+						Z = 36;		\
+					}			\
+				}				\
+				check(Z,X,35)			\
+				left(Z,X,34) {			\
+					right(Z,X,34) {		\
+						Z = 34;		\
+					}			\
+					check(Z,X,33)		\
+					left(Z,X,32) {		\
+						Z = 32;		\
+					}			\
+				}				\
+			}					\
+		}						\
+	}							\
+	check(Z,X,31)						\
+	left(Z,X,30) {						\
+		right(Z,X,16) {					\
+			right(Z,X,24) {				\
+				right(Z,X,28){			\
+					right(Z,X,30) {		\
+						Z = 30;		\
+					}			\
+					check(Z,X,29)		\
+					left(Z,X,28) {		\
+						Z = 28;		\
+					}			\
+				}				\
+				check(Z,X,27)			\
+				left(Z,X,26) {			\
+					right(Z,X,26) {		\
+						Z = 26;		\
+					}			\
+					check(Z,X,25)		\
+					left(Z,X,24) {		\
+						Z = 24;		\
+					}			\
+				}				\
+			}					\
+			check(Z,X,23)				\
+			left(Z,X,22) {				\
+				right(Z,X,20){			\
+					right(Z,X,22) {		\
+						Z = 22;		\
+					}			\
+					check(Z,X,21)		\
+					left(Z,X,20) {		\
+						Z = 20;		\
+					}			\
+				}				\
+				check(Z,X,19)			\
+				left(Z,X,18) {			\
+					right(Z,X,18) {		\
+						Z = 18;		\
+					}			\
+					check(Z,X,17)		\
+					left(Z,X,16) {		\
+						Z = 16;		\
+					}			\
+				}				\
+			}					\
+		}						\
+		check(Z,X,15)					\
+		left(Z,X,14) {					\
+			right(Z,X,8) {				\
+				right(Z,X,12){			\
+					right(Z,X,14) {		\
+						Z = 14;		\
+					}			\
+					check(Z,X,13)		\
+					left(Z,X,12) {		\
+						Z = 12;		\
+					}			\
+				}				\
+				check(Z,X,11)			\
+				left(Z,X,10) {			\
+					right(Z,X,10) {		\
+						Z = 10;		\
+					}			\
+					check(Z,X,9)		\
+					left(Z,X,8) {		\
+						Z = 8;		\
+					}			\
+				}				\
+			}					\
+			check(Z,X,7)				\
+			left(Z,X,6) {				\
+				right(Z,X,4){			\
+					right(Z,X,6) {		\
+						Z = 6;		\
+					}			\
+					check(Z,X,5)		\
+					left(Z,X,4) {		\
+						Z = 4;		\
+					}			\
+				}				\
+				check(Z,X,3)			\
+				left(Z,X,2) {			\
+					right(Z,X,2) {		\
+						Z = 2;		\
+					}			\
+					check(Z,X,1)		\
+					left(Z,X,0) {		\
+						Z = 0;		\
+					}			\
+				}				\
+			}					\
+		}						\
 	}
 
-#define GETBIN32(Z,X) \
-	right(Z,X,16) { \
-		right(Z,X,24) {\
-			right(Z,X,28){ \
-				right(Z,X,30) {\
-					Z = 30;\
-					right(Z,X,31) {\
-						Z = 31;\
-					}\
-				}\
-				check(Z,X,29) \
-				left(Z,X,28) {\
-					Z = 28; \
-				}\
-			}\
-			check(Z,X,27)\
-			left(Z,X,26) {\
-				right(Z,X,26) {\
-					Z = 26;\
-				}\
-				check(Z,X,25)\
-				left(Z,X,24) {\
-					Z = 24; \
-				}\
-			}\
-		}\
-		check(Z,X,23)\
-		left(Z,X,22) { \
-			right(Z,X,20){ \
-				right(Z,X,22) {\
-					Z = 22;\
-				}\
-				check(Z,X,21)\
-				left(Z,X,20) {\
-					Z = 20; \
-				}\
-			}\
-			check(Z,X,19)\
-			left(Z,X,18) {\
-				right(Z,X,18) {\
-					Z = 18;\
-				}\
-				check(Z,X,17)\
-				left(Z,X,16) {\
-					Z = 16; \
-				}\
-			}\
-		}\
-	}\
-	check(Z,X,15)\
-	left(Z,X,14) { \
-		right(Z,X,8) {\
-			right(Z,X,12){ \
-				right(Z,X,14) {\
-					Z = 14;\
-				}\
-				check(Z,X,13)\
-				left(Z,X,12) {\
-					Z = 12; \
-				}\
-			}\
-			check(Z,X,11)\
-			left(Z,X,10) {\
-				right(Z,X,10) {\
-					Z = 10;\
-				}\
-				check(Z,X,9)\
-				left(Z,X,8) {\
-					Z = 8; \
-				}\
-			}\
-		}\
-		check(Z,X,7)\
-		left(Z,X,6) { \
-			right(Z,X,4){ \
-				right(Z,X,6) {\
-					Z = 6;\
-				}\
-				check(Z,X,5)\
-				left(Z,X,4) {\
-					Z = 4; \
-				}\
-			}\
-			check(Z,X,3)\
-			left(Z,X,2) {\
-				right(Z,X,2) {\
-					Z = 2;\
-				}\
-				check(Z,X,1)\
-				left(Z,X,0) {\
-					Z = 0; \
-				}\
-			}\
-		}\
+#define GETBIN32(Z,X)					\
+	right(Z,X,16) {					\
+		right(Z,X,24) {				\
+			right(Z,X,28){			\
+				right(Z,X,30) {		\
+					Z = 30;		\
+					right(Z,X,31) {	\
+						Z = 31;	\
+					}		\
+				}			\
+				check(Z,X,29)		\
+				left(Z,X,28) {		\
+					Z = 28;		\
+				}			\
+			}				\
+			check(Z,X,27)			\
+			left(Z,X,26) {			\
+				right(Z,X,26) {		\
+					Z = 26;		\
+				}			\
+				check(Z,X,25)		\
+				left(Z,X,24) {		\
+					Z = 24;		\
+				}			\
+			}				\
+		}					\
+		check(Z,X,23)				\
+		left(Z,X,22) {				\
+			right(Z,X,20){			\
+				right(Z,X,22) {		\
+					Z = 22;		\
+				}			\
+				check(Z,X,21)		\
+				left(Z,X,20) {		\
+					Z = 20;		\
+				}			\
+			}				\
+			check(Z,X,19)			\
+			left(Z,X,18) {			\
+				right(Z,X,18) {		\
+					Z = 18;		\
+				}			\
+				check(Z,X,17)		\
+				left(Z,X,16) {		\
+					Z = 16;		\
+				}			\
+			}				\
+		}					\
+	}						\
+	check(Z,X,15)					\
+	left(Z,X,14) {					\
+		right(Z,X,8) {				\
+			right(Z,X,12){			\
+				right(Z,X,14) {		\
+					Z = 14;		\
+				}			\
+				check(Z,X,13)		\
+				left(Z,X,12) {		\
+					Z = 12;		\
+				}			\
+			}				\
+			check(Z,X,11)			\
+			left(Z,X,10) {			\
+				right(Z,X,10) {		\
+					Z = 10;		\
+				}			\
+				check(Z,X,9)		\
+				left(Z,X,8) {		\
+					Z = 8;		\
+				}			\
+			}				\
+		}					\
+		check(Z,X,7)				\
+		left(Z,X,6) {				\
+			right(Z,X,4){			\
+				right(Z,X,6) {		\
+					Z = 6;		\
+				}			\
+				check(Z,X,5)		\
+				left(Z,X,4) {		\
+					Z = 4;		\
+				}			\
+			}				\
+			check(Z,X,3)			\
+			left(Z,X,2) {			\
+				right(Z,X,2) {		\
+					Z = 2;		\
+				}			\
+				check(Z,X,1)		\
+				left(Z,X,0) {		\
+					Z = 0;		\
+				}			\
+			}				\
+		}					\
 	}
 
-#define GETBIN16(Z,X) \
-	right(Z,X,8) {\
-		right(Z,X,12){ \
-			right(Z,X,14) {\
-				Z = 14;\
-				right(Z,X,15) {\
-					Z = 15;\
-				}\
-			}\
-			check(Z,X,13)\
-			left(Z,X,12) {\
-				Z = 12; \
-			}\
-		}\
-		check(Z,X,11)\
-		left(Z,X,10) {\
-			right(Z,X,10) {\
-				Z = 10;\
-			}\
-			check(Z,X,9)\
-			left(Z,X,8) {\
-				Z = 8; \
-			}\
-		}\
-	}\
-	check(Z,X,7)\
-	left(Z,X,6) { \
-		right(Z,X,4){ \
-			right(Z,X,6) {\
-				Z = 6;\
-			}\
-			check(Z,X,5)\
-			left(Z,X,4) {\
-				Z = 4; \
-			}\
-		}\
-		check(Z,X,3)\
-		left(Z,X,2) {\
-			right(Z,X,2) {\
-				Z = 2;\
-			}\
-			check(Z,X,1)\
-			left(Z,X,0) {\
-				Z = 0; \
-			}\
-		}\
+#define GETBIN16(Z,X)				\
+	right(Z,X,8) {				\
+		right(Z,X,12){			\
+			right(Z,X,14) {		\
+				Z = 14;		\
+				right(Z,X,15) {	\
+					Z = 15;	\
+				}		\
+			}			\
+			check(Z,X,13)		\
+			left(Z,X,12) {		\
+				Z = 12;		\
+			}			\
+		}				\
+		check(Z,X,11)			\
+		left(Z,X,10) {			\
+			right(Z,X,10) {		\
+				Z = 10;		\
+			}			\
+			check(Z,X,9)		\
+			left(Z,X,8) {		\
+				Z = 8;		\
+			}			\
+		}				\
+	}					\
+	check(Z,X,7)				\
+	left(Z,X,6) {				\
+		right(Z,X,4){			\
+			right(Z,X,6) {		\
+				Z = 6;		\
+			}			\
+			check(Z,X,5)		\
+			left(Z,X,4) {		\
+				Z = 4;		\
+			}			\
+		}				\
+		check(Z,X,3)			\
+		left(Z,X,2) {			\
+			right(Z,X,2) {		\
+				Z = 2;		\
+			}			\
+			check(Z,X,1)		\
+			left(Z,X,0) {		\
+				Z = 0;		\
+			}			\
+		}				\
 	}
 
-#define GETBIN8(Z,X) \
-	right(Z,X,4){ \
-		right(Z,X,6) {\
-			Z = 6;\
-			right(Z,X,7) {\
-				Z = 7;\
-			}\
-		}\
-		check(Z,X,5)\
-		left(Z,X,4) {\
-			Z = 4; \
-		}\
-	}\
-	check(Z,X,3)\
-	left(Z,X,2) {\
-		right(Z,X,2) {\
-			Z = 2;\
-		}\
-		check(Z,X,1)\
-		left(Z,X,0) {\
-			Z = 0; \
-		}\
+#define GETBIN8(Z,X)				\
+	right(Z,X,4){				\
+		right(Z,X,6) {			\
+			Z = 6;			\
+			right(Z,X,7) {		\
+				Z = 7;		\
+			}			\
+		}				\
+		check(Z,X,5)			\
+		left(Z,X,4) {			\
+			Z = 4;			\
+		}				\
+	}					\
+	check(Z,X,3)				\
+	left(Z,X,2) {				\
+		right(Z,X,2) {			\
+			Z = 2;			\
+		}				\
+		check(Z,X,1)			\
+		left(Z,X,0) {			\
+			Z = 0;			\
+		}				\
 	}
 
 /* end of binary search */
-
-static int
-imprints_create(BAT *b, char *inbins, bte bits,
-		char *imps, BUN *impcnt, char *dict, BUN *dictcnt)
-{
-	BUN i;
-	BUN dcnt, icnt, new;
-	bte bin = 0;
-	cchdc_t *d = (cchdc_t *) dict;
-	dcnt = icnt = 0;
 
 #define IMPS_CREATE(TYPE,B)						\
 do {									\
@@ -488,6 +478,16 @@ do {									\
 	}								\
 } while (0)
 
+static int
+imprints_create(BAT *b, char *inbins, bte bits,
+		char *imps, BUN *impcnt, char *dict, BUN *dictcnt)
+{
+	BUN i;
+	BUN dcnt, icnt, new;
+	bte bin = 0;
+	cchdc_t *d = (cchdc_t *) dict;
+	dcnt = icnt = 0;
+
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		BINSIZE(bits, IMPS_CREATE, bte);
@@ -518,13 +518,42 @@ do {									\
 	return 1;
 }
 
+#define FILL_HISTOGRAM(TYPE)						\
+do {									\
+	BUN k;								\
+	TYPE *s = (TYPE *) Tloc(smp, smp->batFirst);			\
+	TYPE *h = (TYPE *) imprints->bins->base;			\
+	if (cnt < 64-1) {						\
+		TYPE max = GDK_##TYPE##_max;				\
+		for (k = 0; k < cnt; k++)				\
+			h[k] = s[k];					\
+		if (k < 8)						\
+			imprints->bits = 8;				\
+		if (8 <= k && k < 16)					\
+			imprints->bits = 16;				\
+		if (16 <= k && k < 32)					\
+			imprints->bits = 32;				\
+		if (32 <= k && k < 64)					\
+			imprints->bits = 64;				\
+		while (k < (BUN) imprints->bits)			\
+			h[k++] = max;					\
+	} else {							\
+		double y, ystep = (double) cnt / (64 - 1);		\
+		for (k = 0, y = 0; (BUN) y < cnt; y += ystep, k++)	\
+			h[k] = s[(BUN) y];				\
+		if (k == 64 - 1) /* there is one left */		\
+			h[k] = s[cnt - 1];				\
+		imprints->bits = 64;					\
+	}								\
+} while (0)
 
 BAT *
-BATimprints(BAT *b) {
-
+BATimprints(BAT *b)
+{
 	BAT *o = NULL;
+	Imprints *imprints;
 
-	assert(BAThdense(b)); /* assert void head */
+	assert(BAThdense(b));	/* assert void head */
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
@@ -534,10 +563,10 @@ BATimprints(BAT *b) {
 	case TYPE_flt:
 	case TYPE_dbl:
 		break;
-	default: /* type not supported */
+	default:		/* type not supported */
 		GDKerror("#BATimprints: col type not "
 			 "suitable for imprints index.\n");
-		return b; /* do nothing */
+		return b;	/* do nothing */
 	}
 
 	BATcheck(b, "BATimprints");
@@ -550,14 +579,13 @@ BATimprints(BAT *b) {
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
-		Imprints *imprints;
 		BAT *smp, *s;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 
-		ALGODEBUG fprintf(stderr, "#BATimprints(b=%s#"BUNFMT") %s: "
-			"created imprints\n", BATgetId(b), BATcount(b),
-			b->T->heap.filename);
+		ALGODEBUG fprintf(stderr, "#BATimprints(b=%s#" BUNFMT ") %s: "
+				  "created imprints\n", BATgetId(b),
+				  BATcount(b), b->T->heap.filename);
 
 		imprints = (Imprints *) GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {
@@ -566,7 +594,6 @@ BATimprints(BAT *b) {
 				      "BATimprints");
 			return NULL;
 		}
-
 #define SMP_SIZE 2048
 		s = BATsample(b, SMP_SIZE);
 		if (s == NULL) {
@@ -583,7 +610,7 @@ BATimprints(BAT *b) {
 			GDKfree(imprints);
 			return NULL;
 		}
-		s = BATproject(smp,b);
+		s = BATproject(smp, b);
 		BBPunfix(smp->batCacheid);
 		if (s == NULL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
@@ -591,8 +618,8 @@ BATimprints(BAT *b) {
 			GDKfree(imprints);
 			return NULL;
 		}
-		s->tkey=1; /* we know is unique on tail now */
-		if (BATsubsort(&smp,NULL,NULL,s,NULL,NULL,0,0) == GDK_FAIL) {
+		s->tkey = 1;	/* we know is unique on tail now */
+		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) == GDK_FAIL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			BBPunfix(s->batCacheid);
@@ -607,8 +634,8 @@ BATimprints(BAT *b) {
 		/* bins of histogram */
 		imprints->bins = (Heap *) GDKzalloc(sizeof(Heap));
 		if (imprints->bins == NULL ||
-				(imprints->bins->filename =
-				GDKmalloc(strlen(nme) + 12)) == NULL ) {
+		    (imprints->bins->filename =
+		     GDKmalloc(strlen(nme) + 12)) == NULL) {
 			if (imprints->bins != NULL) {
 				GDKfree(imprints->bins);
 			}
@@ -620,7 +647,7 @@ BATimprints(BAT *b) {
 			return NULL;
 		}
 		sprintf(imprints->bins->filename, "%s.bins", nme);
-		if (HEAPalloc(imprints->bins, 64, b->T->width) < 0 ) {
+		if (HEAPalloc(imprints->bins, 64, b->T->width) < 0) {
 			GDKerror("#BATimprints: memory allocation error");
 			GDKfree(imprints->bins);
 			GDKfree(imprints);
@@ -629,30 +656,6 @@ BATimprints(BAT *b) {
 			return NULL;
 		}
 
-#define FILL_HISTOGRAM(TYPE)					\
-do {								\
-	BUN k;							\
-	TYPE *s = (TYPE *)Tloc(smp, smp->batFirst);		\
-	TYPE *h = (TYPE *)imprints->bins->base;			\
-	if (cnt < 64-1) {					\
-		TYPE max = GDK_##TYPE##_max;			\
-		for (k = 0; k < cnt; k++)			\
-			h[k] = s[k];				\
-		if (k<8) imprints->bits=8;			\
-		if (8<=k && k<16) imprints->bits=16;		\
-		if (16<=k && k<32) imprints->bits=32;		\
-		if (32<=k && k<64) imprints->bits=64;		\
-		for (;k<(BUN)imprints->bits; k++)		\
-			h[k] = max;				\
-	} else {						\
-		double y, ystep = (double)cnt/(double)(64-1);	\
-		for (k=0, y = 0; (BUN)y<cnt; y+= ystep, k++)	\
-				h[k] = s[(BUN)y];		\
-		if (k==64-1) /* there is one left */		\
-			h[k] = s[cnt-1];			\
-		imprints->bits=64;				\
-	}							\
-} while (0)
 		switch (ATOMstorage(b->T->type)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
@@ -682,11 +685,12 @@ do {								\
 		/* alloc heaps for imprints vectors and cache dictionary */
 		imprints->imps = (Heap *) GDKzalloc(sizeof(Heap));
 		imprints->dict = (Heap *) GDKzalloc(sizeof(Heap));
-		if (imprints->imps == NULL || imprints->dict == NULL ||
-				(imprints->imps->filename =
-				GDKmalloc(strlen(nme) + 12)) == NULL ||
-				(imprints->dict->filename =
-				GDKmalloc(strlen(nme) + 12)) == NULL) {
+		if (imprints->imps == NULL ||
+		    imprints->dict == NULL ||
+		    (imprints->imps->filename =
+		     GDKmalloc(strlen(nme) + 12)) == NULL ||
+		    (imprints->dict->filename =
+		     GDKmalloc(strlen(nme) + 12)) == NULL) {
 			GDKerror("#BATimprints: memory allocation error");
 			HEAPfree(imprints->bins);
 			GDKfree(imprints->bins);
@@ -704,110 +708,107 @@ do {								\
 			}
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-					"BATimprints");
+				      "BATimprints");
 			return NULL;
 		}
 		sprintf(imprints->imps->filename, "%s.imps", nme);
 		sprintf(imprints->dict->filename, "%s.dict", nme);
 
 		/* TODO: better estimation for the size to alloc */
-		if (HEAPalloc(imprints->imps, (b->T->heap.size+IMPS_PAGE-1)/IMPS_PAGE,
-					imprints->bits/8) +
-			HEAPalloc(imprints->dict, (b->T->heap.size+IMPS_PAGE-1)/IMPS_PAGE,
-				sizeof(cchdc_t)) < 0) {
+		if (HEAPalloc(imprints->imps,
+			      (b->T->heap.size + IMPS_PAGE - 1) / IMPS_PAGE,
+			      imprints->bits / 8) < 0 ||
+		    HEAPalloc(imprints->dict,
+			      (b->T->heap.size + IMPS_PAGE - 1) / IMPS_PAGE,
+			      sizeof(cchdc_t)) < 0) {
 			GDKerror("#BATimprints: memory allocation error");
-			HEAPfree(imprints->bins);
-			HEAPfree(imprints->imps);
-			HEAPfree(imprints->dict);
-			GDKfree(imprints->bins);
-			GDKfree(imprints->imps);
-			GDKfree(imprints->dict);
-			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-					"BATimprints");
-			return NULL;
+			goto bailout;
 		}
 
-		if (!imprints_create(b, imprints->bins->base, imprints->bits,
-					imprints->imps->base,
-					&imprints->impcnt,
-					imprints->dict->base,
-					&imprints->dictcnt)) {
+		if (!imprints_create(b,
+				     imprints->bins->base,
+				     imprints->bits,
+				     imprints->imps->base,
+				     &imprints->impcnt,
+				     imprints->dict->base,
+				     &imprints->dictcnt)) {
 			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->bins);
-			HEAPfree(imprints->imps);
-			HEAPfree(imprints->dict);
-			GDKfree(imprints->bins);
-			GDKfree(imprints->imps);
-			GDKfree(imprints->dict);
-			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-					"BATimprints");
-			return NULL;
+			goto bailout;
 		}
 		b->T->imprints = imprints;
 	}
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
-		o->T->imprints = NULL; /* views always keep null pointer and
-					  need to obtain the latest imprint
-					  from the parent at query time */
+		o->T->imprints = NULL;	/* views always keep null pointer and
+					   need to obtain the latest imprint
+					   from the parent at query time */
 		BBPunfix(b->batCacheid);
 		b = o;
 	}
 	assert(b->batCapacity >= BATcount(b));
 	return b;
+
+  bailout:
+	HEAPfree(imprints->bins);
+	HEAPfree(imprints->imps);
+	HEAPfree(imprints->dict);
+	GDKfree(imprints->bins);
+	GDKfree(imprints->imps);
+	GDKfree(imprints->dict);
+	GDKfree(imprints);
+	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
+	return NULL;
 }
+
+#define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
 
 int
 IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 {
 	int ret = -1;
 
-#define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
-
 	switch (tpe) {
-		case TYPE_bte:
-			{
-				bte *bins = (bte *) inbins;
-				BINSIZE(bits, getbin, bte);
-			}
-			break;
-		case TYPE_sht:
-			{
-				sht *bins = (sht *) inbins;
-				BINSIZE(bits, getbin, sht);
-			}
-			break;
-		case TYPE_int:
-			{
-				int *bins = (int *) inbins;
-				BINSIZE(bits, getbin, int);
-			}
-			break;
-		case TYPE_lng:
-			{
-				lng *bins = (lng *) inbins;
-				BINSIZE(bits, getbin, lng);
-			}
-			break;
-		case TYPE_flt:
-			{
-				flt *bins = (flt *) inbins;
-				BINSIZE(bits, getbin, flt);
-			}
-			break;
-		case TYPE_dbl:
-			{
-				dbl *bins = (dbl *) inbins;
-				BINSIZE(bits, getbin, dbl);
-			}
-			break;
-		default:
-			assert(0);
-			(void) inbins;
-			break;
+	case TYPE_bte:
+	{
+		bte *bins = (bte *) inbins;
+		BINSIZE(bits, getbin, bte);
+	}
+		break;
+	case TYPE_sht:
+	{
+		sht *bins = (sht *) inbins;
+		BINSIZE(bits, getbin, sht);
+	}
+		break;
+	case TYPE_int:
+	{
+		int *bins = (int *) inbins;
+		BINSIZE(bits, getbin, int);
+	}
+		break;
+	case TYPE_lng:
+	{
+		lng *bins = (lng *) inbins;
+		BINSIZE(bits, getbin, lng);
+	}
+		break;
+	case TYPE_flt:
+	{
+		flt *bins = (flt *) inbins;
+		BINSIZE(bits, getbin, flt);
+	}
+		break;
+	case TYPE_dbl:
+	{
+		dbl *bins = (dbl *) inbins;
+		BINSIZE(bits, getbin, dbl);
+	}
+		break;
+	default:
+		assert(0);
+		(void) inbins;
+		break;
 	}
 	return ret;
 }
@@ -817,8 +818,8 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 lng
 IMPSimprintsize(BAT *b)
 {
-	lng sz=0;
-	if( b->T->imprints){
+	lng sz = 0;
+	if (b->T->imprints) {
 		sz = b->T->imprints->impcnt * b->T->imprints->bits / 8;
 		sz += b->T->imprints->dictcnt * sizeof(cchdc_t);
 	}
@@ -826,31 +827,28 @@ IMPSimprintsize(BAT *b)
 }
 
 static void
-IMPSremove(BAT *b) {
+IMPSremove(BAT *b)
+{
 	Imprints *imprints;
 
-	assert(BAThdense(b)); /* assert void head */
+	assert(BAThdense(b));	/* assert void head */
 	assert(b->T->imprints != NULL);
 	assert(!VIEWtparent(b));
 
-	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)),
-			"BATimprints");
+	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 	imprints = b->T->imprints;
 	b->T->imprints = NULL;
 
 	if (imprints->imps->storage != STORE_MEM)
-		HEAPdelete(imprints->imps,
-				BBP_physical(b->batCacheid), "imps");
+		HEAPdelete(imprints->imps, BBP_physical(b->batCacheid), "imps");
 	else
 		HEAPfree(imprints->imps);
 	if (imprints->dict->storage != STORE_MEM)
-		HEAPdelete(imprints->dict,
-				BBP_physical(b->batCacheid), "dict");
+		HEAPdelete(imprints->dict, BBP_physical(b->batCacheid), "dict");
 	else
 		HEAPfree(imprints->dict);
 	if (imprints->bins->storage != STORE_MEM)
-		HEAPdelete(imprints->bins,
-				BBP_physical(b->batCacheid), "bins");
+		HEAPdelete(imprints->bins, BBP_physical(b->batCacheid), "bins");
 	else
 		HEAPfree(imprints->bins);
 
@@ -859,15 +857,14 @@ IMPSremove(BAT *b) {
 	GDKfree(imprints->bins);
 	GDKfree(imprints);
 
-	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-			"BATimprints");
+	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
 	return;
 }
 
 void
-IMPSdestroy(BAT *b) {
-
+IMPSdestroy(BAT *b)
+{
 	if (b) {
 		if (b->T->imprints != NULL && !VIEWtparent(b)) {
 			IMPSremove(b);
@@ -883,8 +880,18 @@ IMPSdestroy(BAT *b) {
 
 #ifndef NDEBUG
 /* never called, useful for debugging */
+
+#define IMPSPRNTMASK(T, B)						\
+	do {								\
+		uint##B##_t *im = (uint##B##_t *) imprints->imps->base;	\
+		for (j = 0; j < imprints->bits; j++)			\
+			s[j] = IMPSisSet(B, im[icnt], j) ? 'x' : '.';	\
+		s[j] = '\0';						\
+	} while (0)
+
 void
-IMPSprint(BAT *b) {
+IMPSprint(BAT *b)
+{
 	Imprints *imprints;
 	cchdc_t *d;
 	str s;
@@ -895,31 +902,25 @@ IMPSprint(BAT *b) {
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict->base;
-	s = (char *) malloc(sizeof(char)*(imprints->bits+1));
+	s = (char *) malloc(sizeof(char) * (imprints->bits + 1));
 	if (s == NULL)
 		return;
 
-#define IMPSPRNTMASK(T,B)						\
-do {									\
-	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		\
-	for (j=0; j<imprints->bits; j++)				\
-		s[j] = IMPSisSet(B, im[icnt], j)?'x':'.';		\
-	s[j] = '\0';							\
-} while (0)
-
-	fprintf(stderr,"bits = %d, impcnt = "BUNFMT", dictcnt = "BUNFMT"\n",
-			imprints->bits, imprints->impcnt, imprints->dictcnt);
-	for (dcnt=0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
+	fprintf(stderr,
+		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+		imprints->bits, imprints->impcnt, imprints->dictcnt);
+	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
-			BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
+			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			fprintf(stderr,"[ "BUNFMT" ]r %s\n",pages,s);
+			fprintf(stderr, "[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
-			l = icnt+d[dcnt].cnt;
+			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
-				BINSIZE(imprints->bits,IMPSPRNTMASK, " ");
-				fprintf(stderr,"[ "BUNFMT" ]  %s\n",pages++,s);
+				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
+				fprintf(stderr, "[ " BUNFMT " ]  %s\n",
+					pages++, s);
 			}
 		}
 	}
