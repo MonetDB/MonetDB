@@ -48,7 +48,6 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   if (substring(url, 1, 10) == "monetdb://") {
     dbname <- url
   }
-  port <- as.integer(port)
   timeout <- as.integer(timeout)
   
   if (substring(dbname, 1, 10) == "monetdb://") {
@@ -79,7 +78,9 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       }
     }
   }
-  
+  # this is important, otherwise we'll trip an assertion
+  port <- as.integer(port)
+
   # validate port number
   if (length(port) != 1 || port < 1 || port > 65535) {
     stop("Illegal port number ",port)
