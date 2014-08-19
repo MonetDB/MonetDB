@@ -129,7 +129,7 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 
-geom_export str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
+geom_export str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
 
 //LocateAlong
 //LocateBetween
@@ -2763,8 +2763,6 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
 
-	mbr *aMBR=NULL, *bMBR=NULL;
-
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
 		throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
@@ -2801,91 +2799,16 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-/*		if(aWKB_previous == NULL && bWKB_previous==NULL) {
-			//create the minimum bounding boxes
-			if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
-				str msg;
-				BBPreleaseref(bBAT->batCacheid);
-				BBPreleaseref(outBAT->batCacheid);
-				msg = createException(MAL, "batgeom.Contains", "%s", err);
-				GDKfree(err);
-				return msg;
-			}
-
-			if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
-				str msg;
-				BBPreleaseref(bBAT->batCacheid);
-				BBPreleaseref(outBAT->batCacheid);
-				msg = createException(MAL, "batgeom.Contains", "%s", err);
-				GDKfree(err);
-				GDKfree(aMBR);
-				return msg;
-			}
-		} else {
-			assert(aWKB_previous != NULL && bWKB_previous != NULL); //both of them shoudl be NULL ot !NULL
-			
-			//the common thing I expect to be comparing one geometry with a banch
-			//of geometries thus, one of the two BAts will only have one geometry
-			//repeated multiple times.
-			//compare the previous geometries with the current geometries
-			//and create new bounding boxes when not the same
-			if(memcmp(aWKB, aWKB_previous, wkb_size(aWKB->len))) {
-				GDKfree(aMBR); //release the memory allocated for the previous MBR
-				aMBR = NULL;
-				if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
-					str msg;
-					BBPreleaseref(bBAT->batCacheid);
-					BBPreleaseref(outBAT->batCacheid);
-					msg = createException(MAL, "batgeom.Contains", "%s", err);
-					GDKfree(err);
-					GDKfree(bMBR);
-					return msg;
-				}
-
-			}
-			if(memcmp(bWKB, bWKB_previous, wkb_size(bWKB->len))) {
-				GDKfree(bMBR); //release the memory allocated for the previous MBR
-				bMBR = NULL;
-				if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
-					str msg;
-					BBPreleaseref(bBAT->batCacheid);
-					BBPreleaseref(outBAT->batCacheid);
-					msg = createException(MAL, "batgeom.Contains", "%s", err);
-					GDKfree(err);
-					GDKfree(aMBR);
-					return msg;
-				}
-
-			}
-		}
-		//check first if the bounding box of geometry a contains the bounding box of geometry b
-		if((err = mbrContains(&outBIT, &aMBR, &bMBR)) != MAL_SUCCEED) {
+		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
 			str msg;
+			BBPreleaseref(aBAT->batCacheid);
 			BBPreleaseref(bBAT->batCacheid);
 			BBPreleaseref(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.Contains", "%s", err);
 			GDKfree(err);
-			GDKfree(aMBR);
-			GDKfree(bMBR);
 			return msg;
 		}
-*/		
-//		if(outBIT) {
-			if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
-				str msg;
-				BBPreleaseref(aBAT->batCacheid);
-				BBPreleaseref(bBAT->batCacheid);
-				BBPreleaseref(outBAT->batCacheid);
-				msg = createException(MAL, "batgeom.Contains", "%s", err);
-				GDKfree(err);
-				return msg;
-			}
-//		}
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-//		
-//		//rememeber the previous geometries
-//		aWKB_previous = aWKB;
-//		bWKB_previous = bWKB;
 	}
 
 	//set some properties of the new BAT
@@ -2896,20 +2819,15 @@ str wkbContains_bat_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BBPreleaseref(bBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
-	//free the MBRs
-	GDKfree(aMBR);
-	GDKfree(bMBR);
-
 	return MAL_SUCCEED;
 
 }
+
 /**
- * It filters the geometries on one BAT with respect to the MBR of the geometry in the other BAT.
- * The BAT with single geometry is the one used to create the filtering condition.
- * If both BATs have more than one geometries, no filtering is performed.
+ * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
-str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
-	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id) {
+	BAT *aBATfiltered = NULL, *bBATfiltered = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL;
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
@@ -2932,17 +2850,23 @@ str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	    BATcount(aBAT) != BATcount(bBAT)) { //the number of valid elements in the BATs are not the same
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", "the arguments must have dense and aligned heads");
+		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	//create two new BATs for the output
+	if ((aBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(aBAT->batCacheid);
 		BBPreleaseref(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, aBAT->hseqbase);
+	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(aBAT->batCacheid);
+		BBPreleaseref(bBAT->batCacheid);
+		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the output BATs equal to that of the aBAT
+	BATseqbase(aBATfiltered, aBAT->hseqbase);
+	BATseqbase(bBATfiltered, aBAT->hseqbase);
 
 	//iterator over the BATs	
 	aBAT_iter = bat_iterator(aBAT);
@@ -2953,26 +2877,60 @@ str wkbFilter_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+		//create the MBRs of the two geometries
+		if((err = wkbMBR(&aMBR, &aWKB)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(aBAT->batCacheid);
 			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.MBRfilter", "%s", err);
+			BBPreleaseref(aBATfiltered->batCacheid);
+			BBPreleaseref(bBATfiltered->batCacheid);
+			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			return msg;
 		}
-		if(outBIT)
-			BUNappend(outBAT,&bWKB, TRUE); //add the result to the outBAT
+		if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(aBAT->batCacheid);
+			BBPreleaseref(bBAT->batCacheid);
+			BBPreleaseref(aBATfiltered->batCacheid);
+			BBPreleaseref(bBATfiltered->batCacheid);
+			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
+			GDKfree(err);
+			GDKfree(aMBR);
+			return msg;
+		}
+		//check the containment of the MBRs
+		if((err = mbrContains(&outBIT, &aMBR, &bMBR)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(aBAT->batCacheid);
+			BBPreleaseref(bBAT->batCacheid);
+			BBPreleaseref(aBATfiltered->batCacheid);
+			BBPreleaseref(bBATfiltered->batCacheid);
+			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
+			GDKfree(err);
+			GDKfree(aMBR);
+			GDKfree(bMBR);
+			return msg;
+		}
+		if(outBIT) {
+			BUNappend(aBATfiltered,&aWKB, TRUE); //add the result to the aBAT
+			BUNappend(bBATfiltered,&bWKB, TRUE); //add the result to the bBAT
+		}
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(aBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
+	//set some properties of the new BATs
+	BATsetcount(aBATfiltered, BATcount(aBAT));
+    	BATsettrivprop(aBATfiltered);
+    	BATderiveProps(aBATfiltered,FALSE);
+	
+	BATsetcount(bBATfiltered, BATcount(aBAT));
+    	BATsettrivprop(bBATfiltered);
+    	BATderiveProps(bBATfiltered,FALSE);
+	
 	BBPreleaseref(aBAT->batCacheid);
 	BBPreleaseref(bBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
+	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
 	
 	//free the MBRs
 	GDKfree(aMBR);

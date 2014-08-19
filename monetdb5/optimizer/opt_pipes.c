@@ -252,14 +252,14 @@ static struct PIPELINES {
 	 "experimental", NULL, NULL, 1},
 #endif
 
-	/*geom pipe*/
+	/*geospatial pipe*/
 	{"geom_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.deadcode();"
+	 "optimizer.geospatial();"
+ 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.geospatial();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
 
