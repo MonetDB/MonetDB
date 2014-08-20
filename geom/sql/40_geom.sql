@@ -4024,7 +4024,7 @@ CREATE FUNCTION mbr(geom Geometry) RETURNS mbr external name geom."mbr";
 CREATE FUNCTION ST_WKTToSQL(wkt string) RETURNS Geometry external name geom."GeomFromText";
 
 --Construct a Geoemtry from a WKB
---CREATE FUNCTION ST_WKBToSQL(wkb_arr WHATEVER_IS_STORED_IN_DB) RETURNS Geometry EXTERNAL NAME geom."GeomFromWKB";
+CREATE FUNCTION ST_WKBToSQL(geom string) RETURNS Geometry EXTERNAL NAME geom."FromBinary";
 
 --Obtaining WKT from Geometry
 CREATE FUNCTION ST_AsText(geom Geometry) RETURNS string EXTERNAL NAME geom."AsText";
@@ -4041,7 +4041,7 @@ CREATE FUNCTION ST_IsEmpty(geom Geometry) RETURNS boolean EXTERNAL NAME geom."Is
 CREATE FUNCTION ST_IsSimple(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsSimple";
 CREATE FUNCTION ST_Boundary(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Boundary";
 CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Envelope";
---Functions regarding relations between Geometries
+--Functions testing spatial relations between Geometries
 CREATE FUNCTION ST_Equals(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Equals";
 CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";
 CREATE FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Intersects";
@@ -4053,7 +4053,7 @@ CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTE
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
---Performing set theoretic operations
+--Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";
 CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
@@ -4071,6 +4071,7 @@ CREATE FUNCTION ST_StartPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom
 CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."EndPoint";
 CREATE FUNCTION ST_IsRing(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsRing";
 CREATE FUNCTION ST_Length(geom Geometry) RETURNS double EXTERNAL NAME geom."Length"; --valid also for MultiCurve
+CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsClosed"; --valid also for MultiCurve
 
 --Functions on LineString
 CREATE FUNCTION ST_NumPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumPoints";
@@ -4093,13 +4094,16 @@ CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geo
 --CREATE FUNCTION ST_Geometries(geom Geometry) RETURNS TABLE(geom Geometries) EXTERNAL NAME geom."Geometries";
 --CREATE FUNCTION NumSurfaces(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumSurfaces";
 --CREATE FUNCTION Surface(positionNum integer) RETURNS Geometry EXTERNAL NAME geom."SurfaceN";
+--from Part 1
+--CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polyhedral surface
+--CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry EXTERNAL NAME --works with polyhedral surface
+--BoundingPolygons
+--IsClosed
 
 --Functions on GeomCollection
 CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumGeometries";
 CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."GeometryN";
 
---Functions on MultiCurve
-CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsClosed";
 
 ----------------
 -- DEPRECATED --
@@ -4130,6 +4134,9 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string, srid integer) RETURNS Geometry E
 --CREATE FUNCTION ST_BdMPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdMPolyFromWKB";
 
 
+-------------
+-- PostGIS --
+-------------
 
 -------------------------------------------------------------------------
 ------------------------- Geometry Constructors -------------------------
@@ -4205,8 +4212,6 @@ CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geo
 --CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom;
 CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningfull for polygon and multipolygon
 CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
---CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polyhedral surface
---CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry EXTERNAL NAME --works with polyhedral surface
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
 CREATE FUNCTION ST_XMax(geom Geometry) RETURNS double EXTERNAL NAME geom."XMaxFromWKB";
 CREATE FUNCTION ST_XMax(box mbr) RETURNS double EXTERNAL NAME geom."XMaxFromMBR";

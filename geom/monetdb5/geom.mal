@@ -68,7 +68,8 @@ comment "Returns the number of interior rings+exterior on the first polygon of t
 #Geometry Constructors
 command AsBinary(w:wkb) :str address wkbAsBinary
 comment "Returns the wkb representation into HEX format";
-
+command FromBinary(w:str) :wkb address wkbFromBinary
+comment "Creates a wkb using the HEX representation";
 
 #command AsText(w:wkb) :str address wkbAsText
 #comment "Creates the text representation of the Geometry.";

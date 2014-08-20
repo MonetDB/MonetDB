@@ -107,6 +107,7 @@ geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
 geom_export str wkbAsText(char**, wkb**, int*);
 geom_export str wkbAsBinary(char**, wkb**);
+geom_export str wkbFromBinary(wkb**, char**);
 geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsSimple(bit*, wkb**);
 //Is3D
@@ -771,6 +772,7 @@ wkb* geos2wkb(const GEOSGeometry* geosGeometry) {
 		*geomWKB = *wkbNULL();
 		return geomWKB;
 	}
+	assert(wkbLen <= GDK_int_max);
 
 	geomWKB = GDKmalloc(wkb_size(wkbLen));
 	//If malloc failed create a NULL wkb
@@ -781,7 +783,6 @@ wkb* geos2wkb(const GEOSGeometry* geosGeometry) {
 		return geomWKB;
 	}
 
-	assert(wkbLen <= GDK_int_max);
 	geomWKB->len = (int) wkbLen;
 	geomWKB->srid = GEOSGetSRID(geosGeometry);
 	memcpy(&geomWKB->data, w, wkbLen);
@@ -999,25 +1000,109 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 //Returns the wkb in a hex representation */
 static char hexit[] = "0123456789ABCDEF";
 
-str wkbAsBinary(char **tostr, wkb **geomWKB) {
+str wkbAsBinary(char **toStr, wkb **geomWKB) {
 	char *s;
 	int i;
 
 	if(wkb_isnil(*geomWKB)) {
-		*tostr = (str) GDKmalloc(1);
-		**tostr = '\0';
+		*toStr = (str) GDKmalloc(1);
+		**toStr = '\0';
 		return MAL_SUCCEED;
 	}
-	*tostr = (str) GDKmalloc(1+((*geomWKB)->len)*2);
+	*toStr = (str) GDKmalloc(1+((*geomWKB)->len)*2);
 
-	s = *tostr;
+	s = *toStr;
 	for (i = 0; i < (*geomWKB)->len; i++) {
 		int val = ((*geomWKB)->data[i] >> 4) & 0xf;
 		*s++ = hexit[val];
 		val = (*geomWKB)->data[i] & 0xf;
 		*s++ = hexit[val];
+//fprintf(stderr, "%d First: %c - Second: %c ==> Original %c (%d)\n", i, *(s-2), *(s-1), (*geomWKB)->data[i], (int)((*geomWKB)->data[i]));
 	}
 	*s = '\0';
+	return MAL_SUCCEED;
+}
+
+static int decit(char hex) {
+	switch(hex) {
+		case '0':
+			return 0;
+			break;
+		case '1':
+			return 1;
+			break;
+		case '2':
+			return 2;
+			break;
+		case '3':
+			return 3;
+			break;
+		case '4':
+			return 4;
+			break;
+		case '5':
+			return 5;
+			break;
+		case '6':
+			return 6;
+			break;
+		case '7':
+			return 7;
+			break;
+		case '8':
+			return 8;
+			break;
+		case '9':
+			return 9;
+			break;
+		case 'A':
+			return 10;
+			break;
+		case 'B':
+			return 11;
+			break;
+		case 'C':
+			return 12;
+			break;
+		case 'D':
+			return 13;
+			break;
+		case 'E':	
+			return 14;
+			break;
+		case 'F':
+			return 15;
+			break;
+		default:
+			return -1;
+	}
+}
+str wkbFromBinary(wkb** geomWKB, char **inStr) {
+	size_t strLength = 0, wkbLength = 0, i;
+	char* s;
+
+	strLength = strlen(*inStr);
+	
+	wkbLength = strLength/2;
+	assert(wkbLength <= GDK_int_max);
+
+	s = (char*)GDKmalloc(wkbLength);
+
+	//compute the value for s
+	for(i=0; i<strLength; i+=2) {
+		char firstHalf = (decit((*inStr)[i]) << 4) & 0xf0; //make sure that only the four most significant bits may be 1
+		char secondHalf = decit((*inStr)[i+1]) & 0xf; //make sure that only the four least significant bits may be 1
+		s[i/2] = firstHalf | secondHalf; //concatenate the two halfs to create the final byte 
+//fprintf(stderr, "%zd First: %c - Second: %c ==> Final: %c (%d)\n", i, (*inStr)[i], (*inStr)[i+1], s[i/2], (int)s[i/2]);
+	}
+
+	*geomWKB = GDKmalloc(wkb_size(wkbLength));
+	(*geomWKB)->len = (int) wkbLength;
+	(*geomWKB)->srid = 0;
+	memcpy(&(*geomWKB)->data, s, wkbLength);
+	GDKfree(s);
+
+
 	return MAL_SUCCEED;
 }
 
