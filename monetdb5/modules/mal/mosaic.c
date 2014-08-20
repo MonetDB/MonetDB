@@ -556,7 +556,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret, *bid, *cid= 0;
 	int i;
 	BUN cnt = 0;
-	lng first =0, last = 0;
+	BUN first =0, last = 0;
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
@@ -758,7 +758,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	// derive the filling
-	cnt = task->lb - (oid*) Tloc(bn,BUNfirst(bn));
+	cnt = (BUN)( task->lb - (oid*) Tloc(bn,BUNfirst(bn)));
 	
 	if( cid)
 		BBPreleaseref(cid);

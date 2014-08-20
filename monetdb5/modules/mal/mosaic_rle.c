@@ -107,7 +107,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
-			percentage = 100 * sizeof(int)/ ( i * sizeof(int));
+			percentage = 100 * sizeof(int)/ ( (int) i * sizeof(int));
 		}
 	}
 	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %d perc\n",(int)i,percentage);
