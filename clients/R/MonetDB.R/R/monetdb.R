@@ -908,14 +908,14 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows, he
   if(header || !missing(nrows)){
     if (length(nrows)==1) nrows <- rep(nrows, length(files))
     for(i in seq_along(files)) {
-      cat(files[i], thefile <- normalizePath(files[i]), "\n")
+      thefile <- normalizePath(files[i])
       dbSendUpdate(conn, paste("COPY", format(nrows[i], scientific=FALSE), "OFFSET 2 RECORDS INTO", 
                                tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
                                                                                                                 na.strings[1], "'", sep=""), if(locked) "LOCKED"))
     }
   } else {
     for(i in seq_along(files)) {
-      cat(files[i], thefile <- normalizePath(files[i]), "\n")
+      thefile <- normalizePath(files[i])
       dbSendUpdate(conn, paste0("COPY INTO ", tablename, " FROM ", paste("'", thefile, "'", sep=""), 
                                 delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
     }
