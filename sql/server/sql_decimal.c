@@ -31,6 +31,10 @@ decimal_from_str(char *dec)
 		neg = 1;
 		dec++;
 	}
+	if (*dec == '+') {
+		neg = 0;
+		dec++;
+	}
 	for (; *dec; dec++) {
 		if (*dec != '.') {
 			res *= 10;

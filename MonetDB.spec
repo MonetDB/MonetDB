@@ -98,7 +98,6 @@ BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
 BuildRequires: cfitsio-devel
 %endif
-BuildRequires: flex
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.0.0
 %endif
