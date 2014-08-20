@@ -173,33 +173,33 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 /* Imprints select code */
 
 /* inner check */
-#define impscheck(CAND,TEST,ADD)					    \
-do {									    \
-	e = (BUN) (i+limit-pr_off+off);					    \
-	if (im[icnt] & mask) {						    \
-		if ((im[icnt] & ~innermask) == 0) {			    \
-			while (o < e && p < q) {			    \
-				v = src[o-off];				    \
-				ADD;					    \
-				cnt++;					    \
-				p++;					    \
-				CAND;					    \
-			}						    \
-		} else {						    \
-			while (o < e && p < q) {			    \
-				v = src[o-off];				    \
-				ADD;					    \
-				cnt += (TEST);				    \
-				p++;					    \
-				CAND;					    \
-			}						    \
-		}							    \
-	} else {							    \
-		while (o < e && p <= q) {				    \
-			p++;						    \
-			CAND;						    \
-		}							    \
-	}								    \
+#define impscheck(CAND,TEST,ADD)			\
+do {							\
+	e = (BUN) (i+limit-pr_off+off);			\
+	if (im[icnt] & mask) {				\
+		if ((im[icnt] & ~innermask) == 0) {	\
+			while (o < e && p < q) {	\
+				v = src[o-off];		\
+				ADD;			\
+				cnt++;			\
+				p++;			\
+				CAND;			\
+			}				\
+		} else {				\
+			while (o < e && p < q) {	\
+				v = src[o-off];		\
+				ADD;			\
+				cnt += (TEST);		\
+				p++;			\
+				CAND;			\
+			}				\
+		}					\
+	} else {					\
+		while (o < e && p <= q) {		\
+			p++;				\
+			CAND;				\
+		}					\
+	}						\
 } while (0)
 
 /* main loop for imprints */
@@ -208,55 +208,56 @@ do {									    \
  * dcnt is the iterator for dictionary entries
  * i    is the iterator for the values in imprints
  */
-#define impsloop(CAND,TEST,ADD)						    \
-do {									    \
-	BUN dcnt, icnt, limit, i, l, e;					    \
-	cchdc_t *d = (cchdc_t *) imprints->dict->base;			    \
-	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		    \
-	CAND;								    \
-	for (i=0, dcnt=0, icnt=0;					    \
-	     (dcnt < imprints->dictcnt) && (i+off < w+pr_off) && (p<q);		    \
-	     dcnt++) {							    \
-		limit = ((BUN) d[dcnt].cnt) << rpp;			    \
-		while ((i+limit+off) <= (o+pr_off)) {			    \
-			i += limit;					    \
-			icnt += d[dcnt].repeat?1:d[dcnt].cnt;		    \
-			dcnt++;						    \
-			limit = ((BUN) d[dcnt].cnt) << rpp;		    \
-		}							    \
-		if (!d[dcnt].repeat) {					    \
-			limit = (BUN) 1 << rpp;				    \
-			l = icnt + d[dcnt].cnt;				    \
-			while ((i+limit+off) <= (o+pr_off)) { 		    \
-				icnt++;					    \
-				i += limit;				    \
-			}						    \
-			for (;						    \
-			     icnt < l && (i+off < w+pr_off);		    \
-			     icnt++) {					    \
-				impscheck(CAND,TEST,ADD);		    \
-				i += limit;				    \
-			}						    \
-		}							    \
-		else {							    \
-			impscheck(CAND,TEST,ADD);			    \
-			i += limit;					    \
-			icnt++;						    \
-		}							    \
-	}								    \
+#define impsloop(CAND,TEST,ADD)						\
+do {									\
+	BUN dcnt, icnt, limit, i, l, e;					\
+	cchdc_t *d = (cchdc_t *) imprints->dict;			\
+	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		\
+	CAND;								\
+	for (i = 0, dcnt = 0, icnt = 0;					\
+	     (dcnt < imprints->dictcnt) && (i + off < w + pr_off) && (p < q); \
+	     dcnt++) {							\
+		limit = ((BUN) d[dcnt].cnt) << rpp;			\
+		while ((i+limit+off) <= (o+pr_off)) {			\
+			i += limit;					\
+			icnt += d[dcnt].repeat?1:d[dcnt].cnt;		\
+			dcnt++;						\
+			limit = ((BUN) d[dcnt].cnt) << rpp;		\
+		}							\
+		if (!d[dcnt].repeat) {					\
+			limit = (BUN) 1 << rpp;				\
+			l = icnt + d[dcnt].cnt;				\
+			while ((i+limit+off) <= (o+pr_off)) {		\
+				icnt++;					\
+				i += limit;				\
+			}						\
+			for (;						\
+			     icnt < l && (i+off < w+pr_off);		\
+			     icnt++) {					\
+				impscheck(CAND,TEST,ADD);		\
+				i += limit;				\
+			}						\
+		}							\
+		else {							\
+			impscheck(CAND,TEST,ADD);			\
+			i += limit;					\
+			icnt++;						\
+		}							\
+	}								\
 } while (0)
 
 /* construct the mask */
 #define impsmask(CAND,TEST,B)						\
 do {									\
-	uint##B##_t *im = (uint##B##_t *) imprints->imps->base;		\
+	uint##B##_t *im = (uint##B##_t *) imprints->imps;		\
 	uint##B##_t mask = 0, innermask;				\
 	int j, lbin, hbin;						\
 	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			imprints->bins->base, tl);			\
+			  imprints->bins, tl);				\
 	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			imprints->bins->base, th);			\
-	for (j=lbin; j<=hbin; j++) mask = IMPSsetBit(B, mask, j);	\
+			  imprints->bins, th);				\
+	for (j = lbin; j <= hbin; j++)					\
+		mask = IMPSsetBit(B, mask, j);				\
 	innermask = mask;						\
 	if (!b->T->nonil || vl != minval)				\
 		innermask = IMPSunsetBit(B, innermask, lbin);		\
@@ -270,30 +271,30 @@ do {									\
 									\
 	if (BATcapacity(bn) < maximum) {				\
 		impsloop(CAND, TEST,					\
-			 buninsfix(bn, T, dst, cnt, oid, (oid)(o),	\
+			 buninsfix(bn, T, dst, cnt, oid, o,		\
 				   (BUN) ((dbl) cnt / (dbl) (p-r)	\
 					  * (dbl) (q-p) * 1.1 + 1024),	\
 				   BATcapacity(bn) + q - p, BUN_NONE));	\
 	} else {							\
-		impsloop(CAND, TEST, dst[cnt] = (oid)(o));		\
+		impsloop(CAND, TEST, dst[cnt] = o);			\
 	}								\
 } while (0)
 
 /* choose number of bits */
-#define bitswitch(CAND,TEST)						    \
-do {									    \
-	assert(imprints);						    \
-	ALGODEBUG fprintf(stderr,					    \
-			"#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	    \
-			"imprints select %s\n", BATgetId(b), BATcount(b),   \
-			s?BATgetId(s):"NULL", anti, #TEST);		    \
-	switch (imprints->bits) {					    \
-		case 8:  impsmask(CAND,TEST,8); break;			    \
-		case 16: impsmask(CAND,TEST,16); break;			    \
-		case 32: impsmask(CAND,TEST,32); break;			    \
-		case 64: impsmask(CAND,TEST,64); break;			    \
-		default: assert(0); break;				    \
-	}								    \
+#define bitswitch(CAND,TEST)						\
+do {									\
+	assert(imprints);						\
+	ALGODEBUG fprintf(stderr,					\
+			"#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			"imprints select %s\n", BATgetId(b), BATcount(b), \
+			s?BATgetId(s):"NULL", anti, #TEST);		\
+	switch (imprints->bits) {					\
+		case 8:  impsmask(CAND,TEST,8); break;			\
+		case 16: impsmask(CAND,TEST,16); break;			\
+		case 32: impsmask(CAND,TEST,32); break;			\
+		case 64: impsmask(CAND,TEST,64); break;			\
+		default: assert(0); break;				\
+	}								\
 } while (0)
 
 /* scan select without imprints */
@@ -328,8 +329,8 @@ do {									\
 } while (0)
 
 /* argument list for type-specific core scan select function call */
-#define scanargs	\
-	b, s, bn, tl, th, li, hi, equi, anti, lval, hval, p, q, cnt, off,   \
+#define scanargs							\
+	b, s, bn, tl, th, li, hi, equi, anti, lval, hval, p, q, cnt, off, \
 	dst, candlist, maximum, use_imprints
 
 #define PREVVALUEbte(x)	((x) - 1)
@@ -364,12 +365,14 @@ do {									\
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(CAND,TEST)						     \
-if (use_imprints) {							     \
-	bitswitch(CAND,TEST);						     \
-} else {								     \
-	scanloop(CAND,TEST);						     \
-}
+#define choose(CAND, TEST)			\
+	do {					\
+		if (use_imprints) {		\
+			bitswitch(CAND, TEST);	\
+		} else {			\
+			scanloop(CAND, TEST);	\
+		}				\
+	} while (0)
 
 /* definition of type-specific core scan select function */
 #define scanfunc(NAME, TYPE, CAND, END)					\
@@ -406,7 +409,8 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	}								\
 	END;								\
 	if (equi) {							\
-		choose(CAND, v == vl);					\
+		assert(!use_imprints);					\
+		scanloop(CAND, v == vl);				\
 	} else if (anti) {						\
 		if (b->T->nonil) {					\
 			choose(CAND,(v <= vl || v >= vh));		\

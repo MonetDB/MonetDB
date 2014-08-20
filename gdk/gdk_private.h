@@ -207,12 +207,13 @@ struct PROPrec {
 };
 
 struct Imprints {
-	bte bits;        /* how many bits in imprints */
-	Heap *bins;      /* ranges of bins */
-	Heap *imps;      /* heap of imprints */
-	BUN impcnt;      /* counter for imprints*/
-	Heap *dict;      /* cache dictionary for compressing imprints */
-	BUN dictcnt;     /* counter for cache dictionary */
+	bte bits;		/* how many bits in imprints */
+	Heap *imprints;
+	void *bins;		/* pointer into imprints heap */
+	void *imps;		/* pointer into imprints heap */
+	void *dict;		/* pointer into imprints heap */
+	BUN impcnt;		/* counter for imprints*/
+	BUN dictcnt;		/* counter for cache dictionary */
 };
 
 typedef struct {

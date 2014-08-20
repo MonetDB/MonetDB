@@ -410,39 +410,40 @@
 do {									\
 	uint##B##_t mask, prvmask;					\
 	uint##B##_t *im = (uint##B##_t *) imps;				\
-	TYPE *col = (TYPE *) Tloc(b, 0);				\
+	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
 	TYPE *bins = (TYPE *) inbins;					\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
-	for (i = 0; i < b->batFirst+b->batCount; i++) {			\
+	for (i = 0; i < b->batCount; i++) {				\
 		if (!(i&new) && i>0) {					\
 			/* same mask as previous and enough count to add */ \
 			if ((prvmask == mask) &&			\
-			    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
+			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
 				/* not a repeat header */		\
-				if (!d[dcnt-1].repeat) {		\
+				if (!dict[dcnt-1].repeat) {		\
 					/* if compressed */		\
-					if (d[dcnt-1].cnt > 1) {	\
+					if (dict[dcnt-1].cnt > 1) {	\
 						/* uncompress last */	\
-						d[dcnt-1].cnt--;	\
+						dict[dcnt-1].cnt--;	\
 						dcnt++; /* new header */ \
-						d[dcnt-1].cnt = 1;	\
+						dict[dcnt-1].cnt = 1;	\
 					}				\
 					/* set repeat */		\
-					d[dcnt-1].repeat = 1;		\
+					dict[dcnt-1].repeat = 1;	\
 				}					\
 				/* increase cnt */			\
-				d[dcnt-1].cnt++;			\
+				dict[dcnt-1].cnt++;			\
 			} else { /* new mask (or run out of header count) */ \
 				prvmask=mask;				\
 				im[icnt] = mask;			\
 				icnt++;					\
-				if ((dcnt > 0) && !(d[dcnt-1].repeat) && \
-				    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
-					d[dcnt-1].cnt++;		\
+				if ((dcnt > 0) && !(dict[dcnt-1].repeat) && \
+				    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
+					dict[dcnt-1].cnt++;		\
 				} else {				\
-					d[dcnt].cnt = 1;		\
-					d[dcnt].repeat = 0;		\
+					dict[dcnt].cnt = 1;		\
+					dict[dcnt].repeat = 0;		\
+					dict[dcnt].flags = 0;		\
 					dcnt++;				\
 				}					\
 			}						\
@@ -454,38 +455,39 @@ do {									\
 	}								\
 	/* one last left */						\
 	if (prvmask == mask && dcnt > 0 &&				\
-	    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {			\
-		if (!d[dcnt-1].repeat) {				\
-			if (d[dcnt-1].cnt > 1) {			\
-				d[dcnt-1].cnt--;			\
+	    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {			\
+		if (!dict[dcnt-1].repeat) {				\
+			if (dict[dcnt-1].cnt > 1) {			\
+				dict[dcnt-1].cnt--;			\
+				dict[dcnt].cnt = 1;			\
+				dict[dcnt].flags = 0;			\
 				dcnt++;					\
-				d[dcnt-1].cnt = 1;			\
 			}						\
-			d[dcnt-1].repeat = 1;				\
+			dict[dcnt-1].repeat = 1;			\
 		}							\
-		d[dcnt-1].cnt ++;					\
+		dict[dcnt-1].cnt ++;					\
 	} else {							\
 		im[icnt] = mask;					\
 		icnt++;							\
-		if ((dcnt > 0) && !(d[dcnt-1].repeat) &&		\
-		    (d[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
-			d[dcnt-1].cnt++;				\
+		if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&		\
+		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
+			dict[dcnt-1].cnt++;				\
 		} else {						\
-			d[dcnt].cnt = 1;				\
-			d[dcnt].repeat = 0;				\
+			dict[dcnt].cnt = 1;				\
+			dict[dcnt].repeat = 0;				\
+			dict[dcnt].flags = 0;				\
 			dcnt++;						\
 		}							\
 	}								\
 } while (0)
 
 static int
-imprints_create(BAT *b, char *inbins, bte bits,
-		char *imps, BUN *impcnt, char *dict, BUN *dictcnt)
+imprints_create(BAT *b, void *inbins, bte bits,
+		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
 	BUN i;
 	BUN dcnt, icnt, new;
 	bte bin = 0;
-	cchdc_t *d = (cchdc_t *) dict;
 	dcnt = icnt = 0;
 
 	switch (ATOMstorage(b->T->type)) {
@@ -522,19 +524,11 @@ imprints_create(BAT *b, char *inbins, bte bits,
 do {									\
 	BUN k;								\
 	TYPE *s = (TYPE *) Tloc(smp, smp->batFirst);			\
-	TYPE *h = (TYPE *) imprints->bins->base;			\
+	TYPE *h = imprints->bins;					\
 	if (cnt < 64-1) {						\
 		TYPE max = GDK_##TYPE##_max;				\
 		for (k = 0; k < cnt; k++)				\
 			h[k] = s[k];					\
-		if (k < 8)						\
-			imprints->bits = 8;				\
-		if (8 <= k && k < 16)					\
-			imprints->bits = 16;				\
-		if (16 <= k && k < 32)					\
-			imprints->bits = 32;				\
-		if (32 <= k && k < 64)					\
-			imprints->bits = 64;				\
 		while (k < (BUN) imprints->bits)			\
 			h[k++] = max;					\
 	} else {							\
@@ -543,7 +537,6 @@ do {									\
 			h[k] = s[(BUN) y];				\
 		if (k == 64 - 1) /* there is one left */		\
 			h[k] = s[cnt - 1];				\
-		imprints->bits = 64;					\
 	}								\
 } while (0)
 
@@ -566,7 +559,7 @@ BATimprints(BAT *b)
 	default:		/* type not supported */
 		GDKerror("#BATimprints: col type not "
 			 "suitable for imprints index.\n");
-		return b;	/* do nothing */
+		return NULL;	/* do nothing */
 	}
 
 	BATcheck(b, "BATimprints");
@@ -576,12 +569,20 @@ BATimprints(BAT *b)
 		o = b;
 		b = BATmirror(BATdescriptor(p));
 	}
+	if (b->batFirst > 0) {
+		/* no imprints if batFirst is not 0
+		 * this shouldn't really happen */
+		if (o)
+			BBPunfix(b->batCacheid);
+		return NULL;
+	}
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 	if (b->T->imprints == NULL) {
 		BAT *smp, *s;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
+		size_t pages;
 
 		ALGODEBUG fprintf(stderr, "#BATimprints(b=%s#" BUNFMT ") %s: "
 				  "created imprints\n", BATgetId(b),
@@ -630,31 +631,50 @@ BATimprints(BAT *b)
 		/* smp now is ordered and unique on tail */
 		assert(smp->tkey && smp->tsorted);
 		cnt = BATcount(smp);
+		imprints->bits = 64;
+		if (cnt < 32)
+			imprints->bits = 32;
+		if (cnt < 16)
+			imprints->bits = 16;
+		if (cnt < 8)
+			imprints->bits = 8;
 
 		/* bins of histogram */
-		imprints->bins = (Heap *) GDKzalloc(sizeof(Heap));
-		if (imprints->bins == NULL ||
-		    (imprints->bins->filename =
+		imprints->imprints = GDKzalloc(sizeof(Heap));
+		if (imprints->imprints == NULL ||
+		    (imprints->imprints->filename =
 		     GDKmalloc(strlen(nme) + 12)) == NULL) {
-			if (imprints->bins != NULL) {
-				GDKfree(imprints->bins);
-			}
-			GDKerror("#BATimprints: memory allocation error.\n");
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
+			GDKerror("#BATimprints: memory allocation error.\n");
 			BBPunfix(smp->batCacheid);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return NULL;
 		}
-		sprintf(imprints->bins->filename, "%s.bins", nme);
-		if (HEAPalloc(imprints->bins, 64, b->T->width) < 0) {
-			GDKerror("#BATimprints: memory allocation error");
-			GDKfree(imprints->bins);
+		sprintf(imprints->imprints->filename, "%s.imprints", nme);
+		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
+		/* The heap we create here consists of three parts:
+		 * bins, max 64 entries with bin boundaries;
+		 * imps;
+		 * dict. */
+		if (HEAPalloc(imprints->imprints,
+			      64 * b->T->width +
+			      pages * (imprints->bits / 8) +
+			      pages * sizeof(cchdc_t) +
+			      sizeof(uint64_t) /* padding for alignment */
+			      + 4 * SIZEOF_SIZE_T, /* extra info */
+			      1) < 0) {
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
+			GDKerror("#BATimprints: memory allocation error");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return NULL;
 		}
+		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
+		imprints->imps = (char *) imprints->bins + 64 * b->T->width;
+		imprints->dict = (void *) ((size_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
 		switch (ATOMstorage(b->T->type)) {
 		case TYPE_bte:
@@ -682,59 +702,28 @@ BATimprints(BAT *b)
 
 		BBPunfix(smp->batCacheid);
 
-		/* alloc heaps for imprints vectors and cache dictionary */
-		imprints->imps = (Heap *) GDKzalloc(sizeof(Heap));
-		imprints->dict = (Heap *) GDKzalloc(sizeof(Heap));
-		if (imprints->imps == NULL ||
-		    imprints->dict == NULL ||
-		    (imprints->imps->filename =
-		     GDKmalloc(strlen(nme) + 12)) == NULL ||
-		    (imprints->dict->filename =
-		     GDKmalloc(strlen(nme) + 12)) == NULL) {
-			GDKerror("#BATimprints: memory allocation error");
-			HEAPfree(imprints->bins);
-			GDKfree(imprints->bins);
-			if (imprints->imps != NULL) {
-				if (imprints->imps->filename != NULL) {
-					GDKfree(imprints->imps->filename);
-				}
-				GDKfree(imprints->imps);
-			}
-			if (imprints->dict != NULL) {
-				if (imprints->dict->filename != NULL) {
-					GDKfree(imprints->dict->filename);
-				}
-				GDKfree(imprints->dict);
-			}
+		if (!imprints_create(b,
+				     imprints->bins,
+				     imprints->bits,
+				     imprints->imps,
+				     &imprints->impcnt,
+				     imprints->dict,
+				     &imprints->dictcnt)) {
+			GDKerror("#BATimprints: failed to create imprints");
+			HEAPfree(imprints->imprints);
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return NULL;
 		}
-		sprintf(imprints->imps->filename, "%s.imps", nme);
-		sprintf(imprints->dict->filename, "%s.dict", nme);
-
-		/* TODO: better estimation for the size to alloc */
-		if (HEAPalloc(imprints->imps,
-			      (b->T->heap.size + IMPS_PAGE - 1) / IMPS_PAGE,
-			      imprints->bits / 8) < 0 ||
-		    HEAPalloc(imprints->dict,
-			      (b->T->heap.size + IMPS_PAGE - 1) / IMPS_PAGE,
-			      sizeof(cchdc_t)) < 0) {
-			GDKerror("#BATimprints: memory allocation error");
-			goto bailout;
-		}
-
-		if (!imprints_create(b,
-				     imprints->bins->base,
-				     imprints->bits,
-				     imprints->imps->base,
-				     &imprints->impcnt,
-				     imprints->dict->base,
-				     &imprints->dictcnt)) {
-			GDKerror("#BATimprints: failed to create imprints");
-			goto bailout;
-		}
+		assert(imprints->impcnt <= pages);
+		assert(imprints->dictcnt <= pages);
+		/* add info to heap for when they become persistent */
+		((size_t *) imprints->imprints->base)[0] = (size_t) imprints->bits;
+		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
+		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
+		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
 		b->T->imprints = imprints;
 	}
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -748,17 +737,6 @@ BATimprints(BAT *b)
 	}
 	assert(b->batCapacity >= BATcount(b));
 	return b;
-
-  bailout:
-	HEAPfree(imprints->bins);
-	HEAPfree(imprints->imps);
-	HEAPfree(imprints->dict);
-	GDKfree(imprints->bins);
-	GDKfree(imprints->imps);
-	GDKfree(imprints->dict);
-	GDKfree(imprints);
-	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-	return NULL;
 }
 
 #define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
@@ -813,8 +791,6 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 	return ret;
 }
 
-#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-
 lng
 IMPSimprintsize(BAT *b)
 {
@@ -839,22 +815,13 @@ IMPSremove(BAT *b)
 	imprints = b->T->imprints;
 	b->T->imprints = NULL;
 
-	if (imprints->imps->storage != STORE_MEM)
-		HEAPdelete(imprints->imps, BBP_physical(b->batCacheid), "imps");
+	if (imprints->imprints->storage != STORE_MEM)
+		HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
+			   "imprints");
 	else
-		HEAPfree(imprints->imps);
-	if (imprints->dict->storage != STORE_MEM)
-		HEAPdelete(imprints->dict, BBP_physical(b->batCacheid), "dict");
-	else
-		HEAPfree(imprints->dict);
-	if (imprints->bins->storage != STORE_MEM)
-		HEAPdelete(imprints->bins, BBP_physical(b->batCacheid), "bins");
-	else
-		HEAPfree(imprints->bins);
+		HEAPfree(imprints->imprints);
 
-	GDKfree(imprints->imps);
-	GDKfree(imprints->dict);
-	GDKfree(imprints->bins);
+	GDKfree(imprints->imprints);
 	GDKfree(imprints);
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -883,7 +850,7 @@ IMPSdestroy(BAT *b)
 
 #define IMPSPRNTMASK(T, B)						\
 	do {								\
-		uint##B##_t *im = (uint##B##_t *) imprints->imps->base;	\
+		uint##B##_t *im = (uint##B##_t *) imprints->imps;	\
 		for (j = 0; j < imprints->bits; j++)			\
 			s[j] = IMPSisSet(B, im[icnt], j) ? 'x' : '.';	\
 		s[j] = '\0';						\
@@ -894,17 +861,14 @@ IMPSprint(BAT *b)
 {
 	Imprints *imprints;
 	cchdc_t *d;
-	str s;
+	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
 	bte j;
 
 	if (!BATimprints(b))
 		return;
 	imprints = b->T->imprints;
-	d = (cchdc_t *) imprints->dict->base;
-	s = (char *) malloc(sizeof(char) * (imprints->bits + 1));
-	if (s == NULL)
-		return;
+	d = (cchdc_t *) imprints->dict;
 
 	fprintf(stderr,
 		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
@@ -924,6 +888,5 @@ IMPSprint(BAT *b)
 			}
 		}
 	}
-	free(s);
 }
 #endif
