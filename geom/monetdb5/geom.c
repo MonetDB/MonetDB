@@ -183,6 +183,9 @@ geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum);
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
+geom_export str wkbPointOnSurface(wkb**, wkb**);
+
+
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 geom_export str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID);
 
@@ -594,6 +597,35 @@ return createException(MAL, "geom.Transform", "Function Not Implemented");
 
 	return ret;
 #endif
+}
+
+
+str wkbPointOnSurface(wkb** resWKB, wkb** geomWKB) {
+	GEOSGeom geosGeometry, resGeosGeometry;
+
+	if(wkb_isnil(*geomWKB)){
+		*resWKB = wkb_nil;
+		return MAL_SUCCEED;
+	}
+	
+	geosGeometry = wkb2geos(*geomWKB);
+	if(!geosGeometry) {
+		*resWKB = wkb_nil;
+		throw(MAL, "geom.PointOnSurface", "wkb2geos failed");
+	}
+
+	resGeosGeometry = GEOSPointOnSurface(geosGeometry);
+	if(!resGeosGeometry) {
+		*resWKB = wkb_nil;
+		throw(MAL, "geom.PointOnSurface", "GEOSPointOnSurface failed");
+	}
+
+	*resWKB = geos2wkb(resGeosGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(resGeosGeometry);
+
+	return MAL_SUCCEED;
 }
 
 

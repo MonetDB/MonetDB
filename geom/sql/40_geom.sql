@@ -4079,7 +4079,7 @@ CREATE FUNCTION ST_PointN(geom Geometry, positionNum integer) RETURNS Geometry E
 
 --Functions on Surface (i.e. Polygon and Polyhedral Surface) and MultiSurface
 CREATE FUNCTION ST_Centroid(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Centroid";
---CREATE FUNCTION ST_PointOnSurface RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_PointOnSurface(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."PointOnSurface";
 CREATE FUNCTION ST_Area(geom Geometry) RETURNS double EXTERNAL NAME geom."Area";
 
 --Functions on Polygon

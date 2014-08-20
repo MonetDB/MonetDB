@@ -1,0 +1,87 @@
+stdout of test 'pointOnSurface` in directory 'geom/sql` itself:
+
+
+# 16:34:02 >  
+# 16:34:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30263" "--set" "mapi_usock=/var/tmp/mtest-20290/.s.monetdb.30263" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:34:02 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:30263/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20290/.s.monetdb.30263
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 16:34:03 >  
+# 16:34:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20290" "--port=30263"
+# 16:34:03 >  
+
+#select ST_PointOnSurface(st_wkttosql('POINT(0 5)'));
+% .L # table_name
+% st_wkttosql_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT (0 5)"	]
+#select ST_PointOnSurface(st_wkttosql('LINESTRING(0 5, 0 10)'));
+% .L # table_name
+% st_wkttosql_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT (0 5)"	]
+#select ST_PointOnSurface(st_wkttosql('POLYGON((0 0, 0 5, 5 5, 5 0, 0 0))'));
+% .L # table_name
+% st_wkttosql_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT (2.5 2.5)"	]
+#select ST_PointOnSurface(st_wkttosql('LINESTRING(0 5 1, 0 0 1, 0 10 2)'));
+% .L # table_name
+% st_wkttosql_single_value # name
+% geometry # type
+% 0 # length
+[ "POINT Z (0 0 1)"	]
+
+# 16:34:04 >  
+# 16:34:04 >  "Done."
+# 16:34:04 >  
+
