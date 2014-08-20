@@ -5,12 +5,6 @@ stdout of test 'install` in directory 'clients/R` itself:
 # 14:24:00 >  "./install.sh" "install"
 # 14:24:00 >  
 
-#~BeginVariableOutput~#
-make: Nothing to be done for `all'.
-> library(MonetDB.R); library(dplyr); library(sqlsurvey)
-> 
-> 
-#~EndVariableOutput~#
 All right, packages installed
 
 # 14:24:02 >  
