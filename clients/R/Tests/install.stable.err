@@ -1,0 +1,50 @@
+stderr of test 'install` in directory 'clients/R` itself:
+
+
+# 14:24:00 >  
+# 14:24:00 >  "./install.sh" "install"
+# 14:24:00 >  
+
+#~BeginVariableOutput~#
+* installing to library ‘/Library/Frameworks/R.framework/Versions/3.1/Resources/library’
+* installing *source* package ‘MonetDB.R’ ...
+** libs
+installing to /Library/Frameworks/R.framework/Versions/3.1/Resources/library/MonetDB.R/libs
+** R
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+* DONE (MonetDB.R)
+Loading required package: DBI
+Loading required package: digest
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: KernSmooth
+KernSmooth 2.23 loaded
+Copyright M. P. Wand 1997-2009
+Loading required package: survey
+Loading required package: grid
+
+Attaching package: ‘survey’
+
+The following object is masked from ‘package:graphics’:
+
+    dotchart
+
+#~EndVariableOutput~#
+
+# 14:24:02 >  
+# 14:24:02 >  "Done."
+# 14:24:02 >  
+
