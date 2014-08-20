@@ -49,6 +49,7 @@ MOSdump_rle(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"flt  %f", *(dbl*) val); break;
 	default:
 		if( task->type == TYPE_timestamp){
+			mnstr_printf(cntxt->fdout,"int "LLFMT, *(lng*) val); break;
 		}
 	}
 	mnstr_printf(cntxt->fdout,"\n");

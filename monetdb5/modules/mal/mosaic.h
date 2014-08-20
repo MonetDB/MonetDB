@@ -44,7 +44,7 @@
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
-#define MOSAIC_BITMAP 	4		// use limited set of bitmaps
+#define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
 #define MOSAIC_ZONE		5		// adaptive zone map over non-compressed data
 #define MOSAIC_EOL		6		// marker for the last block
 

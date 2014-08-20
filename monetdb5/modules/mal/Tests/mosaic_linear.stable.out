@@ -1,0 +1,91 @@
+stdout of test 'mosaic_linear` in directory 'monetdb5/modules/mal` itself:
+
+
+# 15:12:48 >  
+# 15:12:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32601" "--set" "mapi_usock=/var/tmp/mtest-15971/.s.monetdb.32601" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_linear.mal"
+# 15:12:48 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32601/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15971/.s.monetdb.32601
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# Range compressions 
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,2);
+    bat.append(b,4);
+    bat.append(b,6);
+    bat.append(b,8);
+    bat.append(b,10);
+    bat.append(b,1);
+    bat.append(b,4);
+    bat.append(b,7);
+    bat.append(b,10);
+    bat.append(b,13);
+    bat.append(b,16);
+    io.print(b);
+    x := mosaic.compress(b,"linear");
+#mosaic.dump(x); 
+    z := mosaic.decompress(x);
+    io.print(z);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	2  ]
+[ 2@0,	4  ]
+[ 3@0,	6  ]
+[ 4@0,	8  ]
+[ 5@0,	10  ]
+[ 6@0,	1  ]
+[ 7@0,	4  ]
+[ 8@0,	7  ]
+[ 9@0,	10  ]
+[ 10@0,	13  ]
+[ 11@0,	16  ]
+#estimate linear 6 elm 33 perc
+#header block 2bfd830 version 20140808
+#index top 1
+#[0] 6 96
+#estimate linear 6 elm 33 perc
+#header block 2bfd830 version 20140808
+#index top 2
+#[0] 6 96
+#[1] 12 144
+#blk  type zone todo 0
+#wins 0 0 0 0 2 0 
+#elms 0 0 0 0 12 0 
+#time 0 0 0 0 489948 0 
+#perc 0 0 0 0 100 0 
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	2  ]
+[ 2@0,	4  ]
+[ 3@0,	6  ]
+[ 4@0,	8  ]
+[ 5@0,	10  ]
+[ 6@0,	1  ]
+[ 7@0,	4  ]
+[ 8@0,	7  ]
+[ 9@0,	10  ]
+[ 10@0,	13  ]
+[ 11@0,	16  ]
+
+# 15:12:48 >  
+# 15:12:48 >  "Done."
+# 15:12:48 >  
+
