@@ -40,10 +40,12 @@ bits=32
 !IF $(bits) == 32
 !IFNDEF BITS32
 BITS32=True
+BITSMCHN=X86
 !ENDIF
 !ELSEIF $(bits) == 64
 !IFNDEF BITS64
 BITS64=True
+BITSMCHN=X64
 !ENDIF
 !ENDIF
 
@@ -184,6 +186,26 @@ GEOS_INCS = -I$(LIBGEOS)\include
 
 !IFNDEF RUBY_DIR
 RUBY_DIR = lib\ruby\gems\1.9.1
+!ENDIF
+
+!IFDEF HAVE_LIBR
+# This is the location of the R library
+libr_LIBDEP = R.lib
+!IFNDEF LIBR
+LIBR = c:\Program Files\R\R-3.1.0
+!ENDIF
+!IFDEF BITS32
+libr_DLL=$(LIBR)\bin\i386\R.dll
+!ELSE
+libr_DLL=$(LIBR)\bin\x64\R.dll
+!ENDIF
+libr_LIBS = $(libr_LIBDEP)
+libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
+
+# generate R.lib from R.dll, needed for linking
+R.lib: "$(libr_DLL)"
+	dumpbin /exports "$(libr_DLL)" | python "$(TOPDIR)\..\NT\makelibdef.py" > R.def
+	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
 # some programs we use, probably no need to edit

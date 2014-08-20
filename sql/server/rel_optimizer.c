@@ -2216,6 +2216,43 @@ sql_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 	return exp_binop(sql->sa, le, re, e->f);
 }
 
+static int 
+exp_find_func( sql_exp *e, char *name)
+{
+	if (!e)
+		return 0;
+	switch(e->type) {
+	case e_aggr:
+	case e_func: 
+		{
+			list *l = e->l;
+			node *n;
+			sql_subfunc *f = e->f;
+
+			if (!f->func->s && !strcmp(f->func->base.name, name)) 
+				return 1;
+			if (!l)
+				return 0;
+			for (n = l->h; n; n = n->next) {
+				sql_exp *ne = n->data;
+
+				if (exp_find_func( ne, name))
+					return 1;
+			}
+		}
+	case e_convert:
+		return exp_find_func( e->l, name);
+	case e_column: 
+	case e_cmp:
+	case e_psm:
+	case e_atom:
+	default:
+		return 0;
+	}
+}
+
+static sql_exp * exp_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr );
+
 static list *
 exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 {
@@ -2236,12 +2273,34 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 					exp_setname(sql->sa, ne, e->rname, e->name );
 					e = ne;
 				}
+			} else if (e->type == e_convert) {
+				sql_exp *l = exp_div_fixup(sql, e->l, cond, lr);
+				sql_exp *ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+				e = ne;
 			}
 			append(nexps, e);
 		}
 		return nexps;
 	}
 	return exps;
+}
+
+static sql_exp *
+exp_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
+{
+	if (is_func(e->type) && e->l && !is_rank_op(e) ) {
+		sql_subfunc *f = e->f;
+
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) {
+			e = sql_div_fixup(sql, e, cond, lr);
+		} else {
+			list *l = exps_case_fixup(sql, e->l, cond, lr);
+			sql_exp *ne = exp_op(sql->sa, l, f);
+			exp_setname(sql->sa, ne, e->rname, e->name );
+			e = ne;
+		}
+	}
+	return e;
 }
 
 static sql_exp *
@@ -2264,38 +2323,23 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 
 		/* ifthenelse with one of the sides an 'sql_div' */
 		args = ne->l;
-		if (!f->func->s && !strcmp(f->func->base.name,"ifthenelse")) { 
+		if (!f->func->s && !strcmp(f->func->base.name, "ifthenelse")) { 
 			sql_exp *cond = args->h->data, *nne; 
 			sql_exp *a1 = args->h->next->data; 
 			sql_exp *a2 = args->h->next->next->data; 
-			sql_subfunc *a1f = a1->f;
-			sql_subfunc *a2f = a2->f;
 
 			/* rewrite right hands of div */
-			if (a1->type == e_func && !a1f->func->s && 
-			     !strcmp(a1f->func->base.name, "sql_div")) {
-				a1 = sql_div_fixup(sql, a1, cond, 0);
+			if ((a1->type == e_func || a1->type == e_convert) && exp_find_func(a1, "sql_div")) {
+				a1 = exp_div_fixup(sql, a1, cond, 0);
 			} else if (a1->type == e_func && a1->l) { 
 				a1->l = exps_case_fixup(sql, a1->l, cond, 0); 
-			} else if (a1->type == e_convert) { 
-				sql_exp *l = a1->l;
-				sql_subfunc *f = l->f;
-
-				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
-					a1->l = sql_div_fixup(sql, l, cond, 0);
 			}
-			if  (a2->type == e_func && !a2f->func->s && 
-			     !strcmp(a2f->func->base.name, "sql_div")) { 
-				a2 = sql_div_fixup(sql, a2, cond, 1);
+			if  ((a2->type == e_func || a2->type == e_convert) && exp_find_func(a2, "sql_div")) {
+				a2 = exp_div_fixup(sql, a2, cond, 1);
 			} else if (a2->type == e_func && a2->l) { 
 				a2->l = exps_case_fixup(sql, a2->l, cond, 1); 
-			} else if (a2->type == e_convert) { 
-				sql_exp *l = a2->l;
-				sql_subfunc *f = l->f;
-
-				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
-					a2->l = sql_div_fixup(sql, l, cond, 1);
 			}
+			assert(cond && a1 && a2);
 			nne = exp_op3(sql->sa, cond, a1, a2, ne->f);
 			exp_setname(sql->sa, nne, ne->rname, ne->name );
 			ne = nne;

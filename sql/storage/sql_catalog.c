@@ -316,3 +316,19 @@ sql_trans_bind_func(sql_trans *tr, char *name)
 		return NULL;
 	return t;
 }
+
+sql_func *
+sql_trans_find_func(sql_trans *tr, int id)
+{
+	node *n, *m;
+	sql_func *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_func_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}

@@ -816,6 +816,8 @@ def msc_library(fd, var, libmap, msc):
 
     srcs = '%s%s%s_OBJS =' % (pref, sep, libname)
     deps = '%s%s%s_DEPS = $(%s%s%s_OBJS)' % (pref, sep, libname, pref, sep, libname)
+    for dep in libmap.get('XDEPS', []):
+        deps = deps + ' ' + dep
     deffile = ''
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":

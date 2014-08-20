@@ -899,6 +899,49 @@ create_func(mvc *sql, char *sname, sql_func *f)
 	return MAL_SUCCEED;
 }
 
+str
+UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	int id = *(int *) getArgReference(stk, pci, 1);
+	sql_func *func;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	func = sql_trans_find_func(sql->session->tr, id);
+	if (func) 
+		mvc_drop_func(sql, func->s, func, 0);
+	return msg;
+}
+
+str
+UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str func = *(str *) getArgReference(stk, pci, 1);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	s = sql_parse(sql, sa_create(), func, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
+
+		msg = create_func(sql, schema, func);
+	} else {
+		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
+}
+
 static char *
 create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
 {
