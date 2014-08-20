@@ -4618,7 +4618,7 @@ data_type:
  |  sqlINTEGER		{ sql_find_subtype(&$$, "int", 0, 0); }
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
 
- |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 18, 3); }
  |  sqlDECIMAL '(' nonzero ')'
 			{ 
 			  int d = $3;
