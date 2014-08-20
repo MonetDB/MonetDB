@@ -32,10 +32,16 @@ MOSdumpHeader(Client cntxt, MOStask task)
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	int i;
 
+#ifdef _DEBGUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#header block "PTRFMT" version %d\n", PTRFMTCAST hdr, hdr->version);
 	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
 	for(i= 0; i< hdr->top; i++)
 		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->index[i], hdr->offset[i]);
+#else
+	(void) cntxt;
+	(void) i;
+	(void) hdr;
+#endif
 }
 
 // add the chunk to the index to facilitate 'fast' OID-based access
@@ -68,7 +74,9 @@ MOSupdateHeader(Client cntxt, MOStask task)
 		minsize = hdr->offset[i] - hdr->offset[i-1];
 		j = i;
 	}
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#ditch entry %d\n",j);
+#endif
 	// simply remove on element
 	for( i = j; i < hdr->top; i++){
 		hdr->index[i]  = hdr->index[i+1];

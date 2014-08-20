@@ -49,23 +49,10 @@ static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
-	lng cnt = 0;
-	mnstr_printf(cntxt->fdout,"#blk  type %s todo "BUNFMT"\n", filtername[task->type], task->elm);
-	mnstr_printf(cntxt->fdout,"#wins ");
-	for(i=0; i< MOSAIC_METHODS; i++)
-		mnstr_printf(cntxt->fdout,LLFMT " ",task->wins[i]);
-	mnstr_printf(cntxt->fdout,"\n#elms ");
-	for(i=0; i< MOSAIC_METHODS; i++){
-		mnstr_printf(cntxt->fdout,LLFMT " ",task->elms[i]);
-		cnt += task->elms[i];
+	for ( i=0; i < MOSAIC_METHODS; i++){
+		mnstr_printf(cntxt->fdout, "#%s wins "LLFMT " elms "LLFMT " time " LLFMT "\n",
+			filtername[i], task->wins[i], task->elms[i],task->time[i]);
 	}
-	mnstr_printf(cntxt->fdout,"\n#time ");
-	for(i=0; i< MOSAIC_METHODS; i++)
-		mnstr_printf(cntxt->fdout, LLFMT" ",task->time[i]);
-	mnstr_printf(cntxt->fdout,"\n#perc ");
-	for(i=0; i< MOSAIC_METHODS; i++)
-		mnstr_printf(cntxt->fdout, "%d ",(int)((100.0 *task->elms[i])/cnt));
-	mnstr_printf(cntxt->fdout,"\n");
 }
 
 // dump a compressed BAT
@@ -98,8 +85,6 @@ MOSdumpInternal(Client cntxt, BAT *b){
 		case MOSAIC_ZONE:
 			MOSdump_zone(cntxt,task);
 			MOSskip_zone(task);
-			break;
-		default: assert(0);
 		}
 	}
 }
@@ -224,7 +209,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	bn = BATnew( TYPE_void, b->ttype, 2*cnt+MosaicBlkSize, TRANSIENT);
+	bn = BATnew( TYPE_void, b->ttype, 2 * cnt * MosaicBlkSize, TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
@@ -251,42 +236,43 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 
 	while(task->elm > 0){
 		// default is to extend the non-compressed block
+		//mnstr_printf(cntxt->fdout,"#elements "BUNFMT"\n",task->elm);
 		cand = MOSAIC_NONE;
 		perc = 100;
 		percentage = 100;
 		
 		// select candidate amongst those
-		if (filter[MOSAIC_RLE]){
+		if ( filter[MOSAIC_RLE]){
 			perc = MOSestimate_rle(cntxt,task);
 			if ( perc < percentage){
 				cand = MOSAIC_RLE;
 				percentage = perc;
 			}
 		}
-		if (filter[MOSAIC_DICT]){
+		if ( filter[MOSAIC_DICT]){
 			perc = MOSestimate_dict(cntxt,task);
-			if ( perc <= percentage){
+			if (perc >= 0 && perc <= percentage){
 				cand = MOSAIC_DICT;
 				percentage = perc;
 			}
 		}
-		if (filter[MOSAIC_ZONE]){
+		if ( filter[MOSAIC_ZONE]){
 			perc = MOSestimate_zone(cntxt,task);
-			if ( perc < percentage){
+			if (perc >= 0 && perc < percentage){
 				cand = MOSAIC_ZONE;
 				percentage = perc;
 			}
 		}
-		if (filter[MOSAIC_DELTA]){
+		if ( filter[MOSAIC_DELTA]){
 			perc = MOSestimate_delta(cntxt,task);
-			if ( perc < percentage){
+			if ( perc >=0 &&  perc < percentage){
 				cand = MOSAIC_DELTA;
 				percentage = perc;
 			}
 		}
-		if (filter[MOSAIC_LINEAR]){
+		if ( filter[MOSAIC_LINEAR]){
 			perc = MOSestimate_linear(cntxt,task);
-			if ( perc < percentage){
+			if ( perc >=0 &&  perc < percentage){
 				cand = MOSAIC_LINEAR;
 				percentage = perc;
 			}
@@ -396,10 +382,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	bn->tkey = b->tkey;
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
-	GDKfree(task);
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bn);
 #endif
+	GDKfree(task);
 	return msg;
 }
 
@@ -1035,4 +1021,50 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
     }
     return msg;
+}
+
+// The analyse routine runs through the BAT dictionary and assess
+// all possible compression options.
+
+static void
+MOSanalyseInternal(Client cntxt, int bid)
+{
+	BAT *b;
+	int ret;
+
+	b = BATdescriptor(bid);
+	if( b == NULL)
+		return;
+	mnstr_printf(cntxt->fdout,"#\n#mosaic BAT %d %s "BUNFMT"\n", bid, BBP_logical(bid), BATcount(b));
+	switch( b->ttype){
+	case TYPE_bit:
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_flt:
+	case TYPE_dbl:
+		MOScompressInternal(cntxt, &ret, &bid, 0);
+		break;
+	default:
+		if( b->ttype == TYPE_timestamp)
+			MOScompressInternal(cntxt, &ret, &bid, 0);
+		else
+			mnstr_printf(cntxt->fdout,"#nonsupported type %d\n",b->ttype);
+	}
+	BBPreleaseref(bid);
+}
+
+str
+MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+    for (i = 1; i < getBBPsize(); i++)
+		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
+			MOSanalyseInternal(cntxt, i);
+	return MAL_SUCCEED;
 }

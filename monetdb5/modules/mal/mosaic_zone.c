@@ -32,6 +32,7 @@
 void
 MOSdump_zone(Client cntxt, MOStask task)
 {
+#ifdef _DEBUG_MOSAIC_
 	MosaicBlk blk = task->blk;
 	mnstr_printf(cntxt->fdout,"#zone "LLFMT" elms ", (lng)(blk->cnt));
 	switch(task->type){
@@ -47,6 +48,10 @@ MOSdump_zone(Client cntxt, MOStask task)
 			mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); 
 		}
 	}
+#else
+	(void)cntxt;
+	(void) task;
+#endif
 }
 void
 MOSadvance_zone(MOStask task)

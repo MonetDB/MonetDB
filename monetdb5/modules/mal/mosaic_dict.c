@@ -104,7 +104,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 {	BUN i = -1;
 	int cnt =0,j;
 	lng *size;
-	int percentage= 99;
+	int percentage= -1;
 	(void) cntxt;
 
 	// use the dst to avoid overwriting noneblocked
@@ -130,7 +130,9 @@ MOSestimate_dict(Client cntxt, MOStask task)
 			if(i) percentage = 100 * sizeof(int) * dictsize / ((int)i * sizeof(int));
 		}
 	}
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate dict %d elm %d perc\n",(int)i,percentage);
+#endif
 	return percentage; 
 }
 
@@ -202,8 +204,6 @@ MOScompress_dict(Client cntxt, MOStask task)
 			task->src = (char*) val;
 		}
 		break;
-	default:
-		assert(0);
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_dict(cntxt, task);

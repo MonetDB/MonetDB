@@ -93,7 +93,7 @@ MOSskip_rle(MOStask task)
 int
 MOSestimate_rle(Client cntxt, MOStask task)
 {	BUN i = -1;
-	int percentage = 0;
+	int percentage = -1;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -111,7 +111,9 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			percentage = 100 * sizeof(int)/ ( (int) i * sizeof(int));
 		}
 	}
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %d perc\n",(int)i,percentage);
+#endif
 	return percentage;
 }
 

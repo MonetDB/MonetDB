@@ -96,7 +96,7 @@ MOSskip_linear(MOStask task)
 int
 MOSestimate_linear(Client cntxt, MOStask task)
 {	BUN i = -1;
-	int percentage = 0;
+	int percentage = -1;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -115,7 +115,9 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			percentage = 100 * 2 * sizeof(int)/ ( (int) i * sizeof(int));
 		}
 	}
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate linear %d elm %d perc\n",(int)i,percentage);
+#endif
 	return percentage;
 }
 
@@ -168,7 +170,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_linear(cntxt, task);
 #endif
-	task->time[MOSAIC_LINEAR] = GDKusec() - task->time[MOSAIC_RLE];
+	task->time[MOSAIC_LINEAR] = GDKusec() - task->time[MOSAIC_LINEAR];
 }
 
 // the inverse operator, extend the src
