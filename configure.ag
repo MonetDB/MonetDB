@@ -2442,17 +2442,28 @@ if test "x$have_samtools" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
+
 	AC_CHECK_HEADER(samtools/bam.h,
+		[ why_have_samtools= ],
+		[ why_have_samtools="samtools/bam.h header not found" ])
+	if test -z "$why_have_samtools"; then
 		AC_CHECK_HEADER(samtools/bgzf.h,
-			AC_CHECK_LIB(bam, bam_header_read,
-				AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
-				[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([-lbam library not found]); fi
-				  have_samtools=no; why_have_samtools="(bam library not found)" ],
-				[-lm -lpthread -lz]),
-			[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bgzf.h header not found]); fi
-			  have_samtools=no; why_have_samtools="(samtools/bgzf.h header not found)" ]),
-		[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bam.h header not found]); fi
-		  have_samtools=no; why_have_samtools="(samtools/bam.h header not found)" ])
+			[ why_have_samtools= ],
+			[ why_have_samtools="samtools/bgzf.h header not found" ])
+	fi
+	if test -z "$why_have_samtools"; then
+		AC_CHECK_LIB(bam, bam_header_read,
+			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
+			[ why_have_samtools="bam library not found" ],
+			[-lm -lpthread -lz])
+	fi
+	if test -n "$why_have_samtools"; then
+		if test "x$have_samtools" != xauto; then
+			AC_MSG_ERROR([$why_have_samtools])
+		fi
+		have_samtools=no
+		why_have_samtools="($why_have_samtools)"
+	fi
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
