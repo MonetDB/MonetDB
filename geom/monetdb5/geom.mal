@@ -61,6 +61,8 @@ comment "returns the str representation of the geometry type";
 command GeometryType{unsafe}(w:wkb, flag:int) :str address wkbGeometryType;
 command NumRings{unsafe}(w:wkb, exterior:int) :int address wkbNumRings
 comment "Returns the number of interior rings+exterior on the first polygon of the geometry";
+#command MLineStringToPolygon{unsafe}(wkt:str, srid:int, flag:int) :wkb address wkbMLineStringToPolygon
+#comment "Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons"; 
 
 
 #Geometry Constructors
@@ -164,6 +166,14 @@ function NRings{unsafe}(w:wkb) :int;
 	return x;
 end NRings;
 
+#function BdPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
+#	x := MLineStringToPolygon(wkt,srid,0);
+#	return x;
+#end BdPolyFromText;
+#function BdMPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
+#	x := MLineStringToPolygon(wkt,srid,1);
+#	return x;
+#end BdMPolyFromText;
 
 command MakePoint{unsafe}(x:dbl, y:dbl) :wkb address geomMakePoint2D
 comment "creates a point using the coordinates";
