@@ -329,7 +329,7 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 		value /= scales[dff];
 		scale -= dff;
 		digits -= dff;
-		if (value >= scales[digits] || value <= -scales[digits]) {
+		if (value >= scales[*d] || value <= -scales[*d]) {
 			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
 		}
 	}
