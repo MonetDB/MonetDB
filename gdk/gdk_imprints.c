@@ -652,8 +652,11 @@ BATimprints(BAT *b)
 				      "BATimprints");
 			return NULL;
 		}
-		sprintf(imprints->imprints->filename, "%s.imprints", nme);
+		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
+			b->batCacheid > 0 ? 't' : 'h');
 		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
+		imprints->imprints->farmid = BBPselectfarm(TRANSIENT, b->ttype,
+							   imprintsheap);
 		/* The heap we create here consists of three parts:
 		 * bins, max 64 entries with bin boundaries;
 		 * imps;

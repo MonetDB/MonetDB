@@ -28,7 +28,8 @@
 enum heaptype {
 	offheap,
 	varheap,
-	hashheap
+	hashheap,
+	imprintsheap
 };
 
 /*
