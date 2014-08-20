@@ -2082,7 +2082,9 @@ str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xm
 }
 
 str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
-	GEOSGeom geosGeometry, externalGeometry;
+	GEOSGeom geosGeometry, externalGeometry, linearRingGeometry;
+	bit closed = 0;
+	GEOSCoordSeq coordSeq_copy;
 
 	if(wkb_isnil(*external)){
 		*out = wkb_nil;
@@ -2090,16 +2092,33 @@ str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
 	}
 
 	externalGeometry = wkb2geos(*external);
-	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLinearRing) {
+	
+	//check the type of the external geometry
+	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString) {
 		*out = wkb_nil;
 		GEOSGeom_destroy(externalGeometry);
-		throw(MAL, "geom.Polygon", "Geometries should be LinearRings");
+		throw(MAL, "geom.Polygon", "Geometries should be LineString");
 	}
 
+	//check whether the linestring is closed
+	wkbIsClosed(&closed, external);
+	if (!closed) {
+		*out = wkb_nil;
+		GEOSGeom_destroy(externalGeometry);
+		throw(MAL, "geom.Polygon", "LineString should be closed");
+	}
+
+	//create a copy of the coordinates
+	coordSeq_copy = GEOSCoordSeq_clone(GEOSGeom_getCoordSeq(externalGeometry));
+	
+	//create a linearRing using the copy of the coordinates
+	linearRingGeometry = GEOSGeom_createLinearRing(coordSeq_copy);
+
+	//create a polygon using the linearRing
 	if(*internalBAT_id == 0) {
-		geosGeometry = GEOSGeom_createPolygon(externalGeometry, NULL, 0);
+		geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
 		if(geosGeometry == NULL) {
-			GEOSGeom_destroy(externalGeometry);
+			GEOSGeom_destroy(linearRingGeometry);
 			throw(MAL, "geom.Polygon", "Error creating Polygon from LinearRing");
 		}
 	} else {
