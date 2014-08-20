@@ -1869,6 +1869,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			mod = sql_func_mod(f->func);
 			fimp = sql_func_imp(f->func);
+			if (s->op1 && list_length(s->op1->op4.lval) != 3 && strcmp(f->func->base.name, "ifthenelse") == 0)
+				assert(0);
 			if (s->nrcols) {
 				sql_subtype *res = f->res->h->data;
 				fimp = convertMultiplexFcn(fimp);
