@@ -64,6 +64,8 @@ test = (
                 # table_function_with_column_subselects.Bug-3172 & create_function.Bug-3172:
                 # id in error message depends on #threads
                     r"^.*!TypeException:user.s2_1\[[0-9]+\]:'.*$",
+                # dplyr (R package) includes the MonetDB version in its output, ignore
+                    r"^Source: MonetDB .*$",
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
