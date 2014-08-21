@@ -534,10 +534,10 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 	}
 
-	if (t->readonly != nt->readonly) {
-		if (t->readonly && table_has_updates(sql->session->tr, nt)) 
-			return sql_message("40000!ALTER TABLE: set READONLY not possible with outstanding updates (wait until updates are flushed)\n");
-		mvc_readonly(sql, nt, t->readonly);
+	if (t->access != nt->access) {
+		if (t->access && table_has_updates(sql->session->tr, nt)) 
+			return sql_message("40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
+		mvc_access(sql, nt, t->access);
 	}
 
 	/* check for changes */
@@ -583,6 +583,10 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 		if (c->def != nc->def)
 			mvc_default(sql, nc, c->def);
+		if (c->storage_type != nc->storage_type) {
+			/* TODO here we should call the storage related functions */
+			mvc_storage(sql, nc, c->storage_type);
+		}
 	}
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
@@ -2205,7 +2209,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(tr, c, 1);
 
-	if (isTable(t) && !t->readonly && (t->base.flag != TR_NEW /* alter */ ) &&
+	if (isTable(t) && t->access == TABLE_WRITABLE && (t->base.flag != TR_NEW /* alter */ ) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)
 		inr = store_funcs.count_col(tr, c, 0);
 	nr -= inr;
@@ -3967,7 +3971,7 @@ SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, *tbl);
 	if (t == NULL)
 		throw(SQL, "sql.compress", "42S02!Table missing");
-	if ( !t->readonly)
+	if (t->access != TABLE_READONLY)
 		throw(SQL, "sql.compress", "!Table must be read only");
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
@@ -3991,11 +3995,11 @@ SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d = c->data;
 		if (d->bid)
 			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
+		//if (d->ibid)
+			//BBPdecref(d->ibid, TRUE);
+		d->bid = bid;
 		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
+		//d->ibid = 0;	/* use the insert bat */
 		c->base.wtime = tr->wstime;
 		c->base.rtime = tr->stime;
 	}
@@ -4029,7 +4033,7 @@ SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, *tbl);
 	if (t == NULL)
 		throw(SQL, "sql.decompress", "42S02!Table missing");
-	if ( !t->readonly)
+	if (t->access != TABLE_READONLY)
 		throw(SQL, "sql.compress", "!Table must be read only");
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
@@ -4053,11 +4057,11 @@ SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d = c->data;
 		if (d->bid)
 			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
+		//if (d->ibid)
+			//BBPdecref(d->ibid, TRUE);
+		d->bid = bid;
 		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
+		//d->ibid = 0;	/* use the insert bat */
 		c->base.wtime = tr->wstime;
 		c->base.rtime = tr->stime;
 	}

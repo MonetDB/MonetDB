@@ -24,10 +24,11 @@
 #include "sql_mvc.h"
 #include "sql_relation.h"
 
-#define tr_none		0
-#define tr_readonly	1
-#define tr_writable	2
-#define tr_serializable 4
+//#define tr_none		0
+//#define tr_readonly	1
+//#define tr_writable	2
+//#define tr_serializable 4
+//#define tr_append	8
 
 extern sql_rel *rel_transactions(mvc *sql, symbol *sym);
 

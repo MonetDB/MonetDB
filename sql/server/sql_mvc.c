@@ -80,7 +80,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
-		mvc_create_column_(m, t, "readonly", "boolean", 1);
+		mvc_create_column_(m, t, "access", "smallint", 16);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
 		if (!first) {
@@ -1202,17 +1202,31 @@ mvc_drop_default(mvc *m, sql_column *col)
 	}
 }
 
-sql_table *
-mvc_readonly(mvc *m, sql_table *t, int readonly)
+sql_column *
+mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_readonly %s %d\n", t->base.name, readonly);
+		fprintf(stderr, "#mvc_storage %s %s\n", col->base.name, storage);
+
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
+		col->storage_type = storage?sa_strdup(m->sa, storage):NULL;
+		return col;
+	} else {
+		return sql_trans_alter_storage(m->session->tr, col, storage);
+	}
+}
+
+sql_table *
+mvc_access(mvc *m, sql_table *t, sht access)
+{
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_access %s %d\n", t->base.name, access);
 
 	if (t->persistence == SQL_DECLARED_TABLE) {
-		t->readonly = readonly;
+		t->access = access;
 		return t;
 	}
-	return sql_trans_alter_readonly(m->session->tr, t, readonly);
+	return sql_trans_alter_access(m->session->tr, t, access);
 }
 
 int 
