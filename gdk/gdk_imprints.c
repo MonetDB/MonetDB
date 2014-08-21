@@ -548,6 +548,12 @@ BATimprints(BAT *b)
 
 	assert(BAThdense(b));	/* assert void head */
 
+	/* we only create imprints for types that look like types we know */
+	if (b->ttype != ATOMstorage(b->ttype) &&
+	    (ATOMnilptr(b->ttype) != ATOMnilptr(ATOMstorage(b->ttype)) ||
+	     BATatoms[b->ttype].atomCmp != BATatoms[ATOMstorage(b->ttype)].atomCmp))
+		return NULL;	/* doesn't look enough like base type */
+
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 	case TYPE_sht:
@@ -557,8 +563,6 @@ BATimprints(BAT *b)
 	case TYPE_dbl:
 		break;
 	default:		/* type not supported */
-		GDKerror("#BATimprints: col type not "
-			 "suitable for imprints index.\n");
 		return NULL;	/* do nothing */
 	}
 
