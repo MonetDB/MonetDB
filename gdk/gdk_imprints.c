@@ -662,9 +662,12 @@ BATimprints(BAT *b)
 		imprints->imprints->farmid = BBPselectfarm(TRANSIENT, b->ttype,
 							   imprintsheap);
 		/* The heap we create here consists of three parts:
-		 * bins, max 64 entries with bin boundaries;
-		 * imps;
-		 * dict. */
+		 * bins, max 64 entries with bin boundaries, domain of b;
+		 * imps, max one entry per "page", entry is "bits" wide;
+		 * dict, max two entries per three "pages".
+		 * In addition, we add some housekeeping entries at
+		 * the start so that we can determine whether we can
+		 * trust the imprints when encountered on startup. */
 		if (HEAPalloc(imprints->imprints,
 			      64 * b->T->width +
 			      pages * (imprints->bits / 8) +
