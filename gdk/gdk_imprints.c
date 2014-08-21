@@ -820,7 +820,7 @@ IMPSremove(BAT *b)
 
 	if (imprints->imprints->storage != STORE_MEM)
 		HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-			   "imprints");
+			   b->batCacheid > 0 ? "timprints" : "himprints");
 	else
 		HEAPfree(imprints->imprints);
 
