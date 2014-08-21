@@ -251,13 +251,18 @@ do {									\
 do {									\
 	uint##B##_t *im = (uint##B##_t *) imprints->imps;		\
 	uint##B##_t mask = 0, innermask;				\
-	int j, lbin, hbin;						\
+	int lbin, hbin;							\
 	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
 			  imprints->bins, tl);				\
 	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
 			  imprints->bins, th);				\
-	for (j = lbin; j <= hbin; j++)					\
-		mask = IMPSsetBit(B, mask, j);				\
+	/* note: (1<<n)-1 gives a sequence o n one bits */		\
+	/* to set bits hbin..lbin inclusive, we would do: */		\
+	/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */	\
+	/* except ((1 << (hbin + 1)) - 1) is not defined if */		\
+	/* hbin == sizeof(uint##B##_t)*8 - 1 */				\
+	/* the following does work, however */				\
+	mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1);	\
 	innermask = mask;						\
 	if (!b->T->nonil || vl != minval)				\
 		innermask = IMPSunsetBit(B, innermask, lbin);		\
