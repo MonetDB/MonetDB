@@ -48,6 +48,7 @@
 # include <rdf.h>
 #endif
 #include "mal_instruction.h"
+#include "mosaic.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -506,7 +507,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 }
 
 static str
-alter_table(mvc *sql, char *sname, sql_table *t)
+alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
@@ -583,8 +584,16 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 		if (c->def != nc->def)
 			mvc_default(sql, nc, c->def);
+
 		if (c->storage_type != nc->storage_type) {
-			/* TODO here we should call the storage related functions */
+			bat bid = 0;
+			BAT *b = store_funcs.bind_col(sql->session->tr, nc, 0);
+			sql_delta *d;
+			char *msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type);
+			if (msg)
+				return msg;
+			d = nc->data;
+			d->bid = bid;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
@@ -1093,7 +1102,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_ALTER_TABLE:{
 		sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-		msg = alter_table(sql, sname, t);
+		msg = alter_table(cntxt, sql, sname, t);
 		break;
 	}
 	case DDL_CREATE_TYPE:{
