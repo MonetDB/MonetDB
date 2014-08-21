@@ -3777,6 +3777,12 @@ BBPdiskscan(const char *parent)
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->T->hash);
+		} else if (strncmp(p + 1, "himprints", 9) == 0) {
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+		} else if (strncmp(p + 1, "timprints", 9) == 0) {
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
 		} else if (strncmp(p + 1, "priv", 4) != 0 && strncmp(p + 1, "new", 3) != 0 && strncmp(p + 1, "head", 4) != 0 && strncmp(p + 1, "tail", 4) != 0) {
 			ok = FALSE;
 		}

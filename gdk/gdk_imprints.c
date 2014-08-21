@@ -587,6 +587,7 @@ BATimprints(BAT *b)
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 		size_t pages;
+		int fd;
 
 		ALGODEBUG fprintf(stderr, "#BATimprints(b=%s#" BUNFMT ") %s: "
 				  "created imprints\n", BATgetId(b),
@@ -599,6 +600,54 @@ BATimprints(BAT *b)
 				      "BATimprints");
 			return NULL;
 		}
+		imprints->imprints = GDKzalloc(sizeof(Heap));
+		if (imprints->imprints == NULL ||
+		    (imprints->imprints->filename =
+		     GDKmalloc(strlen(nme) + 12)) == NULL) {
+			GDKfree(imprints->imprints);
+			GDKfree(imprints);
+			GDKerror("#BATimprints: memory allocation error.\n");
+			BBPunfix(smp->batCacheid);
+			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
+				      "BATimprints");
+			return NULL;
+		}
+		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
+			b->batCacheid > 0 ? 't' : 'h');
+		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
+		imprints->imprints->farmid = BBPselectfarm(PERSISTENT, b->ttype,
+							   imprintsheap);
+		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
+				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+			size_t hdata[4];
+			struct stat st;
+			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
+			    hdata[0] & ((size_t) 1 << 16) &&
+			    hdata[3] == (size_t) BATcount(b) &&
+			    fstat(fd, &st) == 0 &&
+			    st.st_size >= (off_t) (imprints->imprints->size = imprints->imprints->free = 64 * b->T->width +
+						   pages * ((bte) hdata[0] / 8) +
+						   hdata[2] * sizeof(cchdc_t) +
+						   sizeof(uint64_t) /* padding for alignment */
+						   + 4 * SIZEOF_SIZE_T) &&
+			    HEAPload(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) >= 0) {
+				/* usable */
+				imprints->bits = (bte) (hdata[0] & 0xFF);
+				imprints->impcnt = (BUN) hdata[1];
+				imprints->dictcnt = (BUN) hdata[2];
+				imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
+				imprints->imps = (char *) imprints->bins + 64 * b->T->width;
+				imprints->dict = (void *) ((size_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+				b->T->imprints = imprints;
+				close(fd);
+				goto do_return;
+			}
+			close(fd);
+			/* file exists, but can't be used: delete it */
+			GDKunlink(imprints->imprints->farmid, BATDIR, nme,
+				  b->batCacheid > 0 ? "timprints" : "himprints");
+		}
+
 #define SMP_SIZE 2048
 		s = BATsample(b, SMP_SIZE);
 		if (s == NULL) {
@@ -643,24 +692,6 @@ BATimprints(BAT *b)
 		if (cnt < 8)
 			imprints->bits = 8;
 
-		/* bins of histogram */
-		imprints->imprints = GDKzalloc(sizeof(Heap));
-		if (imprints->imprints == NULL ||
-		    (imprints->imprints->filename =
-		     GDKmalloc(strlen(nme) + 12)) == NULL) {
-			GDKfree(imprints->imprints);
-			GDKfree(imprints);
-			GDKerror("#BATimprints: memory allocation error.\n");
-			BBPunfix(smp->batCacheid);
-			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-				      "BATimprints");
-			return NULL;
-		}
-		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
-			b->batCacheid > 0 ? 't' : 'h');
-		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
-		imprints->imprints->farmid = BBPselectfarm(TRANSIENT, b->ttype,
-							   imprintsheap);
 		/* The heap we create here consists of three parts:
 		 * bins, max 64 entries with bin boundaries, domain of b;
 		 * imps, max one entry per "page", entry is "bits" wide;
@@ -729,13 +760,30 @@ BATimprints(BAT *b)
 		}
 		assert(imprints->impcnt <= pages);
 		assert(imprints->dictcnt <= pages);
+		imprints->imprints->free = (size_t) ((char *) ((cchdc_t *) imprints->dict + imprints->dictcnt) - imprints->imprints->base);
 		/* add info to heap for when they become persistent */
 		((size_t *) imprints->imprints->base)[0] = (size_t) imprints->bits;
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
+		if (HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
+		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
+				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
+			write(fd, imprints->imprints->base, sizeof(size_t));
+#if defined(NATIVE_WIN32)
+			_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+			fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+			fsync(fd);
+#endif
+			close(fd);
+		}
 		b->T->imprints = imprints;
 	}
+
+  do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {
@@ -825,11 +873,8 @@ IMPSremove(BAT *b)
 	imprints = b->T->imprints;
 	b->T->imprints = NULL;
 
-	if (imprints->imprints->storage != STORE_MEM)
-		HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-			   b->batCacheid > 0 ? "timprints" : "himprints");
-	else
-		HEAPfree(imprints->imprints);
+	HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
+		   b->batCacheid > 0 ? "timprints" : "himprints");
 
 	GDKfree(imprints->imprints);
 	GDKfree(imprints);
