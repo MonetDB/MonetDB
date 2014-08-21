@@ -61,16 +61,17 @@ void
 MOSadvance_linear(MOStask task)
 {
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bte))); break;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bit))); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(sht))); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(int))); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(oid))); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(lng))); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(flt))); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(dbl))); break;
 	default:
 		if( task->type == TYPE_timestamp){
-			task->blk = (MosaicBlk)( ((char*)task->blk) + 3 * MosaicBlkSize ); 
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(lng)) ); 
 		}
 	}
 }
@@ -89,7 +90,7 @@ MOSskip_linear(MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
-	percentage = 100 * 2 * sizeof(TYPE)/ ( (int)i * sizeof(TYPE));\
+	percentage = 100 * (MosaicBlkSize + 2 * sizeof(TYPE))/ ( (int)i * sizeof(TYPE));\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
@@ -103,6 +104,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	case TYPE_bte: Estimate(bte); break;
 	case TYPE_bit: Estimate(bit); break;
 	case TYPE_sht: Estimate(sht); break;
+	case TYPE_oid: Estimate(oid); break;
 	case TYPE_lng: Estimate(lng); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
@@ -112,7 +114,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
 				break;
-			percentage = 100 * 2 * sizeof(int)/ ( (int) i * sizeof(int));
+			percentage = 100 * (MosaicBlkSize + 2 * sizeof(int))/ ( (int) i * sizeof(int));
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -150,6 +152,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_bte: LINEARcompress(bte); break;
 	case TYPE_bit: LINEARcompress(bit); break;
 	case TYPE_sht: LINEARcompress(sht); break;
+	case TYPE_oid: LINEARcompress(oid); break;
 	case TYPE_lng: LINEARcompress(lng); break;
 	case TYPE_flt: LINEARcompress(flt); break;
 	case TYPE_dbl: LINEARcompress(dbl); break;
@@ -194,6 +197,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_bte: LINEARdecompress(bte); break ;
 	case TYPE_bit: LINEARdecompress(bit); break ;
 	case TYPE_sht: LINEARdecompress(sht); break;
+	case TYPE_oid: LINEARdecompress(oid); break;
 	case TYPE_lng: LINEARdecompress(lng); break;
 	case TYPE_flt: LINEARdecompress(flt); break;
 	case TYPE_dbl: LINEARdecompress(dbl); break;
@@ -293,6 +297,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 	case TYPE_bit: subselect_linear(bit); break;
 	case TYPE_bte: subselect_linear(bte); break;
 	case TYPE_sht: subselect_linear(sht); break;
+	case TYPE_oid: subselect_linear(oid); break;
 	case TYPE_lng: subselect_linear(lng); break;
 	case TYPE_flt: subselect_linear(flt); break;
 	case TYPE_dbl: subselect_linear(dbl); break;
@@ -431,6 +436,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 	case TYPE_bit: thetasubselect_linear(bit); break;
 	case TYPE_bte: thetasubselect_linear(bte); break;
 	case TYPE_sht: thetasubselect_linear(sht); break;
+	case TYPE_oid: thetasubselect_linear(oid); break;
 	case TYPE_lng: thetasubselect_linear(lng); break;
 	case TYPE_flt: thetasubselect_linear(flt); break;
 	case TYPE_dbl: thetasubselect_linear(dbl); break;
@@ -507,6 +513,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: leftfetchjoin_linear(bit); break;
 		case TYPE_bte: leftfetchjoin_linear(bte); break;
 		case TYPE_sht: leftfetchjoin_linear(sht); break;
+		case TYPE_oid: leftfetchjoin_linear(oid); break;
 		case TYPE_lng: leftfetchjoin_linear(lng); break;
 		case TYPE_flt: leftfetchjoin_linear(flt); break;
 		case TYPE_dbl: leftfetchjoin_linear(dbl); break;
@@ -565,6 +572,7 @@ MOSjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: join_linear(bit); break;
 		case TYPE_bte: join_linear(bte); break;
 		case TYPE_sht: join_linear(sht); break;
+		case TYPE_oid: join_linear(oid); break;
 		case TYPE_lng: join_linear(lng); break;
 		case TYPE_flt: join_linear(flt); break;
 		case TYPE_dbl: join_linear(dbl); break;

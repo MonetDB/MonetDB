@@ -49,8 +49,9 @@ static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
+	mnstr_printf(cntxt->fdout,"# ");
 	for ( i=0; i < MOSAIC_METHODS; i++){
-		mnstr_printf(cntxt->fdout, "#%s wins "LLFMT " elms "LLFMT " time " LLFMT "\n",
+		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT "\t" LLFMT "\t",
 			filtername[i], task->wins[i], task->elms[i],task->time[i]);
 	}
 }
@@ -209,7 +210,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	bn = BATnew( TYPE_void, b->ttype, 2 * cnt * MosaicBlkSize, TRANSIENT);
+	bn = BATnew( TYPE_void, b->ttype, cnt + 3 *  MosaicBlkSize + MosaicHdrSize, TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
@@ -287,7 +288,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			// close the non-compressed part
 			if( (task->blk->tag == MOSAIC_NONE || task->blk->tag == MOSAIC_ZONE) && task->blk->cnt ){
 				MOSupdateHeader(cntxt,task);
-				MOSskip_none(task);
+				if( task->blk->tag == MOSAIC_NONE)
+					MOSskip_none(task);
+				else
+					MOSskip_zone(task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				task->blk->tag = MOSAIC_EOL;
@@ -324,7 +328,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOSadvance_linear(task);
 			task->blk->tag = MOSAIC_EOL;
 			task->blk->cnt = 0;
-			task->dst = ((char*) task->blk)+ MosaicBlkSize;
+			task->dst = ((char*) task->blk)+ 3 * MosaicBlkSize;
 			break;
 		case MOSAIC_RLE:
 			MOScompress_rle(cntxt,task);
@@ -367,7 +371,15 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	}
 //#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
+	mnstr_printf(cntxt->fdout,"\n");
 //#endif
+	// if we couldnt compress ignore the result
+	if( task->elms[MOSAIC_NONE] == (lng) cnt){
+		GDKfree(task);
+		BBPreleaseref(bn->batCacheid);
+		BBPkeepref(*ret = b->batCacheid);
+		return MAL_SUCCEED;
+	}
 
 	BATsetcount(bn, cnt);
 	BATseqbase(bn,b->hseqbase);
@@ -1027,44 +1039,67 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // all possible compression options.
 
 static void
-MOSanalyseInternal(Client cntxt, int bid)
+MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 {
 	BAT *b;
 	int ret;
+	str type;
 
 	b = BATdescriptor(bid);
-	if( b == NULL)
+	if( b == NULL ){
+		mnstr_printf(cntxt->fdout,"#nonaccessible %d %s\n",bid, BBP_logical(bid));
 		return;
-	mnstr_printf(cntxt->fdout,"#\n#mosaic BAT %d %s "BUNFMT"\n", bid, BBP_logical(bid), BATcount(b));
+	}
+	if( BATcount(b) < threshold){
+		BBPreleaseref(bid);
+		//mnstr_printf(cntxt->fdout,"#too small %d %s\n",bid, BBP_logical(bid));
+		return;
+	}
+	if( isVIEW(b)){
+		mnstr_printf(cntxt->fdout,"#ignore view %d %s\n",bid, BBP_logical(bid));
+		BBPreleaseref(bid);
+		return;
+	}
+	type = getTypeName(b->ttype);
 	switch( b->ttype){
 	case TYPE_bit:
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
+		mnstr_printf(cntxt->fdout,"#%d\t%s\t%s\t"BUNFMT"\t%10d ", bid, BBP_logical(bid), type, BATcount(b), ATOMsize(b->ttype) *(int) BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, 0);
 		break;
 	default:
-		if( b->ttype == TYPE_timestamp)
+		if( b->ttype == TYPE_timestamp){
+			mnstr_printf(cntxt->fdout,"#%d\t%s\t%s\t"BUNFMT"\t%10d ", bid, BBP_logical(bid), type, BATcount(b), ATOMsize(b->ttype) *(int) BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid, 0);
-		else
-			mnstr_printf(cntxt->fdout,"#nonsupported type %d\n",b->ttype);
+		}
 	}
+	GDKfree(type);
 	BBPreleaseref(bid);
 }
 
 str
 MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i,bid;
+	BUN threshold= 1000;
 	(void) mb;
-	(void) stk;
-	(void) pci;
+	
 
+	if( pci->argc > 1)
+		threshold = *(BUN*) getArgReference(stk,pci,1);
+
+	if( pci->argc >2 ){
+		bid = *(int*) getArgReference(stk,pci,2);
+		MOSanalyseInternal(cntxt, threshold,bid);
+	} else
     for (i = 1; i < getBBPsize(); i++)
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
-			MOSanalyseInternal(cntxt, i);
+			MOSanalyseInternal(cntxt, threshold, i);
 	return MAL_SUCCEED;
 }

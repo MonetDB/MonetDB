@@ -30,7 +30,7 @@ void
 MOSdumpHeader(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	int i;
+	int i=0;
 
 #ifdef _DEBGUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#header block "PTRFMT" version %d\n", PTRFMTCAST hdr, hdr->version);
@@ -66,7 +66,7 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	}
 	// compress the index by finding the smallest compressed fragment pair
 	hdr->index[hdr->top] = task->blk->cnt + hdr->index[hdr->top-1];
-	hdr->offset[hdr->top] =  (lng) (task->dst - (char*) task->hdr);
+	hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 	minsize = hdr->offset[1];
 	j = 0;
 	for( i = 1; i <= hdr->top; i++)
