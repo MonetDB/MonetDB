@@ -769,7 +769,8 @@ BATimprints(BAT *b)
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
-			write(fd, imprints->imprints->base, sizeof(size_t));
+			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
+				perror("write imprints");
 #if defined(NATIVE_WIN32)
 			_commit(fd);
 #elif defined(HAVE_FDATASYNC)
