@@ -160,6 +160,8 @@ int HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
