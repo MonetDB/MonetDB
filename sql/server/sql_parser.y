@@ -4649,7 +4649,7 @@ data_type:
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
  |  HUGEINT		{ sql_find_subtype(&$$, "hugeint", 0, 0); }
 
- |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 18, 3); }
  |  sqlDECIMAL '(' nonzero ')'
 			{ 
 			  int d = $3;

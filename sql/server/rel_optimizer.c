@@ -204,7 +204,8 @@ list_find_exp( list *exps, sql_exp *e)
 {
 	sql_exp *ne = NULL;
 
-	assert(e->type == e_column);
+	if (e->type != e_column)
+		return NULL;
 	if ((e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
 	    ((ne=exps_bind_column(exps, e->r, NULL)) != NULL))
 		return ne;
@@ -1733,6 +1734,7 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *u = rp, *ou = u, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
+			int add_r = 0;
 
 			/* only push topn once */
 			x = ul;
@@ -1746,6 +1748,8 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			if (x && x->op == op_topn)
 				return rel;
 
+			if (list_length(ul->exps) > list_length(r->exps))
+				add_r = 1;
 			ul = rel_dup(ul);
 			ur = rel_dup(ur);
 			if (!is_project(ul->op)) 
@@ -1760,14 +1764,23 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			/* introduce projects under the set */
 			ul = rel_project(sql->sa, ul, NULL);
 			ul->exps = exps_copy(sql->sa, r->exps);
+			/* possibly add order by column */
+			if (add_r)
+				ul->exps = list_merge(ul->exps, exps_copy(sql->sa, r->r), NULL);
 			ul->r = exps_copy(sql->sa, r->r);
 			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
 			ur = rel_project(sql->sa, ur, NULL);
 			ur->exps = exps_copy(sql->sa, r->exps);
+			/* possibly add order by column */
+			if (add_r)
+				ur->exps = list_merge(ur->exps, exps_copy(sql->sa, r->r), NULL);
 			ur->r = exps_copy(sql->sa, r->r);
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 			u = rel_setop(sql->sa, ul, ur, op_union);
 			u->exps = exps_copy(sql->sa, r->exps); 
+			/* possibly add order by column */
+			if (add_r)
+				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
 			/* zap names */
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);

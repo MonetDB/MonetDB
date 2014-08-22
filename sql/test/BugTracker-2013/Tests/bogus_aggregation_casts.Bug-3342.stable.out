@@ -42,9 +42,9 @@ Ready.
 #select sys.median(p_retailprice) from part;
 % sys.L1 # table_name
 % L1 # name
-% double # type
-% 24 # length
-[ 903	]
+% decimal # type
+% 14 # length
+[ 903.00	]
 #drop table part;
 
 # 21:17:25 >  

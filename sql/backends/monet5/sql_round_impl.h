@@ -302,6 +302,8 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 		} else {
 			scale = 0;
 		}
+	} else { /* we have a dot in the string */
+		digits--;
 	}
 
 	value = decimal_from_str(s);
@@ -309,20 +311,27 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 		digits--;
 	if (scale < *sc) {
 		/* the current scale is too small, increase it by adding 0's */
-		int d = *sc - scale;	/* CANNOT be 0! */
+		int dff = *sc - scale;	/* CANNOT be 0! */
 
-		value *= scales[d];
-		scale += d;
-		digits += d;
+		value *= scales[dff];
+		scale += dff;
+		digits += dff;
 	} else if (scale > *sc) {
 		/* the current scale is too big, decrease it by correctly rounding */
-		int d = scale - *sc;	/* CANNOT be 0 */
-		lng rnd = scales[d] >> 1;
+		/* we should round properly, and check for overflow (res >= 10^digits+scale) */
+		int dff = scale - *sc;	/* CANNOT be 0 */
+		lng rnd = scales[dff] >> 1;
 
-		value += rnd;
-		value /= scales[d];
-		scale -= d;
-		digits -= d;
+		if (value > 0)
+			value += rnd;
+		else
+			value -= rnd;
+		value /= scales[dff];
+		scale -= dff;
+		digits -= dff;
+		if (value >= scales[*d] || value <= -scales[*d]) {
+			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+		}
 	}
 	if (digits > *d) {
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);

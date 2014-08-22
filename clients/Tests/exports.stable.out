@@ -299,7 +299,6 @@ int HEAPextend(Heap *h, size_t size, int mayshare);
 int HEAPfree(Heap *h);
 size_t HEAPmemsize(Heap *h);
 size_t HEAPvmsize(Heap *h);
-void IMPSdestroy(BAT *b);
 lng IMPSimprintsize(BAT *b);
 void MRschedule(int taskcnt, void **arg, void( *cmd)(void *p));
 int MT_check_nr_cores(void);

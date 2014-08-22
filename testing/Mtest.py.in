@@ -1803,6 +1803,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".jaql"
         CALL = "jaql"
         SERVER = "JAQL"
+    elif os.path.isfile(TST+".R"):
+        EXT = ".R"
+        CALL = "R"
+        SERVER = "SQL"
+
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1849,7 +1854,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.jaql]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.jaql|.R]`")
         return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -2906,6 +2911,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif CALL == "jaql":
                 Clnt = splitcommand(exe['JAQL_Client'][1])
                 RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+            elif CALL == "R":
+                Clnt = splitcommand(exe['R_Client'][1])
+                RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
@@ -3386,7 +3394,7 @@ def main(argv) :
 
     vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'JAQLCLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'JAQLCLIENT', 'RCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3404,6 +3412,7 @@ def main(argv) :
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
         dft['JAQLCLIENT']     = "'mclient -ljaql -ftest -Eutf-8'"
+        dft['RCLIENT']        = "'R --vanilla --slave'"
 
     #par = {}
     # get current environment
@@ -3462,6 +3471,8 @@ def main(argv) :
              'default: %s' % dft['SQLDUMP']),
             ('JAQLCLIENT', None, 'JAQLCLIENT', '<jaql-client program>',
              'default: %s' % dft['JAQLCLIENT']),
+            ('RCLIENT', None, 'RCLIENT', '<R program>',
+             'default: %s' % dft['RCLIENT']),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
@@ -3519,7 +3530,7 @@ def main(argv) :
         if tail != 'All':
             for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
                         '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
-                        '.sql', '.py', ''):
+                        '.sql', '.py', '.R', ''):
                 if tail.endswith(ext + '.in'):
                     args.append(tail[:-len(ext + '.in')])
                     break
@@ -3839,6 +3850,7 @@ def main(argv) :
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['JAQL_Client']   = CheckExec(env['JAQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['JAQLCLIENT'], HOST, env['MAPIPORT'])
+            exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
             if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
                 exe['Mtimeout'] = '', ''
             env['exe'] = exe
