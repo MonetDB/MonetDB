@@ -37,7 +37,6 @@
 
 #include <Rembedded.h>
 #include <Rdefines.h>
-#include <Rinterface.h>
 #include <Rinternals.h>
 #include <R_ext/Parse.h>
 
@@ -130,6 +129,7 @@ static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
 
+
 // helper function to translate R TYPEOF() return values to something readable
 char* rtypename(int rtypeid) {
 	if (rtypeid < 0 || rtypeid > 25) {
@@ -155,11 +155,23 @@ void clearRErrConsole(void) {
 	// Do nothing?
 }
 
-static int RAPIinitialize(void) {
+int RAPIinstalladdons(void);
 
+/* UNIX-like initialization */
+#ifndef WIN32
+
+#define R_INTERFACE_PTRS 1
+#define CSTACK_DEFNS 1
+#include <Rinterface.h>
+
+static int RAPIinitialize(void) {
+// TODO: check for header/library version mismatch?
 #ifdef RIF_HAS_RSIGHAND
 	R_SignalHandlers=0;
 #endif
+	// set R_HOME for packages etc. We know this from our configure script
+	setenv("R_HOME", RHOME, TRUE);
+
 	// set some command line arguments
 	{
 		structRstart rp;
@@ -201,44 +213,9 @@ static int RAPIinitialize(void) {
 
 	// big boy here
 	setup_Rmainloop();
-	{
-		int evalErr;
-		ParseStatus status;
-		char rlibs[BUFSIZ];
-		char rapiinclude[BUFSIZ];
-		SEXP librisexp;
-		struct stat sb;
 
-		// r library folder, create if not exists
-		snprintf(rlibs, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-				"rapi_packages");
-
-		if (stat(rlibs, &sb) != 0) {
-			if (mkdir(rlibs, S_IRWXU) != 0) {
-				return 4;
-			}
-		}
-#ifdef _RAPI_DEBUG_
-		printf("# R libraries installed in %s\n",rlibs);
-#endif
-
-		PROTECT(librisexp = allocVector(STRSXP, 1));
-		SET_STRING_ELT(librisexp, 0, mkChar(rlibs));
-		Rf_defineVar(Rf_install(".rapi.libdir"), librisexp, R_GlobalEnv);
-		UNPROTECT(1);
-
-		// run rapi.R environment setup script
-		snprintf(rapiinclude, BUFSIZ, "source(\"%s\")",
-				locate_file("rapi", ".R", 0));
-		R_tryEvalSilent(
-				VECTOR_ELT(
-						R_ParseVector(mkString(rapiinclude), 1, &status,
-								R_NilValue), 0), R_GlobalEnv, &evalErr);
-
-		// of course the script may contain errors as well
-		if (evalErr != FALSE) {
-			return 5;
-		}
+	if (RAPIinstalladdons() != 0) {
+		return 3;
 	}
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
@@ -246,6 +223,161 @@ static int RAPIinitialize(void) {
 	//SET_INTERNAL(install("system"), R_NilValue);
 
 	rapiInitialized++;
+	return 0;
+}
+#else
+/* Completely different Windows initialization */
+/* Gratefully inspired by the JRI code by Simon Urbanek (LGPL)  */
+
+/* R likes this spelling better */
+#define Win32
+
+#define NONAMELESSUNION
+#include <windows.h>
+#include <winreg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/* before we include RStatup.h we need to work around a bug in it for Win64:
+   it defines wrong R_size_t if R_SIZE_T_DEFINED is not set */
+#if defined(WIN64) && ! defined(R_SIZE_T_DEFINED)
+#include <stdint.h>
+#define R_size_t uintptr_t
+#define R_SIZE_T_DEFINED 1
+#endif
+
+#include "R_ext/RStartup.h"
+#include "Rversion.h"
+
+#ifndef _WIN64
+/* according to fixed/config.h Windows has uintptr_t, my windows hasn't */
+#if !defined(HAVE_UINTPTR_T) && !defined(uintptr_t) && !defined(_STDINT_H)
+//typedef unsigned uintptr_t;
+// TODO: win64? how do we know?
+#endif
+#endif
+extern __declspec(dllimport) uintptr_t R_CStackLimit; /* C stack limit */
+extern __declspec(dllimport) uintptr_t R_CStackStart; /* Initial stack address */
+
+/* for signal-handling code */
+/* #include "psignal.h" - it's not included, so just get SIGBREAK */
+#define	SIGBREAK 21	/* to readers pgrp upon background tty read */
+
+#define	S_IRWXU		0000700
+
+/* one way to allow user interrupts: called in ProcessEvents */
+#ifdef _MSC_VER
+__declspec(dllimport) int UserBreak;
+#else
+#ifndef WIN64
+#define UserBreak     (*_imp__UserBreak)
+#endif
+extern int UserBreak;
+#endif
+
+extern char *getDLLVersion(), *getRUser(), *get_R_HOME();
+extern void R_DefParams(Rstart), R_SetParams(Rstart), R_setStartTime();
+extern void ProcessEvents(void);
+extern int R_ReplDLLdo1();
+
+static void my_onintr(int sig)
+{
+    UserBreak = 1;
+}
+
+//extern Rboolean R_LoadRconsole;
+
+int RAPIinitialize(void) {
+	 structRstart rp;
+	Rstart Rp = &rp;
+	char Rversion[25], *RHome;
+
+	snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
+	if(strncmp(getDLLVersion(), Rversion, 25) != 0) {
+	fprintf(stderr, "Error: R.DLL version does not match\n");
+	exit(1);
+	}
+
+	R_setStartTime();
+	R_DefParams(Rp);
+	if((RHome = get_R_HOME()) == NULL) {
+	fprintf(stderr,
+		"R_HOME must be set in the environment or Registry\n");
+	exit(2);
+	}
+	Rp->rhome = RHome;
+	Rp->home = getRUser();
+	Rp->CharacterMode = LinkDLL;
+	//Rp->ReadConsole = w;
+	Rp->WriteConsole = writeConsole;
+	//Rp->CallBack = myCallBack;
+	//Rp->ShowMessage = askok;
+	//Rp->YesNoCancel = askyesnocancel;
+	//Rp->Busy = myBusy;
+
+	Rp->R_Quiet = TRUE;
+	Rp->R_Interactive = TRUE;
+	Rp->RestoreAction = SA_RESTORE;
+	Rp->SaveAction = SA_NOSAVE;
+	R_SetParams(Rp);
+	//R_set_command_line_arguments(argc, argv);
+
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+
+	signal(SIGBREAK, my_onintr);
+	//GA_initapp(0, 0);
+	//R_LoadRconsole = FALSE;
+	setup_Rmainloop();
+
+    return RAPIinstalladdons();
+}
+
+void initRinside() {
+    /* disable stack checking, because threads will thow it off */
+    R_CStackLimit = (uintptr_t) -1;
+}
+
+#endif
+
+
+int RAPIinstalladdons(void) {
+	int evalErr;
+	ParseStatus status;
+	char rlibs[BUFSIZ];
+	char rapiinclude[BUFSIZ];
+	SEXP librisexp;
+	struct stat sb;
+
+	// r library folder, create if not exists
+	snprintf(rlibs, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
+			"rapi_packages");
+
+	if (stat(rlibs, &sb) != 0) {
+		if (mkdir(rlibs, S_IRWXU) != 0) {
+			return 4;
+		}
+	}
+#ifdef _RAPI_DEBUG_
+	printf("# R libraries installed in %s\n",rlibs);
+#endif
+
+	PROTECT(librisexp = allocVector(STRSXP, 1));
+	SET_STRING_ELT(librisexp, 0, mkChar(rlibs));
+	Rf_defineVar(Rf_install(".rapi.libdir"), librisexp, R_GlobalEnv);
+	UNPROTECT(1);
+
+	// run rapi.R environment setup script
+	snprintf(rapiinclude, BUFSIZ, "source(\"%s\")",
+			locate_file("rapi", ".R", 0));
+	R_tryEvalSilent(
+			VECTOR_ELT(
+					R_ParseVector(mkString(rapiinclude), 1, &status,
+							R_NilValue), 0), R_GlobalEnv, &evalErr);
+
+	// of course the script may contain errors as well
+	if (evalErr != FALSE) {
+		return 5;
+	}
 	return 0;
 }
 
@@ -309,7 +441,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// first argument after the return contains the pointer to the sql_func structure
 	// NEW macro temporarily renamed to MNEW to allow including sql_catalog.h
 
-	if (sqlfun != NULL && !list_empty(sqlfun->ops)) {
+	if (sqlfun != NULL && sqlfun->ops->cnt > 0) {
 		int carg = pci->retc + 2;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
@@ -609,8 +741,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 str RAPIprelude(void) {
 	MT_lock_init(&rapiLock, "rapi_lock");
-	// set R_HOME for packages etc. We know this from our configure script
-	setenv("R_HOME", RHOME, TRUE);
 
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock, "rapi.evaluate");

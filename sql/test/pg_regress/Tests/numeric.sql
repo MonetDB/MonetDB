@@ -2,17 +2,17 @@
 -- NUMERIC
 --
 
-CREATE TABLE num_data (id integer, val numeric(18,10));
-CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_sqrt (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_ln (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_log10 (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(18,10));
+CREATE TABLE num_data (id integer, val numeric(38,10));
+CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,10));
+CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,10));
+CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,10));
+CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,10));
+CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,10));
+CREATE TABLE num_exp_ln (id integer, expected numeric(38,10));
+CREATE TABLE num_exp_log10 (id integer, expected numeric(38,10));
+CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,10));
 
-CREATE TABLE num_result (id1 integer, id2 integer, result numeric(18,10));
+CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,10));
 
 
 -- ******************************

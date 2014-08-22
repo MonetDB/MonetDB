@@ -610,10 +610,6 @@ sql_update_feb2013_sp3(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
-/*
- * TODO
- * 	update all table functions, ie make them type F_UNION
- */
 static str
 sql_update_jan2014(Client c)
 {
@@ -892,6 +888,21 @@ sql_update_oct2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "delete from _columns where table_id in (select id from _tables where name like '#%%');\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from _tables where name like '#%%';\n");
 
+	/* all UNION functions need to be drop and recreated */
+	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014 as (select * from functions where type = 5 and language <> 0) with data;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014_changes (c bigint);\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n"); 
+	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function drop_func_upgrade_oct2014;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function create_func_upgrade_oct2014( f string ) returns int external name sql.create_func_upgrade_oct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select create_func_upgrade_oct2014(func) from upgradeOct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function create_func_upgrade_oct2014;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014_changes;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014;\n");
+
 	/* change in 25_debug.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;\n");
@@ -1073,7 +1084,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 			F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'generate_series', 'storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'db_users', 'env', 'generate_series', 'storage', 'storagemodel', 'var') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);
 
 	if (schema) {
@@ -1188,9 +1199,8 @@ SQLinitClient(Client c)
 
 				if (fd) {
 					struct stat st;
-					if (fstat(fileno(getFile(fd)), &st) < 0)
-						st.st_size = 128 * BLOCK;
-					bfd = bstream_create(fd, (size_t) st.st_size);
+					FILE *f;
+					bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
 					if (bfd && bstream_next(bfd) >= 0)
 						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
 					bstream_destroy(bfd);
@@ -1585,6 +1595,8 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED, fullname;
 	str *expr;
 	mvc *m;
+	FILE *f;
+	struct stat st;
 
 	fullname = MSP_locate_sqlscript(*name, 0);
 	if (fullname == NULL)
@@ -1594,7 +1606,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_destroy(fd);
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
-	bfd = bstream_create(fd, 128 * BLOCK);
+	bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);
