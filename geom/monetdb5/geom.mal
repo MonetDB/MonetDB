@@ -429,6 +429,9 @@ geom.prelude();
 
 module batgeom;
 
+command InteriorRings(w:wkb) :bat[:oid,:wkb] address wkbInteriorRings
+comment "Returns a table with all the interior rings of the polygon";
+
 command ContainsFilter{unsafe}(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
 

@@ -162,6 +162,7 @@ geom_export str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, i
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumRings(int*, wkb**, int*);
+geom_export str wkbInteriorRings(int* outBAT_id, wkb** geomWKB);
 geom_export str wkbIsClosed(bit *out, wkb **geom);
 geom_export str wkbIsRing(bit *out, wkb **geom);
 geom_export str wkbIsValid(bit *out, wkb **geom);
@@ -2262,13 +2263,13 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 
 	if (!geosGeometry) { 
 		*interiorRingWKB = wkb_nil;
-		throw(MAL, "geom.interiorRing", "wkb2geos failed");
+		throw(MAL, "geom.interiorRingN", "wkb2geos failed");
 	}
 
-	if (GEOSGeomTypeId(geosGeometry) != GEOS_POLYGON) {
+	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon) {
 		*interiorRingWKB = wkb_nil;
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.interiorRing", "Geometry not a Polygon");
+		throw(MAL, "geom.interiorRingN", "Geometry not a Polygon");
 
 	}
 
@@ -2285,13 +2286,82 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
 	}
 
-	/* get the exterior ring of the geometry */	
+	/* get the interior ring of the geometry */	
 	interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, *ringNum);
+	if (!interiorRingGeometry) { 
+		*interiorRingWKB = wkb_nil;
+		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed");
+	}
 	/* get the wkb representation of it */
 	*interiorRingWKB = geos2wkb(interiorRingGeometry);
-	
-	return MAL_SUCCEED;
 
+	return MAL_SUCCEED;
+}
+
+str wkbInteriorRings(int* outBAT_id, wkb** geomWKB) {
+	BAT* outBAT;
+	int interiorRingsNum = 0, i=0;
+	GEOSGeom geosGeometry;
+	str ret = MAL_SUCCEED;
+fprintf(stderr, "in wkbInteriorRings");
+
+	if (wkb_isnil(*geomWKB)) {
+		throw(MAL, "geom.InteriorRings", "Null input geometry");
+	}
+
+	geosGeometry = wkb2geos(*geomWKB);
+
+	if(!geosGeometry) {
+		throw(MAL, "geom.InteriorRings", "Error in wkb2geos");
+	}
+	
+	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon) {
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.interiorRings", "Geometry not a Polygon");
+
+	}
+
+	ret = wkbNumRings(&interiorRingsNum, geomWKB, &i);
+
+	if(ret != MAL_SUCCEED) {
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.InteriorRings", "Error in wkbNumRings");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), interiorRingsNum, TRANSIENT)) == NULL) {
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, 0);
+
+
+	for (i = 0; i < interiorRingsNum; i++) { 
+		const GEOSGeometry* interiorRingGeometry;
+		wkb* interiorRingWKB;
+
+		/* get the interior ring of the geometry */	
+		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
+		if (!interiorRingGeometry) { 
+			interiorRingWKB = wkb_nil;
+			throw(MAL, "geom.InteriorRings", "GEOSGetInteriorRingN failed");
+		}
+		/* get the wkb representation of it */
+		interiorRingWKB = geos2wkb(interiorRingGeometry);
+		if(!interiorRingWKB) {
+			BBPreleaseref(outBAT->batCacheid);
+			throw(MAL, "geom.InteriorRings", "Error in wkb2geos");
+		}
+
+		BUNappend(outBAT,&interiorRingWKB,TRUE); //add the result to the outBAT
+	}
+
+	//set some properties of the new BAT
+    	BATsettrivprop(outBAT);
+    	BATderiveProps(outBAT,FALSE);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
 	return MAL_SUCCEED;
 }
 
