@@ -1102,11 +1102,15 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, 0);
+		if( ret)
+			BBPreleaseref(ret);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid, 0);
+			if( ret)
+				BBPreleaseref(ret);
 		}
 	}
 	GDKfree(type);
