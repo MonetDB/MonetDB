@@ -4883,6 +4883,7 @@ non_reserved_word:
 |  FILTER	{ $$ = sa_strdup(SA, "filter"); }
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 ;
 
 name_commalist:
