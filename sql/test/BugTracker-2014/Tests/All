@@ -35,3 +35,4 @@ select-distinct-order-limit.Bug-3527
 round.Bug-3542
 number_4_4.Bug-3543
 ifthenelse.Bug-3546
+subselect-reverse.Bug-3552
