@@ -1184,9 +1184,8 @@ SQLinitClient(Client c)
 
 				if (fd) {
 					struct stat st;
-					if (fstat(fileno(getFile(fd)), &st) < 0)
-						st.st_size = 128 * BLOCK;
-					bfd = bstream_create(fd, (size_t) st.st_size);
+					FILE *f;
+					bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
 					if (bfd && bstream_next(bfd) >= 0)
 						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
 					bstream_destroy(bfd);
@@ -1581,6 +1580,8 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED, fullname;
 	str *expr;
 	mvc *m;
+	FILE *f;
+	struct stat st;
 
 	fullname = MSP_locate_sqlscript(*name, 0);
 	if (fullname == NULL)
@@ -1590,7 +1591,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_destroy(fd);
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
-	bfd = bstream_create(fd, 128 * BLOCK);
+	bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);

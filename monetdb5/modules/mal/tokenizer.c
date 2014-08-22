@@ -388,7 +388,7 @@ TKNZRappend(oid *pos, str *s)
 	return MAL_SUCCEED;
 }
 
-#define SIZE 1 * 1024 * 1024
+#define SIZE (1 * 1024 * 1024)
 str
 TKNZRdepositFile(int *r, str *fnme)
 {
@@ -399,6 +399,8 @@ TKNZRdepositFile(int *r, str *fnme)
 	char buf[PATHLENGTH];
 	oid pos;
 	str msg= MAL_SUCCEED;
+	FILE *f;
+	struct stat st;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -416,7 +418,7 @@ TKNZRdepositFile(int *r, str *fnme)
 		close_stream(fs);
 		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
 	}
-	bs = bstream_create(fs, SIZE);
+	bs = bstream_create(fs, (f = getFile(fs)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) SIZE);
 	if (bs == NULL)
 		throw(MAL, "tokenizer.depositFile", MAL_MALLOC_FAIL);
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
