@@ -12,33 +12,28 @@ SELECT 1 AS one;
 
 -- check bool type-casting as well as and, or, not in qualifications--
 
-SELECT cast('t' AS boolean) AS true;
+SELECT cast('t' AS boolean) AS "true";
 SELECT cast('true' AS boolean) AS true;
 SELECT cast('true' AS boolean) AS "true";
 
-SELECT cast('f' AS boolean) AS false;
+SELECT cast('f' AS boolean) AS "false";
 SELECT cast('false' AS boolean) AS false;
 SELECT cast('false' AS boolean) AS "false";
 
-SELECT cast('t' AS boolean) or cast('f' AS boolean) AS true;
-SELECT cast('true' AS boolean) or cast('false' AS boolean) AS true;
+SELECT cast('t' AS boolean) or cast('f' AS boolean) AS "true";
 SELECT cast('true' AS boolean) or cast('false' AS boolean) AS "true";
 
-SELECT cast('t' AS boolean) and cast('f' AS boolean) AS false;
-SELECT cast('true' AS boolean) and cast('false' AS boolean) AS false;
+SELECT cast('t' AS boolean) and cast('f' AS boolean) AS "false";
 SELECT cast('true' AS boolean) and cast('false' AS boolean) AS "false";
 
-SELECT not cast('f' AS boolean) AS true;
-SELECT not cast('false' AS boolean) AS true;
+SELECT not cast('f' AS boolean) AS "true";
 SELECT not cast('false' AS boolean) AS "true";
 SELECT not cast('true' AS boolean) AS "false";
 
-SELECT cast('t' AS boolean) = cast('f' AS boolean) AS false;
-SELECT cast('true' AS boolean) = cast('false' AS boolean) AS false;
+SELECT cast('t' AS boolean) = cast('f' AS boolean) AS "false";
 SELECT cast('true' AS boolean) = cast('false' AS boolean) AS "false";
 
-SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS true;
-SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS true;
+SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS "true";
 SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS "true";
 
 
@@ -59,7 +54,6 @@ SELECT '' AS f_3, * FROM BOOLTBL1;
 SELECT '' AS t_3, BOOLTBL1.*
    FROM BOOLTBL1
    WHERE f1 = cast('true' AS boolean);
-
 
 SELECT '' AS t_3, BOOLTBL1.*
    FROM BOOLTBL1
@@ -140,7 +134,6 @@ SELECT '' AS "Not False", f1
    FROM BOOLTBL1
    WHERE f1 = (NOT FALSE);
 
-
 SELECT '' AS "False", f1
    FROM BOOLTBL1
    WHERE f1 = FALSE;
@@ -157,7 +150,6 @@ SELECT '' AS "Not True", f1
    FROM BOOLTBL1
    WHERE f1 = (NOT TRUE);
 
-
 SELECT '' AS "True", f1
    FROM BOOLTBL2
    WHERE f1 = TRUE;
@@ -173,7 +165,6 @@ SELECT '' AS "Not False", f1
 SELECT '' AS "Not False", f1
    FROM BOOLTBL2
    WHERE f1 = (NOT FALSE);
-
 
 SELECT '' AS "False", f1
    FROM BOOLTBL2

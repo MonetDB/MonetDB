@@ -70,7 +70,7 @@ def process(args, recursive = False):
         elif arg[:1] in ('-', '/'):
             argv.append(arg)
         elif arg.endswith('.lib'):
-            if os.path.isabs(arg) or not os.path.exists(arg) or os.path.exists(arg[:-4] + '.dll'):
+            if os.path.isabs(arg) or not os.path.exists(arg) or os.path.exists(arg[:-4] + '.dll') or '\\' not in arg:
                 argv.append(arg)
             else:
                 dirname = os.path.dirname(arg)

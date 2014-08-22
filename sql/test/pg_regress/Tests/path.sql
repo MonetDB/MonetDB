@@ -1,10 +1,10 @@
 --
--- string
+-- PATH
 --
 
 --DROP TABLE PATH_TBL;
 
-CREATE TABLE PATH_TBL (f1 string);
+CREATE TABLE PATH_TBL (f1 path);
 
 INSERT INTO PATH_TBL VALUES ('[(1,2),(3,4)]');
 

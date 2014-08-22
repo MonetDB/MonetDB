@@ -1,6 +1,7 @@
 0.9.5
 - Fixed package date (Thanks, Dimitar)
 - Added sys. schema name to internal queries, so SET SCHEMA xx would not break things (Thanks again, Dimitar)
+- Fixed monetdb:// URL handling on newer R versions (Thanks, Alex)
 
 0.9.4
 - dbWriteTable overhaul (thanks, Anthony)
