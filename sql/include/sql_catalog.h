@@ -371,6 +371,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
+	char *storage_type;
 	void *data;
 } sql_idx;
 

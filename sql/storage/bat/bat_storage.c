@@ -544,6 +544,18 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 	return ok;
 }
 
+void
+allocate_delta(sql_trans *tr, sql_column *c)
+{
+	if (!c->data || !c->base.allocated) {
+		int type = c->type.type->localtype;
+		sql_column *oc = tr_find_column(tr->parent, c);
+		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = timestamp_delta(oc->data, tr->stime);
+		(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
+		c->base.allocated = 1;
+	}
+}
+
 static void 
 append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
@@ -1606,6 +1618,23 @@ gtr_minmax( sql_trans *tr )
 }
 
 static int 
+tr_update_storage( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
+{
+	int ok = LOG_OK;
+
+	(void)tr;
+	assert(store_nr_active==1);
+
+	assert (obat->bid != 0 && cbat->bid != 0);
+	assert (obat->cached == NULL && cbat->cached == NULL);
+	temp_destroy(obat->bid);
+	obat->bid = cbat->bid;
+	temp_dup(cbat->bid);
+	assert(obat->ibid == cbat->ibid);
+	return ok;
+}
+
+static int 
 tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
 	int ok = LOG_OK;
@@ -1801,7 +1830,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		} else {
 			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
+			if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+				tr_update_storage(tr, oc->data, cc->data);
+			else
+				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
 
 		oc->null = cc->null;
@@ -1846,7 +1878,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 			} else {
 				assert(oi->base.allocated);
-				tr_update_delta(tr, oi->data, ci->data, 0);
+				if (ci->storage_type && (!ci->storage_type || strcmp(ci->storage_type, oi->storage_type) != 0))
+					tr_update_storage(tr, oi->data, ci->data);
+				else
+					tr_update_delta(tr, oi->data, ci->data, 0);
 			}
 
 			if (oi->base.rtime < ci->base.rtime)
