@@ -162,6 +162,12 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
+	__attribute__((__visibility__("hidden")));
+#ifndef NDEBUG
+void IMPSprint(BAT *b)
+	__attribute__((__visibility__("hidden")));
+#endif
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
@@ -193,12 +199,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
-	__attribute__((__visibility__("hidden")));
-#ifndef NDEBUG
-void IMPSprint(BAT *b)
-	__attribute__((__visibility__("hidden")));
-#endif
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
