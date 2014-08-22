@@ -85,6 +85,8 @@ typedef struct MOSTASK{
 	BUN	elm;		// elements left to compress
 	char *src;		// read pointer into source
 
+	lng  xsize,size;// original and compressed size
+	lng timer;		// compression time
 	void *min, *max;// space for zones
 
 	oid *lb, *rb;	// Collected oids from operations
@@ -94,8 +96,7 @@ typedef struct MOSTASK{
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 
 	// collect compression statistics for the particular task
-	lng time[MOSAIC_METHODS];
-	lng wins[MOSAIC_METHODS];	
+	lng blks[MOSAIC_METHODS];	
 	lng elms[MOSAIC_METHODS];	
 } *MOStask;
 

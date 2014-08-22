@@ -39,6 +39,7 @@ MOSdump_zone(Client cntxt, MOStask task)
 	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
 	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
 	case TYPE_int: {int low= *(int*)zone_min(blk), max =*(int*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
+	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 	case TYPE_lng: {lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 	case TYPE_flt: {flt low= *(flt*)zone_min(blk), max =*(flt*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
 	case TYPE_dbl: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
@@ -62,6 +63,7 @@ MOSadvance_zone(MOStask task)
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* blk->cnt)); break ;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* blk->cnt)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* blk->cnt)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); break;
@@ -119,7 +121,6 @@ MOScompress_zone(Client cntxt, MOStask task)
 
 	(void) cntxt;
 	blk->tag = MOSAIC_ZONE;
-    task->time[MOSAIC_ZONE] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: ZONEcompress(bte); break ;
@@ -138,6 +139,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 		task->elm--;
 	}
 		break;
+	case TYPE_oid: ZONEcompress(oid); break;
 	case TYPE_lng: ZONEcompress(lng); break;
 	case TYPE_flt: ZONEcompress(flt); break;
 	case TYPE_dbl: ZONEcompress(dbl); break;
@@ -156,6 +158,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 		if ( task->max ==0 || *(int*)task->max < *max ) task->max = (void*) max;
 	}
 		break;
+	case TYPE_oid: ZONEbreak(oid); break;
 	case TYPE_lng: ZONEbreak(lng); break;
 	case TYPE_flt: ZONEbreak(flt); break;
 	case TYPE_dbl: ZONEbreak(dbl); break;
@@ -164,7 +167,6 @@ MOScompress_zone(Client cntxt, MOStask task)
 	MOSdump_zone(cntxt, task);
 #ifdef _DEBUG_MOSAIC_
 #endif
-    task->time[MOSAIC_ZONE] = GDKusec() - task->time[MOSAIC_ZONE];
 }
 
 // the inverse operator, extend the src
@@ -179,7 +181,6 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
-	lng clk = GDKusec();
 	char *compressed;
 	(void) cntxt;
 
@@ -195,6 +196,7 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 		task->src += i * sizeof(int);
 	}
 		break;
+	case TYPE_oid: ZONEdecompress(oid); break;
 	case TYPE_lng: ZONEdecompress(lng); break;
 	case TYPE_flt: ZONEdecompress(flt); break;
 	case TYPE_dbl: ZONEdecompress(dbl); break;
@@ -202,7 +204,6 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 		if( task->type == TYPE_timestamp)
 			ZONEdecompress(timestamp);
 	}
-    task->time[MOSAIC_ZONE] = GDKusec() - clk;
 }
 
 // The remainder should provide the minimal algebraic framework
@@ -300,6 +301,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	case TYPE_bit: subselect_zone(bit); break;
 	case TYPE_bte: subselect_zone(bte); break;
 	case TYPE_sht: subselect_zone(sht); break;
+	case TYPE_oid: subselect_zone(oid); break;
 	case TYPE_lng: subselect_zone(lng); break;
 	case TYPE_flt: subselect_zone(flt); break;
 	case TYPE_dbl: subselect_zone(dbl); break;
@@ -514,6 +516,7 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	case TYPE_bit: thetasubselect_zone(bit); break;
 	case TYPE_bte: thetasubselect_zone(bte); break;
 	case TYPE_sht: thetasubselect_zone(sht); break;
+	case TYPE_oid: thetasubselect_zone(oid); break;
 	case TYPE_lng: thetasubselect_zone(lng); break;
 	case TYPE_flt: thetasubselect_zone(flt); break;
 	case TYPE_dbl: thetasubselect_zone(dbl); break;
@@ -596,6 +599,7 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: leftfetchjoin_zone(bit); break;
 		case TYPE_bte: leftfetchjoin_zone(bte); break;
 		case TYPE_sht: leftfetchjoin_zone(sht); break;
+		case TYPE_oid: leftfetchjoin_zone(oid); break;
 		case TYPE_lng: leftfetchjoin_zone(lng); break;
 		case TYPE_flt: leftfetchjoin_zone(flt); break;
 		case TYPE_dbl: leftfetchjoin_zone(dbl); break;
@@ -642,6 +646,7 @@ MOSjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: join_zone(bit); break;
 		case TYPE_bte: join_zone(bte); break;
 		case TYPE_sht: join_zone(sht); break;
+		case TYPE_oid: join_zone(oid); break;
 		case TYPE_lng: join_zone(lng); break;
 		case TYPE_flt: join_zone(flt); break;
 		case TYPE_dbl: join_zone(dbl); break;

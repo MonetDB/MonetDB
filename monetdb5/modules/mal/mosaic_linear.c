@@ -146,7 +146,6 @@ MOScompress_linear(Client cntxt, MOStask task)
 	(void) cntxt;
 	blk->tag = MOSAIC_LINEAR;
 	blk->cnt =  0;
-	task->time[MOSAIC_LINEAR] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: LINEARcompress(bte); break;
@@ -173,7 +172,6 @@ MOScompress_linear(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_linear(cntxt, task);
 #endif
-	task->time[MOSAIC_LINEAR] = GDKusec() - task->time[MOSAIC_LINEAR];
 }
 
 // the inverse operator, extend the src
@@ -190,7 +188,6 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  task->blk;
 	BUN i;
-	lng clk = GDKusec();
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -209,7 +206,6 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 			task->src += i * sizeof(int);
 		}
 	}
-	task->time[MOSAIC_LINEAR] = GDKusec() - clk;
 }
 
 // perform relational algebra operators over non-compressed chunks

@@ -50,10 +50,11 @@ MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
 	mnstr_printf(cntxt->fdout,"# ");
-	for ( i=0; i < MOSAIC_METHODS; i++){
-		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT "\t" LLFMT "\t",
-			filtername[i], task->wins[i], task->elms[i],task->time[i]);
-	}
+	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes "LLFMT"\t"LLFMT "\t%10.2fx\t", 
+		task->timer,task->size,task->xsize, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
+	for ( i=0; i < MOSAIC_METHODS; i++)
+	if( task->blks[i])
+		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT "\t" , filtername[i], task->blks[i], task->elms[i]);
 }
 
 // dump a compressed BAT
@@ -159,7 +160,7 @@ str
 MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 {
 	BAT *b, *bn;
-	BUN cnt;
+	BUN cnt, cutoff =0;
 	int i;
 	char *c;
 	str msg = MAL_SUCCEED;
@@ -226,6 +227,8 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	// initialize the non-compressed read pointer
 	task->src = Tloc(b, BUNfirst(b));
 	task->elm = BATcount(b);
+	task->size = b->T->heap.free;
+	task->timer = GDKusec();
 
 	// prepare a compressed heap
 	MOSinit(task,bn);
@@ -235,12 +238,20 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	task->blk->tag = MOSAIC_EOL;
 	task->blk->cnt = 0;
 
+	cutoff = task->elm > 1000? task->elm - 1000: task->elm;
 	while(task->elm > 0){
 		// default is to extend the non-compressed block
 		//mnstr_printf(cntxt->fdout,"#elements "BUNFMT"\n",task->elm);
 		cand = MOSAIC_NONE;
 		perc = 100;
 		percentage = 100;
+
+		// cutoff the filters, especially dictionary tests are expensive
+		if( cutoff && cutoff > task->elm){
+			if( task->blks[MOSAIC_DICT] == 0)
+				filter[MOSAIC_DICT] = 0;
+			cutoff = 0;
+		}
 		
 		// select candidate amongst those
 		if ( filter[MOSAIC_RLE]){
@@ -257,7 +268,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 				percentage = perc;
 			}
 		}
-		if ( filter[MOSAIC_ZONE]){
+		if (0 && filter[MOSAIC_ZONE]){
 			perc = MOSestimate_zone(cntxt,task);
 			if (perc >= 0 && perc < percentage){
 				cand = MOSAIC_ZONE;
@@ -369,17 +380,21 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		task->blk->tag = MOSAIC_EOL;
 		task->blk->cnt = 0;
 	}
+	task->xsize = ((lng)task->dst - (lng)task->hdr) + MosaicHdrSize;
+	task->timer = GDKusec() - task->timer;
 //#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
 	mnstr_printf(cntxt->fdout,"\n");
 //#endif
-	// if we couldnt compress ignore the result
-	if( task->elms[MOSAIC_NONE] == (lng) cnt){
+	// if we couldnt compress well enough, ignore the result
+/*
+	if( task->xsize && task->size / task->xsize < 1){
 		GDKfree(task);
 		BBPreleaseref(bn->batCacheid);
 		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
+*/
 
 	BATsetcount(bn, cnt);
 	BATseqbase(bn,b->hseqbase);
@@ -461,6 +476,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	}
 	MOSinit(task,b);;
 	task->src = Tloc(bn, BUNfirst(bn));
+	task->timer = GDKusec();
 	while(task->blk){
 		switch(task->blk->tag){
 		case MOSAIC_DICT:
@@ -500,6 +516,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	bn->T->seq = b->T->seq;
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
+	task->timer = GDKusec()- task->timer;
 	//bn->tkey = b->tkey;
 	//bn->batDirty = 1;
 
@@ -591,8 +608,12 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	anti = (bit *) getArgReference(stk, pci, i + 4);
 	//
 	// use default implementation if possible
-	if( !isCompressed(*bid))
-		return ALGsubselect1(ret,bid,low,hgh,li,hi,anti);
+	if( !isCompressed(*bid)){
+		if(cid)
+			return ALGsubselect2(ret,bid,cid,low,hgh,li,hi,anti);
+		else
+			return ALGsubselect1(ret,bid,low,hgh,li,hi,anti);
+	}
 
 	b= BATdescriptor(*bid);
 	if( b == NULL)
@@ -684,7 +705,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, cid =0,  *ret, *bid;
+	int idx, *cid =0,  *ret, *bid;
 	BAT *b = 0, *cand = 0, *bn = NULL;
 	BUN first = 0,last = 00;
 	BUN cnt=0;
@@ -698,14 +719,18 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret= (int*) getArgReference(stk,pci,0);
 	bid= (int*) getArgReference(stk,pci,1);
 	if( pci->argc == 5){ // candidate list included
-		cid = *(int*) getArgReference(stk,pci, 2);
+		cid = (int*) getArgReference(stk,pci, 2);
 		idx = 3;
 	} else idx = 2;
 	low= (void*) getArgReference(stk,pci,idx);
 	oper= (char**) getArgReference(stk,pci,idx+1);
 
-	if( !isCompressed(*bid))
-		return ALGthetasubselect1(ret,bid,low, (const char **)oper);
+	if( !isCompressed(*bid)){
+		if( cid)
+			return ALGthetasubselect2(ret,bid,cid,low, (const char **)oper);
+		else
+			return ALGthetasubselect1(ret,bid,low, (const char **)oper);
+	}
 	
 	b = BATdescriptor(*bid);
 	if( b == NULL)
@@ -731,7 +756,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MOSinit(task,b);
 	// drag along the candidate list into the task descriptor
 	if (cid) {
-		cand = BATdescriptor(cid);
+		cand = BATdescriptor(*cid);
 		if (cand == NULL){
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(bn->batCacheid);
@@ -784,7 +809,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = (BUN)( task->lb - (oid*) Tloc(bn,BUNfirst(bn)));
 	
 	if( cid)
-		BBPreleaseref(cid);
+		BBPreleaseref(*cid);
 	if( bn){
 		BATsetcount(bn,cnt);
 		bn->hdense = 1;
@@ -1047,16 +1072,21 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 
 	b = BATdescriptor(bid);
 	if( b == NULL ){
-		mnstr_printf(cntxt->fdout,"#nonaccessible %d %s\n",bid, BBP_logical(bid));
+		mnstr_printf(cntxt->fdout,"#nonaccessible %d\n",bid);
 		return;
 	}
-	if( BATcount(b) < threshold){
+	if( b->ttype == TYPE_void ||  BATcount(b) < threshold){
 		BBPreleaseref(bid);
 		//mnstr_printf(cntxt->fdout,"#too small %d %s\n",bid, BBP_logical(bid));
 		return;
 	}
-	if( isVIEW(b)){
+	if ( isVIEW(b) || isVIEWCOMBINE(b) || VIEWtparent(b)) {
 		mnstr_printf(cntxt->fdout,"#ignore view %d %s\n",bid, BBP_logical(bid));
+		BBPreleaseref(bid);
+		return;
+	}
+	if ( BATcount(b) < MIN_INPUT_COUNT ){
+		mnstr_printf(cntxt->fdout,"#ignore small %d %s\n",bid, BBP_logical(bid));
 		BBPreleaseref(bid);
 		return;
 	}
@@ -1070,12 +1100,12 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-		mnstr_printf(cntxt->fdout,"#%d\t%s\t%s\t"BUNFMT"\t%10d ", bid, BBP_logical(bid), type, BATcount(b), ATOMsize(b->ttype) *(int) BATcount(b));
+		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, 0);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp){
-			mnstr_printf(cntxt->fdout,"#%d\t%s\t%s\t"BUNFMT"\t%10d ", bid, BBP_logical(bid), type, BATcount(b), ATOMsize(b->ttype) *(int) BATcount(b));
+			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid, 0);
 		}
 	}

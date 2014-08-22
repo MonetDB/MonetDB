@@ -88,16 +88,16 @@ insert into tmp3 values
 (9, false, 0.317),
 (10, false, 0.317);
 
-alter table tmp3 set read only;
+alter table tmp3 set insert only;
 
 explain select * from tmp3;
 select * from tmp3;
 --select * from storage where "table" = 'tmp3';
 
 --call sys.compress('sys','tmp3');
-alter table tmp3 alter column i set storage 'rle';
-alter table tmp3 alter column b set storage 'rle';
-alter table tmp3 alter column f set storage 'rle';
+alter table tmp3 alter column i set storage 'none';
+alter table tmp3 alter column b set storage 'none';
+alter table tmp3 alter column f set storage 'none';
 explain select * from tmp3;
 select * from tmp3;
 --select * from storage where "table" = 'tmp3';

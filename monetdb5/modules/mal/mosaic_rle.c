@@ -143,7 +143,6 @@ MOScompress_rle(Client cntxt, MOStask task)
 	(void) cntxt;
 	blk->tag = MOSAIC_RLE;
 	blk->cnt =  0;
-	task->time[MOSAIC_RLE] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: RLEcompress(bte); break;
@@ -169,7 +168,6 @@ MOScompress_rle(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_rle(cntxt, task);
 #endif
-	task->time[MOSAIC_RLE] = GDKusec() - task->time[MOSAIC_RLE];
 }
 
 // the inverse operator, extend the src
@@ -185,7 +183,6 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
-	lng clk = GDKusec();
 	char *compressed;
 	(void) cntxt;
 
@@ -205,7 +202,6 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 			task->src += i * sizeof(int);
 		}
 	}
-	task->time[MOSAIC_RLE] = GDKusec() - clk;
 }
 
 // perform relational algebra operators over non-compressed chunks

@@ -42,6 +42,7 @@ MOSadvance_none(MOStask task)
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* blk->cnt)); break ;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* blk->cnt)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* blk->cnt)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); break;
@@ -78,7 +79,6 @@ MOScompress_none(Client cntxt, MOStask task)
 
 	(void) cntxt;
 	blk->tag = MOSAIC_NONE;
-    task->time[MOSAIC_NONE] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: NONEcompress(bte); break ;
@@ -92,6 +92,7 @@ MOScompress_none(Client cntxt, MOStask task)
 		task->elm--;
 	}
 		break;
+	case TYPE_oid: NONEcompress(oid); break;
 	case TYPE_lng: NONEcompress(lng); break;
 	case TYPE_flt: NONEcompress(flt); break;
 	case TYPE_dbl: NONEcompress(dbl); break;
@@ -99,7 +100,6 @@ MOScompress_none(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_none_(cntxt, task);
 #endif
-    task->time[MOSAIC_NONE] = GDKusec() - task->time[MOSAIC_NONE];
 }
 
 // the inverse operator, extend the src
@@ -114,7 +114,6 @@ MOSdecompress_none(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
-	lng clk = GDKusec();
 	char *compressed;
 	(void) cntxt;
 
@@ -130,6 +129,7 @@ MOSdecompress_none(Client cntxt, MOStask task)
 		task->src += i * sizeof(int);
 	}
 		break;
+	case TYPE_oid: NONEdecompress(oid); break;
 	case TYPE_lng: NONEdecompress(lng); break;
 	case TYPE_flt: NONEdecompress(flt); break;
 	case TYPE_dbl: NONEdecompress(dbl); break;
@@ -137,7 +137,6 @@ MOSdecompress_none(Client cntxt, MOStask task)
 		if( task->type == TYPE_timestamp)
 			NONEdecompress(timestamp);
 	}
-    task->time[MOSAIC_NONE] = GDKusec() - clk;
 }
 
 // The remainder should provide the minimal algebraic framework
@@ -228,6 +227,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	case TYPE_bit: subselect_none(bit); break;
 	case TYPE_bte: subselect_none(bte); break;
 	case TYPE_sht: subselect_none(sht); break;
+	case TYPE_oid: subselect_none(oid); break;
 	case TYPE_lng: subselect_none(lng); break;
 	case TYPE_flt: subselect_none(flt); break;
 	case TYPE_dbl: subselect_none(dbl); break;
@@ -423,6 +423,7 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	case TYPE_bit: thetasubselect_none(bit); break;
 	case TYPE_bte: thetasubselect_none(bte); break;
 	case TYPE_sht: thetasubselect_none(sht); break;
+	case TYPE_oid: thetasubselect_none(oid); break;
 	case TYPE_lng: thetasubselect_none(lng); break;
 	case TYPE_flt: thetasubselect_none(flt); break;
 	case TYPE_dbl: thetasubselect_none(dbl); break;
@@ -494,6 +495,7 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: leftfetchjoin_none(bit); break;
 		case TYPE_bte: leftfetchjoin_none(bte); break;
 		case TYPE_sht: leftfetchjoin_none(sht); break;
+		case TYPE_oid: leftfetchjoin_none(oid); break;
 		case TYPE_lng: leftfetchjoin_none(lng); break;
 		case TYPE_flt: leftfetchjoin_none(flt); break;
 		case TYPE_dbl: leftfetchjoin_none(dbl); break;
@@ -540,6 +542,7 @@ MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_bit: join_none(bit); break;
 		case TYPE_bte: join_none(bte); break;
 		case TYPE_sht: join_none(sht); break;
+		case TYPE_oid: join_none(oid); break;
 		case TYPE_lng: join_none(lng); break;
 		case TYPE_flt: join_none(flt); break;
 		case TYPE_dbl: join_none(dbl); break;

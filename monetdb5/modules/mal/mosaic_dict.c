@@ -178,7 +178,6 @@ MOScompress_dict(Client cntxt, MOStask task)
 	*size = 0;
 	blk->tag = MOSAIC_DICT;
 	blk->cnt =  0;
-	task->time[MOSAIC_DICT] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DICTcompress(sht); break;
@@ -214,7 +213,6 @@ MOScompress_dict(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_dict(cntxt, task);
 #endif
-	task->time[MOSAIC_DICT] = GDKusec() - task->time[MOSAIC_DICT];
 }
 
 // the inverse operator, extend the src
@@ -231,7 +229,6 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
-	lng clk = GDKusec();
 	char *compressed;
 	(void) cntxt;
 
@@ -252,7 +249,6 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 		if( task->type == TYPE_timestamp)
 			DICTdecompress(timestamp);
 	}
-	task->time[MOSAIC_DICT] = GDKusec() - clk;
 }
 
 // perform relational algebra operators over non-compressed chunks

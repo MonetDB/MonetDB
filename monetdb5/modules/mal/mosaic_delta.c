@@ -129,7 +129,6 @@ MOScompress_delta(Client cntxt, MOStask task)
 
 	(void) cntxt;
 	blk->tag = MOSAIC_DELTA;
-    task->time[MOSAIC_DELTA] = GDKusec();
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DELTAcompress(sht); break;
@@ -169,7 +168,6 @@ MOScompress_delta(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_delta_(cntxt, task);
 #endif
-    task->time[MOSAIC_DELTA] = GDKusec() - task->time[MOSAIC_DELTA];
 }
 
 // the inverse operator, extend the src
@@ -190,7 +188,6 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
-	lng clk = GDKusec();
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -209,7 +206,6 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 		task->src += i * sizeof(int);
 	}
 	}
-    task->time[MOSAIC_DELTA] = GDKusec() - clk;
 }
 
 // The remainder should provide the minimal algebraic framework

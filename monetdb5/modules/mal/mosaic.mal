@@ -20,6 +20,10 @@ pattern analyse(threshold:lng)
 address MOSanalyse
 comment "Apply heap compression on all with minimum threshold";
 
+pattern analyse(threshold:lng,b:int)
+address MOSanalyse
+comment "Apply heap compression on all with minimum threshold";
+
 
 pattern dump(b:bat[:oid,:any])
 address MOSdump

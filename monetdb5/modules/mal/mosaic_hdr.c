@@ -53,13 +53,13 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	int i, j;
 
 	(void) cntxt;
-    task->wins[task->blk->tag]++;
+    task->blks[task->blk->tag]++;
     task->elms[task->blk->tag] += task->blk->cnt;
 	if( hdr->top < MOSAICINDEX-1 ){
 		if( hdr->top == 0)
 			hdr->index[hdr->top] = task->blk->cnt;
 		else hdr->index[hdr->top] = task->blk->cnt + hdr->index[hdr->top-1];
-		hdr->offset[hdr->top] =  (lng) (task->dst - (char*) task->hdr);
+		hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 		hdr->top++;
 		MOSdumpHeader(cntxt,task);
 		return;
