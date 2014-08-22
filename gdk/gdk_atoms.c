@@ -268,7 +268,10 @@ ATOMheap(int t, Heap *hp, size_t cap)
 int
 ATOMcmp(int t, const void *l, const void *r)
 {
-	switch (ATOMstorage(t)) {
+	switch (t != ATOMstorage(t) &&
+		ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) &&
+		ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) ?
+		ATOMstorage(t) : t) {
 	case TYPE_bte:
 		return simple_CMP(l, r, bte);
 	case TYPE_sht:
