@@ -1,17 +1,24 @@
-options(monetdb.debug.query=T)
-options(monetdb.insert.splitsize=10)
+library(MonetDB.R,quietly=T)
 
-library(MonetDB.R)
+args <- commandArgs(trailingOnly = TRUE)
+dbport <- 50000
+dbname <- "mTests_clients_R"
+if (length(args) > 0) 
+	dbport <- args[[1]]
+
+options(monetdb.insert.splitsize=10)
 
 drv <- dbDriver("MonetDB")
 stopifnot(identical(dbGetInfo(drv)$name,"MonetDBDriver"))
 
-con <- dbConnect(drv, "monetdbrtest")
+con <- dbConnect(drv, port=dbport, dbname=dbname)
 stopifnot(identical(class(con)[[1]],"MonetDBConnection"))
 # overwrite variable to force destructor
-con <- dbConnect(drv, "monetdbrtest")
-con <- dbConnect(drv, "monetdbrtest")
+con <- mc(port=dbport, dbname=dbname)
+con <- mc(port=dbport, dbname=dbname)
+sink(tempfile()) # redirect gc output not to confuse Mtest
 gc()
+sink()
 
 # basic MAPI/SQL test
 stopifnot(identical(dbGetQuery(con,"SELECT 'DPFKG!'")[[1]],"DPFKG!"))
@@ -38,7 +45,8 @@ data(iris)
 dbWriteTable(con,"monetdbtest",iris)
 
 stopifnot(identical(dbExistsTable(con,"monetdbtest"),TRUE))
-stopifnot(identical(dbExistsTable(con,"monetdbtest2"),FALSE))
+stopifnot(identical(dbExistsTable(con,"monetd
+	btest2"),FALSE))
 stopifnot("monetdbtest" %in% dbListTables(con))
 
 stopifnot(identical(dbListFields(con,"monetdbtest"),c("sepal_length","sepal_width","petal_length","petal_width","species")))
@@ -129,6 +137,7 @@ stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
 
 #test merovingian control code
-stopifnot("monetdbrtest" %in% monetdbd.liststatus("monetdb")$dbname)
+#cannot really do this in Mtest, sorry
+#stopifnot(dbname %in% monetdbd.liststatus("monetdb")$dbname)
 
 print("SUCCESS")

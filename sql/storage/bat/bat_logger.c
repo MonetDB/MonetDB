@@ -82,8 +82,8 @@ bl_postversion( void *lg)
 	(void)lg;
 	if (catalog_version == CATALOG_FEB2013) {
 		/* we need to add the new schemas.system column */
-		BAT *b, *b1, *b2, *b3;
-		BATiter bi;
+		BAT *b, *b1, *b2, *b3, *u, *f, *l;
+		BATiter bi, fi, li;
 		char *s = "sys", n[64];
 		BUN p,q;
 
@@ -133,8 +133,13 @@ bl_postversion( void *lg)
 
 		/* add functions.vararg/varres */
 		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_sql")));
+		u = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_type")));
+		f = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_func")));
+		l = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_name")));
+		fi = bat_iterator(f);
+		li = bat_iterator(l);
 
-		if (!b)
+		if (!b || !u || !f || !l)
 			return;
 		bi = bat_iterator(b);
 		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
@@ -147,18 +152,34 @@ bl_postversion( void *lg)
         	BATseqbase(b2, b->hseqbase);
         	BATseqbase(b3, b->hseqbase);
 
-		/* default to no variaable arguments and results */
+		/* default to no variable arguments and results */
 		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			bit v = FALSE;
-			int type;
-			/* TODO how about import ! */
-			BUNappend(b1, &v, TRUE);
-			BUNappend(b2, &v, TRUE);
+			bit v = FALSE, t = TRUE;
+			int lang, type = F_UNION;
+			char *name = BUNtail(li, p);
 
-			/* this should be value of functions_sql + 1*/
-			type = *(bit*) BUNtloc(bi,p) + 1;
-			BUNappend(b3, &type, TRUE);
+			if (strcmp(name, "copyfrom") == 0) {
+				/* var in and out, and union func */
+				void_inplace(u, p, &type, TRUE);
+				BUNappend(b1, &t, TRUE);
+				BUNappend(b2, &t, TRUE);
 
+				lang = 0;
+				BUNappend(b3, &lang, TRUE);
+			} else {
+				BUNappend(b1, &v, TRUE);
+				BUNappend(b2, &v, TRUE);
+
+				/* this should be value of functions_sql + 1*/
+				lang = *(bit*) BUNtloc(bi,p) + 1;
+				BUNappend(b3, &lang, TRUE);
+			}
+
+			/* beware these will all be drop and recreated in the sql
+			 * upgrade code */
+			name = BUNtail(fi, p);
+			if (strstr(name, "RETURNS TABLE") != NULL) 
+				void_inplace(u, p, &type, TRUE);
 		}
 		b1 = BATsetaccess(b1, BAT_READ);
 		b2 = BATsetaccess(b2, BAT_READ);
@@ -169,6 +190,8 @@ bl_postversion( void *lg)
 		logger_add_bat(lg, b3, N(n, NULL, s, "functions_language"));
 
 		bat_destroy(b);
+		bat_destroy(u);
+		bat_destroy(l);
 
 		/* delete functions.sql */
 		logger_del_bat(lg, b->batCacheid);
@@ -176,9 +199,6 @@ bl_postversion( void *lg)
 		bat_destroy(b1);
 		bat_destroy(b2);
 		bat_destroy(b3);
-
-
-		/* TODO rename columns.storage_type -> storage */
 	}
 	if (catalog_version == CATALOG_OCT2010) {
 		BAT *b, *b1;

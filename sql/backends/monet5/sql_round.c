@@ -171,8 +171,7 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 	BAT *res, *v;
 	hge *src, *dst;
 	BUN i, cnt;
-	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
-	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
+	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
@@ -203,7 +202,6 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 	src = (hge *) Tloc(v, BUNfirst(v));
 	dst = (hge *) Tloc(res, BUNfirst(res));
 
-	nil = FALSE;
 	nonil = TRUE;
 	if (v->T->nonil == TRUE) {
 		for (i = 0; i < cnt; i++)
@@ -211,7 +209,6 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (src[i] == hge_nil) {
-				nil = TRUE;
 				nonil = FALSE;
 				dst[i] = hge_nil;
 			} else {
@@ -226,9 +223,10 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;
-	res->T->nil = nil;
+	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -241,7 +239,7 @@ hge_bat_dec_round_wrap(bat *_res, bat *_v, hge *r)
 }
 
 static inline hge
-hge_round_body_nonil(hge v, int d, int s, bte r)
+hge_round_body_nonil(hge v, int d, int s, int r)
 {
 	hge res = hge_nil;
 
@@ -276,7 +274,7 @@ hge_round_body_nonil(hge v, int d, int s, bte r)
 }
 
 static inline hge
-hge_round_body(hge v, int d, int s, bte r)
+hge_round_body(hge v, int d, int s, int r)
 {
 	/* shortcut nil */
 	if (v == hge_nil) {
@@ -302,8 +300,7 @@ hge_bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	BAT *res, *v;
 	hge *src, *dst;
 	BUN i, cnt;
-	bit nonil;		/* TRUE: we know there are no NIL (NULL) values */
-	bit nil;		/* TRUE: we know there is at least one NIL (NULL) value */
+	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r && d && s);
@@ -334,7 +331,6 @@ hge_bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	src = (hge *) Tloc(v, BUNfirst(v));
 	dst = (hge *) Tloc(res, BUNfirst(res));
 
-	nil = FALSE;
 	nonil = TRUE;
 	if (v->T->nonil == TRUE) {
 		for (i = 0; i < cnt; i++)
@@ -342,7 +338,6 @@ hge_bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (src[i] == hge_nil) {
-				nil = TRUE;
 				nonil = FALSE;
 				dst[i] = hge_nil;
 			} else {
@@ -357,9 +352,10 @@ hge_bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;
-	res->T->nil = nil;
+	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -396,8 +392,10 @@ str_2dec_hge(hge *res, str *val, int *d, int *sc)
 			*res = hge_nil;
 			return MAL_SUCCEED;
 		} else {
-			throw(SQL, "hge", "\"%s\" is no decimal value (doesn't contain a '.')", *val);
+			scale = 0;
 		}
+	} else { /* we have a dot in the string */
+		digits--;
 	}
 
 	value = decimal_from_str(s);
@@ -405,20 +403,27 @@ str_2dec_hge(hge *res, str *val, int *d, int *sc)
 		digits--;
 	if (scale < *sc) {
 		/* the current scale is too small, increase it by adding 0's */
-		int d = *sc - scale;	/* CANNOT be 0! */
+		int dff = *sc - scale;	/* CANNOT be 0! */
 
-		value *= scales[d];
-		scale += d;
-		digits += d;
+		value *= scales[dff];
+		scale += dff;
+		digits += dff;
 	} else if (scale > *sc) {
 		/* the current scale is too big, decrease it by correctly rounding */
-		int d = scale - *sc;	/* CANNOT be 0 */
-		hge rnd = scales[d] >> 1;
+		/* we should round properly, and check for overflow (res >= 10^digits+scale) */
+		int dff = scale - *sc;	/* CANNOT be 0 */
+		hge rnd = scales[dff] >> 1;
 
-		value += rnd;
-		value /= scales[d];
-		scale -= d;
-		digits -= d;
+		if (value > 0)
+			value += rnd;
+		else
+			value -= rnd;
+		value /= scales[dff];
+		scale -= dff;
+		digits -= dff;
+		if (value >= scales[*d] || value <= -scales[*d]) {
+			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+		}
 	}
 	if (digits > *d) {
 		throw(SQL, "hge", "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);

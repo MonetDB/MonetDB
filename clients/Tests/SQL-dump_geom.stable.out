@@ -5245,8 +5245,8 @@ COPY 3693 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5911	5909	"val"	"wrd"	64	0	1	1
 5914	5913	"result"	"bigint"	64	0	0	0
 5915	5913	"val"	"bigint"	64	0	1	1
-5918	5917	"result"	"decimal"	1	0	0	0
-5919	5917	"val"	"decimal"	1	0	1	1
+5918	5917	"result"	"decimal"	18	3	0	0
+5919	5917	"val"	"decimal"	18	3	1	1
 5922	5921	"result"	"real"	24	0	0	0
 5923	5921	"val"	"real"	24	0	1	1
 5926	5925	"result"	"double"	53	0	0	0
@@ -5272,8 +5272,8 @@ COPY 3693 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 5962	5961	"result"	"bigint"	64	0	0	0
 5963	5961	"val"	"bigint"	64	0	1	1
 5964	5961	"q"	"double"	53	0	1	2
-5967	5966	"result"	"decimal"	1	0	0	0
-5968	5966	"val"	"decimal"	1	0	1	1
+5967	5966	"result"	"decimal"	18	3	0	0
+5968	5966	"val"	"decimal"	18	3	1	1
 5969	5966	"q"	"double"	53	0	1	2
 5972	5971	"result"	"real"	24	0	0	0
 5973	5971	"val"	"real"	24	0	1	1

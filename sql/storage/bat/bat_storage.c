@@ -1384,8 +1384,12 @@ empty_col(sql_column *c)
 	sql_delta *bat = c->data;
 
 	assert(c->data && c->base.allocated && bat->bid == 0);
-	bat->bid = e_bat(type);
+	bat->bid = bat->ibid;
+	bat->ibid = e_bat(type);
+	if (bat->bid == bat->ibid)
+		bat->bid = copyBat(bat->ibid, type, 0);
 }
+
 static void 
 empty_idx(sql_idx *i)
 {
@@ -1393,7 +1397,10 @@ empty_idx(sql_idx *i)
 	sql_delta *bat = i->data;
 
 	assert(i->data && i->base.allocated && bat->bid == 0);
-	bat->bid = e_bat(type);
+	bat->bid = bat->ibid;
+	bat->ibid = e_bat(type);
+	if (bat->bid == bat->ibid) 
+		bat->bid = copyBat(bat->ibid, type, 0);
 }
 
 static BUN
@@ -1745,10 +1752,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				for (n = tt->idxs.set->h; n; n = n->next) 
 					(void)store_funcs.clear_idx(tr->parent, n->data);
 		} else {
-			for (n = tt->columns.set->h; n; n = n->next) 
+			for (n = ft->columns.set->h; n; n = n->next) 
 				empty_col(n->data);
-			if (tt->idxs.set) 
-				for (n = tt->idxs.set->h; n; n = n->next) 
+			if (ft->idxs.set) 
+				for (n = ft->idxs.set->h; n; n = n->next) 
 					empty_idx(n->data);
 		}
 	}

@@ -305,6 +305,14 @@ pattern dropDeclaredTables{unsafe}( nr:int ) :void
 address mvc_drop_declared_tables_wrap
 comment "drop top n declared tables"; 
 
+pattern drop_func_upgrade_oct2014(id:int) :int
+address UPGdrop_func
+comment "Drop the function identified by id, needed for the Oct2014 upgrade";
+
+pattern create_func_upgrade_oct2014(f:str) :int
+address UPGcreate_func
+comment "Create the function described by f, needed for the Oct2014 upgrade";
+
 pattern exportHead{unsafe}(s:streams, res_id:int) :void
 address mvc_export_head_wrap
 comment "Export a result (in order) to stream s"; 

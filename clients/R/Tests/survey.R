@@ -1,11 +1,17 @@
-library(MonetDB.R)
-library(sqlsurvey)
+library(MonetDB.R,quietly=T)
+library(sqlsurvey,quietly=T)
 
-options(monetdb.debug.query=T)
+args <- commandArgs(trailingOnly = TRUE)
+dbport <- 50000
+dbname <- "mTests_clients_R"
+if (length(args) > 0) 
+	dbport <- args[[1]]
 
 # install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
 
-db <- dbConnect( MonetDB.R() , "monetdb://localhost/monetdbrtest")
+dburl <- paste0("monetdb://localhost:",dbport,"/",dbname)
+
+db <- dbConnect( MonetDB.R() , dburl)
 
 data( api )
 
@@ -17,6 +23,7 @@ x$full <- NULL
 
 # load the apiclus1 data set into the monetdb
 dbWriteTable( db , 'apiclus1' , x , overwrite = TRUE )
+cat("#~BeginVariableOutput~#\n")
 
 dclus1 <-
 		sqlsurvey(
@@ -25,7 +32,7 @@ dclus1 <-
 				# fpc = 'fpc' ,
 				table.name = 'apiclus1' ,
 				key = "idkey" ,
-				database = "monetdb://localhost/monetdbrtest" ,
+				database = dburl ,
 				driver = MonetDB.R() ,
 				user = "monetdb" ,
 				password = "monetdb" 
@@ -48,6 +55,7 @@ svymean( ~dname , dclus1 , byvar = ~comp_imp )
 # but then actual queries do work
 dbGetQuery( db , 'select * from apiclus1 limit 2' )
 dbRemoveTable(db,"apiclus1")
+cat("#~EndVariableOutput~#\n")
 
 
 print("SUCCESS")

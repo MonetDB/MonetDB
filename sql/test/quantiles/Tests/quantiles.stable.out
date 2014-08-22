@@ -102,9 +102,9 @@ Ready.
 #select median(l_extendedprice) from lit;
 % sys.L1 # table_name
 % L1 # name
-% double # type
-% 24 # length
-[ 36724.5	]
+% decimal # type
+% 17 # length
+[ 36724.50	]
 #select quantile(l_extendedprice,0.0) from lit;
 % sys.L1 # table_name
 % L1 # name
@@ -134,10 +134,10 @@ Ready.
 #select median(l_extendedprice) from lit group by l_returnflag;
 % sys.L1 # table_name
 % L1 # name
-% double # type
-% 24 # length
+% decimal # type
+% 17 # length
 [ 36960.68	]
-[ 37144.2	]
+[ 37144.20	]
 [ 35937.88	]
 #select quantile(l_extendedprice,0.0) from lit group by l_returnflag;
 % sys.L1 # table_name
