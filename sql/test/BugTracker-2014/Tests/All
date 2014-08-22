@@ -31,3 +31,4 @@ non_groupby_column.Bug-3524
 orderby_count.Bug-3526
 outer_join_using_diff_types_using.Bug-3536
 select-distinct-order-limit.Bug-3527
+subselect-reverse.Bug-3552

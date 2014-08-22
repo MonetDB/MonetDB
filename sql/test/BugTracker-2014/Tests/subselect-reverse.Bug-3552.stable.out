@@ -1,0 +1,87 @@
+stdout of test 'subselect-reverse.Bug-3552` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 21:23:14 >  
+# 21:23:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38047" "--set" "mapi_usock=/var/tmp/mtest-22685/.s.monetdb.38047" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:23:14 >  
+
+# MonetDB 5 server v11.19.0 (hg id: 7ed723670162+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.734 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:38047/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22685/.s.monetdb.38047
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 21:23:15 >  
+# 21:23:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22685" "--port=38047"
+# 21:23:15 >  
+
+#START TRANSACTION;
+#CREATE TABLE tst3552 (int_col integer);
+#INSERT INTO tst3552 VALUES (1);
+[ 1	]
+#INSERT INTO tst3552 VALUES (0);
+[ 1	]
+#SELECT * FROM tst3552;
+% sys.tst3552 # table_name
+% int_col # name
+% int # type
+% 1 # length
+[ 1	]
+[ 0	]
+#SELECT * FROM tst3552 WHERE int_col = 0;
+% sys.tst3552 # table_name
+% int_col # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT * FROM tst3552 WHERE int_col <> 0;
+% sys.tst3552 # table_name
+% int_col # name
+% int # type
+% 1 # length
+[ 1	]
+#ROLLBACK;
+
+# 21:23:15 >  
+# 21:23:15 >  "Done."
+# 21:23:15 >  
+

@@ -1193,20 +1193,37 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		if (anti) {
-			BUN first = SORTfndlast(b, nil) - BUNfirst(b);
-			/* match: [first..low) + [high..count) */
-			if (s) {
-				oid o = (oid) first + b->H->seq;
-				first = SORTfndfirst(s, &o) - BUNfirst(s);
-				o = (oid) low + b->H->seq;
-				low = SORTfndfirst(s, &o) - BUNfirst(s);
-				o = (oid) high + b->H->seq;
-				high = SORTfndfirst(s, &o) - BUNfirst(s);
-				v = VIEWhead(BATmirror(s));
+			if (b->tsorted) {
+				BUN first = SORTfndlast(b, nil) - BUNfirst(b);
+				/* match: [first..low) + [high..count) */
+				if (s) {
+					oid o = (oid) first + b->H->seq;
+					first = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) low + b->H->seq;
+					low = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) high + b->H->seq;
+					high = SORTfndfirst(s, &o) - BUNfirst(s);
+					v = VIEWhead(BATmirror(s));
+				} else {
+					v = VIEWhead(b);	/* [oid,nil] */
+				}
+				bn = BATslice2(v, first, low, high, BATcount(v));
 			} else {
-				v = VIEWhead(b);	/* [oid,nil] */
+				BUN last = SORTfndlast(b, nil) - BUNfirst(b);
+				/* match: [0..low) + [high..last) */
+				if (s) {
+					oid o = (oid) last + b->H->seq;
+					last = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) low + b->H->seq;
+					low = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) high + b->H->seq;
+					high = SORTfndfirst(s, &o) - BUNfirst(s);
+					v = VIEWhead(BATmirror(s));
+				} else {
+					v = VIEWhead(b);	/* [oid,nil] */
+				}
+				bn = BATslice2(v, 0, low, high, last);
 			}
-			bn = BATslice2(v, first, low, high, BATcount(v));
 		} else {
 			/* match: [low..high) */
 			if (s) {
