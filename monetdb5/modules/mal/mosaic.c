@@ -1058,7 +1058,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // all possible compression options.
 
 static void
-MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
+MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 {
 	BAT *b;
 	int ret;
@@ -1095,7 +1095,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 	case TYPE_flt:
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-		MOScompressInternal(cntxt, &ret, &bid, 0);
+		MOScompressInternal(cntxt, &ret, &bid, properties);
 		if( ret != bid)
 			BBPdecref(ret,TRUE);
 	case TYPE_str:
@@ -1103,7 +1103,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-			MOScompressInternal(cntxt, &ret, &bid, 0);
+			MOScompressInternal(cntxt, &ret, &bid, properties);
 			if( ret != bid)
 				BBPdecref(ret,TRUE);
 		} else
@@ -1118,18 +1118,23 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,bid;
 	BUN threshold= 1000;
+	str properties = 0;
 	(void) mb;
 	
 
-	if( pci->argc > 1)
-		threshold = *(BUN*) getArgReference(stk,pci,1);
+	if( pci->argc > 1){
+		if( getArgType(mb,pci,1) == TYPE_lng)
+			threshold = *(BUN*) getArgReference(stk,pci,1);
+		if( getArgType(mb,pci,1) == TYPE_str)
+			properties = *(str*) getArgReference(stk,pci,1);
+	}
 
 	if( pci->argc >2 ){
 		bid = *(int*) getArgReference(stk,pci,2);
-		MOSanalyseInternal(cntxt, threshold,bid);
+		MOSanalyseInternal(cntxt, threshold, properties, bid);
 	} else
     for (i = 1; i < getBBPsize(); i++)
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
-			MOSanalyseInternal(cntxt, threshold, i);
+			MOSanalyseInternal(cntxt, threshold, properties, i);
 	return MAL_SUCCEED;
 }
