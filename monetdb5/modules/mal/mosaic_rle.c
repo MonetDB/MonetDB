@@ -45,6 +45,8 @@ MOSdump_rle(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"oid "OIDFMT, *(oid*) val); break;
 	case  TYPE_lng:
 		mnstr_printf(cntxt->fdout,"lng "LLFMT, *(lng*) val); break;
+	case  TYPE_wrd:
+		mnstr_printf(cntxt->fdout,"wrd "SZFMT, *(wrd*) val); break;
 	case TYPE_flt:
 		mnstr_printf(cntxt->fdout,"flt  %f", *(flt*) val); break;
 	case TYPE_dbl:
@@ -70,6 +72,7 @@ MOSadvance_rle(MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(int))); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(oid))); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(lng))); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd))); break;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(flt))); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl))); break;
 	default:
@@ -111,6 +114,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_oid: Estimate(oid); break;
 	case TYPE_lng: Estimate(lng); break;
+	case TYPE_wrd: Estimate(wrd); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
 	case TYPE_int:
@@ -155,6 +159,7 @@ MOScompress_rle(Client cntxt, MOStask task)
 	case TYPE_sht: RLEcompress(sht); break;
 	case TYPE_oid: RLEcompress(oid); break;
 	case TYPE_lng: RLEcompress(lng); break;
+	case TYPE_wrd: RLEcompress(wrd); break;
 	case TYPE_flt: RLEcompress(flt); break;
 	case TYPE_dbl: RLEcompress(dbl); break;
 	case TYPE_int:
@@ -199,6 +204,7 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 	case TYPE_sht: RLEdecompress(sht); break;
 	case TYPE_oid: RLEdecompress(oid); break;
 	case TYPE_lng: RLEdecompress(lng); break;
+	case TYPE_wrd: RLEdecompress(wrd); break;
 	case TYPE_flt: RLEdecompress(flt); break;
 	case TYPE_dbl: RLEdecompress(dbl); break;
 	case TYPE_int:
@@ -297,6 +303,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 	case TYPE_sht: subselect_rle(sht); break;
 	case TYPE_oid: subselect_rle(oid); break;
 	case TYPE_lng: subselect_rle(lng); break;
+	case TYPE_wrd: subselect_rle(wrd); break;
 	case TYPE_flt: subselect_rle(flt); break;
 	case TYPE_dbl: subselect_rle(dbl); break;
 	case TYPE_int:
@@ -436,6 +443,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 	case TYPE_sht: thetasubselect_rle(sht); break;
 	case TYPE_oid: thetasubselect_rle(oid); break;
 	case TYPE_lng: thetasubselect_rle(lng); break;
+	case TYPE_wrd: thetasubselect_rle(wrd); break;
 	case TYPE_flt: thetasubselect_rle(flt); break;
 	case TYPE_dbl: thetasubselect_rle(dbl); break;
 	case TYPE_int:
@@ -513,6 +521,7 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_sht: leftfetchjoin_rle(sht); break;
 		case TYPE_oid: leftfetchjoin_rle(oid); break;
 		case TYPE_lng: leftfetchjoin_rle(lng); break;
+		case TYPE_wrd: leftfetchjoin_rle(wrd); break;
 		case TYPE_flt: leftfetchjoin_rle(flt); break;
 		case TYPE_dbl: leftfetchjoin_rle(dbl); break;
 		case TYPE_int:
@@ -568,6 +577,7 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_sht: join_rle(sht); break;
 		case TYPE_oid: join_rle(oid); break;
 		case TYPE_lng: join_rle(lng); break;
+		case TYPE_wrd: join_rle(wrd); break;
 		case TYPE_flt: join_rle(flt); break;
 		case TYPE_dbl: join_rle(dbl); break;
 		case TYPE_int:

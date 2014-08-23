@@ -41,6 +41,7 @@ MOSadvance_delta(MOStask task)
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1)); break ;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1)); break ;
 	default:
 		if( task->type == TYPE_timestamp)
@@ -69,7 +70,7 @@ MOSskip_delta(MOStask task)
 			break;\
 		val = *w;\
 	}\
-	percentage = 100 * (MosaicBlkSize + sizeof(TYPE)+(int)i-1) / ((int)i * sizeof(TYPE));\
+	percentage = 100 * (MosaicBlkSize + sizeof(TYPE)+(bte)i-1) / ((int)i * sizeof(TYPE));\
 }
 
 int
@@ -88,8 +89,9 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			percentage = 100 * (MosaicBlkSize + sizeof(oid)+(oid)i-1) / ((int)i * sizeof(int));
+			percentage = 100 * (MosaicBlkSize + sizeof(oid)+(bte)i-1) / ((int)i * sizeof(int));
 		}
+	case TYPE_wrd: Estimate_delta(wrd); break;
 	case TYPE_lng: Estimate_delta(lng); break;
 	case TYPE_int:
 		{	int *w = (int*)task->src, val= *w, delta;
@@ -99,7 +101,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			percentage = 100 * (MosaicBlkSize + sizeof(int)+(int)i-1) / ((int)i * sizeof(int));
+			percentage = 100 * (MosaicBlkSize + sizeof(int)+(bte)i-1) / ((int)i * sizeof(int));
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -136,6 +138,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DELTAcompress(sht); break;
+	case TYPE_wrd: DELTAcompress(wrd); break;
 	case TYPE_lng: DELTAcompress(lng); break;
 	case TYPE_oid:
 		{	oid *w = (oid*)task->src, val= *w, delta;
@@ -198,6 +201,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_oid: DELTAdecompress(oid); break;
+	case TYPE_wrd: DELTAdecompress(wrd); break;
 	case TYPE_lng: DELTAdecompress(lng); break;
 	case TYPE_int:
 	{ 	int val;
@@ -304,6 +308,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, 
 	case TYPE_bte: subselect_delta(bte); break;
 	case TYPE_sht: subselect_delta(sht); break;
 	case TYPE_oid: subselect_delta(oid); break;
+	case TYPE_wrd: subselect_delta(wrd); break;
 	case TYPE_lng: subselect_delta(lng); break;
 	case TYPE_flt: subselect_delta(flt); break;
 	case TYPE_dbl: subselect_delta(dbl); break;
@@ -507,6 +512,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *
 	case TYPE_sht: thetasubselect_delta(sht); break;
 	case TYPE_oid: thetasubselect_delta(oid); break;
 	case TYPE_lng: thetasubselect_delta(lng); break;
+	case TYPE_wrd: thetasubselect_delta(wrd); break;
 	case TYPE_flt: thetasubselect_delta(flt); break;
 	case TYPE_dbl: thetasubselect_delta(dbl); break;
 	case TYPE_int:
@@ -584,6 +590,7 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_sht: leftfetchjoin_delta(sht); break;
 		case TYPE_oid: leftfetchjoin_delta(oid); break;
 		case TYPE_lng: leftfetchjoin_delta(lng); break;
+		case TYPE_wrd: leftfetchjoin_delta(wrd); break;
 		case TYPE_flt: leftfetchjoin_delta(flt); break;
 		case TYPE_dbl: leftfetchjoin_delta(dbl); break;
 		case TYPE_int:
@@ -635,6 +642,7 @@ MOSjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_sht: join_delta(sht); break;
 		case TYPE_oid: join_delta(oid); break;
 		case TYPE_lng: join_delta(lng); break;
+		case TYPE_wrd: join_delta(wrd); break;
 		case TYPE_flt: join_delta(flt); break;
 		case TYPE_dbl: join_delta(dbl); break;
 		case TYPE_int:

@@ -1091,6 +1091,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+	case TYPE_wrd:
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
