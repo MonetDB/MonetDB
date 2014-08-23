@@ -41,6 +41,10 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_dbl:
 		return 1;
 	default:
+		if( type == TYPE_date)
+			return 1;
+		if( type == TYPE_daytime)
+			return 1;
 		if( type == TYPE_timestamp)
 			return 1;
 	}

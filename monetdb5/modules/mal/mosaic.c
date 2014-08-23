@@ -49,9 +49,11 @@ static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
+	flt perc = task->size/100.0;
+
 	mnstr_printf(cntxt->fdout,"# ");
-	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes "LLFMT"\t"LLFMT "\t%10.2fx\t", 
-		task->timer,task->size,task->xsize, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
+	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes "LLFMT"\t"LLFMT "\t%3.0f%%\t%10.2fx\t", 
+		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->blks[i])
 		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT "\t" , filtername[i], task->blks[i], task->elms[i]);
@@ -1092,14 +1094,20 @@ MOSanalyseInternal(Client cntxt, BUN threshold, int bid)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
+		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, 0);
+		if( ret != bid)
+			BBPdecref(ret,TRUE);
+	case TYPE_str:
 		break;
 	default:
-		if( b->ttype == TYPE_timestamp){
-			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_logical(bid), type, BATcount(b));
+		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
+			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid, 0);
-		}
+			if( ret != bid)
+				BBPdecref(ret,TRUE);
+		} else
+			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}
 	GDKfree(type);
 	BBPreleaseref(bid);

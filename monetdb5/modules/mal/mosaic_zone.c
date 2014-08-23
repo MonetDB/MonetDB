@@ -44,6 +44,14 @@ MOSdump_zone(Client cntxt, MOStask task)
 	case TYPE_flt: {flt low= *(flt*)zone_min(blk), max =*(flt*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
 	case TYPE_dbl: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
 	default:
+		if( task->type == TYPE_date){
+			date low= *(date*)zone_min(blk), max =*(date*) zone_max(blk);  
+			mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); 
+		}
+		if( task->type == TYPE_daytime){
+			daytime low= *(daytime*)zone_min(blk), max =*(daytime*) zone_max(blk);  
+			mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); 
+		}
 		if( task->type == TYPE_timestamp){
 			lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  
 			mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); 
@@ -68,6 +76,10 @@ MOSadvance_zone(MOStask task)
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk))); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk))); break;
 	default:
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(date)* MOScnt(blk))); 
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(daytime)* MOScnt(blk))); 
 		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk))); 
 	}
@@ -201,6 +213,10 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 	case TYPE_flt: ZONEdecompress(flt); break;
 	case TYPE_dbl: ZONEdecompress(dbl); break;
 	default:
+		if( task->type == TYPE_date)
+			ZONEdecompress(date);
+		if( task->type == TYPE_daytime)
+			ZONEdecompress(daytime);
 		if( task->type == TYPE_timestamp)
 			ZONEdecompress(timestamp);
 	}
@@ -382,6 +398,11 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 		}
 			break;
 		default:
+			if( task->type == TYPE_date)
+				subselect_zone(date); 
+			if( task->type == TYPE_daytime)
+				subselect_zone(daytime); 
+
 			if( task->type == TYPE_timestamp)
 				{ 	lng *val= (lng*) (((char*) task->blk) + 3 * MosaicBlkSize);
 					int lownil = timestamp_isnil(*(timestamp*)low);
@@ -571,6 +592,10 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 		} 
 		break;
 	default:
+			if( task->type == TYPE_date)
+				thetasubselect_zone(date); 
+			if( task->type == TYPE_daytime)
+				thetasubselect_zone(daytime); 
 			if( task->type == TYPE_timestamp)
 				thetasubselect_zone(lng); 
 	}
@@ -616,6 +641,10 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_date)
+				leftfetchjoin_zone(date); 
+			if (task->type == TYPE_daytime)
+				leftfetchjoin_zone(daytime); 
 			if (task->type == TYPE_timestamp)
 				leftfetchjoin_zone(lng); 
 	}
@@ -664,6 +693,10 @@ MOSjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_date)
+				join_zone(date); 
+			if (task->type == TYPE_daytime)
+				join_zone(daytime); 
 			if (task->type == TYPE_timestamp)
 				join_zone(lng); 
 	}

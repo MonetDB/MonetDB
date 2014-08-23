@@ -64,9 +64,12 @@ MOSdump_linear(Client cntxt, MOStask task)
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"flt  %f %f", *(dbl*) linear_base(blk), *(dbl*) linear_step(task,blk)); break;
 	default:
-		if( task->type == TYPE_timestamp){
-			mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
-		}
+		if( task->type == TYPE_daytime)
+			mnstr_printf(cntxt->fdout,"daytime %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); 
+		if( task->type == TYPE_date)
+			mnstr_printf(cntxt->fdout,"date %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); 
+		if( task->type == TYPE_timestamp)
+			mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); 
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
@@ -84,9 +87,12 @@ MOSadvance_linear(MOStask task)
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(flt))); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(dbl))); break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(daytime)) ); 
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(date)) ); 
+		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(lng)) ); 
-		}
 	}
 }
 
@@ -380,9 +386,12 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 	}
 	break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_daytime)
+			subselect_linear(daytime); 
+		if( task->type == TYPE_date)
+			subselect_linear(date); 
+		if( task->type == TYPE_timestamp)
 			subselect_linear(lng); 
-		}
 	}
 	task->lb = o;
 	return MAL_SUCCEED;
@@ -493,9 +502,12 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 		}
 		break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_date)
+			thetasubselect_linear(date); 
+		if( task->type == TYPE_daytime)
+			thetasubselect_linear(daytime); 
+		if( task->type == TYPE_timestamp)
 			thetasubselect_linear(lng); 
-		}
 	}
 	task->lb =o;
 	return MAL_SUCCEED;
@@ -542,6 +554,10 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if( task->type == TYPE_daytime)
+				leftfetchjoin_linear(daytime); 
+			if( task->type == TYPE_date)
+				leftfetchjoin_linear(date); 
 			if( task->type == TYPE_timestamp)
 			{	lng *v;
 				lng val = *(lng*) linear_base(blk) ;

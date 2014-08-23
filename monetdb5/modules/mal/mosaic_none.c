@@ -47,6 +47,10 @@ MOSadvance_none(MOStask task)
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk))); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk))); break;
 	default:
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date)* MOScnt(blk))); 
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime)* MOScnt(blk))); 
 		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk))); 
 	}
@@ -135,6 +139,10 @@ MOSdecompress_none(Client cntxt, MOStask task)
 	case TYPE_flt: NONEdecompress(flt); break;
 	case TYPE_dbl: NONEdecompress(dbl); break;
 	default:
+		if( task->type == TYPE_date)
+			NONEdecompress(date);
+		if( task->type == TYPE_daytime)
+			NONEdecompress(daytime);
 		if( task->type == TYPE_timestamp)
 			NONEdecompress(timestamp);
 	}
@@ -299,6 +307,11 @@ MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 		}
 			break;
 		default:
+			if( task->type == TYPE_date)
+				subselect_none(date); 
+			if( task->type == TYPE_daytime)
+				subselect_none(daytime); 
+			
 			if( task->type == TYPE_timestamp)
 				{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
 					int lownil = timestamp_isnil(*(timestamp*)low);
@@ -468,6 +481,10 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 		} 
 		break;
 	default:
+			if( task->type == TYPE_date)
+				thetasubselect_none(date); 
+			if( task->type == TYPE_daytime)
+				thetasubselect_none(daytime); 
 			if( task->type == TYPE_timestamp)
 				thetasubselect_none(lng); 
 	}
@@ -513,6 +530,10 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_date)
+				leftfetchjoin_none(date); 
+			if (task->type == TYPE_daytime)
+				leftfetchjoin_none(daytime); 
 			if (task->type == TYPE_timestamp)
 				leftfetchjoin_none(lng); 
 	}
@@ -561,6 +582,10 @@ MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_date)
+				join_none(date); 
+			if (task->type == TYPE_daytime)
+				join_none(daytime); 
 			if (task->type == TYPE_timestamp)
 				join_none(lng); 
 	}

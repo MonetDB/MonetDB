@@ -50,9 +50,12 @@ MOSdump_rle(Client cntxt, MOStask task)
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"flt  %f", *(dbl*) val); break;
 	default:
-		if( task->type == TYPE_timestamp){
-			mnstr_printf(cntxt->fdout,"int "LLFMT, *(lng*) val); break;
-		}
+		if( task->type == TYPE_date)
+			mnstr_printf(cntxt->fdout,"date %d ", *(int*) val); 
+		if( task->type == TYPE_daytime)
+			mnstr_printf(cntxt->fdout,"daytime %d ", *(int*) val);
+		if( task->type == TYPE_timestamp)
+			mnstr_printf(cntxt->fdout,"int "LLFMT, *(lng*) val); 
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
@@ -70,9 +73,12 @@ MOSadvance_rle(MOStask task)
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(flt))); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl))); break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(date))); 
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime))); 
+		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp))); 
-		}
 	}
 }
 
@@ -360,9 +366,12 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 	}
 	break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_date)
+			subselect_rle(date); 
+		if( task->type == TYPE_daytime)
+			subselect_rle(daytime); 
+		if( task->type == TYPE_timestamp)
 			subselect_rle(lng); 
-		}
 	}
 	task->lb = o;
 	return MAL_SUCCEED;
@@ -470,9 +479,12 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 		}
 		break;
 	default:
-		if( task->type == TYPE_timestamp){
+		if( task->type == TYPE_date)
+			thetasubselect_rle(date); 
+		if( task->type == TYPE_daytime)
+			thetasubselect_rle(daytime); 
+		if( task->type == TYPE_timestamp)
 			thetasubselect_rle(lng); 
-		}
 	}
 	task->lb =o;
 	return MAL_SUCCEED;

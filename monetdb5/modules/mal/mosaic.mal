@@ -54,6 +54,14 @@ pattern subselect(b:bat[:oid,:timestamp], low:timestamp, high:timestamp, li:bit,
 address MOSsubselect
 comment "Overloaded selection routine";
 
+pattern subselect(b:bat[:oid,:date], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:daytime], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
 pattern subselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
@@ -76,6 +84,14 @@ pattern subselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], low:dbl, high:dbl, li:b
 address MOSsubselect;
 
 pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:date], cand:bat[:oid,:oid], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:daytime], cand:bat[:oid,:oid], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect
 comment "Overloaded selection routine";
 
@@ -104,6 +120,14 @@ pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oi
 address MOSthetasubselect
 comment "Overloaded selection routine";
 
+pattern thetasubselect(b:bat[:oid,:date], low:date, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect
+comment "Overloaded selection routine";
+
+pattern thetasubselect(b:bat[:oid,:daytime], low:daytime, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect
+comment "Overloaded selection routine";
+
 pattern thetasubselect(b:bat[:oid,:bte], c:bat[:oid,:oid], low:bte, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
@@ -129,6 +153,14 @@ pattern thetasubselect(b:bat[:oid,:timestamp], c:bat[:oid,:oid], low:timestamp, 
 address MOSthetasubselect
 comment "Overloaded selection routine";
 
+pattern thetasubselect(b:bat[:oid,:date], c:bat[:oid,:oid], low:date, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect
+comment "Overloaded selection routine";
+
+pattern thetasubselect(b:bat[:oid,:daytime], c:bat[:oid,:oid], low:daytime, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect
+comment "Overloaded selection routine";
+
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
 address MOSleftfetchjoin;
 
@@ -151,6 +183,14 @@ pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
 address MOSleftfetchjoin;
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+address MOSleftfetchjoin
+comment "Overloaded leftfetchjoin operation";
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:date]) :bat[:oid,:date]
+address MOSleftfetchjoin
+comment "Overloaded leftfetchjoin operation";
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:daytime]) :bat[:oid,:daytime]
 address MOSleftfetchjoin
 comment "Overloaded leftfetchjoin operation";
 

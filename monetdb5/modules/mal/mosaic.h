@@ -132,6 +132,8 @@ float nextafterf(float x, float y);
 #define PREVVALUEoid(x) ((x) - 1)
 #define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
 #define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
+#define PREVVALUEdate(x) ((x) - 1)
+#define PREVVALUEdaytime(x) ((x) - 1)
 
 #define NEXTVALUEbit(x) ((x) + 1)
 #define NEXTVALUEbte(x) ((x) + 1)
@@ -141,6 +143,8 @@ float nextafterf(float x, float y);
 #define NEXTVALUEoid(x) ((x) + 1)
 #define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
 #define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
+#define NEXTVALUEdate(x) ((x) + 1)
+#define NEXTVALUEdaytime(x) ((x) + 1)
 
 // skip until you hit a candidate
 #define MOSskipit()\

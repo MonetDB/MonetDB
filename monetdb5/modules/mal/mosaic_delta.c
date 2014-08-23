@@ -45,6 +45,10 @@ MOSadvance_delta(MOStask task)
 	default:
 		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1)); 
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1)); 
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1)); 
 	}
 }
 
@@ -371,6 +375,10 @@ MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, 
 		}
 			break;
 		default:
+			if( task->type == TYPE_daytime)
+				subselect_delta(daytime);
+			if( task->type == TYPE_date)
+				subselect_delta(date);
 			if( task->type == TYPE_timestamp)
 				{ 	lng val= *(lng*) (((char*) task->blk) + MosaicBlkSize);
 					int lownil = timestamp_isnil(*(timestamp*)low);
@@ -542,6 +550,10 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *
 		} 
 		break;
 	default:
+			if( task->type == TYPE_daytime)
+				thetasubselect_delta(daytime); 
+			if( task->type == TYPE_date)
+				thetasubselect_delta(date); 
 			if( task->type == TYPE_timestamp)
 				thetasubselect_delta(lng); 
 	}
@@ -587,6 +599,10 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_daytime)
+				leftfetchjoin_delta(daytime); 
+			if (task->type == TYPE_date)
+				leftfetchjoin_delta(date); 
 			if (task->type == TYPE_timestamp)
 				leftfetchjoin_delta(lng); 
 	}
@@ -637,6 +653,10 @@ MOSjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 		}
 		break;
 		default:
+			if (task->type == TYPE_daytime)
+				join_delta(daytime); 
+			if (task->type == TYPE_date)
+				join_delta(date); 
 			if (task->type == TYPE_timestamp)
 				join_delta(lng); 
 	}

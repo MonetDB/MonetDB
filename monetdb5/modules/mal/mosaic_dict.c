@@ -57,6 +57,8 @@ MOSdump_dict(Client cntxt, MOStask task)
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
 	default:
+		if( task->type == TYPE_date){
+		}
 		if( task->type == TYPE_timestamp){
 		}
 	}
@@ -74,6 +76,8 @@ MOSadvance_dict(MOStask task)
 	default:
 		if( task->type == TYPE_timestamp)
 				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); 
+		if( task->type == TYPE_date)
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); 
 	}
 }
 
@@ -247,6 +251,8 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 		}
 		break;
 	default:
+		if( task->type == TYPE_date)
+			DICTdecompress(date);
 		if( task->type == TYPE_timestamp)
 			DICTdecompress(timestamp);
 	}
@@ -405,6 +411,10 @@ MOSsubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	}
 	break;
 	default:
+		if( task->type == TYPE_date)
+			subselect_dict(date);
+		if( task->type == TYPE_daytime)
+			subselect_dict(daytime);
 		if( task->type == TYPE_timestamp)
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize );
 			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));
