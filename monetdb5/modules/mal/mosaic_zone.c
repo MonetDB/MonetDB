@@ -34,7 +34,7 @@ MOSdump_zone(Client cntxt, MOStask task)
 {
 #ifdef _DEBUG_MOSAIC_
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#zone "LLFMT" elms ", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#zone "BUNFMT" elms ", MOScnt(blk));
 	switch(task->type){
 	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
 	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
@@ -59,17 +59,17 @@ MOSadvance_zone(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bte)* blk->cnt)); break ;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* blk->cnt)); break ;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* blk->cnt)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* blk->cnt)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bte)* MOScnt(blk))); break ;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* MOScnt(blk))); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* MOScnt(blk))); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk))); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk))); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk))); break ;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk))); break ;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk))); break;
 	default:
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(timestamp)* blk->cnt)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk))); 
 	}
 }
 
@@ -77,7 +77,7 @@ void
 MOSskip_zone(MOStask task)
 {
 	MOSadvance_zone(task);
-	if ( task->blk->tag == MOSAIC_EOL)
+	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -88,12 +88,12 @@ MOSskip_zone(MOStask task)
 {	TPE *min,*max;\
 	min = (TPE*)zone_min(blk);\
 	max = (TPE*)zone_max(blk);\
-	if ( blk->cnt == 0 || *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
-	if ( blk->cnt == 0 || *max == TPE##_nil || *max < *(TPE*)task->src) *max = *(TPE*)task->src;\
+	if ( MOScnt(blk) == 0 || *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
+	if ( MOScnt(blk) == 0 || *max == TPE##_nil || *max < *(TPE*)task->src) *max = *(TPE*)task->src;\
 	*(TPE*) task->dst = *(TPE*) task->src;\
 	task->src += sizeof(TPE);\
 	task->dst += sizeof(TPE);\
-	blk->cnt ++;\
+	MOSinc(blk,1);\
 	task->elm--;\
 }
 
@@ -120,7 +120,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	(void) cntxt;
-	blk->tag = MOSAIC_ZONE;
+	*blk = MOSzone;
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: ZONEcompress(bte); break ;
@@ -130,12 +130,12 @@ MOScompress_zone(Client cntxt, MOStask task)
 	{	int *min,*max;
 		min = (int*)zone_min(blk);
 		max = (int*)zone_max(blk);
-		if (blk->cnt == 0 || *min == int_nil || *min > *(int*)task->src) *min = *(int*)task->src;
-		if (blk->cnt == 0 || *max == int_nil || *max < *(int*)task->src) *max = *(int*)task->src;
+		if (MOScnt(blk) == 0 || *min == int_nil || *min > *(int*)task->src) *min = *(int*)task->src;
+		if (MOScnt(blk) == 0 || *max == int_nil || *max < *(int*)task->src) *max = *(int*)task->src;
 		*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
 		task->dst += sizeof(int);
-		blk->cnt ++;
+		MOSinc(blk,1);
 		task->elm--;
 	}
 		break;
@@ -171,7 +171,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define ZONEdecompress(TYPE)\
-{ for(i = 0; i < (BUN) blk->cnt; i++) \
+{ BUN lim = MOScnt(blk); for(i = 0; i < lim; i++) \
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
 	task->src += i * sizeof(TYPE);\
 }
@@ -190,8 +190,8 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 	case TYPE_bit: ZONEdecompress(bit); break ;
 	case TYPE_sht: ZONEdecompress(sht); break;
 	case TYPE_int:
-	{	
-		for(i = 0; i < (BUN) blk->cnt; i++) 
+	{	BUN lim = MOScnt(blk);
+		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
@@ -293,8 +293,8 @@ MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	(void) hi;
 	(void) anti;
 
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){
@@ -508,8 +508,8 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	int anti=0;
 	(void) cntxt;
 	
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){

@@ -30,7 +30,7 @@ void
 MOSdump_none(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#none "LLFMT"\n", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#none "BUNFMT"\n", MOScnt(blk));
 }
 
 void
@@ -38,17 +38,17 @@ MOSadvance_none(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* blk->cnt)); break ;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* blk->cnt)); break ;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* blk->cnt)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* blk->cnt)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* blk->cnt)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* blk->cnt)); break ;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* blk->cnt)); break ;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* blk->cnt)); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOScnt(blk))); break ;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* MOScnt(blk))); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOScnt(blk))); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk))); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk))); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk))); break ;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk))); break ;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk))); break;
 	default:
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* blk->cnt)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk))); 
 	}
 }
 
@@ -56,7 +56,7 @@ void
 MOSskip_none(MOStask task)
 {
 	MOSadvance_none(task);
-	if ( task->blk->tag == MOSAIC_EOL)
+	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -67,7 +67,7 @@ MOSskip_none(MOStask task)
 {	*(TYPE*) task->dst = *(TYPE*) task->src;\
 	task->src += sizeof(TYPE);\
 	task->dst += sizeof(TYPE);\
-	blk->cnt ++;\
+	MOSinc(blk,1);\
 	task->elm--;\
 }
 
@@ -78,7 +78,7 @@ MOScompress_none(Client cntxt, MOStask task)
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	(void) cntxt;
-	blk->tag = MOSAIC_NONE;
+	*blk = MOSnone + MOScnt(blk);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: NONEcompress(bte); break ;
@@ -88,7 +88,7 @@ MOScompress_none(Client cntxt, MOStask task)
 	{	*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
 		task->dst += sizeof(int);
-		blk->cnt ++;
+		MOSinc(blk,1);
 		task->elm--;
 	}
 		break;
@@ -104,7 +104,8 @@ MOScompress_none(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define NONEdecompress(TYPE)\
-{ for(i = 0; i < (BUN) blk->cnt; i++) \
+{ BUN lim = MOScnt(blk); \
+	for(i = 0; i < lim; i++) \
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
 	task->src += i * sizeof(TYPE);\
 }
@@ -123,8 +124,8 @@ MOSdecompress_none(Client cntxt, MOStask task)
 	case TYPE_bit: NONEdecompress(bit); break ;
 	case TYPE_sht: NONEdecompress(sht); break;
 	case TYPE_int:
-	{	
-		for(i = 0; i < (BUN) blk->cnt; i++) 
+	{ BUN lim = MOScnt(blk);	
+		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
@@ -219,8 +220,8 @@ MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 	(void) hi;
 	(void) anti;
 
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){
@@ -415,8 +416,8 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 	int anti=0;
 	(void) cntxt;
 	
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){

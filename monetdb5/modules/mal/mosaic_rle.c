@@ -33,7 +33,7 @@ MOSdump_rle(Client cntxt, MOStask task)
 	MosaicBlk blk= task->blk;
 	void *val = (void*)(((char*) blk) + MosaicBlkSize);
 
-	mnstr_printf(cntxt->fdout,"#rle "LLFMT" ", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#rle "BUNFMT" ", MOScnt(blk));
 	switch(task->type){
 	case TYPE_bte:
 		mnstr_printf(cntxt->fdout,"bte %d", *(int*) val); break;
@@ -80,7 +80,7 @@ void
 MOSskip_rle(MOStask task)
 {
 	MOSadvance_rle(task);
-	if ( task->blk->tag == MOSAIC_EOL)
+	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -129,7 +129,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 		for(i =1; i<task->elm; i++)\
 		if ( ((TYPE*)task->src)[i] != val)\
 			break;\
-		blk->cnt = i;\
+		MOSinc(blk,i);\
 		task->dst +=  sizeof(TYPE);\
 		task->src += i * sizeof(TYPE);\
 	}
@@ -141,8 +141,7 @@ MOScompress_rle(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
-	blk->tag = MOSAIC_RLE;
-	blk->cnt =  0;
+	*blk = MOSrle;
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: RLEcompress(bte); break;
@@ -159,7 +158,7 @@ MOScompress_rle(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
-			blk->cnt = i;
+			MOSinc(blk,i);
 			task->dst +=  sizeof(int);
 			task->src += i * sizeof(int);
 		}
@@ -173,7 +172,8 @@ MOScompress_rle(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define RLEdecompress(TYPE)\
 {	TYPE val = *(TYPE*) task->dst;\
-	for(i = 0; i < (BUN) blk->cnt; i++)\
+	BUN lim = MOScnt(blk);\
+	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val;\
 	task->src += i * sizeof(TYPE);\
 }
@@ -197,7 +197,8 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 	case TYPE_dbl: RLEdecompress(dbl); break;
 	case TYPE_int:
 		{	int val = *(int*) compressed ;
-			for(i = 0; i < (BUN) blk->cnt; i++)
+			BUN lim= MOScnt(blk);
+			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val;
 			task->src += i * sizeof(int);
 		}
@@ -278,8 +279,8 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 	int cmp;
 	(void) cntxt;
 
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	if (task->cl && *task->cl > last)
 		return MAL_SUCCEED;
 	o = task->lb;
@@ -414,8 +415,8 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 	int anti=0;
 	(void) cntxt;
 	
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	if (task->cl && *task->cl > last)
 		return MAL_SUCCEED;
 	o = task->lb;

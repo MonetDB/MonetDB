@@ -27,7 +27,21 @@
 #include "mosaic_linear.h"
 
 #define linear_base(BLK) ((void*)(((char*) BLK)+ MosaicBlkSize))
-#define linear_step(BLK) ((void*)(((char*) BLK)+ 2 * MosaicBlkSize))
+
+static void*
+linear_step(MOStask task, MosaicBlk blk){
+	switch(ATOMstorage(task->type)){
+	case TYPE_bte : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(bte));
+	case TYPE_bit : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(bit));
+	case TYPE_sht : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(sht));
+	case TYPE_int : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(int));
+	case TYPE_lng : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(lng));
+	case TYPE_oid : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(oid));
+	case TYPE_flt : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(flt));
+	case TYPE_dbl : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(dbl));
+	}
+	return 0;
+}
 
 /* Beware, the dump routines use the compressed part of the task */
 void
@@ -35,23 +49,23 @@ MOSdump_linear(Client cntxt, MOStask task)
 {
 	MosaicBlk blk= task->blk;
 
-	mnstr_printf(cntxt->fdout,"#linear "LLFMT" ", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#linear "BUNFMT" ", MOScnt(blk));
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte:
-		mnstr_printf(cntxt->fdout,"bte %d %d", *(int*) linear_base(blk), *(int*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"bte %d %d", *(int*) linear_base(blk), *(int*) linear_step(task, blk)); break;
 	case TYPE_sht:
-		mnstr_printf(cntxt->fdout,"sht %d %d", *(int*) linear_base(blk), *(int*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"sht %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
 	case TYPE_int:
-		mnstr_printf(cntxt->fdout,"int %d %d", *(int*) linear_base(blk), *(int*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"int %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
 	case  TYPE_lng:
-		mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
 	case TYPE_flt:
-		mnstr_printf(cntxt->fdout,"flt  %f %f", *(flt*) linear_base(blk), *(flt*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"flt  %f %f", *(flt*) linear_base(blk), *(flt*) linear_step(task,blk)); break;
 	case TYPE_dbl:
-		mnstr_printf(cntxt->fdout,"flt  %f %f", *(dbl*) linear_base(blk), *(dbl*) linear_step(blk)); break;
+		mnstr_printf(cntxt->fdout,"flt  %f %f", *(dbl*) linear_base(blk), *(dbl*) linear_step(task,blk)); break;
 	default:
 		if( task->type == TYPE_timestamp){
-			mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(blk)); break;
+			mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
 		}
 	}
 	mnstr_printf(cntxt->fdout,"\n");
@@ -80,7 +94,7 @@ void
 MOSskip_linear(MOStask task)
 {
 	MOSadvance_linear(task);
-	if ( task->blk->tag == MOSAIC_EOL)
+	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -130,10 +144,10 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	for(i =1; i<task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
-	blk->cnt = i;\
+	MOSinc(blk,i);\
 	*(TYPE*) linear_base(blk) = val;\
-	*(TYPE*) linear_step(blk) = step;\
-	task->dst +=  2 * sizeof(TYPE);\
+	*(TYPE*) linear_step(task,blk) = step;\
+	task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);\
 	task->src += i * sizeof(TYPE);\
 }
 
@@ -144,8 +158,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
-	blk->tag = MOSAIC_LINEAR;
-	blk->cnt =  0;
+	*blk = MOSlinear;
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: LINEARcompress(bte); break;
@@ -161,10 +174,10 @@ MOScompress_linear(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)\
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))\
 				break;\
-			blk->cnt = i;\
+			MOSinc(blk,i);\
 			*(int*) linear_base(blk) = val;\
-			*(int*) linear_step(blk) = step;\
-			task->dst +=  2 * sizeof(int);\
+			*(int*) linear_step(task,blk) = step;\
+			task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
 			task->src += i * sizeof(int);\
 		}
 		break;
@@ -177,8 +190,9 @@ MOScompress_linear(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define LINEARdecompress(TYPE)\
 {	TYPE val = *(TYPE*) linear_base(blk);\
-	TYPE step = *(TYPE*) linear_step(blk);\
-	for(i = 0; i < (BUN) blk->cnt; i++)\
+	TYPE step = *(TYPE*) linear_step(task,blk);\
+	BUN lim = MOScnt(blk);\
+	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val + (int) i * step;\
 	task->src += i * sizeof(TYPE);\
 }
@@ -200,8 +214,9 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_dbl: LINEARdecompress(dbl); break;
 	case TYPE_int:
 		{	int val = *(int*) linear_base(blk) ;
-			int step = *(int*) linear_step(blk);
-			for(i = 0; i < (BUN) blk->cnt; i++)
+			int step = *(int*) linear_step(task,blk);
+			BUN lim= MOScnt(blk);
+			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val + i * step;
 			task->src += i * sizeof(int);
 		}
@@ -213,7 +228,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 
 #define  subselect_linear(TYPE) \
 {	TYPE val = *(TYPE*) linear_base(blk) ;\
-	TYPE step = *(TYPE*) linear_step(blk);\
+	TYPE step = *(TYPE*) linear_step(task,blk);\
 	if( !*anti){\
 		if( *(TYPE*) low == TYPE##_nil && *(TYPE*) hgh == TYPE##_nil){\
 			for( ; first < last; first++){\
@@ -283,8 +298,8 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 	MosaicBlk blk =  task->blk;
 	(void) cntxt;
 
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	if (task->cl && *task->cl > last)
 		return MAL_SUCCEED;
 	o = task->lb;
@@ -300,7 +315,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 	case TYPE_int:
 	// Expanded MOSselect_linear for debugging
 	{	int val = *(int*) linear_base(blk) ;
-		int step = *(int*) linear_step(blk);
+		int step = *(int*) linear_step(task,blk);
 
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -376,7 +391,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 #define thetasubselect_linear(TYPE)\
 { 	TYPE low,hgh;\
 	TYPE v = *(TYPE*) linear_base(blk) ;\
-	TYPE step = *(TYPE*) linear_step(blk);\
+	TYPE step = *(TYPE*) linear_step(task,blk);\
 	low= hgh = TYPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TYPE*) val;\
@@ -422,8 +437,8 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 	MosaicBlk blk= task->blk;
 	(void) cntxt;
 	
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	if (task->cl && *task->cl > last)
 		return MAL_SUCCEED;
 	o = task->lb;
@@ -439,7 +454,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 	case TYPE_int:
 		{ 	int low,hgh;
 			int v = *(int*) linear_base(blk) ;
-			int step = *(int*) linear_step(blk);
+			int step = *(int*) linear_step(task,blk);
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -489,7 +504,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 #define leftfetchjoin_linear(TYPE)\
 {TYPE *v;\
 	TYPE val = *(TYPE*) linear_base(blk) ;\
-	TYPE step = *(TYPE*) linear_step(blk);\
+	TYPE step = *(TYPE*) linear_step(task,blk);\
 	v= (TYPE*) task->src;\
 	for(; first < last; first++, val+=step){\
 		MOSskipit();\
@@ -516,7 +531,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 		{	int *v;
 			int val = *(int*) linear_base(blk) ;
-			int step = *(int*) linear_step(blk);
+			int step = *(int*) linear_step(task,blk);
 			v= (int*) task->src;
 			for(; first < last; first++,val+=step){
 				MOSskipit();
@@ -530,7 +545,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 			if( task->type == TYPE_timestamp)
 			{	lng *v;
 				lng val = *(lng*) linear_base(blk) ;
-				lng step = *(lng*) linear_step(blk);
+				lng step = *(lng*) linear_step(task,blk);
 				v= (lng*) task->src;
 				for(; first < last; first++, val+=step){
 					MOSskipit();
@@ -546,7 +561,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 #define join_linear(TYPE)\
 {	TYPE *w;\
 	TYPE val = *(TYPE*) linear_base(blk) ;\
-	TYPE step = *(TYPE*) linear_step(blk);\
+	TYPE step = *(TYPE*) linear_step(task,blk);\
 	w = (TYPE*) task->src;\
 	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
 		for(oo= (oid) first, val = *(int*) linear_base(blk); oo < (oid) last; val+=step, oo++)\
@@ -575,7 +590,7 @@ MOSjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_int:
 			{	int *w;
 				int val = *(int*) linear_base(blk) ;
-				int step = *(int*) linear_step(blk);
+				int step = *(int*) linear_step(task,blk);
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++, val+=step)
 					for(oo= (oid) first, val = *(int*) linear_base(blk); oo < (oid) last; val+=step, oo++)

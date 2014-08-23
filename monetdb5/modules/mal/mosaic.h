@@ -63,17 +63,26 @@ typedef struct MOSAICHEADER{
 	BUN offset[MOSAICINDEX];
 } * MosaicHdr;
 
-typedef struct MOSAICBLOCK{
-	bte tag;	// method applied in chunk
-	bte prop[7];// properties needed by compression scheme.
-	BUN cnt;	// compression specific information
-} *MosaicBlk;
+// bit stuffed header block
+typedef lng *MosaicBlk;
+#define MOStag(Blk) (*(Blk)>>56)
+#define MOSsetTag(Tag)  ((lng) (Tag) <<56)
+#define MOScnt(Blk) (BUN)(*(Blk) & 03777777777777777)
+#define MOSinc(Blk,I) *(Blk)= *(Blk)+I
+
+#define MOSnone (((lng)MOSAIC_NONE) <<56)
+#define MOSrle (((lng)MOSAIC_RLE) <<56)
+#define MOSdict (((lng)MOSAIC_DICT) <<56)
+#define MOSlinear (((lng)MOSAIC_LINEAR) <<56)
+#define MOSdelta (((lng)MOSAIC_DELTA) <<56)
+#define MOSzone (((lng)MOSAIC_ZONE) <<56)
+#define MOSeol (((lng)MOSAIC_EOL) <<56)
 
 #define wordaligned(SZ) \
 	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(int)) : 0))
 
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER))
-#define MosaicBlkSize  wordaligned(sizeof(struct MOSAICBLOCK))
+#define MosaicBlkSize  wordaligned(sizeof(lng))
 
 
 typedef struct MOSTASK{

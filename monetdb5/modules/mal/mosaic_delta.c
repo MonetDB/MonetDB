@@ -30,7 +30,7 @@ void
 MOSdump_delta(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#delta "LLFMT"\n", (lng)(blk->cnt));
+	mnstr_printf(cntxt->fdout,"#delta "BUNFMT"\n", MOScnt(blk));
 }
 
 void
@@ -38,13 +38,13 @@ MOSadvance_delta(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + blk->cnt-1)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + blk->cnt-1)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + blk->cnt-1)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + blk->cnt-1)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1)); break ;
 	default:
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + blk->cnt-1)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1)); 
 	}
 }
 
@@ -52,7 +52,7 @@ void
 MOSskip_delta(MOStask task)
 {
 	MOSadvance_delta(task);
-	if ( task->blk->tag == MOSAIC_EOL)
+	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -117,7 +117,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		val = val + delta;\
 	}\
 	task->src += i * sizeof(TYPE);\
-	blk->cnt += i;\
+	MOSinc(blk,i);\
 }
 
 // rather expensive simple value non-compressed store
@@ -128,7 +128,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	BUN i = 0;
 
 	(void) cntxt;
-	blk->tag = MOSAIC_DELTA;
+	*blk = MOSdelta;;
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DELTAcompress(sht); break;
@@ -146,7 +146,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				val = val+ delta;
 			}
 			task->src += i * sizeof(oid);
-			blk->cnt += i;
+			MOSinc(blk,i);
 		}
 		break;
 	case TYPE_int:
@@ -162,7 +162,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				val = val+ delta;
 			}
 			task->src += i * sizeof(int);
-			blk->cnt += i;
+			MOSinc(blk,i);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -173,11 +173,12 @@ MOScompress_delta(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define DELTAdecompress(TYPE)\
 { TYPE val;\
+	BUN lim = MOScnt(blk);\
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
 	((int*)task->src)[0] = val;\
-	for(i = 1; i < (BUN) blk->cnt; i++) {\
+	for(i = 1; i < lim; i++) {\
 		val = ((TYPE*)task->src)[i] = val + *task->dst++;\
 	}\
 	task->src += i * sizeof(int);\
@@ -195,12 +196,13 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_lng: DELTAdecompress(lng); break;
 	case TYPE_int:
-	{ int val;
+	{ 	int val;
+		BUN lim = MOScnt(blk);
 		task->dst = ((char*) task->blk) + MosaicBlkSize;
 		val = *(int*)task->dst ;
 		task->dst += sizeof(int);
 		((int*)task->src)[0] = val;
-		for(i = 1; i < (BUN) blk->cnt; i++) {
+		for(i = 1; i < lim; i++) {
 			val = ((int*)task->src)[i] = val + *(bte*) task->dst++;
 		}
 		task->src += i * sizeof(int);
@@ -289,8 +291,8 @@ MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, 
 	(void) hi;
 	(void) anti;
 
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){
@@ -487,8 +489,8 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *
 	int anti=0;
 	(void) cntxt;
 	
-	if ( first + task->blk->cnt > last)
-		last = task->blk->cnt;
+	if ( first + MOScnt(task->blk) > last)
+		last = MOScnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){
@@ -620,12 +622,14 @@ MOSjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_flt: join_delta(flt); break;
 		case TYPE_dbl: join_delta(dbl); break;
 		case TYPE_int:
-		{	int *v, *w;
-			v = (int*) (((char*) task->blk) + MosaicBlkSize);
-			for(oo= (oid) first; first < last; first++, v++, oo++){
+		{	int *w,base;
+			bte *v;
+			base = *(int*) (((char*) task->blk) + MosaicBlkSize);
+			v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(int));
+			for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
-				if ( *w == *v){
+				if ( *w == base){
 					BUNappend(task->lbat, &oo, FALSE);
 					BUNappend(task->rbat, &o, FALSE);
 				}
