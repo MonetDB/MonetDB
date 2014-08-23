@@ -593,7 +593,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->t->access == TABLE_WRITABLE) 
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 
-		       	msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type);
+				if( c->storage_type)
+					msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type);
+				else
+					msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
 			if (msg)
 				return msg;
 			allocate_delta(sql->session->tr, nc);
