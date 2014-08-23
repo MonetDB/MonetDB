@@ -92,13 +92,16 @@ alter table tmp3 set read only;
 
 explain select * from tmp3;
 select * from tmp3;
---explain select sum(i) from tmp3 where i <5;
+explain select sum(i) from tmp3 where i <5;
+select sum(i) from tmp3 where i <5;
 
 alter table tmp3 alter column i set storage 'none';
 alter table tmp3 alter column b set storage 'none';
 alter table tmp3 alter column f set storage 'none';
 explain select * from tmp3;
 select * from tmp3;
+explain select sum(i) from tmp3 where i <5;
+select sum(i) from tmp3 where i <5;
 
 --select * from storage where "table" = 'tmp3';
 alter table tmp3 alter column i set storage NULL;
