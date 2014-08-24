@@ -49,14 +49,14 @@ static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
 	int i;
-	flt perc = task->size/100.0;
+	dbl perc = task->size/100.0;
 
 	mnstr_printf(cntxt->fdout,"# ");
 	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes "LLFMT"\t"LLFMT "\t%3.0f%%\t%10.2fx\t", 
 		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->blks[i])
-		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT "\t" , filtername[i], task->blks[i], task->elms[i]);
+		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , filtername[i], task->blks[i], task->elms[i], task->elms[i]/task->blks[i]);
 }
 
 // dump a compressed BAT
@@ -171,7 +171,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	lng percentage=0, perc;
 	int filter[MOSAIC_METHODS];
 	
-	if( properties)
+	if( properties && !strstr(properties,"compress"))
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= strstr(properties,filtername[i]) != 0;
 	else
@@ -872,7 +872,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->cl = ol;
 	task->n = cnt;
 	if( cnt)
-		first = *ol;
+		first = ol? *ol:o;
 
 	first = MOSfindChunk(cntxt,task,first);
 

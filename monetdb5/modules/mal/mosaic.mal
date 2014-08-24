@@ -36,6 +36,9 @@ comment "Dump the compressed structure";
 pattern subselect(b:bat[:oid,:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
+pattern subselect(b:bat[:oid,:bit], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
 pattern subselect(b:bat[:oid,:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
@@ -67,6 +70,9 @@ address MOSsubselect
 comment "Overloaded selection routine";
 
 pattern subselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:bit], cand:bat[:oid,:oid], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
 pattern subselect(b:bat[:oid,:sht], cand:bat[:oid,:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
@@ -102,6 +108,9 @@ comment "Overloaded selection routine";
 pattern thetasubselect(b:bat[:oid,:bte], low:bte, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
+pattern thetasubselect(b:bat[:oid,:bit], low:bit, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
 pattern thetasubselect(b:bat[:oid,:sht], low:sht, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
@@ -135,6 +144,9 @@ comment "Overloaded selection routine";
 pattern thetasubselect(b:bat[:oid,:bte], c:bat[:oid,:oid], low:bte, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
+pattern thetasubselect(b:bat[:oid,:bit], c:bat[:oid,:oid], low:bit, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
 pattern thetasubselect(b:bat[:oid,:sht], c:bat[:oid,:oid], low:sht, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
@@ -166,6 +178,9 @@ address MOSthetasubselect
 comment "Overloaded selection routine";
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bit]) :bat[:oid,:bit]
 address MOSleftfetchjoin;
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]

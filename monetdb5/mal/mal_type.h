@@ -29,7 +29,7 @@
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)  ((X>>8) & 0377 )
-//#define getTailType(X)  ((X) & 0377 )
+#define getTailType(X)  ((X) & 0377 )
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
 #define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
 //#define setAnyTailIndex(X,I) X |= ((I & 017)<<18);

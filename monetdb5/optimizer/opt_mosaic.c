@@ -31,8 +31,9 @@
 
 static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 {	int type;
-	switch(type = getArgType(mb,pci,idx)){
+	switch(type = getTailType( getArgType(mb,pci,idx))){
 	case TYPE_bte:
+	case TYPE_bit:
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
@@ -72,7 +73,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 
 	// pre-scan to identify all potentially compressed columns
-    for( i=1; i < mb->stop; i++){
+    for( i=1; i < limit; i++){
         p = old[i];
         if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival == 0 && OPTmosaicType(mb,p,0)){
 				check[getArg(p,0)] = 1;
@@ -80,7 +81,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival != 0){
 			// locate the corresponding base column and turn it off
 			for( k= i-1; k>0; k--){
-				q = getInstrPtr(mb,k);
+				q = old[k];
 				if ( getArg(q,2) == getArg(p,2) && getArg(q,3) == getArg(p,3) && getArg(q,4) == getArg(p,4))
 					check[getArg(q,0)] = 0;
 			}
@@ -94,6 +95,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)]))
                 /* ok */;
 		else
+		// mark all that needs decompression
 		for(j= p->retc; j<p->argc; j++)
 		if( check[getArg(p,j)] )
 			check[getArg(p,j)] = -1;
@@ -112,13 +114,13 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			p = q;
 		} else
 		// preferrably use compressed version
-        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef) && check[getArg(p,1)] > 0)
+        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef) && check[getArg(p,1)] != 0)
                 setModuleId(p, mosaicRef);
 		else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef && check[getArg(p,2)] > 0)
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef && check[getArg(p,2)] != 0)
                 setModuleId(p, mosaicRef);
 		 else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] > 0))
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0))
                 setModuleId(p, mosaicRef);
 		pushInstruction(mb,p);
     }
