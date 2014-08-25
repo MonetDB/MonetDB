@@ -487,7 +487,9 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
-	GEOMETRY GEOMETRYSUBTYPE 
+	
+/* the tokens used in geom */
+%token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
 %token  CURRENT_ROLE sqlSESSION
@@ -4876,6 +4878,9 @@ data_type:
 			$$.type = NULL;
 			YYABORT;
 		}
+	}
+| GEOMETRYA {
+		sql_find_subtype(&$$, "geometrya", 0, 0 );
 	}
  ;
 

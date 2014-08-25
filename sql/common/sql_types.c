@@ -1215,7 +1215,8 @@ sqltypeinit( sql_allocator *sa)
 
 	GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 	/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
-	
+	*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_GEOMA, "wkba");
+
 	MBR = *t++ = sql_create_type(sa, "MBR", 0, SCALE_NONE, 0, EC_MBR, "mbr");
 	
 	/* mbr operator functions */

@@ -36,17 +36,30 @@ command tostr() :str		address wkbTOSTR;
 command fromstr() :wkb		address wkbFROMSTR;
 command hash() :int		address wkbHASH;
 command null() :int		address wkbNULL;
-command cmp() :int		address wkbCOMP;
-command read()			address wkbREAD;
-command write()			address wkbWRITE;
-command put() :int		address wkbPUT;
-command del() :int		address wkbDEL;
-command length() :int		address wkbLENGTH;
-command heap() :int		address wkbHEAP;
+command cmp() :int		address wkbCOMP; #used in selections
+command read()			address wkbREAD; #read from log
+command write()			address wkbWRITE; #write on log
+command put() :int		address wkbPUT; #put in heap
+command del() :int		address wkbDEL; #delete from heap
+command length() :int		address wkbLENGTH; 
+command heap() :int		address wkbHEAP; #create heap
 
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command FromText{unsafe}(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
 command ToText(w:wkb, withSRID:int) :str address wkbAsText;
+
+atom wkba;
+command tostr() :str address wkbaTOSTR;
+command fromstr() :wkba address wkbaFROMSTR;
+command null() :int address wkbaNULL;
+command hash() :int address wkbaHASH;
+command cmp() :int address wkbaCOMP; #used in selections
+command read() address wkbaREAD; #read from log
+command write() address wkbaWRITE; #write on log
+command put() :int address wkbaPUT; #put in heap
+command del() :int address wkbaDEL; #delete from heap
+command length() :int address wkbaLENGTH; 
+command heap() :int address wkbaHEAP; #create heap
 
 module geom;
 
@@ -230,6 +243,8 @@ command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
 comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
 command InteriorRingN(w:wkb, n:int) :wkb address wkbInteriorRingN
 comment "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.";
+command InteriorRings(w:wkb) :wkba address wkbInteriorRings
+comment "Returns an 'array' with all the interior rings of the polygon";
 command IsClosed(w:wkb) :bit address wkbIsClosed
 comment "Returns TRUE if the LINESTRING's start and end points are coincident.";
 command IsEmpty(w:wkb) :bit address wkbIsEmpty
@@ -428,9 +443,6 @@ command epilogue():void address geom_epilogue;
 geom.prelude();
 
 module batgeom;
-
-command InteriorRings(w:wkb) :bat[:oid,:wkb] address wkbInteriorRings
-comment "Returns a table with all the interior rings of the polygon";
 
 command ContainsFilter{unsafe}(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";

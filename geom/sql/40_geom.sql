@@ -4087,7 +4087,7 @@ CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME ge
 CREATE FUNCTION ST_SetExteriorRing(geom Geometry) RETURNS Geometry external name geom."MakePolygon"; --gets a linestring and creates a polygon (postGIS: ST_MakePolygon)
 CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
-CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."InteriorRings";
+CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom."InteriorRings";
 --BEGIN
 --	DECLARE TABLE res(ring integer);
 --	INSERT INTO res VALUES(1);

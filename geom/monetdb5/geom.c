@@ -67,8 +67,51 @@ geom_export void geoGetType(char** res, int* info, int* flag);
 geom_export bat *geom_prelude(void);
 geom_export void geom_epilogue(void);
 
+/* the len argument is needed for correct storage and retrieval */
+geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
+geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
+geom_export int wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
+
+geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
+geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
+geom_export int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray);
+
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
+geom_export wkba *wkbaNULL(void);
+
+geom_export BUN wkbHASH(wkb *w);
+geom_export BUN mbrHASH(mbr *atom);
+geom_export BUN wkbaHASH(wkba *w);
+
+geom_export int wkbCOMP(wkb *l, wkb *r);
+geom_export int mbrCOMP(mbr *l, mbr *r);
+geom_export int wkbaCOMP(wkba *l, wkba *r);
+
+/* read/write to/from log */
+geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
+geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
+geom_export wkb *wkbaREAD(wkba *a, stream *s, size_t cnt);
+
+geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
+geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
+geom_export int wkbaWRITE(wkba *c, stream *s, size_t cnt);
+
+geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
+geom_export var_t wkbaPUT(Heap *h, var_t *bun, wkba *val);
+
+geom_export void wkbDEL(Heap *h, var_t *index);
+geom_export void wkbaDEL(Heap *h, var_t *index);
+
+geom_export int wkbLENGTH(wkb *p);
+geom_export int wkbaLENGTH(wkba *p);
+
+geom_export void wkbHEAP(Heap *heap, size_t capacity);
+geom_export void wkbaHEAP(Heap *heap, size_t capacity);
+
+//geom_export str mbrFromString(mbr **w, str *src);
+geom_export str wkbIsnil(bit *r, wkb **v);
+
 
 /* functions tha are used when a column is added to an existing table */
 geom_export str mbrFromMBR(mbr **w, mbr **src);
@@ -84,18 +127,6 @@ geom_export wkb* geos2wkb(const GEOSGeometry* geosGeometry);
 /* gets a GEOSGeometry and returns the mbr of it 
  * works only for 2D geometries */
 geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
-
-/* the len argument is needed for correct storage and retrieval */
-geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
-geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
-geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
-geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
-
-/* read/write to/from disk */
-geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
-geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
-geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
-geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
@@ -162,7 +193,7 @@ geom_export str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, i
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumRings(int*, wkb**, int*);
-geom_export str wkbInteriorRings(int* outBAT_id, wkb** geomWKB);
+geom_export str wkbInteriorRings(wkba**, wkb**);
 geom_export str wkbIsClosed(bit *out, wkb **geom);
 geom_export str wkbIsRing(bit *out, wkb **geom);
 geom_export str wkbIsValid(bit *out, wkb **geom);
@@ -762,23 +793,16 @@ static var_t wkb_size(size_t len) {
 	return (var_t) (sizeof(wkb) - 1 + len);
 }
 
-/* NULL: generic nil mbr. */
-/* returns a pointer to a nil-mbr. */
-mbr *mbrNULL(void) {
-	static mbr mbrNIL;
-	mbrNIL.xmin = flt_nil;
-	mbrNIL.ymin = flt_nil;
-	mbrNIL.xmax = flt_nil;
-	mbrNIL.ymax = flt_nil;
-	return (&mbrNIL);
-}
+/* returns the size of variable-sized atom wkba */
+static var_t wkba_size(size_t len) {
+	var_t size;
+ 
+	if (len == ~(size_t) 0)
+		len = 0;	
+	size = sizeof(wkba)+len;
+	assert(size <= VAR_MAX);
 
-/* returns a pointer to a null wkb */
-wkb *wkbNULL(void) {
-	static wkb nullval;
-
-	nullval.len = ~(int) 0;
-	return (&nullval);
+	return size;
 }
 
 /* create the WKB out of the GEOSGeometry 
@@ -885,150 +909,8 @@ mbr* mbrFromGeos(const GEOSGeom geosGeometry) {
 }
 
 
-/*str wkbFromString(wkb **w, str *wkt) {
-	int len = 0;
-	char *errbuf;
-	str ex;
-
-	if (wkbFROMSTR(*wkt, 0, &len, w))
-		return MAL_SUCCEED;
-	errbuf = GDKerrbuf;
-	if (errbuf) {
-		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
-			errbuf += 8;
-	} else {
-		errbuf = "cannot parse string";
-	}
-
-	ex = createException(MAL, "wkb.FromString", "%s", errbuf);
-
-	if (GDKerrbuf)
-		GDKerrbuf[0] = '\0';
-
-	return ex;
-}*/
 
 
-/* FROMSTR: parse string to mbr. */
-/* return number of parsed characters. */
-int mbrFROMSTR(char *src, int *len, mbr **atom) {
-	int nil = 0;
-	int nchars = 0;	/* The number of characters parsed; the return value. */
-	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
-	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
-	char *c;
-
-	if (strcmp(src, str_nil) == 0)
-		nil = 1;
-
-	if (!nil && strstr(src,"BOX") ==  src && (c = strstr(src,"(")) != NULL) {
-		/* Parse the mbr */
-		if ((c - src) != 3 && (c - src) != 4) {
-			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'\n");
-			return 0;
-		}
-
-		if (sscanf(c,"(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
-			GDKerror("ParseException: Not enough coordinates.\n");
-			return 0;
-		}
-	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
-		return 0;
-
-	if (*len < (int) sizeof(mbr)) {
-		if (*atom)
-			GDKfree(*atom);
-		*atom = GDKmalloc(*len = sizeof(mbr));
-	}
-	if (nil) {
-		nchars = 3;
-		**atom = *mbrNULL();
-	} else if (geosMbr == NULL) {
-		size_t l;
-		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
-		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
-		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
-		assert(GDK_flt_min <= ymax && ymax <= GDK_flt_max);
-		(*atom)->xmin = (float) xmin;
-		(*atom)->ymin = (float) ymin;
-		(*atom)->xmax = (float) xmax;
-		(*atom)->ymax = (float) ymax;
-		l = strlen(src);
-		assert(l <= GDK_int_max);
-		nchars = (int) l;
-	}
-	if (geosMbr)
-		GEOSGeom_destroy(geosMbr);
-	return nchars;
-}
-
-#define MBR_WKTLEN 256
-
-/* TOSTR: print atom in a string. */
-/* return length of resulting string. */
-int mbrTOSTR(char **dst, int *len, mbr *atom) {
-	static char tempWkt[MBR_WKTLEN];
-	size_t dstStrLen = 3;
-
-	if (!mbr_isnil(atom)) {
-		snprintf(tempWkt, MBR_WKTLEN, "BOX (%f %f, %f %f)",
-			 atom->xmin, atom->ymin, atom->xmax, atom->ymax);
-		dstStrLen = strlen(tempWkt) + 2;
-		assert(dstStrLen < GDK_int_max);
-	}
-
-	if (*len < (int) dstStrLen + 1) {
-		if (*dst)
-			GDKfree(*dst);
-		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
-	}
-
-	if (dstStrLen > 3)
-		snprintf(*dst, *len, "\"%s\"", tempWkt);
-	else
-		strcpy(*dst, "nil");
-	return (int) dstStrLen;
-}
-
-/* Creates WKB representation (including srid) from WKT representation */
-/* return number of parsed characters. */
-int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
-	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-	GEOSWKTReader *WKT_reader;
-
-	if (strcmp(geomWKT, str_nil) == 0) {
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-
-	WKT_reader = GEOSWKTReader_create();
-	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
-	GEOSWKTReader_destroy(WKT_reader);
-
-	if(geosGeometry == NULL){
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-
-	if (GEOSGeomTypeId(geosGeometry) == -1) {
-		GEOSGeom_destroy(geosGeometry);
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-
-	GEOSSetSRID(geosGeometry, srid);
-	/* the srid was lost with the transformation of the GEOSGeom to wkb
-	* so we decided to store it in the wkb */ 
-		
-	/* we have a GEOSGeometry will number of coordinates and SRID and we 
- 	* want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	*len = (int) wkb_size((*geomWKB)->len);
-
-	return (int)strlen(geomWKT);
-}
 
 //Returns the wkb in a hex representation */
 static char hexit[] = "0123456789ABCDEF";
@@ -1139,121 +1021,13 @@ str wkbFromBinary(wkb** geomWKB, char **inStr) {
 	return MAL_SUCCEED;
 }
 
-/* Creates the string representation (WKT) of a WKB */
-/* return length of resulting string. */
-int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
-	char *wkt = NULL;
-	int dstStrLen = 5;			/* "nil" */
-
-	/* from WKB to GEOSGeometry */
-	GEOSGeom geosGeometry = wkb2geos(geomWKB);
-
-	
-	if (geosGeometry) {
-		size_t l;
-		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
-		//set the number of dimensions in the writer so that it can 
-		//read correctly the geometry coordinates
-		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
-		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
-		l = strlen(wkt);
-		assert(l < GDK_int_max);
-		dstStrLen = (int) l + 2;	/* add quotes */
-		GEOSWKTWriter_destroy(WKT_wr);
-		GEOSGeom_destroy(geosGeometry);
-	}
-
-	if (wkt) {
-	//	if (*len < (int) dstStrLen + 1) 
-			*len = dstStrLen+1;
-		
-		*geomWKT = GDKmalloc(*len);
-		snprintf(*geomWKT, *len, "\"%s\"", wkt);
-		GEOSFree(wkt);
-	} else {
-		strcpy(*geomWKT, "nil");
-	}
-
-	return (int) dstStrLen;
-}
 
 
 
-/* read mbr from disk */
-mbr* mbrREAD(mbr *a, stream *s, size_t cnt) {
-	mbr *c;
-	size_t i;
-	int v[4];
-	flt vals[4];
 
-	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readIntArray(s, v, 4))
-			return NULL;
-		memcpy(vals, v, 4 * sizeof(int));
-		c->xmin = vals[0];
-		c->ymin = vals[1];
-		c->xmax = vals[2];
-		c->ymax = vals[3];
-	}
-	return a;
-}
 
-/* write mbr to disk */
-int mbrWRITE(mbr *c, stream *s, size_t cnt) {
-	size_t i;
-	flt vals[4];
-	int v[4];
 
-	for (i = 0; i < cnt; i++, c++) {
-		vals[0] = c->xmin;
-		vals[1] = c->ymin;
-		vals[2] = c->xmax;
-		vals[3] = c->ymax;
-		memcpy(v, vals, 4 * sizeof(int));
-		if (!mnstr_writeIntArray(s, v, 4))
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
 
-/* read wkb from disk */
-wkb* wkbREAD(wkb *a, stream *s, size_t cnt) {
-	int len;
-	int srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
-		return NULL;
-	if (mnstr_readInt(s, &srid) != 1)
-		return NULL;
-	if ((a = GDKmalloc(wkb_size(len))) == NULL)
-		return NULL;
-	a->len = len;
-	a->srid = srid;
-	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
-		return NULL;
-	}
-	return a;
-}
-
-/* write wkb to disk */
-int wkbWRITE(wkb *a, stream *s, size_t cnt) {
-	int len = a->len;
-	int srid = a->srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (len > 0 &&			/* 64bit: check for overflow */
-	    mnstr_write(s, (char *) a->data, len, 1) < 0)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
 
 str mbrFromMBR(mbr **w, mbr **src) {
 	*w = (mbr *) GDKmalloc(sizeof(mbr));
@@ -2298,12 +2072,12 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 	return MAL_SUCCEED;
 }
 
-str wkbInteriorRings(int* outBAT_id, wkb** geomWKB) {
-	BAT* outBAT;
+str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 	int interiorRingsNum = 0, i=0;
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
-fprintf(stderr, "in wkbInteriorRings");
+	char* data= NULL;
+	int totalDataSize =0;
 
 	if (wkb_isnil(*geomWKB)) {
 		throw(MAL, "geom.InteriorRings", "Null input geometry");
@@ -2328,40 +2102,42 @@ fprintf(stderr, "in wkbInteriorRings");
 		throw(MAL, "geom.InteriorRings", "Error in wkbNumRings");
 	}
 
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), interiorRingsNum, TRANSIENT)) == NULL) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
-	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, 0);
-
-
 	for (i = 0; i < interiorRingsNum; i++) { 
 		const GEOSGeometry* interiorRingGeometry;
 		wkb* interiorRingWKB;
-
-		/* get the interior ring of the geometry */	
+		char* dataCopy = NULL;
+		
+		// get the interior ring of the geometry	
 		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
 		if (!interiorRingGeometry) { 
 			interiorRingWKB = wkb_nil;
 			throw(MAL, "geom.InteriorRings", "GEOSGetInteriorRingN failed");
 		}
-		/* get the wkb representation of it */
+		// get the wkb representation of it
 		interiorRingWKB = geos2wkb(interiorRingGeometry);
 		if(!interiorRingWKB) {
-			BBPreleaseref(outBAT->batCacheid);
 			throw(MAL, "geom.InteriorRings", "Error in wkb2geos");
 		}
 
-		BUNappend(outBAT,&interiorRingWKB,TRUE); //add the result to the outBAT
+		if(data)
+			dataCopy = data;
+		data = GDKmalloc(totalDataSize+interiorRingWKB->len+8);
+		if(dataCopy) { 
+			memcpy(data, dataCopy, totalDataSize);
+			GDKfree(dataCopy);
+		}
+
+		memcpy(data+totalDataSize, &interiorRingWKB->len, 4);
+		memcpy(data+totalDataSize+4, &interiorRingWKB->srid, 4);
+		memcpy(data+totalDataSize+8, interiorRingWKB->data, interiorRingWKB->len);
+		totalDataSize += interiorRingWKB->len+8;
 	}
 
-	//set some properties of the new BAT
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	
+	*geomArray = GDKmalloc(wkba_size(totalDataSize));
+	(*geomArray)->itemsNum = interiorRingsNum;
+	memcpy(&(*geomArray)->data, data, totalDataSize);
+	GDKfree(data);	
+
 	return MAL_SUCCEED;
 }
 
@@ -4019,51 +3795,9 @@ str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 
 
 
-geom_export BUN mbrHASH(mbr *atom);
-geom_export int mbrCOMP(mbr *l, mbr *r);
-geom_export str mbrFromString(mbr **w, str *src);
-geom_export BUN wkbHASH(wkb *w);
-geom_export int wkbCOMP(wkb *l, wkb *r);
-geom_export str wkbIsnil(bit *r, wkb **v);
-geom_export void wkbDEL(Heap *h, var_t *index);
-geom_export int wkbLENGTH(wkb *p);
-geom_export void wkbHEAP(Heap *heap, size_t capacity);
-geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 
-/* HASH: compute a hash value. */
-/* returns a positive integer hash value */
-
-BUN
-mbrHASH(mbr *atom)
-{
-	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
-}
-
-/* COMP: compare two mbrs. */
-/* returns int <0 if l<r, 0 if l==r, >0 else */
-
-int
-mbrCOMP(mbr *l, mbr *r)
-{
-	/* simple lexicographical ordering on (x,y) */
-	int res;
-	if (l->xmin == r->xmin)
-		res = (l->ymin < r->ymin) ? -1 : (l->ymin != r->ymin);
-	else
-		res = (l->xmin < r->xmin) ? -1 : 1;
-	if (res == 0) {
-		if (l->xmax == r->xmax)
-			res = (l->ymax < r->ymax) ? -1 : (l->ymax != r->ymax);
-		else
-			res = (l->xmax < r->xmax) ? -1 : 1;
-	}
-	return res;
-}
-
-
-
-str
+/*str
 mbrFromString(mbr **w, str *src)
 {
 	int len = *w ? (int) sizeof(mbr) : 0;
@@ -4086,39 +3820,7 @@ mbrFromString(mbr **w, str *src)
 		GDKerrbuf[0] = '\0';
 
 	return ex;
-}
-
-
-
-
-BUN
-wkbHASH(wkb *w)
-{
-	int i;
-	BUN h = 0;
-
-	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
-		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
-	}
-	return h;
-}
-
-int
-wkbCOMP(wkb *l, wkb *r)
-{
-	int len = l->len;
-
-	if (len != r->len)
-		return len - r->len;
-
-	if (len == ~(int) 0)
-		return (0);
-
-	return memcmp(l->data, r->data, len);
-}
-
-
+}*/
 
 str
 wkbIsnil(bit *r, wkb **v)
@@ -4127,41 +3829,6 @@ wkbIsnil(bit *r, wkb **v)
 	return MAL_SUCCEED;
 }
 
-
-
-void
-wkbDEL(Heap *h, var_t *index)
-{
-	HEAP_free(h, *index);
-}
-
-
-
-int
-wkbLENGTH(wkb *p)
-{
-	var_t len = wkb_size(p->len);
-	assert(len <= GDK_int_max);
-	return (int) len;
-}
-
-void
-wkbHEAP(Heap *heap, size_t capacity)
-{
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
-
-var_t
-wkbPUT(Heap *h, var_t *bun, wkb *val)
-{
-	char *base;
-
-	*bun = HEAP_malloc(h, wkb_size(val->len));
-	base = h->base;
-	if (*bun)
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
-	return *bun;
-}
 
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
@@ -4184,15 +3851,552 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 	return MAL_SUCCEED;
 }
 
+/***********************************************/
+/************* wkb type functions **************/
+/***********************************************/
+
+/* Creates the string representation (WKT) of a WKB */
+/* return length of resulting string. */
+int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
+	char *wkt = NULL;
+	int dstStrLen = 5;			/* "nil" */
+
+	/* from WKB to GEOSGeometry */
+	GEOSGeom geosGeometry = wkb2geos(geomWKB);
+
+	if (geosGeometry) {
+		size_t l;
+		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
+		//set the number of dimensions in the writer so that it can 
+		//read correctly the geometry coordinates
+		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
+		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
+		l = strlen(wkt);
+		assert(l < GDK_int_max);
+		dstStrLen = (int) l + 2;	/* add quotes */
+		GEOSWKTWriter_destroy(WKT_wr);
+		GEOSGeom_destroy(geosGeometry);
+	}
+
+	if (wkt) {
+	//	if (*len < (int) dstStrLen + 1) 
+			*len = dstStrLen+1;
+		
+		*geomWKT = GDKmalloc(*len);
+		snprintf(*geomWKT, *len, "\"%s\"", wkt);
+		GEOSFree(wkt);
+	} else {
+		strcpy(*geomWKT, "nil");
+	}
+
+	return (int) dstStrLen;
+}
+
+/* Creates WKB representation (including srid) from WKT representation */
+/* return number of parsed characters. */
+int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
+	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
+	GEOSWKTReader *WKT_reader;
+
+	if (strcmp(geomWKT, str_nil) == 0) {
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+
+	WKT_reader = GEOSWKTReader_create();
+	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
+	GEOSWKTReader_destroy(WKT_reader);
+
+	if(geosGeometry == NULL){
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+
+	if (GEOSGeomTypeId(geosGeometry) == -1) {
+		GEOSGeom_destroy(geosGeometry);
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+
+	GEOSSetSRID(geosGeometry, srid);
+	/* the srid was lost with the transformation of the GEOSGeom to wkb
+	* so we decided to store it in the wkb */ 
+		
+	/* we have a GEOSGeometry will number of coordinates and SRID and we 
+ 	* want to get the wkb out of it */
+	*geomWKB = geos2wkb(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	*len = (int) wkb_size((*geomWKB)->len);
+
+	return (int)strlen(geomWKT);
+}
+
+BUN wkbHASH(wkb *w) {
+	int i;
+	BUN h = 0;
+
+	for (i = 0; i < (w->len - 1); i += 2) {
+		int a = *(w->data + i), b = *(w->data + i + 1);
+		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
+	}
+	return h;
+}
+
+/* returns a pointer to a null wkb */
+wkb *wkbNULL(void) {
+	static wkb nullval;
+
+	nullval.len = ~(int) 0;
+	return (&nullval);
+}
+
+int wkbCOMP(wkb *l, wkb *r) {
+	int len = l->len;
+
+	if (len != r->len)
+		return len - r->len;
+
+	if (len == ~(int) 0)
+		return (0);
+
+	return memcmp(l->data, r->data, len);
+}
+
+/* read wkb from log */
+wkb* wkbREAD(wkb *a, stream *s, size_t cnt) {
+	int len;
+	int srid;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1)
+		return NULL;
+	if (mnstr_readInt(s, &srid) != 1)
+		return NULL;
+	if ((a = GDKmalloc(wkb_size(len))) == NULL)
+		return NULL;
+	a->len = len;
+	a->srid = srid;
+	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+}
+
+/* write wkb to log */
+int wkbWRITE(wkb *a, stream *s, size_t cnt) {
+	int len = a->len;
+	int srid = a->srid;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
+		return GDK_FAIL;
+	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
+		return GDK_FAIL;
+	if (len > 0 &&			/* 64bit: check for overflow */
+	    mnstr_write(s, (char *) a->data, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+var_t wkbPUT(Heap *h, var_t *bun, wkb *val) {
+	char *base;
+
+	*bun = HEAP_malloc(h, wkb_size(val->len));
+	base = h->base;
+	if (*bun)
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
+	return *bun;
+}
+
+void wkbDEL(Heap *h, var_t *index) {
+	HEAP_free(h, *index);
+}
 
 
 
+int wkbLENGTH(wkb *p) {
+	var_t len = wkb_size(p->len);
+	assert(len <= GDK_int_max);
+	return (int) len;
+}
+
+void wkbHEAP(Heap *heap, size_t capacity) {
+	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+}
+
+
+/***********************************************/
+/************* mbr type functions **************/
+/***********************************************/
+
+#define MBR_WKTLEN 256
+
+/* TOSTR: print atom in a string. */
+/* return length of resulting string. */
+int mbrTOSTR(char **dst, int *len, mbr *atom) {
+	static char tempWkt[MBR_WKTLEN];
+	size_t dstStrLen = 3;
+
+	if (!mbr_isnil(atom)) {
+		snprintf(tempWkt, MBR_WKTLEN, "BOX (%f %f, %f %f)",
+			 atom->xmin, atom->ymin, atom->xmax, atom->ymax);
+		dstStrLen = strlen(tempWkt) + 2;
+		assert(dstStrLen < GDK_int_max);
+	}
+
+	if (*len < (int) dstStrLen + 1) {
+		if (*dst)
+			GDKfree(*dst);
+		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
+	}
+
+	if (dstStrLen > 3)
+		snprintf(*dst, *len, "\"%s\"", tempWkt);
+	else
+		strcpy(*dst, "nil");
+	return (int) dstStrLen;
+}
+
+/* FROMSTR: parse string to mbr. */
+/* return number of parsed characters. */
+int mbrFROMSTR(char *src, int *len, mbr **atom) {
+	int nil = 0;
+	int nchars = 0;	/* The number of characters parsed; the return value. */
+	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
+	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+	char *c;
+
+	if (strcmp(src, str_nil) == 0)
+		nil = 1;
+
+	if (!nil && strstr(src,"BOX") ==  src && (c = strstr(src,"(")) != NULL) {
+		/* Parse the mbr */
+		if ((c - src) != 3 && (c - src) != 4) {
+			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'\n");
+			return 0;
+		}
+
+		if (sscanf(c,"(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
+			GDKerror("ParseException: Not enough coordinates.\n");
+			return 0;
+		}
+	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
+		return 0;
+
+	if (*len < (int) sizeof(mbr)) {
+		if (*atom)
+			GDKfree(*atom);
+		*atom = GDKmalloc(*len = sizeof(mbr));
+	}
+	if (nil) {
+		nchars = 3;
+		**atom = *mbrNULL();
+	} else if (geosMbr == NULL) {
+		size_t l;
+		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
+		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
+		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
+		assert(GDK_flt_min <= ymax && ymax <= GDK_flt_max);
+		(*atom)->xmin = (float) xmin;
+		(*atom)->ymin = (float) ymin;
+		(*atom)->xmax = (float) xmax;
+		(*atom)->ymax = (float) ymax;
+		l = strlen(src);
+		assert(l <= GDK_int_max);
+		nchars = (int) l;
+	}
+	if (geosMbr)
+		GEOSGeom_destroy(geosMbr);
+	return nchars;
+}
+
+/* HASH: compute a hash value. */
+/* returns a positive integer hash value */
+BUN mbrHASH(mbr *atom) {
+	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
+}
+
+/* NULL: generic nil mbr. */
+/* returns a pointer to a nil-mbr. */
+mbr *mbrNULL(void) {
+	static mbr mbrNIL;
+	mbrNIL.xmin = flt_nil;
+	mbrNIL.ymin = flt_nil;
+	mbrNIL.xmax = flt_nil;
+	mbrNIL.ymax = flt_nil;
+	return (&mbrNIL);
+}
+
+/* COMP: compare two mbrs. */
+/* returns int <0 if l<r, 0 if l==r, >0 else */
+int mbrCOMP(mbr *l, mbr *r) {
+	/* simple lexicographical ordering on (x,y) */
+	int res;
+	if (l->xmin == r->xmin)
+		res = (l->ymin < r->ymin) ? -1 : (l->ymin != r->ymin);
+	else
+		res = (l->xmin < r->xmin) ? -1 : 1;
+	if (res == 0) {
+		if (l->xmax == r->xmax)
+			res = (l->ymax < r->ymax) ? -1 : (l->ymax != r->ymax);
+		else
+			res = (l->xmax < r->xmax) ? -1 : 1;
+	}
+	return res;
+}
+
+/* read mbr from log */
+mbr* mbrREAD(mbr *a, stream *s, size_t cnt) {
+	mbr *c;
+	size_t i;
+	int v[4];
+	flt vals[4];
+
+	for (i = 0, c = a; i < cnt; i++, c++) {
+		if (!mnstr_readIntArray(s, v, 4))
+			return NULL;
+		memcpy(vals, v, 4 * sizeof(int));
+		c->xmin = vals[0];
+		c->ymin = vals[1];
+		c->xmax = vals[2];
+		c->ymax = vals[3];
+	}
+	return a;
+}
+
+/* write mbr to log */
+int mbrWRITE(mbr *c, stream *s, size_t cnt) {
+	size_t i;
+	flt vals[4];
+	int v[4];
+
+	for (i = 0; i < cnt; i++, c++) {
+		vals[0] = c->xmin;
+		vals[1] = c->ymin;
+		vals[2] = c->xmax;
+		vals[3] = c->ymax;
+		memcpy(v, vals, 4 * sizeof(int));
+		if (!mnstr_writeIntArray(s, v, 4))
+			return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+/************************************************/
+/************* wkba type functions **************/
+/************************************************/
+
+/* Creates the string representation of a wkb_array */
+/* return length of resulting string. */
+int wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
+	int strLength = 0;			/* "nil" */
+	int i=0, totalReadBytes=0, totalWrittenBytes=0;
+fprintf(stderr, "wkb_arrayTOSTR\n");	
+
+	//iterate over the wkb in the array
+	for(i=0; i<fromArray->itemsNum; i++) {
+		int wkbLength, srid;
+		wkb* geomWKB;
+				
+		//the first four bytes have the number of bytes in the wkb
+		memcpy(&wkbLength, fromArray->data+totalReadBytes, 4);
+		totalReadBytes += 4;
+		//the next four bytes have the srid
+		memcpy(&srid, fromArray->data+totalReadBytes, 4);
+		totalReadBytes += 4;
+		//the remaining wkbLenth bytes have the wkb data
+		geomWKB = GDKmalloc(wkb_size(wkbLength));
+		if (geomWKB) {
+			char* wkt = NULL;
+			char* totalCopy = NULL;
+
+			geomWKB->len = wkbLength;
+			geomWKB->srid = srid;
+			memcpy(&geomWKB->data, fromArray->data+totalReadBytes, wkbLength);
+			totalReadBytes += wkbLength;
+
+			//create the str from the wkb
+			strLength += wkbTOSTR(&wkt, len, geomWKB);
+			GDKfree(geomWKB);
+
+			totalCopy = *toStr; //hold the position of the already created str
+			*toStr = GDKmalloc(strLength+1); //allocate new space to add the new string as well
+			strcpy(*toStr, totalCopy); //copy the already create str to the new space
+			GDKfree(totalCopy); //free the new space
+			strcpy(*toStr+totalWrittenBytes, wkt); //copy the new string at the end of the old
+			totalWrittenBytes = strLength; //the number of written bytes
+			
+
+		} else { 
+			strcpy(*toStr, "nil");
+			*len = 6;
+			return 5;
+		}
+	}	
+
+	*len = strLength+1;	
+	return strLength;
+}
+
+/* return number of parsed characters. */
+int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray) {
+	char* token;
+//	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
+//	GEOSWKTReader *WKT_reader;
+//
+//	if (strcmp(geomWKT, str_nil) == 0) {
+//		*geomWKB = wkb_nil;
+//		return 0;
+//	}
+//
+//	WKT_reader = GEOSWKTReader_create();
+//	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
+//	GEOSWKTReader_destroy(WKT_reader);
+fprintf(stderr, "wkbaFROMSTR\n");
+*len = sizeof(wkba);
+*toArray = GDKmalloc(*len);
+(*toArray)->itemsNum = 0;
+//(*toArray)->data = "A";
+
+token = strtok (fromStr,":");
+while (token != NULL)
+{
+	fprintf(stderr, "%s\n",token);
+	token = strtok (NULL, ":");
+}
+//	if(geosGeometry == NULL){
+//		*geomWKB = wkb_nil;
+//		return 0;
+//	}
+//
+//	if (GEOSGeomTypeId(geosGeometry) == -1) {
+//		GEOSGeom_destroy(geosGeometry);
+//		*geomWKB = wkb_nil;
+//		return 0;
+//	}
+//
+//	GEOSSetSRID(geosGeometry, srid);
+//	/* the srid was lost with the transformation of the GEOSGeom to wkb
+//	* so we decided to store it in the wkb */ 
+//		
+//	/* we have a GEOSGeometry will number of coordinates and SRID and we 
+ //	* want to get the wkb out of it */
+//	*geomWKB = geos2wkb(geosGeometry);
+//	GEOSGeom_destroy(geosGeometry);
+//
+//	*len = (int) wkb_size((*geomWKB)->len);
+
+	return strlen(fromStr);
+}
+
+/* returns a pointer to a null wkba */
+wkba* wkbaNULL(void) {
+	static wkba nullval;
+fprintf(stderr, "wkbaNULL\n");
+
+	nullval.itemsNum = ~(int) 0;
+	return (&nullval);
+}
+
+BUN wkbaHASH(wkba *w) {
+	int i;
+	BUN h = 0;
+fprintf(stderr, "wkbaNULL\n");
+
+	for (i = 0; i < (w->itemsNum - 1); i += 2) {
+		int a = *(w->data + i), b = *(w->data + i + 1);
+		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
+	}
+	return h;
+}
+
+int wkbaCOMP(wkba *l, wkb *r) {
+	int len = l->len;
+fprintf(stderr, "wkbaNULL\n");
+
+	if (len != r->len)
+		return len - r->len;
+
+	if (len == ~(int) 0)
+		return (0);
+
+	return memcmp(l->data, r->data, len);
+}
+
+/* read wkb from log */
+wkba* wkbaREAD(wkb *a, stream *s, size_t cnt) {
+	int len;
+	int srid;
+
+	(void) cnt;
+	assert(cnt == 1);
+	fprintf(stderr, "wkbaNULL\n");
+if (mnstr_readInt(s, &len) != 1)
+		return NULL;
+	if (mnstr_readInt(s, &srid) != 1)
+		return NULL;
+	if ((a = GDKmalloc(wkb_size(len))) == NULL)
+		return NULL;
+	a->len = len;
+	a->srid = srid;
+	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+}
+
+/* write wkb to log */
+int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
+	int len = a->len;
+	int srid = a->srid;
+
+	(void) cnt;
+	assert(cnt == 1);
+	ifprintf(stderr, "wkbaNULL\n");
+f (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
+		return GDK_FAIL;
+	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
+		return GDK_FAIL;
+	if (len > 0 &&			/* 64bit: check for overflow */
+	    mnstr_write(s, (char *) a->data, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+var_t wkbaPUT(Heap *h, var_t *bun, wkb *val) {
+	char *base;
+fprintf(stderr, "wkbaNULL\n");
+
+	*bun = HEAP_malloc(h, wkb_size(val->len));
+	base = h->base;
+	if (*bun)
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
+	return *bun;
+}
+
+void wkbaDEL(Heap *h, var_t *index) {
+	fprintf(stderr, "wkbaNULL\n");
+HEAP_free(h, *index);
+}
 
 
 
+int wkbaLENGTH(wkb *p) {
+	var_t len = wkb_size(p->len);
+	assert(len <= GDK_int_max);
+	fprintf(stderr, "wkbaNULL\n");
+return (int) len;
+}
 
-
-
+void wkabHEAP(Heap *heap, size_t capacity) {
+	fprintf(stderr, "wkbaNULL\n");
+HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+}
 
 
 

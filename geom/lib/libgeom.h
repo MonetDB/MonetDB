@@ -124,6 +124,11 @@ typedef struct wkb {
 	char data[1];
 } wkb;
 
+typedef struct wkba {
+	int itemsNum; //the number of wkb
+	char wkb[]; //the wkb
+} wkba;
+
 typedef struct {
 	unsigned char type;
 	mbr bbox;
