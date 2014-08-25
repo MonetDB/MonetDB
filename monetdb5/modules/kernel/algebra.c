@@ -319,22 +319,6 @@ ALGmaxany(ptr result, int *bid)
 }
 
 str
-ALGtopN(int *res, int *bid, lng *top)
-{
-	BAT *b;
-
-	b = BATdescriptor(*bid);
-	if (b == NULL) {
-		throw(MAL, "algebra.top", RUNTIME_OBJECT_MISSING);
-	}
-	/* TOP N works inplace, ie deletes ... */
-	(void) BATtopN(b, (BUN) *top);
-	*res = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 ALGgroupby(int *res, int *gids, int *cnts)
 {
 	BAT *bn, *g, *c;
@@ -1081,12 +1065,6 @@ ALGbinaryestimate(int *result, int *lid, int *rid, lng *estimate,
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
-}
-
-str
-ALGhistogram(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BAThistogram, "algebra.histogram");
 }
 
 static BAT *

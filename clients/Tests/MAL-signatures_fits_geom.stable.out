@@ -208,9 +208,6 @@ comment Return the current size (in number of elements) in a BAT.
 
 command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
-command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int] 
-address ALGhistogram;
-comment Produce a BAT containing the histogram over the tail values.
 
 command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
 address JSONgroupStr;
@@ -2670,10 +2667,6 @@ comment Select unique tuples from the input BAT. Double elimination is 		done ov
 command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
 address ALGthetauselect;
 comment The theta (<=,<,=,>,>=) select() limited to head values
-
-command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
-address ALGtopN;
-comment Trim all but the top N tuples.
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;

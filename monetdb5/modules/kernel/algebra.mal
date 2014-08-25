@@ -151,10 +151,6 @@ command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid]
 address ALGsubslice_wrd
 comment "Return the oids of the slice with the BUNs at position x till y.";
 
-command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
-address ALGtopN
-comment "Trim all but the top N tuples.";
-
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
@@ -695,10 +691,6 @@ command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
-# @- Histogram on Tail
-command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int]
-address ALGhistogram
-comment "Produce a BAT containing the histogram over the tail values.";
 
 # @- Default Min and Max
 # Implementations a generic Min and Max routines get declared first. The

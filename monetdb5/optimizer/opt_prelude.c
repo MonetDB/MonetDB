@@ -104,7 +104,6 @@ str subgroupdoneRef;
 str groupsRef;
 str groupbyRef;
 str hashRef;
-str histogramRef;
 str identityRef;
 str ifthenelseRef;
 str inplaceRef;
@@ -370,7 +369,6 @@ void optimizerInit(void)
 	groupsRef = putName("groups",6);
 	groupbyRef = putName("groupby",7);
 	hashRef = putName("hash",4);
-	histogramRef = putName("histogram",9);
 	identityRef = putName("identity",8);
 	ifthenelseRef = putName("ifthenelse",10);
 	inplaceRef = putName("inplace",7);
