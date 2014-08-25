@@ -1,9 +1,9 @@
-stdout of test 'xqueries` in directory 'sql/test/mosaic` itself:
+stdout of test 'xqueries_delta` in directory 'sql/test/mosaic` itself:
 
 
-# 21:09:37 >  
-# 21:09:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30051" "--set" "mapi_usock=/var/tmp/mtest-28373/.s.monetdb.30051" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_mosaic" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 21:09:37 >  
+# 21:39:36 >  
+# 21:39:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38894" "--set" "mapi_usock=/var/tmp/mtest-26302/.s.monetdb.38894" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_mosaic" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:39:36 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,17 +13,17 @@ stdout of test 'xqueries` in directory 'sql/test/mosaic` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30051/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28373/.s.monetdb.30051
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38894/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26302/.s.monetdb.38894
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
 Ready.
 
-# 21:09:37 >  
-# 21:09:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28373" "--port=30051"
-# 21:09:37 >  
+# 21:39:36 >  
+# 21:39:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26302" "--port=38894"
+# 21:39:36 >  
 
 #set optimizer='sequential_pipe';
 #drop table tmp3;
@@ -98,9 +98,9 @@ end s7_1;
 % wrd # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage 'none';
-#alter table tmp3 alter column b set storage 'none';
-#alter table tmp3 alter column f set storage 'none';
+#alter table tmp3 alter column i set storage 'delta';
+#alter table tmp3 alter column b set storage 'delta';
+#alter table tmp3 alter column f set storage 'delta';
 #explain select count(*) from tmp3 where i <4;
 % .explain # table_name
 % mal # name
@@ -218,7 +218,7 @@ end s21_1;
 [ 66	]
 #alter table tmp3 set read write;
 
-# 21:09:37 >  
-# 21:09:37 >  "Done."
-# 21:09:37 >  
+# 21:39:36 >  
+# 21:39:36 >  "Done."
+# 21:39:36 >  
 

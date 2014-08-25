@@ -99,9 +99,9 @@ select count(*) from tmp3 where i = 7;
 select count(*) from tmp3 where f <0.316;
 select count(*) from tmp3 where b = true;
 
-alter table tmp3 alter column i set storage 'none';
-alter table tmp3 alter column b set storage 'none';
-alter table tmp3 alter column f set storage 'none';
+alter table tmp3 alter column i set storage 'delta';
+alter table tmp3 alter column b set storage 'delta';
+alter table tmp3 alter column f set storage 'delta';
 
 explain select count(*) from tmp3 where i <4;
 select count(*) from tmp3 where i <4;

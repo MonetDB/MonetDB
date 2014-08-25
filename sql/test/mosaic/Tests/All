@@ -1,3 +1,5 @@
 compression
 compressionRLE
 xqueries
+xqueries_rle
+xqueries_delta

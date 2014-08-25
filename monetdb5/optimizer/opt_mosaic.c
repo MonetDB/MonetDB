@@ -52,6 +52,7 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	}
 	return 0;
 }
+
 int 
 OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
