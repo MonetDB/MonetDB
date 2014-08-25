@@ -34,6 +34,8 @@ sed -r \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
+	-e 's/\bbool 'f'\b/cast('false' as boolean)/Ig' \
+	-e 's/\bbool 't'\b/cast('true' as boolean)/Ig' \
 	-e 's/\bbool ''*''\b/cast('\1' as boolean)/Ig' \
 	-e 's/\bchar 'c'/cast('c' as char)/Ig' \
 	-e 's/\bint2 '0'/cast('0' as smallint)/Ig' \
@@ -57,10 +59,6 @@ sed -r \
 	-e 's/\bnumeric(210,10)\b/numeric(18,10)/Ig' \
 	-e 's/\bfloat8 (*)/cast(\1 as double)/Ig' \
 	-e 's/\bbytea\b/blob/Ig' \
-	-e 's/\bpath\b/string/Ig' \
-	-e 's/\bpoint\b/string/Ig' \
-	-e 's/\bbox\b/string/Ig' \
-	-e 's/\bpolygon\b/string/Ig' \
 	-e 's/\bcity_budget\b/decimal(7,2)/Ig' \
 	-e 's/\bdate 'yesterday'/sql_sub(current_date, 24*60*60.0)/Ig' \
 	-e 's/\bdate 'today'/current_date/Ig' \

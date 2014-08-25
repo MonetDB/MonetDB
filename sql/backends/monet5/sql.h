@@ -109,6 +109,9 @@ sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalSt
 sql5_export str mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -340,4 +343,5 @@ sql5_export str STRindex_bte(bte *res, str src, bit *u);
 sql5_export str BATSTRindex_bte(bat *res, bat *src, bit *u);
 sql5_export str STRstrings(str *res, str src);
 sql5_export str BATSTRstrings(bat *res, bat *src);
+
 #endif /* _SQL_H */

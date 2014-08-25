@@ -28,7 +28,8 @@
 enum heaptype {
 	offheap,
 	varheap,
-	hashheap
+	hashheap,
+	imprintsheap
 };
 
 /*
@@ -159,6 +160,14 @@ int HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
+	__attribute__((__visibility__("hidden")));
+#ifndef NDEBUG
+void IMPSprint(BAT *b)
+	__attribute__((__visibility__("hidden")));
+#endif
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
@@ -190,12 +199,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
-	__attribute__((__visibility__("hidden")));
-#ifndef NDEBUG
-void IMPSprint(BAT *b)
-	__attribute__((__visibility__("hidden")));
-#endif
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -207,12 +210,13 @@ struct PROPrec {
 };
 
 struct Imprints {
-	bte bits;        /* how many bits in imprints */
-	Heap *bins;      /* ranges of bins */
-	Heap *imps;      /* heap of imprints */
-	BUN impcnt;      /* counter for imprints*/
-	Heap *dict;      /* cache dictionary for compressing imprints */
-	BUN dictcnt;     /* counter for cache dictionary */
+	bte bits;		/* how many bits in imprints */
+	Heap *imprints;
+	void *bins;		/* pointer into imprints heap */
+	void *imps;		/* pointer into imprints heap */
+	void *dict;		/* pointer into imprints heap */
+	BUN impcnt;		/* counter for imprints*/
+	BUN dictcnt;		/* counter for cache dictionary */
 };
 
 typedef struct {
