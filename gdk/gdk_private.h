@@ -80,8 +80,6 @@ BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
 BAT *BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void BATpropagate(BAT *dst, BAT *src, int idx)
-	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)

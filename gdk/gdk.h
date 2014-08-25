@@ -3195,38 +3195,12 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * levels.
  */
 
-#define GDK_AGGR_SIZE 1
-#define GDK_AGGR_CARD 2
 #define GDK_MIN_VALUE 3
 #define GDK_MAX_VALUE 4
 
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
-
-/*
- * @- Alignment transformations
- * Some classes of algebraic operators transform a sequence in an
- * input BAT always in the same way in the output result. An example
- * are the @{X@}() function (including histogram(b), which is
- * identical to @{count@}(b.reverse)).  That is to say, if
- * synced(b2,b2) => synced(@{X@}(b1),@{Y@}(b2))
- *
- * Another example is b.fetch(position-bat). If synced(b2,b2) and the
- * same position-bat is fetched with, the results will again be
- * synced.  This can be mimicked by transforming the
- * @emph{alignment-id} of the input BAT with a one-way function onto
- * the result.
- *
- * We use @strong{output->halign = NOID_AGGR(input->halign)} for the
- * @strong{output = @{X@}(input)} case, and @strong{output->align =
- * NOID_MULT(input1->align,input2->halign)} for the fetch.
- */
-#define AGGR_MAGIC	111
-#define NOID(x)		((oid)(x))
-#define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
-#define NOID_MULT(x,y)	NOID( (lng)(y)*(lng)(x) )
 
 /*
  * @- BAT relational operators

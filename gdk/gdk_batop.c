@@ -1739,7 +1739,6 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
  * is a nil value present by mis-using the highest bits of both
  * GDK_AGGR_SIZE and GDK_AGGR_CARD.
  */
-#define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
 void
 PROPdestroy(PROPrec *p)
@@ -1785,15 +1784,6 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 		VALcopy(&p->v, &vr);
 		b->batDirtydesc = TRUE;
 	}
-}
-
-void
-BATpropagate(BAT *dst, BAT *src, int idx)
-{
-	PROPrec *p = BATgetprop(src, idx);
-
-	if (p)
-		BATsetprop(dst, idx, p->v.vtype, VALget(&p->v));
 }
 
 
