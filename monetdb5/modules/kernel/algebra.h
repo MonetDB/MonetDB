@@ -43,7 +43,6 @@ algebra_export str ALGvariancep(dbl *res, int *bid);
 
 algebra_export str ALGminany(ptr result, int *bid);
 algebra_export str ALGmaxany(ptr result, int *bid);
-algebra_export str ALGtopN(int *res, int *bid, lng *top);
 algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);

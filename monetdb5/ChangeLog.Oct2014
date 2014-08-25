@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Mon Aug 25 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.topN and its imlementation BATtopN.  The function was
+  not used.
 - Removed aggr.histogram and its implementation BAThistogram.  The
   function was not used, and did not produce output in the "headless"
   (i.e. dense-headed) format.  Histograms can be created as a by-product

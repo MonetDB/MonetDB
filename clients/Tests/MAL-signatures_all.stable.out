@@ -2787,10 +2787,6 @@ command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:
 address ALGthetauselect;
 comment The theta (<=,<,=,>,>=) select() limited to head values
 
-command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
-address ALGtopN;
-comment Trim all but the top N tuples.
-
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.

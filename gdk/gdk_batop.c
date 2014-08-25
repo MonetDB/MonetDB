@@ -908,36 +908,6 @@ BATslice(BAT *b, BUN l, BUN h)
 }
 
 /*
- * Top-N selection
- *
- * The top-N elements can be easily obtained by trimming the
- * space. The auxiliary index structures are removed.  For
- * non-variable size BATs it merely requires adjustment of the free
- * space labels. Other BATs require a loop through the tuples to be
- * deleted. [todo]
- */
-int
-BATtopN(BAT *b, BUN topN)
-{
-	BATcheck(b, "BATtopN");
-	if (topN > BATcount(b)) {
-		GDKerror("BATtopN: not enough tuples in target\n");
-	} else if (b->H->varsized || b->T->varsized) {
-		HASHremove(b);
-		while (BATcount(b) > topN)
-			BUNdelete(b, BUNlast(b), FALSE);
-	} else {
-		HASHremove(b);
-		BATsetcount(b, topN);
-	}
-	IMPSdestroy(b);
-	/* we no longer know if there are NILs */
-	b->H->nil = b->htype == TYPE_void && b->hseqbase == oid_nil && topN >= 1;
-	b->T->nil = b->ttype == TYPE_void && b->tseqbase == oid_nil && topN >= 1;
-	return 0;
-}
-
-/*
  *  BAT Sorting
  * BATsort returns a sorted copy. BATorder sorts the BAT itself.
  */
