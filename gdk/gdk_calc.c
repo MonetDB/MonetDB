@@ -12471,6 +12471,10 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			((hge *) dst)[i] = hge_nil;
 		break;
 #endif
+	case TYPE_oid:
+		for (; i < cnt; i++)
+			((oid *) dst)[i] = oid_nil;
+		break;
 	case TYPE_flt:
 		for (; i < cnt; i++)
 			((flt *) dst)[i] = flt_nil;
