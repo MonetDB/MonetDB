@@ -4400,13 +4400,13 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Inspection of the actual storage footprint is a recurring question of users.
  * This is modelled as a generic SQL table producing function.
  * create function storage()
- * returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted int)
+ * returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted bit, compress bit)
  * external name sql.storage;
  */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints, *mode, *compress;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4416,14 +4416,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *rtab = (int *) getArgReference(stk, pci, 1);
 	int *rcol = (int *) getArgReference(stk, pci, 2);
 	int *rtype = (int *) getArgReference(stk, pci, 3);
-	int *rloc = (int *) getArgReference(stk, pci, 4);
-	int *rcnt = (int *) getArgReference(stk, pci, 5);
-	int *ratom = (int *) getArgReference(stk, pci, 6);
-	int *rsize = (int *) getArgReference(stk, pci, 7);
-	int *rheap = (int *) getArgReference(stk, pci, 8);
-	int *rindices = (int *) getArgReference(stk, pci, 9);
-	int *rimprints = (int *) getArgReference(stk, pci, 10);
-	int *rsort = (int *) getArgReference(stk, pci, 11);
+	int *rmode = (int *) getArgReference(stk, pci, 4);
+	int *rloc = (int *) getArgReference(stk, pci, 5);
+	int *rcnt = (int *) getArgReference(stk, pci, 6);
+	int *ratom = (int *) getArgReference(stk, pci, 7);
+	int *rsize = (int *) getArgReference(stk, pci, 8);
+	int *rheap = (int *) getArgReference(stk, pci, 9);
+	int *rindices = (int *) getArgReference(stk, pci, 10);
+	int *rimprints = (int *) getArgReference(stk, pci, 11);
+	int *rsort = (int *) getArgReference(stk, pci, 12);
+	int *rcompress = (int *) getArgReference(stk, pci, 13);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4439,6 +4441,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(col, 0);
 	type = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 	BATseqbase(type, 0);
+	mode = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(mode, 0);
 	loc = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 	BATseqbase(loc, 0);
 	cnt = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
@@ -4455,13 +4459,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(sort, 0);
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || imprints == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
+	compress = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
+	BATseqbase(compress, 0);
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || compress == NULL) {
 		if (sch)
 			BBPreleaseref(sch->batCacheid);
 		if (tab)
 			BBPreleaseref(tab->batCacheid);
 		if (col)
 			BBPreleaseref(col->batCacheid);
+		if (mode)
+			BBPreleaseref(mode->batCacheid);
 		if (loc)
 			BBPreleaseref(loc->batCacheid);
 		if (cnt)
@@ -4480,6 +4489,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(imprints->batCacheid);
 		if (sort)
 			BBPreleaseref(sort->batCacheid);
+		if (compress)
+			BBPreleaseref(compress->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
@@ -4503,6 +4514,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sch = BUNappend(sch, b->name, FALSE);
 								tab = BUNappend(tab, bt->name, FALSE);
 								col = BUNappend(col, bc->name, FALSE);
+								if (c->t->access == TABLE_WRITABLE) 
+									mode = BUNappend(mode, "writable", FALSE);
+								else
+								if (c->t->access == TABLE_APPENDONLY) 
+									mode = BUNappend(mode, "appendonly", FALSE);
+								else
+								if (c->t->access == TABLE_READONLY) 
+									mode = BUNappend(mode, "readonly", FALSE);
+								else
+									mode = BUNappend(mode, 0, FALSE);
 								type = BUNappend(type, c->type.type->sqlname, FALSE);
 
 								/*printf(" cnt "BUNFMT, BATcount(bn)); */
@@ -4552,6 +4573,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								w = BATtordered(bn);
 								sort = BUNappend(sort, &w, FALSE);
+
+								w = bn->T->heap.compressed;
+								compress = BUNappend(compress, &w, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4568,6 +4592,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sch = BUNappend(sch, b->name, FALSE);
 									tab = BUNappend(tab, bt->name, FALSE);
 									col = BUNappend(col, bc->name, FALSE);
+									if (c->t->access == TABLE_WRITABLE) 
+										mode = BUNappend(mode, "writable", FALSE);
+									else
+									if (c->t->access == TABLE_APPENDONLY) 
+										mode = BUNappend(mode, "appendonly", FALSE);
+									else
+									if (c->t->access == TABLE_READONLY) 
+										mode = BUNappend(mode, "readonly", FALSE);
+									else
+										mode = BUNappend(mode, 0, FALSE);
 									type = BUNappend(type, "oid", FALSE);
 
 									/*printf(" cnt "BUNFMT, BATcount(bn)); */
@@ -4616,6 +4650,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									sort = BUNappend(sort, &w, FALSE);
+
+									w = bn->T->heap.compressed;
+									compress = BUNappend(compress, &w, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -4626,6 +4663,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsch = sch->batCacheid);
 	BBPkeepref(*rtab = tab->batCacheid);
 	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rmode = mode->batCacheid);
 	BBPkeepref(*rloc = loc->batCacheid);
 	BBPkeepref(*rtype = type->batCacheid);
 	BBPkeepref(*rcnt = cnt->batCacheid);
@@ -4635,6 +4673,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rindices = indices->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
+	BBPkeepref(*rcompress = compress->batCacheid);
 	return MAL_SUCCEED;
 }
 

@@ -464,6 +464,7 @@ pattern storage()(
 	table:bat[:oid,:str],
 	column:bat[:oid,:str],
 	type:bat[:oid,:str],
+	mode:bat[:oid,:str],
 	location:bat[:oid,:str],
 	count:bat[:oid,:lng],
 	atomwidth:bat[:oid,:int],
@@ -471,7 +472,8 @@ pattern storage()(
 	heap:bat[:oid,:lng],
 	hashes:bat[:oid,:lng],
 	imprints:bat[:oid,:lng],
-	sorted:bat[:oid,:bit])
+	sorted:bat[:oid,:bit],
+	compress:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
 
