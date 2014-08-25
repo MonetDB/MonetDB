@@ -110,7 +110,7 @@ static lng scales[19] = {
 
 #define STRING(a)		#a
 
-#define BIG int			/* a larger type */
+#define BIG lng			/* a larger type */
 
 #define TYPE bte
 #include "sql_round_impl.h"
@@ -119,9 +119,6 @@ static lng scales[19] = {
 #define TYPE sht
 #include "sql_round_impl.h"
 #undef TYPE
-
-#undef BIG
-#define BIG lng
 
 #define TYPE int
 #include "sql_round_impl.h"
