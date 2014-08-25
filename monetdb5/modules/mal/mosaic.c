@@ -257,7 +257,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		// select candidate amongst those
 		if ( filter[MOSAIC_RLE]){
 			perc = MOSestimate_rle(cntxt,task);
-			if ( perc < percentage){
+			if (perc >= 0 &&  perc < percentage){
 				cand = MOSAIC_RLE;
 				percentage = perc;
 			}
