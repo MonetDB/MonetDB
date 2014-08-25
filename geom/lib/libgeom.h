@@ -125,8 +125,8 @@ typedef struct wkb {
 } wkb;
 
 typedef struct wkba {
-	int itemsNum; //the number of wkb
-	char wkb[]; //the wkb
+	int itemsNum; //the number of wkbs
+	wkb** data; //the wkbs
 } wkba;
 
 typedef struct {

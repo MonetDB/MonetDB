@@ -70,11 +70,11 @@ geom_export void geom_epilogue(void);
 /* the len argument is needed for correct storage and retrieval */
 geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
-geom_export int wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
+geom_export size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
 
 geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
-geom_export int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray);
+geom_export int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid);
 
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
@@ -91,7 +91,7 @@ geom_export int wkbaCOMP(wkba *l, wkba *r);
 /* read/write to/from log */
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
-geom_export wkb *wkbaREAD(wkba *a, stream *s, size_t cnt);
+geom_export wkba* wkbaREAD(wkba *a, stream *s, size_t cnt);
 
 geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
 geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
@@ -794,12 +794,12 @@ static var_t wkb_size(size_t len) {
 }
 
 /* returns the size of variable-sized atom wkba */
-static var_t wkba_size(size_t len) {
+static var_t wkba_size(int items) {
 	var_t size;
  
-	if (len == ~(size_t) 0)
-		len = 0;	
-	size = sizeof(wkba)+len;
+	if (items == ~ 0)
+		items = 0;	
+	size = sizeof(wkba)+items*sizeof(wkba*);
 	assert(size <= VAR_MAX);
 
 	return size;
@@ -4192,105 +4192,64 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
 
 /* Creates the string representation of a wkb_array */
 /* return length of resulting string. */
-int wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
-	int strLength = 0;			/* "nil" */
-	int i=0, totalReadBytes=0, totalWrittenBytes=0;
-fprintf(stderr, "wkb_arrayTOSTR\n");	
+size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
+	int items = fromArray->itemsNum, i;
+	size_t dataSize=sizeof(int), skipBytes=0;
+	char** partialStrs;
+	char* nilStr = "nil";
 
-	//iterate over the wkb in the array
-	for(i=0; i<fromArray->itemsNum; i++) {
-		int wkbLength, srid;
-		wkb* geomWKB;
-				
-		//the first four bytes have the number of bytes in the wkb
-		memcpy(&wkbLength, fromArray->data+totalReadBytes, 4);
-		totalReadBytes += 4;
-		//the next four bytes have the srid
-		memcpy(&srid, fromArray->data+totalReadBytes, 4);
-		totalReadBytes += 4;
-		//the remaining wkbLenth bytes have the wkb data
-		geomWKB = GDKmalloc(wkb_size(wkbLength));
-		if (geomWKB) {
-			char* wkt = NULL;
-			char* totalCopy = NULL;
+fprintf(stderr, "wkbaTOSTR\n");
 
-			geomWKB->len = wkbLength;
-			geomWKB->srid = srid;
-			memcpy(&geomWKB->data, fromArray->data+totalReadBytes, wkbLength);
-			totalReadBytes += wkbLength;
-
-			//create the str from the wkb
-			strLength += wkbTOSTR(&wkt, len, geomWKB);
-			GDKfree(geomWKB);
-
-			totalCopy = *toStr; //hold the position of the already created str
-			*toStr = GDKmalloc(strLength+1); //allocate new space to add the new string as well
-			strcpy(*toStr, totalCopy); //copy the already create str to the new space
-			GDKfree(totalCopy); //free the new space
-			strcpy(*toStr+totalWrittenBytes, wkt); //copy the new string at the end of the old
-			totalWrittenBytes = strLength; //the number of written bytes
-			
-
-		} else { 
-			strcpy(*toStr, "nil");
+	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
+	partialStrs = (char**)malloc(sizeof(char**));
+	*partialStrs = (char*) malloc(items*sizeof(char*));
+	//create the string version of each wkb
+	for(i=0; i<items; i++) {
+		dataSize += wkbTOSTR(&partialStrs[i], len, fromArray->data[i]);
+		
+		if(strcmp(partialStrs[i], nilStr) == 0) {
 			*len = 6;
+			*toStr = GDKmalloc(6);
+			strcpy(*toStr, "nil");
 			return 5;
 		}
-	}	
+	}
 
-	*len = strLength+1;	
-	return strLength;
+	//copy all partial strings to a single one
+	*toStr = GDKmalloc(dataSize+1);
+	memcpy(*toStr, &items, sizeof(int));
+	for(i=0; i<items; i++) {
+		strcpy(*toStr+skipBytes, partialStrs[i]);
+		skipBytes+=strlen(partialStrs[i])-1;
+		GDKfree(partialStrs[i]);
+	}
+	
+	GDKfree(partialStrs);
+
+	*len = dataSize+1;
+	return dataSize;
 }
 
 /* return number of parsed characters. */
-int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray) {
-	char* token;
-//	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-//	GEOSWKTReader *WKT_reader;
-//
-//	if (strcmp(geomWKT, str_nil) == 0) {
-//		*geomWKB = wkb_nil;
-//		return 0;
-//	}
-//
-//	WKT_reader = GEOSWKTReader_create();
-//	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
-//	GEOSWKTReader_destroy(WKT_reader);
+int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid) {
+	int items, i;
+	size_t skipBytes=0;
+
 fprintf(stderr, "wkbaFROMSTR\n");
-*len = sizeof(wkba);
-*toArray = GDKmalloc(*len);
-(*toArray)->itemsNum = 0;
-//(*toArray)->data = "A";
+//IS THERE SPACE OR SOME OTHER CHARACTER?
 
-token = strtok (fromStr,":");
-while (token != NULL)
-{
-	fprintf(stderr, "%s\n",token);
-	token = strtok (NULL, ":");
-}
-//	if(geosGeometry == NULL){
-//		*geomWKB = wkb_nil;
-//		return 0;
-//	}
-//
-//	if (GEOSGeomTypeId(geosGeometry) == -1) {
-//		GEOSGeom_destroy(geosGeometry);
-//		*geomWKB = wkb_nil;
-//		return 0;
-//	}
-//
-//	GEOSSetSRID(geosGeometry, srid);
-//	/* the srid was lost with the transformation of the GEOSGeom to wkb
-//	* so we decided to store it in the wkb */ 
-//		
-//	/* we have a GEOSGeometry will number of coordinates and SRID and we 
- //	* want to get the wkb out of it */
-//	*geomWKB = geos2wkb(geosGeometry);
-//	GEOSGeom_destroy(geosGeometry);
-//
-//	*len = (int) wkb_size((*geomWKB)->len);
+	//read the number of items from the begining of the string
+	memcpy(&items, fromStr, sizeof(int));
+	skipBytes += sizeof(int);
 
-	return strlen(fromStr);
+	*toArray = (wkba*)GDKmalloc(wkba_size(items));
+
+	for(i=0; i<items; i++) {
+		int parsedBytes = wkbFROMSTR(fromStr+skipBytes, len, &((*toArray)->data[i]), srid);
+		skipBytes+=parsedBytes;
+	}
+
+	return skipBytes;
 }
 
 /* returns a pointer to a null wkba */
@@ -4302,80 +4261,89 @@ fprintf(stderr, "wkbaNULL\n");
 	return (&nullval);
 }
 
-BUN wkbaHASH(wkba *w) {
-	int i;
+BUN wkbaHASH(wkba *wArray) {
+	int j,i;
 	BUN h = 0;
 fprintf(stderr, "wkbaNULL\n");
 
-	for (i = 0; i < (w->itemsNum - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
-		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
+	for (j = 0; j < wArray->itemsNum ; j++) {
+		wkb* w = wArray->data[j];
+		for (i = 0; i < (w->len - 1); i += 2) {
+			int a = *(w->data + i), b = *(w->data + i + 1);
+			h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
+		}
 	}
 	return h;
 }
 
-int wkbaCOMP(wkba *l, wkb *r) {
-	int len = l->len;
+int wkbaCOMP(wkba *l, wkba *r) {
+	int i, res =0;;
 fprintf(stderr, "wkbaNULL\n");
 
-	if (len != r->len)
-		return len - r->len;
+	//compare the number of items
+	if (l->itemsNum != r->itemsNum)
+		return l->itemsNum - r->itemsNum;
 
-	if (len == ~(int) 0)
+	if (l->itemsNum == ~(int) 0)
 		return (0);
 
-	return memcmp(l->data, r->data, len);
+	//compare each wkb separately
+	for(i=0; i<l->itemsNum; i++)
+		res += wkbCOMP(l->data[i], r->data[i]);
+
+	return res;
 }
 
 /* read wkb from log */
-wkba* wkbaREAD(wkb *a, stream *s, size_t cnt) {
-	int len;
-	int srid;
+wkba* wkbaREAD(wkba *a, stream *s, size_t cnt) {
+	int items, i;
 
 	(void) cnt;
 	assert(cnt == 1);
 	fprintf(stderr, "wkbaNULL\n");
-if (mnstr_readInt(s, &len) != 1)
+
+	if (mnstr_readInt(s, &items) != 1)
 		return NULL;
-	if (mnstr_readInt(s, &srid) != 1)
+
+	if ((a = GDKmalloc(wkba_size(items))) == NULL)
 		return NULL;
-	if ((a = GDKmalloc(wkb_size(len))) == NULL)
-		return NULL;
-	a->len = len;
-	a->srid = srid;
-	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
-		return NULL;
-	}
+	
+	a->itemsNum = items;
+
+	for(i=0; i<items; i++)
+		wkbREAD(a->data[i], s, cnt);
+	
 	return a;
 }
 
 /* write wkb to log */
 int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
-	int len = a->len;
-	int srid = a->srid;
+	int i, items = a->itemsNum;
+	int ret = GDK_SUCCEED;
 
 	(void) cnt;
 	assert(cnt == 1);
-	ifprintf(stderr, "wkbaNULL\n");
-f (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
+	fprintf(stderr, "wkbaNULL\n");
+
+	if (!mnstr_writeInt(s, items))
 		return GDK_FAIL;
-	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (len > 0 &&			/* 64bit: check for overflow */
-	    mnstr_write(s, (char *) a->data, len, 1) < 0)
-		return GDK_FAIL;
+	for(i=0; i<items; i++) {
+		ret = wkbWRITE(a->data[i], s, cnt);
+		
+		if(ret != GDK_SUCCEED)
+			return ret;
+	}
 	return GDK_SUCCEED;
 }
 
-var_t wkbaPUT(Heap *h, var_t *bun, wkb *val) {
+var_t wkbaPUT(Heap *h, var_t *bun, wkba *val) {
 	char *base;
 fprintf(stderr, "wkbaNULL\n");
 
-	*bun = HEAP_malloc(h, wkb_size(val->len));
+	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
 	if (*bun)
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkba_size(val->itemsNum));
 	return *bun;
 }
 
@@ -4384,16 +4352,14 @@ void wkbaDEL(Heap *h, var_t *index) {
 HEAP_free(h, *index);
 }
 
-
-
-int wkbaLENGTH(wkb *p) {
-	var_t len = wkb_size(p->len);
+int wkbaLENGTH(wkba *p) {
+	var_t len = wkba_size(p->itemsNum);
 	assert(len <= GDK_int_max);
 	fprintf(stderr, "wkbaNULL\n");
 return (int) len;
 }
 
-void wkabHEAP(Heap *heap, size_t capacity) {
+void wkbaHEAP(Heap *heap, size_t capacity) {
 	fprintf(stderr, "wkbaNULL\n");
 HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
