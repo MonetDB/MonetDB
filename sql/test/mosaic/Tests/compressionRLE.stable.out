@@ -1,0 +1,354 @@
+stdout of test 'compressionRLE` in directory 'sql/test/mosaic` itself:
+
+
+# 21:09:36 >  
+# 21:09:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30051" "--set" "mapi_usock=/var/tmp/mtest-28373/.s.monetdb.30051" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_mosaic" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:09:36 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30051/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28373/.s.monetdb.30051
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:09:37 >  
+# 21:09:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28373" "--port=30051"
+# 21:09:37 >  
+
+#set optimizer='sequential_pipe';
+#drop table tmp3;
+#create table tmp3( i integer, b boolean, f real,t timestamp);
+#insert into tmp3 values
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+[ 86	]
+#alter table tmp3 set read only;
+#explain select * from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s6_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_16 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    X_13 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_10 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_12 := mosaic.leftfetchjoin(X_3,X_10);
+    X_19 := sql.resultSet(4,1,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
+    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
+    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_19);
+end s6_1;
+# querylog.define("explain select * from tmp3;","sequential_pipe")
+#alter table tmp3 alter column i set storage 'rle';
+#alter table tmp3 alter column b set storage 'rle';
+#alter table tmp3 alter column f set storage 'rle';
+#alter table tmp3 alter column t set storage 'rle';
+#explain select i from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s11_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_10 := sql.resultSet(1,1,X_9);
+    sql.rsColumn(X_10,"sys.tmp3","i","int",32,0,X_9);
+    X_16 := io.stdout();
+    sql.exportResult(X_16,X_10);
+end s11_1;
+# querylog.define("explain select i from tmp3;","sequential_pipe")
+#explain select b from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s12_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_10 := sql.resultSet(1,1,X_9);
+    sql.rsColumn(X_10,"sys.tmp3","b","boolean",1,0,X_9);
+    X_15 := io.stdout();
+    sql.exportResult(X_15,X_10);
+end s12_1;
+# querylog.define("explain select b from tmp3;","sequential_pipe")
+#explain select f from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s13_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_10 := sql.resultSet(1,1,X_9);
+    sql.rsColumn(X_10,"sys.tmp3","f","real",24,0,X_9);
+    X_16 := io.stdout();
+    sql.exportResult(X_16,X_10);
+end s13_1;
+# querylog.define("explain select f from tmp3;","sequential_pipe")
+#explain select t from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s14_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_10 := sql.resultSet(1,1,X_9);
+    sql.rsColumn(X_10,"sys.tmp3","t","timestamp",7,0,X_9);
+    X_16 := io.stdout();
+    sql.exportResult(X_16,X_10);
+end s14_1;
+# querylog.define("explain select t from tmp3;","sequential_pipe")
+#select * from tmp3;
+% sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
+% i,	b,	f,	t # name
+% int,	boolean,	real,	timestamp # type
+% 2,	5,	15,	26 # length
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+#alter table tmp3 alter column i set storage NULL;
+#alter table tmp3 alter column b set storage NULL;
+#alter table tmp3 alter column f set storage NULL;
+#alter table tmp3 alter column t set storage NULL;
+#explain select * from tmp3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 66 # length
+function user.s20_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_16 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    X_13 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_10 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_12 := mosaic.leftfetchjoin(X_3,X_10);
+    X_19 := sql.resultSet(4,1,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
+    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
+    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_19);
+end s20_1;
+# querylog.define("explain select * from tmp3;","sequential_pipe")
+#select * from tmp3;
+% sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
+% i,	b,	f,	t # name
+% int,	boolean,	real,	timestamp # type
+% 2,	5,	15,	26 # length
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+#alter table tmp3 set read write;
+
+# 21:09:37 >  
+# 21:09:37 >  "Done."
+# 21:09:37 >  
+

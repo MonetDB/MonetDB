@@ -92,27 +92,25 @@ insert into tmp3 values
 
 alter table tmp3 set read only;
 
-explain select * from tmp3;
-select * from tmp3;
-explain select sum(i) from tmp3 where i <5;
-select sum(i) from tmp3 where i <5;
+explain select count(*) from tmp3 where i <4;
+select count(*) from tmp3 where i <4;
 
 alter table tmp3 alter column i set storage 'none';
 alter table tmp3 alter column b set storage 'none';
 alter table tmp3 alter column f set storage 'none';
-explain select * from tmp3;
-select * from tmp3;
-explain select sum(i) from tmp3 where i <5;
-select sum(i) from tmp3 where i <5;
+
+explain select count(*) from tmp3 where i <4;
+select count(*) from tmp3 where i <4;
 
 --select * from storage where "table" = 'tmp3';
 alter table tmp3 alter column i set storage NULL;
 alter table tmp3 alter column b set storage NULL;
 alter table tmp3 alter column f set storage NULL;
-explain select * from tmp3;
-select * from tmp3;
+
+explain select count(*) from tmp3 where i <4;
+select count(*) from tmp3 where i <4;
 
 alter table tmp3 set read write;
-select * from tmp3;
+--select * from tmp3;
 
 --drop table tmp3;

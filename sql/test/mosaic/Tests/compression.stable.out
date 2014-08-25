@@ -44,132 +44,27 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 72 # length
-function user.s5_1{autoCommit=true}():void;
-barrier X_183 := language.dataflow();
+% 66 # length
+function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",0,8);
-    X_61:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,0,8);
-    X_102 := algebra.leftfetchjoin(X_46,X_61);
-    X_48:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",1,8);
-    X_62:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,1,8);
-    X_103 := algebra.leftfetchjoin(X_48,X_62);
-    X_50:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",2,8);
-    X_63:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,2,8);
-    X_104 := algebra.leftfetchjoin(X_50,X_63);
-    X_52:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",3,8);
-    X_64:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,3,8);
-    X_105 := algebra.leftfetchjoin(X_52,X_64);
-    X_54:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",4,8);
-    X_65:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,4,8);
-    X_106 := algebra.leftfetchjoin(X_54,X_65);
-    X_56:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",5,8);
-    X_66:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,5,8);
-    X_107 := algebra.leftfetchjoin(X_56,X_66);
-    X_58:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",6,8);
-    X_67:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,6,8);
-    X_108 := algebra.leftfetchjoin(X_58,X_67);
-    X_60:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",7,8);
-    X_68:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,7,8);
-    X_109 := algebra.leftfetchjoin(X_60,X_68);
-    X_142 := mat.packIncrement(X_102,8);
-    X_143 := mat.packIncrement(X_142,X_103);
-    X_144 := mat.packIncrement(X_143,X_104);
-    X_145 := mat.packIncrement(X_144,X_105);
-    X_146 := mat.packIncrement(X_145,X_106);
-    X_147 := mat.packIncrement(X_146,X_107);
-    X_148 := mat.packIncrement(X_147,X_108);
-    X_7 := mat.packIncrement(X_148,X_109);
-    X_101:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,7,8);
-    X_141 := algebra.leftfetchjoin(X_60,X_101);
-    X_100:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,6,8);
-    X_140 := algebra.leftfetchjoin(X_58,X_100);
-    X_99:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,5,8);
-    X_139 := algebra.leftfetchjoin(X_56,X_99);
-    X_98:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,4,8);
-    X_138 := algebra.leftfetchjoin(X_54,X_98);
-    X_97:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,3,8);
-    X_137 := algebra.leftfetchjoin(X_52,X_97);
-    X_96:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,2,8);
-    X_136 := algebra.leftfetchjoin(X_50,X_96);
-    X_95:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,1,8);
-    X_135 := algebra.leftfetchjoin(X_48,X_95);
-    X_94:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,0,8);
-    X_134 := algebra.leftfetchjoin(X_46,X_94);
-    X_93:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,7,8);
-    X_133 := algebra.leftfetchjoin(X_60,X_93);
-    X_91:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,6,8);
-    X_132 := algebra.leftfetchjoin(X_58,X_91);
-    X_89:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,5,8);
-    X_131 := algebra.leftfetchjoin(X_56,X_89);
-    X_87:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,4,8);
-    X_130 := algebra.leftfetchjoin(X_54,X_87);
-    X_85:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,3,8);
-    X_129 := algebra.leftfetchjoin(X_52,X_85);
-    X_83:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,2,8);
-    X_128 := algebra.leftfetchjoin(X_50,X_83);
-    X_81:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,1,8);
-    X_127 := algebra.leftfetchjoin(X_48,X_81);
-    X_79:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,0,8);
-    X_126 := algebra.leftfetchjoin(X_46,X_79);
-    X_76:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,7,8);
-    X_117 := algebra.leftfetchjoin(X_60,X_76);
-    X_75:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,6,8);
-    X_116 := algebra.leftfetchjoin(X_58,X_75);
-    X_74:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,5,8);
-    X_115 := algebra.leftfetchjoin(X_56,X_74);
-    X_73:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,4,8);
-    X_114 := algebra.leftfetchjoin(X_54,X_73);
-    X_72:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,3,8);
-    X_113 := algebra.leftfetchjoin(X_52,X_72);
-    X_71:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,2,8);
-    X_112 := algebra.leftfetchjoin(X_50,X_71);
-    X_70:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,1,8);
-    X_111 := algebra.leftfetchjoin(X_48,X_70);
-    X_69:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,0,8);
-    X_110 := algebra.leftfetchjoin(X_46,X_69);
-    language.pass(X_60);
-    language.pass(X_58);
-    language.pass(X_56);
-    language.pass(X_54);
-    language.pass(X_52);
-    language.pass(X_50);
-    language.pass(X_48);
-    language.pass(X_46);
-exit X_183;
-    X_14 := sql.resultSet(4,1,X_7);
-    sql.rsColumn(X_14,"sys.tmp3","i","int",32,0,X_7);
-    X_150 := mat.packIncrement(X_110,8);
-    X_152 := mat.packIncrement(X_150,X_111);
-    X_153 := mat.packIncrement(X_152,X_112);
-    X_154 := mat.packIncrement(X_153,X_113);
-    X_155 := mat.packIncrement(X_154,X_114);
-    X_156 := mat.packIncrement(X_155,X_115);
-    X_157 := mat.packIncrement(X_156,X_116);
-    X_9 := mat.packIncrement(X_157,X_117);
-    sql.rsColumn(X_14,"sys.tmp3","b","boolean",1,0,X_9);
-    X_159 := mat.packIncrement(X_126,8);
-    X_160 := mat.packIncrement(X_159,X_127);
-    X_161 := mat.packIncrement(X_160,X_128);
-    X_162 := mat.packIncrement(X_161,X_129);
-    X_163 := mat.packIncrement(X_162,X_130);
-    X_164 := mat.packIncrement(X_163,X_131);
-    X_165 := mat.packIncrement(X_164,X_132);
-    X_11 := mat.packIncrement(X_165,X_133);
-    sql.rsColumn(X_14,"sys.tmp3","f","real",24,0,X_11);
-    X_167 := mat.packIncrement(X_134,8);
-    X_168 := mat.packIncrement(X_167,X_135);
-    X_169 := mat.packIncrement(X_168,X_136);
-    X_170 := mat.packIncrement(X_169,X_137);
-    X_171 := mat.packIncrement(X_170,X_138);
-    X_172 := mat.packIncrement(X_171,X_139);
-    X_173 := mat.packIncrement(X_172,X_140);
-    X_13 := mat.packIncrement(X_173,X_141);
-    sql.rsColumn(X_14,"sys.tmp3","t","timestamp",7,0,X_13);
-    X_29 := io.stdout();
-    sql.exportResult(X_29,X_14);
-end s5_1;
-# querylog.define("explain select * from tmp3;","default_pipe")
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_16 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    X_13 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_10 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_12 := mosaic.leftfetchjoin(X_3,X_10);
+    X_19 := sql.resultSet(4,1,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
+    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
+    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_19);
+end s6_1;
+# querylog.define("explain select * from tmp3;","sequential_pipe")
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -268,157 +163,32 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 72 # length
-function user.s9_1{autoCommit=true}():void;
-barrier X_183 := language.dataflow();
+% 66 # length
+function user.s10_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",0,8);
-    X_61:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,0,8);
-    X_102 := algebra.leftfetchjoin(X_46,X_61);
-    X_48:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",1,8);
-    X_62:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,1,8);
-    X_103 := algebra.leftfetchjoin(X_48,X_62);
-    X_50:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",2,8);
-    X_63:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,2,8);
-    X_104 := algebra.leftfetchjoin(X_50,X_63);
-    X_52:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",3,8);
-    X_64:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,3,8);
-    X_105 := algebra.leftfetchjoin(X_52,X_64);
-    X_54:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",4,8);
-    X_65:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,4,8);
-    X_106 := algebra.leftfetchjoin(X_54,X_65);
-    X_56:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",5,8);
-    X_66:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,5,8);
-    X_107 := algebra.leftfetchjoin(X_56,X_66);
-    X_58:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",6,8);
-    X_67:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,6,8);
-    X_108 := algebra.leftfetchjoin(X_58,X_67);
-    X_60:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",7,8);
-    X_68:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,7,8);
-    X_109 := algebra.leftfetchjoin(X_60,X_68);
-    X_142 := mat.packIncrement(X_102,8);
-    X_143 := mat.packIncrement(X_142,X_103);
-    X_144 := mat.packIncrement(X_143,X_104);
-    X_145 := mat.packIncrement(X_144,X_105);
-    X_146 := mat.packIncrement(X_145,X_106);
-    X_147 := mat.packIncrement(X_146,X_107);
-    X_148 := mat.packIncrement(X_147,X_108);
-    X_7 := mat.packIncrement(X_148,X_109);
-    X_101:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,7,8);
-    X_141 := algebra.leftfetchjoin(X_60,X_101);
-    X_100:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,6,8);
-    X_140 := algebra.leftfetchjoin(X_58,X_100);
-    X_99:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,5,8);
-    X_139 := algebra.leftfetchjoin(X_56,X_99);
-    X_98:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,4,8);
-    X_138 := algebra.leftfetchjoin(X_54,X_98);
-    X_97:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,3,8);
-    X_137 := algebra.leftfetchjoin(X_52,X_97);
-    X_96:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,2,8);
-    X_136 := algebra.leftfetchjoin(X_50,X_96);
-    X_95:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,1,8);
-    X_135 := algebra.leftfetchjoin(X_48,X_95);
-    X_94:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,0,8);
-    X_134 := algebra.leftfetchjoin(X_46,X_94);
-    X_93:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,7,8);
-    X_133 := algebra.leftfetchjoin(X_60,X_93);
-    X_91:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,6,8);
-    X_132 := algebra.leftfetchjoin(X_58,X_91);
-    X_89:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,5,8);
-    X_131 := algebra.leftfetchjoin(X_56,X_89);
-    X_87:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,4,8);
-    X_130 := algebra.leftfetchjoin(X_54,X_87);
-    X_85:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,3,8);
-    X_129 := algebra.leftfetchjoin(X_52,X_85);
-    X_83:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,2,8);
-    X_128 := algebra.leftfetchjoin(X_50,X_83);
-    X_81:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,1,8);
-    X_127 := algebra.leftfetchjoin(X_48,X_81);
-    X_79:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,0,8);
-    X_126 := algebra.leftfetchjoin(X_46,X_79);
-    X_76:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,7,8);
-    X_117 := algebra.leftfetchjoin(X_60,X_76);
-    X_75:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,6,8);
-    X_116 := algebra.leftfetchjoin(X_58,X_75);
-    X_74:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,5,8);
-    X_115 := algebra.leftfetchjoin(X_56,X_74);
-    X_73:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,4,8);
-    X_114 := algebra.leftfetchjoin(X_54,X_73);
-    X_72:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,3,8);
-    X_113 := algebra.leftfetchjoin(X_52,X_72);
-    X_71:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,2,8);
-    X_112 := algebra.leftfetchjoin(X_50,X_71);
-    X_70:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,1,8);
-    X_111 := algebra.leftfetchjoin(X_48,X_70);
-    X_69:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,0,8);
-    X_110 := algebra.leftfetchjoin(X_46,X_69);
-    language.pass(X_60);
-    language.pass(X_58);
-    language.pass(X_56);
-    language.pass(X_54);
-    language.pass(X_52);
-    language.pass(X_50);
-    language.pass(X_48);
-    language.pass(X_46);
-exit X_183;
-    X_14 := sql.resultSet(4,1,X_7);
-    sql.rsColumn(X_14,"sys.tmp3","i","int",32,0,X_7);
-    X_150 := mat.packIncrement(X_110,8);
-    X_152 := mat.packIncrement(X_150,X_111);
-    X_153 := mat.packIncrement(X_152,X_112);
-    X_154 := mat.packIncrement(X_153,X_113);
-    X_155 := mat.packIncrement(X_154,X_114);
-    X_156 := mat.packIncrement(X_155,X_115);
-    X_157 := mat.packIncrement(X_156,X_116);
-    X_9 := mat.packIncrement(X_157,X_117);
-    sql.rsColumn(X_14,"sys.tmp3","b","boolean",1,0,X_9);
-    X_159 := mat.packIncrement(X_126,8);
-    X_160 := mat.packIncrement(X_159,X_127);
-    X_161 := mat.packIncrement(X_160,X_128);
-    X_162 := mat.packIncrement(X_161,X_129);
-    X_163 := mat.packIncrement(X_162,X_130);
-    X_164 := mat.packIncrement(X_163,X_131);
-    X_165 := mat.packIncrement(X_164,X_132);
-    X_11 := mat.packIncrement(X_165,X_133);
-    sql.rsColumn(X_14,"sys.tmp3","f","real",24,0,X_11);
-    X_167 := mat.packIncrement(X_134,8);
-    X_168 := mat.packIncrement(X_167,X_135);
-    X_169 := mat.packIncrement(X_168,X_136);
-    X_170 := mat.packIncrement(X_169,X_137);
-    X_171 := mat.packIncrement(X_170,X_138);
-    X_172 := mat.packIncrement(X_171,X_139);
-    X_173 := mat.packIncrement(X_172,X_140);
-    X_13 := mat.packIncrement(X_173,X_141);
-    sql.rsColumn(X_14,"sys.tmp3","t","timestamp",7,0,X_13);
-    X_29 := io.stdout();
-    sql.exportResult(X_29,X_14);
-end s9_1;
-# querylog.define("explain select * from tmp3;","default_pipe")
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_16 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    X_13 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_10 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_12 := mosaic.leftfetchjoin(X_3,X_10);
+    X_19 := sql.resultSet(4,1,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
+    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
+    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_19);
+end s10_1;
+# querylog.define("explain select * from tmp3;","sequential_pipe")
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
 % int,	boolean,	real,	timestamp # type
-% 10,	5,	15,	26 # length
-[ 20140808,	true,	3.29366796e-38,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	1.40129846e-45,	2014-08-23 11:34:54.000000	]
-[ 86,	true,	1.20511668e-43,	2014-08-23 11:34:54.000000	]
-[ 0,	true,	0,	2014-08-23 11:34:54.000000	]
-[ -606348325,	true,	6.72623263e-44,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	0,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	9.52882956e-44,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	0,	2014-08-23 11:34:54.000000	]
-[ -606348325,	true,	9379954690,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	4.58995312e-41,	2014-08-23 11:34:54.000000	]
-[ 424,	false,	5.94150549e-43,	2014-08-23 11:34:54.000000	]
-[ 0,	false,	0,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ -606348325,	false,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ -606348325,	true,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ -606348325,	true,	-1.23769507e+17,	2014-08-23 11:34:54.000000	]
-[ 86,	true,	1.20511668e-43,	2014-08-23 11:34:54.000000	]
-[ 0,	true,	0,	2014-08-23 11:34:54.000000	]
+% 2,	5,	15,	26 # length
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
@@ -434,57 +204,77 @@ end s9_1;
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 2,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 2,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 2,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 0,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
-[ 5,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 6,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 7,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 8,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 9,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 10,	true,	0.317000002,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 1,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 3,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 2,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
-[ 2,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
 [ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
 [ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 1,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 2,	false,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 3,	true,	0.31400001,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 4,	true,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 0,	false,	0.316000015,	2014-08-23 11:34:54.000000	]
+[ 5,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 6,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 7,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 8,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 9,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
+[ 10,	false,	0.317000002,	2014-08-23 11:34:54.000000	]
 #alter table tmp3 alter column i set storage NULL;
 #alter table tmp3 alter column b set storage NULL;
 #alter table tmp3 alter column f set storage NULL;
@@ -492,132 +282,27 @@ end s9_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 72 # length
-function user.s13_1{autoCommit=true}():void;
-barrier X_183 := language.dataflow();
+% 66 # length
+function user.s14_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",0,8);
-    X_61:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,0,8);
-    X_102 := algebra.leftfetchjoin(X_46,X_61);
-    X_48:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",1,8);
-    X_62:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,1,8);
-    X_103 := algebra.leftfetchjoin(X_48,X_62);
-    X_50:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",2,8);
-    X_63:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,2,8);
-    X_104 := algebra.leftfetchjoin(X_50,X_63);
-    X_52:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",3,8);
-    X_64:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,3,8);
-    X_105 := algebra.leftfetchjoin(X_52,X_64);
-    X_54:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",4,8);
-    X_65:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,4,8);
-    X_106 := algebra.leftfetchjoin(X_54,X_65);
-    X_56:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",5,8);
-    X_66:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,5,8);
-    X_107 := algebra.leftfetchjoin(X_56,X_66);
-    X_58:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",6,8);
-    X_67:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,6,8);
-    X_108 := algebra.leftfetchjoin(X_58,X_67);
-    X_60:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3",7,8);
-    X_68:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0,7,8);
-    X_109 := algebra.leftfetchjoin(X_60,X_68);
-    X_142 := mat.packIncrement(X_102,8);
-    X_143 := mat.packIncrement(X_142,X_103);
-    X_144 := mat.packIncrement(X_143,X_104);
-    X_145 := mat.packIncrement(X_144,X_105);
-    X_146 := mat.packIncrement(X_145,X_106);
-    X_147 := mat.packIncrement(X_146,X_107);
-    X_148 := mat.packIncrement(X_147,X_108);
-    X_7 := mat.packIncrement(X_148,X_109);
-    X_101:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,7,8);
-    X_141 := algebra.leftfetchjoin(X_60,X_101);
-    X_100:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,6,8);
-    X_140 := algebra.leftfetchjoin(X_58,X_100);
-    X_99:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,5,8);
-    X_139 := algebra.leftfetchjoin(X_56,X_99);
-    X_98:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,4,8);
-    X_138 := algebra.leftfetchjoin(X_54,X_98);
-    X_97:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,3,8);
-    X_137 := algebra.leftfetchjoin(X_52,X_97);
-    X_96:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,2,8);
-    X_136 := algebra.leftfetchjoin(X_50,X_96);
-    X_95:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,1,8);
-    X_135 := algebra.leftfetchjoin(X_48,X_95);
-    X_94:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0,0,8);
-    X_134 := algebra.leftfetchjoin(X_46,X_94);
-    X_93:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,7,8);
-    X_133 := algebra.leftfetchjoin(X_60,X_93);
-    X_91:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,6,8);
-    X_132 := algebra.leftfetchjoin(X_58,X_91);
-    X_89:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,5,8);
-    X_131 := algebra.leftfetchjoin(X_56,X_89);
-    X_87:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,4,8);
-    X_130 := algebra.leftfetchjoin(X_54,X_87);
-    X_85:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,3,8);
-    X_129 := algebra.leftfetchjoin(X_52,X_85);
-    X_83:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,2,8);
-    X_128 := algebra.leftfetchjoin(X_50,X_83);
-    X_81:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,1,8);
-    X_127 := algebra.leftfetchjoin(X_48,X_81);
-    X_79:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0,0,8);
-    X_126 := algebra.leftfetchjoin(X_46,X_79);
-    X_76:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,7,8);
-    X_117 := algebra.leftfetchjoin(X_60,X_76);
-    X_75:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,6,8);
-    X_116 := algebra.leftfetchjoin(X_58,X_75);
-    X_74:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,5,8);
-    X_115 := algebra.leftfetchjoin(X_56,X_74);
-    X_73:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,4,8);
-    X_114 := algebra.leftfetchjoin(X_54,X_73);
-    X_72:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,3,8);
-    X_113 := algebra.leftfetchjoin(X_52,X_72);
-    X_71:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,2,8);
-    X_112 := algebra.leftfetchjoin(X_50,X_71);
-    X_70:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,1,8);
-    X_111 := algebra.leftfetchjoin(X_48,X_70);
-    X_69:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0,0,8);
-    X_110 := algebra.leftfetchjoin(X_46,X_69);
-    language.pass(X_60);
-    language.pass(X_58);
-    language.pass(X_56);
-    language.pass(X_54);
-    language.pass(X_52);
-    language.pass(X_50);
-    language.pass(X_48);
-    language.pass(X_46);
-exit X_183;
-    X_14 := sql.resultSet(4,1,X_7);
-    sql.rsColumn(X_14,"sys.tmp3","i","int",32,0,X_7);
-    X_150 := mat.packIncrement(X_110,8);
-    X_152 := mat.packIncrement(X_150,X_111);
-    X_153 := mat.packIncrement(X_152,X_112);
-    X_154 := mat.packIncrement(X_153,X_113);
-    X_155 := mat.packIncrement(X_154,X_114);
-    X_156 := mat.packIncrement(X_155,X_115);
-    X_157 := mat.packIncrement(X_156,X_116);
-    X_9 := mat.packIncrement(X_157,X_117);
-    sql.rsColumn(X_14,"sys.tmp3","b","boolean",1,0,X_9);
-    X_159 := mat.packIncrement(X_126,8);
-    X_160 := mat.packIncrement(X_159,X_127);
-    X_161 := mat.packIncrement(X_160,X_128);
-    X_162 := mat.packIncrement(X_161,X_129);
-    X_163 := mat.packIncrement(X_162,X_130);
-    X_164 := mat.packIncrement(X_163,X_131);
-    X_165 := mat.packIncrement(X_164,X_132);
-    X_11 := mat.packIncrement(X_165,X_133);
-    sql.rsColumn(X_14,"sys.tmp3","f","real",24,0,X_11);
-    X_167 := mat.packIncrement(X_134,8);
-    X_168 := mat.packIncrement(X_167,X_135);
-    X_169 := mat.packIncrement(X_168,X_136);
-    X_170 := mat.packIncrement(X_169,X_137);
-    X_171 := mat.packIncrement(X_170,X_138);
-    X_172 := mat.packIncrement(X_171,X_139);
-    X_173 := mat.packIncrement(X_172,X_140);
-    X_13 := mat.packIncrement(X_173,X_141);
-    sql.rsColumn(X_14,"sys.tmp3","t","timestamp",7,0,X_13);
-    X_29 := io.stdout();
-    sql.exportResult(X_29,X_14);
-end s13_1;
-# querylog.define("explain select * from tmp3;","default_pipe")
+    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
+    X_6 := sql.bind(X_2,"sys","tmp3","i",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    X_16 := sql.bind(X_2,"sys","tmp3","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    X_13 := sql.bind(X_2,"sys","tmp3","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_10 := sql.bind(X_2,"sys","tmp3","b",0);
+    X_12 := mosaic.leftfetchjoin(X_3,X_10);
+    X_19 := sql.resultSet(4,1,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
+    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
+    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
+    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_19);
+end s14_1;
+# querylog.define("explain select * from tmp3;","sequential_pipe")
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name

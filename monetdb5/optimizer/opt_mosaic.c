@@ -63,6 +63,10 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( check == NULL)
 		return 0;
 
+#ifdef _DEBUG_MOSAIC_
+	mnstr_printf(cntxt->fdout,"#mosaic implementation\n");
+    printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
 	limit = mb->stop;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -95,6 +99,10 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)]))
                 /* ok */;
 		else
+		if ( p->token == ASSIGNsymbol)
+			for( j=0; j < p->retc; j++)
+				check[getArg(p,j)]= check[getArg(p,p->retc+j)];
+		else
 		// mark all that needs decompression
 		for(j= p->retc; j<p->argc; j++)
 		if( check[getArg(p,j)] )
@@ -105,13 +113,18 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         p = old[i];
         if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival == 0 && check[getArg(p,0)]< 0){
 			//decompress before use such that it can be used properly
+			pushInstruction(mb,p);
+			j=  getArg(p,0);
+			check[getArg(p,0)] = 0;
+
 			q = newStmt(mb,mosaicRef,decompressRef);
 			setVarType(mb,getArg(q,0), getVarType(mb,getArg(p,0)));
 			setVarUDFtype(mb,getArg(q,0));
-			j=  getArg(p,0);
+
 			getArg(p,0) = getArg(q,0);
+			q = pushArgument(mb,q,getArg(q,0));
 			getArg(q,0) = j;
-			p = q;
+			p= 0;
 		} else
 		// preferrably use compressed version
         if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef) && check[getArg(p,1)] != 0)
@@ -122,7 +135,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 else
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0))
                 setModuleId(p, mosaicRef);
-		pushInstruction(mb,p);
+		if( p )
+			pushInstruction(mb,p);
     }
 	GDKfree(old);
 	GDKfree(check);
