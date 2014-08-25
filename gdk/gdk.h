@@ -3190,17 +3190,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
  *
- * @- BAT aggregates
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAThistogram(BAT *b)
- * @item BAT*
- * @end multitable
- *
- * The routine BAThistogram produces a new BAT with a frequency
- * distribution of the tail of its operand.
- *
  * For each BAT we maintain its dimensions as separately accessible
  * properties. They can be used to improve query processing at higher
  * levels.
@@ -3214,7 +3203,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
 
 /*

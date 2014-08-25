@@ -695,10 +695,6 @@ command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
-# @- Histogram on Tail
-command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int]
-address ALGhistogram
-comment "Produce a BAT containing the histogram over the tail values.";
 
 # @- Default Min and Max
 # Implementations a generic Min and Max routines get declared first. The

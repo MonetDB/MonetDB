@@ -1083,12 +1083,6 @@ ALGbinaryestimate(int *result, int *lid, int *rid, lng *estimate,
 	return MAL_SUCCEED;
 }
 
-str
-ALGhistogram(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BAThistogram, "algebra.histogram");
-}
-
 static BAT *
 BATwcopy(BAT *b)
 {
