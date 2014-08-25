@@ -66,22 +66,22 @@ void
 MOSadvance_rle(MOStask task)
 {
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte))); break;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bit))); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(sht))); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(int))); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(oid))); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(lng))); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd))); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(flt))); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl))); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte),bte)); break;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bit),bit)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(sht),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(int),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(oid),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(lng),lng)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(flt),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl),dbl)); break;
 	default:
 		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(date))); 
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(date),date)); 
 		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime))); 
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime),daytime)); 
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp))); 
+			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp),timestamp)); 
 	}
 }
 
@@ -499,12 +499,12 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 }
 
 #define leftfetchjoin_rle(TPE)\
-{	TPE *val, *v;\
+{	TPE val, *v;\
 	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(; first < last; first++, val++){\
+	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	for(; first < last; first++){\
 		MOSskipit();\
-		*v++ = *val;\
+		*v++ = val;\
 		task->n--;\
 	}\
 	task->src = (char*) v;\
@@ -525,12 +525,12 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		case TYPE_flt: leftfetchjoin_rle(flt); break;
 		case TYPE_dbl: leftfetchjoin_rle(dbl); break;
 		case TYPE_int:
-		{	int *val, *v;
+		{	int val, *v;
 			v= (int*) task->src;
-			val = (int*) (((char*) task->blk) + MosaicBlkSize);
+			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
 			for(; first < last; first++){
 				MOSskipit();
-				*v++ = *val;
+				*v++ = val;
 				task->n--;
 			}
 			task->src = (char*) v;
@@ -538,12 +538,12 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 		break;
 		default:
 			if( task->type == TYPE_timestamp)
-			{	timestamp *val, *v;
+			{	timestamp val, *v;
 				v= (timestamp*) task->src;
-				val = (timestamp*) (((char*) task->blk) + MosaicBlkSize);
-				for(; first < last; first++, val++){
+				val = *(timestamp*) (((char*) task->blk) + MosaicBlkSize);
+				for(; first < last; first++){
 					MOSskipit();
-					*v++ = *val;
+					*v++ = val;
 					task->n--;
 				}
 				task->src = (char*) v;

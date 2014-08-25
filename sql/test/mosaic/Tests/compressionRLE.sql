@@ -1,3 +1,5 @@
+set optimizer='sequential_pipe';
+
 drop table tmp3;
 create table tmp3( i integer, b boolean, f real,t timestamp);
 insert into tmp3 values
@@ -91,22 +93,27 @@ insert into tmp3 values
 alter table tmp3 set read only;
 
 explain select * from tmp3;
-select * from tmp3;
+--select * from tmp3;
 
 alter table tmp3 alter column i set storage 'rle';
 alter table tmp3 alter column b set storage 'rle';
 alter table tmp3 alter column f set storage 'rle';
-explain select * from tmp3;
+alter table tmp3 alter column t set storage 'rle';
+explain select i from tmp3;
+explain select b from tmp3;
+explain select f from tmp3;
+explain select t from tmp3;
 select * from tmp3;
 
 --select * from storage where "table" = 'tmp3';
 alter table tmp3 alter column i set storage NULL;
 alter table tmp3 alter column b set storage NULL;
 alter table tmp3 alter column f set storage NULL;
+alter table tmp3 alter column t set storage NULL;
 explain select * from tmp3;
 select * from tmp3;
 
 alter table tmp3 set read write;
-select * from tmp3;
+--select * from tmp3;
 
 --drop table tmp3;

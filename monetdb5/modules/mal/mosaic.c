@@ -171,7 +171,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	lng percentage=0, perc;
 	int filter[MOSAIC_METHODS];
 	
-	if( properties && !strstr(properties,"compress"))
+	if( properties && !strstr(properties,"compressed"))
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= strstr(properties,filtername[i]) != 0;
 	else

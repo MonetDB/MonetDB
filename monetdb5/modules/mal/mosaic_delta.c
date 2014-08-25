@@ -38,18 +38,18 @@ MOSadvance_delta(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1)); break ;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1,sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1,int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1,oid)); break ;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1,wrd)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1,lng)); break ;
 	default:
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1,timestamp)); 
 		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1,date)); 
 		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1,daytime)); 
 	}
 }
 

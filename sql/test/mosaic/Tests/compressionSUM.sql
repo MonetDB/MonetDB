@@ -1,3 +1,5 @@
+set optimizer='sequential_pipe';
+
 drop table tmp3;
 create table tmp3( i integer, b boolean, f real,t timestamp);
 insert into tmp3 values

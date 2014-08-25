@@ -62,6 +62,8 @@ MOSdump_dict(Client cntxt, MOStask task)
 	default:
 		if( task->type == TYPE_date){
 		}
+		if( task->type == TYPE_daytime){
+		}
 		if( task->type == TYPE_timestamp){
 		}
 	}
@@ -72,16 +74,18 @@ void
 MOSadvance_dict(MOStask task)
 {
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOScnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOScnt(task->blk),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOScnt(task->blk),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOScnt(task->blk),lng)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOScnt(task->blk),wrd)); break;
 	default:
 		if( task->type == TYPE_timestamp)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOScnt(task->blk),timestamp)); 
 		if( task->type == TYPE_date)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk))); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk),date)); 
+		if( task->type == TYPE_daytime)
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk),daytime)); 
 	}
 }
 
@@ -163,8 +167,10 @@ MOSestimate_dict(Client cntxt, MOStask task)
 				break;\
 			}\
 		if ( j == *size){\
-			if ( *size == dictsize)\
+			if ( *size == dictsize){\
+				task->dst += wordaligned(MOScnt(blk) %2,TPE);\
 				break;\
+			}\
 			dict[j] = *val;\
 			*size = *size+1;\
 			*task->dst++ = (char) j;\
@@ -206,7 +212,7 @@ MOScompress_dict(Client cntxt, MOStask task)
 				if ( j == *size){
 					if ( *size == dictsize){
 						// align on word boundary
-						task->dst += wordaligned(MOScnt(blk) %2);
+						task->dst += wordaligned(MOScnt(blk) %2,lng);
 						break;
 					}
 					dict[j] = *val;

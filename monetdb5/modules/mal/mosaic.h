@@ -78,11 +78,14 @@ typedef lng *MosaicBlk;
 #define MOSzone (((lng)MOSAIC_ZONE) <<56)
 #define MOSeol (((lng)MOSAIC_EOL) <<56)
 
-#define wordaligned(SZ) \
-	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(int)) : 0))
+/* Memory word alignement is type and platform dependent.
+ * We use an encoding that fits the column type requirements
+ */
+#define wordaligned(SZ,TYPE) \
+	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(TYPE)) : 0))
 
-#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER))
-#define MosaicBlkSize  wordaligned(sizeof(lng))
+#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),lng)
+#define MosaicBlkSize  wordaligned(sizeof(lng),lng)
 
 
 typedef struct MOSTASK{
