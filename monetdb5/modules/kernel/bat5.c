@@ -2198,9 +2198,10 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
 		for (;p<q; oidx++, p++) {					\
 			if ( *o == oidx ){						\
-				while ( ol>o && *--ol == bidx) {		\
+				while ( ol>o && ol[-1] == bidx) {	\
 					bidx--;							\
-					q--;						\
+					q--;							\
+					ol--;							\
 				}									\
 				*r++ = *(--q);						\
 				o += (o < ol);						\
@@ -2242,7 +2243,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 	}
 
 	oidx = b->hseqbase;
-	bidx = oidx + BUNlast(b)-1;
+	bidx = oidx + BATcount(b)-1;
 	o = (oid*)Tloc(bs, BUNfirst(bs));
 	ol= (oid*)Tloc(bs, BUNlast(bs));
 
@@ -2263,9 +2264,10 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 
 			for (;p<q; oidx++, p++) {
 				if ( *o == oidx ){
-					while ( ol > o && *--ol == bidx) {
+					while ( ol > o && ol[-1] == bidx) {
 						bidx--;
 						q--;
+						ol--;
 					}
 					BUNappend(bn, BUNtail(bi, --q), FALSE);
 					o += (o < ol);
@@ -2335,14 +2337,15 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 
 	oidx = b->hseqbase;
 	bidx = oidx + BUNlast(b)-1;
-    	o  = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol = (oid*)Tloc(bs, BUNlast(bs));
-    	r  = (oid*)Tloc(bn, BUNfirst(bn));
+	o  = (oid*)Tloc(bs, BUNfirst(bs));
+	ol = (oid*)Tloc(bs, BUNlast(bs));
+	r  = (oid*)Tloc(bn, BUNfirst(bn));
 
 	for (;oidx<bidx; oidx++) {
 		if ( *o == oidx ){
-			while ( ol > o && *--ol == bidx) {
+			while ( ol > o && ol[-1] == bidx) {
 				bidx--;
+				ol--;
 			}
 			*r++ = bidx;
 			o += (o < ol);
