@@ -130,6 +130,8 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
+geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag);
+
 
 /* Basic Methods on Geometric objects (OGC) */
 geom_export str wkbDimension(int*, wkb**);
@@ -1114,7 +1116,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 		*geomWKB = wkb_nil;
 	}
 	if (*tpe > 0 && te != *tpe)
-		throw(MAL, "wkb.FromText", "Trying to read Geometry type '%s' with function for Geometry type '%s'", geom_type2str(te,0), geom_type2str(*tpe,0));
+		throw(MAL, "wkb.FromText", "Geometry not type '%s'", geom_type2str(*tpe,0));
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -1185,6 +1187,169 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
+}
+
+str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
+	int itemsNum =0, i, type=wkbMultiLineString;
+	str ret = MAL_SUCCEED;
+	wkb* inputWKB = NULL;	
+
+	wkb **linestringsWKB;
+	double *linestringsArea;
+
+	bit ordered = 0;
+
+	//make wkb from wkt
+	ret = wkbFromText(&inputWKB, geomWKT, srid, &type);
+	if(ret != MAL_SUCCEED) {
+		*geomWKB = wkb_nil;
+
+		if(inputWKB)
+			GDKfree(inputWKB);
+		return ret;
+	}
+	
+	//read the number of linestrings in the input
+	ret = wkbNumGeometries(&itemsNum, &inputWKB);
+	if(ret != MAL_SUCCEED) {
+		*geomWKB = wkb_nil;
+		return ret;
+	}
+
+	linestringsWKB = (wkb**)GDKmalloc(itemsNum*sizeof(wkb*));
+	linestringsArea = (double*)GDKmalloc(itemsNum*sizeof(double));
+	//create oen polygon for each lineString and compute the are of each of them
+	for(i=1; i<=itemsNum; i++) { 
+		wkb* polygonWKB;
+		int batId=0;
+
+		ret = wkbGeometryN(&linestringsWKB[i-1], &inputWKB, &i);	
+		if(ret != MAL_SUCCEED || !linestringsWKB[i-1]) {
+			*geomWKB = wkb_nil;
+
+			GDKfree(inputWKB);
+			for(;i>0; i--)
+				if(linestringsWKB[i-1])
+					GDKfree(linestringsWKB[i-1]);
+			GDKfree(linestringsWKB);
+			
+			return ret;
+		}
+
+		ret = wkbMakePolygon(&polygonWKB, &linestringsWKB[i-1], &batId, srid);
+		if(ret != MAL_SUCCEED) {
+			*geomWKB = wkb_nil;
+			
+			GDKfree(inputWKB);
+			for(;i>0; i--)
+				if(linestringsWKB[i-1])
+					GDKfree(linestringsWKB[i-1]);
+			GDKfree(linestringsWKB);
+			
+			throw(MAL, "geom.MLineStringToPolygon", "All linestring should be closed");
+		}
+
+		ret = wkbArea(&linestringsArea[i-1], &polygonWKB);
+		if(ret != MAL_SUCCEED) {
+			*geomWKB = wkb_nil;
+			
+			GDKfree(inputWKB);
+			for(;i>0; i--)
+				if(linestringsWKB[i-1])
+					GDKfree(linestringsWKB[i-1]);
+			GDKfree(linestringsWKB);
+			
+			return ret;
+		}
+
+		GDKfree(polygonWKB);
+	}
+
+	GDKfree(inputWKB);
+
+	//order the linestrings with decreasing (polygons) area
+	while(!ordered) {
+		ordered = 1;
+		
+		for(i=0; i<itemsNum-1; i++) {
+			if(linestringsArea[i+1] > linestringsArea[i]) {
+				//switch
+				wkb* linestringWKB = linestringsWKB[i];
+				double linestringArea = linestringsArea[i];
+
+				linestringsWKB[i] = linestringsWKB[i+1];
+				linestringsArea[i] = linestringsArea[i+1];
+
+				linestringsWKB[i+1] = linestringWKB;
+				linestringsArea[i+1] = linestringArea;
+			
+				ordered = 0;
+			}
+		}
+	}
+
+	//print areas
+	for(i=0; i<itemsNum; i++) {
+		char* toStr = NULL;
+		int len = 0;
+		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
+		fprintf(stderr, "%f %s\n", linestringsArea[i], toStr);
+		GDKfree(toStr);
+	}
+
+	if(*flag == 0) {
+		//the biggest polygon is the external shell
+		GEOSCoordSeq coordSeq_external;
+		GEOSGeom externalGeometry, linearRingExternalGeometry, *internalGeometries, finalGeometry;
+
+		externalGeometry = wkb2geos(linestringsWKB[0]);
+		if(!externalGeometry) {
+			*geomWKB = wkb_nil;
+			throw(MAL, "geom.MLineStringToPolygon", "Error in wkb2geos");
+		}
+		
+		coordSeq_external = GEOSCoordSeq_clone(GEOSGeom_getCoordSeq(externalGeometry));
+		linearRingExternalGeometry = GEOSGeom_createLinearRing(coordSeq_external);
+
+		//all remaining should be internal
+		internalGeometries = (GEOSGeom*)GDKmalloc((itemsNum-1)*sizeof(GEOSGeom*));
+		for(i=1; i<itemsNum; i++) {
+			GEOSCoordSeq coordSeq_internal;
+			GEOSGeom internalGeometry;
+
+			internalGeometry = wkb2geos(linestringsWKB[i]);
+			if(!internalGeometry) {
+				*geomWKB = wkb_nil;
+				throw(MAL, "geom.MLineStringToPolygon", "Error in wkb2geos");
+			}
+		
+			coordSeq_internal = GEOSCoordSeq_clone(GEOSGeom_getCoordSeq(internalGeometry));
+			internalGeometries[i-1] = GEOSGeom_createLinearRing(coordSeq_internal);
+		}
+
+		finalGeometry = GEOSGeom_createPolygon(linearRingExternalGeometry, internalGeometries, itemsNum-1);
+		if(finalGeometry == NULL) {
+			GEOSGeom_destroy(linearRingExternalGeometry);
+			*geomWKB = wkb_nil;
+			throw(MAL, "geom.MLineStringToPolygon", "Error creating Polygon from LinearRing");
+		}
+
+		GEOSSetSRID(finalGeometry, *srid);
+		*geomWKB = geos2wkb(finalGeometry);
+
+		GEOSGeom_destroy(finalGeometry); 
+		GDKfree(internalGeometries); 
+	} else if(*flag == 1) {
+	//} else {
+		*geomWKB = wkb_nil;
+		throw(MAL, "geom.MLineStringToPolygon", "Uknown flag");
+	}
+
+	for(i=0;i<itemsNum; i++)
+		GDKfree(linestringsWKB[i]);
+	GDKfree(linestringsWKB);
+	GDKfree(linestringsArea);
+	return MAL_SUCCEED;
 }
 
 static str geomMakePoint(wkb **geomWKB, GEOSGeom geosGeometry) {
@@ -1902,6 +2067,7 @@ str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
 	GEOSSetSRID(geosGeometry, *srid);
 
 	*out = geos2wkb(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
 
 	return MAL_SUCCEED;
 
@@ -3928,7 +4094,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	/* the srid was lost with the transformation of the GEOSGeom to wkb
 	* so we decided to store it in the wkb */ 
 		
-	/* we have a GEOSGeometry will number of coordinates and SRID and we 
+	/* we have a GEOSGeometry with number of coordinates and SRID and we 
  	* want to get the wkb out of it */
 	*geomWKB = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
