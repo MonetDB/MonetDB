@@ -2076,9 +2076,6 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 	int interiorRingsNum = 0, i=0;
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
-//	char* data= NULL;
-//	int totalDataSize =0;
-fprintf(stderr, "In wkbInteriorRings\n");
 
 	if (wkb_isnil(*geomWKB)) {
 		throw(MAL, "geom.InteriorRings", "Null input geometry");
@@ -2109,7 +2106,6 @@ fprintf(stderr, "In wkbInteriorRings\n");
 	for (i = 0; i < interiorRingsNum; i++) { 
 		const GEOSGeometry* interiorRingGeometry;
 		wkb* interiorRingWKB;
-//		char* dataCopy = NULL;
 		
 		// get the interior ring of the geometry	
 		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
@@ -2124,25 +2120,7 @@ fprintf(stderr, "In wkbInteriorRings\n");
 		}
 		
 		(*geomArray)->data[i] = interiorRingWKB;
-
-//		if(data)
-//			dataCopy = data;
-//		data = GDKmalloc(totalDataSize+interiorRingWKB->len+8);
-//		if(dataCopy) { 
-//			memcpy(data, dataCopy, totalDataSize);
-//			GDKfree(dataCopy);
-//		}
-//
-//		memcpy(data+totalDataSize, &interiorRingWKB->len, 4);
-//		memcpy(data+totalDataSize+4, &interiorRingWKB->srid, 4);
-//		memcpy(data+totalDataSize+8, interiorRingWKB->data, interiorRingWKB->len);
-//		totalDataSize += interiorRingWKB->len+8;
 	}
-
-//	*geomArray = GDKmalloc(wkba_size(totalDataSize));
-//	(*geomArray)->itemsNum = interiorRingsNum;
-//	memcpy(&(*geomArray)->data, data, totalDataSize);
-//	GDKfree(data);	
 
 	return MAL_SUCCEED;
 }
