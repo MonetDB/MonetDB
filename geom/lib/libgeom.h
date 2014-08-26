@@ -126,7 +126,7 @@ typedef struct wkb {
 
 typedef struct wkba {
 	int itemsNum; //the number of wkbs
-	wkb** data; //the wkbs
+	wkb* data[]; //the wkbs
 } wkba;
 
 typedef struct {

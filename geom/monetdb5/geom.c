@@ -799,7 +799,7 @@ static var_t wkba_size(int items) {
  
 	if (items == ~ 0)
 		items = 0;	
-	size = sizeof(wkba)+items*sizeof(wkba*);
+	size = sizeof(wkba)+items*sizeof(wkb*);
 	assert(size <= VAR_MAX);
 
 	return size;
@@ -2076,8 +2076,9 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 	int interiorRingsNum = 0, i=0;
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
-	char* data= NULL;
-	int totalDataSize =0;
+//	char* data= NULL;
+//	int totalDataSize =0;
+fprintf(stderr, "In wkbInteriorRings\n");
 
 	if (wkb_isnil(*geomWKB)) {
 		throw(MAL, "geom.InteriorRings", "Null input geometry");
@@ -2102,10 +2103,13 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 		throw(MAL, "geom.InteriorRings", "Error in wkbNumRings");
 	}
 
+	*geomArray = (wkba*)GDKmalloc(wkba_size(interiorRingsNum));
+	(*geomArray)->itemsNum = interiorRingsNum;
+
 	for (i = 0; i < interiorRingsNum; i++) { 
 		const GEOSGeometry* interiorRingGeometry;
 		wkb* interiorRingWKB;
-		char* dataCopy = NULL;
+//		char* dataCopy = NULL;
 		
 		// get the interior ring of the geometry	
 		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
@@ -2118,25 +2122,27 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 		if(!interiorRingWKB) {
 			throw(MAL, "geom.InteriorRings", "Error in wkb2geos");
 		}
+		
+		(*geomArray)->data[i] = interiorRingWKB;
 
-		if(data)
-			dataCopy = data;
-		data = GDKmalloc(totalDataSize+interiorRingWKB->len+8);
-		if(dataCopy) { 
-			memcpy(data, dataCopy, totalDataSize);
-			GDKfree(dataCopy);
-		}
-
-		memcpy(data+totalDataSize, &interiorRingWKB->len, 4);
-		memcpy(data+totalDataSize+4, &interiorRingWKB->srid, 4);
-		memcpy(data+totalDataSize+8, interiorRingWKB->data, interiorRingWKB->len);
-		totalDataSize += interiorRingWKB->len+8;
+//		if(data)
+//			dataCopy = data;
+//		data = GDKmalloc(totalDataSize+interiorRingWKB->len+8);
+//		if(dataCopy) { 
+//			memcpy(data, dataCopy, totalDataSize);
+//			GDKfree(dataCopy);
+//		}
+//
+//		memcpy(data+totalDataSize, &interiorRingWKB->len, 4);
+//		memcpy(data+totalDataSize+4, &interiorRingWKB->srid, 4);
+//		memcpy(data+totalDataSize+8, interiorRingWKB->data, interiorRingWKB->len);
+//		totalDataSize += interiorRingWKB->len+8;
 	}
 
-	*geomArray = GDKmalloc(wkba_size(totalDataSize));
-	(*geomArray)->itemsNum = interiorRingsNum;
-	memcpy(&(*geomArray)->data, data, totalDataSize);
-	GDKfree(data);	
+//	*geomArray = GDKmalloc(wkba_size(totalDataSize));
+//	(*geomArray)->itemsNum = interiorRingsNum;
+//	memcpy(&(*geomArray)->data, data, totalDataSize);
+//	GDKfree(data);	
 
 	return MAL_SUCCEED;
 }
@@ -4194,18 +4200,23 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
 /* return length of resulting string. */
 size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
 	int items = fromArray->itemsNum, i;
-	size_t dataSize=sizeof(int), skipBytes=0;
+	int itemsNumDigits = ceil(log10(items));
+	size_t dataSize;//, skipBytes=0;
 	char** partialStrs;
 	char* nilStr = "nil";
-
+	char* toStrPtr = NULL, *itemsNumStr=GDKmalloc((itemsNumDigits+1)*sizeof(char));
+	
 fprintf(stderr, "wkbaTOSTR\n");
+	sprintf(itemsNumStr, "%d", items);
+	dataSize = strlen(itemsNumStr);
 
+	
 	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
-	partialStrs = (char**)malloc(sizeof(char**));
-	*partialStrs = (char*) malloc(items*sizeof(char*));
+	partialStrs = (char**)GDKmalloc(sizeof(char**));
+	*partialStrs = (char*) GDKmalloc(items*sizeof(char*));
 	//create the string version of each wkb
 	for(i=0; i<items; i++) {
-		dataSize += wkbTOSTR(&partialStrs[i], len, fromArray->data[i]);
+		dataSize += wkbTOSTR(&partialStrs[i], len, fromArray->data[i])-2; //remove quotes
 		
 		if(strcmp(partialStrs[i], nilStr) == 0) {
 			*len = 6;
@@ -4215,19 +4226,41 @@ fprintf(stderr, "wkbaTOSTR\n");
 		}
 	}
 
-	//copy all partial strings to a single one
-	*toStr = GDKmalloc(dataSize+1);
-	memcpy(*toStr, &items, sizeof(int));
-	for(i=0; i<items; i++) {
-		strcpy(*toStr+skipBytes, partialStrs[i]);
-		skipBytes+=strlen(partialStrs[i])-1;
-		GDKfree(partialStrs[i]);
-	}
-	
-	GDKfree(partialStrs);
+	//add [] around itemsNum
+	dataSize+=2;
+	//add ", " before each item
+	dataSize += 2*sizeof(char)*items;
 
-	*len = dataSize+1;
-	return dataSize;
+	//copy all partial strings to a single one
+	*toStr = GDKmalloc(dataSize+3); //plus quotes+termination character
+	toStrPtr=*toStr;
+	*(toStrPtr++) = '\"';
+	*(toStrPtr++) = '[';
+	strcpy(toStrPtr, itemsNumStr);
+	toStrPtr+=strlen(itemsNumStr);
+	*(toStrPtr++) = ']';
+	for(i=0; i<items; i++) {
+		if(i==0)
+			*(toStrPtr++) = ':';
+		else
+			*(toStrPtr++) = ',';
+		*(toStrPtr++) = ' ';	
+
+		//strcpy(toStrPtr, partialStrs[i]);
+		memcpy(toStrPtr, &partialStrs[i][1], strlen(partialStrs[i])-2);
+		toStrPtr+=strlen(partialStrs[i])-2;
+		GDKfree(partialStrs[i]);
+		
+	}
+
+	*(toStrPtr++) = '\"';
+	*toStrPtr='\0';
+
+	GDKfree(partialStrs);
+	GDKfree(itemsNumStr);
+
+	*len = strlen(*toStr)+1;
+	return (toStrPtr-*toStr);
 }
 
 /* return number of parsed characters. */
