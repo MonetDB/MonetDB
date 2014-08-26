@@ -2383,14 +2383,6 @@ command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:o
 address ALGantijoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
-command algebra.antiuselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
-address ALGantiuselectInclusive;
-comment See select() but limited to head values
-
-command algebra.antiuselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
-address ALGantiuselect1;
-comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
-
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
 address ALGbandjoin;
 comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
@@ -2783,10 +2775,6 @@ address ALGtintersect;
 command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunique;
 comment Select unique tuples from the input BAT. Double elimination is 		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
-
-command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
-address ALGthetauselect;
-comment The theta (<=,<,=,>,>=) select() limited to head values
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
