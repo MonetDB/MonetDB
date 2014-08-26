@@ -22,7 +22,7 @@ local-temp-2.Bug-3468
 select_in_crash.Bug-3491
 boolean_not.Bug-3505
 varchar_conversion_crash.Bug-3506
-bug_in_cse.Bug-3511
+HAVE_GEOM?bug_in_cse.Bug-3511
 stringfloatshtcompare.Bug-3512
 oid-table-assert.Bug-3514
 round-properties.Bug-3515
@@ -36,3 +36,5 @@ round.Bug-3542
 number_4_4.Bug-3543
 ifthenelse.Bug-3546
 subselect-reverse.Bug-3552
+orderby_on_constant.Bug-3554
+div_by_zero_in_return.Bug-3555

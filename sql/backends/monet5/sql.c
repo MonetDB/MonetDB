@@ -4193,6 +4193,11 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 
 	/* get the deletions BAT */
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
+	if (BATcount(del) == 0) {
+		BBPreleaseref(del->batCacheid);
+		return MAL_SUCCEED;
+	} 
+
 
 	i = 0;
 	bids[i] = 0;
@@ -4220,6 +4225,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 			BBPdecref(bids[i], TRUE);
 		throw(SQL, name, "Too many columns to handle, use copy instead");
 	}
+	BBPreleaseref(del->batCacheid);
 
 	mvc_clear_table(m, t);
 	for (o = t->columns.set->h, i = 0; o; o = o->next, i++) {
@@ -4302,13 +4308,15 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the deletions BAT */
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
-	/* now decide on the algorithm */
-	if (ordered) {
-		if (BATcount(del) > cnt / 20)
-			SQLshrink(cntxt, mb, stk, pci);
-	} else
-		SQLreuse(cntxt, mb, stk, pci);
-
+	if (BATcount(del) > 0) {
+		/* now decide on the algorithm */
+		if (ordered) {
+			if (BATcount(del) > cnt / 20)
+				SQLshrink(cntxt, mb, stk, pci);
+		} else {
+			SQLreuse(cntxt, mb, stk, pci);
+		}
+	}
 	BBPreleaseref(del->batCacheid);
 	return MAL_SUCCEED;
 }
