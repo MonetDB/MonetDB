@@ -350,17 +350,17 @@ ALGgroupby(int *res, int *gids, int *cnts)
 str
 ALGcard(lng *result, int *bid)
 {
-	BAT *b, *bn;
+	BAT *b, *gn, *en;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
 	}
-	bn = (BAT *) BATkunique(BATmirror(b));
-	if (bn == NULL) {
+	if (BATgroup(&gn, &en, NULL, b, NULL, NULL, NULL) != GDK_SUCCEED) {
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
-	*result = BATcount(bn);
-	BBPunfix(bn->batCacheid);
+	*result = BATcount(en);
+	BBPunfix(gn->batCacheid);
+	BBPunfix(en->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
