@@ -184,7 +184,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
-	((int*)task->src)[0] = val;\
+	((TYPE*)task->src)[0] = val;\
 	for(i = 1; i < lim; i++) {\
 		val = ((TYPE*)task->src)[i] = val + *task->dst++;\
 	}\
