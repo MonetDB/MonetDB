@@ -1719,6 +1719,9 @@ const_column(sql_allocator *sa, stmt *val)
 	s->op1 = val;
 	s->op4.typeval = *ct;
 	s->nrcols = 1;
+
+	s->tname = val->tname;
+	s->cname = val->cname;
 	return s;
 }
 

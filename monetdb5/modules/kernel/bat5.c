@@ -2198,9 +2198,9 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
 		for (;p<q; oidx++, p++) {					\
 			if ( *o == oidx ){						\
-				while ( *ol == bidx && ol>o) {		\
+				while ( ol>o && *--ol == bidx) {		\
 					bidx--;							\
-					ol--;q--;						\
+					q--;						\
 				}									\
 				*r++ = *(--q);						\
 				o += (o < ol);						\
@@ -2241,9 +2241,10 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 
-	bidx= BUNlast(b)-1;
+	oidx = b->hseqbase;
+	bidx = oidx + BUNlast(b)-1;
 	o = (oid*)Tloc(bs, BUNfirst(bs));
-	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
+	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	switch(ATOMstorage(b->ttype) ){
 	case TYPE_bte: reuseloop(bte); break;
@@ -2262,15 +2263,16 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 
 			for (;p<q; oidx++, p++) {
 				if ( *o == oidx ){
-					while ( *ol == bidx && ol>o) {
+					while ( ol > o && *--ol == bidx) {
 						bidx--;
-						ol--;q--;
+						q--;
 					}
 					BUNappend(bn, BUNtail(bi, --q), FALSE);
 					o += (o < ol);
 					bidx--;
-				} else
+				} else {
 					BUNappend(bn, BUNtail(bi, p), FALSE);
+				}
 			}
 		} else {
 			switch( b->T->width){
@@ -2298,6 +2300,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
 BKCreuseBATmap(int *ret, int *bid, int *did)
 {
@@ -2330,10 +2333,11 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
-	bidx= BUNlast(b)-1;
-    o = (oid*)Tloc(bs, BUNfirst(bs));
-    ol= (oid*)Tloc(bs, BUNlast(bs));
-    r = (oid*)Tloc(bn, BUNfirst(bn));
+	oidx = b->hseqbase;
+	bidx = oidx + BUNlast(b)-1;
+    	o  = (oid*)Tloc(bs, BUNfirst(bs));
+    	ol = (oid*)Tloc(bs, BUNlast(bs));
+    	r  = (oid*)Tloc(bn, BUNfirst(bn));
 
 	for (;oidx<bidx; oidx++) {
 		if ( *o == oidx ){
@@ -2343,8 +2347,9 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 			*r++ = bidx;
 			o += (o < ol);
 			bidx--;
-		} else
+		} else {
 			*r++ = oidx;
+		}
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
