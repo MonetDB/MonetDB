@@ -4555,8 +4555,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								atom = BUNappend(atom, &w, FALSE);
 
-								sz = tailsize(bn, BATcount(bn));
-								sz += headsize(bn, BATcount(bn));
+								sz = bn->T->heap.free;
 								size = BUNappend(size, &sz, FALSE);
 
 								sz = bn->T->vheap ? bn->T->vheap->size : 0;

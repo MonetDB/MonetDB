@@ -188,8 +188,19 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
-	if ( b->ttype == TYPE_void){
-		// void columns are already compressed
+	switch(ATOMstorage(b->ttype)){
+	case TYPE_bit:
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_oid:
+	case TYPE_wrd:
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	default:
+		// don't compress them
 		BBPkeepref(*ret = b->batCacheid);
 		return msg;
 	}
@@ -213,7 +224,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	bn = BATnew( TYPE_void, b->ttype, cnt + 3 *  MosaicBlkSize + MosaicHdrSize, TRANSIENT);
+	bn = BATnew( TYPE_void, b->ttype, cnt + 3 *  MosaicBlkSize + MosaicHdrSize, b->batPersistence);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
