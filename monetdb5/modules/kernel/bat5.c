@@ -2228,7 +2228,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
+	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
@@ -2321,7 +2321,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) , TRANSIENT);
+	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
@@ -2336,12 +2336,12 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 	}
 
 	oidx = b->hseqbase;
-	bidx = oidx + BUNlast(b)-1;
+	bidx = oidx + BATcount(b)-1;
 	o  = (oid*)Tloc(bs, BUNfirst(bs));
 	ol = (oid*)Tloc(bs, BUNlast(bs));
 	r  = (oid*)Tloc(bn, BUNfirst(bn));
 
-	for (;oidx<bidx; oidx++) {
+	for (; oidx <= bidx; oidx++) {
 		if ( *o == oidx ){
 			while ( ol > o && ol[-1] == bidx) {
 				bidx--;
