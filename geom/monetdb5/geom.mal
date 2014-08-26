@@ -335,7 +335,6 @@ end MakePolygon;
 command PointOnSurface(w:wkb) :wkb address wkbPointOnSurface
 comment "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.";
 
-
 command mbr(:wkb) :mbr address wkbMBR
 comment "Creates the mbr for the given wkb.";
 command MakeBox2D(:wkb,:wkb) :mbr address wkbBox2D

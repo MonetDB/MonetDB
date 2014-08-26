@@ -4095,13 +4095,19 @@ CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME 
 --END;
 --CREATE FUNCTION ST_SetInteriorRings(geom Geometry[]) RETURNS Geometry EXTERNAL NAME geom."InteriorRings";
 
---Functions on Polyhedral Surfaces
+--Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon pathes or facets)
 --CREATE FUNCTION ST_Geometries(geom Geometry) RETURNS TABLE(geom Geometries) EXTERNAL NAME geom."Geometries";
 --CREATE FUNCTION NumSurfaces(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumSurfaces";
 --CREATE FUNCTION Surface(positionNum integer) RETURNS Geometry EXTERNAL NAME geom."SurfaceN";
 --from Part 1
---CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer EXTERNAL NAME --works only with polyhedral surface
---CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry EXTERNAL NAME --works with polyhedral surface
+CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer --EXTERNAL NAME geom."NumPatches"; --same with NumSurfaces
+BEGIN
+	RETURN SELECT ST_NumGeometries(geom);
+END;
+CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry --EXTERNAL NAME geom."PatchN" --same with Surface
+BEGIN
+	RETURN SELECT ST_GeometryN(geom, patchNum);
+END; 
 --BoundingPolygons
 --IsClosed
 

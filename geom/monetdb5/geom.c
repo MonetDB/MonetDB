@@ -217,7 +217,6 @@ geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
 
-
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 geom_export str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID);
 
@@ -3114,8 +3113,6 @@ str wkbNumGeometries(int* out, wkb** geom) {
 
 	return MAL_SUCCEED;
 }
-
-
 
 /* MBR */
 
