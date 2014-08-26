@@ -826,14 +826,14 @@ stmt_reorder(sql_allocator *sa, stmt *s, int direction, stmt *orderby_ids, stmt 
 }
 
 stmt *
-stmt_unique(sql_allocator *sa, stmt *s, stmt *g, stmt *e, stmt *c)
+stmt_unique(sql_allocator *sa, stmt *s)
 {
 	stmt *ns = stmt_create(sa, st_unique);
 
 	ns->op1 = s;
-	ns->op2 = g;
-	ns->op3 = e;
-	ns->op4.stval = c;
+	ns->op2 = NULL;
+	ns->op3 = NULL;
+	ns->op4.stval = NULL;
 	ns->nrcols = s->nrcols;
 	ns->key = 1;
 	ns->aggr = s->aggr;
