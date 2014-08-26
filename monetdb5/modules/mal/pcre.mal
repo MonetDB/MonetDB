@@ -173,5 +173,5 @@ end ilikesubselect;
 command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCRElike_join_pcre;
 
-command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-address PCREilike_join_pcr5;
+command algebra.ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address PCREilike_join_pcre;
