@@ -3881,11 +3881,36 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
+	char *polyhedralSurface = "POLYHEDRALSURFACE";
+	char *multiPolygon = "MULTIPOLYGON";
+	char *geoType;
+	int typeSize = 0;
+	char *geomWKT_original = NULL;
 
 	if (strcmp(geomWKT, str_nil) == 0) {
 		*geomWKB = wkb_nil;
 		return 0;
 	}
+	
+	//check whether the geometry type is polyhedral surface
+	//geos cannot handle this type of geometry but since it is 
+	//a special type of multipolygon I jsu change the type before 
+	//continuing. Of course this means that isValid for example does
+	//not work correctly.
+	typeSize = strlen(polyhedralSurface);
+	geoType = (char*)GDKmalloc((typeSize+1)*sizeof(char));
+	memcpy(geoType, geomWKT, typeSize);
+	geoType[typeSize] = '\0';
+	if(strcasecmp(geoType, polyhedralSurface) == 0) {
+		int sizeOfInfo = strlen(geomWKT)-strlen(polyhedralSurface);
+		geomWKT_original = geomWKT;
+		geomWKT = (char*)GDKmalloc((sizeOfInfo+strlen(multiPolygon)+1)*sizeof(char));
+		strcpy(geomWKT, multiPolygon);
+		memcpy(geomWKT+strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
+		geomWKT[sizeOfInfo+strlen(multiPolygon)] = '\0';
+	}
+	GDKfree(geoType);
+	////////////////////////// UP TO HERE ///////////////////////////
 
 	WKT_reader = GEOSWKTReader_create();
 	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
@@ -3913,6 +3938,10 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 
 	*len = (int) wkb_size((*geomWKB)->len);
 
+	if(geomWKT_original) {
+		GDKfree(geomWKT);
+		geomWKT = geomWKT_original;	
+	}
 	return (int)strlen(geomWKT);
 }
 
@@ -4374,17 +4403,3 @@ void wkbaHEAP(Heap *heap, size_t capacity) {
 	fprintf(stderr, "wkbaNULL\n");
 HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
