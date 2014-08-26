@@ -75,7 +75,7 @@ pcre_export str BATPCREilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
 pcre_export str BATPCREnotilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREnotilike2(int *ret, int *b, str *pat);
-pcre_export str PCREselectDef(int *res, str *pattern, int *bid);
+pcre_export str PCREselect(int *res, str *pattern, int *bid);
 pcre_export str PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
 pcre_export str PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
 pcre_export str pcre_init(void);
@@ -267,48 +267,6 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 	r->T->nonil = FALSE;
 	r->tsorted = FALSE;
 	r->trevsorted = FALSE;
-
-	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
-	return r;
-}
-
-static BAT *
-re_select(RE *pattern, BAT *strs, int ignore)
-{
-	BATiter strsi = bat_iterator(strs);
-	BAT *r;
-	BUN p, q;
-
-	assert(strs->htype==TYPE_void);
-	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs), TRANSIENT);
-	else
-		r = BATnew(strs->htype, TYPE_str, BATcount(strs), TRANSIENT);
-	if (r == NULL)
-		return NULL;
-
-	if (ignore) {
-		BATloop(strs, p, q) {
-			const char *s = BUNtail(strsi, p);
-
-			if (re_match_ignore(s, pattern))
-				BUNins(r, BUNhead(strsi, p), s, FALSE);
-		}
-	} else {
-		BATloop(strs, p, q) {
-			const char *s = BUNtail(strsi, p);
-
-			if (re_match_no_ignore(s, pattern))
-				BUNins(r, BUNhead(strsi, p), s, FALSE);
-		}
-	}
-	r->H->nonil = strs->H->nonil;
-	r->hsorted = strs->hsorted;
-	r->hrevsorted = strs->hrevsorted;
-/*	BATkey(r, BAThkey(strs)); ?*/
-	r->T->nonil = strs->T->nonil;
-	r->tsorted = strs->tsorted;
-	r->trevsorted = strs->trevsorted;
 
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	return r;
@@ -1119,8 +1077,8 @@ PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
 	return msg;
 }
 
-static str
-PCREselect(int *res, str *pattern, int *bid, bit *ignore)
+str
+PCREselect(int *res, str *pattern, int *bid)
 {
 	BAT *bn = NULL, *strs;
 	str msg;
@@ -1129,7 +1087,7 @@ PCREselect(int *res, str *pattern, int *bid, bit *ignore)
 		throw(MAL, "pcre.select", RUNTIME_OBJECT_MISSING);
 	}
 
-	if ((msg = pcre_select(&bn, *pattern, strs, *ignore)) != MAL_SUCCEED) {
+	if ((msg = pcre_select(&bn, *pattern, strs, FALSE)) != MAL_SUCCEED) {
 		BBPunfix(strs->batCacheid);
 		return msg;
 	}
@@ -1140,13 +1098,6 @@ PCREselect(int *res, str *pattern, int *bid, bit *ignore)
 	return msg;
 }
 
-str
-PCREselectDef(int *res, str *pattern, int *bid)
-{
-	bit ignore = FALSE;
-	return(PCREselect(res, pattern, bid, &ignore));
-}
-
 static str
 PCREuselect(int *res, str *pattern, int *bid, bit *ignore)
 {
@@ -1154,7 +1105,7 @@ PCREuselect(int *res, str *pattern, int *bid, bit *ignore)
 	str msg;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "pcre.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "pcre.uselect", RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((msg = pcre_uselect(&bn, *pattern, strs, *ignore)) != MAL_SUCCEED) {
@@ -1592,7 +1543,7 @@ PCRElikesubselect3(bat *ret, bat *bid, str *pat, str *esc, bit *anti)
 }
 
 static str
-PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
+PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit ignore)
 {
 	char *ppat = NULL;
 	str r = MAL_SUCCEED;
@@ -1610,10 +1561,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			re_destroy(re);
 			throw(MAL, "pcre.like", RUNTIME_OBJECT_MISSING);
 		}
-		if (us)
-			res = re_uselect(re, bp, ignore);
-		else
-			res = re_select(re, bp, ignore);
+		res = re_uselect(re, bp, ignore);
 
 		re_destroy(re);
 		if (res == NULL) {
@@ -1643,10 +1591,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 					throw(MAL, "pcre.like", MAL_MALLOC_FAIL); /* likely to fail hard as well */
 
 				sprintf(ppat, "^%s$", *pat);
-				if (us)
-					r = PCREuselect(ret, &ppat, b, &ignore);
-				else
-					r = PCREselect(ret, &ppat, b, &ignore);
+				r = PCREuselect(ret, &ppat, b, &ignore);
 				GDKfree(ppat);
 			} else {
 				BAT *bp = BATdescriptor(*b);
@@ -1654,10 +1599,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 
 				if (bp == NULL)
 					throw(MAL, "pcre.like", OPERATION_FAILED); /*operation?*/
-				if (us)
-					res = BATuselect(bp, *pat, *pat);
-				else
-					res = BATselect(bp, *pat, *pat);
+				res = BATuselect(bp, *pat, *pat);
 
 				*ret = res->batCacheid;
 				BBPkeepref(res->batCacheid);
@@ -1665,10 +1607,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 				r = MAL_SUCCEED;
 			}
 		} else {
-			if (us)
-				r = PCREuselect(ret, &ppat, b, &ignore);
-			else
-				r = PCREselect(ret, &ppat, b, &ignore);
+			r = PCREuselect(ret, &ppat, b, &ignore);
 			GDKfree(ppat);
 		}
 	}
@@ -1701,20 +1640,11 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 		int r;
 		str err;
 
-		if (case_sensitive) {
-			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE, FALSE)) != MAL_SUCCEED) {
-				BBPunfix(j->batCacheid);
-				BBPreleaseref(B->batCacheid);
-				BBPreleaseref(Bpat->batCacheid);
-				return err;
-			}
-		} else {
-			if ((err = PCRElike_pcre( &r, b, &ppat, esc, TRUE,TRUE)) != MAL_SUCCEED) {
-				BBPunfix(j->batCacheid);
-				BBPreleaseref(B->batCacheid);
-				BBPreleaseref(Bpat->batCacheid);
-				return err;
-			}
+		if ((err = PCRElike_pcre( &r, b, &ppat, esc, !case_sensitive)) != MAL_SUCCEED) {
+			BBPunfix(j->batCacheid);
+			BBPreleaseref(B->batCacheid);
+			BBPreleaseref(Bpat->batCacheid);
+			return err;
 		}
 
 		tr = BATdescriptor(r);
@@ -1725,9 +1655,22 @@ PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 			throw(MAL,"pcre",RUNTIME_OBJECT_MISSING);
 		}
 		x = BATconst(tr, TYPE_oid, BUNhead(pati, p), TRANSIENT);
-		BATins(j, x, TRUE);
 		BBPreleaseref(tr->batCacheid);
+		if ( x == NULL) {
+			BBPreleaseref(B->batCacheid);
+			BBPreleaseref(Bpat->batCacheid);
+			BBPreleaseref(j->batCacheid);
+			throw(MAL,"pcre",MAL_MALLOC_FAIL);
+		}
+		tr = BATins(j, x, TRUE);
 		BBPreleaseref(x->batCacheid);
+		if (tr == NULL) {
+			BBPreleaseref(B->batCacheid);
+			BBPreleaseref(Bpat->batCacheid);
+			BBPreleaseref(j->batCacheid);
+			throw(MAL,"pcre",MAL_MALLOC_FAIL);
+		}
+		j = tr;
 	}
 	BBPreleaseref(B->batCacheid);
 	BBPreleaseref(Bpat->batCacheid);

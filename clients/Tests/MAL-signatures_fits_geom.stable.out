@@ -40910,14 +40910,10 @@ command pcre.imatch(s:str,pat:str):bit
 address PCREimatch;
 comment Caseless Perl Compatible Regular Expression pattern matching against a string
 
-command pcre.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
 command pcre.index(pat:pcre,s:str):int 
 address PCREindex;
 comment match a pattern, return matched position (or 0 when not found)
 
-command pcre.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCRElike_join_pcre;
 command pcre.match(s:str,pat:str):bit 
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
@@ -40943,10 +40939,6 @@ comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 
 command pcre.sql2pcre(pat:str,esc:str):str 
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
-
-command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
-address PCREselectDef;
-comment Select tuples based on the pattern
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;

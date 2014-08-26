@@ -1741,7 +1741,7 @@ str PCREpatindex(int *ret, str *pat, str *val);
 str PCREquote(str *r, str *v);
 str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
 str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
-str PCREselectDef(int *res, str *pattern, int *bid);
+str PCREselect(int *res, str *pattern, int *bid);
 str PCREsql2pcre(str *ret, str *pat, str *esc);
 sht PropertyIndex(str name);
 str PropertyName(sht idx);

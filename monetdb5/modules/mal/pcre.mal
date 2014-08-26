@@ -20,15 +20,9 @@ command index(pat:pcre, s:str) :int
 address PCREindex
 comment "match a pattern, return matched position (or 0 when not found)";
 
-command select(pat:str, strs:bat[:oid,:str]):bat[:oid,:str]
-address PCREselectDef
-comment "Select tuples based on the pattern";
-
-command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-address PCRElike_join_pcre;
-
-command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-address PCREilike_join_pcre;
+# command select(pat:str, strs:bat[:oid,:str]):bat[:oid,:str]
+# address PCREselect
+# comment "Select tuples based on the pattern";
 
 command match(s:str, pat:str):bit
 address PCREmatch
@@ -154,23 +148,23 @@ comment "Select all head values of the first input BAT for which the
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-#function likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	#return likesubselect(b, pat, esc, false, anti);
+#function algebra.likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	#return algebra.likesubselect(b, pat, esc, false, anti);
 #end likesubselect;
 
-function ilikesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return likesubselect(b, pat, esc, true, anti);
+function algebra.ilikesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return algebra.likesubselect(b, pat, esc, true, anti);
 end ilikesubselect;
 
-function likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return likesubselect(b, cand, pat, esc, false, anti);
+function algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return algebra.likesubselect(b, cand, pat, esc, false, anti);
 end likesubselect;
 
-function ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return likesubselect(b, cand, pat, esc, true, anti);
+function algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return algebra.likesubselect(b, cand, pat, esc, true, anti);
 end ilikesubselect;
 
-command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+command algebra.likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCRElike_join_pcre;
 
 command algebra.ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
