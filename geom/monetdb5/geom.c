@@ -4218,7 +4218,17 @@ size_t wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 		*geomWKB = wkb_nil;
 		return 0;
 	}
-	
+fprintf(stderr, "In wkbFROMSTR\n");
+	//check whether the represenattion is binary (hex)
+	if(geomWKT[0] == '0'){
+				str ret = wkbFromBinary(geomWKB, &geomWKT);
+fprintf(stderr, "BINARY\n");
+
+		if(ret != MAL_SUCCEED)
+			return 0;
+		return (int)strlen(geomWKT);
+	}
+	fprintf(stderr, "NOT\n");
 	//check whether the geometry type is polyhedral surface
 	//geos cannot handle this type of geometry but since it is 
 	//a special type of multipolygon I jsu change the type before 

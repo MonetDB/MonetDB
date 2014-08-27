@@ -540,6 +540,11 @@ command calc.isnil(v:wkb):bit
 address wkbIsnil
 comment "Nil test for wkb value";
 
+#loading string without the need to use st_wkbtosql OR st_wkttosql
+function calc.wkb{unsafe}( wkt:str, srid:int, type:int ) :wkb;
+        x := wkb.FromText(wkt,0,0);
+        return x;
+end wkb;
 
 # wkbPoint := 1;
 # wkbLineString := 2;
