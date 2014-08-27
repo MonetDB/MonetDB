@@ -2406,7 +2406,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							       ") AS \"all\" "
 							 "WHERE ntype & %u > 0 "
 							       "%s "
-							 "ORDER BY system, name",
+							 "ORDER BY system, name, sname",
 							 MD_TABLE, MD_VIEW,
 							 nameq,
 							 MD_SEQ,
