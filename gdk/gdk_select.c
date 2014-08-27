@@ -30,7 +30,7 @@ float nextafterf(float x, float y);
 /* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
-#define buninsfix(B,C,A,I,T,V,G,M,R)				\
+#define buninsfix(B,A,I,V,G,M,R)				\
 	do {							\
 		if ((I) == BATcapacity(B)) {			\
 			BATsetcount((B), (I));			\
@@ -40,7 +40,7 @@ float nextafterf(float x, float y);
 				BBPreclaim(B);			\
 				return (R);			\
 			}					\
-			A = (T *) C##loc((B), BUNfirst(B));	\
+			A = (oid *) Tloc((B), BUNfirst(B));	\
 		}						\
 		A[(I)] = (V);					\
 	} while (0)
@@ -138,7 +138,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
-				buninsfix(bn, T, dst, cnt, oid, o,
+				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
 				cnt++;
@@ -147,7 +147,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	} else {
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) (i + off);
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
 				  maximum, NULL);
 			cnt++;
@@ -276,7 +276,7 @@ do {									\
 									\
 	if (BATcapacity(bn) < maximum) {				\
 		impsloop(CAND, TEST,					\
-			 buninsfix(bn, T, dst, cnt, oid, o,		\
+			 buninsfix(bn, dst, cnt, o,			\
 				   (BUN) ((dbl) cnt / (dbl) (p-r)	\
 					  * (dbl) (q-p) * 1.1 + 1024),	\
 				   BATcapacity(bn) + q - p, BUN_NONE));	\
@@ -315,7 +315,7 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
-			buninsfix(bn, T, dst, cnt, oid, (oid)(o),	\
+			buninsfix(bn, dst, cnt, (oid)(o),		\
 				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
 					 * (dbl) (q-p) * 1.1 + 1024),	\
 				  BATcapacity(bn) + q - p, BUN_NONE);	\
@@ -456,7 +456,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
@@ -471,7 +471,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
@@ -492,7 +492,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
@@ -535,7 +535,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
@@ -550,7 +550,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
@@ -571,7 +571,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, T, dst, cnt, oid, o,
+			buninsfix(bn, dst, cnt, o,
 				  (BUN) ((dbl) cnt / (dbl) (p-r)
 					 * (dbl) (q-p) * 1.1 + 1024),
 				  BATcapacity(bn) + q - p, BUN_NONE);
