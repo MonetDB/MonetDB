@@ -461,38 +461,6 @@ merge_compute_minrun(ssize_t n)
 
 #undef COPY
 
-#define COPY		COPY_oid
-
-#define binarysort	binarysort_oid
-#define do_ssort	do_ssort_oid
-#define gallop_left	gallop_left_oid
-#define gallop_right	gallop_right_oid
-#define ISLT		ISLT_oid
-#define merge_at	merge_at_oid
-#include "gdk_ssort_impl.h"
-#undef binarysort
-#undef do_ssort
-#undef gallop_left
-#undef gallop_right
-#undef ISLT
-#undef merge_at
-
-#define binarysort	binarysort_oid_rev
-#define do_ssort	do_ssort_oid_rev
-#define gallop_left	gallop_left_oid_rev
-#define gallop_right	gallop_right_oid_rev
-#define ISLT		ISLT_oid_rev
-#define merge_at	merge_at_oid_rev
-#include "gdk_ssort_impl.h"
-#undef binarysort
-#undef do_ssort
-#undef gallop_left
-#undef gallop_right
-#undef ISLT
-#undef merge_at
-
-#undef COPY
-
 #define COPY		COPY_any
 
 #define binarysort	binarysort_any
@@ -529,7 +497,6 @@ merge_compute_minrun(ssize_t n)
 #define do_ssort_lng	do_ssort_lng_rev
 #define do_ssort_flt	do_ssort_flt_rev
 #define do_ssort_dbl	do_ssort_dbl_rev
-#define do_ssort_oid	do_ssort_oid_rev
 #define do_ssort_any	do_ssort_any_rev
 
 #include "gdk_ssort_impl.h"
@@ -541,7 +508,6 @@ merge_compute_minrun(ssize_t n)
 #undef do_ssort_lng
 #undef do_ssort_flt
 #undef do_ssort_dbl
-#undef do_ssort_oid
 #undef do_ssort_any
 
 #undef binarysort

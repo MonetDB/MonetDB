@@ -241,7 +241,6 @@ binsearch_##TYPE(const oid *rcand, oid offset, const TYPE *rvals,	\
 BINSEARCHFUNC(bte)
 BINSEARCHFUNC(sht)
 BINSEARCHFUNC(int)
-BINSEARCHFUNC(oid)
 BINSEARCHFUNC(lng)
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
@@ -271,14 +270,17 @@ binsearch(const oid *rcand, oid offset,
 #if SIZEOF_WRD == SIZEOF_INT
 	case TYPE_wrd:
 #endif
+#if SIZEOF_OID == SIZEOF_INT
+	case TYPE_oid:
+#endif
 		return binsearch_int(rcand, offset, (const int *) rvals,
 				     lo, hi, (const int *) v, ordering, last);
-	case TYPE_oid:
-		return binsearch_oid(rcand, offset, (const oid *) rvals,
-				     lo, hi, (const oid *) v, ordering, last);
 	case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
 	case TYPE_wrd:
+#endif
+#if SIZEOF_OID == SIZEOF_LNG
+	case TYPE_oid:
 #endif
 		return binsearch_lng(rcand, offset, (const lng *) rvals,
 				     lo, hi, (const lng *) v, ordering, last);
@@ -1458,12 +1460,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 
 				switch (t) {
 				case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-				case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-				case TYPE_wrd:
-#endif
 					if (!nil_matches && *(const int*)v == int_nil) {
 						lskipped = BATcount(r1) > 0;
 						continue;
@@ -1479,12 +1475,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					}
 					break;
 				case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-				case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-				case TYPE_wrd:
-#endif
 					if (!nil_matches && *(const lng*)v == lng_nil) {
 						lskipped = BATcount(r1) > 0;
 						continue;
@@ -2356,9 +2346,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (*(const int*)vrl == int_nil ||
 				    *(const int*)vrh == int_nil ||
 				    *(const int*)vl < *(const int*)vrl ||
@@ -2368,24 +2355,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				if (*(const lng*)vrl == lng_nil ||
 				    *(const lng*)vrh == lng_nil ||
 				    *(const lng*)vl < *(const lng*)vrl ||
 				    *(const lng*)vl > *(const lng*)vrh ||
 				    (!li && *(const lng*)vl == *(const lng*)vrl) ||
 				    (!hi && *(const lng*)vl == *(const lng*)vrh))
-					continue;
-				break;
-			case TYPE_oid:
-				if (*(const oid*)vrl == oid_nil ||
-				    *(const oid*)vrh == oid_nil ||
-				    *(const oid*)vl < *(const oid*)vrl ||
-				    *(const oid*)vl > *(const oid*)vrh ||
-				    (!li && *(const oid*)vl == *(const oid*)vrl) ||
-				    (!hi && *(const oid*)vl == *(const oid*)vrh))
 					continue;
 				break;
 			case TYPE_flt:
@@ -2407,6 +2382,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			default:
+				assert(t != TYPE_oid);
+				assert(t != TYPE_wrd);
 				if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
 					continue;
 				c = cmp(vl, vrl);

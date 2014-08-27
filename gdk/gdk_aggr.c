@@ -1943,9 +1943,6 @@ do_groupmin(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 	case TYPE_int:
 		AGGR_CMP(int, LT);
 		break;
-	case TYPE_oid:
-		AGGR_CMP(oid, LT);
-		break;
 	case TYPE_lng:
 		AGGR_CMP(lng, LT);
 		break;
@@ -1963,6 +1960,8 @@ do_groupmin(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 		}
 		/* fall through */
 	default:
+		assert(b->ttype != TYPE_oid);
+		assert(b->ttype != TYPE_wrd);
 		bi = bat_iterator(b);
 
 		if (gdense) {
@@ -2081,9 +2080,6 @@ do_groupmax(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 	case TYPE_int:
 		AGGR_CMP(int, GT);
 		break;
-	case TYPE_oid:
-		AGGR_CMP(oid, GT);
-		break;
 	case TYPE_lng:
 		AGGR_CMP(lng, GT);
 		break;
@@ -2101,6 +2097,8 @@ do_groupmax(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
 		}
 		/* fall through */
 	default:
+		assert(b->ttype != TYPE_oid);
+		assert(b->ttype != TYPE_wrd);
 		bi = bat_iterator(b);
 
 		if (gdense) {
