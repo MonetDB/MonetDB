@@ -31,6 +31,13 @@ Ready.
 % smallint # type
 % 1 # length
 [ 2	]
+#select a+b from (select 1 as a,1 as b union select 1,1) as q order by a limit
+#1;
+% .L3 # table_name
+% L3 # name
+% smallint # type
+% 1 # length
+[ 2	]
 
 # 19:40:07 >  
 # 19:40:07 >  "Done."

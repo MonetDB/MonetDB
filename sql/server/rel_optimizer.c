@@ -1777,7 +1777,7 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ur->r = exps_copy(sql->sa, r->r);
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 			u = rel_setop(sql->sa, ul, ur, op_union);
-			u->exps = exps_copy(sql->sa, r->exps); 
+			u->exps = exps_alias(sql->sa, r->exps); 
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
@@ -1785,7 +1785,11 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
 
-			r->l = u;
+			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
+			ur->r = r->r;
+			r->l = NULL;
+			rel_destroy(r);
+			rel->l = ur;
 			(*changes)++;
 			return rel;
 		}
