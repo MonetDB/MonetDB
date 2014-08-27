@@ -32,13 +32,13 @@
 mosaic_export int dictsize;
 
 mosaic_export void MOSdump_dict(Client cntxt, MOStask task);
-mosaic_export void MOSadvance_dict(MOStask task);
-mosaic_export void MOSskip_dict(MOStask task);
-mosaic_export int MOSestimate_dict(Client cntxt, MOStask task);
+mosaic_export void MOSadvance_dict(Client cntxt, MOStask task);
+mosaic_export void MOSskip_dict(Client cntxt, MOStask task);
+mosaic_export flt  MOSestimate_dict(Client cntxt, MOStask task);
 mosaic_export void MOScompress_dict(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_dict(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_dict(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last);
-mosaic_export str MOSjoin_dict(Client cntxt,  MOStask task, BUN first, BUN last);
+mosaic_export str MOSsubselect_dict(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mosaic_export str MOSthetasubselect_dict(Client cntxt,  MOStask task, void *val, str oper);
+mosaic_export str MOSleftfetchjoin_dict(Client cntxt,  MOStask task);
+mosaic_export str MOSjoin_dict(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_DICT_ */

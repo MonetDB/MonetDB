@@ -68,27 +68,28 @@ MOSdumpInternal(Client cntxt, BAT *b){
 	if( task == NULL)
 		return;
 	MOSinit(task,b);
-	while(task->blk){
+	MOSinitializeScan(cntxt,task,0,task->hdr->top);
+	while(task->start< task->stop){
 		switch(MOStag(task->blk)){
 		case MOSAIC_NONE:
 			MOSdump_none(cntxt,task);
-			MOSskip_none(task);
+			MOSadvance_none(cntxt,task);
 			break;
 		case MOSAIC_RLE:
 			MOSdump_rle(cntxt,task);
-			MOSskip_rle(task);
+			MOSadvance_rle(cntxt,task);
 			break;
 		case MOSAIC_DICT:
 			MOSdump_dict(cntxt,task);
-			MOSskip_dict(task);
+			MOSadvance_dict(cntxt,task);
 			break;
 		case MOSAIC_DELTA:
 			MOSdump_delta(cntxt,task);
-			MOSskip_delta(task);
+			MOSadvance_delta(cntxt,task);
 			break;
 		case MOSAIC_ZONE:
 			MOSdump_zone(cntxt,task);
-			MOSskip_zone(task);
+			MOSadvance_zone(cntxt,task);
 		}
 	}
 }
@@ -168,7 +169,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	str msg = MAL_SUCCEED;
 	MOStask task;
 	int cand;
-	lng percentage=0, perc;
+	float factor= 1.0, fac= 1.0;
 	int filter[MOSAIC_METHODS];
 	
 	if( properties && !strstr(properties,"compressed"))
@@ -255,8 +256,8 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		// default is to extend the non-compressed block
 		//mnstr_printf(cntxt->fdout,"#elements "BUNFMT"\n",task->elm);
 		cand = MOSAIC_NONE;
-		perc = 100;
-		percentage = 100;
+		fac = 1.0;
+		factor = 1.0;
 
 		// cutoff the filters, especially dictionary tests are expensive
 		if( cutoff && cutoff > task->elm){
@@ -267,38 +268,38 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		
 		// select candidate amongst those
 		if ( filter[MOSAIC_RLE]){
-			perc = MOSestimate_rle(cntxt,task);
-			if (perc >= 0 &&  perc < percentage){
+			fac = MOSestimate_rle(cntxt,task);
+			if (fac > factor){
 				cand = MOSAIC_RLE;
-				percentage = perc;
+				factor = fac;
 			}
 		}
 		if ( filter[MOSAIC_DICT]){
-			perc = MOSestimate_dict(cntxt,task);
-			if (perc >= 0 && perc <= percentage){
+			fac = MOSestimate_dict(cntxt,task);
+			if (fac > factor){
 				cand = MOSAIC_DICT;
-				percentage = perc;
+				factor = fac;
 			}
 		}
-		if (0 && filter[MOSAIC_ZONE]){
-			perc = MOSestimate_zone(cntxt,task);
-			if (perc >= 0 && perc < percentage){
+		if ( filter[MOSAIC_ZONE]){
+			fac = MOSestimate_zone(cntxt,task);
+			if (fac > factor){
 				cand = MOSAIC_ZONE;
-				percentage = perc;
+				factor = fac;
 			}
 		}
 		if ( filter[MOSAIC_DELTA]){
-			perc = MOSestimate_delta(cntxt,task);
-			if ( perc >=0 &&  perc < percentage){
+			fac = MOSestimate_delta(cntxt,task);
+			if ( fac > factor ){
 				cand = MOSAIC_DELTA;
-				percentage = perc;
+				factor = fac;
 			}
 		}
 		if ( filter[MOSAIC_LINEAR]){
-			perc = MOSestimate_linear(cntxt,task);
-			if ( perc >=0 &&  perc < percentage){
+			fac = MOSestimate_linear(cntxt,task);
+			if ( fac >factor){
 				cand = MOSAIC_LINEAR;
-				percentage = perc;
+				factor = fac;
 			}
 		}
 
@@ -312,9 +313,9 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk) ){
 				MOSupdateHeader(cntxt,task);
 				if( MOStag(task->blk) == MOSAIC_NONE)
-					MOSskip_none(task);
+					MOSskip_none(cntxt,task);
 				else
-					MOSskip_zone(task);
+					MOSskip_zone(cntxt,task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				*task->blk = MOSeol;
@@ -327,7 +328,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_dict(task);
+			MOSadvance_dict(cntxt,task);
 			*task->blk = MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -336,7 +337,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_delta(task);
+			MOSadvance_delta(cntxt,task);
 			*task->blk = MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -345,7 +346,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_linear(task);
+			MOSadvance_linear(cntxt,task);
 			*task->blk= MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -354,7 +355,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_rle(task);
+			MOSadvance_rle(cntxt,task);
 			*task->blk = MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -363,7 +364,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 				task->dst += 2 * MosaicBlkSize;
 			if ( MOScnt(task->blk) > MAXZONESIZE){
 				MOSupdateHeader(cntxt,task);
-				MOSadvance_zone(task);
+				MOSadvance_zone(cntxt,task);
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				*task->blk = MOSeol;
 			}
@@ -377,10 +378,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk)){
 		MOSupdateHeader(cntxt,task);
 		if( MOStag(task->blk) == MOSAIC_NONE ){
-			MOSadvance_none(task);
+			MOSadvance_none(cntxt,task);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 		} else{
-			MOSadvance_zone(task);
+			MOSadvance_zone(cntxt,task);
 			task->dst = ((char*) task->blk)+ 3 * MosaicBlkSize;
 		}
 		*task->blk = MOSeol;
@@ -486,27 +487,27 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		switch(MOStag(task->blk)){
 		case MOSAIC_DICT:
 			MOSdecompress_dict(cntxt,task);
-			MOSskip_dict(task);
+			MOSskip_dict(cntxt,task);
 			break;
 		case MOSAIC_DELTA:
 			MOSdecompress_delta(cntxt,task);
-			MOSskip_delta(task);
+			MOSskip_delta(cntxt,task);
 			break;
 		case MOSAIC_LINEAR:
 			MOSdecompress_linear(cntxt,task);
-			MOSskip_linear(task);
+			MOSskip_linear(cntxt,task);
 			break;
 		case MOSAIC_NONE:
 			MOSdecompress_none(cntxt,task);
-			MOSskip_none(task);
+			MOSskip_none(cntxt,task);
 			break;
 		case MOSAIC_RLE:
 			MOSdecompress_rle(cntxt,task);
-			MOSskip_rle(task);
+			MOSskip_rle(cntxt,task);
 			break;
 		case MOSAIC_ZONE:
 			MOSdecompress_zone(cntxt,task);
-			MOSskip_zone(task);
+			MOSskip_zone(cntxt,task);
 			break;
 		default: assert(0);
 		}
@@ -557,31 +558,31 @@ isCompressed(int bid)
 	return r;
 }
 
-#ifdef _MSC_VER
-#define nextafter   _nextafter
-float nextafterf(float x, float y);
-#endif
+// locate the corresponding bind operation to determine the partition
+static void
+MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part, int *nrofparts )
+{
+	int i;
+	InstrPtr p;
 
-#define PREVVALUEbte(x) ((x) - 1)
-#define PREVVALUEsht(x) ((x) - 1)
-#define PREVVALUEint(x) ((x) - 1)
-#define PREVVALUElng(x) ((x) - 1)
-#define PREVVALUEoid(x) ((x) - 1)
-#define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
-#define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
-
-#define NEXTVALUEbte(x) ((x) + 1)
-#define NEXTVALUEsht(x) ((x) + 1)
-#define NEXTVALUEint(x) ((x) + 1)
-#define NEXTVALUElng(x) ((x) + 1)
-#define NEXTVALUEoid(x) ((x) + 1)
-#define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
-#define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
+	*part = *nrofparts = 1;
+	for( i = 1; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid){
+			*part = getVarConstant(mb,getArg(p,6)).val.ival;
+			*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
+		} else
+		if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
+			return MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
+	}
+}
 
 /* The algebra operators should fall back to their default
  * when we know that the heap is not compressed
  * The actual decompression should wait until we know that
  * the administration thru SQL layers works properly.
+ *
+ * The oid-range can be reduced due to partitioning.
  */
 str
 MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -590,11 +591,12 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *low, *hgh;
 	int *ret, *bid, *cid= 0;
 	int i;
+	int startblk,stopblk; // block range to scan
 	BUN cnt = 0;
-	BUN first =0, last = 0;
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
+	int part,nrofparts;
 
 	(void) cntxt;
 	(void) mb;
@@ -623,8 +625,6 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BATdescriptor(*bid);
 	if( b == NULL)
 			throw(MAL, "mosaic.subselect",RUNTIME_OBJECT_MISSING);
-	// determine the elements in the compressed structure
-	last = b->T->heap.count;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
@@ -633,7 +633,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// accumulator for the oids
-	bn = BATnew(TYPE_void, TYPE_oid, last, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
@@ -653,42 +653,41 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		task->n = BATcount(cand);
 	}
 
-	// loop thru all the chunks and collect the partial results
-	if ( task->cl && task->n && *task->cl > (oid) first)
-		first = (BUN)  *task->cl;
-	first = MOSfindChunk(cntxt,task,first);
-	while(task->blk && first < last ){
+	// determine block range to scan for partitioned columns
+	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
+	if ( nrofparts > 1){
+		startblk = task->hdr->top/nrofparts * part;
+		if( part == nrofparts -1)
+			stopblk  =  task->hdr->top;
+		else
+			stopblk  =  startblk + task->hdr->top/nrofparts;
+	} else{
+		startblk =0;
+		stopblk = task->hdr->top;
+	}
+	// position the scan on the first mosaic block to consider
+	MOSinitializeScan(cntxt,task,startblk,stopblk);
+
+	while(task->start < task->stop ){
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSsubselect_rle(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_rle(task);
+			MOSsubselect_rle(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DICT:
-			MOSsubselect_dict(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_dict(task);
+			MOSsubselect_dict(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DELTA:
-			MOSsubselect_delta(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_delta(task);
+			MOSsubselect_delta(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_LINEAR:
-			MOSsubselect_linear(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_linear(task);
+			MOSsubselect_linear(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_ZONE:
-			MOSsubselect_zone(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_zone(task);
+			MOSsubselect_zone(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_NONE:
 		default:
-			MOSsubselect_none(cntxt,task,first,first + MOScnt(task->blk),low,hgh,li,hi,anti);
-			first += MOScnt(task->blk);
-			MOSskip_none(task);
+			MOSsubselect_none(cntxt,task,low,hgh,li,hi,anti);
 		}
 	}
 	// derive the filling
@@ -711,8 +710,9 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, *cid =0,  *ret, *bid;
+	int startblk, stopblk; // block range to scan
+	int part,nrofparts;
 	BAT *b = 0, *cand = 0, *bn = NULL;
-	BUN first = 0,last = 00;
 	BUN cnt=0;
 	str msg= MAL_SUCCEED;
 	char **oper;
@@ -741,7 +741,6 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == NULL)
 		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	// determine the elements in the compressed structure
-	last = b->T->heap.count;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
@@ -750,7 +749,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// accumulator for the oids
-	bn = BATnew(TYPE_void, TYPE_oid, last, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_oid, b->T->heap.count, TRANSIENT);
 	if( bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
@@ -771,43 +770,41 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		task->n = BATcount(cand);
 	}
 
-	// loop thru all the chunks and collect the partial results
-	if ( task->cl && task->n && *task->cl > (oid) first)
-		first = (BUN)  *task->cl;
-	first = MOSfindChunk(cntxt,task,first);
+	// determine block range to scan for partitioned columns
+	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
+	if ( nrofparts > 1){
+		startblk = task->hdr->top/nrofparts * part;
+		if( part == nrofparts -1)
+			stopblk  =  task->hdr->top;
+		else
+			stopblk  =  startblk + task->hdr->top/nrofparts;
+	} else{
+		startblk =0;
+		stopblk = task->hdr->top;
+	}
+	// position the scan on the first mosaic block to consider
+	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
-	while(task->blk && first < last ){
+	while(task->start < task->stop ){
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSthetasubselect_rle(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_rle(task);
+			MOSthetasubselect_rle(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DELTA:
-			MOSthetasubselect_delta(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_delta(task);
+			MOSthetasubselect_delta(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_LINEAR:
-			MOSthetasubselect_linear(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_linear(task);
+			MOSthetasubselect_linear(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DICT:
-			MOSthetasubselect_dict(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_dict(task);
+			MOSthetasubselect_dict(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_ZONE:
-			MOSthetasubselect_zone(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_zone(task);
+			MOSthetasubselect_zone(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_NONE:
 		default:
-			MOSthetasubselect_none(cntxt,task,first,first + MOScnt(task->blk),low,*oper);
-			first += MOScnt(task->blk);
-			MOSskip_none(task);
+			MOSthetasubselect_none(cntxt,task,low,*oper);
 		}
 	}
 	// derive the filling
@@ -832,8 +829,10 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret, *lid =0, *rid=0;
+	int part, nrofparts;
+	int startblk,stopblk;
 	BAT *bl = NULL, *br = NULL, *bn;
-	BUN cnt, first=0;
+	BUN cnt;
 	oid *ol =0, o = 0;
 	str msg= MAL_SUCCEED;
 	MOStask task;
@@ -882,43 +881,42 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task->cl = ol;
 	task->n = cnt;
-	if( cnt)
-		first = ol? *ol:o;
 
-	first = MOSfindChunk(cntxt,task,first);
+	// determine block range to scan for partitioned columns
+	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
+	if ( nrofparts > 1){
+		startblk = task->hdr->top/nrofparts * part;
+		if( part == nrofparts -1)
+			stopblk  =  task->hdr->top;
+		else
+			stopblk  =  startblk + task->hdr->top/nrofparts;
+	} else{
+		startblk =0;
+		stopblk = task->hdr->top;
+	}
+	// position the scan on the first mosaic block to consider
+	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
 	// loop thru all the chunks and fetch all results
-	while(task->blk )
+	while(task->start<task->stop )
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSleftfetchjoin_rle(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_rle(task);
+			MOSleftfetchjoin_rle(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSleftfetchjoin_dict(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_dict(task);
+			MOSleftfetchjoin_dict(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
-			MOSleftfetchjoin_delta(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_delta(task);
+			MOSleftfetchjoin_delta(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSleftfetchjoin_linear(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_linear(task);
+			MOSleftfetchjoin_linear(cntxt, task);
 			break;
 		case MOSAIC_ZONE:
-			MOSleftfetchjoin_zone(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_zone(task);
+			MOSleftfetchjoin_zone(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSleftfetchjoin_none(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_none(task);
+			MOSleftfetchjoin_none(cntxt, task);
 			break;
 		default:
 			assert(0);
@@ -947,8 +945,10 @@ str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret,*lid,*rid;
+	int part, nrofparts;
+	int startblk,stopblk;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
-	BUN cnt = 0, first= 0;
+	BUN cnt = 0;
 	int swapped = 0;
 	str msg = MAL_SUCCEED;
 	MOStask task;
@@ -1002,41 +1002,41 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	task->lbat = bln;
 	task->rbat = brn;
-	first = MOSfindChunk(cntxt,task,0);
-	(void)first;
+	// determine block range to scan for partitioned columns
+	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
+	if ( nrofparts > 1){
+		startblk = task->hdr->top/nrofparts * part;
+		if( part == nrofparts -1)
+			stopblk  =  task->hdr->top;
+		else
+			stopblk  =  startblk + task->hdr->top/nrofparts;
+	} else{
+		startblk =0;
+		stopblk = task->hdr->top;
+	}
+	// position the scan on the first mosaic block to consider
+	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
 	// loop thru all the chunks and collect the results
 	while(task->blk )
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSjoin_rle(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_rle(task);
+			MOSjoin_rle(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSjoin_dict(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_dict(task);
+			MOSjoin_dict(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
-			MOSjoin_delta(cntxt, task, first, first + MOScnt(task->blk));
-			first +=  MOScnt(task->blk);
-			MOSskip_delta(task);
+			MOSjoin_delta(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSjoin_linear(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_linear(task);
+			MOSjoin_linear(cntxt, task);
 			break;
 		case MOSAIC_ZONE:
-			MOSjoin_zone(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_zone(task);
+			MOSjoin_zone(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSjoin_none(cntxt, task, first, first + MOScnt(task->blk));
-			first += MOScnt(task->blk);
-			MOSskip_none(task);
+			MOSjoin_none(cntxt, task);
 			break;
 		default:
 			assert(0);

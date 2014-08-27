@@ -29,13 +29,13 @@
 #include "mal_client.h"
 
 mosaic_export void MOSdump_linear(Client cntxt, MOStask task);
-mosaic_export void MOSadvance_linear(MOStask task);
-mosaic_export void MOSskip_linear(MOStask task);
-mosaic_export int MOSestimate_linear(Client cntxt, MOStask task);
+mosaic_export void MOSadvance_linear(Client cntxt, MOStask task);
+mosaic_export void MOSskip_linear(Client cntxt, MOStask task);
+mosaic_export flt  MOSestimate_linear(Client cntxt, MOStask task);
 mosaic_export void MOScompress_linear(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_linear(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last);
-mosaic_export str MOSjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last);
+mosaic_export str MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mosaic_export str MOSthetasubselect_linear(Client cntxt,  MOStask task, void *val, str oper);
+mosaic_export str MOSleftfetchjoin_linear(Client cntxt,  MOStask task);
+mosaic_export str MOSjoin_linear(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_LINEAR_ */

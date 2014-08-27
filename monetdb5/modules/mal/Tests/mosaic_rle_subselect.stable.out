@@ -60,34 +60,6 @@ function user.main():void;
     io.print(s);
     xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
     io.print(xs);
-    c := bat.new(:oid,:oid);
-    bat.append(c,0@0);
-    bat.append(c,3@0);
-    io.print(c);
-    s := algebra.thetasubselect(b,c,50,"<");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,"<");
-    io.print(xs);
-    s := algebra.thetasubselect(b,c,50,"<=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,"<=");
-    io.print(xs);
-    s := algebra.thetasubselect(b,c,50,">");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,">");
-    io.print(xs);
-    s := algebra.thetasubselect(b,c,50,">=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,">=");
-    io.print(xs);
-    s := algebra.thetasubselect(b,c,50,"==");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,"==");
-    io.print(xs);
-    s := algebra.thetasubselect(b,c,50,"!=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,50,"!=");
-    io.print(xs);
 end main;
 #--------------------------#
 # h	t  # name
@@ -286,72 +258,6 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
 
 # 15:21:02 >  
 # 15:21:02 >  "Done."

@@ -49,39 +49,3 @@ s:= algebra.subselect(b,nil:int,nil:int,false,false,true);
 io.print(s);
 xs:= mosaic.subselect(x,nil:int,nil:int,false,false,true);
 io.print(xs);
-
-c:= bat.new(:oid,:oid);
-bat.append(c,0@0);
-bat.append(c,3@0);
-io.print(c);
-
-s:= algebra.thetasubselect(b,c,50,"<");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"<");
-io.print(xs);
-
-s:= algebra.thetasubselect(b,c,50,"<=");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"<=");
-io.print(xs);
-
-s:= algebra.thetasubselect(b,c,50,">");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,">");
-io.print(xs);
-
-s:= algebra.thetasubselect(b,c,50,">=");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,">=");
-io.print(xs);
-
-s:= algebra.thetasubselect(b,c,50,"==");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"==");
-io.print(xs);
-
-s:= algebra.thetasubselect(b,c,50,"!=");
-io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"!=");
-io.print(xs);
-

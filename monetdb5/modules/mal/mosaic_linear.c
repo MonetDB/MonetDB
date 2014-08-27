@@ -78,8 +78,10 @@ MOSdump_linear(Client cntxt, MOStask task)
 }
 
 void
-MOSadvance_linear(MOStask task)
+MOSadvance_linear(Client cntxt, MOStask task)
 {
+	(void) cntxt;
+	task->start += MOScnt(task->blk);
 	switch(task->type){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bit),bit)); break;
@@ -101,9 +103,9 @@ MOSadvance_linear(MOStask task)
 }
 
 void
-MOSskip_linear(MOStask task)
+MOSskip_linear(Client cntxt, MOStask task)
 {
-	MOSadvance_linear(task);
+	MOSadvance_linear(cntxt, task);
 	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -114,14 +116,14 @@ MOSskip_linear(MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
-	percentage = 100 * (MosaicBlkSize + 2 * sizeof(TYPE))/ ( (int)i * sizeof(TYPE));\
+	factor =  ( (flt)i * sizeof(TYPE))/(MosaicBlkSize + 2 * sizeof(TYPE));\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
-int
+flt
 MOSestimate_linear(Client cntxt, MOStask task)
 {	BUN i = -1;
-	int percentage = -1;
+	flt factor = 1.0;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -139,13 +141,13 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
 				break;
-			percentage = 100 * (MosaicBlkSize + 2 * sizeof(int))/ ( (int) i * sizeof(int));
+			factor =  ( (flt)i * sizeof(int))/(MosaicBlkSize + 2 * sizeof(int));
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate linear %d elm %d perc\n",(int)i,percentage);
+	mnstr_printf(cntxt->fdout,"#estimate linear %d elm %4.2f factor\n",(int)i,factor);
 #endif
-	return percentage;
+	return factor;
 }
 
 // insert a series of values into the compressor block using linear.
@@ -305,16 +307,21 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
+	BUN first,last;
 	int cmp;
 	MosaicBlk blk =  task->blk;
 	(void) cntxt;
 
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
-	if (task->cl && *task->cl > last)
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_linear(cntxt,task);
 		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
@@ -401,6 +408,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 		if( task->type == TYPE_timestamp)
 			subselect_linear(lng); 
 	}
+	MOSskip_linear(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -447,17 +455,22 @@ MOSsubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *low,
 }
 
 str
-MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
+MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 {
 	oid *o;
 	int anti=0;
+	BUN first,last;
 	MosaicBlk blk= task->blk;
 	(void) cntxt;
 	
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
-	if (task->cl && *task->cl > last)
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_linear(cntxt,task);
 		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(task->type){
@@ -518,6 +531,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 		if( task->type == TYPE_timestamp)
 			thetasubselect_linear(lng); 
 	}
+	MOSskip_linear(cntxt,task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -536,10 +550,15 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task, BUN first, BUN last, void 
 }
 
 str
-MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 {
+	BUN first,last;
 	MosaicBlk blk = task->blk;
+
 	(void) cntxt;
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_linear(bit); break;
@@ -581,6 +600,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 				task->src = (char*) v;
 			}
 	}
+	MOSskip_linear(cntxt,task);
 	return MAL_SUCCEED;
 }
 
@@ -598,12 +618,16 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 }
 
 str
-MOSjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSjoin_linear(Client cntxt,  MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	BUN n;
+	BUN n,first,last;
 	oid o, oo;
+
 	(void) cntxt;
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(ATOMstorage(task->type)){
 		case TYPE_bit: join_linear(bit); break;
@@ -627,5 +651,6 @@ MOSjoin_linear(Client cntxt,  MOStask task, BUN first, BUN last)
 					}
 			}
 	}
+	MOSskip_linear(cntxt,task);
 	return MAL_SUCCEED;
 }

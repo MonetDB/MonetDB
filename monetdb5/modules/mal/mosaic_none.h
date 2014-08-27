@@ -30,12 +30,12 @@
 #include "mal_client.h"
 
 mosaic_export void MOSdump_none(Client cntxt, MOStask task);
-mosaic_export void MOSadvance_none(MOStask task);
-mosaic_export void MOSskip_none(MOStask task);
+mosaic_export void MOSadvance_none(Client cntxt, MOStask task);
+mosaic_export void MOSskip_none(Client cntxt, MOStask task);
 mosaic_export void MOScompress_none(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_none(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last);
-mosaic_export str MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last);
+mosaic_export str MOSsubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mosaic_export str MOSthetasubselect_none(Client cntxt,  MOStask task, void *val, str oper);
+mosaic_export str MOSleftfetchjoin_none(Client cntxt,  MOStask task);
+mosaic_export str MOSjoin_none(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_NONE_ */

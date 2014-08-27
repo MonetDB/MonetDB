@@ -59,7 +59,7 @@
 typedef struct MOSAICHEADER{
 	int version;
 	int top;
-	oid index[MOSAICINDEX];
+	oid oidbase[MOSAICINDEX];
 	BUN offset[MOSAICINDEX];
 } * MosaicHdr;
 
@@ -89,9 +89,12 @@ typedef lng *MosaicBlk;
 
 
 typedef struct MOSTASK{
-	int type;		// one of the permissible types
-	MosaicHdr hdr;	// start of the destination heap
-	MosaicBlk blk;	// current block header
+	int type;		// one of the permissible compression types
+	MosaicHdr hdr;	// header block with index/synopsis information
+	MosaicBlk blk;	// current block header in scan
+	oid start;		// oid of first element in current blk
+	oid stop;		// last oid of range to be scanned
+
 	char *dst;		// write pointer into current compressed blocks
 
 	BUN	elm;		// elements left to compress
@@ -99,7 +102,7 @@ typedef struct MOSTASK{
 
 	lng  xsize,size;// original and compressed size
 	lng timer;		// compression time
-	void *min, *max;// space for zones
+	void *min, *max;// space for zones indices
 
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
@@ -111,14 +114,6 @@ typedef struct MOSTASK{
 	lng blks[MOSAIC_METHODS];	
 	lng elms[MOSAIC_METHODS];	
 } *MOStask;
-
-/* we keep a condensed OID index anchored to the compressed blocks */
-
-typedef struct MOSINDEX{
-	lng offset;		// header location within compressed heap
-	lng nullcnt;	// number of nulls encountered
-	ValRecord low,hgh; // zone value markers for fix-length types
-} *mosaicindex;
 
 /* Run through a column to produce a compressed version */
 

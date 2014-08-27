@@ -80,7 +80,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// pre-scan to identify all potentially compressed columns
     for( i=1; i < limit; i++){
         p = old[i];
-        if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival == 0 && p->argc == 6 && OPTmosaicType(mb,p,0)){
+        if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival == 0 && OPTmosaicType(mb,p,0)){
 				check[getArg(p,0)] = 1;
 		} else
         if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival != 0){

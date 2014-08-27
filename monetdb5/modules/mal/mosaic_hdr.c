@@ -33,10 +33,10 @@ MOSdumpHeader(Client cntxt, MOStask task)
 	int i=0;
 
 #ifdef _DEBGUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#header block "PTRFMT" version %d\n", PTRFMTCAST hdr, hdr->version);
+	mnstr_printf(cntxt->fdout,"#header block version %d\n", hdr->version);
 	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
 	for(i= 0; i< hdr->top; i++)
-		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->index[i], hdr->offset[i]);
+		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->oidbase[i], hdr->offset[i]);
 #else
 	(void) cntxt;
 	(void) i;
@@ -56,22 +56,25 @@ MOSupdateHeader(Client cntxt, MOStask task)
     task->blks[MOStag(task->blk)]++;
     task->elms[MOStag(task->blk)] += MOScnt(task->blk);
 	if( hdr->top < MOSAICINDEX-1 ){
-		if( hdr->top == 0)
-			hdr->index[hdr->top] = MOScnt(task->blk);
-		else hdr->index[hdr->top] = MOScnt(task->blk)+ hdr->index[hdr->top-1];
+		if( hdr->top == 0){
+			hdr->oidbase[hdr->top] = 0;
+			hdr->offset[hdr->top] = 0;
+			hdr->top++;
+		}
+		hdr->oidbase[hdr->top] = MOScnt(task->blk)+ hdr->oidbase[hdr->top-1];
 		hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 		hdr->top++;
 		MOSdumpHeader(cntxt,task);
 		return;
 	}
 	// compress the index by finding the smallest compressed fragment pair
-	hdr->index[hdr->top] = MOScnt(task->blk) + hdr->index[hdr->top-1];
+	hdr->oidbase[hdr->top] = MOScnt(task->blk) + hdr->oidbase[hdr->top-1];
 	hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 	minsize = hdr->offset[1];
 	j = 0;
-	for( i = 1; i <= hdr->top; i++)
-	if ( hdr->offset[i] - hdr->offset[i-1] < minsize ){
-		minsize = hdr->offset[i] - hdr->offset[i-1];
+	for( i = 0; i < hdr->top; i++)
+	if ( hdr->offset[i] - hdr->offset[i+1] < minsize ){
+		minsize = hdr->offset[i] - hdr->offset[i+1];
 		j = i;
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -79,7 +82,7 @@ MOSupdateHeader(Client cntxt, MOStask task)
 #endif
 	// simply remove on element
 	for( i = j; i < hdr->top; i++){
-		hdr->index[i]  = hdr->index[i+1];
+		hdr->oidbase[i]  = hdr->oidbase[i+1];
 		hdr->offset[i] = hdr->offset[i+1];
 	}
 	MOSdumpHeader(cntxt,task);
@@ -93,19 +96,17 @@ MOSinitHeader(MOStask task)
 	hdr->top = 0;
 }
 
-// determine the index of the chunk that contains 
-// the value of a specific oid, update the task
-BUN
-MOSfindChunk(Client cntxt, MOStask task, oid o)
+// position the task on the mosaic blk to be scanned
+void
+MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	int i = 0;
 
 	(void) cntxt;
-	assert( o <= hdr->index[hdr->top-1]);
-	for(;  i <hdr->top-1; i++)
-		if ( hdr->index[i+1] > o)
-			break;
-	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + (i ? hdr->offset[i]:0));
-	return i?hdr->index[hdr->top-1] :0;
+	assert( startblk >= 0 && startblk < hdr->top);
+	assert( stopblk > 0 && stopblk <= hdr->top);
+	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + hdr->offset[startblk]);
+	// set the oid range covered
+	task->start = hdr->oidbase[startblk];
+	task->stop = hdr->oidbase[stopblk-1];
 }

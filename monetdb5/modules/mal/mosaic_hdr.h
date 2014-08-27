@@ -31,5 +31,5 @@
 mosaic_export void MOSdumpHeader(Client cntxt, MOStask task);
 mosaic_export void MOSupdateHeader(Client cntxt, MOStask task);
 mosaic_export void MOSinitHeader(MOStask task);
-mosaic_export BUN MOSfindChunk(Client cntxt, MOStask task, oid o);
+mosaic_export void MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk);
 #endif /* _MOSAIC_HDR_ */

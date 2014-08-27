@@ -33,13 +33,13 @@
 #define MAXZONESIZE 32*1024
 
 mosaic_export void MOSdump_zone(Client cntxt, MOStask task);
-mosaic_export void MOSadvance_zone(MOStask task);
-mosaic_export void MOSskip_zone(MOStask task);
-mosaic_export int MOSestimate_zone(Client cntxt, MOStask task);
+mosaic_export void MOSadvance_zone(Client cntxt, MOStask task);
+mosaic_export void MOSskip_zone(Client cntxt, MOStask task);
+mosaic_export flt  MOSestimate_zone(Client cntxt, MOStask task);
 mosaic_export void MOScompress_zone(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_zone(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_zone(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last);
-mosaic_export str MOSjoin_zone(Client cntxt,  MOStask task, BUN first, BUN last);
+mosaic_export str MOSsubselect_zone(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mosaic_export str MOSthetasubselect_zone(Client cntxt,  MOStask task, void *val, str oper);
+mosaic_export str MOSleftfetchjoin_zone(Client cntxt,  MOStask task);
+mosaic_export str MOSjoin_zone(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_ZONE_ */

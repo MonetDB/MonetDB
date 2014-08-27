@@ -34,9 +34,12 @@ MOSdump_none(Client cntxt, MOStask task)
 }
 
 void
-MOSadvance_none(MOStask task)
+MOSadvance_none(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
+	(void) cntxt;
+
+	task->start += MOScnt(blk);
 	switch(task->type){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOScnt(blk),bte)); break ;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* MOScnt(blk),bit)); break ;
@@ -58,9 +61,9 @@ MOSadvance_none(MOStask task)
 }
 
 void
-MOSskip_none(MOStask task)
+MOSskip_none(Client cntxt, MOStask task)
 {
-	MOSadvance_none(task);
+	MOSadvance_none(cntxt,task);
 	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -220,19 +223,21 @@ MOSdecompress_none(Client cntxt, MOStask task)
 	}
 
 str
-MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSsubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
+	BUN first,last;
 	int cmp;
 	(void) cntxt;
-	(void) low;
-	(void) hgh;
-	(void) li;
-	(void) hi;
-	(void) anti;
 
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_none(cntxt,task);
+		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(task->type){
@@ -383,6 +388,7 @@ MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 					}
 				}
 	}
+	MOSskip_none(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -427,12 +433,21 @@ MOSsubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *low, v
 } 
 
 str
-MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
+MOSthetasubselect_none(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
+	BUN first,last;
 	(void) cntxt;
 	
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_none(cntxt,task);
+		return MAL_SUCCEED;
+	}
 	if ( first + MOScnt(task->blk) > last)
 		last = MOScnt(task->blk);
 	o = task->lb;
@@ -493,6 +508,7 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 			if( task->type == TYPE_timestamp)
 				thetasubselect_none(lng); 
 	}
+	MOSskip_none(cntxt,task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -510,9 +526,13 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, BUN first, BUN last, void *v
 }
 
 str
-MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSleftfetchjoin_none(Client cntxt,  MOStask task)
 {
+	BUN first,last;
 	(void) cntxt;
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_none(bit); break;
@@ -543,6 +563,7 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 			if (task->type == TYPE_timestamp)
 				leftfetchjoin_none(lng); 
 	}
+	MOSskip_none(cntxt,task);
 	return MAL_SUCCEED;
 }
 
@@ -560,11 +581,14 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 }
 
 str
-MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSjoin_none(Client cntxt,  MOStask task)
 {
-	BUN n;
+	BUN n,first,last;
 	oid o, oo;
 	(void) cntxt;
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_none(bit); break;
@@ -596,5 +620,6 @@ MOSjoin_none(Client cntxt,  MOStask task, BUN first, BUN last)
 			if (task->type == TYPE_timestamp)
 				join_none(lng); 
 	}
+	MOSskip_none(cntxt,task);
 	return MAL_SUCCEED;
 }

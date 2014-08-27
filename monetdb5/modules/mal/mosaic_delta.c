@@ -27,6 +27,30 @@
 #include "mosaic_delta.h"
 
 void
+MOSadvance_delta(Client cntxt, MOStask task)
+{
+	MosaicBlk blk = task->blk;
+	(void) cntxt;
+
+	task->start += MOScnt(blk);
+	switch(task->type){
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1,sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1,int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1,oid)); break ;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1,wrd)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1,lng)); break ;
+	default:
+		if( task->type == TYPE_timestamp)
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1,timestamp)); 
+		if( task->type == TYPE_date)
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1,date)); 
+		if( task->type == TYPE_daytime)
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1,daytime)); 
+	}
+}
+
+
+void
 MOSdump_delta(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
@@ -34,29 +58,9 @@ MOSdump_delta(Client cntxt, MOStask task)
 }
 
 void
-MOSadvance_delta(MOStask task)
+MOSskip_delta(Client cntxt, MOStask task)
 {
-	MosaicBlk blk = task->blk;
-	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1,sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1,int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1,oid)); break ;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1,wrd)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1,lng)); break ;
-	default:
-		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1,timestamp)); 
-		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1,date)); 
-		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1,daytime)); 
-	}
-}
-
-void
-MOSskip_delta(MOStask task)
-{
-	MOSadvance_delta(task);
+	MOSadvance_delta(cntxt, task);
 	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -70,13 +74,14 @@ MOSskip_delta(MOStask task)
 			break;\
 		val = *w;\
 	}\
-	percentage = 100 * (MosaicBlkSize + sizeof(TYPE)+(bte)i-1) / ((int)i * sizeof(TYPE));\
+	factor = (float)((int)i * sizeof(TYPE))/  (MosaicBlkSize + sizeof(TYPE)+(bte)i-1);\
 }
 
-int
+// estimate the compression level 
+flt
 MOSestimate_delta(Client cntxt, MOStask task)
-{	BUN i = -1;
-	int percentage = -1;
+{	BUN i = 0;
+	flt factor = 1.0;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -89,7 +94,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			percentage = 100 * (MosaicBlkSize + sizeof(oid)+(bte)i-1) / ((int)i * sizeof(int));
+			factor = ((float)i * sizeof(int))/  (MosaicBlkSize + sizeof(oid)+(bte)i-1);
 		}
 	case TYPE_wrd: Estimate_delta(wrd); break;
 	case TYPE_lng: Estimate_delta(lng); break;
@@ -101,13 +106,13 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			percentage = 100 * (MosaicBlkSize + sizeof(int)+(bte)i-1) / ((int)i * sizeof(int));
+			factor = (float)((int)i * sizeof(int))/  (MosaicBlkSize + sizeof(int)+(bte)i-1);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate delta %d elm %d perc\n",(int)i,percentage);
+	mnstr_printf(cntxt->fdout,"#estimate delta %d elm %.3f factor\n",(int)i,factor);
 #endif
-	return percentage;
+	return factor;
 }
 
 #define DELTAcompress(TYPE)\
@@ -288,19 +293,21 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	}
 
 str
-MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
+	BUN first,last;
 	int cmp;
 	(void) cntxt;
-	(void) low;
-	(void) hgh;
-	(void) li;
-	(void) hi;
-	(void) anti;
 
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_delta(cntxt,task);
+		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(task->type){
@@ -451,6 +458,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, 
 					}
 				}
 	}
+	MOSskip_delta(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -496,14 +504,21 @@ MOSsubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *low, 
 } 
 
 str
-MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
+MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
+	BUN first,last;
 	(void) cntxt;
 	
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_delta(cntxt,task);
+		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(task->type){
@@ -563,6 +578,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *
 			if( task->type == TYPE_timestamp)
 				thetasubselect_delta(lng); 
 	}
+	MOSskip_delta(cntxt,task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -580,9 +596,14 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, BUN first, BUN last, void *
 }
 
 str
-MOSleftfetchjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 {
+	BUN first, last;
 	(void) cntxt;
+
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_delta(bit); break;
@@ -613,6 +634,7 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 			if (task->type == TYPE_timestamp)
 				leftfetchjoin_delta(lng); 
 	}
+	MOSskip_delta(cntxt,task);
 	return MAL_SUCCEED;
 }
 
@@ -630,11 +652,15 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 }
 
 str
-MOSjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSjoin_delta(Client cntxt,  MOStask task)
 {
-	BUN n;
+	BUN n, first, last;
 	oid o, oo;
 	(void) cntxt;
+
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_delta(bit); break;
@@ -668,5 +694,6 @@ MOSjoin_delta(Client cntxt,  MOStask task, BUN first, BUN last)
 			if (task->type == TYPE_timestamp)
 				join_delta(lng); 
 	}
+	MOSskip_delta(cntxt,task);
 	return MAL_SUCCEED;
 }

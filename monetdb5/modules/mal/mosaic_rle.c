@@ -63,8 +63,11 @@ MOSdump_rle(Client cntxt, MOStask task)
 }
 
 void
-MOSadvance_rle(MOStask task)
+MOSadvance_rle(Client cntxt, MOStask task)
 {
+	(void) cntxt;
+
+	task->start += MOScnt(task->blk);
 	switch(task->type){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bit),bit)); break;
@@ -86,9 +89,9 @@ MOSadvance_rle(MOStask task)
 }
 
 void
-MOSskip_rle(MOStask task)
+MOSskip_rle(Client cntxt, MOStask task)
 {
-	MOSadvance_rle(task);
+	MOSadvance_rle(cntxt, task);
 	if ( MOStag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -98,14 +101,14 @@ MOSskip_rle(MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
-	percentage = 100 * (MosaicBlkSize + sizeof(TYPE))/ ( (int)i * sizeof(TYPE));\
+	factor = ( (flt)i * sizeof(TYPE))/ (MosaicBlkSize + sizeof(TYPE));\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
-int
+flt
 MOSestimate_rle(Client cntxt, MOStask task)
 {	BUN i = -1;
-	int percentage = -1;
+	flt factor = 1.0;
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
@@ -122,13 +125,13 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
-			percentage = 100 * (MosaicBlkSize +  sizeof(int))/ ( (int) i * sizeof(int));
+			factor = ( (flt)i * sizeof(int))/ (MosaicBlkSize + sizeof(int));
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %d perc\n",(int)i,percentage);
+	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %4.3 factor\n",(int)i,factor);
 #endif
-	return percentage;
+	return factor;
 }
 
 // insert a series of values into the compressor block using rle.
@@ -286,15 +289,20 @@ MOSdecompress_rle(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSsubselect_rle(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
+	BUN first,last;
 	(void) cntxt;
 
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
-	if (task->cl && *task->cl > last)
+	// set the oid range covered
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSadvance_rle(cntxt,task);
 		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
@@ -380,6 +388,7 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 		if( task->type == TYPE_timestamp)
 			subselect_rle(lng); 
 	}
+	MOSadvance_rle(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -425,16 +434,21 @@ MOSsubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *low, vo
 }
 
 str
-MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *val, str oper)
+MOSthetasubselect_rle(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
+	BUN first,last;
 	(void) cntxt;
 	
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
-	if (task->cl && *task->cl > last)
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
+
+	if (task->cl && *task->cl > last){
+		MOSskip_rle(cntxt,task);
 		return MAL_SUCCEED;
+	}
 	o = task->lb;
 
 	switch(task->type){
@@ -494,6 +508,7 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 		if( task->type == TYPE_timestamp)
 			thetasubselect_rle(lng); 
 	}
+	MOSskip_rle(cntxt,task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -511,9 +526,14 @@ MOSthetasubselect_rle(Client cntxt,  MOStask task, BUN first, BUN last, void *va
 }
 
 str
-MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSleftfetchjoin_rle(Client cntxt,  MOStask task)
 {
+	BUN first,last;
 	(void) cntxt;
+
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_rle(bit); break;
@@ -549,6 +569,7 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 				task->src = (char*) v;
 			}
 	}
+	MOSskip_rle(cntxt,task);
 	return MAL_SUCCEED;
 }
 
@@ -565,11 +586,15 @@ MOSleftfetchjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 }
 
 str
-MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
+MOSjoin_rle(Client cntxt,  MOStask task)
 {
-	BUN n;
+	BUN n,first,last;
 	oid o, oo;
 	(void) cntxt;
+
+	// set the oid range covered and advance scan range
+	first = task->start;
+	last = first + MOScnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_rle(bit); break;
@@ -606,5 +631,6 @@ MOSjoin_rle(Client cntxt,  MOStask task, BUN first, BUN last)
 			}
 			}
 	}
+	MOSskip_rle(cntxt,task);
 	return MAL_SUCCEED;
 }
