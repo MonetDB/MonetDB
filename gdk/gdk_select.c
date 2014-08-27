@@ -46,6 +46,33 @@ float nextafterf(float x, float y);
 	} while (0)
 
 static BAT *
+virtualize(BAT *bn)
+{
+	assert(bn == NULL ||
+	       ((bn->ttype == TYPE_void || bn->ttype == TYPE_oid) &&
+		bn->tkey && bn->tsorted));
+	/* since bn has unique and strictly ascending tail values, we
+	 * can easily check whether the tail is dense */
+	if (bn && !BATtdense(bn) &&
+	    * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
+	    * (const oid *) Tloc(bn, BUNlast(bn) - 1)) {
+		/* tail is dense, replace by virtual oid */
+		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
+				  BATgetId(bn), BATcount(bn),
+				  * (const oid *) Tloc(bn, BUNfirst(bn)));
+		bn->tseqbase = * (const oid *) Tloc(bn, BUNfirst(bn));
+		bn->tdense = 1;
+		HEAPfree(&bn->T->heap);
+		bn->ttype = TYPE_void;
+		bn->tvarsized = 1;
+		bn->T->width = 0;
+		bn->T->shift = 0;
+	}
+
+	return bn;
+}
+
+static BAT *
 newempty(const char *func)
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
@@ -1252,7 +1279,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bn->hrevsorted = bn->batCount <= 1;
 		bn->H->nonil = 1;
 		bn->H->nil = 0;
-		return bn;
+		return virtualize(bn);
 	}
 
 	/* upper limit for result size */
@@ -1377,7 +1404,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				    lval, hval, maximum, use_imprints);
 	}
 
-	return bn;
+	return virtualize(bn);
 }
 
 /* theta select
