@@ -4370,7 +4370,7 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
 /* return length of resulting string. */
 size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
 	int items = fromArray->itemsNum, i;
-	int itemsNumDigits = ceil(log10(items));
+	double itemsNumDigits = ceil(log10(items));
 	size_t dataSize;//, skipBytes=0;
 	char** partialStrs;
 	char* nilStr = "nil";
