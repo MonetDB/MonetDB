@@ -72,9 +72,9 @@ geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
 geom_export size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
 
-geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
-geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
-geom_export int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid);
+geom_export size_t wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
+geom_export size_t mbrFROMSTR(char *src, int *len, mbr **atom);
+geom_export size_t wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid);
 
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
@@ -4041,7 +4041,7 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
-int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
+size_t wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	char *polyhedralSurface = "POLYHEDRALSURFACE";
@@ -4049,6 +4049,7 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	char *geoType;
 	int typeSize = 0;
 	char *geomWKT_original = NULL;
+	size_t parsedCharacters = 0;
 
 	if (strcmp(geomWKT, str_nil) == 0) {
 		*geomWKB = wkb_nil;
@@ -4105,7 +4106,10 @@ int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 		GDKfree(geomWKT);
 		geomWKT = geomWKT_original;	
 	}
-	return (int)strlen(geomWKT);
+
+	parsedCharacters =  strlen(geomWKT);
+	assert(parsedCharacters <= GDK_int_max);
+	return parsedCharacters;
 }
 
 BUN wkbHASH(wkb *w) {
@@ -4239,9 +4243,9 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
-int mbrFROMSTR(char *src, int *len, mbr **atom) {
+size_t mbrFROMSTR(char *src, int *len, mbr **atom) {
 	int nil = 0;
-	int nchars = 0;	/* The number of characters parsed; the return value. */
+	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
 	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
 	char *c;
@@ -4272,7 +4276,6 @@ int mbrFROMSTR(char *src, int *len, mbr **atom) {
 		nchars = 3;
 		**atom = *mbrNULL();
 	} else if (geosMbr == NULL) {
-		size_t l;
 		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
 		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
 		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
@@ -4281,12 +4284,11 @@ int mbrFROMSTR(char *src, int *len, mbr **atom) {
 		(*atom)->ymin = (float) ymin;
 		(*atom)->xmax = (float) xmax;
 		(*atom)->ymax = (float) ymax;
-		l = strlen(src);
-		assert(l <= GDK_int_max);
-		nchars = (int) l;
+		nchars = strlen(src);
 	}
 	if (geosMbr)
 		GEOSGeom_destroy(geosMbr);
+	assert(nchars <= GDK_int_max);
 	return nchars;
 }
 
@@ -4434,7 +4436,7 @@ fprintf(stderr, "wkbaTOSTR\n");
 }
 
 /* return number of parsed characters. */
-int wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid) {
+size_t wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid) {
 	int items, i;
 	size_t skipBytes=0;
 
@@ -4451,7 +4453,8 @@ fprintf(stderr, "wkbaFROMSTR\n");
 		int parsedBytes = wkbFROMSTR(fromStr+skipBytes, len, &((*toArray)->data[i]), srid);
 		skipBytes+=parsedBytes;
 	}
-
+	
+	assert(skipBytes <= GDK_int_max);
 	return skipBytes;
 }
 
