@@ -2779,14 +2779,6 @@ command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:o
 address ALGantijoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-command algebra.antiuselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
-address ALGantiuselectInclusive;
-comment See select() but limited to head values
-
-command algebra.antiuselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
-address ALGantiuselect1;
-comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
-
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
 address ALGbandjoin;
 comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
@@ -2856,7 +2848,7 @@ address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcr5;
+address PCREilike_join_pcre;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
@@ -3179,10 +3171,6 @@ address ALGtintersect;
 command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunique;
 comment Select unique tuples from the input BAT. Double elimination is		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
-
-command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
-address ALGthetauselect;
-comment The theta (<=,<,=,>,>=) select() limited to head values
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
@@ -51836,14 +51824,10 @@ command pcre.imatch(s:str,pat:str):bit
 address PCREimatch;
 comment Caseless Perl Compatible Regular Expression pattern matching against a string
 
-command pcre.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
 command pcre.index(pat:pcre,s:str):int 
 address PCREindex;
 comment match a pattern, return matched position (or 0 when not found)
 
-command pcre.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCRElike_join_pcre;
 command pcre.match(s:str,pat:str):bit 
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
@@ -51869,10 +51853,6 @@ comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 
 command pcre.sql2pcre(pat:str,esc:str):str 
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
-
-command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
-address PCREselectDef;
-comment Select tuples based on the pattern
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;
