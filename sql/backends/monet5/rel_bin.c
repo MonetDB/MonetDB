@@ -509,7 +509,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 						grp = stmt_project(sql->sa, next, grp);
 						stmt_group_done(g);
 					} else
-						as = stmt_unique(sql->sa, as, NULL, NULL, NULL);
+						as = stmt_unique(sql->sa, as);
 				}
 				append(l, as);
 			}

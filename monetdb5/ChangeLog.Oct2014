@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Aug 26 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Remove algebra.antiuselect and algebra.thetauselect.  They were subsumed
+  by algebra.subselect.
+
 * Mon Aug 25 2014 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.topN and its imlementation BATtopN.  The function was
   not used.

@@ -929,11 +929,7 @@ int isFragmentGroup(InstrPtr p){
 			))  ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== projectRef ||
-				getFunctionId(p)== selectRef ||
-				getFunctionId(p)== selectNotNilRef ||
-				getFunctionId(p)== uselectRef ||
-				getFunctionId(p)== antiuselectRef ||
-				getFunctionId(p)== thetauselectRef 
+				getFunctionId(p)== selectNotNilRef
 			))  ||
 			isSubSelect(p) ||
 			(getModuleId(p)== batRef && (

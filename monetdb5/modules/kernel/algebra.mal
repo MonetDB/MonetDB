@@ -94,10 +94,6 @@ comment "Select all head values of the first input BAT for which the tail value
 	relationship holds.  The output BAT is sorted on the tail value.";
 
 
-#command thetaselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:any_2]
-#address ALGthetaselect
-#comment "The theta (<=,<,=,>,>=) select()";
-#
 command select(b:bat[:oid,:any_2], low:any_2, high:any_2):bat[:oid,:any_2]
 address ALGselect
 comment "Select all BUNs that have tail values: {v| low <= v <= high}.
@@ -160,10 +156,6 @@ command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
-command thetauselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:void]
-address ALGthetauselect
-comment "The theta (<=,<,=,>,>=) select() limited to head values";
-
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void]
 address ALGuselect;
 command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
@@ -171,15 +163,6 @@ address ALGuselect1
 comment "Value select, but returning only the
 	head values. SEE ALSO:select(bat,val)";
 
-command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
-address ALGantiuselect1
-comment "Value select, but returning only the
-	head values. SEE ALSO:select(bat,val)";
-
-command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
-		li:bit, hi:bit) :bat[:any_1,:void]
-address ALGantiuselectInclusive
-comment "See select() but limited to head values";
 # @- Pattern matching
 command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
 address ALGlike
