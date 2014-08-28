@@ -1677,7 +1677,7 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 			const char *esc, int caseignore)
 {
 	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
-	BAT *result1, *result2;
+	BAT *result1 = NULL, *result2 = NULL;
 	char *msg = MAL_SUCCEED;
 
 	if ((left = BATdescriptor(lid)) == NULL)
