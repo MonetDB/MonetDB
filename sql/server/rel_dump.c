@@ -26,6 +26,7 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_semantic.h"
+#include "rel_psm.h"
 
 static void
 print_indent(mvc *sql, stream *fout, int depth)
@@ -80,6 +81,28 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	if (!e)
 		return;
 	switch(e->type) {
+	case e_psm: {
+		if (e->flag & PSM_SET) {
+			/* todo */
+		} else if (e->flag & PSM_VAR) {
+			/* todo */
+		} else if (e->flag & PSM_RETURN) {
+			mnstr_printf(fout, "return ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+		} else if (e->flag & PSM_WHILE) {
+			mnstr_printf(fout, "while ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+			exps_print(sql, fout, e->r, depth, alias, 0);
+		} else if (e->flag & PSM_IF) {
+			mnstr_printf(fout, "if ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+			exps_print(sql, fout, e->r, depth, alias, 0);
+			if (e->f)
+				exps_print(sql, fout, e->f, depth, alias, 0);
+		} else if (e->flag & PSM_REL) {
+		}
+	 	break;
+	}
 	case e_convert: {
 		char *to_type = sql_subtype_string(&e->tpe);
 		mnstr_printf(fout, "%s[", to_type);
@@ -340,7 +363,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 		if (rel->r)
 			rel_print_(sql, fout, rel->r, depth+1, refs);
-		if (rel->exps) 
+		if (rel->exps && rel->flag == DDL_PSM) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
 	case op_join: 

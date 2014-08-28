@@ -2331,6 +2331,10 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address ILIKEsubjoin;
+comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
+
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCREilike_join_pcre;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
@@ -2382,6 +2386,10 @@ comment Routine to handle join paths.  The type analysis is rather tricky.
 pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
+
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address LIKEsubjoin;
+comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
 command algebra.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCRElike_join_pcre;
