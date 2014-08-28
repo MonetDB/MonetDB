@@ -2807,27 +2807,27 @@ command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B
 
@@ -50187,7 +50187,7 @@ comment Create an iterator with fixed granule size.	  The result is a view.
 
 command json.dump(j:json):void 
 address JSONdump;
-pattern json.fold(k:bat[:oid,:any]):json 
+pattern json.fold(v:bat[:oid,:any]):json 
 address JSONfold;
 comment Combine the value list into a single json array object.
 
@@ -52240,6 +52240,10 @@ pattern sql.copy_from(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,fname
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
+pattern sql.create_func_upgrade_oct2014(f:str):int 
+address UPGcreate_func;
+comment Create the function described by f, needed for the Oct2014 upgrade
+
 pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd 
 address mvc_clear_table_wrap;
 comment Clear table
@@ -52343,6 +52347,10 @@ comment dump the content of the query cache
 pattern sql.db_users():bat[:oid,:str] 
 address db_users_wrap;
 comment return table of users with sql scenario
+
+pattern sql.drop_func_upgrade_oct2014(id:int):int 
+address UPGdrop_func;
+comment Drop the function identified by id, needed for the Oct2014 upgrade
 
 pattern sql.dropDeclaredTables{unsafe}(nr:int):void 
 address mvc_drop_declared_tables_wrap;
