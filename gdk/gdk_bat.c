@@ -3032,6 +3032,8 @@ BATassertProps(BAT *b)
 
 	/* general BAT sanity */
 	assert(b != NULL);
+	if( b->T->heap.compressed)
+		return;
 	bm = BATmirror(b);
 	assert(bm != NULL);
 	assert(b->H == bm->T);
