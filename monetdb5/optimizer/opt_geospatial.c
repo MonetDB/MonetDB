@@ -30,9 +30,9 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 				//create the new instruction
 				newInstrPtr = newStmt(mb, "batgeom", "ContainsFilter");
-				//create the return variables of the new instruction
-				aBATreturnId = newVariable(mb, GDKstrdup("aBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],1)));
-				bBATreturnId = newVariable(mb, GDKstrdup("bBAT_filtered"), newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],2)));
+				//create the return variables of the new instruction (they should be of the same with the input varibles of the old instruction)
+				aBATreturnId = newVariable(mb, GDKstrdup("aBAT_filtered"), getArgType(mb,oldInstrPtr[i],1)); //newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],1)));
+				bBATreturnId = newVariable(mb, GDKstrdup("bBAT_filtered"), getArgType(mb,oldInstrPtr[i],2)); //newBatType(TYPE_oid, getArgType(mb,oldInstrPtr[i],2)));
 				//set the return and input arguments of the new instruction
 				setReturnArgument(newInstrPtr, aBATreturnId); //set the first return argument
 				newInstrPtr = pushReturn(mb, newInstrPtr, bBATreturnId); //push a second return argument

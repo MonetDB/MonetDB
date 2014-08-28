@@ -164,7 +164,7 @@ geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 
 geom_export str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
-geom_export str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id);
+geom_export str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id);
 //LocateAlong
 //LocateBetween
 
@@ -3108,8 +3108,8 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
-str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
-	BAT *aBATfiltered = NULL, *bBATfiltered = NULL, *BAToriginal = NULL;
+str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
+	BAT *bBATfiltered = NULL, *BAToriginal = NULL;
 	wkb *bWKB = NULL;
 	bit outBIT;
 	BATiter BAT_iter;
@@ -3128,19 +3128,13 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 
-	//create the new BATs
-	if ((aBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
-		BBPreleaseref(BAToriginal->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
-	}
+	//create the new BAT
 	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPreleaseref(BAToriginal->batCacheid);
-		BBPreleaseref(aBATfiltered->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
 
 	//set the first idx of the output BATs equal to that of the aBAT
-	BATseqbase(aBATfiltered, BAToriginal->hseqbase);
 	BATseqbase(bBATfiltered, BAToriginal->hseqbase);
 
 	//iterator over the BAT
@@ -3150,7 +3144,6 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
 		str msg;
 		BBPreleaseref(BAToriginal->batCacheid);
-		BBPreleaseref(aBATfiltered->batCacheid);
 		BBPreleaseref(bBATfiltered->batCacheid);
 		msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 		GDKfree(err);
@@ -3166,7 +3159,6 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 		if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(aBATfiltered->batCacheid);
 			BBPreleaseref(bBATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
@@ -3178,7 +3170,6 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 		if((err = mbrContains(&outBIT, &geomMBR, &bMBR)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(aBATfiltered->batCacheid);
 			BBPreleaseref(bBATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
@@ -3187,7 +3178,6 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 			return msg;
 		}
 		if(outBIT) {
-			BUNappend(aBATfiltered,*geomWKB, TRUE); //add the result to the bBAT
 			BUNappend(bBATfiltered,bWKB, TRUE); //add the result to the bBAT
 			remainingElements++;
 		}
@@ -3196,16 +3186,14 @@ str wkbContainsFilter_geom_bat(int* aBATfiltered_id, int* bBATfiltered_id, wkb**
 	}
 
 	//set some properties of the new BATs
-	BATsetcount(aBATfiltered, remainingElements);
-    	BATsettrivprop(aBATfiltered);
-    	BATderiveProps(aBATfiltered,FALSE);
 	BATsetcount(bBATfiltered, remainingElements);
     	BATsettrivprop(bBATfiltered);
     	BATderiveProps(bBATfiltered,FALSE);
 	
 	BBPreleaseref(BAToriginal->batCacheid);
-	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
 	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
+	
+	*outWKB = *geomWKB;
 	
 	return MAL_SUCCEED;
 

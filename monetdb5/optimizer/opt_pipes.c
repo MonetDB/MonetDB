@@ -257,12 +257,38 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.geospatial();"
- 	 "optimizer.deadcode();"
+	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
-
+/*
+	{"geom_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.evaluate();"
+	 "optimizer.emptySet();"
+	 "optimizer.aliases();"
+	 "optimizer.geospatial();"
+	 "optimizer.pushselect();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
+	 "optimizer.deadcode();"
+	 "optimizer.commonTerms();"
+	 "optimizer.joinPath();"
+	 "optimizer.reorder();"
+	 "optimizer.deadcode();"
+	 "optimizer.reduce();"
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.garbageCollector();",
+	 "experimental", NULL, NULL, 1},
+*/
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
