@@ -3209,8 +3209,9 @@ str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB
 	
 	BBPreleaseref(BAToriginal->batCacheid);
 	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
-	
-	*outWKB = *geomWKB;
+
+	//copy the input single geometry to the output	
+	wkbFromWKB(outWKB, geomWKB);
 	
 	return MAL_SUCCEED;
 
