@@ -109,15 +109,27 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = BATsample(bn, (BUN) 25000);
 						} else
 							bsample = NULL;
-						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), ATOMnilptr(bn->ttype), 0, 0, 0);
+						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
 						nils = BATcount(br);
-						if (br->tkey)
+						BBPunfix(br->batCacheid);
+						if (bn->tkey)
 							uniq = sz;
 						else {
-							br = BATkunique(BATmirror(br));
-							uniq = br? BATcount(br):0;
+							BAT *gn, *en;
+							if (bsample)
+								br = BATproject(bsample, bn);
+							else
+								br = bn;
+							/* BATgroup checks BATproject result */
+							if (BATgroup(&gn, &en, NULL, br, NULL, NULL, NULL) == GDK_SUCCEED) {
+								uniq = BATcount(en);
+								BBPunfix(gn->batCacheid);
+								BBPunfix(en->batCacheid);
+							} else
+								uniq = 0;
+							if (bsample && br)
+								BBPunfix(br->batCacheid);
 						}
-						BBPunfix(br->batCacheid);
 						if( bsample)
 							BBPunfix(bsample->batCacheid);
 						sorted = BATtordered(bn);

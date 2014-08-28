@@ -56,8 +56,8 @@ Ready.
 
 SCHEMA  json
 SCHEMA  tmp
-SCHEMA         tmp
 SCHEMA         json
+SCHEMA         tmp
 SYSTEM SCHEMA  sys
 SYSTEM TABLE  sys._columns
 SYSTEM TABLE  sys._tables

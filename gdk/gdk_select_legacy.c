@@ -25,7 +25,6 @@
 
 #undef BATselect_
 #undef BATuselect_
-#undef BATantiuselect_
 #undef BATselect
 #undef BATuselect
 
@@ -160,12 +159,6 @@ BAT *
 BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
 	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, "BATuselect_");
-}
-
-BAT *
-BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
-{
-	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, "BATantiuselect");
 }
 
 /* Return a BAT which is a subset of b with just the qualifying

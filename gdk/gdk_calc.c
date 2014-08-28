@@ -11404,15 +11404,9 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		BETWEEN_LOOP_TYPE(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		BETWEEN_LOOP_TYPE(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		BETWEEN_LOOP_TYPE(lng);
 		break;
 #ifdef HAVE_HGE
@@ -11427,6 +11421,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		BETWEEN_LOOP_TYPE(dbl);
 		break;
 	default:
+		assert(tp != TYPE_oid);
+		assert(tp != TYPE_wrd);
 		if (!BATatoms[tp].linear ||
 		    (atomcmp = ATOMcompare(tp)) == NULL) {
 			BBPunfix(bn->batCacheid);
@@ -12381,9 +12377,6 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
-#endif
 			CANDLOOP((int *) dst, i, int_nil, 0, start);
 			for (i = start; i < end; i++, seq++) {
 				CHECKCAND((int *) dst, i, candoff, int_nil);
@@ -12391,9 +12384,6 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
-#endif
 			CANDLOOP((lng *) dst, i, lng_nil, 0, start);
 			for (i = start; i < end; i++, seq++) {
 				CHECKCAND((lng *) dst, i, candoff, lng_nil);
@@ -12521,10 +12511,24 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_bte_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_bte_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
@@ -12534,11 +12538,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 #endif
-		case TYPE_oid:
-			return convert_bte_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_bte_flt(src, dst, cnt,
 					       start, end, cand,
@@ -12566,10 +12565,24 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_sht_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_sht_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
@@ -12579,11 +12592,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 #endif
-		case TYPE_oid:
-			return convert_sht_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_sht_flt(src, dst, cnt,
 					       start, end, cand,
@@ -12596,9 +12604,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
@@ -12616,10 +12621,24 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_int_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_int_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
@@ -12629,11 +12648,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 #endif
-		case TYPE_oid:
-			return convert_int_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_int_flt(src, dst, cnt,
 					       start, end, cand,
@@ -12646,9 +12660,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
@@ -12666,11 +12677,25 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_lng_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_lng_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
@@ -12680,11 +12705,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff);
 #endif
-		case TYPE_oid:
-			return convert_lng_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_lng_flt(src, dst, cnt,
 					       start, end, cand,
@@ -12763,11 +12783,25 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_flt_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_flt_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
@@ -12779,11 +12813,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 #endif
-		case TYPE_oid:
-			return convert_flt_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_flt_flt(src, dst, cnt,
 					       start, end, cand,
@@ -12813,11 +12842,25 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_dbl_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
 					       abort_on_error);
 		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff,
+						       abort_on_error);
+#endif
 			return convert_dbl_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
@@ -12829,11 +12872,6 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       candend, candoff,
 					       abort_on_error);
 #endif
-		case TYPE_oid:
-			return convert_dbl_oid(src, dst, cnt,
-					       start, end, cand,
-					       candend, candoff,
-					       abort_on_error);
 		case TYPE_flt:
 			return convert_dbl_flt(src, dst, cnt,
 					       start, end, cand,
