@@ -509,7 +509,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 						grp = stmt_project(sql->sa, next, grp);
 						stmt_group_done(g);
 					} else
-						as = stmt_unique(sql->sa, as, NULL, NULL, NULL);
+						as = stmt_unique(sql->sa, as);
 				}
 				append(l, as);
 			}
@@ -2306,6 +2306,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!orderbycolstmt) 
 				return NULL;
 			
+			/* handle constants */
+			orderbycolstmt = column(sql->sa, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_FLAG(distinct, is_ascending(orderbycole), last, 1));
 			} else { 	/* topn based on 2 columns */

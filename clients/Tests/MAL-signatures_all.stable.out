@@ -208,10 +208,6 @@ comment Return the current size (in number of elements) in a BAT.
 
 command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
-command aggr.histogram(b:bat[:any_1,:any_2]):bat[:any_2,:int] 
-address ALGhistogram;
-comment Produce a BAT containing the histogram over the tail values.
-
 command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
 address JSONgroupStr;
 comment Aggregate the double values to array.
@@ -2266,14 +2262,6 @@ command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:o
 address ALGantijoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-command algebra.antiuselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
-address ALGantiuselectInclusive;
-comment See select() but limited to head values
-
-command algebra.antiuselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
-address ALGantiuselect1;
-comment Value select, but returning only the	head values. SEE ALSO:select(bat,val)
-
 command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
 address ALGbandjoin;
 comment This is a join() for which the predicate is that two BUNs match		if the left-tail value is within the range [right-head - minus,		right-head + plus], depending on (l_in/h_in), the bounds		are included. Works only for the builtin numerical types,		and their derivates.
@@ -2342,8 +2330,12 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address ILIKEsubjoin;
+comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
+
 command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcr5;
+address PCREilike_join_pcre;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
@@ -2393,6 +2385,10 @@ comment Routine to handle join paths.  The type analysis is rather tricky.
 pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
+
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+address LIKEsubjoin;
+comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
 command algebra.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address PCRElike_join_pcre;
@@ -2666,14 +2662,6 @@ address ALGtintersect;
 command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunique;
 comment Select unique tuples from the input BAT. Double elimination is		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
-
-command algebra.thetauselect(b:bat[:any_1,:any_2],val:any_2,op:str):bat[:any_1,:void] 
-address ALGthetauselect;
-comment The theta (<=,<,=,>,>=) select() limited to head values
-
-command algebra.topN(b:bat[:any_1,:any_2],top:lng):bat[:any_1,:any_2] 
-address ALGtopN;
-comment Trim all but the top N tuples.
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
@@ -40893,14 +40881,10 @@ command pcre.imatch(s:str,pat:str):bit
 address PCREimatch;
 comment Caseless Perl Compatible Regular Expression pattern matching against a string
 
-command pcre.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
 command pcre.index(pat:pcre,s:str):int 
 address PCREindex;
 comment match a pattern, return matched position (or 0 when not found)
 
-command pcre.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCRElike_join_pcre;
 command pcre.match(s:str,pat:str):bit 
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
@@ -40926,10 +40910,6 @@ comment Replace _all_ matches of "pattern" in "origin_str" with "replacement".	 
 command pcre.sql2pcre(pat:str,esc:str):str 
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
-
-command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
-address PCREselectDef;
-comment Select tuples based on the pattern
 
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;

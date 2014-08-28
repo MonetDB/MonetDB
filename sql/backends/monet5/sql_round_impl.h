@@ -153,25 +153,25 @@ round_body_nonil(TYPE v, int d, int s, int r)
 		res = 0;
 	} else if (r > 0 && r < s) {
 		int dff = s - r;
-		lng rnd = scales[dff] >> 1;
-		lng lres;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
 		if (v > 0)
-			lres = (((v + rnd) / scales[dff]) * scales[dff]);
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
-			lres = (((v - rnd) / scales[dff]) * scales[dff]);
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG)
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
 	} else if (r <= 0 && -r + s > 0) {
 		int dff = -r + s;
-		lng rnd = scales[dff] >> 1;
-		lng lres;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
 		if (v > 0)
-			lres = (((v + rnd) / scales[dff]) * scales[dff]);
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
-			lres = (((v - rnd) / scales[dff]) * scales[dff]);
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG)
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
@@ -454,7 +454,7 @@ batstr_2num(int *res, int *bid, int *len)
 str
 dec2second_interval(lng *res, int *sc, TYPE *dec, int *ek, int *sk)
 {
-	lng value = *dec;
+	BIG value = *dec;
 
 	(void) ek;
 	(void) sk;
@@ -468,6 +468,9 @@ dec2second_interval(lng *res, int *sc, TYPE *dec, int *ek, int *sk)
 		value += rnd;
 		value /= scales[d];
 	}
+#if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
+	assert((hge) GDK_lng_min < value && value <= (hge) GDK_lng_max);
+#endif
 	*res = value;
 	return MAL_SUCCEED;
 }

@@ -41,8 +41,9 @@ SELECT count(oid) FROM wi;
 -- should fail
 SELECT count(oid) FROM wo;
 
-VACUUM ANALYZE wi;
-VACUUM ANALYZE wo;
+-- There is no VACUUM statement in the SQL standard.
+/* VACUUM ANALYZE wi; */
+/* VACUUM ANALYZE wo; */
 
 SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
   FROM pg_class
