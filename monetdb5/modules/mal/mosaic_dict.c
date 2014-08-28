@@ -44,6 +44,9 @@ MOSadvance_dict(Client cntxt, MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOScnt(task->blk),int)); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOScnt(task->blk),oid)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOScnt(task->blk),lng)); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOScnt(task->blk),hge)); break;
+#endif
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOScnt(task->blk),wrd)); break;
 	default:
 		if( task->type == TYPE_timestamp)
@@ -79,6 +82,11 @@ MOSdump_dict(Client cntxt, MOStask task)
 	case  TYPE_lng:
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
+#ifdef HAVE_HGE
+	case  TYPE_hge:
+		for(i=0; i< *size; i++)
+		mnstr_printf(cntxt->fdout,"hge [%d] %.40g", i, ((dbl*) val)[i]); break;
+#endif
 	case  TYPE_wrd:
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"wrd [%d] "SZFMT, i, ((wrd*) val)[i]); break;
@@ -134,6 +142,9 @@ MOSestimate_dict(Client cntxt, MOStask task)
 	case TYPE_sht: estimateDict(sht); break;
 	case TYPE_oid: estimateDict(oid); break;
 	case TYPE_lng: estimateDict(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: estimateDict(hge); break;
+#endif
 	case TYPE_wrd: estimateDict(wrd); break;
 	case TYPE_int:
 		{	int val = *(int*)task->src;
@@ -202,6 +213,9 @@ MOScompress_dict(Client cntxt, MOStask task)
 	case TYPE_int: DICTcompress(int); break;
 	case TYPE_oid: DICTcompress(oid); break;
 	case TYPE_wrd: DICTcompress(wrd); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: DICTcompress(hge); break;
+#endif
 	case TYPE_lng:
 		{	lng *val = (lng*)task->src;
 			lng *dict = (lng*)((char*)task->blk+ 2 * MosaicBlkSize);
@@ -256,7 +270,9 @@ MOSdecompress_dict(Client cntxt, MOStask task)
 	switch(task->type){
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_oid: DICTdecompress(oid); break;
-	case TYPE_lng: DICTdecompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: DICTdecompress(hge); break;
+#endif
 	case TYPE_wrd: DICTdecompress(wrd); break;
 	case TYPE_int:
 		{	bte *idx = (bte*)(compressed + dictsize * sizeof(int));
@@ -365,6 +381,9 @@ MOSsubselect_dict(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bi
 	case TYPE_sht: subselect_dict(sht); break;
 	case TYPE_oid: subselect_dict(oid); break;
 	case TYPE_lng: subselect_dict(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_dict(hge); break;
+#endif
 	case TYPE_wrd: subselect_dict(wrd); break;
 	case TYPE_int:
 	// Expanded MOSselect_dict for debugging
@@ -572,6 +591,9 @@ MOSthetasubselect_dict(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_dict(sht); break;
 	case TYPE_oid: thetasubselect_dict(oid); break;
 	case TYPE_lng: thetasubselect_dict(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_dict(hge); break;
+#endif
 	case TYPE_wrd: thetasubselect_dict(wrd); break;
 	case TYPE_int:
 		{ 	int low,hgh;
@@ -685,6 +707,9 @@ MOSleftfetchjoin_dict(Client cntxt,  MOStask task)
 		case TYPE_sht: leftfetchjoin_dict(sht); break;
 		case TYPE_oid: leftfetchjoin_dict(oid); break;
 		case TYPE_lng: leftfetchjoin_dict(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_dict(hge); break;
+#endif
 		case TYPE_wrd: leftfetchjoin_dict(wrd); break;
 		case TYPE_int:
 		{	int *v;
@@ -737,6 +762,9 @@ MOSjoin_dict(Client cntxt,  MOStask task)
 		case TYPE_sht: join_dict(sht); break;
 		case TYPE_oid: join_dict(oid); break;
 		case TYPE_lng: join_dict(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_dict(hge); break;
+#endif
 		case TYPE_wrd: join_dict(wrd); break;
 		case TYPE_int:
 		{	int  *w;

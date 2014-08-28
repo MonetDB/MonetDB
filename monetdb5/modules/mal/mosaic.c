@@ -42,6 +42,7 @@ MOSinit(MOStask task, BAT *b){
 		b= BATdescriptor(VIEWtparent(b));
 	assert(b);
 	base = Tloc(b,BUNfirst(b));
+	assert(base);
 	task->type = b->ttype;
 	task->hdr = (MosaicHdr) base;
 	base += MosaicHdrSize;
@@ -199,6 +200,9 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 	case TYPE_oid:
 	case TYPE_wrd:
 	case TYPE_flt:
@@ -1148,6 +1152,9 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 	case TYPE_wrd:
 	case TYPE_oid:
 	case TYPE_flt:

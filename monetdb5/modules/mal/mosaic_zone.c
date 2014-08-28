@@ -41,6 +41,9 @@ MOSdump_zone(Client cntxt, MOStask task)
 	case TYPE_int: {int low= *(int*)zone_min(blk), max =*(int*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
 	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 	case TYPE_lng: {lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
+#ifdef HAVE_HGE
+	case TYPE_hge: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", low,max); }break;
+#endif
 	case TYPE_wrd: {wrd low= *(wrd*)zone_min(blk), max =*(wrd*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["SZFMT" - "SZFMT"]\n", low,max); }break;
 	case TYPE_flt: {flt low= *(flt*)zone_min(blk), max =*(flt*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
 	case TYPE_dbl: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
@@ -77,6 +80,9 @@ MOSadvance_zone(Client cntxt, MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk),int)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk),oid)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk),lng)); break ;
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(hge)* MOScnt(blk),hge)); break ;
+#endif
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(wrd)* MOScnt(blk),wrd)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk),dbl)); break;
@@ -158,6 +164,9 @@ MOScompress_zone(Client cntxt, MOStask task)
 		break;
 	case TYPE_oid: ZONEcompress(oid); break;
 	case TYPE_lng: ZONEcompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEcompress(hge); break;
+#endif
 	case TYPE_wrd: ZONEcompress(wrd); break;
 	case TYPE_flt: ZONEcompress(flt); break;
 	case TYPE_dbl: ZONEcompress(dbl); break;
@@ -178,6 +187,9 @@ MOScompress_zone(Client cntxt, MOStask task)
 		break;
 	case TYPE_oid: ZONEbreak(oid); break;
 	case TYPE_lng: ZONEbreak(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEbreak(hge); break;
+#endif
 	case TYPE_wrd: ZONEbreak(wrd); break;
 	case TYPE_flt: ZONEbreak(flt); break;
 	case TYPE_dbl: ZONEbreak(dbl); break;
@@ -217,6 +229,9 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 		break;
 	case TYPE_oid: ZONEdecompress(oid); break;
 	case TYPE_lng: ZONEdecompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEdecompress(hge); break;
+#endif
 	case TYPE_wrd: ZONEdecompress(wrd); break;
 	case TYPE_flt: ZONEdecompress(flt); break;
 	case TYPE_dbl: ZONEdecompress(dbl); break;
@@ -329,6 +344,9 @@ MOSsubselect_zone(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bi
 	case TYPE_sht: subselect_zone(sht); break;
 	case TYPE_oid: subselect_zone(oid); break;
 	case TYPE_lng: subselect_zone(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_zone(hge); break;
+#endif
 	case TYPE_wrd: subselect_zone(wrd); break;
 	case TYPE_flt: subselect_zone(flt); break;
 	case TYPE_dbl: subselect_zone(dbl); break;
@@ -558,6 +576,9 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_zone(sht); break;
 	case TYPE_oid: thetasubselect_zone(oid); break;
 	case TYPE_lng: thetasubselect_zone(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_zone(hge); break;
+#endif
 	case TYPE_wrd: thetasubselect_zone(wrd); break;
 	case TYPE_flt: thetasubselect_zone(flt); break;
 	case TYPE_dbl: thetasubselect_zone(dbl); break;
@@ -652,6 +673,9 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task)
 		case TYPE_sht: leftfetchjoin_zone(sht); break;
 		case TYPE_oid: leftfetchjoin_zone(oid); break;
 		case TYPE_lng: leftfetchjoin_zone(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_zone(hge); break;
+#endif
 		case TYPE_flt: leftfetchjoin_zone(flt); break;
 		case TYPE_dbl: leftfetchjoin_zone(dbl); break;
 		case TYPE_int:
@@ -707,6 +731,9 @@ MOSjoin_zone(Client cntxt,  MOStask task)
 		case TYPE_sht: join_zone(sht); break;
 		case TYPE_oid: join_zone(oid); break;
 		case TYPE_lng: join_zone(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_zone(hge); break;
+#endif
 		case TYPE_wrd: join_zone(wrd); break;
 		case TYPE_flt: join_zone(flt); break;
 		case TYPE_dbl: join_zone(dbl); break;

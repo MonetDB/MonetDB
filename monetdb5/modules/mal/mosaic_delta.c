@@ -39,6 +39,9 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1,oid)); break ;
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1,wrd)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1,lng)); break ;
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(hge) + MOScnt(blk)-1,hge)); break ;
+#endif
 	default:
 		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1,timestamp)); 
@@ -98,6 +101,9 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		}
 	case TYPE_wrd: Estimate_delta(wrd); break;
 	case TYPE_lng: Estimate_delta(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: Estimate_delta(hge); break;
+#endif
 	case TYPE_int:
 		{	int *w = (int*)task->src, val= *w, delta;
 			for(w++,i =1; i<task->elm; i++,w++){
@@ -145,6 +151,9 @@ MOScompress_delta(Client cntxt, MOStask task)
 	case TYPE_sht: DELTAcompress(sht); break;
 	case TYPE_wrd: DELTAcompress(wrd); break;
 	case TYPE_lng: DELTAcompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: DELTAcompress(hge); break;
+#endif
 	case TYPE_oid:
 		{	oid *w = (oid*)task->src, val= *w, delta;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
@@ -208,6 +217,9 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_wrd: DELTAdecompress(wrd); break;
 	case TYPE_lng: DELTAdecompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: DELTAdecompress(hge); break;
+#endif
 	case TYPE_int:
 	{ 	int val;
 		BUN lim = MOScnt(blk);
@@ -317,6 +329,9 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	case TYPE_oid: subselect_delta(oid); break;
 	case TYPE_wrd: subselect_delta(wrd); break;
 	case TYPE_lng: subselect_delta(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_delta(hge); break;
+#endif
 	case TYPE_flt: subselect_delta(flt); break;
 	case TYPE_dbl: subselect_delta(dbl); break;
 	case TYPE_int:
@@ -527,6 +542,9 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_delta(sht); break;
 	case TYPE_oid: thetasubselect_delta(oid); break;
 	case TYPE_lng: thetasubselect_delta(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_delta(hge); break;
+#endif
 	case TYPE_wrd: thetasubselect_delta(wrd); break;
 	case TYPE_flt: thetasubselect_delta(flt); break;
 	case TYPE_dbl: thetasubselect_delta(dbl); break;
@@ -611,6 +629,9 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 		case TYPE_sht: leftfetchjoin_delta(sht); break;
 		case TYPE_oid: leftfetchjoin_delta(oid); break;
 		case TYPE_lng: leftfetchjoin_delta(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_delta(hge); break;
+#endif
 		case TYPE_wrd: leftfetchjoin_delta(wrd); break;
 		case TYPE_flt: leftfetchjoin_delta(flt); break;
 		case TYPE_dbl: leftfetchjoin_delta(dbl); break;
@@ -668,6 +689,9 @@ MOSjoin_delta(Client cntxt,  MOStask task)
 		case TYPE_sht: join_delta(sht); break;
 		case TYPE_oid: join_delta(oid); break;
 		case TYPE_lng: join_delta(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_delta(hge); break;
+#endif
 		case TYPE_wrd: join_delta(wrd); break;
 		case TYPE_flt: join_delta(flt); break;
 		case TYPE_dbl: join_delta(dbl); break;

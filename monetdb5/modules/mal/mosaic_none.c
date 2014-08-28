@@ -47,6 +47,9 @@ MOSadvance_none(Client cntxt, MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk),int)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk),oid)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk),lng)); break ;
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(hge)* MOScnt(blk),hge)); break ;
+#endif
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd)* MOScnt(blk),wrd)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk),dbl)); break;
@@ -102,6 +105,9 @@ MOScompress_none(Client cntxt, MOStask task)
 		break;
 	case TYPE_oid: NONEcompress(oid); break;
 	case TYPE_lng: NONEcompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: NONEcompress(hge); break;
+#endif
 	case TYPE_wrd: NONEcompress(wrd); break;
 	case TYPE_flt: NONEcompress(flt); break;
 	case TYPE_dbl: NONEcompress(dbl); break;
@@ -141,6 +147,9 @@ MOSdecompress_none(Client cntxt, MOStask task)
 		break;
 	case TYPE_oid: NONEdecompress(oid); break;
 	case TYPE_lng: NONEdecompress(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: NONEdecompress(hge); break;
+#endif
 	case TYPE_wrd: NONEdecompress(wrd); break;
 	case TYPE_flt: NONEdecompress(flt); break;
 	case TYPE_dbl: NONEdecompress(dbl); break;
@@ -246,6 +255,9 @@ MOSsubselect_none(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bi
 	case TYPE_sht: subselect_none(sht); break;
 	case TYPE_oid: subselect_none(oid); break;
 	case TYPE_lng: subselect_none(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_none(hge); break;
+#endif
 	case TYPE_wrd: subselect_none(wrd); break;
 	case TYPE_flt: subselect_none(flt); break;
 	case TYPE_dbl: subselect_none(dbl); break;
@@ -458,6 +470,9 @@ MOSthetasubselect_none(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_none(sht); break;
 	case TYPE_oid: thetasubselect_none(oid); break;
 	case TYPE_lng: thetasubselect_none(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_none(hge); break;
+#endif
 	case TYPE_wrd: thetasubselect_none(wrd); break;
 	case TYPE_flt: thetasubselect_none(flt); break;
 	case TYPE_dbl: thetasubselect_none(dbl); break;
@@ -540,6 +555,9 @@ MOSleftfetchjoin_none(Client cntxt,  MOStask task)
 		case TYPE_sht: leftfetchjoin_none(sht); break;
 		case TYPE_oid: leftfetchjoin_none(oid); break;
 		case TYPE_lng: leftfetchjoin_none(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_none(hge); break;
+#endif
 		case TYPE_wrd: leftfetchjoin_none(wrd); break;
 		case TYPE_flt: leftfetchjoin_none(flt); break;
 		case TYPE_dbl: leftfetchjoin_none(dbl); break;
@@ -596,6 +614,9 @@ MOSjoin_none(Client cntxt,  MOStask task)
 		case TYPE_sht: join_none(sht); break;
 		case TYPE_oid: join_none(oid); break;
 		case TYPE_lng: join_none(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_none(hge); break;
+#endif
 		case TYPE_wrd: join_none(wrd); break;
 		case TYPE_flt: join_none(flt); break;
 		case TYPE_dbl: join_none(dbl); break;
