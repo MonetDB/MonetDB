@@ -529,7 +529,7 @@ comment "Called when inserting values to a table in order to check if the insert
 
 command batcalc.wkb(geo:bat[:oid,:wkb], columnType:int, columnSRID:int) :bat[:oid,:wkb] address geom_2_geom_bat
 comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition";
-#Is it needed ???
+#Is it needed ??? --> yes for bulk loading without extra functions
 #command wkb(v:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFromWKB_bat;
 #comment "It is called when adding a new geometry column to an existing table";
 

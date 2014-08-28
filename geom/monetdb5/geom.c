@@ -2332,17 +2332,16 @@ str wkbNumRings(int* out, wkb** geom, int* exteriorRing) {
 
 /* it handles functions that take as input a single geometry and return boolean */
 static int wkbBasicBoolean(wkb **geom, char (*func)(const GEOSGeometry*)) {
-	int res = -1;
+	int ret = -1;
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry)
 		return 3;
 
-	res = (*func)(geosGeometry);
-
+	ret = (*func)(geosGeometry); //it is supposed to return char but treating it as such gives wrong results
 	GEOSGeom_destroy(geosGeometry);
 
-	return res;
+	return ret;
 }
 
 /* the function checks whether the geometry is closed. GEOS works only with
@@ -2432,7 +2431,7 @@ str wkbIsSimple(bit *out, wkb **geomWKB) {
 	return MAL_SUCCEED;
 }
 
-/*geom prints a message sayig the reasom why the geometry is not valid but
+/*geom prints a message saying the reasom why the geometry is not valid but
  * since there is also isValidReason I skip this here */
 str wkbIsValid(bit *out, wkb **geomWKB) {
 	int res = wkbBasicBoolean(geomWKB, GEOSisValid);
