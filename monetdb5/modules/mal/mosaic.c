@@ -386,7 +386,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		}
 		*task->blk = MOSeol;
 	}
-	task->xsize = ((lng)task->dst - (lng)task->hdr) + MosaicHdrSize;
+	task->xsize = ((lng)task->dst - (lng)task->hdr) + (lng)MosaicHdrSize;
 	task->timer = GDKusec() - task->timer;
 //#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
@@ -573,7 +573,7 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
 			*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
 		} else
 		if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
-			return MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
+			MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
 	}
 }
 
@@ -635,6 +635,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// accumulator for the oids
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
+		GDKfree(task);
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -647,6 +648,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (cand == NULL){
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(bn->batCacheid);
+			GDKfree(task);
 			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
@@ -702,6 +704,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
 	* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+	GDKfree(task);
 	BBPkeepref(bn->batCacheid);
 	return msg;
 }
@@ -823,6 +826,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn->tkey = 1;
 		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
 	}
+	GDKfree(task);
 	return msg;
 }
 
@@ -874,6 +878,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( task == NULL){
 		BBPreleaseref(bl->batCacheid);
 		BBPreleaseref(br->batCacheid);
+		GDKfree(task);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
 	MOSinit(task,br);
@@ -937,6 +942,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = 1;
 	BATderiveProps(bn,0);
 	BBPkeepref(*ret = bn->batCacheid);
+	GDKfree(task);
 	return msg;
 }
 
@@ -1062,6 +1068,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
         BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
     }
+	GDKfree(task);
     return msg;
 }
 

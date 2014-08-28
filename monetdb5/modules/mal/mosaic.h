@@ -129,6 +129,9 @@ float nextafterf(float x, float y);
 #define PREVVALUElng(x) ((x) - 1)
 #define PREVVALUEwrd(x) ((x) - 1)
 #define PREVVALUEoid(x) ((x) - 1)
+#ifdef HAVE_HGE
+#define PREVVALUEhge(x) ((x) - 1)
+#endif
 #define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
 #define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
 #define PREVVALUEdate(x) ((x) - 1)
@@ -141,6 +144,9 @@ float nextafterf(float x, float y);
 #define NEXTVALUElng(x) ((x) + 1)
 #define NEXTVALUEwrd(x) ((x) + 1)
 #define NEXTVALUEoid(x) ((x) + 1)
+#ifdef HAVE_HGE
+#define NEXTVALUEhge(x) ((x) + 1)
+#endif
 #define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
 #define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
 #define NEXTVALUEdate(x) ((x) + 1)
