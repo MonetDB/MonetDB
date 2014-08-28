@@ -54,15 +54,20 @@ virtualize(BAT *bn)
 	/* since bn has unique and strictly ascending tail values, we
 	 * can easily check whether the tail is dense */
 	if (bn && !BATtdense(bn) &&
-	    * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
-	    * (const oid *) Tloc(bn, BUNlast(bn) - 1)) {
+	    (BATcount(bn) == 0 ||
+	     * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
+	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* tail is dense, replace by virtual oid */
 		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
 				  BATgetId(bn), BATcount(bn),
 				  * (const oid *) Tloc(bn, BUNfirst(bn)));
-		bn->tseqbase = * (const oid *) Tloc(bn, BUNfirst(bn));
+		if (BATcount(bn) == 0)
+			bn->tseqbase = 0;
+		else
+			bn->tseqbase = * (const oid *) Tloc(bn, BUNfirst(bn));
 		bn->tdense = 1;
-		HEAPfree(&bn->T->heap);
+		if (bn->ttype == TYPE_oid)
+			HEAPfree(&bn->T->heap);
 		bn->ttype = TYPE_void;
 		bn->tvarsized = 1;
 		bn->T->width = 0;
