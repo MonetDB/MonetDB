@@ -116,7 +116,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate delta %d elm %.3f factor\n",(int)i,factor);
+	mnstr_printf(cntxt->fdout,"#estimate delta "BUNFMT" elm %.3f factor\n",i,factor);
 #endif
 	return factor;
 }
@@ -187,7 +187,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	MOSdump_delta_(cntxt, task);
+	MOSdump_delta(cntxt, task);
 #endif
 }
 

@@ -72,7 +72,7 @@ MOSdump_dict(Client cntxt, MOStask task)
 	switch(task->type){
 	case TYPE_sht:
 		for(i=0; i< *size; i++)
-		mnstr_printf(cntxt->fdout,"sht [%d] %d",i, ((int*) val)[i]); break;
+		mnstr_printf(cntxt->fdout,"sht [%d] %hd",i, ((sht*) val)[i]); break;
 	case TYPE_int:
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"int [%d] %d",i, ((int*) val)[i]); break;
@@ -164,7 +164,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate dict %d elm %4.2f factor\n",(int) factor);
+	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
 #endif
 	return factor; 
 }

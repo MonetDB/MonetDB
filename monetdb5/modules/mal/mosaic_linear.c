@@ -56,9 +56,9 @@ MOSdump_linear(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"#linear "BUNFMT" ", MOScnt(blk));
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte:
-		mnstr_printf(cntxt->fdout,"bte %d %d", *(int*) linear_base(blk), *(int*) linear_step(task, blk)); break;
+		mnstr_printf(cntxt->fdout,"bte %hhd %hhd", *(bte*) linear_base(blk), *(bte*) linear_step(task, blk)); break;
 	case TYPE_sht:
-		mnstr_printf(cntxt->fdout,"sht %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
+		mnstr_printf(cntxt->fdout,"sht %hd %hd", *(sht*) linear_base(blk), *(sht*) linear_step(task,blk)); break;
 	case TYPE_int:
 		mnstr_printf(cntxt->fdout,"int %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
 	case  TYPE_lng:
@@ -158,7 +158,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate linear %d elm %4.2f factor\n",(int)i,factor);
+	mnstr_printf(cntxt->fdout,"#estimate linear "BUNFMT" elm %4.2f factor\n",i,factor);
 #endif
 	return factor;
 }

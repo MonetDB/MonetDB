@@ -113,7 +113,7 @@ MOScompress_none(Client cntxt, MOStask task)
 	case TYPE_dbl: NONEcompress(dbl); break;
 	}
 #ifdef _DEBUG_MOSAIC_
-	MOSdump_none_(cntxt, task);
+	MOSdump_none(cntxt, task);
 #endif
 }
 

@@ -36,9 +36,9 @@ MOSdump_rle(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"#rle "BUNFMT" ", MOScnt(blk));
 	switch(task->type){
 	case TYPE_bte:
-		mnstr_printf(cntxt->fdout,"bte %d", *(int*) val); break;
+		mnstr_printf(cntxt->fdout,"bte %hhd", *(bte*) val); break;
 	case TYPE_sht:
-		mnstr_printf(cntxt->fdout,"sht %d", *(int*) val); break;
+		mnstr_printf(cntxt->fdout,"sht %hd", *(sht*) val); break;
 	case TYPE_int:
 		mnstr_printf(cntxt->fdout,"int %d", *(int*) val); break;
 	case  TYPE_oid:
@@ -139,7 +139,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate rle %d elm %4.3 factor\n",(int)i,factor);
+	mnstr_printf(cntxt->fdout,"#estimate rle "BUNFMT" elm %4.3f factor\n",i,factor);
 #endif
 	return factor;
 }

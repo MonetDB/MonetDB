@@ -36,10 +36,10 @@ MOSdump_zone(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	mnstr_printf(cntxt->fdout,"#zone "BUNFMT" elms ", MOScnt(blk));
 	switch(task->type){
-	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
-	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
+	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
+	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
 	case TYPE_int: {int low= *(int*)zone_min(blk), max =*(int*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
-	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
+	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["OIDFMT" - "OIDFMT"]\n", low,max); }break;
 	case TYPE_lng: {lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 #ifdef HAVE_HGE
 	case TYPE_hge: {hge low= *(hge*)zone_min(blk), max =*(hge*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", (dbl) low, (dbl) max); }break;
