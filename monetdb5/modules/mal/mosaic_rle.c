@@ -47,7 +47,7 @@ MOSdump_rle(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"lng "LLFMT, *(lng*) val); break;
 #ifdef HAVE_HGE
 	case  TYPE_hge:
-		mnstr_printf(cntxt->fdout,"hge %.40g", *(dbl*) val); break;
+		mnstr_printf(cntxt->fdout,"hge %.40g", (dbl) *(hge*) val); break;
 #endif
 	case  TYPE_wrd:
 		mnstr_printf(cntxt->fdout,"wrd "SZFMT, *(wrd*) val); break;

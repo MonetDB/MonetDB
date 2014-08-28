@@ -85,7 +85,7 @@ MOSdump_dict(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case  TYPE_hge:
 		for(i=0; i< *size; i++)
-		mnstr_printf(cntxt->fdout,"hge [%d] %.40g", i, ((dbl*) val)[i]); break;
+		mnstr_printf(cntxt->fdout,"hge [%d] %.40g", i, (dbl) ((hge*) val)[i]); break;
 #endif
 	case  TYPE_wrd:
 		for(i=0; i< *size; i++)

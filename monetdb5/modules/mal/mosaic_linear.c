@@ -65,7 +65,7 @@ MOSdump_linear(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
 #ifdef HAVE_HGE
 	case  TYPE_hge:
-		mnstr_printf(cntxt->fdout,"int %.40g %.40g ", *(dbl*) linear_base(blk), *(dbl*) linear_step(task,blk)); break;
+		mnstr_printf(cntxt->fdout,"int %.40g %.40g ", (dbl) *(hge*) linear_base(blk), (dbl) *(hge*) linear_step(task,blk)); break;
 #endif
 	case  TYPE_wrd:
 		mnstr_printf(cntxt->fdout,"int "SZFMT" " SZFMT, *(wrd*) linear_base(blk), *(wrd*) linear_step(task,blk)); break;

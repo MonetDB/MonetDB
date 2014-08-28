@@ -42,7 +42,7 @@ MOSdump_zone(Client cntxt, MOStask task)
 	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 	case TYPE_lng: {lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
 #ifdef HAVE_HGE
-	case TYPE_hge: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", low,max); }break;
+	case TYPE_hge: {hge low= *(hge*)zone_min(blk), max =*(hge*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", (dbl) low, (dbl) max); }break;
 #endif
 	case TYPE_wrd: {wrd low= *(wrd*)zone_min(blk), max =*(wrd*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["SZFMT" - "SZFMT"]\n", low,max); }break;
 	case TYPE_flt: {flt low= *(flt*)zone_min(blk), max =*(flt*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
