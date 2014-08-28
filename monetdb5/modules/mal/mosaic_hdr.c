@@ -70,18 +70,18 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	// compress the index by finding the smallest compressed fragment pair
 	hdr->oidbase[hdr->top] = MOScnt(task->blk) + hdr->oidbase[hdr->top-1];
 	hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
-	minsize = hdr->offset[1];
+	minsize = hdr->offset[2];
 	j = 0;
-	for( i = 0; i < hdr->top; i++)
-	if ( hdr->offset[i] - hdr->offset[i+1] < minsize ){
-		minsize = hdr->offset[i] - hdr->offset[i+1];
+	for( i = 0; i < hdr->top-1; i++)
+	if ( hdr->offset[i] - hdr->offset[i+2] < minsize ){
+		minsize = hdr->offset[i] - hdr->offset[i+2];
 		j = i;
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#ditch entry %d\n",j);
 #endif
 	// simply remove on element
-	for( i = j; i < hdr->top; i++){
+	for( i = j+1; i < hdr->top; i++){
 		hdr->oidbase[i]  = hdr->oidbase[i+1];
 		hdr->offset[i] = hdr->offset[i+1];
 	}
