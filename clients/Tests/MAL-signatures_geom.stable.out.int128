@@ -50126,9 +50126,9 @@ address IOttable;
 comment Print an n-ary table. Like print, but does not print oid column
 
 command iterator.filter(name:json,idx:hge,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_hge;
 command iterator.filter(name:json,idx:hge):json 
-address JSONfilterArray;
+address JSONfilterArray_hge;
 command iterator.next(step:hge,last:hge):hge 
 address ITRnext_hge;
 command iterator.next(step:dbl,last:dbl):dbl 

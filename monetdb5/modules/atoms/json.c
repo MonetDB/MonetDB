@@ -941,6 +941,24 @@ JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
+#ifdef HAVE_HGE
+str
+JSONfilterArray_hge(json *ret, json *js, hge *index)
+{
+	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
+		throw(MAL, "json.filter", "index out of range");
+	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+}
+
+str
+JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
+{
+	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
+		throw(MAL, "json.filter", "index out of range");
+	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+}
+#endif
+
 str
 JSONfilter(json *ret, json *js, str *expr)
 {
