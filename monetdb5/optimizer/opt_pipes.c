@@ -253,7 +253,7 @@ static struct PIPELINES {
 #endif
 
 	/*geospatial pipe*/
-	{"geom_pipe",
+/*	{"geom_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.geospatial();"
@@ -262,7 +262,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
-/*
+*/
 	{"geom_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -271,8 +271,8 @@ static struct PIPELINES {
 	 "optimizer.evaluate();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
-	 "optimizer.geospatial();"
 	 "optimizer.pushselect();"
+	 "optimizer.geospatial();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
@@ -288,7 +288,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "experimental", NULL, NULL, 1},
-*/
+
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
