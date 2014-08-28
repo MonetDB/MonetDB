@@ -43,7 +43,6 @@ algebra_export str ALGvariancep(dbl *res, int *bid);
 
 algebra_export str ALGminany(ptr result, int *bid);
 algebra_export str ALGmaxany(ptr result, int *bid);
-algebra_export str ALGtopN(int *res, int *bid, lng *top);
 algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
@@ -52,14 +51,10 @@ algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, co
 algebra_export str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
-algebra_export str ALGthetauselect(int *result, int *bid, ptr value, str *op);
-algebra_export str ALGantiuselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
-algebra_export str ALGthetaselect(int *result, int *bid, ptr low, str *op);
 algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 
 algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
@@ -80,7 +75,6 @@ algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, ba
 
 algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-algebra_export str ALGhistogram(int *result, int *bid);
 algebra_export str ALGcopy(int *result, int *bid);
 algebra_export str ALGkunique(int *result, int *bid);
 algebra_export str ALGtunique(int *result, int *bid);

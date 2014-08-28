@@ -770,15 +770,15 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			if (body && lang > FUNC_LANG_SQL) {
 				char *lang_body = body->h->data.sval;
 				char *mod = 	(lang == FUNC_LANG_R)?"rapi":
-											(lang == FUNC_LANG_C)?"capi":
-											(lang == FUNC_LANG_J)?"japi":"unknown";
+						(lang == FUNC_LANG_C)?"capi":
+						(lang == FUNC_LANG_J)?"japi":"unknown";
 				sql->params = NULL;
-					if (create) {
-						f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
+				if (create) {
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
 				} else {
-						sql_func *f = sf->func;
+					sql_func *f = sf->func;
 					f->mod = _STRDUP("rapi");
 					f->imp = _STRDUP("eval");
 					if (res && restype)

@@ -2199,28 +2199,28 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					     *line && !(isascii((int) *line) && isspace((int) *line));
 					     line++) {
 						switch (*line) {
-							case 't':
-								x |= MD_TABLE;
+						case 't':
+							x |= MD_TABLE;
 							break;
-							case 'v':
-								x |= MD_VIEW;
+						case 'v':
+							x |= MD_VIEW;
 							break;
-							case 's':
-								x |= MD_SEQ;
+						case 's':
+							x |= MD_SEQ;
 							break;
-							case 'f':
-								x |= MD_FUNC;
+						case 'f':
+							x |= MD_FUNC;
 							break;
-							case 'n':
-								x |= MD_SCHEMA;
+						case 'n':
+							x |= MD_SCHEMA;
 							break;
-							case 'S':
-								wantsSystem = 1;
+						case 'S':
+							wantsSystem = 1;
 							break;
-							default:
-								fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
-								length = 0;
-								line[1] = '\0';
+						default:
+							fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
+							length = 0;
+							line[1] = '\0';
 							break;
 						}
 					}
@@ -2234,35 +2234,32 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					/* lowercase the object, except for quoted parts */
 					q = line;
 					for (p = line; *p != '\0'; p++) {
-						switch (*p) {
-							case '"':
-								if (escaped) {
-									if (*(p + 1) == '"') {
-										/* SQL escape */
-										*q++ = *p++;
-									} else {
-										escaped = 0;
-									}
+						if (*p == '"') {
+							if (escaped) {
+								if (*(p + 1) == '"') {
+									/* SQL escape */
+									*q++ = *p++;
 								} else {
-									escaped = 1;
+									escaped = 0;
 								}
-								break;
-							default:
-								if (!escaped) {
-									*q++ = tolower((int) *p);
-									if (*p == '*') {
-										*p = '%';
-										hasWildcard = 1;
-									} else if (*p == '?') {
-										*p = '_';
-										hasWildcard = 1;
-									} else if (*p == '.') {
-										hasSchema = 1;
-									}
-								} else {
-									*q++ = *p;
+							} else {
+								escaped = 1;
+							}
+						} else {
+							if (!escaped) {
+								*q++ = tolower((int) *p);
+								if (*p == '*') {
+									*p = '%';
+									hasWildcard = 1;
+								} else if (*p == '?') {
+									*p = '_';
+									hasWildcard = 1;
+								} else if (*p == '.') {
+									hasSchema = 1;
 								}
-								break;
+							} else {
+								*q++ = *p;
+							}
 						}
 					}
 					*q = '\0';
@@ -2410,7 +2407,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							       ") AS \"all\" "
 							 "WHERE ntype & %u > 0 "
 							       "%s "
-							 "ORDER BY system, name",
+							 "ORDER BY system, name, sname",
 							 MD_TABLE, MD_VIEW,
 							 nameq,
 							 MD_SEQ,

@@ -1659,6 +1659,8 @@ OIDinit(void)
 #endif
 	GDKflushed = 0;
 	GDKoid = OIDrand();
+	assert(oid_nil == * (const oid *) ATOMnilptr(TYPE_oid));
+	assert(wrd_nil == * (const wrd *) ATOMnilptr(TYPE_wrd));
 	return 0;
 }
 
@@ -1805,7 +1807,11 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 0,			/* size */
 	 0,			/* align */
-	 (ptr) &oid_nil,	/* atomNull */
+#if SIZEOF_OID == SIZEOF_INT
+	 (ptr) &int_nil,	/* atomNull */
+#else
+	 (ptr) &lng_nil,	/* atomNull */
+#endif
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,    /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) OIDtoStr,      /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) voidRead,      /* atomRead */
@@ -1928,7 +1934,11 @@ atomDesc BATatoms[MAXATOMS] = {
 	 1,			/* linear */
 	 sizeof(oid),		/* size */
 	 sizeof(oid),		/* align */
-	 (ptr) &oid_nil,	/* atomNull */
+#if SIZEOF_OID == SIZEOF_INT
+	 (ptr) &int_nil,	/* atomNull */
+#else
+	 (ptr) &lng_nil,	/* atomNull */
+#endif
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr,   /* atomFromStr */
 	 (int (*)(str *, int *, const void *)) OIDtoStr,     /* atomToStr */
 #if SIZEOF_OID == SIZEOF_INT

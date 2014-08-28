@@ -508,14 +508,15 @@ CREATE UNIQUE INDEX num_exp_ln_idx ON num_exp_ln (id);
 CREATE UNIQUE INDEX num_exp_log10_idx ON num_exp_log10 (id);
 CREATE UNIQUE INDEX num_exp_power_10_ln_idx ON num_exp_power_10_ln (id);
 
-VACUUM ANALYZE num_exp_add;
-VACUUM ANALYZE num_exp_sub;
-VACUUM ANALYZE num_exp_div;
-VACUUM ANALYZE num_exp_mul;
-VACUUM ANALYZE num_exp_sqrt;
-VACUUM ANALYZE num_exp_ln;
-VACUUM ANALYZE num_exp_log10;
-VACUUM ANALYZE num_exp_power_10_ln;
+-- There is no VACUUM statement in the SQL standard.
+/* VACUUM ANALYZE num_exp_add; */
+/* VACUUM ANALYZE num_exp_sub; */
+/* VACUUM ANALYZE num_exp_div; */
+/* VACUUM ANALYZE num_exp_mul; */
+/* VACUUM ANALYZE num_exp_sqrt; */
+/* VACUUM ANALYZE num_exp_ln; */
+/* VACUUM ANALYZE num_exp_log10; */
+/* VACUUM ANALYZE num_exp_power_10_ln; */
 
 -- ******************************
 -- * Now check the behaviour of the NUMERIC type
