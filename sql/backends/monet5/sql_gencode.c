@@ -1518,17 +1518,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = dump_joinN(sql, mb, s);
 			break;
 		case st_tunion:{
-			if (dump_2_(sql, mb, s, batRef, "mergecand") < 0)
+			if (dump_2_(sql, mb, s, batRef, mergecandRef) < 0)
 				return -1;
 		}
 			break;
 		case st_tdiff:{
-			if (dump_2_(sql, mb, s, algebraRef, "tdiff") < 0)
+			if (dump_2_(sql, mb, s, algebraRef, tdiffRef) < 0)
 				return -1;
 		}
 			break;
 		case st_tinter:{
-			if (dump_2_(sql, mb, s, algebraRef, "tinter") < 0)
+			if (dump_2_(sql, mb, s, algebraRef, tinterRef) < 0)
 				return -1;
 		}
 			break;
