@@ -51566,10 +51566,6 @@ command pcre.sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
 
-command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
-address PCREselectDef;
-comment Select tuples based on the pattern
-
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;
 comment A list of counters to be activated.
