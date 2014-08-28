@@ -1330,8 +1330,25 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		finalGeometry = GEOSGeom_createPolygon(linearRingExternalGeometry, internalGeometries, itemsNum-1);
 		if(finalGeometry == NULL) {
 			GEOSGeom_destroy(linearRingExternalGeometry);
+			for(i=0; i<itemsNum; i++)
+				GEOSGeom_destroy(internalGeometries[i]);
+			GDKfree(internalGeometries);
 			*geomWKB = wkb_nil;
 			throw(MAL, "geom.MLineStringToPolygon", "Error creating Polygon from LinearRing");
+		}
+
+		//check of the created polygon is valid
+		if(GEOSisValid(finalGeometry) != 1) {
+			//suppress the GEOS message
+			if (GDKerrbuf)
+				GDKerrbuf[0] = '\0';
+
+			GEOSGeom_destroy(finalGeometry);
+			GDKfree(internalGeometries);
+			
+			*geomWKB = wkb_nil;
+			throw(MAL, "geom.MLineStringToPolygon", "The provided MultiLineString does not create a valid Polygon");
+
 		}
 
 		GEOSSetSRID(finalGeometry, *srid);
@@ -1340,7 +1357,8 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		GEOSGeom_destroy(finalGeometry); 
 		GDKfree(internalGeometries); 
 	} else if(*flag == 1) {
-	//} else {
+		
+	} else {
 		*geomWKB = wkb_nil;
 		throw(MAL, "geom.MLineStringToPolygon", "Uknown flag");
 	}
