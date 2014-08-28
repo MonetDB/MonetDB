@@ -59,9 +59,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {
-			 if (getFunctionId(p) == selectRef ||
-				getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == thetaselectRef ||
+			 if (getFunctionId(p) == subselectRef ||
 				getFunctionId(p) == thetasubselectRef) {
 				newRows(1,1, (c1 > 100 ? c1 / 2 +1: c1),0);
 			} else if (

@@ -589,7 +589,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,0)] = PIVOT;
 			} 
 		} else
-		if ( getModuleId(p) == algebraRef && (getFunctionId(p)== thetaselectRef  || getFunctionId(p) == selectRef || getFunctionId(p) == subselectRef ||getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)){
+		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subselectRef ||getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)){
 			if ( vars[getArg(p,p->retc)] == PARTITION ){
 				status[i] = PARTITION;
 				vars[getArg(p,0)] = PARTITION;

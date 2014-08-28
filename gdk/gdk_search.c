@@ -598,7 +598,8 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 
 	if (BATtdense(b)) {
 		/* no need for binary search on dense column */
-		if (*(const oid *) v < b->tseqbase)
+		if (*(const oid *) v < b->tseqbase ||
+		    *(const oid *) v == oid_nil)
 			return which == FIND_ANY ? BUN_NONE : lo;
 		if (*(const oid *) v >= b->tseqbase + BATcount(b))
 			return which == FIND_ANY ? BUN_NONE : hi;

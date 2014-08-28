@@ -27,6 +27,7 @@
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_planner.h"
+#include "rel_psm.h"
 #include "sql_env.h"
 
 #define new_func_list(sa) sa_list(sa)
@@ -1777,7 +1778,7 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ur->r = exps_copy(sql->sa, r->r);
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 			u = rel_setop(sql->sa, ul, ur, op_union);
-			u->exps = exps_copy(sql->sa, r->exps); 
+			u->exps = exps_alias(sql->sa, r->exps); 
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
@@ -1785,7 +1786,11 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
 
-			r->l = u;
+			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
+			ur->r = r->r;
+			r->l = NULL;
+			rel_destroy(r);
+			rel->l = ur;
 			(*changes)++;
 			return rel;
 		}
@@ -2320,6 +2325,25 @@ static sql_exp *
 exp_case_fixup( mvc *sql, sql_exp *e )
 {
 	/* only functions need fix up */
+	if (e->type == e_psm) {
+		if (e->flag & PSM_SET) {
+			/* todo */
+		} else if (e->flag & PSM_VAR) {
+			/* todo */
+		} else if (e->flag & PSM_RETURN) {
+			e->l = exp_case_fixup(sql, e->l);
+		} else if (e->flag & PSM_WHILE) {
+			e->l = exp_case_fixup(sql, e->l);
+			e->r = exps_case_fixup(sql, e->r, NULL, 0);
+		} else if (e->flag & PSM_IF) {
+			e->l = exp_case_fixup(sql, e->l);
+			e->r = exps_case_fixup(sql, e->r, NULL, 0);
+			if (e->f)
+				e->f = exps_case_fixup(sql, e->f, NULL, 0);
+		} else if (e->flag & PSM_REL) {
+		}
+		return e;
+	}
 	if (e->type == e_func && e->l && !is_rank_op(e) ) {
 		list *l = new_exp_list(sql->sa), *args = e->l;
 		node *n;
@@ -2391,7 +2415,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 {
 	
 	(void)changes; /* only go through it once, ie don't mark for changes */
-	if (is_project(rel->op) && rel->exps) {
+	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == DDL_PSM)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
 		int needed = 0;
@@ -2400,7 +2424,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data;
 
 			if (e->type == e_func || e->type == e_convert ||
-			    e->type == e_aggr) 
+			    e->type == e_aggr || e->type == e_psm) 
 				needed = 1;
 		}
 		if (!needed)
@@ -7056,7 +7080,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 #endif
 
 	/* simple merging of projects */
-	if (gp.cnt[op_project]) {
+	if (gp.cnt[op_project] || gp.cnt[op_ddl]) {
 		rel = rewrite(sql, rel, &rel_merge_projects, &changes);
 		if (level <= 0) {
 			rel = rewrite(sql, rel, &rel_case_fixup, &changes);

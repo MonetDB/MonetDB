@@ -3210,55 +3210,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
  *
- * @- BAT aggregates
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAThistogram(BAT *b)
- * @item BAT*
- * @end multitable
- *
- * The routine BAThistogram produces a new BAT with a frequency
- * distribution of the tail of its operand.
- *
  * For each BAT we maintain its dimensions as separately accessible
  * properties. They can be used to improve query processing at higher
  * levels.
  */
 
-#define GDK_AGGR_SIZE 1
-#define GDK_AGGR_CARD 2
 #define GDK_MIN_VALUE 3
 #define GDK_MAX_VALUE 4
 
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export BAT *BAThistogram(BAT *b);
-gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
-
-/*
- * @- Alignment transformations
- * Some classes of algebraic operators transform a sequence in an
- * input BAT always in the same way in the output result. An example
- * are the @{X@}() function (including histogram(b), which is
- * identical to @{count@}(b.reverse)).  That is to say, if
- * synced(b2,b2) => synced(@{X@}(b1),@{Y@}(b2))
- *
- * Another example is b.fetch(position-bat). If synced(b2,b2) and the
- * same position-bat is fetched with, the results will again be
- * synced.  This can be mimicked by transforming the
- * @emph{alignment-id} of the input BAT with a one-way function onto
- * the result.
- *
- * We use @strong{output->halign = NOID_AGGR(input->halign)} for the
- * @strong{output = @{X@}(input)} case, and @strong{output->align =
- * NOID_MULT(input1->align,input2->halign)} for the fetch.
- */
-#define AGGR_MAGIC	111
-#define NOID(x)		((oid)(x))
-#define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
-#define NOID_MULT(x,y)	NOID( (lng)(y)*(lng)(x) )
 
 /*
  * @- BAT relational operators
@@ -3330,7 +3292,6 @@ gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 
@@ -3482,16 +3443,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect_(_b, (h), (t), (li), (hi));			\
-	})
-
-#define BATantiuselect_(b, h, t, li, hi)				\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATantiuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATantiuselect_(_b, (h), (t), (li), (hi));		\
 	})
 
 #define BATselect(b, h, t)						\

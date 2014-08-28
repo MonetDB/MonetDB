@@ -118,10 +118,6 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	if (b2->halign == 0) {
 		b2->halign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
-	} else {
-		/* propagate GDK_AGGR information */
-		BATpropagate(b1, b2, GDK_AGGR_SIZE);
-		BATpropagate(b1, b2, GDK_AGGR_CARD);
 	}
 	if (BAThvoid(b2)) {
 		/* b2 is either dense or has a void(nil) head */
