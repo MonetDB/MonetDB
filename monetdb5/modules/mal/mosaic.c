@@ -37,7 +37,11 @@ static char *filtername[]={"none","rle","dict","delta","linear","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
-	char * base = Tloc(b,BUNfirst(b));
+	char *base;
+	if( isVIEW(b))
+		b= BATdescriptor(VIEWtparent(b));
+	assert(b);
+	base = Tloc(b,BUNfirst(b));
 	task->type = b->ttype;
 	task->hdr = (MosaicHdr) base;
 	base += MosaicHdrSize;
@@ -565,7 +569,8 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
 	int i;
 	InstrPtr p;
 
-	*part = *nrofparts = 1;
+	*part = 0;
+	*nrofparts = 1;
 	for( i = 1; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid){
@@ -872,10 +877,15 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bl = BATdescriptor(*lid);
 	if( bl == NULL)
 		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+
 	br = BATdescriptor(*rid);
 	if( br == NULL){
 		BBPreleaseref(*rid);
 		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+	}
+	if (isVIEWCOMBINE(br)){
+		BBPreleaseref(*rid);
+		throw(MAL,"mosaic.leftfetchjoin","compressed view");
 	}
 	cnt = BATcount(bl);
 	bn = BATnew(TYPE_void,br->ttype, cnt, TRANSIENT);
@@ -911,7 +921,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// don't use more parallelism then entries in the header
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
-		if( part > nrofparts){
+		if( part >= nrofparts){
 			BBPreleaseref(*lid);
 			BBPreleaseref(*rid);
 			BBPkeepref(*ret = bn->batCacheid);
@@ -919,14 +929,15 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		}
 		startblk = task->hdr->top/nrofparts * part;
-		if( part == nrofparts -1)
-			stopblk  =  task->hdr->top;
-		else
+		if( part < nrofparts )
 			stopblk  =  startblk + task->hdr->top/nrofparts;
+		else
+			stopblk  =  task->hdr->top;
 	} else{
 		startblk =0;
 		stopblk = task->hdr->top;
 	}
+	assert(startblk < stopblk);
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
