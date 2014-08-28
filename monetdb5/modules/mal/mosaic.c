@@ -658,6 +658,15 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
+		// don't use more parallelism then entries in the header
+		if( nrofparts > task->hdr->top)
+			nrofparts = task->hdr->top;
+		if( part > nrofparts){
+			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+			BBPkeepref(bn->batCacheid);
+			GDKfree(task);
+			return MAL_SUCCEED;
+		}
 		startblk = task->hdr->top/nrofparts * part;
 		if( part == nrofparts -1)
 			stopblk  =  task->hdr->top;
@@ -767,6 +776,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (cand == NULL){
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(bn->batCacheid);
+			GDKfree(task);
 			throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, BUNfirst(cand));
@@ -776,6 +786,14 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
+		// don't use more parallelism then entries in the header
+		if( nrofparts > task->hdr->top)
+			nrofparts = task->hdr->top;
+		if( part > nrofparts){
+			BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
+			GDKfree(task);
+			return MAL_SUCCEED;
+		}
 		startblk = task->hdr->top/nrofparts * part;
 		if( part == nrofparts -1)
 			stopblk  =  task->hdr->top;
@@ -890,6 +908,16 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
+		// don't use more parallelism then entries in the header
+		if( nrofparts > task->hdr->top)
+			nrofparts = task->hdr->top;
+		if( part > nrofparts){
+			BBPreleaseref(*lid);
+			BBPreleaseref(*rid);
+			BBPkeepref(*ret = bn->batCacheid);
+			GDKfree(task);
+			return MAL_SUCCEED;
+		}
 		startblk = task->hdr->top/nrofparts * part;
 		if( part == nrofparts -1)
 			stopblk  =  task->hdr->top;
