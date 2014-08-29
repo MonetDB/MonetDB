@@ -2835,6 +2835,7 @@ stream *file_rstream(FILE *fp, const char *name);
 stream *file_wastream(FILE *fp, const char *name);
 stream *file_wstream(FILE *fp, const char *name);
 FILE *getFile(stream *s);
+size_t getFileSize(stream *s);
 stream *iconv_rstream(stream *ss, const char *charset, const char *name);
 stream *iconv_wstream(stream *ss, const char *charset, const char *name);
 int isa_block_stream(stream *s);
