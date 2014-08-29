@@ -53,13 +53,19 @@ BATsubunique(BAT *b, BAT *s)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 
+	BATcheck(b, "BATsubunique");
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		if (s) {
 			/* we can return a slice of the candidate list */
 			oid lo = b->hseqbase;
 			oid hi = lo + BATcount(b);
-			return BATsubselect(s, NULL, &lo, &hi, 1, 0, 0);
+			b = BATsubselect(s, NULL, &lo, &hi, 1, 0, 0);
+			if (b == NULL)
+				return NULL;
+			bn = BATproject(b, s);
+			BBPunfix(b->batCacheid);
+			return virtualize(bn);
 		}
 		/* we can return all values */
 		bn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
@@ -264,7 +270,7 @@ BATsubunique(BAT *b, BAT *s)
 				GDKfree(ext);
 			hp = NULL;
 			ext = NULL;
-			GDKerror("BATgroup: cannot allocate hash table\n");
+			GDKerror("BATsubunique: cannot allocate hash table\n");
 			goto bunins_failed;
 		}
 		for (;;) {
