@@ -333,16 +333,15 @@ ALGgroupby(int *res, int *gids, int *cnts)
 str
 ALGcard(lng *result, int *bid)
 {
-	BAT *b, *gn, *en;
+	BAT *b, *en;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
 	}
-	if (BATgroup(&gn, &en, NULL, b, NULL, NULL, NULL) != GDK_SUCCEED) {
+	if ((en = BATsubunique(b, NULL)) == NULL) {
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	*result = BATcount(en);
-	BBPunfix(gn->batCacheid);
 	BBPunfix(en->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -933,12 +932,6 @@ ALGcopy(bat *result, bat *bid)
 }
 
 str
-ALGkunique(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATkunique, "algebra.kunique");
-}
-
-str
 ALGsubunique2(bat *result, bat *bid, bat *sid)
 {
 	BAT *b, *s = NULL, *bn = NULL;
@@ -1227,27 +1220,6 @@ ALGsample(bat *result, bat *bid, int *param)
 }
 
 /* add items missing in the kernel */
-str
-ALGtunique(int *result, int *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.tunique", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATkunique(BATmirror(b));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.tunique", GDK_EXCEPTION);
-}
-
 str
 ALGtunion(int *result, int *bid, int *bid2)
 {
