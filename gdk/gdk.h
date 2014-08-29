@@ -3239,8 +3239,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
  * @item BAT *
- * @tab BATkunique (BAT *b)
- * @item BAT *
  * @tab BATkunion (BAT *b, BAT *c)
  * @item BAT *
  * @tab BATkintersect (BAT *b, BAT *c)
@@ -3274,9 +3272,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * an result-size estimate parameter was added to all equi-join
  * implementations.  TODO: add this for
  * semijoin/select/unique/diff/intersect
- *
- * The routine BATtunique considers only the head column, and produces
- * a unique head column.
  *
  * @- modes for thethajoin
  */
@@ -3324,7 +3319,6 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATkunique(BAT *b);
 gdk_export BAT *BATkintersect(BAT *b, BAT *c);
 gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);

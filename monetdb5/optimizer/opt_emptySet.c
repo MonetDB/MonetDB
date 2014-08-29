@@ -153,13 +153,11 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 						actions++;
 						break;
 					} 
-					if ( f == tuniqueRef || 
-					     f == likeRef  || 
+					if ( f == likeRef  || 
 					     f == sortRef  || 
 					     f == sortTailRef  ||
 					     f == sortHTRef  || 
 					     f == sortTHRef  || 
-					     f == kuniqueRef  ||
 					     f == semijoinRef ||
 					     f == kintersectRef  ||
 					     f == fragmentRef ){

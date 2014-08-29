@@ -45,15 +45,17 @@ float nextafterf(float x, float y);
 		A[(I)] = (V);					\
 	} while (0)
 
-static BAT *
+BAT *
 virtualize(BAT *bn)
 {
+	/* input must be a valid candidate list or NULL */
 	assert(bn == NULL ||
-	       ((bn->ttype == TYPE_void || bn->ttype == TYPE_oid) &&
+	       (((bn->ttype == TYPE_void && bn->tseqbase != oid_nil) ||
+		 bn->ttype == TYPE_oid) &&
 		bn->tkey && bn->tsorted));
 	/* since bn has unique and strictly ascending tail values, we
 	 * can easily check whether the tail is dense */
-	if (bn && !BATtdense(bn) &&
+	if (bn && bn->ttype == TYPE_oid &&
 	    (BATcount(bn) == 0 ||
 	     * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
@@ -66,8 +68,7 @@ virtualize(BAT *bn)
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, BUNfirst(bn));
 		bn->tdense = 1;
-		if (bn->ttype == TYPE_oid)
-			HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap);
 		bn->ttype = TYPE_void;
 		bn->tvarsized = 1;
 		bn->T->width = 0;

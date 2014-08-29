@@ -76,8 +76,6 @@ algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, ba
 algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 algebra_export str ALGcopy(int *result, int *bid);
-algebra_export str ALGkunique(int *result, int *bid);
-algebra_export str ALGtunique(int *result, int *bid);
 algebra_export str ALGsubunique2(bat *result, bat *bid, bat *sid);
 algebra_export str ALGsubunique1(bat *result, bat *bid);
 algebra_export str ALGcross(int *result, int *lid, int *rid);

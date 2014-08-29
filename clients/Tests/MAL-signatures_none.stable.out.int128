@@ -2889,10 +2889,6 @@ command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:
 address ALGsemijoin;
 comment Returns the intersection taken over only the *head* columns of two BATs.	Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
 
-command algebra.kunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGkunique;
-comment Select unique tuples from the input BAT.  Double elimination is		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
-
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -3174,10 +3170,6 @@ command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid]
 address ALGtinter;
 command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGtintersect;
-command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGtunique;
-comment Select unique tuples from the input BAT. Double elimination is		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
-
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.

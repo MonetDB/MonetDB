@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Aug 29 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.kunique and algebra.tunique.  They were subsumed by
+  algebra.subunique.
+
 * Tue Aug 26 2014 Sjoerd Mullender <sjoerd@acm.org>
 - Remove algebra.antiuselect and algebra.thetauselect.  They were subsumed
   by algebra.subselect.
