@@ -591,8 +591,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	
 	switch( tpe =getArgType(mb,pci,idx)){
 	case TYPE_bte: VLTthetasubselect(bte,abs);break;
-	case TYPE_int: VLTthetasubselect(int,abs);break;
 	case TYPE_sht: VLTthetasubselect(sht,abs);break;
+	case TYPE_int: VLTthetasubselect(int,abs);break;
 	case TYPE_lng: VLTthetasubselect(lng,llabs);break;
 	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
