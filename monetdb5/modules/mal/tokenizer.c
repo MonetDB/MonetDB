@@ -627,7 +627,7 @@ TKNZRgetCount(int *r)
 str
 TKNZRgetCardinality(int *r)
 {
-	BAT *b, *gn, *en;
+	BAT *b, *en;
 	int i;
 	wrd cnt;
 
@@ -638,12 +638,11 @@ TKNZRgetCardinality(int *r)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);
 	for (i = 0; i < tokenDepth; i++) {
-		if (BATgroup(&gn, &en, NULL, tokenBAT[i].val, NULL, NULL, NULL) != GDK_SUCCEED) {
+		if ((en = BATsubunique(tokenBAT[i].val, NULL)) == NULL) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
 		cnt = (wrd) BATcount(en);
-		BBPunfix(gn->batCacheid);
 		BBPunfix(en->batCacheid);
 		BUNappend(b, &cnt, FALSE);
 	}

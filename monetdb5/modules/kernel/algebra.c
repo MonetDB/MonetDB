@@ -333,16 +333,15 @@ ALGgroupby(int *res, int *gids, int *cnts)
 str
 ALGcard(lng *result, int *bid)
 {
-	BAT *b, *gn, *en;
+	BAT *b, *en;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
 	}
-	if (BATgroup(&gn, &en, NULL, b, NULL, NULL, NULL) != GDK_SUCCEED) {
+	if ((en = BATsubunique(b, NULL)) == NULL) {
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	*result = BATcount(en);
-	BBPunfix(gn->batCacheid);
 	BBPunfix(en->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
