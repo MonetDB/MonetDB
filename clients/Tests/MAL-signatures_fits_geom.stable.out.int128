@@ -2807,27 +2807,27 @@ command algebra.exist(b:bat[:oid,:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit) (X_4:bat[:oid,:oid],X_5:bat[:oid,:oid]) 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit) (X_5:bat[:oid,:oid],X_6:bat[:oid,:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],g:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],s:bat[:oid,:oid],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit):bat[:oid,:oid] 
+pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oid] 
 address ALGfirstn;
 comment Calculate first N values of B
 
@@ -2890,10 +2890,6 @@ comment Returns the difference taken over only the *head* columns of two BATs. 	
 command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGsemijoin;
 comment Returns the intersection taken over only the *head* columns of two BATs. 	Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
-
-command algebra.kunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGkunique;
-comment Select unique tuples from the input BAT.  Double elimination is 		done only looking at the head column. The result is a BAT with		property hkeyed() == true.
 
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
@@ -3176,10 +3172,6 @@ command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid]
 address ALGtinter;
 command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address ALGtintersect;
-command algebra.tunique(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGtunique;
-comment Select unique tuples from the input BAT. Double elimination is 		done over the BUNs tail. The result is a BAT with property		tkeyd()== true
-
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -50150,9 +50142,9 @@ address IOttable;
 comment Print an n-ary table. Like print, but does not print oid column
 
 command iterator.filter(name:json,idx:hge,other:str):json 
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_hge;
 command iterator.filter(name:json,idx:hge):json 
-address JSONfilterArray;
+address JSONfilterArray_hge;
 command iterator.next(step:hge,last:hge):hge 
 address ITRnext_hge;
 command iterator.next(step:dbl,last:dbl):dbl 
@@ -50187,7 +50179,7 @@ comment Create an iterator with fixed granule size.	  The result is a view.
 
 command json.dump(j:json):void 
 address JSONdump;
-pattern json.fold(k:bat[:oid,:any]):json 
+pattern json.fold(v:bat[:oid,:any]):json 
 address JSONfold;
 comment Combine the value list into a single json array object.
 
@@ -51778,10 +51770,6 @@ command pcre.sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
 
-command pcre.select(pat:str,strs:bat[:oid,:str]):bat[:oid,:str] 
-address PCREselectDef;
-comment Select tuples based on the pattern
-
 pattern profiler.activate(name:str...):void 
 address CMDactivateProfiler;
 comment A list of counters to be activated.
@@ -52240,6 +52228,10 @@ pattern sql.copy_from(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,fname
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
+pattern sql.create_func_upgrade_oct2014(f:str):int 
+address UPGcreate_func;
+comment Create the function described by f, needed for the Oct2014 upgrade
+
 pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd 
 address mvc_clear_table_wrap;
 comment Clear table
@@ -52343,6 +52335,10 @@ comment dump the content of the query cache
 pattern sql.db_users():bat[:oid,:str] 
 address db_users_wrap;
 comment return table of users with sql scenario
+
+pattern sql.drop_func_upgrade_oct2014(id:int):int 
+address UPGdrop_func;
+comment Drop the function identified by id, needed for the Oct2014 upgrade
 
 pattern sql.dropDeclaredTables{unsafe}(nr:int):void 
 address mvc_drop_declared_tables_wrap;

@@ -501,15 +501,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				if (!as) 
 					return NULL;	
 				if (need_distinct(e)){ 
-					if (grp) {
-						stmt *g = stmt_group(sql->sa, as, grp, ext, cnt);
-						stmt *next = stmt_result(sql->sa, g, 1); 
+					stmt *g = stmt_group(sql->sa, as, grp, ext, cnt);
+					stmt *next = stmt_result(sql->sa, g, 1); 
 						
-						as = stmt_project(sql->sa, next, as);
+					as = stmt_project(sql->sa, next, as);
+					if (grp)
 						grp = stmt_project(sql->sa, next, grp);
-						stmt_group_done(g);
-					} else
-						as = stmt_unique(sql->sa, as);
+					stmt_group_done(g);
 				}
 				append(l, as);
 			}

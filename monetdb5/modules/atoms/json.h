@@ -87,6 +87,10 @@ json_export str JSONfilterArray_int(json *ret, json *j, int *index);
 json_export str JSONfilterArrayDefault_int(json *ret, json *j, int *index, str *other);
 json_export str JSONfilterArray_lng(json *ret, json *j, lng *index);
 json_export str JSONfilterArrayDefault_lng(json *ret, json *j, lng *index, str *other);
+#ifdef HAVE_HGE
+json_export str JSONfilterArray_hge(json *ret, json *j, hge *index);
+json_export str JSONfilterArrayDefault_hge(json *ret, json *j, hge *index, str *other);
+#endif
 
 json_export str JSONisvalid(bit *ret, json *j);
 json_export str JSONisobject(bit *ret, json *j);

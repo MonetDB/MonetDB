@@ -1897,6 +1897,21 @@ BATcount_no_nil(BAT *b)
 	return cnt;
 }
 
+static BAT *
+newdensecand(oid first, oid last)
+{
+	BAT *bn;
+
+	if ((bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT)) == NULL)
+		return NULL;
+	if (last < first)
+		first = last = 0; /* empty range */
+	BATsetcount(bn, last - first + 1);
+	BATseqbase(bn, 0);
+	BATseqbase(BATmirror(bn), first);
+	return bn;
+}
+
 /* merge two candidate lists and produce a new one
  *
  * candidate lists are VOID-headed BATs with an OID tail which is
@@ -1926,10 +1941,10 @@ BATmergecand(BAT *a, BAT *b)
 	assert(b->T->nonil);
 
 	/* we can return a if b is empty (and v.v.) */
-	if ( BATcount(a) == 0){
+	if (BATcount(a) == 0) {
 		return BATcopy(b, b->htype, b->ttype, 0, TRANSIENT);
 	}
-	if ( BATcount(b) == 0){
+	if (BATcount(b) == 0) {
 		return BATcopy(a, a->htype, a->ttype, 0, TRANSIENT);
 	}
 	/* we can return a if a fully covers b (and v.v) */
@@ -1941,11 +1956,24 @@ BATmergecand(BAT *a, BAT *b)
 	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
 	ad = (af + BATcount(a) - 1 == al); /* i.e., dense */
 	bd = (bf + BATcount(b) - 1 == bl); /* i.e., dense */
+	if (ad && bd) {
+		/* both are dense */
+		if (af <= bf && bf <= al + 1) {
+			/* partial overlap starting with a, or b is
+			 * smack bang after a */
+			return newdensecand(af, al < bl ? bl : al);
+		}
+		if (bf <= af && af <= bl + 1) {
+			/* partial overlap starting with b, or a is
+			 * smack bang after b */
+			return newdensecand(bf, al < bl ? bl : al);
+		}
+	}
 	if (ad && af <= bf && al >= bl) {
-		return BATcopy(a, a->htype, a->ttype, 0, TRANSIENT);
+		return newdensecand(af, al);
 	}
 	if (bd && bf <= af && bl >= al) {
-		return BATcopy(b, b->htype, b->ttype, 0, TRANSIENT);
+		return newdensecand(bf, bl);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b), TRANSIENT);
@@ -2010,12 +2038,12 @@ BATmergecand(BAT *a, BAT *b)
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
 	BATseqbase(bn, 0);
-	bn->trevsorted = 0;
+	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	return bn;
+	return virtualize(bn);
 }
 
 /* intersect two candidate lists and produce a new one
@@ -2028,7 +2056,9 @@ BATintersectcand(BAT *a, BAT *b)
 {
 	BAT *bn;
 	const oid *ap, *bp, *ape, *bpe;
-	oid *p, i;
+	oid *p;
+	oid af, al, bf, bl;
+	BATiter ai, bi;
 
 	BATcheck(a, "BATintersectcand");
 	BATcheck(b, "BATintersectcand");
@@ -2044,30 +2074,19 @@ BATintersectcand(BAT *a, BAT *b)
 	assert(b->T->nonil);
 
 	if (BATcount(a) == 0 || BATcount(b) == 0) {
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		if (bn) {
-			BATseqbase(bn, 0);
-			BATseqbase(BATmirror(bn), 0);
-		}
-		return bn;
+		return newdensecand(0, 0);
 	}
 
-	if (a->ttype == TYPE_void && b->ttype == TYPE_void) {
+	ai = bat_iterator(a);
+	bi = bat_iterator(b);
+	af = *(oid*) BUNtail(ai, BUNfirst(a));
+	bf = *(oid*) BUNtail(bi, BUNfirst(b));
+	al = *(oid*) BUNtail(ai, BUNlast(a) - 1);
+	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
+
+	if ((af + BATcount(a) - 1 == al) && (bf + BATcount(b) - 1 == bl)) {
 		/* both lists are VOID */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		i = MAX(a->tseqbase, b->tseqbase);
-		if (a->tseqbase + BATcount(a) <= b->tseqbase ||
-		    b->tseqbase + BATcount(b) <= a->tseqbase) {
-			/* no overlap */
-			BATsetcount(bn, 0);
-		} else {
-			BATsetcount(bn, MIN(a->tseqbase + BATcount(a) - i,
-					    b->tseqbase + BATcount(b) - i));
-		}
-		BATseqbase(BATmirror(bn), i);
-		return bn;
+		return newdensecand(MAX(af, bf), MIN(al, bl));
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(a), BATcount(b)), TRANSIENT);
@@ -2109,10 +2128,10 @@ BATintersectcand(BAT *a, BAT *b)
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
 	BATseqbase(bn, 0);
-	bn->trevsorted = 0;
+	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	return bn;
+	return virtualize(bn);
 }

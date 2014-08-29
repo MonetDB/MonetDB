@@ -115,15 +115,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (bn->tkey)
 							uniq = sz;
 						else {
-							BAT *gn, *en;
+							BAT *en;
 							if (bsample)
 								br = BATproject(bsample, bn);
 							else
 								br = bn;
-							/* BATgroup checks BATproject result */
-							if (BATgroup(&gn, &en, NULL, br, NULL, NULL, NULL) == GDK_SUCCEED) {
+							if (br && (en = BATsubunique(br, NULL)) != NULL) {
 								uniq = BATcount(en);
-								BBPunfix(gn->batCacheid);
 								BBPunfix(en->batCacheid);
 							} else
 								uniq = 0;
