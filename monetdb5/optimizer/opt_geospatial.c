@@ -30,15 +30,23 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains") == 0) {
 				int inputBAT = 0;
 	
+				if(isaBatType(getArgType(mb,oldInstrPtr[i],1)))
+					inputBAT = 1;
+				
+				if(isaBatType(getArgType(mb,oldInstrPtr[i],2))) {
+					if(inputBAT == 1) {
+						//no Filtering when both inputs are BATs because it cannot be parallelised)
+						pushInstruction(mb, oldInstrPtr[i]);
+						continue;
+					}
+					inputBAT=2;
+				}	
+
 				//create the new instruction
 				newInstrPtr = newStmt(mb, "batgeom", "ContainsFilter");
+			
+
 				//create the return variable of the new instruction (it should be of the same type with the input variable (BAT) of the old instruction)	
-				if(isaBatType(getArgType(mb,oldInstrPtr[i],1))) {
-					inputBAT = 1;
-				} else if(isaBatType(getArgType(mb,oldInstrPtr[i],2))) {
-					inputBAT=2;
-				}
-				
 				returnBATId = newVariable(mb, GDKstrdup("BATfiltered"), getArgType(mb,oldInstrPtr[i],inputBAT));
 				
 				//set the return and input arguments of the new instruction

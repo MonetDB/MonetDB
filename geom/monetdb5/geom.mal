@@ -443,8 +443,7 @@ geom.prelude();
 
 module batgeom;
 
-#only one argument is allowed to be a BAT
-#command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
+command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
 

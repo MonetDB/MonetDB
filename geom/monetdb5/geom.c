@@ -156,7 +156,7 @@ geom_export str wkbTouches(bit*, wkb**, wkb**);
 geom_export str wkbCrosses(bit*, wkb**, wkb**);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
 geom_export str wkbContains(bit*, wkb**, wkb**);
-//geom_export str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
+geom_export str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
 geom_export str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id);
 geom_export str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
@@ -2769,7 +2769,6 @@ str wkbContains(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	return MAL_SUCCEED;
 }
 
-/*
 str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL; //, *aWKB_previous = NULL, *bWKB_previous = NULL;
@@ -2835,7 +2834,7 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	
 	return MAL_SUCCEED;
 
-}*/
+}
 
 
 str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
