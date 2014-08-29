@@ -1724,7 +1724,7 @@ JSONgroupStr(str *ret, const bat *bid)
 	BAT *b;
 	BUN p, q;
 	const char *t = NULL;
-	size_t len, size = BUFSIZ, offset;
+	size_t len, size = BUFSIZ, offset, cnt = 0;
 	str buf = GDKmalloc(size);
 	BATiter bi;
 	const char *err = NULL;
@@ -1742,24 +1742,27 @@ JSONgroupStr(str *ret, const bat *bid)
 	offset = 0;
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		int n = 0;
+		int n = 0, nil = 0;
 
 		switch (b->ttype) {
 		case TYPE_str:
 			t = (const char *) BUNtail(bi, p);
+			nil = (strNil(t));
 			break;
 		case TYPE_dbl:
 			val = (const double *) BUNtail(bi, p);
-			snprintf(temp, sizeof(temp), "%f", *val);
+			nil = (*val == dbl_nil);
+			if (!nil)
+				snprintf(temp, sizeof(temp), "%f", *val);
 			t = (const char *) temp;
 			break;
 		}
 
-		//t = (const char *) BUNtail(bi, p);
-
-		if (strNil(t))
+		if (nil)
 			continue;
-		len = strlen(t) + 1;
+		if (!cnt)
+			offset = snprintf(buf, size, "[ ");
+		len = strlen(t) + 1 + 4; /* closing bracket and optional ',' */
 		if (len >= size - offset) {
 			str nbuf;
 			size += len + 128;
@@ -1770,40 +1773,21 @@ JSONgroupStr(str *ret, const bat *bid)
 			}
 			buf = nbuf;
 		}
+		if (cnt)
+			offset += snprintf(buf + offset, size - offset, ", ");
 		switch (b->ttype) {
 		case TYPE_str:
-			if (offset == 0) {
-				if (BATcount(b) == 1) {
-					n = snprintf(buf, size, "[ \"%s\" ]", t);
-				} else {
-					n = snprintf(buf, size, "[ \"%s\"", t);
-				}
-			} else {
-				if (p == BUNlast(b) - 1) {
-					n = snprintf(buf + offset, size - offset, ", \"%s\" ]", t);
-				} else {
-					n = snprintf(buf + offset, size - offset, ", \"%s\"", t);
-				}
-			}
+			n = snprintf(buf + offset, size - offset, "\"%s\"", t);
 			break;
 		case TYPE_dbl:
-			if (offset == 0) {
-				if (BATcount(b) == 1) {
-					n = snprintf(buf, size, "[ %s ]", t);
-				} else {
-					n = snprintf(buf, size, "[ %s", t);
-				}
-			} else {
-				if (p == BUNlast(b) - 1) {
-					n = snprintf(buf + offset, size - offset, ", %s ]", t);
-				} else {
-					n = snprintf(buf + offset, size - offset, ", %s", t);
-				}
-			}
+			n = snprintf(buf + offset, size - offset, "%s", t);
 			break;
 		}
+		cnt++;
 		offset += n;
 	}
+	if (cnt)
+		offset += snprintf(buf + offset, size - offset, " ]");
 	BBPreleaseref(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
