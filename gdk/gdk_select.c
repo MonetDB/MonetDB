@@ -1377,10 +1377,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	hash = b->batPersistence == PERSISTENT &&
+	hash = equi &&
+	       b->batPersistence == PERSISTENT &&
 	       (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
 	       BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
-	if (estimate == BUN_NONE && equi && !b->T->hash && hash) {
+	if (hash && estimate == BUN_NONE && !b->T->hash) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select */
 		if (BATcount(b) <= 10000) {
@@ -1417,7 +1418,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BATcount(b) / 100) - 1;
 			}
 		}
-		hash = hash && estimate < BATcount(b) / 100;
+		hash = estimate < BATcount(b) / 100;
 	}
 	if (estimate == BUN_NONE) {
 		/* no better estimate possible/required:
