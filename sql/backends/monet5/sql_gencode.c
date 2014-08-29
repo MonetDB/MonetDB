@@ -1742,43 +1742,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 		}
 			break;
-		case st_unique:{
-			int l;
-
-			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
-				return -1;
-
-			if (s->op2) {
-				int grp, ext;
-
-				if ((grp = _dumpstmt(sql, mb, s->op2)) < 0)
-					return -1;
-				if ((ext = _dumpstmt(sql, mb, s->op3)) < 0)
-					return -1;
-
-				q = newStmt2(mb, groupRef, subgroupRef);
-				/* push second result */
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, grp);
-				if (q == NULL)
-					return -1;
-				grp = getDestVar(q);
-				ext = getArg(q, 1);
-
-				q = newStmt2(mb, algebraRef, leftfetchjoinRef);
-				q = pushArgument(mb, q, ext);
-				q = pushArgument(mb, q, l);
-			} else {
-				q = newStmt2(mb, algebraRef, tuniqueRef);
-				q = pushArgument(mb, q, l);
-			}
-			if (q == NULL)
-				return -1;
-			s->nr = getDestVar(q);
-			break;
-		}
 		case st_convert:{
 			list *types = s->op4.lval;
 			sql_subtype *f = types->h->data;
