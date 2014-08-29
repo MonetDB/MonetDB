@@ -320,8 +320,6 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int var)
 	}
 	for(k=1; k < mat[m].mi->argc; k++) {
 		q = copyInstruction(p);
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(mat_apply1) MergeTable: %d Processing instruction %s\n", k, getFunctionId(p));
 
 		if (is_assign)
 			getArg(q, 0) = getArg(mat[n].mi, k);
@@ -369,9 +367,6 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nva
 
 	for(k=1; k < mat[m].mi->argc; k++) {
 		InstrPtr q = copyInstruction(p);
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(mat_apply2) MergeTable: %d Processing instruction %s\n", k, getFunctionId(p));
-
 		getArg(q, 0) = newTmpVariable(mb, tpe);
 		getArg(q, mvar) = getArg(mat[m].mi, k);
 		getArg(q, nvar) = getArg(mat[n].mi, k);
@@ -1429,8 +1424,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		int j;
 
 		p = old[i];
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(1) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 		for (j = 0; j<p->retc; j++) {
  			int res = getArg(p, j);
@@ -1476,8 +1469,6 @@ fprintf(stderr, "(1) MergeTable: %d Processing instruction %s\n", i, getFunction
 		InstrPtr r;
 
 		p = old[i];
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(2) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
@@ -1673,8 +1664,6 @@ fprintf(stderr, "(2) MergeTable: %d Processing instruction %s\n", i, getFunction
 		/* subselect on insert, should use last tid only */
 		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0) {
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(2.4) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 			r = copyInstruction(p);
 			getArg(r, fm) = getArg(mat[m].mi, mat[m].mi->argc-1);
@@ -1687,8 +1676,6 @@ fprintf(stderr, "(2.4) MergeTable: %d Processing instruction %s\n", i, getFuncti
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), mat, mtop)) >= 0){
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(2.3) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
 			if ((r = mat_apply3(mb, p, mat, m, n, o, fm, fn, fo)) != NULL)
@@ -1699,11 +1686,8 @@ fprintf(stderr, "(2.3) MergeTable: %d Processing instruction %s\n", i, getFuncti
 		if (match == 2 && bats == 2 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0){
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(2.2) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
-
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
-			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL)
+			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL) 
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
@@ -1712,16 +1696,12 @@ fprintf(stderr, "(2.2) MergeTable: %d Processing instruction %s\n", i, getFuncti
 		if (match == 1 && bats == 1 && (isFragmentGroup(p) || isMapOp(p) || 
 		   (!getModuleId(p) && !getFunctionId(p) && p->barrier == 0 /* simple assignment */)) && p->retc != 2 && 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0){
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(2.1) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 			if ((r = mat_apply1(mb, p, mat, mtop, m, fm)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}
-if(getModuleId(p) && !strcasecmp(getModuleId(p),"batgeom"))
-fprintf(stderr, "(OUT) MergeTable: %d Processing instruction %s\n", i, getFunctionId(p));
 
 		/*
 		 * All other instructions should be checked for remaining MAT dependencies.
