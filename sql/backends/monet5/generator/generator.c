@@ -328,7 +328,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	anti = * (bit *) getArgReference(stk, pci, i + 4);
 
 	switch ( tpe = getArgType(mb, pci, i)) {
-	case TYPE_bte: calculate_range(bte, int); break;
+	case TYPE_bte: calculate_range(bte, sht); break;
 	case TYPE_sht: calculate_range(sht, int); break;
 	case TYPE_int: calculate_range(int, lng); break;
 	case TYPE_lng: calculate_range(lng, lng); break;
