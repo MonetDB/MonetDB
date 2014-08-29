@@ -156,15 +156,17 @@ geom_export str wkbTouches(bit*, wkb**, wkb**);
 geom_export str wkbCrosses(bit*, wkb**, wkb**);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
 geom_export str wkbContains(bit*, wkb**, wkb**);
-geom_export str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
+//geom_export str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
 geom_export str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id);
+geom_export str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
 geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 
-geom_export str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
-geom_export str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id);
+//geom_export str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
+geom_export str wkbContainsFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id);
+geom_export str wkbContainsFilter_bat_geom(int* BATfiltered_id, int* BAToriginal_id, wkb** geomWKB);
 //LocateAlong
 //LocateBetween
 
@@ -2766,148 +2768,8 @@ str wkbContains(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 
 	return MAL_SUCCEED;
 }
+
 /*
-geom_export str wkbContains_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str wkbContains_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int aType, bType;
-	
-	(void) cntxt;
-	(void) mb;
-	
-fprintf(stderr, "In wkbContains_bat\n");
-
-	//check the types of the two arguments
-	aType = stk->stk[getArg(pci, 1)].vtype;
-	bType = stk->stk[getArg(pci, 2)].vtype;
-
-	if ((aType == TYPE_bat || isaBatType(aType)) && (bType == TYPE_bat || isaBatType(bType))) {
-		bat *aBAT_id = NULL, *bBAT_id=NULL;
-		BAT *aBAT = NULL, *bBAT = NULL;
-		fprintf(stderr, "BAT - BAT\n");
-
-		//get the indices of the BATs in the BBP
-		aBAT_id = (bat*) getArgReference(stk, pci, 1);
-		bBAT_id = (bat*) getArgReference(stk, pci, 2);
-
-		//get the descriptors of the BATS	
-		if((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
-			throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
-		}
-		if((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-			BBPreleaseref(bBAT->batCacheid);
-			throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
-		}
-
-		fprintf(stderr, "aBAT size = %d - bBAT size = %d\n", (unsigned int)BATcount(aBAT), (unsigned int)BATcount(bBAT));
-
-		return wkbContains_bat_bat()
-	} else if(aType == TYPE_bat || isaBatType(aType)) {
-		fprintf(stderr, "BAT - scalar\n");
-	}
-	else if(bType == TYPE_bat || isaBatType(bType)) {
-		fprintf(stderr, "scalar - BAT\n");
-	} else {
-		fprintf(stderr, "unknown\n");
-	}
-
-	return MAL_SUCCEED;
-}*/
-
-/* geometry A is scalar, geometry B is BAT */
-/*str wkbContains_firstScalar_bat(int* outBAT_id, wkb** aWKB, int* bBAT_id) {
-	BAT *outBAT = NULL, *bBAT = NULL;
-	wkb *bWKB = NULL;
-	bit outBIT;
-	BATiter bBAT_iter;
-	BUN p=0, q=0;
-	str err = NULL;
-	mbr *aMBR = NULL;
-fprintf(stderr, "In wkbContains_firstScalar_bat\n");
-	//get the descriptor of the BAT
-	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if (bBAT->htype != TYPE_void) { //header type of bBAT not void
-		BBPreleaseref(bBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "the arguments must have dense and aligned heads");
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(bBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(bBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
-	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, bBAT->hseqbase);
-
-	//get the bounding box of geometry A
-	if((err = wkbMBR(&aMBR, aWKB)) != MAL_SUCCEED) {
-		str msg;
-		BBPreleaseref(bBAT->batCacheid);
-		BBPreleaseref(outBAT->batCacheid);
-		msg = createException(MAL, "batgeom.Contains", "%s", err);
-		GDKfree(err);
-		return msg;
-	}
-
-	//iterator over the BAT of geometry B	
-	bBAT_iter = bat_iterator(bBAT);
-	BATloop(bBAT, p, q) { //iterate over all valid elements of geometry B
-		mbr *bMBR = NULL;
-		bWKB = (wkb*) BUNtail(bBAT_iter, p);
-
-		//get the bounding box of geometry B
-		if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			GDKfree(aMBR);
-			return msg;
-		}
-
-		//check first if the bounding box of geometry a contains the bounding box of geometry b
-		if((err = mbrContains(&outBIT, &aMBR, &bMBR)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			GDKfree(aMBR);
-			GDKfree(bMBR);
-			return msg;
-		}
-
-		if(outBIT) {
-			if ((err = wkbContains(&outBIT, aWKB, &bWKB)) != MAL_SUCCEED) { //check
-				str msg;
-				BBPreleaseref(bBAT->batCacheid);
-				BBPreleaseref(outBAT->batCacheid);
-				msg = createException(MAL, "batgeom.Contains", "%s", err);
-				GDKfree(err);
-				GDKfree(aMBR);
-				GDKfree(bMBR);
-				return msg;
-			}
-		}
-		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-		GDKfree(bMBR);
-	}
-	GDKfree(aMBR);
-
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(bBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(bBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
-
-}*/
-
 str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL; //, *aWKB_previous = NULL, *bWKB_previous = NULL;
@@ -2973,7 +2835,7 @@ str wkbContains_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	
 	return MAL_SUCCEED;
 
-}
+}*/
 
 
 str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
@@ -2982,7 +2844,7 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	bit outBIT;
 	BATiter inBAT_iter;
 	BUN i=0;
-fprintf(stderr, "in geom bat\n");
+
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
@@ -3030,10 +2892,14 @@ fprintf(stderr, "in geom bat\n");
 
 }
 
+str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
+	return wkbContains_geom_bat(outBAT_id, geomWKB, inBAT_id);
+}
+
 
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
- **/
+ **//*
 str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id) {
 	BAT *aBATfiltered = NULL, *bBATfiltered = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL;
@@ -3120,16 +2986,16 @@ str wkbContainsFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_
 	return MAL_SUCCEED;
 
 
-}
+}*/
 
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
-str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
-	BAT *bBATfiltered = NULL, *BAToriginal = NULL;
-	wkb *bWKB = NULL;
+str wkbContainsFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
+	BAT *BATfiltered = NULL, *BAToriginal = NULL;
+	wkb *WKBoriginal = NULL;
 	bit outBIT;
-	BATiter BAT_iter;
+	BATiter BAToriginal_iter;
 	BUN i=0;
 	mbr* geomMBR;
 	int remainingElements =0;
@@ -3146,22 +3012,22 @@ str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB
 	}
 
 	//create the new BAT
-	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
+	if ((BATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPreleaseref(BAToriginal->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
 
 	//set the first idx of the output BATs equal to that of the aBAT
-	BATseqbase(bBATfiltered, BAToriginal->hseqbase);
+	BATseqbase(BATfiltered, BAToriginal->hseqbase);
 
 	//iterator over the BAT
-	BAT_iter = bat_iterator(BAToriginal);
+	BAToriginal_iter = bat_iterator(BAToriginal);
 
 	//create the MBR of the geom
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
 		str msg;
 		BBPreleaseref(BAToriginal->batCacheid);
-		BBPreleaseref(bBATfiltered->batCacheid);
+		BBPreleaseref(BATfiltered->batCacheid);
 		msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 		GDKfree(err);
 		return msg;
@@ -3169,14 +3035,14 @@ str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB
 
 	for (i = BUNfirst(BAToriginal); i < BATcount(BAToriginal); i++) { 
 		str err = NULL;
-		mbr* bMBR;
-		bWKB = (wkb*) BUNtail(BAT_iter, i + BUNfirst(BAToriginal));
+		mbr* MBRoriginal;
+		WKBoriginal = (wkb*) BUNtail(BAToriginal_iter, i + BUNfirst(BAToriginal));
 
 		//create the MBR for each geometry in the BAT
-		if((err = wkbMBR(&bMBR, &bWKB)) != MAL_SUCCEED) {
+		if((err = wkbMBR(&MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(bBATfiltered->batCacheid);
+			BBPreleaseref(BATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			GDKfree(geomMBR);
@@ -3184,38 +3050,42 @@ str wkbContainsFilter_geom_bat(wkb** outWKB, int* bBATfiltered_id, wkb** geomWKB
 		}
 		
 		//check the containment of the MBRs
-		if((err = mbrContains(&outBIT, &geomMBR, &bMBR)) != MAL_SUCCEED) {
+		if((err = mbrContains(&outBIT, &geomMBR, &MBRoriginal)) != MAL_SUCCEED) {
 			str msg;
 			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(bBATfiltered->batCacheid);
+			BBPreleaseref(BATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			GDKfree(geomMBR);
-			GDKfree(bMBR);
+			GDKfree(MBRoriginal);
 			return msg;
 		}
 		if(outBIT) {
-			BUNappend(bBATfiltered,bWKB, TRUE); //add the result to the bBAT
+			BUNappend(BATfiltered,WKBoriginal, TRUE); //add the result to the bBAT
 			remainingElements++;
 		}
 		
-		GDKfree(bMBR);
+		GDKfree(MBRoriginal);
 	}
 
 	//set some properties of the new BATs
-	BATsetcount(bBATfiltered, remainingElements);
-    	BATsettrivprop(bBATfiltered);
-    	BATderiveProps(bBATfiltered,FALSE);
+	BATsetcount(BATfiltered, remainingElements);
+    	BATsettrivprop(BATfiltered);
+    	BATderiveProps(BATfiltered,FALSE);
 	
 	BBPreleaseref(BAToriginal->batCacheid);
-	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
+	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
 
-	//copy the input single geometry to the output	
-	wkbFromWKB(outWKB, geomWKB);
+//	//copy the input single geometry to the output	
+//	wkbFromWKB(outWKB, geomWKB);
 	
 	return MAL_SUCCEED;
 
 
+}
+
+str wkbContainsFilter_bat_geom(int* BATfiltered_id, int* BAToriginal_id, wkb** geomWKB) {
+	return wkbContainsFilter_geom_bat(BATfiltered_id, geomWKB, BAToriginal_id);
 }
 
 str wkbCrosses(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {

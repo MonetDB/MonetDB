@@ -443,10 +443,17 @@ geom.prelude();
 
 module batgeom;
 
-command ContainsFilter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_bat
+#only one argument is allowed to be a BAT
+#command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
+command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
+command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
+
+#only one argument should be BAT
+#command ContainsFilter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_bat
+#comment "Filters the points in the bats according to the MBR of the other bat.";
+command ContainsFilter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbContainsFilter_geom_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
-command ContainsFilter(a:wkb, b:bat[:oid,:wkb]) (w:wkb, bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_geom_bat
-comment "Filters the points in the bats according to the MBR of the other bat.";
+command ContainsFilter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbContainsFilter_bat_geom;
 
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
@@ -463,12 +470,6 @@ comment "creates a 2D with m attribute points BAT using three double BATs";
 command setSRID(w:bat[:oid,:wkb], srid:int) :bat[:oid,:wkb] address wkbSetSRID_bat
 comment "Sets the Reference System ID for this Geometry.";
 
-#create one pattern for each possible combination of bat - scalar
-#pattern Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
-#pattern Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat;
-#pattern Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
-command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
-command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 
 
 command mbr(:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbMBR_bat
