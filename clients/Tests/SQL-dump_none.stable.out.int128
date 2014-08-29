@@ -5658,8 +5658,8 @@ COPY 4061 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 6364	6362	"val"	"wrd"	64	0	1	1
 6367	6366	"result"	"bigint"	64	0	0	0
 6368	6366	"val"	"bigint"	64	0	1	1
-6371	6370	"result"	"decimal"	1	0	0	0
-6372	6370	"val"	"decimal"	1	0	1	1
+6371	6370	"result"	"decimal"	18	3	0	0
+6372	6370	"val"	"decimal"	18	3	1	1
 6375	6374	"result"	"real"	24	0	0	0
 6376	6374	"val"	"real"	24	0	1	1
 6379	6378	"result"	"double"	53	0	0	0
@@ -5685,8 +5685,8 @@ COPY 4061 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 6415	6414	"result"	"bigint"	64	0	0	0
 6416	6414	"val"	"bigint"	64	0	1	1
 6417	6414	"q"	"double"	53	0	1	2
-6420	6419	"result"	"decimal"	1	0	0	0
-6421	6419	"val"	"decimal"	1	0	1	1
+6420	6419	"result"	"decimal"	18	3	0	0
+6421	6419	"val"	"decimal"	18	3	1	1
 6422	6419	"q"	"double"	53	0	1	2
 6425	6424	"result"	"real"	24	0	0	0
 6426	6424	"val"	"real"	24	0	1	1

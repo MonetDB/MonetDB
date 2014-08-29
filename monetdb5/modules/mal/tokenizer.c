@@ -399,8 +399,6 @@ TKNZRdepositFile(int *r, str *fnme)
 	char buf[PATHLENGTH];
 	oid pos;
 	str msg= MAL_SUCCEED;
-	FILE *f;
-	struct stat st;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -418,7 +416,7 @@ TKNZRdepositFile(int *r, str *fnme)
 		close_stream(fs);
 		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
 	}
-	bs = bstream_create(fs, (f = getFile(fs)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) SIZE);
+	bs = bstream_create(fs, SIZE);
 	if (bs == NULL)
 		throw(MAL, "tokenizer.depositFile", MAL_MALLOC_FAIL);
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
@@ -629,7 +627,7 @@ TKNZRgetCount(int *r)
 str
 TKNZRgetCardinality(int *r)
 {
-	BAT *b, *gn, *en;
+	BAT *b, *en;
 	int i;
 	wrd cnt;
 
@@ -640,12 +638,11 @@ TKNZRgetCardinality(int *r)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);
 	for (i = 0; i < tokenDepth; i++) {
-		if (BATgroup(&gn, &en, NULL, tokenBAT[i].val, NULL, NULL, NULL) != GDK_SUCCEED) {
+		if ((en = BATsubunique(tokenBAT[i].val, NULL)) == NULL) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
 		cnt = (wrd) BATcount(en);
-		BBPunfix(gn->batCacheid);
 		BBPunfix(en->batCacheid);
 		BUNappend(b, &cnt, FALSE);
 	}
