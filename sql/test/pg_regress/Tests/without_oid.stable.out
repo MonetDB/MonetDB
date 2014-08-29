@@ -1,138 +1,173 @@
 stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:18 >  
-# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:18 >  
+# 15:25:36 >  
+# 15:25:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34869" "--set" "mapi_usock=/var/tmp/mtest-28380/.s.monetdb.34869" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:25:36 >  
 
-# MonetDB 5 server v11.18.0
+# MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_pg_regress', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:34869/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28380/.s.monetdb.34869
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 15:25:37 >  
+# 15:25:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28380" "--port=34869"
+# 15:25:37 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- WITHOUT OID
-#--
-#--
-#-- This test tries to verify that WITHOUT OIDS actually saves space.
-#-- On machines where MAXALIGN is 8, WITHOUT OIDS may or may not save any
-#-- space, depending on the size of the tuple header + null bitmap.
-#-- As of 8.0 we need a 9-bit null bitmap to force the difference to appear.
-#--
 #CREATE TABLE wi (i INT,
 #                 n1 int, n2 int, n3 int, n4 int,
-#                 n5 int, n6 int, n7 int, n8 int) WITH OIDS;
+#                 n5 int, n6 int, n7 int, n8 int) /* WITH OIDS */;
 #CREATE TABLE wo (i INT,
 #                 n1 int, n2 int, n3 int, n4 int,
-#                 n5 int, n6 int, n7 int, n8 int) WITHOUT OIDS;
-#INSERT INTO wi VALUES (1);  -- 1
-[ 1 ]
-#INSERT INTO wo SELECT i FROM wi;  -- 1
-[ 1 ]
-#INSERT INTO wo SELECT i+1 FROM wi;  -- 1+1=2
-[ 1 ]
-#INSERT INTO wi SELECT i+1 FROM wo;  -- 1+2=3
-[ 1 ]
-#INSERT INTO wi SELECT i+3 FROM wi;  -- 3+3=6
-[ 1 ]
-#INSERT INTO wo SELECT i+2 FROM wi;  -- 2+6=8
-[ 1 ]
-#INSERT INTO wo SELECT i+8 FROM wo;  -- 8+8=16
-[ 1 ]
-#INSERT INTO wi SELECT i+6 FROM wo;  -- 6+16=22
-[ 1 ]
-#INSERT INTO wi SELECT i+22 FROM wi;  -- 22+22=44
-[ 1 ]
-#INSERT INTO wo SELECT i+16 FROM wi;  -- 16+44=60
-[ 1 ]
-#INSERT INTO wo SELECT i+60 FROM wo;  -- 60+60=120
-[ 1 ]
-#INSERT INTO wi SELECT i+44 FROM wo;  -- 44+120=164
-[ 1 ]
-#INSERT INTO wi SELECT i+164 FROM wi;  -- 164+164=328
-[ 1 ]
-#INSERT INTO wo SELECT i+120 FROM wi;  -- 120+328=448
-[ 1 ]
-#INSERT INTO wo SELECT i+448 FROM wo;  -- 448+448=896
-[ 1 ]
-#INSERT INTO wi SELECT i+328 FROM wo;  -- 328+896=1224
-[ 1 ]
-#INSERT INTO wi SELECT i+1224 FROM wi;  -- 1224+1224=2448
-[ 1 ]
-#INSERT INTO wo SELECT i+896 FROM wi;  -- 896+2448=3344
-[ 1 ]
-#INSERT INTO wo SELECT i+3344 FROM wo;  -- 3344+3344=6688
-[ 1 ]
-#INSERT INTO wi SELECT i+2448 FROM wo;  -- 2448+6688=9136
-[ 1 ]
-#INSERT INTO wo SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
-[ 1 ]
+#                 n5 int, n6 int, n7 int, n8 int) /* WITHOUT OIDS */;
+#INSERT INTO wi (i) VALUES (1);  -- 1
+[ 1	]
+#INSERT INTO wo (i) SELECT i FROM wi;  -- 1
+[ 1	]
+#INSERT INTO wo (i) SELECT i+1 FROM wi;  -- 1+1=2
+[ 1	]
+#INSERT INTO wi (i) SELECT i+1 FROM wo;  -- 1+2=3
+[ 2	]
+#INSERT INTO wi (i) SELECT i+3 FROM wi;  -- 3+3=6
+[ 3	]
+#INSERT INTO wo (i) SELECT i+2 FROM wi;  -- 2+6=8
+[ 6	]
+#INSERT INTO wo (i) SELECT i+8 FROM wo;  -- 8+8=16
+[ 8	]
+#INSERT INTO wi (i) SELECT i+6 FROM wo;  -- 6+16=22
+[ 16	]
+#INSERT INTO wi (i) SELECT i+22 FROM wi;  -- 22+22=44
+[ 22	]
+#INSERT INTO wo (i) SELECT i+16 FROM wi;  -- 16+44=60
+[ 44	]
+#INSERT INTO wo (i) SELECT i+60 FROM wo;  -- 60+60=120
+[ 60	]
+#INSERT INTO wi (i) SELECT i+44 FROM wo;  -- 44+120=164
+[ 120	]
+#INSERT INTO wi (i) SELECT i+164 FROM wi;  -- 164+164=328
+[ 164	]
+#INSERT INTO wo (i) SELECT i+120 FROM wi;  -- 120+328=448
+[ 328	]
+#INSERT INTO wo (i) SELECT i+448 FROM wo;  -- 448+448=896
+[ 448	]
+#INSERT INTO wi (i) SELECT i+328 FROM wo;  -- 328+896=1224
+[ 896	]
+#INSERT INTO wi (i) SELECT i+1224 FROM wi;  -- 1224+1224=2448
+[ 1224	]
+#INSERT INTO wo (i) SELECT i+896 FROM wi;  -- 896+2448=3344
+[ 2448	]
+#INSERT INTO wo (i) SELECT i+3344 FROM wo;  -- 3344+3344=6688
+[ 3344	]
+#INSERT INTO wi (i) SELECT i+2448 FROM wo;  -- 2448+6688=9136
+[ 6688	]
+#INSERT INTO wo (i) SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
+[ 2448	]
 #SELECT count(oid) FROM wi;
-% sys.L0 # table_name
-% count # name
-% ? # type
-% ? # length
-[ 9136 ]
-
-#-- should fail
-#
-VACUUM ANALYZE wi;
-VACUUM ANALYZE wo;
-#SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
-#  FROM pg_class
-# WHERE relname IN ('wi', 'wo');
-% sys.L0,	sys.L0 # table_name
-% ?column?,	?column? # name
-% ?,	? # type
-% ?,	? # length
-[ "t",	0 ]
-
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 4 # length
+[ 9136	]
+#SELECT count(i) FROM wo;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 4 # length
+[ 9136	]
+#SELECT * FROM sys.storage
+# WHERE "table" IN ('wi', 'wo');
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	2,	3,	3,	7,	4,	1,	5,	1,	1,	1,	5 # length
+[ "sys",	"wi",	"oid",	"oid",	"10/1052",	9136,	8,	73088,	0,	0,	0,	false	]
+[ "sys",	"wi",	"i",	"int",	"07/751",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n1",	"int",	"05/533",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n2",	"int",	"07/740",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n3",	"int",	"05/532",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n4",	"int",	"07/750",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n5",	"int",	"05/531",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n6",	"int",	"07/747",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n7",	"int",	"05/530",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n8",	"int",	"07/745",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"i",	"int",	"06/612",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n1",	"int",	"05/567",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n2",	"int",	"05/560",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n3",	"int",	"06/615",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n4",	"int",	"05/557",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n5",	"int",	"05/504",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n6",	"int",	"05/556",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n7",	"int",	"05/527",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n8",	"int",	"07/744",	9136,	4,	36544,	0,	0,	0,	true	]
 #DROP TABLE wi;
 #DROP TABLE wo;
-#--
-#-- WITH / WITHOUT OIDS in CREATE TABLE AS
-#--
 #CREATE TABLE create_table_test (
 #    a int,
 #    b int
 #);
-COPY create_table_test FROM stdin;
-#CREATE TABLE create_table_test2 WITH OIDS AS
-#    SELECT a + b AS c1, a - b AS c2 FROM create_table_test;
-#CREATE TABLE create_table_test3 WITHOUT OIDS AS
-#    SELECT a + b AS c1, a - b AS c2 FROM create_table_test;
+#INSERT INTO create_table_test VALUES (5, 10);
+[ 1	]
+#INSERT INTO create_table_test VALUES (10, 15);
+[ 1	]
+#CREATE TABLE create_table_test3 /* WITHOUT OIDS */ AS
+#    SELECT a + b AS c1, a - b AS c2 FROM create_table_test WITH DATA;
 #SELECT count(oid) FROM create_table_test2;
-% sys.L0 # table_name
-% count # name
-% ? # type
-% ? # length
-[ 2 ]
-
-#-- should fail
-#
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#SELECT count(*) FROM create_table_test3;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
 #DROP TABLE create_table_test;
-#DROP TABLE create_table_test2;
-#DROP TABLE create_table_test3;
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 15:25:38 >  
+# 15:25:38 >  "Done."
+# 15:25:38 >  
 

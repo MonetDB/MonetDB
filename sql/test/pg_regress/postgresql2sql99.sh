@@ -101,7 +101,7 @@ sed -r \
 	-e 's/^COMMENT.*;$//Ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/Ig' \
 	-e 's/SELECT * INTO TABLE * FROM *;/\CREATE TABLE \2 AS SELECT \1 FROM \3 WITH DATA;/Ig' \
-	-e 's/VACUUM ANALYZE *;/call vacuum('sys', '\1');/Ig' \
+	-e 's/VACUUM ANALYZE *;/call vacuum('sys', '\1'); call analyze('sys', '\1');/Ig' \
 	-e 's/VACUUM FULL *;/call vacuum('sys', '\1');/Ig' \
 	-e 's/VACUUM *;/call vacuum('sys', '\1');/Ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//Ig' \
@@ -109,6 +109,8 @@ sed -r \
 	-e 's/SET geqo TO *;/\/* SET geqo TO \1; *\//Ig' \
 	-e 's/RESET datestyle;/\/* RESET datestyle; *\//Ig' \
 	-e 's/RESET geqo;/\/* RESET geqo; *\//Ig' \
+	-e 's/ WITH OIDS;/\/* WITH OIDS; *\//Ig' \
+	-e 's/ WITHOUT OIDS;/\/* WITHOUT OIDS; *\//Ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/Ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/Ig' \
 	-e 's/\s+([^\s]+)::int4\b/ cast(\1 as integer)/Ig' \
