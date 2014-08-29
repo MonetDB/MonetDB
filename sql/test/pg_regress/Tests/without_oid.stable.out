@@ -56,7 +56,7 @@ Ready.
 # 15:25:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28380" "--port=34869"
 # 15:25:37 >  
 
-#CREATE TABLE wi (i INT,
+#CREATE TABLE wi (oid oid GENERATED ALWAYS AS IDENTITY, i INT,
 #                 n1 int, n2 int, n3 int, n4 int,
 #                 n5 int, n6 int, n7 int, n8 int) /* WITH OIDS */;
 #CREATE TABLE wo (i INT,
@@ -122,7 +122,7 @@ Ready.
 % schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
 % clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 3,	2,	3,	3,	7,	4,	1,	5,	1,	1,	1,	5 # length
-[ "sys",	"wi",	"oid",	"oid",	"10/1052",	9136,	8,	73088,	0,	0,	0,	false	]
+[ "sys",	"wi",	"oid",	"oid",	"10/1041",	9136,	8,	73088,	0,	0,	0,	false	]
 [ "sys",	"wi",	"i",	"int",	"07/751",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n1",	"int",	"05/533",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n2",	"int",	"07/740",	9136,	4,	36544,	0,	0,	0,	true	]
