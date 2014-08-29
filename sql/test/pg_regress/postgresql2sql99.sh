@@ -101,8 +101,9 @@ sed -r \
 	-e 's/^COMMENT.*;$//Ig' \
 	-e 's/\) (INHERITS.*);/\); -- \1/Ig' \
 	-e 's/SELECT * INTO TABLE * FROM *;/\CREATE TABLE \2 AS SELECT \1 FROM \3 WITH DATA;/Ig' \
-	-e 's/VACUUM ANALYZE *;/\/* VACUUM ANALYZE \1; *\//Ig' \
-	-e 's/VACUUM FULL *;/\/* VACUUM FULL \1; *\//Ig' \
+	-e 's/VACUUM ANALYZE *;/call vacuum('sys', '\1');/Ig' \
+	-e 's/VACUUM FULL *;/call vacuum('sys', '\1');/Ig' \
+	-e 's/VACUUM *;/call vacuum('sys', '\1');/Ig' \
 	-e 's/alter table * alter column * set storage external;/\/* alter table \1 alter column \2 set storage external; *\//Ig' \
 	-e 's/SET datestyle TO *;/\/* SET datestyle TO \1; *\//Ig' \
 	-e 's/SET geqo TO *;/\/* SET geqo TO \1; *\//Ig' \

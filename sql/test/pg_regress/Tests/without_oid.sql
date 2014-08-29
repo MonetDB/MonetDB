@@ -41,9 +41,9 @@ SELECT count(oid) FROM wi;
 -- should fail
 SELECT count(oid) FROM wo;
 
--- There is no VACUUM statement in the SQL standard.
-/* VACUUM ANALYZE wi; */
-/* VACUUM ANALYZE wo; */
+-- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');"
+call vacuum('sys', 'wi');
+call vacuum('sys', 'wo');
 
 SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
   FROM pg_class

@@ -1,7 +1,8 @@
 --
 -- VACUUM
 --
--- There is no VACUUM statement in the SQL standard.
+-- Replaced PostgreSQL "VACUUM FULL my_table;"
+-- with MonetDB "call vacuum('sys', 'my_table');"
 --
 
 CREATE TABLE vactst (i INT);
@@ -23,8 +24,21 @@ SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
 SELECT count(*) FROM vactst WHERE i <> 0;
 DELETE FROM vactst WHERE i <> 0;
 SELECT * FROM vactst;
-/* VACUUM FULL vactst; */
+
+select * from sys.storage where "table" = 'vactst';
+call vacuum('sys', 'vactst');
+select * from sys.storage where "table" = 'vactst';
+
 UPDATE vactst SET i = i + 1;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
+INSERT INTO vactst SELECT * FROM vactst;
 INSERT INTO vactst SELECT * FROM vactst;
 INSERT INTO vactst SELECT * FROM vactst;
 INSERT INTO vactst SELECT * FROM vactst;
@@ -41,7 +55,11 @@ SELECT count(*) FROM vactst;
 SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
 SELECT count(*) FROM vactst WHERE i <> 0;
 DELETE FROM vactst WHERE i <> 0;
-/* VACUUM FULL vactst; */
+
+select * from sys.storage where "table" = 'vactst';
+call vacuum('sys', 'vactst');
+select * from sys.storage where "table" = 'vactst';
+
 DELETE FROM vactst;
 SELECT * FROM vactst;
 
