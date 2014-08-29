@@ -289,8 +289,6 @@ comment "Returns a BAT copy with buns in reverse order";
 #
 # @noindent Operands provided are:
 # @itemize
-# @item [s,k,t]unique(bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# produces a copy of the bat, with double elimination
 # @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 # bat union.
 # @item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
@@ -308,25 +306,12 @@ comment "Returns a BAT copy with buns in reverse order";
 # The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
 # of @emph{r} that are not in @emph{l}. They do not do double-elimination
 # over the @emph{l} nor @emph{r} BUNs.
-# Operations with double-elimination can be formed by performing
-# [k,s]unique(l) on their operands.
 # The kintersect(l,r) is used also as implementation for the
 # @emph{semijoin()}.
 #
 # The t-@emph{operand} series are cast into a k-@emph{operand}
 # expression enclosing it with a BATmirror.
-# @- Head-unique elements
-command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGkunique
-comment "Select unique tuples from the input BAT.  Double elimination is
-		done only looking at the head column. The result is a BAT with
-		property hkeyed() == true.";
-
-command tunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGtunique
-comment "Select unique tuples from the input BAT. Double elimination is
-		done over the BUNs tail. The result is a BAT with property
-		tkeyd()== true";
+# @- unique elements
 command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGsubunique2
 comment "Select all unique values from the tail of the first input.

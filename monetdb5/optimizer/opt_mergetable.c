@@ -1525,9 +1525,7 @@ fprintf(stderr, "(2) MergeTable: %d Processing instruction %s\n", i, getFunction
 			 getFunctionId(p)== maxRef ||
 			 getFunctionId(p)== avgRef ||
 			 getFunctionId(p)== sumRef ||
-			 getFunctionId(p) == prodRef)) ||
-		    (getModuleId(p) == algebraRef &&
-		     getFunctionId(p) == tuniqueRef)) &&
+			 getFunctionId(p) == prodRef))) &&
 			(m=is_a_mat(getArg(p,1), mat, mtop)) >= 0) {
 			mat_aggr(mb, p, mat, m);
 			actions++;

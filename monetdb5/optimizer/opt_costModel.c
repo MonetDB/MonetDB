@@ -87,9 +87,6 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else
 			if (getFunctionId(p) == crossRef) {
 				newRows(1,2,((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1)),0);
-			} else
-			if (getFunctionId(p) == tuniqueRef ) {
-				newRows(1,1,( c1 < 50 ? c1 : c1 / 10+1),0);
 			}
 		} else if (getModuleId(p) == batcalcRef) {
 			if( getFunctionId(p) == ifthenelseRef) {

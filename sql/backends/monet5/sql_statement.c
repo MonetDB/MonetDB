@@ -122,7 +122,6 @@ st_type2string(st_type type)
 
 		ST(group);
 
-		ST(unique);
 		ST(convert);
 		ST(Nop);
 		ST(func);
@@ -325,7 +324,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_join:
 			case st_join2:
 			case st_joinN:
-			case st_unique:
 			case st_append:
 			case st_rs_column:
 
@@ -826,21 +824,6 @@ stmt_reorder(sql_allocator *sa, stmt *s, int direction, stmt *orderby_ids, stmt 
 }
 
 stmt *
-stmt_unique(sql_allocator *sa, stmt *s)
-{
-	stmt *ns = stmt_create(sa, st_unique);
-
-	ns->op1 = s;
-	ns->op2 = NULL;
-	ns->op3 = NULL;
-	ns->op4.stval = NULL;
-	ns->nrcols = s->nrcols;
-	ns->key = 1;
-	ns->aggr = s->aggr;
-	return ns;
-}
-
-stmt *
 stmt_atom(sql_allocator *sa, atom *op1)
 {
 	stmt *s = stmt_create(sa, st_atom);
@@ -1299,7 +1282,6 @@ tail_type(stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_append:
 	case st_alias:
 	case st_gen_group:
@@ -1465,7 +1447,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_convert:
 		return column_name(sa, st->op1);
 	case st_Nop:
@@ -1543,7 +1524,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_diff:
 	case st_union:
 	case st_aggr:
-	case st_unique:
 		return table_name(sa, st->op1);
 
 	case st_table_clear:
@@ -1603,7 +1583,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_convert:
 	case st_Nop:
 	case st_aggr:
@@ -1757,7 +1736,7 @@ stack_push_children(sql_stack *stk, stmt *s)
 		stack_push_list(stk, s->op4.lval);
 		break;
 	default:
-		if ((s->type == st_uselect2 || s->type == st_unique || s->type == st_group) && s->op4.stval)
+		if ((s->type == st_uselect2 || s->type == st_group) && s->op4.stval)
 			stack_push_stmt(stk, s->op4.stval, 1);
 		if (s->op2) {
 			if (s->op3)

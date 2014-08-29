@@ -192,6 +192,7 @@ stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
 stream_export FILE *getFile(stream *s);
+stream_export size_t getFileSize(stream *s);
 
 stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
 stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);

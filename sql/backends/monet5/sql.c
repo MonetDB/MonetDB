@@ -2739,8 +2739,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bstream *s;
 	stream *ss;
 	str utf8 = "UTF-8";
-	FILE *f;
-	struct stat st;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2771,15 +2769,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			mnstr_destroy(ss);
 		throw(IO, "streams.open", "could not open file '%s': %s", filename, strerror(errnr));
 	}
-	if ((f = getFile(ss)) != NULL && fstat(fileno(f), &st) == 0)
-		s = bstream_create(ss, (size_t) st.st_size);
-	else {
 #if SIZEOF_VOID_P == 4
-		s = bstream_create(ss, 0x20000);
+	s = bstream_create(ss, 0x20000);
 #else
-		s = bstream_create(ss, 0x2000000);
+	s = bstream_create(ss, 0x2000000);
 #endif
-	}
 #ifdef WIN32
 	fix_windows_newline(tsep);
 	fix_windows_newline(rsep);

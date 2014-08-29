@@ -16,6 +16,6 @@
 # All Rights Reserved.
 
 command filter(name:json, idx:hge) :json
-address JSONfilterArray;
+address JSONfilterArray_hge;
 command filter(name:json, idx:hge, other:str) :json
-address JSONfilterArrayDefault;
+address JSONfilterArrayDefault_hge;
