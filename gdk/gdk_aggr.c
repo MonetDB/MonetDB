@@ -2324,7 +2324,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BATseqbase(bn, min);
 	} else { /* quantiles for entire BAT b, EZ */
 
-		BUN index = BUNfirst(b) + (BUN) ((BATcount(b) - 1)  * quantile);
+		BUN index, r = 0, p = BUNlast(b);
+
+		if (skip_nils) {
+			while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
+				r++;
+		}
+		index = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
 		v = BUNtail(bi, index);
 		BUNappend(bn, v, FALSE);
 		BATseqbase(bn, 0);
