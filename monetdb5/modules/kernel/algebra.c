@@ -933,12 +933,6 @@ ALGcopy(bat *result, bat *bid)
 }
 
 str
-ALGkunique(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATkunique, "algebra.kunique");
-}
-
-str
 ALGsubunique2(bat *result, bat *bid, bat *sid)
 {
 	BAT *b, *s = NULL, *bn = NULL;
@@ -1227,27 +1221,6 @@ ALGsample(bat *result, bat *bid, int *param)
 }
 
 /* add items missing in the kernel */
-str
-ALGtunique(int *result, int *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.tunique", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATkunique(BATmirror(b));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.tunique", GDK_EXCEPTION);
-}
-
 str
 ALGtunion(int *result, int *bid, int *bid2)
 {
