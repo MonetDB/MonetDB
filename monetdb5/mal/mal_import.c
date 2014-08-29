@@ -86,21 +86,24 @@ malOpenSource(str file)
  * where an intermediate file is used to pass commands around.
  * Since the parser needs access to the complete block, we first have
  * to find out how long the input is.
- * For the time being, we assume at most 1Mb.
 */
 static str
 malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;
-	FILE *f;
-	struct stat st;
+	size_t sz;
 
 	fd = malOpenSource(name);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		mnstr_destroy(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
-	*fdin = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
+	sz = getFileSize(fd);
+	if (sz > (size_t) 1 << 29) {
+		mnstr_destroy(fd);
+		throw(MAL, "malInclude", "file %s too large to process", name);
+	}
+	*fdin = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 	if (bstream_next(*fdin) < 0)
 		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;
@@ -269,13 +272,11 @@ evalFile(Client c, str fname, int listing)
 			mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
 					filename);
 		} else {
-			FILE *f;
-			struct stat st;
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
 			MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-			MCpushClientInput(c, bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK)), c->listing, "");
+			MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
 			msg = runScenario(c);
 		}
 		filename = p + 1;
@@ -285,13 +286,11 @@ evalFile(Client c, str fname, int listing)
 		if( fd == 0) mnstr_destroy(fd);
 		msg = createException(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
 	} else {
-		FILE *f;
-		struct stat st;
 		c->srcFile = filename;
 		c->yycur = 0;
 		c->bak = NULL;
 		MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-		MCpushClientInput(c, bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK)), c->listing, "");
+		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
 		msg = runScenario(c);
 	}
 	GDKfree(fname);

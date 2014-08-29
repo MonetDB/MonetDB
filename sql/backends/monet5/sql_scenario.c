@@ -1183,12 +1183,17 @@ SQLinitClient(Client c)
 					filename = p + 1;
 
 				if (fd) {
-					struct stat st;
-					FILE *f;
-					bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
-					if (bfd && bstream_next(bfd) >= 0)
-						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
-					bstream_destroy(bfd);
+					size_t sz;
+					sz = getFileSize(fd);
+					if (sz > (size_t) 1 << 29) {
+						mnstr_destroy(fd);
+						msg = createException(MAL, "createdb", "file %s too large to process", filename);
+					} else {
+						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
+						if (bfd && bstream_next(bfd) >= 0)
+							msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
+						bstream_destroy(bfd);
+					}
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
@@ -1580,8 +1585,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED, fullname;
 	str *expr;
 	mvc *m;
-	FILE *f;
-	struct stat st;
+	size_t sz;
 
 	fullname = MSP_locate_sqlscript(*name, 0);
 	if (fullname == NULL)
@@ -1591,7 +1595,12 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_destroy(fd);
 		throw(MAL, "sql.include", "could not open file: %s\n", *name);
 	}
-	bfd = bstream_create(fd, (f = getFile(fd)) != NULL && fstat(fileno(f), &st) == 0 ? (size_t) st.st_size : (size_t) (128 * BLOCK));
+	sz = getFileSize(fd);
+	if (sz > (size_t) 1 << 29) {
+		mnstr_destroy(fd);
+		throw(MAL, "sql.include", "file %s too large to process", fullname);
+	}
+	bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
 		throw(MAL, "sql.include", "could not read %s\n", *name);

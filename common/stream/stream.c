@@ -71,8 +71,16 @@
 #include <stdarg.h>		/* va_alist.. */
 #include <assert.h>
 
-#ifdef HAVE_NETDB_H
+#ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_NETDB_H
 # include <netinet/in_systm.h>
 # include <netinet/in.h>
 # include <netinet/ip.h>
@@ -716,6 +724,18 @@ getFile(stream *s)
 	if (s->read != file_read)
 		return NULL;
 	return (FILE *) s->stream_data.p;
+}
+
+size_t
+getFileSize(stream *s)
+{
+       if (s->read == file_read) {
+               struct stat stb;
+
+               fstat(fileno((FILE *) s->stream_data.p), &stb);
+               return (size_t) stb.st_size;
+       }
+       return 0;               /* unknown */
 }
 
 static stream *
