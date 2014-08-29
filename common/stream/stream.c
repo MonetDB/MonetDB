@@ -571,7 +571,7 @@ file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	if (!feof(fp)) {
+	if (elmsize && cnt && !feof(fp)) {
 		if (ferror(fp) ||
 		    ((rc = fread(buf, elmsize, cnt, fp)) == 0 &&
 		     ferror(fp))) {
@@ -775,7 +775,7 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	if (!gzeof(fp)) {
+	if (size && !gzeof(fp)) {
 		size = gzread(fp, buf, size);
 		if (gzerror(fp, &err) != NULL && err < 0) {
 			s->errnr = MNSTR_READ_ERROR;
@@ -997,6 +997,8 @@ stream_bzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
+	if (size == 0)
+		return 0;
 	size = BZ2_bzRead(&err, bzp->b, buf, size);
 	if (err == BZ_STREAM_END) {
 		/* end of stream, but not necessarily end of file: get
@@ -1444,20 +1446,23 @@ static ssize_t
 curl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	struct curl_data *c = (struct curl_data *) s->stream_data.p;
-	size_t size;
+	size_t size = cnt * elmsize;
 
 	if (c == NULL) {
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
 
+	if (size == 0)
+		return 0;
 	if (c->usesize - c->offset >= elmsize || !c->running) {
 		/* there is at least one element's worth of data
 		 * available, or we have reached the end: return as
 		 * much as we have, but no more than requested */
-		if (cnt * elmsize > c->usesize - c->offset)
+		if (size > c->usesize - c->offset) {
 			cnt = (c->usesize - c->offset) / elmsize;
-		size = cnt * elmsize;
+			size = cnt * elmsize;
+		}
 		memcpy(buf, c->buffer + c->offset, size);
 		c->offset += size;
 		if (c->offset == c->usesize)
@@ -1639,6 +1644,8 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr || size == 0)
 		return -1;
 
+	if (size == 0)
+		return 0;
 	do {
 		errno = 0;
 #ifdef NATIVE_WIN32
@@ -1904,6 +1911,8 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr || udp == NULL)
 		return -1;
 
+	if (size == 0)
+		return 0;
 	errno = 0;
 	if ((res = recvfrom(udp->s, buf,
 #ifdef NATIVE_WIN32
@@ -2249,6 +2258,8 @@ ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	inbytesleft = ic->buflen;
 	outbuf = (char *) buf;
 	outbytesleft = elmsize * cnt;
+	if (outbytesleft == 0)
+		return 0;
 	while (outbytesleft > 0 && !ic->eof) {
 		if (ic->buflen == sizeof(ic->buffer)) {
 			/* ridiculously long multibyte sequence, return error */
@@ -2554,7 +2565,7 @@ buffer_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 	b = (buffer *) s->stream_data.p;
 	assert(b);
-	if (b && b->pos + size <= b->len) {
+	if (size && b && b->pos + size <= b->len) {
 		memcpy(buf, b->buf + b->pos, size);
 		b->pos += size;
 		return (ssize_t) (size / elmsize);
@@ -2940,7 +2951,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	 * empty read */
 	if (todo > 0 && cnt == 0)
 		s->nr = 0;
-	return (ssize_t) (cnt / elmsize);
+	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
 }
 
 static void
