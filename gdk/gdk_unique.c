@@ -110,7 +110,7 @@ BATsubunique(BAT *b, BAT *s)
 		nr = BATproject(r, s);
 		BBPunfix(nb->batCacheid);
 		BBPunfix(r->batCacheid);
-		return nr;
+		return virtualize(nr);
 	}
 
 	assert(b->ttype != TYPE_void);
@@ -310,7 +310,7 @@ BATsubunique(BAT *b, BAT *s)
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	return bn;
+	return virtualize(bn);
 
   bunins_failed:
 	if (seen)

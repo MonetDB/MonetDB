@@ -197,6 +197,8 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
+BAT *virtualize(BAT *bn)
+	__attribute__((__visibility__("hidden")));
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63

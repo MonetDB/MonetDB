@@ -2030,18 +2030,7 @@ BATmergecand(BAT *a, BAT *b)
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	af = * (const oid *) Tloc(bn, BUNfirst(bn));
-	if (af + BATcount(bn) - 1 == *(const oid *) Tloc(bn, BUNlast(bn) - 1)) {
-		/* new bat is in fact dense, replace by void column */
-		bn->tseqbase = af;
-		bn->tdense = 1;
-		HEAPfree(&bn->T->heap);
-		bn->ttype = TYPE_void;
-		bn->tvarsized = 1;
-		bn->T->width = 0;
-		bn->T->shift = 0;
-	}
-	return bn;
+	return virtualize(bn);
 }
 
 /* intersect two candidate lists and produce a new one
@@ -2131,17 +2120,5 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
-	if (BATcount(bn) == 0 ||
-	    (af = * (const oid *) Tloc(bn, BUNfirst(bn))) + BATcount(bn) - 1 ==
-	    * (const oid *) Tloc(bn, BUNlast(bn) - 1)) {
-		/* new bat is in fact dense, replace by void column */
-		bn->tseqbase = BATcount(bn) == 0 ? 0 : af;
-		bn->tdense = 1;
-		HEAPfree(&bn->T->heap);
-		bn->ttype = TYPE_void;
-		bn->tvarsized = 1;
-		bn->T->width = 0;
-		bn->T->shift = 0;
-	}
-	return bn;
+	return virtualize(bn);
 }
