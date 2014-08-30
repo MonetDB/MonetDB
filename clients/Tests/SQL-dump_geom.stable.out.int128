@@ -736,6 +736,12 @@ external name generator.series;
 create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
 returns table (value tinyint)
 external name generator.series;
+create function sys.generate_series(first smallint, last smallint)
+returns table (value smallint)
+external name generator.series;
+create function sys.generate_series(first smallint, last smallint, stepsize smallint)
+returns table (value smallint)
+external name generator.series;
 create function sys.generate_series(first int, last int)
 returns table (value int)
 external name generator.series;
@@ -1868,7 +1874,7 @@ COPY 286 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6938	"minval"	"clob"	0	0	6941	NULL	true	10	NULL
 6939	"maxval"	"clob"	0	0	6941	NULL	true	11	NULL
 6940	"sorted"	"boolean"	1	0	6941	NULL	true	12	NULL
-7056	"function_id"	"int"	32	0	7057	NULL	true	0	NULL
+7067	"function_id"	"int"	32	0	7068	NULL	true	0	NULL
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."_tables" (
@@ -1921,7 +1927,7 @@ COPY 40 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 6916	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
 6926	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
 6941	"statistics"	2000	NULL	0	true	0	false
-7057	"systemfunctions"	2000	NULL	0	true	0	false
+7068	"systemfunctions"	2000	NULL	0	true	0	false
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."args" (
@@ -1934,7 +1940,7 @@ CREATE TABLE "sys"."args" (
 	"inout"       TINYINT,
 	"number"      INTEGER
 );
-COPY 4168 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 4175 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2155	30	"res_0"	"oid"	63	0	0	0
 2156	30	"arg_1"	"wrd"	64	0	1	1
 2157	31	"res_0"	"oid"	63	0	0	0
@@ -6073,36 +6079,43 @@ COPY 4168 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 7006	7004	"first"	"tinyint"	8	0	1	1
 7007	7004	"last"	"tinyint"	8	0	1	2
 7008	7004	"stepsize"	"tinyint"	8	0	1	3
-7011	7010	"value"	"int"	32	0	0	0
-7012	7010	"first"	"int"	32	0	1	1
-7013	7010	"last"	"int"	32	0	1	2
-7016	7015	"value"	"int"	32	0	0	0
-7017	7015	"first"	"int"	32	0	1	1
-7018	7015	"last"	"int"	32	0	1	2
-7019	7015	"stepsize"	"int"	32	0	1	3
-7022	7021	"value"	"bigint"	64	0	0	0
-7023	7021	"first"	"bigint"	64	0	1	1
-7024	7021	"last"	"bigint"	64	0	1	2
-7027	7026	"value"	"bigint"	64	0	0	0
-7028	7026	"first"	"bigint"	64	0	1	1
-7029	7026	"last"	"bigint"	64	0	1	2
-7030	7026	"stepsize"	"bigint"	64	0	1	3
-7033	7032	"value"	"real"	24	0	0	0
-7034	7032	"first"	"real"	24	0	1	1
-7035	7032	"last"	"real"	24	0	1	2
-7036	7032	"stepsize"	"real"	24	0	1	3
-7039	7038	"value"	"double"	53	0	0	0
-7040	7038	"first"	"double"	53	0	1	1
-7041	7038	"last"	"double"	53	0	1	2
-7042	7038	"stepsize"	"double"	53	0	1	3
-7045	7044	"value"	"decimal"	10	2	0	0
-7046	7044	"first"	"decimal"	10	2	1	1
-7047	7044	"last"	"decimal"	10	2	1	2
-7048	7044	"stepsize"	"decimal"	10	2	1	3
-7051	7050	"value"	"timestamp"	7	0	0	0
-7052	7050	"first"	"timestamp"	7	0	1	1
-7053	7050	"last"	"timestamp"	7	0	1	2
-7054	7050	"stepsize"	"sec_interval"	13	0	1	3
+7011	7010	"value"	"smallint"	16	0	0	0
+7012	7010	"first"	"smallint"	16	0	1	1
+7013	7010	"last"	"smallint"	16	0	1	2
+7016	7015	"value"	"smallint"	16	0	0	0
+7017	7015	"first"	"smallint"	16	0	1	1
+7018	7015	"last"	"smallint"	16	0	1	2
+7019	7015	"stepsize"	"smallint"	16	0	1	3
+7022	7021	"value"	"int"	32	0	0	0
+7023	7021	"first"	"int"	32	0	1	1
+7024	7021	"last"	"int"	32	0	1	2
+7027	7026	"value"	"int"	32	0	0	0
+7028	7026	"first"	"int"	32	0	1	1
+7029	7026	"last"	"int"	32	0	1	2
+7030	7026	"stepsize"	"int"	32	0	1	3
+7033	7032	"value"	"bigint"	64	0	0	0
+7034	7032	"first"	"bigint"	64	0	1	1
+7035	7032	"last"	"bigint"	64	0	1	2
+7038	7037	"value"	"bigint"	64	0	0	0
+7039	7037	"first"	"bigint"	64	0	1	1
+7040	7037	"last"	"bigint"	64	0	1	2
+7041	7037	"stepsize"	"bigint"	64	0	1	3
+7044	7043	"value"	"real"	24	0	0	0
+7045	7043	"first"	"real"	24	0	1	1
+7046	7043	"last"	"real"	24	0	1	2
+7047	7043	"stepsize"	"real"	24	0	1	3
+7050	7049	"value"	"double"	53	0	0	0
+7051	7049	"first"	"double"	53	0	1	1
+7052	7049	"last"	"double"	53	0	1	2
+7053	7049	"stepsize"	"double"	53	0	1	3
+7056	7055	"value"	"decimal"	10	2	0	0
+7057	7055	"first"	"decimal"	10	2	1	1
+7058	7055	"last"	"decimal"	10	2	1	2
+7059	7055	"stepsize"	"decimal"	10	2	1	3
+7062	7061	"value"	"timestamp"	7	0	0	0
+7063	7061	"first"	"timestamp"	7	0	1	1
+7064	7061	"last"	"timestamp"	7	0	1	2
+7065	7061	"stepsize"	"sec_interval"	13	0	1	3
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."auths" (
@@ -6363,7 +6376,7 @@ CREATE TABLE "sys"."functions" (
 	"vararg"      BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1482 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1484 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 30	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	0
 31	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	0
 32	"hash"	"hash"	"mkey"	0	1	false	false	false	0
@@ -7838,14 +7851,16 @@ COPY 1482 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6994	"fuse"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- add function signatures to SQL catalog\n\n\n-- fuse two (8-byte) integer values into one (16-byte) bigint value\ncreate function fuse(one bigint, two bigint)\nreturns hugeint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
 6999	"generate_series"	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the ""License""); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an ""AS IS""\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2014 MonetDB B.V.\n-- All Rights Reserved.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 7004	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7010	"generate_series"	"create function sys.generate_series(first int, last int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7015	"generate_series"	"create function sys.generate_series(first int, last int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7021	"generate_series"	"create function sys.generate_series(first bigint, last bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7026	"generate_series"	"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7032	"generate_series"	"create function sys.generate_series(first real, last real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7038	"generate_series"	"create function sys.generate_series(first double, last double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7044	"generate_series"	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-7050	"generate_series"	"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7010	"generate_series"	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7015	"generate_series"	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7021	"generate_series"	"create function sys.generate_series(first int, last int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7026	"generate_series"	"create function sys.generate_series(first int, last int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7032	"generate_series"	"create function sys.generate_series(first bigint, last bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7037	"generate_series"	"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7043	"generate_series"	"create function sys.generate_series(first real, last real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7049	"generate_series"	"create function sys.generate_series(first double, last double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7055	"generate_series"	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7061	"generate_series"	"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."idxs" (
@@ -7899,7 +7914,7 @@ COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 5672	1	1	0	0
 5675	1	1	0	0
 5679	1	1	0	0
-7057	1	1	3	0
+7068	1	1	3	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."schemas" (
@@ -7962,7 +7977,7 @@ START TRANSACTION;
 CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
-COPY 1482 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1484 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
 30
 31
 32
@@ -9442,9 +9457,11 @@ COPY 1482 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 7021
 7026
 7032
-7038
-7044
-7050
+7037
+7043
+7049
+7055
+7061
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."triggers" (

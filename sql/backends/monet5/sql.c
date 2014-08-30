@@ -80,14 +80,6 @@ rel_is_point_query(sql_rel *rel)
 	if (is_project(rel->op))
 		return rel_is_point_query(rel->l);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
-/*
-		node *n;
-		is_point = 1;
-		for (n=rel->exps->h; n && is_point; n = n->next) {
-			if (!exp_is_point_select(n->data))
-				is_point = 0;
-		}
-*/
 		is_point = 0;
 		/* just one point expression makes this a point query */
 		if (rel->exps->h)

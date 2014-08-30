@@ -25,6 +25,14 @@ create function sys.generate_series(first tinyint, last tinyint, stepsize tinyin
 returns table (value tinyint)
 external name generator.series;
 
+create function sys.generate_series(first smallint, last smallint)
+returns table (value smallint)
+external name generator.series;
+
+create function sys.generate_series(first smallint, last smallint, stepsize smallint)
+returns table (value smallint)
+external name generator.series;
+
 create function sys.generate_series(first int, last int)
 returns table (value int)
 external name generator.series;
