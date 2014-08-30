@@ -63,20 +63,24 @@ typedef struct MOSAICHEADER{
 	BUN offset[MOSAICINDEX];
 } * MosaicHdr;
 
-// bit stuffed header block
-typedef lng *MosaicBlk;
-#define MOStag(Blk) (*(Blk)>>56)
-#define MOSsetTag(Tag)  ((lng) (Tag) <<56)
-#define MOScnt(Blk) (BUN)(*(Blk) & 03777777777777777)
+// bit stuffed header block, currently 4 bytes wide
+#define MOSshift 24
+typedef int *MosaicBlk;
+
+#define MOStag(Blk) (*(Blk)>>MOSshift)
+#define MOSsetTag(Tag)  ((int) (Tag) <<MOSshift)
+#define MOScnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
 #define MOSinc(Blk,I) *(Blk)= *(Blk)+I
 
-#define MOSnone (((lng)MOSAIC_NONE) <<56)
-#define MOSrle (((lng)MOSAIC_RLE) <<56)
-#define MOSdict (((lng)MOSAIC_DICT) <<56)
-#define MOSlinear (((lng)MOSAIC_LINEAR) <<56)
-#define MOSdelta (((lng)MOSAIC_DELTA) <<56)
-#define MOSzone (((lng)MOSAIC_ZONE) <<56)
-#define MOSeol (((lng)MOSAIC_EOL) <<56)
+#define MOSnone (((int)MOSAIC_NONE) <<MOSshift)
+#define MOSrle (((int)MOSAIC_RLE) <<MOSshift)
+#define MOSdict (((int)MOSAIC_DICT) <<MOSshift)
+#define MOSlinear (((int)MOSAIC_LINEAR) <<MOSshift)
+#define MOSdelta (((int)MOSAIC_DELTA) <<MOSshift)
+#define MOSzone (((int)MOSAIC_ZONE) <<MOSshift)
+#define MOSeol (((int)MOSAIC_EOL) <<MOSshift)
+
+#define MOSlimit() (int) ~(0377<<MOSshift)
 
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements

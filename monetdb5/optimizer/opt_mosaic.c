@@ -37,6 +37,9 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 	case TYPE_oid:
 	case TYPE_wrd:
 	case TYPE_flt:

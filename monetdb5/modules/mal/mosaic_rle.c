@@ -108,6 +108,7 @@ MOSskip_rle(Client cntxt, MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
+	if ( i > MOSlimit() ) i = MOSlimit();\
 	factor = ( (flt)i * sizeof(TYPE))/ (MosaicBlkSize + sizeof(TYPE));\
 }
 
@@ -135,6 +136,7 @@ MOSestimate_rle(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
+			if ( i > MOSlimit() ) i = MOSlimit();
 			factor = ( (flt)i * sizeof(int))/ (MosaicBlkSize + sizeof(int));
 		}
 	}
@@ -146,16 +148,17 @@ MOSestimate_rle(Client cntxt, MOStask task)
 
 // insert a series of values into the compressor block using rle.
 #define RLEcompress(TYPE)\
-	{	TYPE val = *(TYPE*) task->src;\
-		TYPE *dst = (TYPE*) task->dst;\
-		*dst = val;\
-		for(i =1; i<task->elm; i++)\
-		if ( ((TYPE*)task->src)[i] != val)\
-			break;\
-		MOSinc(blk,i);\
-		task->dst +=  sizeof(TYPE);\
-		task->src += i * sizeof(TYPE);\
-	}
+{	TYPE val = *(TYPE*) task->src;\
+	TYPE *dst = (TYPE*) task->dst;\
+	BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;\
+	*dst = val;\
+	for(i =1; i<limit; i++)\
+	if ( ((TYPE*)task->src)[i] != val)\
+		break;\
+	MOSinc(blk,i);\
+	task->dst +=  sizeof(TYPE);\
+	task->src += i * sizeof(TYPE);\
+}
 
 void
 MOScompress_rle(Client cntxt, MOStask task)
@@ -181,8 +184,9 @@ MOScompress_rle(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int val = *(int*) task->src;
 			int *dst = (int*) task->dst;
+			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
 			*dst = val;
-			for(i =1; i<task->elm; i++)
+			for(i =1; i<limit; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
 			MOSinc(blk,i);

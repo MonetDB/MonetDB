@@ -328,6 +328,19 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				*task->blk = MOSeol;
 			}
+			break;
+		case MOSAIC_NONE:
+		case MOSAIC_ZONE:
+			if ( MOScnt(task->blk) == MOSlimit()){
+				MOSupdateHeader(cntxt,task);
+				if( MOStag(task->blk) == MOSAIC_NONE)
+					MOSskip_none(cntxt,task);
+				else
+					MOSskip_zone(cntxt,task);
+				// always start with an EOL block
+				task->dst = ((char*) task->blk)+ MosaicBlkSize;
+				*task->blk = MOSeol;
+			}
 		}
 		// apply the compression to a chunk
 		switch(cand){

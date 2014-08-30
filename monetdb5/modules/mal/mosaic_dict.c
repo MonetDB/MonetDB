@@ -123,6 +123,7 @@ MOSskip_dict(Client cntxt, MOStask task)
 			cnt++;\
 		}\
 	}\
+	if ( i > MOSlimit() ) i = MOSlimit();\
 	if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);\
 }
 
@@ -160,6 +161,7 @@ MOSestimate_dict(Client cntxt, MOStask task)
 					cnt++;
 				}
 			}
+			if ( i > MOSlimit() ) i = MOSlimit();
 			if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);
 		}
 	}
@@ -173,8 +175,9 @@ MOSestimate_dict(Client cntxt, MOStask task)
 #define DICTcompress(TPE)\
 {	TPE *val = (TPE*)task->src;\
 	TPE *dict = (TPE*)((char*)task->blk+ 2 * MosaicBlkSize);\
+	BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;\
 	task->dst = ((char*) dict)+ sizeof(TPE)*dictsize;\
-	for(i =0; i<task->elm; i++, val++){\
+	for(i =0; i<limit; i++, val++){\
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == *val) {\
 				MOSinc(blk,1);\
@@ -186,10 +189,10 @@ MOSestimate_dict(Client cntxt, MOStask task)
 				task->dst += wordaligned(MOScnt(blk) %2,TPE);\
 				break;\
 			}\
+			MOSinc(blk,1);\
 			dict[j] = *val;\
 			*size = *size+1;\
 			*task->dst++ = (char) j;\
-			MOSinc(blk,1);\
 		}\
 	}\
 	task->src = (char*) val;\
@@ -219,8 +222,9 @@ MOScompress_dict(Client cntxt, MOStask task)
 	case TYPE_lng:
 		{	lng *val = (lng*)task->src;
 			lng *dict = (lng*)((char*)task->blk+ 2 * MosaicBlkSize);
+			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
 			task->dst = ((char*) dict)+ sizeof(lng)*dictsize;
-			for(i =0; i<task->elm; i++, val++){
+			for(i =0; i<limit; i++, val++){
 				for(j= 0; j< *size; j++)
 					if( dict[j] == *val) {
 						MOSinc(blk,1);
@@ -233,10 +237,10 @@ MOScompress_dict(Client cntxt, MOStask task)
 						task->dst += wordaligned(MOScnt(blk) %2,lng);
 						break;
 					}
+					MOSinc(blk,1);
 					dict[j] = *val;
 					*size = *size+1;
 					*task->dst++ = (char) j;
-					MOSinc(blk,1);
 				}
 			}
 			task->src = (char*) val;

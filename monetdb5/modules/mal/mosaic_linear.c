@@ -126,6 +126,7 @@ MOSskip_linear(Client cntxt, MOStask task)
 	for(i =1; i < task->elm; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
+	if( i >= MOSlimit()) i = MOSlimit();\
 	factor =  ( (flt)i * sizeof(TYPE))/(MosaicBlkSize + 2 * sizeof(TYPE));\
 }
 
@@ -154,6 +155,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			for(i =1; i<task->elm; i++)
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
 				break;
+			if( i >= MOSlimit()) i = MOSlimit();
 			factor =  ( (flt)i * sizeof(int))/(MosaicBlkSize + 2 * sizeof(int));
 		}
 	}
@@ -167,7 +169,8 @@ MOSestimate_linear(Client cntxt, MOStask task)
 #define LINEARcompress(TYPE)\
 {	TYPE val = *(TYPE*) task->src;\
 	TYPE step = *(TYPE*) (task->src + sizeof(TYPE)) - val;\
-	for(i =1; i<task->elm; i++)\
+	BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;\
+	for(i =1; i<limit; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
 	MOSinc(blk,i);\
@@ -201,7 +204,8 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int val = *(int*) task->src;\
 			int step = *(int*) (task->src + sizeof(int)) - val;\
-			for(i =1; i<task->elm; i++)\
+			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
+			for(i =1; i<limit; i++)\
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))\
 				break;\
 			MOSinc(blk,i);\
