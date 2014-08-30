@@ -115,9 +115,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	case TYPE_int:
 		VLTmaterialize(int);
 		break;
-	case TYPE_wrd:
-		VLTmaterialize(wrd);
-		break;
 	case TYPE_lng:
 		VLTmaterialize(lng);
 		break;
@@ -331,10 +328,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	anti = * (bit *) getArgReference(stk, pci, i + 4);
 
 	switch ( tpe = getArgType(mb, pci, i)) {
-	case TYPE_bte: calculate_range(bte, int); break;
+	case TYPE_bte: calculate_range(bte, sht); break;
 	case TYPE_sht: calculate_range(sht, int); break;
 	case TYPE_int: calculate_range(int, lng); break;
-	case TYPE_wrd: calculate_range(wrd, lng); break;
 	case TYPE_lng: calculate_range(lng, lng); break;
 	case TYPE_flt: calculate_range(flt, dbl); break;
 	case TYPE_dbl: calculate_range(dbl, dbl); break;
@@ -595,8 +591,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	
 	switch( tpe =getArgType(mb,pci,idx)){
 	case TYPE_bte: VLTthetasubselect(bte,abs);break;
-	case TYPE_int: VLTthetasubselect(int,abs);break;
 	case TYPE_sht: VLTthetasubselect(sht,abs);break;
+	case TYPE_int: VLTthetasubselect(int,abs);break;
 	case TYPE_lng: VLTthetasubselect(lng,llabs);break;
 	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
