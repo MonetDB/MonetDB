@@ -732,6 +732,10 @@ getFile(stream *s)
 	return (FILE *) s->stream_data.p;
 }
 
+#ifdef NATIVE_WIN32
+#define fileno(fd) _fileno(fd)
+#endif
+
 size_t
 getFileSize(stream *s)
 {

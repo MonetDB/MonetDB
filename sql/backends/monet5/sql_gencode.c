@@ -1952,26 +1952,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
-				if (no_nil) {
-					if (s->op1->type != st_list) {
-						q = newStmt2(mb, algebraRef, selectNotNilRef);
-						q = pushArgument(mb, q, l);
-						if (q == NULL)
-							return -1;
-						l = getDestVar(q);
-					} else {
-						stmt_nr = SA_NEW_ARRAY(sql->mvc->sa, int, list_length(s->op1->op4.lval));
-						for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
-							stmt *op = n->data;
-
-							q = newStmt2(mb, algebraRef, selectNotNilRef);
-							q = pushArgument(mb, q, op->nr);
-							if (q == NULL)
-								return -1;
-							stmt_nr[i] = getDestVar(q);
-						}
-					}
-				}
 				q = newStmt(mb, mod, aggrfunc);
 				if (q == NULL)
 					return -1;
@@ -2012,7 +1992,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushBit(mb, q, no_nil);
 				if (abort_on_error)
 					q = pushBit(mb, q, TRUE);
-			}
+			} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) 
+				q = pushBit(mb, q, no_nil);
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
