@@ -1995,7 +1995,7 @@ udp_create(const char *name)
 }
 
 static int
-udp_socket(udp_stream * udp, char *hostname, int port, int write)
+udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 {
 	struct sockaddr *serv;
 	socklen_t servsize;
@@ -2023,7 +2023,7 @@ udp_socket(udp_stream * udp, char *hostname, int port, int write)
 }
 
 stream *
-udp_rastream(char *hostname, int port, const char *name)
+udp_rastream(const char *hostname, int port, const char *name)
 {
 	stream *s;
 
@@ -2044,7 +2044,7 @@ udp_rastream(char *hostname, int port, const char *name)
 }
 
 stream *
-udp_wastream(char *hostname, int port, const char *name)
+udp_wastream(const char *hostname, int port, const char *name)
 {
 	stream *s;
 
