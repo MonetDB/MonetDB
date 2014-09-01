@@ -64,12 +64,13 @@ lib_mal = {
 		json_util.c json_util.h \
 		mosaic.c mosaic.h \
 		mosaic_hdr.c mosaic_hdr.h \
-		mosaic_none.c mosaic_none.h \
-		mosaic_rle.c mosaic_rle.h \
-		mosaic_dict.c mosaic_dict.h \
+		mosaic_literal.c mosaic_literal.h \
+		mosaic_runlength.c mosaic_runlength.h \
+		mosaic_dictionary.c mosaic_dictionary.h \
 		mosaic_zone.c mosaic_zone.h \
 		mosaic_delta.c mosaic_delta.h \
 		mosaic_linear.c mosaic_linear.h \
+		mosaic_variance.c mosaic_variance.h \
 		calc.c batcalc.c
 }
 

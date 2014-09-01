@@ -95,10 +95,10 @@ alter table tmp3 set read only;
 explain select * from tmp3;
 --select * from tmp3;
 
-alter table tmp3 alter column i set storage 'rle';
-alter table tmp3 alter column b set storage 'rle';
-alter table tmp3 alter column f set storage 'rle';
-alter table tmp3 alter column t set storage 'rle';
+alter table tmp3 alter column i set storage 'runlength';
+alter table tmp3 alter column b set storage 'runlength';
+alter table tmp3 alter column f set storage 'runlength';
+alter table tmp3 alter column t set storage 'runlength';
 explain select i from tmp3;
 explain select b from tmp3;
 explain select f from tmp3;

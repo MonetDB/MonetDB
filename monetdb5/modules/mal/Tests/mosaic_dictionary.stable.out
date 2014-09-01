@@ -1,9 +1,9 @@
-stdout of test 'mosaic_delta` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_dictionary` in directory 'monetdb5/modules/mal` itself:
 
 
-# 19:05:34 >  
-# 19:05:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38017" "--set" "mapi_usock=/var/tmp/mtest-21014/.s.monetdb.38017" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_delta.mal"
-# 19:05:34 >  
+# 00:21:55 >  
+# 00:21:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34101" "--set" "mapi_usock=/var/tmp/mtest-14508/.s.monetdb.34101" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict.mal"
+# 00:21:55 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,40 +13,23 @@ stdout of test 'mosaic_delta` in directory 'monetdb5/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38017/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21014/.s.monetdb.38017
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34101/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14508/.s.monetdb.34101
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
-# Delta compression 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,4);
-    bat.append(b,-1);
-    bat.append(b,-3);
-    bat.append(b,1000);
-    bat.append(b,1001);
-    bat.append(b,1004);
-    bat.append(b,999);
-    bat.append(b,977);
+    b := bat.new(:oid,:timestamp);
+    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
+    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
+    bat.append(b,"2014-08-14 12:01:00.000":timestamp);
+    bat.append(b,"2014-08-14 12:02:00.000":timestamp);
+    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
+    b := bat.append(b,b);
     io.print(b);
-    x := mosaic.compress(b,"delta");
+    x := mosaic.compress(b,"dictionary test 100");
 #mosaic.dump(x); 
     z := mosaic.decompress(x);
     io.print(z);
-    bs := bat.new(:oid,:timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:02:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bs := bat.append(bs,bs);
-    io.print(bs);
-    xs := mosaic.compress(bs,"delta");
-#mosaic.dump(x); 
-    zs := mosaic.decompress(xs);
-    io.print(zs);
     d := bat.new(:oid,:date);
     bat.append(d,"2014-08-14":date);
     bat.append(d,"2014-08-14":date);
@@ -55,51 +38,11 @@ function user.main():void;
     bat.append(d,"2014-08-15":date);
     d := bat.append(d,d);
     io.print(d);
-    xd := mosaic.compress(d,"delta");
+    xd := mosaic.compress(d,"dictionary test 100");
 #mosaic.dump(xd); 
     zd := mosaic.decompress(xd);
     io.print(zd);
 end main;
-#--------------------------#
-# h	t  # name
-# void	int  # type
-#--------------------------#
-[ 0@0,	0  ]
-[ 1@0,	1  ]
-[ 2@0,	4  ]
-[ 3@0,	-1  ]
-[ 4@0,	-3  ]
-[ 5@0,	1000  ]
-[ 6@0,	1001  ]
-[ 7@0,	1004  ]
-[ 8@0,	999  ]
-[ 9@0,	977  ]
-#header block 1bb4830 version 20140808
-#index top 1
-#[0] 5 96
-#header block 1bb4830 version 20140808
-#index top 2
-#[0] 5 96
-#[1] 10 120
-#blk  type 5 todo 0
-#wins 0 0 0 2 0 0 
-#elms 0 0 0 10 0 0 
-#time 0 0 0 0 0 0 
-#perc 0 0 0 100 0 0 
-#--------------------------#
-# h	t  # name
-# void	int  # type
-#--------------------------#
-[ 0@0,	0  ]
-[ 1@0,	1  ]
-[ 2@0,	4  ]
-[ 3@0,	-1  ]
-[ 4@0,	-3  ]
-[ 5@0,	1000  ]
-[ 6@0,	1001  ]
-[ 7@0,	1004  ]
-[ 8@0,	999  ]
-[ 9@0,	977  ]
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type
@@ -114,7 +57,15 @@ end main;
 [ 7@0,	2014-08-14 12:01:00.000  ]
 [ 8@0,	2014-08-14 12:02:00.000  ]
 [ 9@0,	2014-08-14 12:00:00.000  ]
-# clk 3	sizes 80	240	300%	      0.33x	none	1	10 10	
+#header block 27342896 version 20140808
+#index top 1
+#[0] 10 160
+#blk 27343056 type 24 todo 0
+#wins 1 0 0 0 0 0 
+#elms 10 0 0 0 0 0 
+#time 0 0 0 0 0 0 
+#perc 100 0 0 0 0 0 
+#decode block 27342968 tag 0 
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type
@@ -143,7 +94,7 @@ end main;
 [ 7@0,	2014-08-14  ]
 [ 8@0,	2014-08-14  ]
 [ 9@0,	2014-08-15  ]
-# clk 1	sizes 40	200	500%	      0.20x	none	1	10 10	
+# clk 3	sizes 40	200	500%	      0.20x	none	1	10 10	
 #--------------------------#
 # h	t  # name
 # void	date  # type
@@ -159,7 +110,7 @@ end main;
 [ 8@0,	2014-08-14  ]
 [ 9@0,	2014-08-15  ]
 
-# 19:05:35 >  
-# 19:05:35 >  "Done."
-# 19:05:35 >  
+# 00:21:55 >  
+# 00:21:55 >  "Done."
+# 00:21:55 >  
 

@@ -67,35 +67,35 @@ zorder
 manifold
 manifoldstr
 
-mosaic_none
-mosaic_rle
+mosaic_literal
+mosaic_runlength
 mosaic_mix
-mosaic_dict
+mosaic_dictionary
 mosaic_zone
 mosaic_delta
 mosaic_linear
 
-mosaic_none_double
+mosaic_literal_double
 
-mosaic_none_subselect
-mosaic_rle_subselect
-mosaic_dict_subselect
+mosaic_literal_subselect
+mosaic_runlength_subselect
+mosaic_dictionary_subselect
 mosaic_zone_subselect
 mosaic_delta_subselect
 mosaic_linear_subselect
 mosaic_mix_subselect
 
-mosaic_none_thetasubselect
-mosaic_rle_thetasubselect
-mosaic_dict_thetasubselect
+mosaic_literal_thetasubselect
+mosaic_runlength_thetasubselect
+mosaic_dictionary_thetasubselect
 mosaic_zone_thetasubselect
 mosaic_delta_thetasubselect
 mosaic_linear_thetasubselect
 mosaic_mix_thetasubselect
 
-mosaic_none_joins
-mosaic_rle_joins
-mosaic_dict_joins
+mosaic_literal_joins
+mosaic_runlength_joins
+mosaic_dictionary_joins
 mosaic_zone_joins
 mosaic_delta_joins
 mosaic_linear_joins

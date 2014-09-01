@@ -1,0 +1,57 @@
+stdout of test 'mosaic_literal` in directory 'monetdb5/modules/mal` itself:
+
+
+# 23:21:09 >  
+# 23:21:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31380" "--set" "mapi_usock=/var/tmp/mtest-28627/.s.monetdb.31380" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_none.mal"
+# 23:21:09 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31380/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28627/.s.monetdb.31380
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# Compression of noncompressable column 
+    b := bat.new(:oid,:int);
+    bat.append(b,50);
+    bat.append(b,19531015);
+    bat.append(b,9);
+    b := bat.append(b,b);
+    io.print(b);
+    x := mosaic.compress(b,"literal");
+#mosaic.dump(x); 
+    z := mosaic.decompress(x);
+    io.print(z);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	50  ]
+[ 1@0,	19531015  ]
+[ 2@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	50  ]
+[ 1@0,	19531015  ]
+[ 2@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
+
+# 23:21:09 >  
+# 23:21:09 >  "Done."
+# 23:21:09 >  
+

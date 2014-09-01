@@ -26,14 +26,15 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_hdr.h"
-#include "mosaic_none.h"
-#include "mosaic_rle.h"
-#include "mosaic_dict.h"
+#include "mosaic_literal.h"
+#include "mosaic_runlength.h"
+#include "mosaic_dictionary.h"
 #include "mosaic_zone.h"
 #include "mosaic_delta.h"
 #include "mosaic_linear.h"
+#include "mosaic_variance.h"
 
-static char *filtername[]={"none","rle","dict","delta","linear","zone","EOL"};
+static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -77,20 +78,24 @@ MOSdumpInternal(Client cntxt, BAT *b){
 	while(task->start< task->stop){
 		switch(MOStag(task->blk)){
 		case MOSAIC_NONE:
-			MOSdump_none(cntxt,task);
-			MOSadvance_none(cntxt,task);
+			MOSdump_literal(cntxt,task);
+			MOSadvance_literal(cntxt,task);
 			break;
 		case MOSAIC_RLE:
-			MOSdump_rle(cntxt,task);
-			MOSadvance_rle(cntxt,task);
+			MOSdump_runlength(cntxt,task);
+			MOSadvance_runlength(cntxt,task);
 			break;
 		case MOSAIC_DICT:
-			MOSdump_dict(cntxt,task);
-			MOSadvance_dict(cntxt,task);
+			MOSdump_dictionary(cntxt,task);
+			MOSadvance_dictionary(cntxt,task);
 			break;
 		case MOSAIC_DELTA:
 			MOSdump_delta(cntxt,task);
 			MOSadvance_delta(cntxt,task);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSdump_variance(cntxt,task);
+			MOSadvance_variance(cntxt,task);
 			break;
 		case MOSAIC_ZONE:
 			MOSdump_zone(cntxt,task);
@@ -169,7 +174,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 {
 	BAT *b, *bn;
 	BUN cnt, cutoff =0;
-	int i;
+	int i, flg=0;
 	char *c;
 	str msg = MAL_SUCCEED;
 	MOStask task;
@@ -178,17 +183,25 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	int filter[MOSAIC_METHODS];
 	
 	if( properties && !strstr(properties,"compressed"))
-		for( i = 0; i< MOSAIC_METHODS; i++)
+		for( i = 0; i< MOSAIC_METHODS; i++){
 			filter[i]= strstr(properties,filtername[i]) != 0;
-	else
+			flg += filter[i];
+		}
+	else{
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= 1;
+		flg=1;
+	}
 	if( properties && (c = strstr(properties,"test")) ){
 		if ( atoi(c+4) < DICTSIZE){
 			if( atoi(c+4))
 				dictsize = atoi(c+4);
 		} else
 			dictsize = 2;
+	}
+	if (flg == 0){
+		BBPkeepref(*ret = *bid);
+		return msg;	// don't compress at all
 	}
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -276,19 +289,28 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		
 		// select candidate amongst those
 		if ( filter[MOSAIC_RLE]){
-			fac = MOSestimate_rle(cntxt,task);
+			fac = MOSestimate_runlength(cntxt,task);
 			if (fac > factor){
 				cand = MOSAIC_RLE;
 				factor = fac;
 			}
 		}
 		if ( filter[MOSAIC_DICT]){
-			fac = MOSestimate_dict(cntxt,task);
+			fac = MOSestimate_dictionary(cntxt,task);
 			if (fac > factor){
 				cand = MOSAIC_DICT;
 				factor = fac;
 			}
 		}
+/*
+		if ( filter[MOSAIC_VARIANCE]){
+			fac = MOSestimate_variance(cntxt,task);
+			if (fac > factor){
+				cand = MOSAIC_DICT;
+				factor = fac;
+			}
+		}
+*/
 		if ( filter[MOSAIC_ZONE]){
 			fac = MOSestimate_zone(cntxt,task);
 			if (fac > factor){
@@ -321,7 +343,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk) ){
 				MOSupdateHeader(cntxt,task);
 				if( MOStag(task->blk) == MOSAIC_NONE)
-					MOSskip_none(cntxt,task);
+					MOSskip_literal(cntxt,task);
 				else
 					MOSskip_zone(cntxt,task);
 				// always start with an EOL block
@@ -334,7 +356,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			if ( MOScnt(task->blk) == MOSlimit()){
 				MOSupdateHeader(cntxt,task);
 				if( MOStag(task->blk) == MOSAIC_NONE)
-					MOSskip_none(cntxt,task);
+					MOSskip_literal(cntxt,task);
 				else
 					MOSskip_zone(cntxt,task);
 				// always start with an EOL block
@@ -345,11 +367,20 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		// apply the compression to a chunk
 		switch(cand){
 		case MOSAIC_DICT:
-			MOScompress_dict(cntxt,task);
+			MOScompress_dictionary(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_dict(cntxt,task);
+			MOSadvance_dictionary(cntxt,task);
+			*task->blk = MOSeol;
+			task->dst = ((char*) task->blk)+ MosaicBlkSize;
+			break;
+		case MOSAIC_VARIANCE:
+			MOScompress_variance(cntxt,task);
+			MOSupdateHeader(cntxt,task);
+			//prepare new block header
+			task->elm -= MOScnt(task->blk);
+			MOSadvance_variance(cntxt,task);
 			*task->blk = MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -372,11 +403,11 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_RLE:
-			MOScompress_rle(cntxt,task);
+			MOScompress_runlength(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
 			task->elm -= MOScnt(task->blk);
-			MOSadvance_rle(cntxt,task);
+			MOSadvance_runlength(cntxt,task);
 			*task->blk = MOSeol;
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -393,13 +424,13 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			break;
 		default :
 			// continue to use the last block header.
-			MOScompress_none(cntxt,task);
+			MOScompress_literal(cntxt,task);
 		}
 	}
 	if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk)){
 		MOSupdateHeader(cntxt,task);
 		if( MOStag(task->blk) == MOSAIC_NONE ){
-			MOSadvance_none(cntxt,task);
+			MOSadvance_literal(cntxt,task);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 		} else{
 			MOSadvance_zone(cntxt,task);
@@ -507,8 +538,12 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	while(task->blk){
 		switch(MOStag(task->blk)){
 		case MOSAIC_DICT:
-			MOSdecompress_dict(cntxt,task);
-			MOSskip_dict(cntxt,task);
+			MOSdecompress_dictionary(cntxt,task);
+			MOSskip_dictionary(cntxt,task);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSdecompress_variance(cntxt,task);
+			MOSskip_variance(cntxt,task);
 			break;
 		case MOSAIC_DELTA:
 			MOSdecompress_delta(cntxt,task);
@@ -519,12 +554,12 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 			MOSskip_linear(cntxt,task);
 			break;
 		case MOSAIC_NONE:
-			MOSdecompress_none(cntxt,task);
-			MOSskip_none(cntxt,task);
+			MOSdecompress_literal(cntxt,task);
+			MOSskip_literal(cntxt,task);
 			break;
 		case MOSAIC_RLE:
-			MOSdecompress_rle(cntxt,task);
-			MOSskip_rle(cntxt,task);
+			MOSdecompress_runlength(cntxt,task);
+			MOSskip_runlength(cntxt,task);
 			break;
 		case MOSAIC_ZONE:
 			MOSdecompress_zone(cntxt,task);
@@ -704,10 +739,13 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSsubselect_rle(cntxt,task,low,hgh,li,hi,anti);
+			MOSsubselect_runlength(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DICT:
-			MOSsubselect_dict(cntxt,task,low,hgh,li,hi,anti);
+			MOSsubselect_dictionary(cntxt,task,low,hgh,li,hi,anti);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSsubselect_variance(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DELTA:
 			MOSsubselect_delta(cntxt,task,low,hgh,li,hi,anti);
@@ -720,7 +758,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_NONE:
 		default:
-			MOSsubselect_none(cntxt,task,low,hgh,li,hi,anti);
+			MOSsubselect_literal(cntxt,task,low,hgh,li,hi,anti);
 		}
 	}
 	// derive the filling
@@ -831,7 +869,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSthetasubselect_rle(cntxt,task,low,*oper);
+			MOSthetasubselect_runlength(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DELTA:
 			MOSthetasubselect_delta(cntxt,task,low,*oper);
@@ -840,14 +878,17 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSthetasubselect_linear(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DICT:
-			MOSthetasubselect_dict(cntxt,task,low,*oper);
+			MOSthetasubselect_dictionary(cntxt,task,low,*oper);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSthetasubselect_variance(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_ZONE:
 			MOSthetasubselect_zone(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_NONE:
 		default:
-			MOSthetasubselect_none(cntxt,task,low,*oper);
+			MOSthetasubselect_literal(cntxt,task,low,*oper);
 		}
 	}
 	// derive the filling
@@ -962,10 +1003,13 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start<task->stop )
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSleftfetchjoin_rle(cntxt, task);
+			MOSleftfetchjoin_runlength(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSleftfetchjoin_dict(cntxt, task);
+			MOSleftfetchjoin_dictionary(cntxt, task);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSleftfetchjoin_variance(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
 			MOSleftfetchjoin_delta(cntxt, task);
@@ -977,7 +1021,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSleftfetchjoin_zone(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSleftfetchjoin_none(cntxt, task);
+			MOSleftfetchjoin_literal(cntxt, task);
 			break;
 		default:
 			assert(0);
@@ -1083,10 +1127,13 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->blk )
 		switch(MOStag(task->blk)){
 		case MOSAIC_RLE:
-			MOSjoin_rle(cntxt, task);
+			MOSjoin_runlength(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSjoin_dict(cntxt, task);
+			MOSjoin_dictionary(cntxt, task);
+			break;
+		case MOSAIC_VARIANCE:
+			MOSjoin_variance(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
 			MOSjoin_delta(cntxt, task);
@@ -1098,7 +1145,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSjoin_zone(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSjoin_none(cntxt, task);
+			MOSjoin_literal(cntxt, task);
 			break;
 		default:
 			assert(0);

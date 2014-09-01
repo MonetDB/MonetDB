@@ -134,7 +134,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		if ( delta < -127 || delta >127)\
 			break;\
 		*(bte*)task->dst++ = (bte) delta;\
-		val = val + delta;\
+		val = *w;\
 	}\
 	task->src += i * sizeof(TYPE);\
 	MOSinc(blk,i);\
@@ -168,7 +168,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				if ( delta < 256)
 					break;
 				*(bte*)task->dst++ = (bte) delta;
-				val = val+ delta;
+				val = *w;
 			}
 			task->src += i * sizeof(oid);
 			MOSinc(blk,i);
@@ -185,7 +185,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				if ( delta < -127 || delta >127)
 					break;
 				*(bte*)task->dst++ = (bte) delta;
-				val = val+ delta;
+				val = *w;
 			}
 			task->src += i * sizeof(int);
 			MOSinc(blk,i);
@@ -203,9 +203,9 @@ MOScompress_delta(Client cntxt, MOStask task)
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
-	((TYPE*)task->src)[0] = val;\
-	for(i = 1; i < lim; i++) {\
-		val = ((TYPE*)task->src)[i] = val + *task->dst++;\
+	for(i = 0; i < lim; i++) {\
+		((TYPE*)task->src)[i] = val;\
+		val += (TYPE) *task->dst++;\
 	}\
 	task->src += i * sizeof(int);\
 }
@@ -231,9 +231,9 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 		task->dst = ((char*) task->blk) + MosaicBlkSize;
 		val = *(int*)task->dst ;
 		task->dst += sizeof(int);
-		((int*)task->src)[0] = val;
-		for(i = 1; i < lim; i++) {
-			val = ((int*)task->src)[i] = val + *(bte*) task->dst++;
+		for(i = 0; i < lim; i++) {
+			((int*)task->src)[i] = val;
+			val += *(bte*) task->dst++;
 		}
 		task->src += i * sizeof(int);
 	}

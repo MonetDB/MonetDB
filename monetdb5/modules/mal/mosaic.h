@@ -39,14 +39,15 @@
 #define MIN_INPUT_COUNT 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	6
+#define MOSAIC_METHODS	7
 #define MOSAIC_NONE     0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
 #define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
-#define MOSAIC_ZONE		5		// adaptive zone map over non-compressed data
-#define MOSAIC_EOL		6		// marker for the last block
+#define MOSAIC_VARIANCE	5		// adaptive dictionary over deltas
+#define MOSAIC_ZONE		6		// adaptive zone map over non-compressed data
+#define MOSAIC_EOL		7		// marker for the last block
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
@@ -75,6 +76,7 @@ typedef int *MosaicBlk;
 #define MOSnone (((int)MOSAIC_NONE) <<MOSshift)
 #define MOSrle (((int)MOSAIC_RLE) <<MOSshift)
 #define MOSdict (((int)MOSAIC_DICT) <<MOSshift)
+#define MOSvariance (((int)MOSAIC_VARIANCE) <<MOSshift)
 #define MOSlinear (((int)MOSAIC_LINEAR) <<MOSshift)
 #define MOSdelta (((int)MOSAIC_DELTA) <<MOSshift)
 #define MOSzone (((int)MOSAIC_ZONE) <<MOSshift)

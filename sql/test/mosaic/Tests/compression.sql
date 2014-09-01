@@ -95,9 +95,9 @@ alter table tmp3 set read only;
 explain select * from tmp3;
 select * from tmp3;
 
-alter table tmp3 alter column i set storage 'none';
-alter table tmp3 alter column b set storage 'none';
-alter table tmp3 alter column f set storage 'none';
+alter table tmp3 alter column i set storage 'literal';
+alter table tmp3 alter column b set storage 'literal';
+alter table tmp3 alter column f set storage 'literal';
 explain select * from tmp3;
 select * from tmp3;
 

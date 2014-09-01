@@ -16,3 +16,31 @@ x:= mosaic.compress(b,"delta");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);
 io.print(z);
+
+bs:= bat.new(:oid,:timestamp);
+bat.append(bs,"2014-08-14 12:00:00":timestamp);
+bat.append(bs,"2014-08-14 12:00:00":timestamp);
+bat.append(bs,"2014-08-14 12:01:00":timestamp);
+bat.append(bs,"2014-08-14 12:02:00":timestamp);
+bat.append(bs,"2014-08-14 12:00:00":timestamp);
+bs:= bat.append(bs,bs);
+
+io.print(bs);
+xs:= mosaic.compress(bs,"delta");
+#mosaic.dump(x);
+zs:= mosaic.decompress(xs);
+io.print(zs);
+
+d:= bat.new(:oid,:date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-15":date);
+d:= bat.append(d,d);
+
+io.print(d);
+xd:= mosaic.compress(d,"delta");
+#mosaic.dump(xd);
+zd:= mosaic.decompress(xd);
+io.print(zd);
