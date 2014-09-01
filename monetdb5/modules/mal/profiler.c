@@ -114,15 +114,10 @@ CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	str x = GDKstrdup("*");
-	str y = GDKstrdup("*");
-
 	(void) mb;		/* fool compiler */
 	(void) stk;
 	(void) pc;
-	setFilter(cntxt->nspace, x, y);
-	GDKfree(x);
-	GDKfree(y);
+	setFilter(cntxt->nspace, "*", "*");
 	return MAL_SUCCEED;
 }
 
@@ -174,13 +169,10 @@ CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str x = GDKstrdup("");
-	str y = GDKstrdup("");
-
 	(void) mb;		/* fool compiler */
 	(void) stk;
 	(void) pci;
-	clrFilter(cntxt->nspace, x, y);
+	clrFilter(cntxt->nspace, "", "");
 	return MAL_SUCCEED;
 }
 
