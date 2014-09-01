@@ -233,7 +233,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	bn = BATnew( TYPE_void, b->ttype, cnt + 3 *  MosaicBlkSize + MosaicHdrSize, b->batPersistence);
+	bn = BATnew( TYPE_void, b->ttype, cnt + 3 *  MosaicBlkSize + MosaicHdrSize, PERSISTENT /*current logger doesn't handle compression calls, ie make persistent before entering log b->batPersistence*/);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);

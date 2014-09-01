@@ -1910,6 +1910,24 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	return ok;
 }
 
+static int
+tr_log_storage( sql_trans *tr, sql_delta *cbat )
+{
+	int ok = LOG_OK;
+	BAT *b;
+
+	(void)tr;
+	assert(tr->parent == gtrans);
+	assert(store_nr_active == 1);
+
+	/* log new snapshot */
+	b = temp_descriptor(cbat->bid);
+	logger_add_bat(bat_logger, b, cbat->name);
+	ok = log_bat_persists(bat_logger, b, cbat->name);
+	bat_destroy(b);
+	return ok;
+}
+
 static int 
 tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 {
@@ -1984,7 +2002,10 @@ log_table(sql_trans *tr, sql_table *ft)
 
 		if (!cc->base.wtime || !cc->base.allocated) 
 			continue;
-		ok = tr_log_delta(tr, cc->data, ft->cleared);
+		if (ft->access > TABLE_WRITABLE) /* TODO we need a proper way to check for changes off the storage */
+			ok = tr_log_storage(tr, cc->data);
+		else
+			ok = tr_log_delta(tr, cc->data, ft->cleared);
 	}
 	if (ok == LOG_OK && ft->idxs.set) {
 		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
@@ -1997,6 +2018,22 @@ log_table(sql_trans *tr, sql_table *ft)
 			ok = tr_log_delta(tr, ci->data, ft->cleared);
 		}
 	}
+	return ok;
+}
+
+static int 
+tr_snapshot_storage( sql_trans *tr, sql_delta *cbat)
+{
+	int ok = LOG_OK;
+	BAT *b = temp_descriptor(cbat->bid);
+
+	assert(tr->parent == gtrans);
+	assert(store_nr_active == 1);
+
+	(void)tr;
+	bat_set_access(b, BAT_READ);
+	BATmode(b, PERSISTENT);
+	bat_destroy(b);
 	return ok;
 }
 
@@ -2035,7 +2072,10 @@ snapshot_table(sql_trans *tr, sql_table *ft)
 
 		if (!cc->base.wtime || !cc->base.allocated) 
 			continue;
-		tr_snapshot_bat(tr, cc->data);
+		if (ft->access > TABLE_WRITABLE) /* TODO we need a proper way to check for changes off the storage */
+			tr_snapshot_storage(tr, cc->data);
+		else
+			tr_snapshot_bat(tr, cc->data);
 	}
 	if (ok == LOG_OK && ft->idxs.set) {
 		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
