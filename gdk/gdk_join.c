@@ -1050,8 +1050,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * we need to add nl * nr values in the results */
 		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
 			/* make some extra space by extrapolating how
-			 * much more we need */
-			BUN newcap = BATcount(r1) + nl * nr * (lcand ? (BUN) (lcandend + 1 - lcand) : lend + 1 - lstart);
+			 * much more we need (used part of l divided
+			 * by total length of l, multiplied by amount
+			 * generated so far) */
+			BUN newcap = (BUN) ((lcand ? (double) (lcandend + 1 - lcand) / BATcount(sl) : (double) (lend + 1 - lstart) / lend) * (BATcount(r1) + nl * nr));
+			if (newcap < nl * nr + BATcount(r1))
+				newcap = nl * nr + BATcount(r1) + 1024;
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
 			r1 = BATextend(r1, newcap);
