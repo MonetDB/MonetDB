@@ -519,7 +519,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		elm = BATcount(b);
 	}
 	
-	bn = BATnew( TYPE_void, b->ttype, elm, TRANSIENT);
+	bn = BATnew( TYPE_void, b->ttype, elm, PERSISTENT);
 	if ( bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
