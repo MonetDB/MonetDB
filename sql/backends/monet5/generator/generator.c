@@ -50,6 +50,9 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_sht: VLTnoop(sht); break;
 	case TYPE_int: VLTnoop(int); break;
 	case TYPE_lng: VLTnoop(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: VLTnoop(hge); break;
+#endif
 	case TYPE_flt: VLTnoop(flt); break;
 	case TYPE_dbl: VLTnoop(dbl); break;
 	default:
@@ -118,6 +121,11 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	case TYPE_lng:
 		VLTmaterialize(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		VLTmaterialize(hge);
+		break;
+#endif
 	case TYPE_flt:
 		VLTmaterialize(flt);
 		break;
@@ -331,7 +339,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_bte: calculate_range(bte, sht); break;
 	case TYPE_sht: calculate_range(sht, int); break;
 	case TYPE_int: calculate_range(int, lng); break;
+#ifndef HAVE_HGE
 	case TYPE_lng: calculate_range(lng, lng); break;
+#else
+	case TYPE_lng: calculate_range(lng, hge); break;
+	case TYPE_hge: calculate_range(hge, hge); break;
+#endif
 	case TYPE_flt: calculate_range(flt, dbl); break;
 	case TYPE_dbl: calculate_range(dbl, dbl); break;
 	default:
@@ -497,6 +510,9 @@ float nextafterf(float x, float y);
 #define PREVVALUEsht(x) ((x) - 1)
 #define PREVVALUEint(x) ((x) - 1)
 #define PREVVALUElng(x) ((x) - 1)
+#ifdef HAVE_HGE
+#define PREVVALUEhge(x) ((x) - 1)
+#endif
 #define PREVVALUEoid(x) ((x) - 1)
 #define PREVVALUEflt(x) nextafterf((x), -GDK_flt_max)
 #define PREVVALUEdbl(x) nextafter((x), -GDK_dbl_max)
@@ -505,10 +521,14 @@ float nextafterf(float x, float y);
 #define NEXTVALUEsht(x) ((x) + 1)
 #define NEXTVALUEint(x) ((x) + 1)
 #define NEXTVALUElng(x) ((x) + 1)
+#ifdef HAVE_HGE
+#define NEXTVALUEhge(x) ((x) + 1)
+#endif
 #define NEXTVALUEoid(x) ((x) + 1)
 #define NEXTVALUEflt(x) nextafterf((x), GDK_flt_max)
 #define NEXTVALUEdbl(x) nextafter((x), GDK_dbl_max)
 
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 
 #define VLTthetasubselect(TPE,ABS) {\
 	TPE f,l,s, low, hgh;\
@@ -594,6 +614,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	case TYPE_sht: VLTthetasubselect(sht,abs);break;
 	case TYPE_int: VLTthetasubselect(int,abs);break;
 	case TYPE_lng: VLTthetasubselect(lng,llabs);break;
+#ifdef HAVE_HGE
+	case TYPE_hge: VLTthetasubselect(hge,HGE_ABS);break;
+#endif
 	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
 	break;
@@ -738,6 +761,9 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	case TYPE_sht:  VLTleftfetchjoin(sht); break;
 	case TYPE_int:  VLTleftfetchjoin(int); break;
 	case TYPE_lng:  VLTleftfetchjoin(lng); break;
+#ifdef HAVE_HGE
+	case TYPE_hge:  VLTleftfetchjoin(hge); break;
+#endif
 	case TYPE_flt:  VLTleftfetchjoin(flt); break;
 	case TYPE_dbl:  VLTleftfetchjoin(dbl); break;
 	default:
@@ -893,6 +919,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_sht: VLTjoin(sht,abs); break;
 	case TYPE_int: VLTjoin(int,abs); break;
 	case TYPE_lng: VLTjoin(lng,llabs); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: VLTjoin(hge,HGE_ABS); break;
+#endif
 	case TYPE_flt: VLTjoin(flt,fabsf); break;
 	case TYPE_dbl: VLTjoin(dbl,fabs); break;
 	default:

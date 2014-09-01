@@ -1,0 +1,56 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+module generator;
+
+pattern series(first:hge,last:hge):bat[:oid,:hge]
+address VLTgenerator_table;
+
+pattern series(first:hge,last:hge,step:hge):bat[:oid,:hge]
+address VLTgenerator_table
+comment "Create and materialize a generator table";
+
+pattern parameters(first:hge,last:hge,step:hge):bat[:oid,:hge]
+address VLTgenerator_noop
+comment "Retain the table definition, but don't materialize";
+
+pattern parameters(first:hge,last:hge):bat[:oid,:hge]
+address VLTgenerator_noop;
+
+pattern thetasubselect(b:bat[:oid,:hge], low:hge, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect
+comment "Overloaded selection routine";
+
+pattern thetasubselect(b:bat[:oid,:hge], cnd:bat[:oid,:oid], low:hge, oper:str) :bat[:oid,:oid]
+address VLTgenerator_thetasubselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect
+comment "Overloaded selection routine";
+
+pattern subselect(b:bat[:oid,:hge], cand:bat[:oid,:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address VLTgenerator_subselect
+comment "Overloaded selection routine";
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
+address VLTgenerator_leftfetchjoin
+comment "Overloaded leftfetchjoin operation";
+
+pattern join(b:bat[:oid,:hge], gen:bat[:oid,:hge]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_join
+comment "Overloaded join operation";
