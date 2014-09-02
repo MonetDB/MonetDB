@@ -637,16 +637,16 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 }
 
 #define join_linear(TYPE)\
-{	TYPE *w;\
-	TYPE val = *(TYPE*) linear_base(blk) ;\
+{	TYPE *w = (TYPE*) task->src;\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
-	w = (TYPE*) task->src;\
-	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
-		for(oo= (oid) first, val = *(TYPE*) linear_base(blk); oo < (oid) last; val+=step, oo++)\
-		if ( *w == val){\
-			BUNappend(task->lbat, &oo, FALSE);\
-			BUNappend(task->rbat, &o, FALSE);\
-		}\
+	for(n = task->elm, o = 0; n -- > 0; w++,o++) {\
+		TYPE val = *(TYPE*) linear_base(blk) ;\
+		for(oo= (oid) first; oo < (oid) last; val+=step, oo++)\
+			if ( *w == val){\
+				BUNappend(task->lbat, &oo, FALSE);\
+				BUNappend(task->rbat, &o, FALSE);\
+			}\
+	}\
 }
 
 str
@@ -674,17 +674,17 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 		case TYPE_flt: join_linear(flt); break;
 		case TYPE_dbl: join_linear(dbl); break;
 		case TYPE_int:
-			{	int *w;
+		{	int *w = (int*) task->src;
+			int step = *(int*) linear_step(task,blk);
+			for(n = task->elm, o = 0; n -- > 0; w++,o++){
 				int val = *(int*) linear_base(blk) ;
-				int step = *(int*) linear_step(task,blk);
-				w = (int*) task->src;
-				for(n = task->elm, o = 0; n -- > 0; w++,o++, val+=step)
-					for(oo= (oid) first, val = *(int*) linear_base(blk); oo < (oid) last; val+=step, oo++)
+				for(oo= (oid) first; oo < (oid) last; val+=step, oo++)
 					if ( *w == val){
 						BUNappend(task->lbat, &oo, FALSE);
 						BUNappend(task->rbat, &o, FALSE);
 					}
 			}
+		}
 	}
 	MOSskip_linear(cntxt,task);
 	return MAL_SUCCEED;
