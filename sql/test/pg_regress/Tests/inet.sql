@@ -4,8 +4,7 @@
 
 -- prepare the table...
 
-DROP TABLE INET_TBL;
-CREATE TABLE INET_TBL (c cidr, i inet);
+CREATE TABLE INET_TBL (c inet, i inet);
 INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.226/24');
 INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.0/26', '192.168.1.226');
 INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.0/24');
@@ -27,8 +26,8 @@ INSERT INTO INET_TBL (c, i) VALUES ('::ffff:1.2.3.4', '::4.3.2.1/24');
 INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.2/30', '192.168.1.226');
 INSERT INTO INET_TBL (c, i) VALUES ('1234::1234::1234', '::1.2.3.4');
 -- check that CIDR rejects invalid input when converting from text:
-INSERT INTO INET_TBL (c, i) VALUES (cidr('192.168.1.2/30'), '192.168.1.226');
-INSERT INTO INET_TBL (c, i) VALUES (cidr('ffff:ffff:ffff:ffff::/24'), '::192.168.1.226');
+INSERT INTO INET_TBL (c, i) VALUES (cast('192.168.1.2/30' as inet), '192.168.1.226');
+INSERT INTO INET_TBL (c, i) VALUES (cast('ffff:ffff:ffff:ffff::/24' as inet), '::192.168.1.226');
 SELECT '' AS ten, c AS cidr, i AS inet FROM INET_TBL;
 
 -- now test some support functions
@@ -49,19 +48,20 @@ SELECT '' AS six, c AS cidr, i AS inet FROM INET_TBL
   WHERE c = i;
 
 SELECT '' AS ten, i, c,
-  i < c AS lt, i <= c AS le, i = c AS eq, 
-  i >= c AS ge, i > c AS gt, i <> c AS ne,
-  i << c AS sb, i <<= c AS sbe,
-  i >> c AS sup, i >>= c AS spe
+  i < c AS lt, i <= c AS le, i = c AS eq
+  , i >= c AS ge, i > c AS gt, i <> c AS ne
+--  i << c AS sb, i <<= c AS sbe,
+--  i >> c AS sup, i >>= c AS spe
   FROM INET_TBL;
 
 -- check the conversion to/from text and set_netmask
 SELECT '' AS ten, set_masklen(inet(text(i)), 24) FROM INET_TBL;
 -- check that index works correctly
 CREATE INDEX inet_idx1 ON inet_tbl(i);
-SET enable_seqscan TO off;
-SELECT * FROM inet_tbl WHERE i<<'192.168.1.0/24'::cidr;
-SELECT * FROM inet_tbl WHERE i<<='192.168.1.0/24'::cidr;
-SET enable_seqscan TO on;
+/* SET enable_seqscan TO off; */
+SELECT * FROM inet_tbl WHERE i<<cast('192.168.1.0/24' as inet);
+SELECT * FROM inet_tbl WHERE i<<=cast('192.168.1.0/24' as inet);
+/* SET enable_seqscan TO on; */
 DROP INDEX inet_idx1;
 
+DROP TABLE INET_TBL;
