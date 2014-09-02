@@ -64,6 +64,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upavg[8];
 	char upmax[8];
 	confkeyval *ckv, *kv;
+	SABdbState state;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -179,12 +180,13 @@ forkMserver(char *database, sabdb** stats, int force)
 		default:
 			/* this also includes SABdbStarting, which we shouldn't ever
 			 * see due to the global starting lock */
+			state = (*stats)->state;
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&fork_lock);
 			return(newErr("unknown or impossible state: %d",
-						(int)(*stats)->state));
+						(int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -500,12 +502,12 @@ forkMserver(char *database, sabdb** stats, int force)
 
 		/* try to be clear on why starting the database failed */
 		if (dp == NULL) {
-			int state = (*stats)->state;
+			state = (*stats)->state;
 
 			/* starting failed */
 			msab_freeStatus(stats);
 
-			switch (state) {
+			switch ((int)state) {
 				case SABdbRunning:
 					/* right, it's not there, but it's running */
 					return(newErr(
@@ -527,7 +529,7 @@ forkMserver(char *database, sabdb** stats, int force)
 								"check monetdbd's logfile for possible "
 								"hints", database));
 				default:
-					return(newErr("unknown state: %d", (int)(*stats)->state));
+					return(newErr("unknown state: %d", (int)state));
 			}
 		}
 
