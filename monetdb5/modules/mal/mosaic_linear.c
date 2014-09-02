@@ -642,7 +642,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 	TYPE step = *(TYPE*) linear_step(task,blk);\
 	w = (TYPE*) task->src;\
 	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
-		for(oo= (oid) first, val = *(int*) linear_base(blk); oo < (oid) last; val+=step, oo++)\
+		for(oo= (oid) first, val = *(TYPE*) linear_base(blk); oo < (oid) last; val+=step, oo++)\
 		if ( *w == val){\
 			BUNappend(task->lbat, &oo, FALSE);\
 			BUNappend(task->rbat, &o, FALSE);\
