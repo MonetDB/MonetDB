@@ -814,12 +814,13 @@ MOSjoin_variance(Client cntxt,  MOStask task)
 		default:
 			if( task->type == TYPE_timestamp)
 			{	timestamp  *w;
-				lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize ), val =dict[0];
+				lng *dict = (lng*) (((char*) task->blk) + 2 * MosaicBlkSize ), lval = dict[0];
+				timestamp *tval = (timestamp*) &lval;
 				bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(timestamp));
-				for(oo= (oid) first; first < last; first++, val+= dict[*idx++], oo++){
+				for(oo= (oid) first; first < last; first++, lval += dict[*idx++], oo++){
 					w = (timestamp*) task->src;
 					for(n = task->elm, o = 0; n -- > 0; w++,o++)
-					if ( w->days == ((timestamp*)&val)->days && w->msecs == ((timestamp*)&val)->msecs){
+					if ( w->days == tval->days && w->msecs == tval->msecs){
 						BUNappend(task->lbat, &oo, FALSE);
 						BUNappend(task->rbat, &o, FALSE);
 					}
