@@ -446,13 +446,18 @@ module batgeom;
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
+command Contains(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:bit] address wkbPointsContains_geom_bat;
+command Contains(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], o:bat[:oid,:oid], srid:int) :bat[:oid,:bit] address wkbFilteredPointsContains_geom_bat;
+
 
 #only one argument should be BAT
-#command ContainsFilter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbContainsFilter_bat
+#command Filter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbFilter_bat
 #comment "Filters the points in the bats according to the MBR of the other bat.";
-command ContainsFilter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbContainsFilter_geom_bat
+command Filter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFilter_geom_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
-command ContainsFilter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbContainsFilter_bat_geom;
+command Filter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbFilter_bat_geom;
+command Filter(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:oid] address wkbFilterWithImprints_geom_bat
+comment "Filters x,y coordinates in the BATs using imprints";
 
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
