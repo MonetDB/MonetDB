@@ -350,6 +350,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *v, *prev = NULL;
 	BUN nl, nr;
+	BUN total;		/* number of rows in l we scan */
 	int insert_nil;
 	/* equal_order is set if we can scan both BATs in the same
 	 * order, so when both are sorted or both are reverse sorted
@@ -394,6 +395,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	total = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
 	lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, BUNfirst(l));
 	rvals = r->ttype == TYPE_void ? NULL : (const char *) Tloc(r, BUNfirst(r));
 	if (l->tvarsized && l->ttype) {
@@ -1050,12 +1052,15 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * we need to add nl * nr values in the results */
 		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
 			/* make some extra space by extrapolating how
-			 * much more we need (used part of l divided
-			 * by total length of l, multiplied by amount
-			 * generated so far) */
-			BUN newcap = (BUN) ((lcand ? (double) (lcandend + 1 - lcand) / BATcount(sl) : (double) (lend + 1 - lstart) / lend) * (BATcount(r1) + nl * nr));
+			 * much more we need (fraction of l we've seen
+			 * so far is used as the fraction of the
+			 * expected result size we've produced so
+			 * far) */
+			BUN newcap = (BUN) ((double) total / (total - (lcand ? (BUN) (lcandend - lcand) : (lend - lstart))) * (BATcount(r1) + nl * nr) * 1.1);
 			if (newcap < nl * nr + BATcount(r1))
 				newcap = nl * nr + BATcount(r1) + 1024;
+			/* make sure heap.free is set properly before
+			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
 			r1 = BATextend(r1, newcap);
