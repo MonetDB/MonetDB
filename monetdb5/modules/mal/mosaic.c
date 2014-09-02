@@ -438,7 +438,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		}
 		*task->blk = MOSeol;
 	}
-	task->xsize = ((lng)task->dst - (lng)task->hdr) + (lng)MosaicHdrSize;
+	task->xsize = (task->dst - (char*)task->hdr) + MosaicHdrSize;
 	task->timer = GDKusec() - task->timer;
 //#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
