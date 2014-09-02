@@ -36,8 +36,8 @@
 #define VLTnoop(TPE)\
 		{	TPE s;\
 			s = pci->argc == 3 ? 1: *(TPE*) getArgReference(stk,pci, 3);\
-			if( s == 0) zeroerror++;\
-			if( s == TPE##_nil) nullerr++;\
+			zeroerror = (s == 0);\
+			nullerr = (s == TPE##_nil);\
 		}
 str
 VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
