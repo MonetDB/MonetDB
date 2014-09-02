@@ -1719,6 +1719,7 @@ JSONgroupStr(str *ret, const bat *bid)
 		GDKfree(buf);
 		throw(MAL, "json.agg", RUNTIME_OBJECT_MISSING);
 	}
+	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 
 	strcpy(buf, str_nil);
 	offset = 0;

@@ -42,7 +42,6 @@
 
 // other headers
 #include <string.h>
-#include <sys/stat.h>
 
 //#define _RAPI_DEBUG_
 
@@ -346,16 +345,13 @@ int RAPIinstalladdons(void) {
 	char rlibs[BUFSIZ];
 	char rapiinclude[BUFSIZ];
 	SEXP librisexp;
-	struct stat sb;
 
 	// r library folder, create if not exists
 	snprintf(rlibs, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
 			"rapi_packages");
 
-	if (stat(rlibs, &sb) != 0) {
-		if (mkdir(rlibs, S_IRWXU) != 0) {
-			return 4;
-		}
+	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
+		return 4;
 	}
 #ifdef _RAPI_DEBUG_
 	printf("# R libraries installed in %s\n",rlibs);
