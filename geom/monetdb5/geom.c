@@ -772,7 +772,8 @@ str wkbFromWKB(wkb **w, wkb **src) {
 /*int* tpe is needed to verify that the type of the FromText function used is the
  * same with the type of the geometry created from the wkt representation */
 str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
-	int len=0, te = *tpe;
+	size_t len=0; 
+	int te = *tpe;
 	char *errbuf;
 	str ex;
 
@@ -803,7 +804,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 /*create textual representation of the wkb */
 str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
-	int len =0;
+	size_t len =0;
 	char* wkt;
 
 	if(wkbTOSTR(&wkt, &len, *geomWKB)) {
@@ -959,7 +960,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	//print areas
 	for(i=0; i<itemsNum; i++) {
 		char* toStr = NULL;
-		int len = 0;
+		size_t len = 0;
 		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
 		fprintf(stderr, "%f %s\n", linestringsArea[i], toStr);
 		GDKfree(toStr);
@@ -2848,7 +2849,7 @@ str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx
 /*str
 mbrFromString(mbr **w, str *src)
 {
-	int len = *w ? (int) sizeof(mbr) : 0;
+	size_t len = *w ? sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
@@ -2905,9 +2906,9 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
-int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
+size_t wkbTOSTR(char **geomWKT, size_t* len, wkb *geomWKB) {
 	char *wkt = NULL;
-	int dstStrLen = 5;			/* "nil" */
+	size_t dstStrLen = 5;			/* "nil" */
 
 	/* from WKB to GEOSGeometry */
 	GEOSGeom geosGeometry = wkb2geos(geomWKB);
@@ -2921,7 +2922,7 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
-		dstStrLen = (int) l + 2;	/* add quotes */
+		dstStrLen = l + 2;	/* add quotes */
 		GEOSWKTWriter_destroy(WKT_wr);
 		GEOSGeom_destroy(geosGeometry);
 	}
@@ -2937,12 +2938,13 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 		strcpy(*geomWKT, "nil");
 	}
 
-	return (int) dstStrLen;
+	assert(dstStrLen <= GDK_int_max);
+	return dstStrLen;
 }
 
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
-size_t wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
+size_t wkbFROMSTR(char* geomWKT, size_t* len, wkb **geomWKB, int srid) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	char *polyhedralSurface = "POLYHEDRALSURFACE";
@@ -3126,7 +3128,7 @@ void wkbHEAP(Heap *heap, size_t capacity) {
 
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
-int mbrTOSTR(char **dst, int *len, mbr *atom) {
+size_t mbrTOSTR(char **dst, size_t *len, mbr *atom) {
 	static char tempWkt[MBR_WKTLEN];
 	size_t dstStrLen = 3;
 
@@ -3137,22 +3139,22 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 		assert(dstStrLen < GDK_int_max);
 	}
 
-	if (*len < (int) dstStrLen + 1) {
+	if (*len < dstStrLen + 1) {
 		if (*dst)
 			GDKfree(*dst);
-		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
+		*dst = GDKmalloc(*len = dstStrLen + 1);
 	}
 
 	if (dstStrLen > 3)
 		snprintf(*dst, *len, "\"%s\"", tempWkt);
 	else
 		strcpy(*dst, "nil");
-	return (int) dstStrLen;
+	return dstStrLen;
 }
 
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
-size_t mbrFROMSTR(char *src, int *len, mbr **atom) {
+size_t mbrFROMSTR(char *src, size_t *len, mbr **atom) {
 	int nil = 0;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
@@ -3285,11 +3287,10 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
  * while the rerurned length (correctly!) is of type size_t ?
  * (not only here, but also elsewhere in this file / the geom code)
  */
-size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
+size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
 	int items = fromArray->itemsNum, i;
 	int itemsNumDigits = (int)ceil(log10(items));
 	size_t dataSize;//, skipBytes=0;
-	size_t szlen;
 	char** partialStrs;
 	char* nilStr = "nil";
 	char* toStrPtr = NULL, *itemsNumStr=GDKmalloc((itemsNumDigits+1)*sizeof(char));
@@ -3347,19 +3348,13 @@ fprintf(stderr, "wkbaTOSTR\n");
 	GDKfree(partialStrs);
 	GDKfree(itemsNumStr);
 
-	/* StM: Open question / ToDo:
-	 * why is len of type int,
-	 * while the rerurned length (correctly!) is of type size_t ?
-	 * (not only here, but also elsewhere in this file / the geom code)
-	 */
-	szlen = strlen(*toStr)+1;
-	assert(szlen < (size_t) GDK_int_max);
-	*len = (int) szlen;
+	*len = strlen(*toStr)+1;
+	assert(*len < (size_t) GDK_int_max);
 	return (toStrPtr-*toStr);
 }
 
 /* return number of parsed characters. */
-size_t wkbaFROMSTR(char *fromStr, int* len, wkba **toArray, int srid) {
+size_t wkbaFROMSTR(char *fromStr, size_t *len, wkba **toArray, int srid) {
 	int items, i;
 	size_t skipBytes=0;
 
