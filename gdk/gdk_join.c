@@ -2770,17 +2770,22 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
+				nilcheck = 0;				\
 			}						\
 			if (sortcheck && lo &&				\
 			    (bn->trevsorted | bn->tsorted | bn->tkey)) { \
 				if (v > prev) {				\
 					bn->trevsorted = 0;		\
-					if (!bn->tsorted)		\
+					if (!bn->tsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else if (v < prev) {			\
 					bn->tsorted = 0;		\
-					if (!bn->trevsorted)		\
+					if (!bn->trevsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else {				\
 					bn->tkey = 0; /* definitely */	\
 				}					\
