@@ -319,8 +319,13 @@ generateSalt(char *buf, unsigned int len)
 	unsigned int fill;
 	unsigned int min;
 
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0) {
+#ifndef STATIC_CODE_ANALYSIS
 		size = (unsigned int)rand();
+#else
+		size = 0;
+#endif
+	}
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
@@ -328,8 +333,13 @@ generateSalt(char *buf, unsigned int len)
 		for (c = 0; c < size; c++)
 			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
 	} else {
-		for (c = 0; c < size; c++)
+		for (c = 0; c < size; c++) {
+#ifndef STATIC_CODE_ANALYSIS
 			buf[c] = seedChars[rand() % 62];
+#else
+			buf[c] = seedChars[0];
+#endif
+		}
 	}
 	for ( ; c < len; c++)
 		buf[c] = '\0';

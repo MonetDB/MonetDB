@@ -198,7 +198,7 @@ MEROgetStatus(sabdb **ret, char *database)
 	sabdb *w = NULL;
 	size_t swlen = 50;
 	size_t swpos = 0;
-	sabdb **sw = malloc(sizeof(sabdb *) * swlen);
+	sabdb **sw;
 	char *p;
 	char *buf;
 	char *e;
@@ -211,11 +211,13 @@ MEROgetStatus(sabdb **ret, char *database)
 	if (e != NULL)
 		return(e);
 
+	sw = malloc(sizeof(sabdb *) * swlen);
 	orig = NULL;
 	if ((p = strtok(buf, "\n")) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			p = strdup(p);
 			free(buf);
+			free(sw);
 			return(p);
 		}
 		for (swpos = 0; (p = strtok(NULL, "\n")) != NULL; swpos++) {
@@ -345,6 +347,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			printf("           ");
 		}
 		printf("  %-*s\n", uriwidth, uri);
+		free(uri);
 	} else if (mode == 2) {
 		/* long mode */
 		char *state;
@@ -1299,6 +1302,7 @@ command_get(int argc, char *argv[])
 	/* avoid work when there are no results */
 	if (orig == NULL) {
 		free(props);
+		free(defprops);
 		return;
 	}
 
@@ -1434,6 +1438,7 @@ command_get(int argc, char *argv[])
 		free(value);
 	msab_freeStatus(&orig);
 	free(props);
+	free(defprops);
 }
 
 static void

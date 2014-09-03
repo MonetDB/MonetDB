@@ -74,13 +74,16 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 
 	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 	if (bind(sock, (SOCKPTR) &server, length) < 0) {
+		closesocket(sock);
 		return(newErr("binding to stream socket port %hu failed: %s",
 				port, strerror(errno)));
 	}
 
-	if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
+	if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+		closesocket(sock);
 		return(newErr("failed getting socket name: %s",
 				strerror(errno)));
+	}
 	hoste = gethostbyaddr(&server.sin_addr.s_addr, 4, server.sin_family);
 	if (hoste == NULL) {
 		snprintf(hostip, sizeof(hostip), "%u.%u.%u.%u",
@@ -134,7 +137,7 @@ openConnectionUDP(int *ret, unsigned short port)
 		if (bind(sock, rp->ai_addr, rp->ai_addrlen) == 0)
 			break; /* working */
 
-		close(sock);
+		closesocket(sock);
 	}
 
 	if (rp == NULL) {
