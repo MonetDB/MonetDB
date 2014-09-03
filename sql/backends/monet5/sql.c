@@ -4625,17 +4625,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											w = (int) (sum / cnt2);
 									}
 									atom = BUNappend(atom, &w, FALSE);
-									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0)); */
-									sz = tailsize(bn, BATcount(bn));
-									sz += headsize(bn, BATcount(bn));
+									sz = bn->T->heap.free;
 									size = BUNappend(size, &sz, FALSE);
 
-									sz = bn->T->vheap ? bn->T->vheap->size : 0;
-									sz += bn->H->vheap ? bn->H->vheap->size : 0;
+									sz = bn->T->vheap ? bn->T->vheap->free : 0;
 									heap = BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+									sz = bn->T->hash ? bn->T->hash->heap->free : 0;
 									indices = BUNappend(indices, &sz, FALSE);
 									sz = IMPSimprintsize(bn);
 									imprints = BUNappend(imprints, &sz, FALSE);

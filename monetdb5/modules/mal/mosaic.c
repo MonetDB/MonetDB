@@ -538,7 +538,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
-	MOSinit(task,b);;
+	MOSinit(task,b);
 	task->src = Tloc(bn, BUNfirst(bn));
 	task->timer = GDKusec();
 	while(task->blk){
@@ -579,6 +579,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	BATseqbase(bn,b->hseqbase);
     bn->hdense = 1;
     bn->hkey = 1;
+	bn->T->heap.free = (lng) (task->dst- Tloc(bn,BUNfirst(bn)));
 	bn->T->nonil = b->T->nonil;
 	bn->T->nil = b->T->nil;
 	bn->T->seq = b->T->seq;
