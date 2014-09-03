@@ -1229,6 +1229,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 		MOScompressInternal(cntxt, &ret, &bid, properties);
 		if( ret != bid)
 			BBPdecref(ret,TRUE);
+		break;
 	case TYPE_str:
 		break;
 	default:

@@ -101,6 +101,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 			if ( i > MOSlimit() ) i = MOSlimit();
 			factor = ((float) i * sizeof(oid))/  (MosaicBlkSize + sizeof(oid)+(bte)i-1);
 		}
+		break;
 	case TYPE_wrd: Estimate_delta(wrd); break;
 	case TYPE_lng: Estimate_delta(lng); break;
 #ifdef HAVE_HGE
