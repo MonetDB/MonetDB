@@ -2948,7 +2948,7 @@ size_t wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	char *polyhedralSurface = "POLYHEDRALSURFACE";
 	char *multiPolygon = "MULTIPOLYGON";
 	char *geoType;
-	int typeSize = 0;
+	size_t typeSize = 0;
 	char *geomWKT_original = NULL;
 	size_t parsedCharacters = 0;
 
@@ -2975,7 +2975,7 @@ size_t wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	memcpy(geoType, geomWKT, typeSize);
 	geoType[typeSize] = '\0';
 	if(strcasecmp(geoType, polyhedralSurface) == 0) {
-		int sizeOfInfo = strlen(geomWKT)-strlen(polyhedralSurface);
+		size_t sizeOfInfo = strlen(geomWKT)-strlen(polyhedralSurface);
 		geomWKT_original = geomWKT;
 		geomWKT = (char*)GDKmalloc((sizeOfInfo+strlen(multiPolygon)+1)*sizeof(char));
 		strcpy(geomWKT, multiPolygon);
@@ -3279,10 +3279,17 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
 
 /* Creates the string representation of a wkb_array */
 /* return length of resulting string. */
+
+/* StM: Open question / ToDo:
+ * why is len of type int,
+ * while the rerurned length (correctly!) is of type size_t ?
+ * (not only here, but also elsewhere in this file / the geom code)
+ */
 size_t wkbaTOSTR(char **toStr, int* len, wkba *fromArray) {
 	int items = fromArray->itemsNum, i;
 	int itemsNumDigits = (int)ceil(log10(items));
 	size_t dataSize;//, skipBytes=0;
+	size_t szlen;
 	char** partialStrs;
 	char* nilStr = "nil";
 	char* toStrPtr = NULL, *itemsNumStr=GDKmalloc((itemsNumDigits+1)*sizeof(char));
@@ -3340,7 +3347,14 @@ fprintf(stderr, "wkbaTOSTR\n");
 	GDKfree(partialStrs);
 	GDKfree(itemsNumStr);
 
-	*len = strlen(*toStr)+1;
+	/* StM: Open question / ToDo:
+	 * why is len of type int,
+	 * while the rerurned length (correctly!) is of type size_t ?
+	 * (not only here, but also elsewhere in this file / the geom code)
+	 */
+	szlen = strlen(*toStr)+1;
+	assert(szlen < (size_t) GDK_int_max);
+	*len = (int) szlen;
 	return (toStrPtr-*toStr);
 }
 
