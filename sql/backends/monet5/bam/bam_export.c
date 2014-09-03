@@ -185,11 +185,12 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 					FILL_BAM_ALIG_ERR "CIGAR and sequence length inconsistency: %d (SEQ) vs %d (CIGAR)",
 					alignment_nr, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
 			}
-			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;
+			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2);
 			if(p == NULL) {
 				throw(MAL, "fill_bam_alig",
 					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
 			}
+			p += doff;
 			memset(p, 0, (c->l_qseq+1)/2);
 			for (i = 0; i < c->l_qseq; ++i)
 				p[i/2] |= bam_nt16_table[(int)seq[i]] << 4*(1-i%2);
