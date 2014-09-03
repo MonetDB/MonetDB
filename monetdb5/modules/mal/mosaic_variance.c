@@ -35,7 +35,8 @@ MOSadvance_variance(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
+	//case TYPE_bte: case TYPE_bit: no compressionachievable
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
@@ -46,13 +47,6 @@ MOSadvance_variance(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
-	default:
-		if( task->type == TYPE_timestamp)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),timestamp)); 
-		if( task->type == TYPE_date)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),date)); 
-		if( task->type == TYPE_daytime)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),daytime)); 
 	}
 }
 
@@ -67,7 +61,7 @@ MOSdump_variance(Client cntxt, MOStask task)
 
 	size = (lng*) (((char*)blk) + MosaicBlkSize);
 	mnstr_printf(cntxt->fdout,"#dict " BUNFMT" ", MOSgetCnt(blk));
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_sht:
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"sht [%d] %hd",i, ((sht*) val)[i]); break;
@@ -94,13 +88,6 @@ MOSdump_variance(Client cntxt, MOStask task)
 		for(i=0; i< *size; i++)
 		mnstr_printf(cntxt->fdout,"hge [%d] %.40g", i, (dbl) ((hge*) val)[i]); break;
 #endif
-	default:
-		if( task->type == TYPE_date){
-		}
-		if( task->type == TYPE_daytime){
-		}
-		if( task->type == TYPE_timestamp){
-		}
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
@@ -302,11 +289,14 @@ MOSdecompress_variance(Client cntxt, MOStask task)
 	compressed = (char*) blk + 2 * MosaicBlkSize;
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: VARDICTdecompress(sht); break;
+	case TYPE_lng: VARDICTdecompress(lng); break;
 	case TYPE_oid: VARDICTdecompress(oid); break;
+	case TYPE_wrd: VARDICTdecompress(wrd); break;
+	case TYPE_flt: VARDICTdecompress(flt); break;
+	case TYPE_dbl: VARDICTdecompress(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: VARDICTdecompress(hge); break;
 #endif
-	case TYPE_wrd: VARDICTdecompress(wrd); break;
 	case TYPE_int:
 		{	bte *idx = (bte*)(compressed + dictsize * sizeof(int));
 			int *dict = (int*) compressed,val= dict[0];
@@ -409,12 +399,14 @@ MOSsubselect_variance(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 
 	switch(task->type){
 	case TYPE_sht: subselect_variance(sht); break;
-	case TYPE_oid: subselect_variance(oid); break;
 	case TYPE_lng: subselect_variance(lng); break;
+	case TYPE_oid: subselect_variance(oid); break;
+	case TYPE_wrd: subselect_variance(wrd); break;
+	case TYPE_flt: subselect_variance(flt); break;
+	case TYPE_dbl: subselect_variance(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: subselect_variance(hge); break;
 #endif
-	case TYPE_wrd: subselect_variance(wrd); break;
 	case TYPE_int:
 	// Expanded MOSselect_variance for debugging
 	{ 	int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize) ,val= dict[0];
@@ -621,12 +613,14 @@ MOSthetasubselect_variance(Client cntxt,  MOStask task, void *val, str oper)
 
 	switch(task->type){
 	case TYPE_sht: thetasubselect_variance(sht); break;
-	case TYPE_oid: thetasubselect_variance(oid); break;
 	case TYPE_lng: thetasubselect_variance(lng); break;
+	case TYPE_oid: thetasubselect_variance(oid); break;
+	case TYPE_wrd: thetasubselect_variance(wrd); break;
+	case TYPE_flt: thetasubselect_variance(flt); break;
+	case TYPE_dbl: thetasubselect_variance(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: thetasubselect_variance(hge); break;
 #endif
-	case TYPE_wrd: thetasubselect_variance(wrd); break;
 	case TYPE_int:
 		{ 	int low,hgh;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize ),v=dict[0];
@@ -737,8 +731,8 @@ MOSleftfetchjoin_variance(Client cntxt,  MOStask task)
 
 	switch(ATOMstorage(task->type)){
 		case TYPE_sht: leftfetchjoin_variance(sht); break;
-		case TYPE_oid: leftfetchjoin_variance(oid); break;
 		case TYPE_lng: leftfetchjoin_variance(lng); break;
+		case TYPE_oid: leftfetchjoin_variance(oid); break;
 		case TYPE_wrd: leftfetchjoin_variance(wrd); break;
 		case TYPE_flt: leftfetchjoin_variance(flt); break;
 		case TYPE_dbl: leftfetchjoin_variance(dbl); break;
@@ -787,10 +781,10 @@ MOSjoin_variance(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_sht: join_variance(sht); break;
-		case TYPE_oid: join_variance(oid); break;
 		case TYPE_lng: join_variance(lng); break;
+		case TYPE_oid: join_variance(oid); break;
 		case TYPE_wrd: join_variance(wrd); break;
 		case TYPE_flt: join_variance(flt); break;
 		case TYPE_dbl: join_variance(dbl); break;
@@ -810,22 +804,6 @@ MOSjoin_variance(Client cntxt,  MOStask task)
 				}
 			}
 		}
-		break;
-		default:
-			if( task->type == TYPE_timestamp)
-			{	timestamp  *w;
-				lng *dict = (lng*) (((char*) task->blk) + 2 * MosaicBlkSize ), lval = dict[0];
-				timestamp *tval = (timestamp*) &lval;
-				bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(timestamp));
-				for(oo= (oid) first; first < last; first++, lval += dict[*idx++], oo++){
-					w = (timestamp*) task->src;
-					for(n = task->elm, o = 0; n -- > 0; w++,o++)
-					if ( w->days == tval->days && w->msecs == tval->msecs){
-						BUNappend(task->lbat, &oo, FALSE);
-						BUNappend(task->rbat, &o, FALSE);
-					}
-				}
-			}
 	}
 	MOSskip_variance(cntxt,task);
 	return MAL_SUCCEED;

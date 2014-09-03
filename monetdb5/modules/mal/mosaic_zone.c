@@ -39,14 +39,14 @@ MOSdump_zone(Client cntxt, MOStask task)
 	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
 	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
 	case TYPE_int: {int low= *(int*)zone_min(blk), max =*(int*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%d - %d]\n", low,max); }break;
-	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["OIDFMT" - "OIDFMT"]\n", low,max); }break;
 	case TYPE_lng: {lng low= *(lng*)zone_min(blk), max =*(lng*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["LLFMT" - "LLFMT"]\n", low,max); }break;
-#ifdef HAVE_HGE
-	case TYPE_hge: {hge low= *(hge*)zone_min(blk), max =*(hge*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", (dbl) low, (dbl) max); }break;
-#endif
+	case TYPE_oid: {oid low= *(oid*)zone_min(blk), max =*(oid*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["OIDFMT" - "OIDFMT"]\n", low,max); }break;
 	case TYPE_wrd: {wrd low= *(wrd*)zone_min(blk), max =*(wrd*) zone_max(blk);  mnstr_printf(cntxt->fdout," ["SZFMT" - "SZFMT"]\n", low,max); }break;
 	case TYPE_flt: {flt low= *(flt*)zone_min(blk), max =*(flt*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
 	case TYPE_dbl: {dbl low= *(dbl*)zone_min(blk), max =*(dbl*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%f - %f]\n", low,max); }break;
+#ifdef HAVE_HGE
+	case TYPE_hge: {hge low= *(hge*)zone_min(blk), max =*(hge*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%.40g -%.40g]\n", (dbl) low, (dbl) max); }break;
+#endif
 	default:
 		if( task->type == TYPE_date){
 			date low= *(date*)zone_min(blk), max =*(date*) zone_max(blk);  
@@ -78,14 +78,14 @@ MOSadvance_zone(Client cntxt, MOStask task)
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* MOSgetCnt(blk),bit)); break ;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk),sht)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk),int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOSgetCnt(blk),oid)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk),lng)); break ;
-#ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(hge)* MOSgetCnt(blk),hge)); break ;
-#endif
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOSgetCnt(blk),oid)); break ;
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(wrd)* MOSgetCnt(blk),wrd)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOSgetCnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(hge)* MOSgetCnt(blk),hge)); break ;
+#endif
 	default:
 		if( task->type == TYPE_date)
 			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(date)* MOSgetCnt(blk),date)); 
@@ -149,6 +149,14 @@ MOScompress_zone(Client cntxt, MOStask task)
 	case TYPE_bte: ZONEcompress(bte); break ;
 	case TYPE_bit: ZONEcompress(bit); break ;
 	case TYPE_sht: ZONEcompress(sht); break;
+	case TYPE_lng: ZONEcompress(lng); break;
+	case TYPE_oid: ZONEcompress(oid); break;
+	case TYPE_wrd: ZONEcompress(wrd); break;
+	case TYPE_flt: ZONEcompress(flt); break;
+	case TYPE_dbl: ZONEcompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEcompress(hge); break;
+#endif
 	case TYPE_int:
 	{	int *min,*max;
 		min = (int*)zone_min(blk);
@@ -162,14 +170,6 @@ MOScompress_zone(Client cntxt, MOStask task)
 		task->elm--;
 	}
 		break;
-	case TYPE_oid: ZONEcompress(oid); break;
-	case TYPE_lng: ZONEcompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: ZONEcompress(hge); break;
-#endif
-	case TYPE_wrd: ZONEcompress(wrd); break;
-	case TYPE_flt: ZONEcompress(flt); break;
-	case TYPE_dbl: ZONEcompress(dbl); break;
 	}
 	// maintain a global min-max pair
 	// break the zone when it covers too many elements
@@ -177,6 +177,14 @@ MOScompress_zone(Client cntxt, MOStask task)
 	case TYPE_bte: ZONEbreak(bte); break ;
 	case TYPE_bit: ZONEbreak(bit); break ;
 	case TYPE_sht: ZONEbreak(sht); break;
+	case TYPE_lng: ZONEbreak(lng); break;
+	case TYPE_oid: ZONEbreak(oid); break;
+	case TYPE_wrd: ZONEbreak(wrd); break;
+	case TYPE_flt: ZONEbreak(flt); break;
+	case TYPE_dbl: ZONEbreak(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEbreak(hge); break;
+#endif
 	case TYPE_int:
 	{	int *min,*max;
 		min = (int*)zone_min(blk);
@@ -185,14 +193,6 @@ MOScompress_zone(Client cntxt, MOStask task)
 		if ( task->max ==0 || *(int*)task->max < *max ) task->max = (void*) max;
 	}
 		break;
-	case TYPE_oid: ZONEbreak(oid); break;
-	case TYPE_lng: ZONEbreak(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: ZONEbreak(hge); break;
-#endif
-	case TYPE_wrd: ZONEbreak(wrd); break;
-	case TYPE_flt: ZONEbreak(flt); break;
-	case TYPE_dbl: ZONEbreak(dbl); break;
 	}
 	
 	MOSdump_zone(cntxt, task);
@@ -216,32 +216,24 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	compressed = ((char*)blk) + 3 * MosaicBlkSize;
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: ZONEdecompress(bte); break ;
 	case TYPE_bit: ZONEdecompress(bit); break ;
 	case TYPE_sht: ZONEdecompress(sht); break;
+	case TYPE_lng: ZONEdecompress(lng); break;
+	case TYPE_oid: ZONEdecompress(oid); break;
+	case TYPE_wrd: ZONEdecompress(wrd); break;
+	case TYPE_flt: ZONEdecompress(flt); break;
+	case TYPE_dbl: ZONEdecompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: ZONEdecompress(hge); break;
+#endif
 	case TYPE_int:
 	{	BUN lim = MOSgetCnt(blk);
 		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
-		break;
-	case TYPE_oid: ZONEdecompress(oid); break;
-	case TYPE_lng: ZONEdecompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: ZONEdecompress(hge); break;
-#endif
-	case TYPE_wrd: ZONEdecompress(wrd); break;
-	case TYPE_flt: ZONEdecompress(flt); break;
-	case TYPE_dbl: ZONEdecompress(dbl); break;
-	default:
-		if( task->type == TYPE_date)
-			ZONEdecompress(date);
-		if( task->type == TYPE_daytime)
-			ZONEdecompress(daytime);
-		if( task->type == TYPE_timestamp)
-			ZONEdecompress(timestamp);
 	}
 }
 
@@ -342,14 +334,14 @@ MOSsubselect_zone(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bi
 	case TYPE_bit: subselect_zone(bit); break;
 	case TYPE_bte: subselect_zone(bte); break;
 	case TYPE_sht: subselect_zone(sht); break;
-	case TYPE_oid: subselect_zone(oid); break;
 	case TYPE_lng: subselect_zone(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: subselect_zone(hge); break;
-#endif
+	case TYPE_oid: subselect_zone(oid); break;
 	case TYPE_wrd: subselect_zone(wrd); break;
 	case TYPE_flt: subselect_zone(flt); break;
 	case TYPE_dbl: subselect_zone(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_zone(hge); break;
+#endif
 	case TYPE_int:
 	// Expanded MOSselect_zone for debugging
 		{ 	int *val= (int*) (((char*) task->blk) + 3 * MosaicBlkSize);
@@ -570,18 +562,18 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bit: thetasubselect_zone(bit); break;
 	case TYPE_bte: thetasubselect_zone(bte); break;
 	case TYPE_sht: thetasubselect_zone(sht); break;
-	case TYPE_oid: thetasubselect_zone(oid); break;
 	case TYPE_lng: thetasubselect_zone(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_zone(hge); break;
-#endif
+	case TYPE_oid: thetasubselect_zone(oid); break;
 	case TYPE_wrd: thetasubselect_zone(wrd); break;
 	case TYPE_flt: thetasubselect_zone(flt); break;
 	case TYPE_dbl: thetasubselect_zone(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_zone(hge); break;
+#endif
 	case TYPE_int:
 		{ 	int low,hgh, *v;
 			int *min,*max;
@@ -631,14 +623,6 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, void *val, str oper)
 				}
 			}
 		} 
-		break;
-	default:
-			if( task->type == TYPE_date)
-				thetasubselect_zone(date); 
-			if( task->type == TYPE_daytime)
-				thetasubselect_zone(daytime); 
-			if( task->type == TYPE_timestamp)
-				thetasubselect_zone(lng); 
 	}
 	MOSskip_zone(cntxt,task);
 	task->lb =o;
@@ -667,17 +651,17 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: leftfetchjoin_zone(bit); break;
 		case TYPE_bte: leftfetchjoin_zone(bte); break;
 		case TYPE_sht: leftfetchjoin_zone(sht); break;
-		case TYPE_oid: leftfetchjoin_zone(oid); break;
 		case TYPE_lng: leftfetchjoin_zone(lng); break;
+		case TYPE_oid: leftfetchjoin_zone(oid); break;
+		case TYPE_flt: leftfetchjoin_zone(flt); break;
+		case TYPE_dbl: leftfetchjoin_zone(dbl); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: leftfetchjoin_zone(hge); break;
 #endif
-		case TYPE_flt: leftfetchjoin_zone(flt); break;
-		case TYPE_dbl: leftfetchjoin_zone(dbl); break;
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
@@ -689,14 +673,6 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task)
 			}
 			task->src = (char*) v;
 		}
-		break;
-		default:
-			if (task->type == TYPE_date)
-				leftfetchjoin_zone(date); 
-			if (task->type == TYPE_daytime)
-				leftfetchjoin_zone(daytime); 
-			if (task->type == TYPE_timestamp)
-				leftfetchjoin_zone(lng); 
 	}
 	MOSskip_zone(cntxt,task);
 	return MAL_SUCCEED;
@@ -725,18 +701,18 @@ MOSjoin_zone(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: join_zone(bit); break;
 		case TYPE_bte: join_zone(bte); break;
 		case TYPE_sht: join_zone(sht); break;
 		case TYPE_oid: join_zone(oid); break;
 		case TYPE_lng: join_zone(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: join_zone(hge); break;
-#endif
 		case TYPE_wrd: join_zone(wrd); break;
 		case TYPE_flt: join_zone(flt); break;
 		case TYPE_dbl: join_zone(dbl); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_zone(hge); break;
+#endif
 		case TYPE_int:
 		{	int *v, *w;
 			v = (int*) (((char*) task->blk) + 3 * MosaicBlkSize);
@@ -749,14 +725,6 @@ MOSjoin_zone(Client cntxt,  MOStask task)
 				}
 			}
 		}
-		break;
-		default:
-			if (task->type == TYPE_date)
-				join_zone(date); 
-			if (task->type == TYPE_daytime)
-				join_zone(daytime); 
-			if (task->type == TYPE_timestamp)
-				join_zone(lng); 
 	}
 	MOSskip_zone(cntxt,task);
 	return MAL_SUCCEED;

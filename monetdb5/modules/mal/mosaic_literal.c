@@ -97,6 +97,14 @@ MOScompress_literal(Client cntxt, MOStask task)
 	case TYPE_bte: LITERALcompress(bte); break ;
 	case TYPE_bit: LITERALcompress(bit); break ;
 	case TYPE_sht: LITERALcompress(sht); break;
+	case TYPE_oid: LITERALcompress(oid); break;
+	case TYPE_lng: LITERALcompress(lng); break;
+	case TYPE_wrd: LITERALcompress(wrd); break;
+	case TYPE_flt: LITERALcompress(flt); break;
+	case TYPE_dbl: LITERALcompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: LITERALcompress(hge); break;
+#endif
 	case TYPE_int:
 	{	*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
@@ -104,15 +112,6 @@ MOScompress_literal(Client cntxt, MOStask task)
 		MOSincCnt(blk,1);
 		task->elm--;
 	}
-		break;
-	case TYPE_oid: LITERALcompress(oid); break;
-	case TYPE_lng: LITERALcompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: LITERALcompress(hge); break;
-#endif
-	case TYPE_wrd: LITERALcompress(wrd); break;
-	case TYPE_flt: LITERALcompress(flt); break;
-	case TYPE_dbl: LITERALcompress(dbl); break;
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_literal(cntxt, task);
@@ -136,32 +135,24 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	compressed = ((char*)blk) + MosaicBlkSize;
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: LITERALdecompress(bte); break ;
 	case TYPE_bit: LITERALdecompress(bit); break ;
 	case TYPE_sht: LITERALdecompress(sht); break;
+	case TYPE_oid: LITERALdecompress(oid); break;
+	case TYPE_lng: LITERALdecompress(lng); break;
+	case TYPE_wrd: LITERALdecompress(wrd); break;
+	case TYPE_flt: LITERALdecompress(flt); break;
+	case TYPE_dbl: LITERALdecompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: LITERALdecompress(hge); break;
+#endif
 	case TYPE_int:
 	{ BUN lim = MOSgetCnt(blk);	
 		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
-		break;
-	case TYPE_oid: LITERALdecompress(oid); break;
-	case TYPE_lng: LITERALdecompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: LITERALdecompress(hge); break;
-#endif
-	case TYPE_wrd: LITERALdecompress(wrd); break;
-	case TYPE_flt: LITERALdecompress(flt); break;
-	case TYPE_dbl: LITERALdecompress(dbl); break;
-	default:
-		if( task->type == TYPE_date)
-			LITERALdecompress(date);
-		if( task->type == TYPE_daytime)
-			LITERALdecompress(daytime);
-		if( task->type == TYPE_timestamp)
-			LITERALdecompress(timestamp);
 	}
 }
 
@@ -257,12 +248,12 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 	case TYPE_sht: subselect_literal(sht); break;
 	case TYPE_oid: subselect_literal(oid); break;
 	case TYPE_lng: subselect_literal(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: subselect_literal(hge); break;
-#endif
 	case TYPE_wrd: subselect_literal(wrd); break;
 	case TYPE_flt: subselect_literal(flt); break;
 	case TYPE_dbl: subselect_literal(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_literal(hge); break;
+#endif
 	case TYPE_int:
 	// Expanded MOSselect_literal for debugging
 		{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
@@ -466,18 +457,18 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 		last = MOSgetCnt(task->blk);
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bit: thetasubselect_literal(bit); break;
 	case TYPE_bte: thetasubselect_literal(bte); break;
 	case TYPE_sht: thetasubselect_literal(sht); break;
 	case TYPE_oid: thetasubselect_literal(oid); break;
 	case TYPE_lng: thetasubselect_literal(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_literal(hge); break;
-#endif
 	case TYPE_wrd: thetasubselect_literal(wrd); break;
 	case TYPE_flt: thetasubselect_literal(flt); break;
 	case TYPE_dbl: thetasubselect_literal(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_literal(hge); break;
+#endif
 	case TYPE_int:
 		{ 	int low,hgh, *v;
 			low= hgh = int_nil;
@@ -516,14 +507,6 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 				}
 			}
 		} 
-		break;
-	default:
-			if( task->type == TYPE_date)
-				thetasubselect_literal(date); 
-			if( task->type == TYPE_daytime)
-				thetasubselect_literal(daytime); 
-			if( task->type == TYPE_timestamp)
-				thetasubselect_literal(lng); 
 	}
 	MOSskip_literal(cntxt,task);
 	task->lb =o;
@@ -551,18 +534,18 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: leftfetchjoin_literal(bit); break;
 		case TYPE_bte: leftfetchjoin_literal(bte); break;
 		case TYPE_sht: leftfetchjoin_literal(sht); break;
 		case TYPE_oid: leftfetchjoin_literal(oid); break;
 		case TYPE_lng: leftfetchjoin_literal(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_literal(hge); break;
-#endif
 		case TYPE_wrd: leftfetchjoin_literal(wrd); break;
 		case TYPE_flt: leftfetchjoin_literal(flt); break;
 		case TYPE_dbl: leftfetchjoin_literal(dbl); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_literal(hge); break;
+#endif
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
@@ -574,14 +557,6 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 			}
 			task->src = (char*) v;
 		}
-		break;
-		default:
-			if (task->type == TYPE_date)
-				leftfetchjoin_literal(date); 
-			if (task->type == TYPE_daytime)
-				leftfetchjoin_literal(daytime); 
-			if (task->type == TYPE_timestamp)
-				leftfetchjoin_literal(lng); 
 	}
 	MOSskip_literal(cntxt,task);
 	return MAL_SUCCEED;
@@ -610,18 +585,18 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: join_literal(bit); break;
 		case TYPE_bte: join_literal(bte); break;
 		case TYPE_sht: join_literal(sht); break;
 		case TYPE_oid: join_literal(oid); break;
 		case TYPE_lng: join_literal(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: join_literal(hge); break;
-#endif
 		case TYPE_wrd: join_literal(wrd); break;
 		case TYPE_flt: join_literal(flt); break;
 		case TYPE_dbl: join_literal(dbl); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: join_literal(hge); break;
+#endif
 		case TYPE_int:
 		{	int *v, *w;
 			v = (int*) (((char*) task->blk) + MosaicBlkSize);
@@ -634,14 +609,6 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 				}
 			}
 		}
-		break;
-		default:
-			if (task->type == TYPE_date)
-				join_literal(date); 
-			if (task->type == TYPE_daytime)
-				join_literal(daytime); 
-			if (task->type == TYPE_timestamp)
-				join_literal(lng); 
 	}
 	MOSskip_literal(cntxt,task);
 	return MAL_SUCCEED;

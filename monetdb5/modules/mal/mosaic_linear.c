@@ -36,13 +36,13 @@ linear_step(MOStask task, MosaicBlk blk){
 	case TYPE_sht : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(sht));
 	case TYPE_int : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(int));
 	case TYPE_lng : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(lng));
-#ifdef HAVE_HGE
-	case TYPE_hge : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(hge));
-#endif
 	case TYPE_wrd : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(wrd));
 	case TYPE_oid : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(oid));
 	case TYPE_flt : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(flt));
 	case TYPE_dbl : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(dbl));
+#ifdef HAVE_HGE
+	case TYPE_hge : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(hge));
+#endif
 	}
 	return 0;
 }
@@ -63,23 +63,16 @@ MOSdump_linear(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"int %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
 	case  TYPE_lng:
 		mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		mnstr_printf(cntxt->fdout,"int %.40g %.40g ", (dbl) *(hge*) linear_base(blk), (dbl) *(hge*) linear_step(task,blk)); break;
-#endif
 	case  TYPE_wrd:
 		mnstr_printf(cntxt->fdout,"int "SZFMT" " SZFMT, *(wrd*) linear_base(blk), *(wrd*) linear_step(task,blk)); break;
 	case TYPE_flt:
 		mnstr_printf(cntxt->fdout,"flt  %f %f", *(flt*) linear_base(blk), *(flt*) linear_step(task,blk)); break;
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"flt  %f %f", *(dbl*) linear_base(blk), *(dbl*) linear_step(task,blk)); break;
-	default:
-		if( task->type == TYPE_daytime)
-			mnstr_printf(cntxt->fdout,"daytime %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); 
-		if( task->type == TYPE_date)
-			mnstr_printf(cntxt->fdout,"date %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); 
-		if( task->type == TYPE_timestamp)
-			mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); 
+#ifdef HAVE_HGE
+	case  TYPE_hge:
+		mnstr_printf(cntxt->fdout,"int %.40g %.40g ", (dbl) *(hge*) linear_base(blk), (dbl) *(hge*) linear_step(task,blk)); break;
+#endif
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
@@ -89,26 +82,19 @@ MOSadvance_linear(Client cntxt, MOStask task)
 {
 	(void) cntxt;
 	task->start += MOSgetCnt(task->blk);
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bit),bit)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(sht),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(int),int)); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(oid),oid)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(lng),lng)); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(hge),hge)); break;
-#endif
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(wrd),wrd)); break;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(flt),flt)); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(dbl),dbl)); break;
-	default:
-		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(daytime), daytime) ); 
-		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(date),date) ); 
-		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(timestamp),timestamp) ); 
+#ifdef HAVE_HGE
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(hge),hge)); break;
+#endif
 	}
 }
 
@@ -143,12 +129,12 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_oid: Estimate(oid); break;
 	case TYPE_lng: Estimate(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: Estimate(hge); break;
-#endif
 	case TYPE_wrd: Estimate(wrd); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: Estimate(hge); break;
+#endif
 	case TYPE_int:
 		{	int val = *(int*)task->src;
 			int step = *(int*) (task->src + sizeof(int)) - val;
@@ -195,12 +181,12 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_sht: LINEARcompress(sht); break;
 	case TYPE_oid: LINEARcompress(oid); break;
 	case TYPE_lng: LINEARcompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: LINEARcompress(hge); break;
-#endif
 	case TYPE_wrd: LINEARcompress(wrd); break;
 	case TYPE_flt: LINEARcompress(flt); break;
 	case TYPE_dbl: LINEARcompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: LINEARcompress(hge); break;
+#endif
 	case TYPE_int:
 		{	int val = *(int*) task->src;\
 			int step = *(int*) (task->src + sizeof(int)) - val;\
@@ -244,12 +230,12 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_sht: LINEARdecompress(sht); break;
 	case TYPE_oid: LINEARdecompress(oid); break;
 	case TYPE_lng: LINEARdecompress(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: LINEARdecompress(hge); break;
-#endif
 	case TYPE_wrd: LINEARdecompress(wrd); break;
 	case TYPE_flt: LINEARdecompress(flt); break;
 	case TYPE_dbl: LINEARdecompress(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: LINEARdecompress(hge); break;
+#endif
 	case TYPE_int:
 		{	int val = *(int*) linear_base(blk) ;
 			int step = *(int*) linear_step(task,blk);
@@ -353,12 +339,12 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case TYPE_sht: subselect_linear(sht); break;
 	case TYPE_oid: subselect_linear(oid); break;
 	case TYPE_lng: subselect_linear(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: subselect_linear(hge); break;
-#endif
 	case TYPE_wrd: subselect_linear(wrd); break;
 	case TYPE_flt: subselect_linear(flt); break;
 	case TYPE_dbl: subselect_linear(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: subselect_linear(hge); break;
+#endif
 	case TYPE_int:
 	// Expanded MOSselect_linear for debugging
 	{	int val = *(int*) linear_base(blk) ;
@@ -505,12 +491,12 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	case TYPE_sht: thetasubselect_linear(sht); break;
 	case TYPE_oid: thetasubselect_linear(oid); break;
 	case TYPE_lng: thetasubselect_linear(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_linear(hge); break;
-#endif
 	case TYPE_wrd: thetasubselect_linear(wrd); break;
 	case TYPE_flt: thetasubselect_linear(flt); break;
 	case TYPE_dbl: thetasubselect_linear(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: thetasubselect_linear(hge); break;
+#endif
 	case TYPE_int:
 		{ 	int low,hgh;
 			int v = *(int*) linear_base(blk) ;
@@ -595,12 +581,12 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 		case TYPE_sht: leftfetchjoin_linear(sht); break;
 		case TYPE_oid: leftfetchjoin_linear(oid); break;
 		case TYPE_lng: leftfetchjoin_linear(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_linear(hge); break;
-#endif
 		case TYPE_wrd: leftfetchjoin_linear(wrd); break;
 		case TYPE_flt: leftfetchjoin_linear(flt); break;
 		case TYPE_dbl: leftfetchjoin_linear(dbl); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: leftfetchjoin_linear(hge); break;
+#endif
 		case TYPE_int:
 		{	int *v;
 			int val = *(int*) linear_base(blk) ;

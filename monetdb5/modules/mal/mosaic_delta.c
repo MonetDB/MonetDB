@@ -34,11 +34,13 @@ MOSadvance_delta(Client cntxt, MOStask task)
 
 	task->start += MOSgetCnt(blk);
 	switch(task->type){
+	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOSgetCnt(blk)-1,wrd)); break ;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
+	//case TYPE_flt: case TYPE_dbl: to be looked into.
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
 #endif
@@ -108,6 +110,8 @@ MOSestimate_delta(Client cntxt, MOStask task)
 			}
 			factor = ((float) i * sizeof(int))/  (MosaicBlkSize + sizeof(int)+(bte)i-1);
 		}
+		break;
+	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate delta "BUNFMT" elm %.3f factor\n",i,factor);
@@ -115,7 +119,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	return factor;
 }
 
-#define DELTAcompress(TYPE)\
+#define DELTAcompress(TYPE,EXPR)\
 {	TYPE *w = (TYPE*)task->src, val= *w, delta;\
 	BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;\
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
@@ -123,7 +127,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	task->dst += sizeof(TYPE);\
 	for(w++,i =1; i<limit; i++,w++){\
 		delta = *w -val;\
-		if ( delta < -127 || delta >127)\
+		if ( EXPR )\
 			break;\
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *w;\
@@ -144,35 +148,19 @@ MOScompress_delta(Client cntxt, MOStask task)
 
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
-	case TYPE_sht: DELTAcompress(sht); break;
-	case TYPE_wrd: DELTAcompress(wrd); break;
-	case TYPE_int: DELTAcompress(int); break;
+	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
+	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta >127)); break;
+	case TYPE_oid: DELTAcompress(hge,(delta < 256)); break;
+	case TYPE_wrd: DELTAcompress(wrd,(delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: DELTAcompress(hge); break;
+	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta >127)); break;
 #endif
-	case TYPE_oid:
-		{	oid *w = (oid*)task->src, val= *w, delta;
+	case TYPE_int:
+		{	int *w = (int*)task->src, val= *w, delta;
 			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
-			*(oid*)task->dst = val;
-			task->dst += sizeof(oid);
-			for(w++,i =1; i<limit; i++,w++){
-				delta = *w -val;
-				if ( delta < 256)
-					break;
-				*(bte*)task->dst++ = (bte) delta;
-				val = *w;
-			}
-			task->src += i * sizeof(oid);
-			MOSincCnt(blk,i);
-		}
-		break;
-	case TYPE_lng:
-		{	lng *w = (lng*)task->src, val= *w, delta;
-			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
-			task->dst = ((char*) task->blk) + MosaicBlkSize;
-			*(lng*)task->dst = val;
-			task->dst += sizeof(lng);
+			*(int*)task->dst = val;
+			task->dst += sizeof(int);
 			for(w++,i =1; i<limit; i++,w++){
 				delta = *w -val;
 				if ( delta < -127 || delta >127)
@@ -180,9 +168,11 @@ MOScompress_delta(Client cntxt, MOStask task)
 				*(bte*)task->dst++ = (bte) delta;
 				val = *w;
 			}
-			task->src += i * sizeof(lng);
+			task->src += i * sizeof(int);
 			MOSincCnt(blk,i);
 		}
+		break;
+	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_delta(cntxt, task);
@@ -213,23 +203,23 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
+	case TYPE_lng: DELTAdecompress(lng); break;
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_wrd: DELTAdecompress(wrd); break;
-	case TYPE_int: DELTAdecompress(int); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAdecompress(hge); break;
 #endif
-	case TYPE_lng:
-	{ 	lng val;
+	case TYPE_int:
+	{ 	int val;
 		BUN lim = MOSgetCnt(blk);
 		task->dst = ((char*) task->blk) + MosaicBlkSize;
-		val = *(lng*)task->dst ;
-		task->dst += sizeof(lng);
+		val = *(int*)task->dst ;
+		task->dst += sizeof(int);
 		for(i = 0; i < lim; i++) {
-			((lng*)task->src)[i] = val;
+			((int*)task->src)[i] = val;
 			val += *(bte*) task->dst++;
 		}
-		task->src += i * sizeof(lng);
+		task->src += i * sizeof(int);
 	}
 	}
 }
@@ -322,17 +312,13 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_bit: subselect_delta(bit); break;
-	case TYPE_bte: subselect_delta(bte); break;
 	case TYPE_sht: subselect_delta(sht); break;
+	case TYPE_lng: subselect_delta(lng); break;
 	case TYPE_oid: subselect_delta(oid); break;
 	case TYPE_wrd: subselect_delta(wrd); break;
-	case TYPE_lng: subselect_delta(lng); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: subselect_delta(hge); break;
 #endif
-	case TYPE_flt: subselect_delta(flt); break;
-	case TYPE_dbl: subselect_delta(dbl); break;
 	case TYPE_int:
 	// Expanded MOSselect_delta for debugging
 		{ 	int val= *(int*) (((char*) task->blk) + MosaicBlkSize);
@@ -536,17 +522,13 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_bit: thetasubselect_delta(bit); break;
-	case TYPE_bte: thetasubselect_delta(bte); break;
 	case TYPE_sht: thetasubselect_delta(sht); break;
-	case TYPE_oid: thetasubselect_delta(oid); break;
 	case TYPE_lng: thetasubselect_delta(lng); break;
+	case TYPE_oid: thetasubselect_delta(oid); break;
+	case TYPE_wrd: thetasubselect_delta(wrd); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: thetasubselect_delta(hge); break;
 #endif
-	case TYPE_wrd: thetasubselect_delta(wrd); break;
-	case TYPE_flt: thetasubselect_delta(flt); break;
-	case TYPE_dbl: thetasubselect_delta(dbl); break;
 	case TYPE_int:
 		{ 	int low,hgh, v;
 			low= hgh = int_nil;
@@ -623,17 +605,13 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
-		case TYPE_bit: leftfetchjoin_delta(bit); break;
-		case TYPE_bte: leftfetchjoin_delta(bte); break;
 		case TYPE_sht: leftfetchjoin_delta(sht); break;
-		case TYPE_oid: leftfetchjoin_delta(oid); break;
 		case TYPE_lng: leftfetchjoin_delta(lng); break;
+		case TYPE_oid: leftfetchjoin_delta(oid); break;
+		case TYPE_wrd: leftfetchjoin_delta(wrd); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: leftfetchjoin_delta(hge); break;
 #endif
-		case TYPE_wrd: leftfetchjoin_delta(wrd); break;
-		case TYPE_flt: leftfetchjoin_delta(flt); break;
-		case TYPE_dbl: leftfetchjoin_delta(dbl); break;
 		case TYPE_int:
 		{	int *val, *v;
 			v= (int*) task->src;
@@ -683,17 +661,13 @@ MOSjoin_delta(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
-		case TYPE_bit: join_delta(bit); break;
-		case TYPE_bte: join_delta(bte); break;
 		case TYPE_sht: join_delta(sht); break;
-		case TYPE_oid: join_delta(oid); break;
 		case TYPE_lng: join_delta(lng); break;
+		case TYPE_oid: join_delta(oid); break;
+		case TYPE_wrd: join_delta(wrd); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: join_delta(hge); break;
 #endif
-		case TYPE_wrd: join_delta(wrd); break;
-		case TYPE_flt: join_delta(flt); break;
-		case TYPE_dbl: join_delta(dbl); break;
 		case TYPE_int:
 		{	int *w,base;
 			bte *v;
