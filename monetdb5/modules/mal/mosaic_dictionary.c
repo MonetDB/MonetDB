@@ -38,23 +38,23 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 {
 	(void) cntxt;
 
-	task->start += MOScnt(task->blk);
+	task->start += MOSgetCnt(task->blk);
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOScnt(task->blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOScnt(task->blk),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOScnt(task->blk),oid)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOScnt(task->blk),lng)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOScnt(task->blk),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOScnt(task->blk),wrd)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
 	default:
 		if( task->type == TYPE_timestamp)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOScnt(task->blk),timestamp)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),timestamp)); 
 		if( task->type == TYPE_date)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk),date)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),date)); 
 		if( task->type == TYPE_daytime)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOScnt(task->blk),daytime)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),daytime)); 
 	}
 }
 
@@ -68,7 +68,7 @@ MOSdump_dictionary(Client cntxt, MOStask task)
 	void *val = (void*)(((char*) blk) + MosaicBlkSize);
 
 	size = (lng*) (((char*)blk) + MosaicBlkSize);
-	mnstr_printf(cntxt->fdout,"#dict " BUNFMT" ", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#dict " BUNFMT" ", MOSgetCnt(blk));
 	switch(task->type){
 	case TYPE_sht:
 		for(i=0; i< *size; i++)
@@ -105,7 +105,7 @@ void
 MOSskip_dictionary(Client cntxt, MOStask task)
 {
 	MOSadvance_dictionary(cntxt, task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -180,16 +180,16 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	for(i =0; i<limit; i++, val++){\
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == *val) {\
-				MOSinc(blk,1);\
+				MOSincCnt(blk,1);\
 				*task->dst++ = (char) j;\
 				break;\
 			}\
 		if ( j == *size){\
 			if ( *size == dictsize){\
-				task->dst += wordaligned(MOScnt(blk) %2,TPE);\
+				task->dst += wordaligned(MOSgetCnt(blk) %2,TPE);\
 				break;\
 			}\
-			MOSinc(blk,1);\
+			MOSincCnt(blk,1);\
 			dict[j] = *val;\
 			*size = *size+1;\
 			*task->dst++ = (char) j;\
@@ -209,7 +209,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	(void) cntxt;
 	size = (lng*) (((char*)blk) + MosaicBlkSize);
 	*size = 0;
-	*blk = MOSdict;
+	MOSsetTag(blk,MOSAIC_DICT);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DICTcompress(sht); break;
@@ -227,17 +227,17 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 			for(i =0; i<limit; i++, val++){
 				for(j= 0; j< *size; j++)
 					if( dict[j] == *val) {
-						MOSinc(blk,1);
+						MOSincCnt(blk,1);
 						*task->dst++ = (char) j;
 						break;
 					}
 				if ( j == *size){
 					if ( *size == dictsize){
 						// align on word boundary
-						task->dst += wordaligned(MOScnt(blk) %2,lng);
+						task->dst += wordaligned(MOSgetCnt(blk) %2,lng);
 						break;
 					}
-					MOSinc(blk,1);
+					MOSincCnt(blk,1);
 					dict[j] = *val;
 					*size = *size+1;
 					*task->dst++ = (char) j;
@@ -256,7 +256,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 #define DICTdecompress(TPE)\
 {	bte *idx = (bte*)(compressed + dictsize * sizeof(TPE));\
 	TPE *dict = (TPE*) compressed;\
-	BUN lim = MOScnt(blk);\
+	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++,idx++)\
 		((TPE*)task->src)[i] = dict[ (bte)*idx];\
 	task->src += i * sizeof(TPE);\
@@ -281,7 +281,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	bte *idx = (bte*)(compressed + dictsize * sizeof(int));
 			int *dict = (int*) compressed;
-			BUN lim = MOScnt(blk);
+			BUN lim = MOSgetCnt(blk);
 			for(i = 0; i < lim; i++,idx++)
 				((int*)task->src)[i] = dict[ (bte)*idx];
 			task->src += i * sizeof(int);
@@ -373,7 +373,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_dictionary(cntxt,task);
@@ -583,7 +583,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_dictionary(cntxt,task);
@@ -705,7 +705,7 @@ MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_sht: leftfetchjoin_dictionary(sht); break;
@@ -760,7 +760,7 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_sht: join_dictionary(sht); break;

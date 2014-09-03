@@ -30,7 +30,7 @@ void
 MOSdump_literal(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#none "BUNFMT"\n", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#none "BUNFMT"\n", MOSgetCnt(blk));
 }
 
 void
@@ -39,27 +39,27 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	(void) cntxt;
 
-	task->start += MOScnt(blk);
+	task->start += MOSgetCnt(blk);
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOScnt(blk),bte)); break ;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* MOScnt(blk),bit)); break ;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOScnt(blk),sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk),int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk),oid)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk),lng)); break ;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOSgetCnt(blk),bte)); break ;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* MOSgetCnt(blk),bit)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk),sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk),int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(oid)* MOSgetCnt(blk),oid)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk),lng)); break ;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(hge)* MOScnt(blk),hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(hge)* MOSgetCnt(blk),hge)); break ;
 #endif
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd)* MOScnt(blk),wrd)); break ;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk),flt)); break ;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk),dbl)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd)* MOSgetCnt(blk),wrd)); break ;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOSgetCnt(blk),flt)); break ;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
 	default:
 		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date)* MOScnt(blk),date)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date)* MOSgetCnt(blk),date)); 
 		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime)* MOScnt(blk),daytime)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime)* MOSgetCnt(blk),daytime)); 
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk),timestamp)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* MOSgetCnt(blk),timestamp)); 
 	}
 }
 
@@ -67,18 +67,18 @@ void
 MOSskip_literal(Client cntxt, MOStask task)
 {
 	MOSadvance_literal(cntxt,task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
 
 // append a series of values into the non-compressed block
 
-#define NONEcompress(TYPE)\
+#define LITERALcompress(TYPE)\
 {	*(TYPE*) task->dst = *(TYPE*) task->src;\
 	task->src += sizeof(TYPE);\
 	task->dst += sizeof(TYPE);\
-	MOSinc(blk,1);\
+	MOSincCnt(blk,1);\
 	task->elm--;\
 }
 
@@ -87,30 +87,32 @@ void
 MOScompress_literal(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
+	BUN cnt = MOSgetCnt(blk);
 
 	(void) cntxt;
-	*blk = MOSnone + MOScnt(blk);
+	MOSsetTag(blk,MOSAIC_NONE);
+	MOSsetCnt(blk,cnt);
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: NONEcompress(bte); break ;
-	case TYPE_bit: NONEcompress(bit); break ;
-	case TYPE_sht: NONEcompress(sht); break;
+	case TYPE_bte: LITERALcompress(bte); break ;
+	case TYPE_bit: LITERALcompress(bit); break ;
+	case TYPE_sht: LITERALcompress(sht); break;
 	case TYPE_int:
 	{	*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
 		task->dst += sizeof(int);
-		MOSinc(blk,1);
+		MOSincCnt(blk,1);
 		task->elm--;
 	}
 		break;
-	case TYPE_oid: NONEcompress(oid); break;
-	case TYPE_lng: NONEcompress(lng); break;
+	case TYPE_oid: LITERALcompress(oid); break;
+	case TYPE_lng: LITERALcompress(lng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: NONEcompress(hge); break;
+	case TYPE_hge: LITERALcompress(hge); break;
 #endif
-	case TYPE_wrd: NONEcompress(wrd); break;
-	case TYPE_flt: NONEcompress(flt); break;
-	case TYPE_dbl: NONEcompress(dbl); break;
+	case TYPE_wrd: LITERALcompress(wrd); break;
+	case TYPE_flt: LITERALcompress(flt); break;
+	case TYPE_dbl: LITERALcompress(dbl); break;
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_literal(cntxt, task);
@@ -118,8 +120,8 @@ MOScompress_literal(Client cntxt, MOStask task)
 }
 
 // the inverse operator, extend the src
-#define NONEdecompress(TYPE)\
-{ BUN lim = MOScnt(blk); \
+#define LITERALdecompress(TYPE)\
+{ BUN lim = MOSgetCnt(blk); \
 	for(i = 0; i < lim; i++) \
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
 	task->src += i * sizeof(TYPE);\
@@ -135,36 +137,36 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 
 	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(task->type){
-	case TYPE_bte: NONEdecompress(bte); break ;
-	case TYPE_bit: NONEdecompress(bit); break ;
-	case TYPE_sht: NONEdecompress(sht); break;
+	case TYPE_bte: LITERALdecompress(bte); break ;
+	case TYPE_bit: LITERALdecompress(bit); break ;
+	case TYPE_sht: LITERALdecompress(sht); break;
 	case TYPE_int:
-	{ BUN lim = MOScnt(blk);	
+	{ BUN lim = MOSgetCnt(blk);	
 		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
 		break;
-	case TYPE_oid: NONEdecompress(oid); break;
-	case TYPE_lng: NONEdecompress(lng); break;
+	case TYPE_oid: LITERALdecompress(oid); break;
+	case TYPE_lng: LITERALdecompress(lng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: NONEdecompress(hge); break;
+	case TYPE_hge: LITERALdecompress(hge); break;
 #endif
-	case TYPE_wrd: NONEdecompress(wrd); break;
-	case TYPE_flt: NONEdecompress(flt); break;
-	case TYPE_dbl: NONEdecompress(dbl); break;
+	case TYPE_wrd: LITERALdecompress(wrd); break;
+	case TYPE_flt: LITERALdecompress(flt); break;
+	case TYPE_dbl: LITERALdecompress(dbl); break;
 	default:
 		if( task->type == TYPE_date)
-			NONEdecompress(date);
+			LITERALdecompress(date);
 		if( task->type == TYPE_daytime)
-			NONEdecompress(daytime);
+			LITERALdecompress(daytime);
 		if( task->type == TYPE_timestamp)
-			NONEdecompress(timestamp);
+			LITERALdecompress(timestamp);
 	}
 }
 
 // The remainder should provide the minimal algebraic framework
-//  to apply the operator to a NONE compressed chunk
+//  to apply the operator to a LITERAL compressed chunk
 
 	
 #define subselect_literal(TPE) {\
@@ -241,7 +243,7 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_literal(cntxt,task);
@@ -454,14 +456,14 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_literal(cntxt,task);
 		return MAL_SUCCEED;
 	}
-	if ( first + MOScnt(task->blk) > last)
-		last = MOScnt(task->blk);
+	if ( first + MOSgetCnt(task->blk) > last)
+		last = MOSgetCnt(task->blk);
 	o = task->lb;
 
 	switch(task->type){
@@ -547,7 +549,7 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_literal(bit); break;
@@ -606,7 +608,7 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_literal(bit); break;

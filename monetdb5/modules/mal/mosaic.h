@@ -68,19 +68,11 @@ typedef struct MOSAICHEADER{
 #define MOSshift 24
 typedef int *MosaicBlk;
 
-#define MOStag(Blk) (*(Blk)>>MOSshift)
-#define MOSsetTag(Tag)  ((int) (Tag) <<MOSshift)
-#define MOScnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
-#define MOSinc(Blk,I) *(Blk)= *(Blk)+I
-
-#define MOSnone (((int)MOSAIC_NONE) <<MOSshift)
-#define MOSrle (((int)MOSAIC_RLE) <<MOSshift)
-#define MOSdict (((int)MOSAIC_DICT) <<MOSshift)
-#define MOSvariance (((int)MOSAIC_VARIANCE) <<MOSshift)
-#define MOSlinear (((int)MOSAIC_LINEAR) <<MOSshift)
-#define MOSdelta (((int)MOSAIC_DELTA) <<MOSshift)
-#define MOSzone (((int)MOSAIC_ZONE) <<MOSshift)
-#define MOSeol (((int)MOSAIC_EOL) <<MOSshift)
+#define MOSgetTag(Blk) (*(Blk)>>MOSshift)
+#define MOSsetTag(Blk,Tag)  *Blk = (Tag) <<MOSshift
+#define MOSsetCnt(Blk,I) *Blk = I & ~(0377<<MOSshift)
+#define MOSgetCnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
+#define MOSincCnt(Blk,I) *(Blk)= *(Blk)+I
 
 #define MOSlimit() (int) ~(0377<<MOSshift)
 
@@ -190,5 +182,6 @@ mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export void MOSblk(MosaicBlk blk);
 
 #endif /* _MOSLIST_H */

@@ -33,7 +33,7 @@ MOSdump_runlength(Client cntxt, MOStask task)
 	MosaicBlk blk= task->blk;
 	void *val = (void*)(((char*) blk) + MosaicBlkSize);
 
-	mnstr_printf(cntxt->fdout,"#rle "BUNFMT" ", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#rle "BUNFMT" ", MOSgetCnt(blk));
 	switch(task->type){
 	case TYPE_bte:
 		mnstr_printf(cntxt->fdout,"bte %hhd", *(bte*) val); break;
@@ -71,7 +71,7 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 {
 	(void) cntxt;
 
-	task->start += MOScnt(task->blk);
+	task->start += MOSgetCnt(task->blk);
 	switch(task->type){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bit),bit)); break;
@@ -99,7 +99,7 @@ void
 MOSskip_runlength(Client cntxt, MOStask task)
 {
 	MOSadvance_runlength(cntxt, task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -155,7 +155,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	for(i =1; i<limit; i++)\
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
-	MOSinc(blk,i);\
+	MOSincCnt(blk,i);\
 	task->dst +=  sizeof(TYPE);\
 	task->src += i * sizeof(TYPE);\
 }
@@ -167,7 +167,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
-	*blk = MOSrle;
+	MOSsetTag(blk, MOSAIC_RLE);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: RLEcompress(bte); break;
@@ -189,7 +189,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 			for(i =1; i<limit; i++)
 			if ( ((int*)task->src)[i] != val)
 				break;
-			MOSinc(blk,i);
+			MOSincCnt(blk,i);
 			task->dst +=  sizeof(int);
 			task->src += i * sizeof(int);
 		}
@@ -203,7 +203,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define RLEdecompress(TYPE)\
 {	TYPE val = *(TYPE*) task->dst;\
-	BUN lim = MOScnt(blk);\
+	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val;\
 	task->src += i * sizeof(TYPE);\
@@ -232,7 +232,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 	case TYPE_dbl: RLEdecompress(dbl); break;
 	case TYPE_int:
 		{	int val = *(int*) compressed ;
-			BUN lim= MOScnt(blk);
+			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val;
 			task->src += i * sizeof(int);
@@ -317,7 +317,7 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 
 	// set the oid range covered
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSadvance_runlength(cntxt,task);
@@ -466,7 +466,7 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_runlength(cntxt,task);
@@ -559,7 +559,7 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_runlength(bit); break;
@@ -623,7 +623,7 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_runlength(bit); break;

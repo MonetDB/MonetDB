@@ -51,6 +51,12 @@ MOSinit(MOStask task, BAT *b){
 	task->dst = base + MosaicBlkSize;
 }
 
+void MOSblk(MosaicBlk blk)
+{
+	printf("Block %d tag %d cnt "BUNFMT"\n", (int)((lng)blk %10000),MOSgetTag(blk),MOSgetCnt(blk));
+}
+
+#ifdef _DEBUG_MOSAIC_
 static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
@@ -63,7 +69,9 @@ MOSdumpTask(Client cntxt,MOStask task)
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->blks[i])
 		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , filtername[i], task->blks[i], task->elms[i], task->elms[i]/task->blks[i]);
+	mnstr_printf(cntxt->fdout,"\n");
 }
+#endif
 
 // dump a compressed BAT
 static void
@@ -76,7 +84,7 @@ MOSdumpInternal(Client cntxt, BAT *b){
 	MOSinit(task,b);
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
 	while(task->start< task->stop){
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_NONE:
 			MOSdump_literal(cntxt,task);
 			MOSadvance_literal(cntxt,task);
@@ -270,12 +278,11 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	MOSinitHeader(task);
 
 	// always start with an EOL block
-	*task->blk = MOSeol;
+	MOSsetTag(task->blk,MOSAIC_EOL);
 
 	cutoff = task->elm > 1000? task->elm - 1000: task->elm;
 	while(task->elm > 0){
 		// default is to extend the non-compressed block
-		//mnstr_printf(cntxt->fdout,"#elements "BUNFMT"\n",task->elm);
 		cand = MOSAIC_NONE;
 		fac = 1.0;
 		factor = 1.0;
@@ -340,28 +347,28 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		case MOSAIC_DELTA:
 		case MOSAIC_LINEAR:
 			// close the non-compressed part
-			if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk) ){
+			if( (MOSgetTag(task->blk) == MOSAIC_NONE || MOSgetTag(task->blk) == MOSAIC_ZONE) && MOSgetCnt(task->blk) ){
 				MOSupdateHeader(cntxt,task);
-				if( MOStag(task->blk) == MOSAIC_NONE)
+				if( MOSgetTag(task->blk) == MOSAIC_NONE)
 					MOSskip_literal(cntxt,task);
 				else
 					MOSskip_zone(cntxt,task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
-				*task->blk = MOSeol;
+				MOSsetTag(task->blk,MOSAIC_EOL);
 			}
 			break;
 		case MOSAIC_NONE:
 		case MOSAIC_ZONE:
-			if ( MOScnt(task->blk) == MOSlimit()){
+			if ( MOSgetCnt(task->blk) == MOSlimit()){
 				MOSupdateHeader(cntxt,task);
-				if( MOStag(task->blk) == MOSAIC_NONE)
+				if( MOSgetTag(task->blk) == MOSAIC_NONE)
 					MOSskip_literal(cntxt,task);
 				else
 					MOSskip_zone(cntxt,task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
-				*task->blk = MOSeol;
+				MOSsetTag(task->blk,MOSAIC_EOL);
 			}
 		}
 		// apply the compression to a chunk
@@ -370,55 +377,55 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOScompress_dictionary(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
-			task->elm -= MOScnt(task->blk);
+			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_dictionary(cntxt,task);
-			*task->blk = MOSeol;
+			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_VARIANCE:
 			MOScompress_variance(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
-			task->elm -= MOScnt(task->blk);
+			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_variance(cntxt,task);
-			*task->blk = MOSeol;
+			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_DELTA:
 			MOScompress_delta(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
-			task->elm -= MOScnt(task->blk);
+			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_delta(cntxt,task);
-			*task->blk = MOSeol;
+			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_LINEAR:
 			MOScompress_linear(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
-			task->elm -= MOScnt(task->blk);
+			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_linear(cntxt,task);
-			*task->blk= MOSeol;
+			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_RLE:
 			MOScompress_runlength(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			//prepare new block header
-			task->elm -= MOScnt(task->blk);
+			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_runlength(cntxt,task);
-			*task->blk = MOSeol;
+			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
 		case MOSAIC_ZONE:
-			if( MOScnt(task->blk) == 0)
+			if( MOSgetCnt(task->blk) == 0)
 				task->dst += 2 * MosaicBlkSize;
-			if ( MOScnt(task->blk) > MAXZONESIZE){
+			if ( MOSgetCnt(task->blk) > MAXZONESIZE){
 				MOSupdateHeader(cntxt,task);
 				MOSadvance_zone(cntxt,task);
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
-				*task->blk = MOSeol;
+				MOSsetTag(task->blk,MOSAIC_EOL);
 			}
 			MOScompress_zone(cntxt,task);
 			break;
@@ -427,23 +434,22 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 			MOScompress_literal(cntxt,task);
 		}
 	}
-	if( (MOStag(task->blk) == MOSAIC_NONE || MOStag(task->blk) == MOSAIC_ZONE) && MOScnt(task->blk)){
+	if( (MOSgetTag(task->blk) == MOSAIC_NONE || MOSgetTag(task->blk) == MOSAIC_ZONE) && MOSgetCnt(task->blk)){
 		MOSupdateHeader(cntxt,task);
-		if( MOStag(task->blk) == MOSAIC_NONE ){
+		if( MOSgetTag(task->blk) == MOSAIC_NONE ){
 			MOSadvance_literal(cntxt,task);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 		} else{
 			MOSadvance_zone(cntxt,task);
 			task->dst = ((char*) task->blk)+ 3 * MosaicBlkSize;
 		}
-		*task->blk = MOSeol;
+		MOSsetTag(task->blk,MOSAIC_EOL);
 	}
 	task->xsize = (task->dst - (char*)task->hdr) + MosaicHdrSize;
 	task->timer = GDKusec() - task->timer;
-//#ifdef _DEBUG_MOSAIC_
+#ifdef _DEBUG_MOSAIC_
 	MOSdumpTask(cntxt,task);
-	mnstr_printf(cntxt->fdout,"\n");
-//#endif
+#endif
 	// if we couldnt compress well enough, ignore the result
 /*
 	if( task->xsize && task->size / task->xsize < 1){
@@ -536,7 +542,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	task->src = Tloc(bn, BUNfirst(bn));
 	task->timer = GDKusec();
 	while(task->blk){
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_DICT:
 			MOSdecompress_dictionary(cntxt,task);
 			MOSskip_dictionary(cntxt,task);
@@ -737,7 +743,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
 	while(task->start < task->stop ){
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			MOSsubselect_runlength(cntxt,task,low,hgh,li,hi,anti);
 			break;
@@ -867,7 +873,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
 	while(task->start < task->stop ){
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			MOSthetasubselect_runlength(cntxt,task,low,*oper);
 			break;
@@ -1001,7 +1007,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// loop thru all the chunks and fetch all results
 	while(task->start<task->stop )
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			MOSleftfetchjoin_runlength(cntxt, task);
 			break;
@@ -1125,7 +1131,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// loop thru all the chunks and collect the results
 	while(task->blk )
-		switch(MOStag(task->blk)){
+		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			MOSjoin_runlength(cntxt, task);
 			break;

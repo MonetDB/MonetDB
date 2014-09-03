@@ -53,7 +53,7 @@ MOSdump_linear(Client cntxt, MOStask task)
 {
 	MosaicBlk blk= task->blk;
 
-	mnstr_printf(cntxt->fdout,"#linear "BUNFMT" ", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#linear "BUNFMT" ", MOSgetCnt(blk));
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte:
 		mnstr_printf(cntxt->fdout,"bte %hhd %hhd", *(bte*) linear_base(blk), *(bte*) linear_step(task, blk)); break;
@@ -88,7 +88,7 @@ void
 MOSadvance_linear(Client cntxt, MOStask task)
 {
 	(void) cntxt;
-	task->start += MOScnt(task->blk);
+	task->start += MOSgetCnt(task->blk);
 	switch(task->type){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bit),bit)); break;
@@ -116,7 +116,7 @@ void
 MOSskip_linear(Client cntxt, MOStask task)
 {
 	MOSadvance_linear(cntxt, task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -173,7 +173,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	for(i =1; i<limit; i++)\
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
-	MOSinc(blk,i);\
+	MOSincCnt(blk,i);\
 	*(TYPE*) linear_base(blk) = val;\
 	*(TYPE*) linear_step(task,blk) = step;\
 	task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);\
@@ -187,7 +187,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
-	*blk = MOSlinear;
+	MOSsetTag(blk,MOSAIC_LINEAR);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: LINEARcompress(bte); break;
@@ -208,7 +208,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 			for(i =1; i<limit; i++)\
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))\
 				break;\
-			MOSinc(blk,i);\
+			MOSincCnt(blk,i);\
 			*(int*) linear_base(blk) = val;\
 			*(int*) linear_step(task,blk) = step;\
 			task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
@@ -225,7 +225,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 #define LINEARdecompress(TYPE)\
 {	TYPE val = *(TYPE*) linear_base(blk);\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
-	BUN lim = MOScnt(blk);\
+	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val + (int) i * step;\
 	task->src += i * sizeof(TYPE);\
@@ -253,7 +253,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int val = *(int*) linear_base(blk) ;
 			int step = *(int*) linear_step(task,blk);
-			BUN lim= MOScnt(blk);
+			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val + i * step;
 			task->src += i * sizeof(int);
@@ -339,7 +339,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(blk);
+	last = first + MOSgetCnt(blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_linear(cntxt,task);
@@ -491,7 +491,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_linear(cntxt,task);
@@ -587,7 +587,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_linear(bit); break;
@@ -659,7 +659,7 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMstorage(task->type)){
 		case TYPE_bit: join_linear(bit); break;

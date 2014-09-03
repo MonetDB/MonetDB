@@ -34,7 +34,7 @@ MOSdump_zone(Client cntxt, MOStask task)
 {
 #ifdef _DEBUG_MOSAIC_
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#zone "BUNFMT" elms ", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#zone "BUNFMT" elms ", MOSgetCnt(blk));
 	switch(task->type){
 	case TYPE_bte: {bte low= *(bte*)zone_min(blk), max =*(bte*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
 	case TYPE_bit: {bit low= *(bit*)zone_min(blk), max =*(bit*) zone_max(blk);  mnstr_printf(cntxt->fdout," [%hhd - %hhd]\n", low,max); }break;
@@ -72,27 +72,27 @@ MOSadvance_zone(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	(void) cntxt;
 
-	task->start += MOScnt(blk);
+	task->start += MOSgetCnt(blk);
 	switch(task->type){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bte)* MOScnt(blk),bte)); break ;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* MOScnt(blk),bit)); break ;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* MOScnt(blk),sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* MOScnt(blk),int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOScnt(blk),oid)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* MOScnt(blk),lng)); break ;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bte)* MOSgetCnt(blk),bte)); break ;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(bit)* MOSgetCnt(blk),bit)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk),sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk),int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(oid)* MOSgetCnt(blk),oid)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk),lng)); break ;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(hge)* MOScnt(blk),hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(hge)* MOSgetCnt(blk),hge)); break ;
 #endif
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(wrd)* MOScnt(blk),wrd)); break ;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOScnt(blk),flt)); break ;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOScnt(blk),dbl)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(wrd)* MOSgetCnt(blk),wrd)); break ;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(flt)* MOSgetCnt(blk),flt)); break ;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
 	default:
 		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(date)* MOScnt(blk),date)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(date)* MOSgetCnt(blk),date)); 
 		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(daytime)* MOScnt(blk),daytime)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(daytime)* MOSgetCnt(blk),daytime)); 
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(timestamp)* MOScnt(blk),timestamp)); 
+			task->blk = (MosaicBlk)( ((char*) task->blk) + 3 * MosaicBlkSize + wordaligned(sizeof(timestamp)* MOSgetCnt(blk),timestamp)); 
 	}
 }
 
@@ -100,7 +100,7 @@ void
 MOSskip_zone(Client cntxt, MOStask task)
 {
 	MOSadvance_zone(cntxt, task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -111,12 +111,12 @@ MOSskip_zone(Client cntxt, MOStask task)
 {	TPE *min,*max;\
 	min = (TPE*)zone_min(blk);\
 	max = (TPE*)zone_max(blk);\
-	if ( MOScnt(blk) == 0 || *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
-	if ( MOScnt(blk) == 0 || *max == TPE##_nil || *max < *(TPE*)task->src) *max = *(TPE*)task->src;\
+	if ( MOSgetCnt(blk) == 0 || *min == TPE##_nil || *min > *(TPE*)task->src) *min = *(TPE*)task->src;\
+	if ( MOSgetCnt(blk) == 0 || *max == TPE##_nil || *max < *(TPE*)task->src) *max = *(TPE*)task->src;\
 	*(TPE*) task->dst = *(TPE*) task->src;\
 	task->src += sizeof(TPE);\
 	task->dst += sizeof(TPE);\
-	MOSinc(blk,1);\
+	MOSincCnt(blk,1);\
 	task->elm--;\
 }
 
@@ -143,7 +143,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	(void) cntxt;
-	*blk = MOSzone;
+	MOSsetTag(blk,MOSAIC_ZONE);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: ZONEcompress(bte); break ;
@@ -153,12 +153,12 @@ MOScompress_zone(Client cntxt, MOStask task)
 	{	int *min,*max;
 		min = (int*)zone_min(blk);
 		max = (int*)zone_max(blk);
-		if (MOScnt(blk) == 0 || *min == int_nil || *min > *(int*)task->src) *min = *(int*)task->src;
-		if (MOScnt(blk) == 0 || *max == int_nil || *max < *(int*)task->src) *max = *(int*)task->src;
+		if (MOSgetCnt(blk) == 0 || *min == int_nil || *min > *(int*)task->src) *min = *(int*)task->src;
+		if (MOSgetCnt(blk) == 0 || *max == int_nil || *max < *(int*)task->src) *max = *(int*)task->src;
 		*(int*) task->dst = *(int*) task->src;
 		task->src += sizeof(int);
 		task->dst += sizeof(int);
-		MOSinc(blk,1);
+		MOSincCnt(blk,1);
 		task->elm--;
 	}
 		break;
@@ -202,7 +202,7 @@ MOScompress_zone(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define ZONEdecompress(TYPE)\
-{ BUN lim = MOScnt(blk); for(i = 0; i < lim; i++) \
+{ BUN lim = MOSgetCnt(blk); for(i = 0; i < lim; i++) \
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
 	task->src += i * sizeof(TYPE);\
 }
@@ -221,7 +221,7 @@ MOSdecompress_zone(Client cntxt, MOStask task)
 	case TYPE_bit: ZONEdecompress(bit); break ;
 	case TYPE_sht: ZONEdecompress(sht); break;
 	case TYPE_int:
-	{	BUN lim = MOScnt(blk);
+	{	BUN lim = MOSgetCnt(blk);
 		for(i = 0; i < lim; i++) 
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
@@ -330,7 +330,7 @@ MOSsubselect_zone(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bi
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_zone(cntxt,task);
@@ -562,7 +562,7 @@ MOSthetasubselect_zone(Client cntxt,  MOStask task, void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_zone(cntxt,task);
@@ -665,7 +665,7 @@ MOSleftfetchjoin_zone(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_zone(bit); break;
@@ -723,7 +723,7 @@ MOSjoin_zone(Client cntxt,  MOStask task)
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_zone(bit); break;

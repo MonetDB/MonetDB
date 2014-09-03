@@ -32,23 +32,23 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	(void) cntxt;
 
-	task->start += MOScnt(blk);
+	task->start += MOSgetCnt(blk);
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOScnt(blk)-1,sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOScnt(blk)-1,int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOScnt(blk)-1,oid)); break ;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOScnt(blk)-1,wrd)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOScnt(blk)-1,lng)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOSgetCnt(blk)-1,wrd)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(hge) + MOScnt(blk)-1,hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
 #endif
 	default:
 		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOScnt(blk)-1,timestamp)); 
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOSgetCnt(blk)-1,timestamp)); 
 		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOScnt(blk)-1,date)); 
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOSgetCnt(blk)-1,date)); 
 		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOScnt(blk)-1,daytime)); 
+			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOSgetCnt(blk)-1,daytime)); 
 	}
 }
 
@@ -57,14 +57,14 @@ void
 MOSdump_delta(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#delta "BUNFMT"\n", MOScnt(blk));
+	mnstr_printf(cntxt->fdout,"#delta "BUNFMT"\n", MOSgetCnt(blk));
 }
 
 void
 MOSskip_delta(Client cntxt, MOStask task)
 {
 	MOSadvance_delta(cntxt, task);
-	if ( MOStag(task->blk) == MOSAIC_EOL)
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
 
@@ -78,7 +78,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 		val = *w;\
 	}\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = (float)((int)i * sizeof(TYPE))/  (MosaicBlkSize + sizeof(TYPE)+(bte)i-1);\
+	factor = ((float) i * sizeof(TYPE))/  (MosaicBlkSize + sizeof(TYPE)+(bte)i-1);\
 }
 
 // estimate the compression level 
@@ -99,7 +99,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 				val = *w;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ((float)i * sizeof(int))/  (MosaicBlkSize + sizeof(oid)+(bte)i-1);
+			factor = ((float) i * sizeof(oid))/  (MosaicBlkSize + sizeof(oid)+(bte)i-1);
 		}
 	case TYPE_wrd: Estimate_delta(wrd); break;
 	case TYPE_lng: Estimate_delta(lng); break;
@@ -114,7 +114,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			factor = (float)((int)i * sizeof(int))/  (MosaicBlkSize + sizeof(int)+(bte)i-1);
+			factor = ((float) i * sizeof(int))/  (MosaicBlkSize + sizeof(int)+(bte)i-1);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -137,7 +137,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		val = *w;\
 	}\
 	task->src += i * sizeof(TYPE);\
-	MOSinc(blk,i);\
+	MOSincCnt(blk,i);\
 }
 
 // rather expensive simple value non-compressed store
@@ -148,12 +148,12 @@ MOScompress_delta(Client cntxt, MOStask task)
 	BUN i = 0;
 
 	(void) cntxt;
-	*blk = MOSdelta;;
+	MOSsetTag(blk,MOSAIC_DELTA);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: DELTAcompress(sht); break;
 	case TYPE_wrd: DELTAcompress(wrd); break;
-	case TYPE_lng: DELTAcompress(lng); break;
+	case TYPE_int: DELTAcompress(int); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge); break;
 #endif
@@ -171,15 +171,15 @@ MOScompress_delta(Client cntxt, MOStask task)
 				val = *w;
 			}
 			task->src += i * sizeof(oid);
-			MOSinc(blk,i);
+			MOSincCnt(blk,i);
 		}
 		break;
-	case TYPE_int:
-		{	int *w = (int*)task->src, val= *w, delta;
+	case TYPE_lng:
+		{	lng *w = (lng*)task->src, val= *w, delta;
 			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
-			*(int*)task->dst = val;
-			task->dst += sizeof(int);
+			*(lng*)task->dst = val;
+			task->dst += sizeof(lng);
 			for(w++,i =1; i<limit; i++,w++){
 				delta = *w -val;
 				if ( delta < -127 || delta >127)
@@ -187,8 +187,8 @@ MOScompress_delta(Client cntxt, MOStask task)
 				*(bte*)task->dst++ = (bte) delta;
 				val = *w;
 			}
-			task->src += i * sizeof(int);
-			MOSinc(blk,i);
+			task->src += i * sizeof(lng);
+			MOSincCnt(blk,i);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -198,16 +198,16 @@ MOScompress_delta(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define DELTAdecompress(TYPE)\
-{ TYPE val;\
-	BUN lim = MOScnt(blk);\
+{ 	TYPE val;\
+	BUN lim = MOSgetCnt(blk);\
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
 	for(i = 0; i < lim; i++) {\
 		((TYPE*)task->src)[i] = val;\
-		val += (TYPE) *task->dst++;\
+		val += (bte) *task->dst++;\
 	}\
-	task->src += i * sizeof(int);\
+	task->src += i * sizeof(TYPE);\
 }
 
 void
@@ -221,21 +221,21 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_wrd: DELTAdecompress(wrd); break;
-	case TYPE_lng: DELTAdecompress(lng); break;
+	case TYPE_int: DELTAdecompress(int); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAdecompress(hge); break;
 #endif
-	case TYPE_int:
-	{ 	int val;
-		BUN lim = MOScnt(blk);
+	case TYPE_lng:
+	{ 	lng val;
+		BUN lim = MOSgetCnt(blk);
 		task->dst = ((char*) task->blk) + MosaicBlkSize;
-		val = *(int*)task->dst ;
-		task->dst += sizeof(int);
+		val = *(lng*)task->dst ;
+		task->dst += sizeof(lng);
 		for(i = 0; i < lim; i++) {
-			((int*)task->src)[i] = val;
+			((lng*)task->src)[i] = val;
 			val += *(bte*) task->dst++;
 		}
-		task->src += i * sizeof(int);
+		task->src += i * sizeof(lng);
 	}
 	}
 }
@@ -319,7 +319,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_delta(cntxt,task);
@@ -533,7 +533,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
 		MOSskip_delta(cntxt,task);
@@ -626,7 +626,7 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: leftfetchjoin_delta(bit); break;
@@ -686,7 +686,7 @@ MOSjoin_delta(Client cntxt,  MOStask task)
 
 	// set the oid range covered and advance scan range
 	first = task->start;
-	last = first + MOScnt(task->blk);
+	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
 		case TYPE_bit: join_delta(bit); break;
