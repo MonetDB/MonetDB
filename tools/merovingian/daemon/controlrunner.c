@@ -683,6 +683,7 @@ static void ctl_handle_client(
 						Mfprintf(_mero_ctlerr, "%s: set: cannot perform "
 								"client share request: discovery service "
 								"is globally disabled\n", origin);
+						msab_freeStatus(&stats);
 						continue;
 					}
 

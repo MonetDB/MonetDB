@@ -1168,6 +1168,11 @@ command_set(int argc, char *argv[], meroset type)
 	msab_freeStatus(&orig);
 	orig = stats;
 
+	if (orig == NULL) {
+		/* error already printed by globMatchDBS */
+		exit(1);
+	}
+
 	/* handle rename separately due to single argument constraint */
 	if (strcmp(property, "name") == 0) {
 		if (type == INHERIT) {
