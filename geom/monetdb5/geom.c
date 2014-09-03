@@ -3384,7 +3384,7 @@ fprintf(stderr, "wkbaFROMSTR\n");
 /* returns a pointer to a null wkba */
 wkba* wkbaNULL(void) {
 	static wkba nullval;
-fprintf(stderr, "wkbaNULL\n");
+fprintf(stderr, "= wkbaNULL\n");
 
 	nullval.itemsNum = ~(int) 0;
 	return (&nullval);
@@ -3393,7 +3393,7 @@ fprintf(stderr, "wkbaNULL\n");
 BUN wkbaHASH(wkba *wArray) {
 	int j,i;
 	BUN h = 0;
-fprintf(stderr, "wkbaNULL\n");
+fprintf(stderr, "= wkbaNULL\n");
 
 	for (j = 0; j < wArray->itemsNum ; j++) {
 		wkb* w = wArray->data[j];
@@ -3407,7 +3407,7 @@ fprintf(stderr, "wkbaNULL\n");
 
 int wkbaCOMP(wkba *l, wkba *r) {
 	int i, res =0;;
-fprintf(stderr, "wkbaNULL\n");
+fprintf(stderr, "= wkbaNULL\n");
 
 	//compare the number of items
 	if (l->itemsNum != r->itemsNum)
@@ -3429,7 +3429,7 @@ wkba* wkbaREAD(wkba *a, stream *s, size_t cnt) {
 
 	(void) cnt;
 	assert(cnt == 1);
-	fprintf(stderr, "wkbaNULL\n");
+	fprintf(stderr, "= wkbaNULL\n");
 
 	if (mnstr_readInt(s, &items) != 1)
 		return NULL;
@@ -3452,7 +3452,7 @@ int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
 
 	(void) cnt;
 	assert(cnt == 1);
-	fprintf(stderr, "wkbaNULL\n");
+	fprintf(stderr, "= wkbaNULL\n");
 
 	if (!mnstr_writeInt(s, items))
 		return GDK_FAIL;
@@ -3467,7 +3467,7 @@ int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
 
 var_t wkbaPUT(Heap *h, var_t *bun, wkba *val) {
 	char *base;
-fprintf(stderr, "wkbaNULL\n");
+fprintf(stderr, "= wkbaNULL\n");
 
 	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
@@ -3477,18 +3477,18 @@ fprintf(stderr, "wkbaNULL\n");
 }
 
 void wkbaDEL(Heap *h, var_t *index) {
-	fprintf(stderr, "wkbaNULL\n");
+	fprintf(stderr, "= wkbaNULL\n");
 HEAP_free(h, *index);
 }
 
 int wkbaLENGTH(wkba *p) {
 	var_t len = wkba_size(p->itemsNum);
 	assert(len <= GDK_int_max);
-	fprintf(stderr, "wkbaNULL\n");
+	fprintf(stderr, "= wkbaNULL\n");
 return (int) len;
 }
 
 void wkbaHEAP(Heap *heap, size_t capacity) {
-	fprintf(stderr, "wkbaNULL\n");
+	fprintf(stderr, "= wkbaNULL\n");
 HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
