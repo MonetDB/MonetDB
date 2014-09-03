@@ -33,6 +33,7 @@
 #include "bam_db_interface.h"
 #include "bam_export.h"
 
+#define NOT_IMPLEMENTED		/* export is not yet implemented */
 
 typedef struct bam_field {
 	str name;
@@ -42,6 +43,8 @@ typedef struct bam_field {
 	BUN cur;
 } bam_field;
 
+
+#ifndef NOT_IMPLEMENTED
 
 /**
  * Copied directly from bam.h/bam_import.c for use by fill_bam_alig
@@ -222,7 +225,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 
 	return MAL_SUCCEED;
 }
-
+#endif
 
 
 
@@ -462,6 +465,14 @@ cleanup:
 str
 bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+#ifdef NOT_IMPLEMENTED
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+#else
 	/* arg 1: path to desired output file */
 	str output_path = *(str *) getArgReference(stk, pci, pci->retc);
 
@@ -479,8 +490,6 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	str sql;
 	str msg = MAL_SUCCEED;
-
-	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
 
 	if ((output = bam_open(output_path, "wb")) == NULL) {
 		msg = createException(MAL, "bam_export", "Could not open output file '%s' for writing", output_path);
@@ -564,5 +573,6 @@ cleanup:
 		unlink(output_header_path);
 	}
 	return msg;
+#endif
 }
 
