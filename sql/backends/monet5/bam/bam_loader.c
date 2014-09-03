@@ -81,8 +81,14 @@ create_reader_thread_data(bam_wrapper * bws, int nr_files, sht nr_threads)
 
 	sht i;
 
+	assert(nr_threads > 0);
+
 	if (d == NULL || reader_lock == NULL || cur_file == NULL
 		|| failure == NULL) {
+		GDKfree(d);
+		GDKfree(reader_lock);
+		GDKfree(cur_file);
+		GDKfree(failure);
 		return NULL;
 	}
 

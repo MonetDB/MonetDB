@@ -1783,63 +1783,118 @@ write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 /* Macros for appending data from an alignment struct to binary
  * files. Note that str msg should be defined in the caller. */
 
-#define ERR_APPEND_ALIGNMENT(msg, fnc, field) \
-	msg = createException(MAL, fnc, \
-						  "Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
-						   bw->file_location, field)
+#define ERR_APPEND_ALIGNMENT(msg, fnc, field)		\
+	do {											\
+		msg = createException(MAL, fnc,									\
+							  "Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
+							  bw->file_location, field);				\
+		goto cleanup;													\
+	} while (0)
 
-#define APPEND_ALIGNMENT(msg, fnc, a, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12) { \
-	if(!APPEND_LNG(f1, (a).virtual_offset)) ERR_APPEND_ALIGNMENT(msg, fnc, "virtual_offset"); \
-	if(f2 != NULL) { \
-		if(!APPEND_STR(f2, (a).qname)) ERR_APPEND_ALIGNMENT(msg, fnc, "qname"); \
-	} \
-	if(!APPEND_SHT(f3, (a).flag)) ERR_APPEND_ALIGNMENT(msg, fnc, "flag"); \
-	if(!APPEND_STR(f4, (a).rname)) ERR_APPEND_ALIGNMENT(msg, fnc, "rname"); \
-	if(!APPEND_INT(f5, (a).pos)) ERR_APPEND_ALIGNMENT(msg, fnc, "pos"); \
-	if(!APPEND_SHT(f6, (a).mapq)) ERR_APPEND_ALIGNMENT(msg, fnc, "mapq"); \
-	if(!APPEND_STR(f7, (a).cigar)) ERR_APPEND_ALIGNMENT(msg, fnc, "cigar"); \
-	if(!APPEND_STR(f8, (a).rnext)) ERR_APPEND_ALIGNMENT(msg, fnc, "rnext"); \
-	if(!APPEND_INT(f9, (a).pnext)) ERR_APPEND_ALIGNMENT(msg, fnc, "pnext"); \
-	if(!APPEND_INT(f10, (a).tlen)) ERR_APPEND_ALIGNMENT(msg, fnc, "tlen"); \
-	if(!APPEND_STR(f11, (a).seq)) ERR_APPEND_ALIGNMENT(msg, fnc, "seq"); \
-	if(!APPEND_STR(f12, (a).qual)) ERR_APPEND_ALIGNMENT(msg, fnc, "qual"); \
-}
+#define APPEND_ALIGNMENT(msg, fnc, a, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12) \
+	do {																\
+		if(!APPEND_LNG(f1, (a).virtual_offset))							\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "virtual_offset");			\
+		if(f2 != NULL) {												\
+			if(!APPEND_STR(f2, (a).qname))								\
+				ERR_APPEND_ALIGNMENT(msg, fnc, "qname");				\
+		}																\
+		if(!APPEND_SHT(f3, (a).flag))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "flag");						\
+		if(!APPEND_STR(f4, (a).rname))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "rname");					\
+		if(!APPEND_INT(f5, (a).pos))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "pos");						\
+		if(!APPEND_SHT(f6, (a).mapq))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "mapq");						\
+		if(!APPEND_STR(f7, (a).cigar))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "cigar");					\
+		if(!APPEND_STR(f8, (a).rnext))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "rnext");					\
+		if(!APPEND_INT(f9, (a).pnext))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "pnext");					\
+		if(!APPEND_INT(f10, (a).tlen))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "tlen");						\
+		if(!APPEND_STR(f11, (a).seq))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "seq");						\
+		if(!APPEND_STR(f12, (a).qual))									\
+			ERR_APPEND_ALIGNMENT(msg, fnc, "qual");						\
+	} while (0)
 
-#define APPEND_ALIGNMENT_UNPAIRED(msg, fnc, a, bw) { \
-	APPEND_ALIGNMENT(msg, fnc, a, bw->alignments[0], bw->alignments[1], bw->alignments[2], \
-		bw->alignments[3], bw->alignments[4], bw->alignments[5], bw->alignments[6], bw->alignments[7], \
-		bw->alignments[8], bw->alignments[9], bw->alignments[10], bw->alignments[11]) \
-}
+#define APPEND_ALIGNMENT_UNPAIRED(msg, fnc, a, bw)	\
+		APPEND_ALIGNMENT(msg, fnc, a,				\
+						 bw->alignments[0],			\
+						 bw->alignments[1],			\
+						 bw->alignments[2],			\
+						 bw->alignments[3],			\
+						 bw->alignments[4],			\
+						 bw->alignments[5],			\
+						 bw->alignments[6],			\
+						 bw->alignments[7],			\
+						 bw->alignments[8],			\
+						 bw->alignments[9],			\
+						 bw->alignments[10],		\
+						 bw->alignments[11])
 
-#define APPEND_ALIGNMENT_PRIM_PAIRED_L(msg, fnc, a, bw) { \
-	APPEND_ALIGNMENT(msg, fnc, a, bw->alignments_paired_primary[0], bw->alignments_paired_primary[2], \
-		bw->alignments_paired_primary[3], bw->alignments_paired_primary[4], bw->alignments_paired_primary[5], \
-		bw->alignments_paired_primary[6], bw->alignments_paired_primary[7], bw->alignments_paired_primary[8], \
-		bw->alignments_paired_primary[9], bw->alignments_paired_primary[10], bw->alignments_paired_primary[11], \
-		bw->alignments_paired_primary[12]) \
-}
+#define APPEND_ALIGNMENT_PRIM_PAIRED_L(msg, fnc, a, bw)			\
+		APPEND_ALIGNMENT(msg, fnc, a,							\
+						 bw->alignments_paired_primary[0],		\
+						 bw->alignments_paired_primary[2],		\
+						 bw->alignments_paired_primary[3],		\
+						 bw->alignments_paired_primary[4],		\
+						 bw->alignments_paired_primary[5],		\
+						 bw->alignments_paired_primary[6],		\
+						 bw->alignments_paired_primary[7],		\
+						 bw->alignments_paired_primary[8],		\
+						 bw->alignments_paired_primary[9],		\
+						 bw->alignments_paired_primary[10],		\
+						 bw->alignments_paired_primary[11],		\
+						 bw->alignments_paired_primary[12])
 
-#define APPEND_ALIGNMENT_PRIM_PAIRED_R(msg, fnc, a, bw) { \
-	APPEND_ALIGNMENT(msg, fnc, a, bw->alignments_paired_primary[1], NULL, bw->alignments_paired_primary[13], \
-		bw->alignments_paired_primary[14], bw->alignments_paired_primary[15], bw->alignments_paired_primary[16], \
-		bw->alignments_paired_primary[17], bw->alignments_paired_primary[18], bw->alignments_paired_primary[19], \
-		bw->alignments_paired_primary[20], bw->alignments_paired_primary[21], bw->alignments_paired_primary[22]) \
-}
+#define APPEND_ALIGNMENT_PRIM_PAIRED_R(msg, fnc, a, bw)		\
+		APPEND_ALIGNMENT(msg, fnc, a,						\
+						 bw->alignments_paired_primary[1],	\
+						 NULL,								\
+						 bw->alignments_paired_primary[13],	\
+						 bw->alignments_paired_primary[14],	\
+						 bw->alignments_paired_primary[15],	\
+						 bw->alignments_paired_primary[16],	\
+						 bw->alignments_paired_primary[17],	\
+						 bw->alignments_paired_primary[18],	\
+						 bw->alignments_paired_primary[19],	\
+						 bw->alignments_paired_primary[20],	\
+						 bw->alignments_paired_primary[21],	\
+						 bw->alignments_paired_primary[22])
 
-#define APPEND_ALIGNMENT_SECO_PAIRED_L(msg, fnc, a, bw) { \
-	APPEND_ALIGNMENT(msg, fnc, a, bw->alignments_paired_secondary[0], bw->alignments_paired_secondary[2], \
-		bw->alignments_paired_secondary[3], bw->alignments_paired_secondary[4], bw->alignments_paired_secondary[5], \
-		bw->alignments_paired_secondary[6], bw->alignments_paired_secondary[7], bw->alignments_paired_secondary[8], \
-		bw->alignments_paired_secondary[9], bw->alignments_paired_secondary[10], bw->alignments_paired_secondary[11], \
-		bw->alignments_paired_secondary[12]) \
-}
+#define APPEND_ALIGNMENT_SECO_PAIRED_L(msg, fnc, a, bw)			\
+		APPEND_ALIGNMENT(msg, fnc, a,							\
+						 bw->alignments_paired_secondary[0],	\
+						 bw->alignments_paired_secondary[2],	\
+						 bw->alignments_paired_secondary[3],	\
+						 bw->alignments_paired_secondary[4],	\
+						 bw->alignments_paired_secondary[5],	\
+						 bw->alignments_paired_secondary[6],	\
+						 bw->alignments_paired_secondary[7],	\
+						 bw->alignments_paired_secondary[8],	\
+						 bw->alignments_paired_secondary[9],	\
+						 bw->alignments_paired_secondary[10],	\
+						 bw->alignments_paired_secondary[11],	\
+						 bw->alignments_paired_secondary[12])
 
-#define APPEND_ALIGNMENT_SECO_PAIRED_R(msg, fnc, a, bw) { \
-	APPEND_ALIGNMENT(msg, fnc, a, bw->alignments_paired_secondary[1], NULL, bw->alignments_paired_secondary[13], \
-		bw->alignments_paired_secondary[14], bw->alignments_paired_secondary[15], bw->alignments_paired_secondary[16], \
-		bw->alignments_paired_secondary[17], bw->alignments_paired_secondary[18], bw->alignments_paired_secondary[19], \
-		bw->alignments_paired_secondary[20], bw->alignments_paired_secondary[21], bw->alignments_paired_secondary[22]) \
-}
+#define APPEND_ALIGNMENT_SECO_PAIRED_R(msg, fnc, a, bw)			\
+		APPEND_ALIGNMENT(msg, fnc, a,							\
+						 bw->alignments_paired_secondary[1],	\
+						 NULL,									\
+						 bw->alignments_paired_secondary[13],	\
+						 bw->alignments_paired_secondary[14],	\
+						 bw->alignments_paired_secondary[15],	\
+						 bw->alignments_paired_secondary[16],	\
+						 bw->alignments_paired_secondary[17],	\
+						 bw->alignments_paired_secondary[18],	\
+						 bw->alignments_paired_secondary[19],	\
+						 bw->alignments_paired_secondary[20],	\
+						 bw->alignments_paired_secondary[21],	\
+						 bw->alignments_paired_secondary[22])
 
 
 
@@ -1878,13 +1933,8 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 		&& prim_last_segm != NULL) {
 		APPEND_ALIGNMENT_PRIM_PAIRED_L(msg, "complete_qname_group",
 						   *prim_firs_segm, bw);
-		if (msg != MAL_SUCCEED)
-			return msg;
-
 		APPEND_ALIGNMENT_PRIM_PAIRED_R(msg, "complete_qname_group",
 						   *prim_last_segm, bw);
-		if (msg != MAL_SUCCEED)
-			return msg;
 
 		prim_firs_segm->written = TRUE;
 		prim_last_segm->written = TRUE;
@@ -1922,29 +1972,19 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 									   "complete_qname_group",
 									   *a,
 									   bw);
-					if (msg != MAL_SUCCEED)
-						return msg;
-
 					APPEND_ALIGNMENT_SECO_PAIRED_R(msg,
 									   "complete_qname_group",
 									   *a2,
 									   bw);
-					if (msg != MAL_SUCCEED)
-						return msg;
 				} else {
 					APPEND_ALIGNMENT_SECO_PAIRED_L(msg,
 									   "complete_qname_group",
 									   *a2,
 									   bw);
-					if (msg != MAL_SUCCEED)
-						return msg;
-
 					APPEND_ALIGNMENT_SECO_PAIRED_R(msg,
 									   "complete_qname_group",
 									   *a,
 									   bw);
-					if (msg != MAL_SUCCEED)
-						return msg;
 				}
 				a->written = TRUE;
 				a2->written = TRUE;
@@ -1958,8 +1998,6 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 		if (!alignments[i]->written) {
 			APPEND_ALIGNMENT_UNPAIRED(msg, "complete_qname_group",
 						  *alignments[i], bw);
-			if (msg != MAL_SUCCEED)
-				return msg;
 
 			alignments[i]->written = TRUE;
 			++bw->cnt_alignments;
@@ -1967,6 +2005,9 @@ complete_qname_group(alignment ** alignments, int nr_alignments,
 	}
 
 	return MAL_SUCCEED;
+
+cleanup:
+	return msg;
 }
 
 #define BAMSAM_TELL(bw) (bw->type == BAM ? bam_tell(bw->bam.input) : (bw->cnt_alignments_total + 1))
@@ -2082,9 +2123,6 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 			/* Write data directly if we are loading into the sfw storage schema */
 			APPEND_ALIGNMENT_UNPAIRED(msg, "process_alignments", *a, bw);
 			++bw->cnt_alignments;
-			if (msg != MAL_SUCCEED) {
-				goto cleanup;
-			}
 		}
 
 		/* Always write auxiliary data immediately */
@@ -2118,9 +2156,6 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 				APPEND_ALIGNMENT_UNPAIRED(msg,
 							  "process_alignments",
 							  *a, bw);
-				if (msg != MAL_SUCCEED) {
-					goto cleanup;
-				}
 				a->written = TRUE;
 				++bw->cnt_alignments;
 			} else {
