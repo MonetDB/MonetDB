@@ -543,7 +543,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	FILE *f = NULL;
 
-	char cur;
+	int cur;
 	int line_size;
 	str line = NULL;
 	size_t line_buf_size = 0;
