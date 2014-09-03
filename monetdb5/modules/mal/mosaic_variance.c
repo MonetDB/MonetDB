@@ -283,7 +283,7 @@ MOScompress_variance(Client cntxt, MOStask task)
 {	bte *idx = (bte*)(compressed + dictsize * sizeof(TPE));\
 	TPE *dict = (TPE*) compressed,val = dict[0];\
 	BUN lim = MOScnt(blk);\
-	((int*)task->src)[0] = val;\
+	((TPE*)task->src)[0] = val;\
 	for(i = 1; i < lim; i++,idx++){\
 		val += dict[ (bte)*idx];\
 		((TPE*)task->src)[i] = val;\
