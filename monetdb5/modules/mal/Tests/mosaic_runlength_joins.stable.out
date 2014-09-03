@@ -27,7 +27,7 @@ function user.main():void;
     bat.append(b,9);
     b := bat.append(b,b);
     io.print(b);
-    x := mosaic.compress(b,"runtime");
+    x := mosaic.compress(b,"runlength");
     c := bat.new(:oid,:oid);
     bat.append(c,0@0);
     bat.append(c,2@0);

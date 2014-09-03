@@ -207,10 +207,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		} else
 			dictsize = 2;
 	}
-	if (flg == 0){
-		BBPkeepref(*ret = *bid);
-		return msg;	// don't compress at all
-	}
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
@@ -233,6 +229,10 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 		// don't compress them
 		BBPkeepref(*ret = b->batCacheid);
 		return msg;
+	}
+	if (flg == 0){
+		BBPkeepref(*ret = b->batCacheid);
+		return msg;	// don't compress at all
 	}
 
 	if (b->T->heap.compressed) {
@@ -1057,7 +1057,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret,*lid,*rid;
+	int *ret, *ret2,*lid,*rid;
 	int part, nrofparts;
 	int startblk,stopblk;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
@@ -1069,11 +1069,12 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	ret = (int*) getArgReference(stk,pci,0);
+	ret2 = (int*) getArgReference(stk,pci,1);
 	lid = (int*) getArgReference(stk,pci,2);
 	rid = (int*) getArgReference(stk,pci,3);
 
 	if( !isCompressed(*lid) && !isCompressed(*rid))
-		return ALGjoin(ret,lid,rid);
+		return ALGjoin2(ret,ret2,lid,rid);
 
 	bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
 	if( bl == NULL)
