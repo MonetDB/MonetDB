@@ -69,10 +69,11 @@ MOSskip_delta(Client cntxt, MOStask task)
 }
 
 // append a series of values into the non-compressed block
-#define Estimate_delta(TYPE)\
+#define Estimate_delta(TYPE, EXPR)\
 {	TYPE *w = (TYPE*)task->src, val= *w, delta;\
 	for(w++,i =1; i<task->elm; i++,w++){\
 		delta = *w -val;\
+		if ( EXPR)\
 		if ( delta < -127 || delta >127)\
 			break;\
 		val = *w;\
@@ -89,23 +90,13 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_sht: Estimate_delta(sht); break;
-	case TYPE_oid: 
-		{	oid *w = (oid*)task->src, val= *w, delta;
-			for(w++,i =1; i<task->elm; i++,w++){
-				delta = *w -val;
-				if ( delta < 256)
-					break;
-				val = *w;
-			}
-			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ((float) i * sizeof(oid))/  (MosaicBlkSize + sizeof(oid)+(bte)i-1);
-		}
-		break;
-	case TYPE_wrd: Estimate_delta(wrd); break;
-	case TYPE_lng: Estimate_delta(lng); break;
+	//case TYPE_bte: case TYPE_bit: no compression achievable
+	case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
+	case TYPE_oid: Estimate_delta(sht,  (delta < 256)); break;
+	case TYPE_wrd: Estimate_delta(wrd,  (delta < -127 || delta >127)); break;
+	case TYPE_lng: Estimate_delta(lng,  (delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: Estimate_delta(hge); break;
+	case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
 #endif
 	case TYPE_int:
 		{	int *w = (int*)task->src, val= *w, delta;
@@ -152,6 +143,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	MOSsetTag(blk,MOSAIC_DELTA);
 
 	switch(ATOMstorage(task->type)){
+	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht); break;
 	case TYPE_wrd: DELTAcompress(wrd); break;
 	case TYPE_int: DELTAcompress(int); break;
@@ -219,6 +211,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
+	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_wrd: DELTAdecompress(wrd); break;

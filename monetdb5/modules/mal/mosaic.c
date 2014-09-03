@@ -465,6 +465,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties)
 	bn->hdense = 1;
 	bn->hkey = 1;
 	bn->batDirty = 1;
+	bn->T->heap.free = (lng) (task->dst- Tloc(bn,BUNfirst(bn)));
 	bn->T->heap.compressed= 1;
 	bn->T->heap.count = cnt;
 	bn->T->nonil = b->T->nonil;
@@ -579,7 +580,6 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 	BATseqbase(bn,b->hseqbase);
     bn->hdense = 1;
     bn->hkey = 1;
-	bn->T->heap.free = (lng) (task->dst- Tloc(bn,BUNfirst(bn)));
 	bn->T->nonil = b->T->nonil;
 	bn->T->nil = b->T->nil;
 	bn->T->seq = b->T->seq;
