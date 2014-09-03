@@ -1437,6 +1437,13 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
+		int t = r->htype;
+		if (t != ATOMstorage(t) &&
+		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+		    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+			t = ATOMstorage(t);
+
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -1460,13 +1467,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				int t = r->htype;
-				if (t != ATOMstorage(t) &&
-				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
-				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-					t = ATOMstorage(t);
-
 				switch (t) {
 				case TYPE_int:
 					if (!nil_matches && *(const int*)v == int_nil) {
