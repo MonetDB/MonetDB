@@ -720,6 +720,7 @@ process_header(bam_wrapper * bw)
 	str s;
 	lng l;
 
+	hl.options = NULL;
 	if (bw->type == BAM) {
 		header_str = bw->bam.header->text;
 	} else {
@@ -2101,7 +2102,8 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 			 * this knowledge to write the alignments for
 			 * that qname to suitable files.
 			 */
-			complete_qname_group(aligs, alig_index, bw);
+			if ((msg = complete_qname_group(aligs, alig_index, bw)) != MAL_SUCCEED)
+				goto cleanup;
 
 			/* All alignments for the previous qname are
 			 * written to files, we can now start
@@ -2173,7 +2175,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 					if ((aligs =
 						 GDKrealloc(aligs,
 							new_nr_aligs *
-							sizeof(alignment))) ==
+							sizeof(alignment *))) ==
 						NULL) {
 						msg = createException(MAL,
 									  "process_alignments",
@@ -2209,7 +2211,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	if (bw->dbschema == 1) {
 		/* alignments will still contain at least one
 		 * alignment, so empty it */
-		complete_qname_group(aligs, alig_index, bw);
+		msg = complete_qname_group(aligs, alig_index, bw);
 	}
 
 	  cleanup:

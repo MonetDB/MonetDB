@@ -689,12 +689,13 @@ bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str msg;
 
-	if ((msg =
-		 drop_file(cntxt, "bam.drop_file", file_id,
-			   dbschema)) != MAL_SUCCEED) {
-		throw(MAL, "bam_drop_file",
+	msg = drop_file(cntxt, "bam.drop_file", file_id, dbschema);
+	if (msg != MAL_SUCCEED) {
+		str msg2 = createException(MAL, "bam_drop_file",
 			  "Error when dropping file with file id '" LLFMT
 			  "': %s\n", file_id, msg);
+		GDKfree(msg);
+		return msg2;
 	}
 
 	(void) stk;

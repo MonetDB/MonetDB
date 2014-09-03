@@ -426,7 +426,8 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 
-	write_header(output, fields);
+	if ((msg = write_header(output, fields)) != MAL_SUCCEED)
+		goto cleanup;
 
 
 	for (i=0; i<tuple_count; ++i) {
