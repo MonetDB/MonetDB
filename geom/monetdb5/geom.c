@@ -3050,9 +3050,6 @@ str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 		BBPreleaseref(yBAT->batCacheid);
 		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
 	}
-fprintf(stderr, "xBAT %d\n", (int)BATcount(xBAT));
-fprintf(stderr, "yBAT %d\n", (int)BATcount(yBAT));
-fprintf(stderr, "OIDsBAT %d\n", (int)BATcount(OIDsBAT));
 	
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(OIDsBAT)) {
@@ -3368,6 +3365,7 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 	BAT *xBAT=NULL, *yBAT=NULL, *xCandidateOIDsBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;
 	str err;
+	double xmin=0.0, xmax=0.0, ymin=0.0, ymax=0.0;
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
@@ -3377,9 +3375,6 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 		BBPreleaseref(xBAT->batCacheid);
 		throw(MAL, "batgeom.wkbFilterWithImprints", RUNTIME_OBJECT_MISSING);
 	}
-fprintf(stderr, "xBAT %d\n", (int)BATcount(xBAT));
-fprintf(stderr, "yBAT %d\n", (int)BATcount(yBAT));
-
 
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
@@ -3404,21 +3399,24 @@ fprintf(stderr, "yBAT %d\n", (int)BATcount(yBAT));
 	}
 	
 	//get candidateOIDs from xBAT (limits are considred to be inclusive)
-	xCandidateOIDsBAT = BATsubselect(xBAT, NULL, &(geomMBR->xmin), &(geomMBR->xmax), 1, 1, 0);
+	xmin = geomMBR->xmin;
+	xmax = geomMBR->xmax;
+	xCandidateOIDsBAT = BATsubselect(xBAT, NULL, &xmin, &xmax, 1, 1, 0);
 	if(xCandidateOIDsBAT == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		return createException(MAL,"batgeom.wkbFilterWithImprints","Problem filtering xBAT");
 	}
-fprintf(stderr, "xCandidateOIDsBAT %d, (%f, %f)\n", (int)BATcount(xCandidateOIDsBAT), geomMBR->xmin, geomMBR->xmax);
+	
 	//get candidateOIDs using yBAT and xCandidateOIDsBAT
-	candidateOIDsBAT = BATsubselect(yBAT, xCandidateOIDsBAT, &(geomMBR->ymin), &(geomMBR->ymax), 1, 1, 0);
+	ymin = geomMBR->ymin;
+	ymax = geomMBR->ymax;
+	candidateOIDsBAT = BATsubselect(yBAT, xCandidateOIDsBAT, &ymin, &ymax, 1, 1, 0);
 	if(candidateOIDsBAT == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		return createException(MAL,"batgeom.wkbFilterWithImprints","Problem filtering yBAT");
 	}
-fprintf(stderr, "candidateOIDsBAT %d (%f, %f)\n", (int)BATcount(candidateOIDsBAT), geomMBR->ymin, geomMBR->ymax);
 
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
