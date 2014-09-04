@@ -892,12 +892,21 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
 		}
 	}
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATtrevordered(b);
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), BATtkey(b));
+	if (bn->batCount <= 1) {
+		bn->hsorted = 1;
+		bn->tsorted = 1;
+		bn->hrevsorted = 1;
+		bn->trevsorted = 1;
+		BATkey(bn, 1);
+		BATkey(BATmirror(bn), 1);
+	} else {
+		bn->hsorted = BAThordered(b);
+		bn->tsorted = BATtordered(b);
+		bn->hrevsorted = BAThrevordered(b);
+		bn->trevsorted = BATtrevordered(b);
+		BATkey(bn, BAThkey(b));
+		BATkey(BATmirror(bn), BATtkey(b));
+	}
 	bn->H->nonil = b->H->nonil || bn->batCount == 0;
 	bn->T->nonil = b->T->nonil || bn->batCount == 0;
 	bn->H->nil = bn->T->nil = 0;	/* we just don't know */
