@@ -3077,9 +3077,15 @@ BATproject(BAT *l, BAT *r)
 	}
 	/* some properties follow from certain combinations of input
 	 * properties */
-	bn->tkey |= l->tkey && r->tkey;
-	bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-	bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	if (BATcount(bn) <= 1) {
+		bn->tkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+	} else {
+		bn->tkey |= l->tkey && r->tkey;
+		bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+		bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
 	BATseqbase(bn, l->hseqbase);
