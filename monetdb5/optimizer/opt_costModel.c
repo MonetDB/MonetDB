@@ -61,7 +61,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getModuleId(p)==algebraRef) {
 			 if (getFunctionId(p) == subselectRef ||
 				getFunctionId(p) == thetasubselectRef) {
-				newRows(1,1, (c1 > 100 ? c1 / 2 +1: c1),0);
+				newRows(1,2, (c1 > 2 ? c2 / 2 +1: c1/2+1),0);
 			} else if (
 				getFunctionId(p) == selectNotNilRef  ||
 				getFunctionId(p) == sortRef  ||

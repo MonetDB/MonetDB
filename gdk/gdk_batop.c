@@ -1145,8 +1145,9 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		 * return group information, or we can trivially
 		 * deduce the groups */
 		if (sorted) {
-			BBPfix(b->batCacheid);
-			bn = b;
+			bn = BATcopy(b, TYPE_void, b->ttype, 0, TRANSIENT);
+			if (bn == NULL)
+				goto error;
 			*sorted = bn;
 		}
 		if (order) {
@@ -1234,8 +1235,10 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			if (order)
 				*order = on;
 			if (groups) {
-				BBPfix(g->batCacheid);
-				*groups = g;
+				gn = BATcopy(g, TYPE_void, g->ttype, 0, TRANSIENT);
+				if (gn == NULL)
+					goto error;
+				*groups = gn;
 			}
 			return GDK_SUCCEED;
 		}

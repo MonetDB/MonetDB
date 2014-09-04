@@ -45,10 +45,24 @@ headers_mal = {
 	SOURCES = generator.mal
 }
 
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = generator_hge.mal
+}
+
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 90_generator.sql
+}
+
+headers_sql_hge = {
+	COND = HAVE_HGE
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 89_generator_hge.sql
 }
 
 headers_autoload = {
@@ -57,5 +71,11 @@ headers_autoload = {
 	SOURCES = 90_generator.mal
 }
 
+headers_autoload_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 89_generator_hge.mal
+}
+
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 90_generator.mal 90_generator.sql generator.mal

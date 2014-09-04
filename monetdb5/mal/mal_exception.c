@@ -41,7 +41,7 @@ static char *exceptionNames[] = {
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
 /*14 */	"RDFException",
-/*15 */	"XQUERYException",
+/*15 */	"Deprecated operation",
 /*EOE*/	NULL
 };
 

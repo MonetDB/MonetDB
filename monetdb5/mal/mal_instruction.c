@@ -717,7 +717,7 @@ getRefName(MalBlkPtr mb, int i)
 }
 
 int
-findVariable(MalBlkPtr mb, str name)
+findVariable(MalBlkPtr mb, const char *name)
 {
 	int i;
 

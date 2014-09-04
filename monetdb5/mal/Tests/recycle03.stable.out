@@ -49,7 +49,7 @@ function sql.qry(low:int,hgh:int):void;
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-    j := algebra.join(s1,b);
+    j := algebra.semijoin(s1,b);
     io.print(j);
 end qry;
 #
@@ -85,62 +85,57 @@ function sql.qry(low:int,hgh:int):void;
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-    j := algebra.join(s1,b);
+    j := algebra.semijoin(s1,b);
     io.print(j);
 end qry;
 [ "start" ]
 #-----------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
-[ 3@0,	  4	  ]
-[ 4@0,	  5	  ]
-[ 5@0,	  6	  ]
-[ 6@0,	  7	  ]
-[ 7@0,	  8	  ]
-[ 8@0,	  9	  ]
-[ 9@0,	  10	  ]
+# void	void  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	8@0  ]
+[ 8@0,	9@0  ]
+[ 9@0,	10@0  ]
 [ "zoom in" ]
 #-----------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
-[ 3@0,	  4	  ]
-[ 4@0,	  5	  ]
+# void	void  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
 [ "next step" ]
 #-----------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  2	  ]
-[ 1@0,	  3	  ]
+# void	void  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	3@0  ]
 [ "last" ]
 #-----------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
-[ 3@0,	  4	  ]
-[ 4@0,	  5	  ]
-[ 5@0,	  6	  ]
-[ 6@0,	  7	  ]
-[ 7@0,	  8	  ]
-[ 8@0,	  9	  ]
-[ 9@0,	  10	  ]
-#RECYCLER  CATALOG admission ADM_ALL
-#CACHE= policy PROFIT limit= 20000 
-#RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008
-#recycled = 8 incache= 11 executed = 1560 memory(KB)= 896 PersBat memory=0
-#RPremoved = 0 RPactive= 11 RPmisses = 0
-#Cache search time= 0(usec)
+# void	void  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	8@0  ]
+[ 8@0,	9@0  ]
+[ 9@0,	10@0  ]
+#RECYCLER CATALOG cached 11 instructions, MAL recycled = 7 total MAL executed = 1729 memory= 136 total searchtime=26.73(usec) savings=5564932
 # CL	   lru		cnt	 ticks	 rd	 wr	 Instr
 #        0	123173	4	47	0	0	    X_0 := sql.mvc();
 #        1	123183	4	58	88	0	    X_1 := sql.tid(1,"sys","tbl");

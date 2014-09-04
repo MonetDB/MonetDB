@@ -1,7 +1,8 @@
 	b := bat.new(:oid,:int);
-	s1 := algebra.select(b,80,90);
-	s2 := algebra.select(s1,90,80);
-	s3 := algebra.select(s2,80,80);
+	x := bat.new(:oid,:oid);
+	s1 := algebra.subselect(b,x,80,90,true,true,false);
+	s2 := algebra.subselect(b,s1,90,80,true,true,false);
+	s3 := algebra.subselect(b,s2,80,80,true,true,false);
 	io.print(s3);
 
 optimizer.pushranges();
