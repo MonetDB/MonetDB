@@ -150,7 +150,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta >127)); break;
-	case TYPE_oid: DELTAcompress(hge,(delta < 256)); break;
+	case TYPE_oid: DELTAcompress(oid,(delta < 256)); break;
 	case TYPE_wrd: DELTAcompress(wrd,(delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta >127)); break;
