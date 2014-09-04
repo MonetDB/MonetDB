@@ -36,8 +36,124 @@ Ready.
 [ 6.4	]
 [ 8	]
 [ 9.6	]
+#select * from generate_series(cast(0.0 as real),cast(10.0 as real),cast(1.6 as real));
+% . # table_name
+% value # name
+% real # type
+% 15 # length
+[ 0	]
+[ 1.60000002	]
+[ 3.20000005	]
+[ 4.80000019	]
+[ 6.4000001	]
+[ 8	]
+[ 9.60000038	]
+#select * from generate_series(cast(0.0 as double),cast(10.0 as double),cast(1.6 as double));
+% . # table_name
+% value # name
+% double # type
+% 24 # length
+[ 0	]
+[ 1.6	]
+[ 3.2	]
+[ 4.8	]
+[ 6.4	]
+[ 8	]
+[ 9.6	]
+#select * from generate_series(cast(0.0 as decimal(10,2)),cast(10.0 as decimal(10,2)),cast(1.6 as decimal(10,2)));
+% . # table_name
+% value # name
+% decimal # type
+% 12 # length
+[ 0.00	]
+[ 1.60	]
+[ 3.20	]
+[ 4.80	]
+[ 6.40	]
+[ 8.00	]
+[ 9.60	]
 #select * from generate_series(0.1,10.0,1.77) 
 #where value <5.0;
+% . # table_name
+% value # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 1.87	]
+[ 3.64	]
+#select * from generate_series(cast(0.1 as real),cast(10.0 as real),cast(1.77 as real)) 
+#where value <5.0;
+% . # table_name
+% value # name
+% real # type
+% 15 # length
+[ 0.100000001	]
+[ 1.87	]
+[ 3.63999987	]
+#select * from generate_series(cast(0.1 as double),cast(10.0 as double),cast(1.77 as double)) 
+#where value <5.0;
+% . # table_name
+% value # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 1.87	]
+[ 3.64	]
+#select * from generate_series(cast(0.1 as decimal(10,2)),cast(10.0 as decimal(10,2)),cast(1.77 as decimal(10,2))) 
+#where value <5.0;
+% . # table_name
+% value # name
+% decimal # type
+% 12 # length
+[ 0.10	]
+[ 1.87	]
+[ 3.64	]
+#select * from generate_series(0.2,10.0,1.9) as v
+#where value <7.0 and value >3.0;
+% .v # table_name
+% value # name
+% double # type
+% 24 # length
+[ 4	]
+[ 5.9	]
+#select * from generate_series(cast(0.2 as real),cast(10.0 as real),cast(1.9 as real)) as v
+#where value <7.0 and value >3.0;
+% .v # table_name
+% value # name
+% real # type
+% 15 # length
+[ 4	]
+[ 5.89999962	]
+#select * from generate_series(cast(0.2 as double),cast(10.0 as double),cast(1.9 as double)) as v
+#where value <7.0 and value >3.0;
+% .v # table_name
+% value # name
+% double # type
+% 24 # length
+[ 4	]
+[ 5.9	]
+#select * from generate_series(cast(0.2 as decimal(10,2)),cast(10.0 as decimal(10,2)),cast(1.9 as decimal(10,2))) as v
+#where value <7.0 and value >3.0;
+% .v # table_name
+% value # name
+% decimal # type
+% 12 # length
+[ 4.00	]
+[ 5.90	]
+#select * from generate_series(0.0e0,10.0e0,1.6e0);
+% . # table_name
+% value # name
+% double # type
+% 24 # length
+[ 0	]
+[ 1.6	]
+[ 3.2	]
+[ 4.8	]
+[ 6.4	]
+[ 8	]
+[ 9.6	]
+#select * from generate_series(0.1e0,10.0e0,1.77e0) 
+#where value <5.0e0;
 % . # table_name
 % value # name
 % double # type

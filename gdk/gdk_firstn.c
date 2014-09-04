@@ -712,12 +712,9 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 #define shuffle_grouped_with_groups2(TYPE)				\
 	do {								\
 		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
-		TYPE lastval = v[groups[top - 1].bun];			\
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;	\
 		     i < end;						\
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
-			if (asc ? v[i] > lastval : v[i] < lastval)	\
-				continue;				\
 			for (j = 0; j < top; j++) {			\
 				if (gv[ci] == groups[j].grp &&		\
 				    v[i] == v[groups[j].bun]) {		\

@@ -49575,6 +49575,10 @@ pattern generator.join(b:bat[:oid,:sht],gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:
 address VLTgenerator_join;
 pattern generator.join(b:bat[:oid,:bte],gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
+pattern generator.join(b:bat[:oid,:hge],gen:bat[:oid,:hge]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+comment Overloaded join operation
+
 pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
 address VLTgenerator_leftfetchjoin;
 comment Overloaded leftfetchjoin operation
@@ -49591,6 +49595,10 @@ pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:
 address VLTgenerator_leftfetchjoin;
 pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
 address VLTgenerator_leftfetchjoin;
+pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:hge]):bat[:oid,:hge] 
+address VLTgenerator_leftfetchjoin;
+comment Overloaded leftfetchjoin operation
+
 pattern generator.parameters(first:dbl,last:dbl):bat[:oid,:dbl] 
 address VLTgenerator_noop;
 pattern generator.parameters(first:flt,last:flt):bat[:oid,:flt] 
@@ -49619,6 +49627,12 @@ pattern generator.parameters(first:sht,last:sht,step:sht):bat[:oid,:sht]
 address VLTgenerator_noop;
 pattern generator.parameters(first:bte,last:bte,step:bte):bat[:oid,:bte] 
 address VLTgenerator_noop;
+pattern generator.parameters(first:hge,last:hge):bat[:oid,:hge] 
+address VLTgenerator_noop;
+pattern generator.parameters(first:hge,last:hge,step:hge):bat[:oid,:hge] 
+address VLTgenerator_noop;
+comment Retain the table definition, but don't materialize
+
 pattern generator.subselect(b:bat[:oid,:timestamp],cand:bat[:oid,:oid],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address VLTgenerator_subselect;
 comment Overloaded selection routine
@@ -49679,6 +49693,20 @@ pattern generator.series(first:sht,last:sht):bat[:oid,:sht]
 address VLTgenerator_table;
 pattern generator.series(first:bte,last:bte):bat[:oid,:bte] 
 address VLTgenerator_table;
+pattern generator.subselect(b:bat[:oid,:hge],cand:bat[:oid,:oid],low:hge,high:hge,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+comment Overloaded selection routine
+
+pattern generator.subselect(b:bat[:oid,:hge],low:hge,high:hge,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+address VLTgenerator_subselect;
+comment Overloaded selection routine
+
+pattern generator.series(first:hge,last:hge,step:hge):bat[:oid,:hge] 
+address VLTgenerator_table;
+comment Create and materialize a generator table
+
+pattern generator.series(first:hge,last:hge):bat[:oid,:hge] 
+address VLTgenerator_table;
 pattern generator.thetasubselect(b:bat[:oid,:timestamp],cnd:bat[:oid,:oid],low:timestamp,oper:str):bat[:oid,:oid] 
 address VLTgenerator_thetasubselect;
 comment Overloaded selection routine
@@ -49711,6 +49739,14 @@ pattern generator.thetasubselect(b:bat[:oid,:sht],low:sht,oper:str):bat[:oid,:oi
 address VLTgenerator_thetasubselect;
 pattern generator.thetasubselect(b:bat[:oid,:bte],low:bte,oper:str):bat[:oid,:oid] 
 address VLTgenerator_thetasubselect;
+pattern generator.thetasubselect(b:bat[:oid,:hge],cnd:bat[:oid,:oid],low:hge,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+comment Overloaded selection routine
+
+pattern generator.thetasubselect(b:bat[:oid,:hge],low:hge,oper:str):bat[:oid,:oid] 
+address VLTgenerator_thetasubselect;
+comment Overloaded selection routine
+
 command geom.Area(g:wkb):dbl 
 address wkbArea;
 comment Returns the area of the geometry.

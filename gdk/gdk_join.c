@@ -358,6 +358,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *v, *prev = NULL;
 	BUN nl, nr;
+	BUN total;		/* number of rows in l we scan */
 	int insert_nil;
 	/* equal_order is set if we can scan both BATs in the same
 	 * order, so when both are sorted or both are reverse sorted
@@ -402,6 +403,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	total = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
 	lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, BUNfirst(l));
 	rvals = r->ttype == TYPE_void ? NULL : (const char *) Tloc(r, BUNfirst(r));
 	if (l->tvarsized && l->ttype) {
@@ -1058,8 +1060,15 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * we need to add nl * nr values in the results */
 		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
 			/* make some extra space by extrapolating how
-			 * much more we need */
-			BUN newcap = BATcount(r1) + nl * nr * (lcand ? (BUN) (lcandend + 1 - lcand) : lend + 1 - lstart);
+			 * much more we need (fraction of l we've seen
+			 * so far is used as the fraction of the
+			 * expected result size we've produced so
+			 * far) */
+			BUN newcap = (BUN) ((double) total / (total - (lcand ? (BUN) (lcandend - lcand) : (lend - lstart))) * (BATcount(r1) + nl * nr) * 1.1);
+			if (newcap < nl * nr + BATcount(r1))
+				newcap = nl * nr + BATcount(r1) + 1024;
+			/* make sure heap.free is set properly before
+			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
 			r1 = BATextend(r1, newcap);
@@ -1436,6 +1445,13 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
+		int t = r->htype;
+		if (t != ATOMstorage(t) &&
+		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+		    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+			t = ATOMstorage(t);
+
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -1459,13 +1475,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				int t = r->htype;
-				if (t != ATOMstorage(t) &&
-				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
-				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-					t = ATOMstorage(t);
-
 				switch (t) {
 				case TYPE_int:
 					if (!nil_matches && *(const int*)v == int_nil) {
@@ -2853,17 +2862,22 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
+				nilcheck = 0;				\
 			}						\
 			if (sortcheck && lo &&				\
 			    (bn->trevsorted | bn->tsorted | bn->tkey)) { \
 				if (v > prev) {				\
 					bn->trevsorted = 0;		\
-					if (!bn->tsorted)		\
+					if (!bn->tsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else if (v < prev) {			\
 					bn->tsorted = 0;		\
-					if (!bn->trevsorted)		\
+					if (!bn->trevsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else {				\
 					bn->tkey = 0; /* definitely */	\
 				}					\
@@ -3164,9 +3178,15 @@ BATproject(BAT *l, BAT *r)
 	}
 	/* some properties follow from certain combinations of input
 	 * properties */
-	bn->tkey |= l->tkey && r->tkey;
-	bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-	bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	if (BATcount(bn) <= 1) {
+		bn->tkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+	} else {
+		bn->tkey |= l->tkey && r->tkey;
+		bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+		bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
 	BATseqbase(bn, l->hseqbase);

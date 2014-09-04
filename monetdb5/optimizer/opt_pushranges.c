@@ -17,6 +17,9 @@
  * All Rights Reserved.
  */
 
+/* (c) M Kersten
+ * This optimizer is deprecated, it does not handle subselects correctly.
+ */
 #include "monetdb_config.h"
 #include "opt_pushranges.h"
 #include "mal_interpreter.h"	/* for showErrors() */

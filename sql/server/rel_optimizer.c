@@ -3200,7 +3200,7 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
  * 	  ) [ B.c1 ] [ a1, a2, .. ]
  * 	) [ A.c1 = B.c1 ]
  */
-	if (rel->op == op_groupby && list_length(gbe) == 1 && is_join(j->op)) {
+	if (rel->op == op_groupby && list_length(gbe) == 1 && is_outerjoin(j->op)) {
 		sql_rel *jl = j->l, *jr = j->r, *cr;
 		sql_exp *gb = gbe->h->data, *e;
 		node *n;
