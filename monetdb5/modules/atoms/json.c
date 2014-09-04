@@ -486,6 +486,7 @@ JSONglue(str res, str r, char sep)
 			strncpy(n + l, r, len);
 			n[l + len] = 0;
 		}
+		GDKfree(res);
 		res = n;
 	}
 	if (r)
@@ -510,7 +511,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 	case JSON_ARRAY:
 		if (terms[ti].name != 0 && terms[ti].token != ANY_STEP) {
 			if (terms[ti].token == END_STEP)
-				r = JSONgetValue(jt, ji);
+				res = JSONgetValue(jt, ji);
 			return res;
 		}
 		cnt = 0;
@@ -793,7 +794,9 @@ JSONtoken(JSON *jt, char *j, char **next, int silent)
 		jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 		return idx;
 	case '"':
-		JSONstringParser(j + 1, next, silent);
+		msg = JSONstringParser(j + 1, next, silent);
+		if (!silent)
+			jt->error = msg;
 		jt->elm[idx].kind = JSON_STRING;
 		jt->elm[idx].value = j;
 		jt->elm[idx].valuelen = *next - j;

@@ -140,4 +140,5 @@
 #define XML_ILLEGAL_CONTENT "Illegal content"
 
 #define GDK_EXCEPTION "GDK reported error."
+#define MAL_DEPRECATED "Deprecated MAL operation."
 #endif /* MAL_ERRORS */

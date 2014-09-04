@@ -36,7 +36,7 @@ function qry(low:int, hgh:int);
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]:= sql.bind(m,"sys","tbl","col",0);
     s1:= algebra.subselect(b,x,low,hgh,true,true,false);
-    j:= algebra.join(s1,b);
+    j:= algebra.semijoin(s1,b);
 	io.print(j);
 end qry;
 

@@ -402,7 +402,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	int ret_cols = 0; /* int because pci->retc is int, too*/
 	str *args;
 	int evalErr;
-	char *msg = createException(MAL, "rapi.eval", "NYI");
+	char *msg = MAL_SUCCEED;
 	BAT *b;
 	BUN cnt;
 	node * argnode;

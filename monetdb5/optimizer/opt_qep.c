@@ -17,6 +17,9 @@
  * All Rights Reserved.
  */
 
+/* (c) M Kersten
+ * This optimizer is deprecated and leaks
+ */
 #include "monetdb_config.h"
 #include "opt_qep.h"
 
@@ -51,8 +54,10 @@ static QEP
 QEPnewNode(MalBlkPtr mb,InstrPtr p){
 	QEP q;
 	q= QEPnew(p->retc,p->argc-p->retc+1);
-	q->mb= mb;
-	q->p = p;
+	if( q){
+		q->mb= mb;
+		q->p = p;
+	}
 	return q;
 }
 
@@ -112,6 +117,8 @@ QEPbuild(MalBlkPtr mb){
 	for(i=1; i< mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
 		q= QEPnewNode(mb,p);
+		if( q == NULL)
+			continue;
 		for( k=p->retc; k<p->argc; k++) 
 		if( ! isVarConstant(mb, getArg(p,k)) ){
 			status[getArg(p,k)]= LEAFNODE;
@@ -128,6 +135,7 @@ QEPbuild(MalBlkPtr mb){
 /* We may end up with multiple variables not yet bound to a QEP. */
 
 	qroot= QEPnew(MAXPARENT,mb->stop);
+	if( qroot)
 	for(i=1; i< mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
 	
@@ -142,7 +150,7 @@ QEPbuild(MalBlkPtr mb){
 			k++;
 			break;
 		}
-		if(k)
+		if(q && k)
 			QEPappend(qroot,q);
 	}
 	GDKfree(vq);
@@ -173,6 +181,8 @@ static void
 QEPfree(QEP qep)
 {
 	int i;
+	if( qep == 0)
+		return;
 	for(i=0; i< qep->climit; i++)
 	if( qep->children[i])
 		QEPfree(qep->children[i]);
@@ -187,7 +197,9 @@ OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) p;
 
 	qep= QEPbuild(mb);
+	if(qep == NULL)
+		return 0;
 	QEPdump(cntxt->fdout,qep,0);
-	QEPfree(qep);
+	if(0)QEPfree(qep); // leaves garbage
 	return 1;
 }

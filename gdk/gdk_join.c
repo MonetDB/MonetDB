@@ -1445,6 +1445,13 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
+		int t = r->htype;
+		if (t != ATOMstorage(t) &&
+		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+		    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+			t = ATOMstorage(t);
+
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -1468,13 +1475,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				int t = r->htype;
-				if (t != ATOMstorage(t) &&
-				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
-				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-					t = ATOMstorage(t);
-
 				switch (t) {
 				case TYPE_int:
 					if (!nil_matches && *(const int*)v == int_nil) {
@@ -3178,9 +3178,15 @@ BATproject(BAT *l, BAT *r)
 	}
 	/* some properties follow from certain combinations of input
 	 * properties */
-	bn->tkey |= l->tkey && r->tkey;
-	bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-	bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	if (BATcount(bn) <= 1) {
+		bn->tkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+	} else {
+		bn->tkey |= l->tkey && r->tkey;
+		bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+		bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
 	BATseqbase(bn, l->hseqbase);
