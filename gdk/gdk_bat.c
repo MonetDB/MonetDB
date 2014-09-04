@@ -990,6 +990,14 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		bn->tsorted = bn->trevsorted = (cnt <= 1 && BATatoms[b->ttype].linear);
 		bn->tdense = bn->T->nonil = 0;
 	}
+	if (BATcount(bn) <= 1) {
+		bn->hsorted = 1;
+		bn->hrevsorted = 1;
+		bn->hkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+	}
 	if (writable != TRUE)
 		bn->batRestricted = BAT_READ;
 	return bn;
