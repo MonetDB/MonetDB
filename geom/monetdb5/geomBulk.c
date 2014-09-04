@@ -132,301 +132,291 @@ str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
 /* the bat version of geomMakePoint2D */
 str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id) {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL;
-	dbl *x = NULL, *y = NULL;
+	BATiter xBAT_iter, yBAT_iter;
 	BUN i;
-	wkb *p = NULL;
-	
-	//get the descriptors of the x and y BATs
-	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
-		 yBAT->htype != TYPE_void || //header type of y BAT not void
-	    xBAT->hseqbase != yBAT->hseqbase || //the idxs of the headers of the x and y BATs are not the same
-	    BATcount(xBAT) != BATcount(yBAT)) { //the number of valid elements in the x and y BATs are not the same
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", "both arguments must have dense and aligned heads");
+	str ret = MAL_SUCCEED;
+
+	//get the BATs
+	if ( (xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.MakePoint", "Problem retrieving BATs");
+		goto clean;
 	}
 
-	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", MAL_MALLOC_FAIL);
+	//check if the BATs are dense and aligned
+	if( !BAThdense(xBAT) || !BAThdense(yBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must have dense heads");
+		goto clean;
 	}
+	if( xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
+		ret = createException(MAL, "batgeom.MakePoint", "Error creating new BAT");
+		goto clean;
+	}
+
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
 	BATseqbase(outBAT, xBAT->hseqbase);
 
-	//pointers to the first valid elements of the x and y BATS
-	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
-	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
-	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+	//iterator over the BATs	
+	xBAT_iter = bat_iterator(xBAT);
+	yBAT_iter = bat_iterator(yBAT);
+
+	for (i = BUNfirst(xBAT); i < BATcount(xBAT); i++) { 
 		str err = NULL;
-		if ((err = geomMakePoint2D(&p, &x[i], &y[i])) != MAL_SUCCEED) { //create point
-			str msg;
-			BBPreleaseref(xBAT->batCacheid);
-			BBPreleaseref(yBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.MakePoint", "%s", err);
+		wkb *pointWKB = NULL;
+
+		double x = *((double*) BUNtail(xBAT_iter, i + BUNfirst(xBAT)));
+		double y = *((double*) BUNtail(yBAT_iter, i + BUNfirst(yBAT)));
+
+		if ((err = geomMakePoint2D(&pointWKB, &x, &y)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
 			GDKfree(err);
-			return msg;
+			
+			goto clean;
 		}
-		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
-		GDKfree(p);
-		p = NULL;
+		BUNappend(outBAT,pointWKB,TRUE); //add the result to the outBAT
+		GDKfree(pointWKB);
+		pointWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(xBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(xBAT->batCacheid);
-	BBPreleaseref(yBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+		
+	return ret;
 }
 
 /* the bat version og geomMakePoint3D */
 str geomMakePoint3D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id) {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL;
-	dbl *x = NULL, *y = NULL, *z = NULL;
+	BATiter xBAT_iter, yBAT_iter, zBAT_iter;
 	BUN i;
-	wkb *p = NULL;
+	str ret = MAL_SUCCEED;
 
-	//get the descriptors of the input BATs
-	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((zBAT = BATdescriptor(*zBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
-		yBAT->htype != TYPE_void || //header type of y BAT not void
-		zBAT->htype != TYPE_void || //header type of z BAT not void
-		xBAT->hseqbase != yBAT->hseqbase || 
-			xBAT->hseqbase != zBAT->hseqbase || //the idxs of the headers of the BATs are not the same
-		BATcount(xBAT) != BATcount(yBAT) || 
-			BATcount(xBAT) != BATcount(zBAT)) { //the number of valid elements in the BATs are not the same
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(zBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", "both arguments must have dense and aligned heads");
+	//get the BATs
+	if ( (xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL || 
+	     (zBAT = BATdescriptor(*zBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.MakePoint", "Problem retrieving BATs");
+		goto clean;
 	}
 
-	//create a new BAT. A BAT can be either PERSISTENT or TRANSIENT
+	//check if the BATs are dense and aligned
+	if( !BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(zBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must have dense heads");
+		goto clean;
+	}
+	if( xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT) || 
+	    xBAT->hseqbase != zBAT->hseqbase || BATcount(xBAT) != BATcount(zBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(zBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.MakePoint", "Error creating new BAT");
+		goto clean;
 	}
+
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
 	BATseqbase(outBAT, xBAT->hseqbase);
 
-	//pointers to the first valid elements of the x and y BATS
-	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
-	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
-	z = (dbl *) Tloc(zBAT, BUNfirst(zBAT));
-	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+	//iterator over the BATs	
+	xBAT_iter = bat_iterator(xBAT);
+	yBAT_iter = bat_iterator(yBAT);
+	zBAT_iter = bat_iterator(zBAT);
+
+	for (i = BUNfirst(xBAT); i < BATcount(xBAT); i++) { 
 		str err = NULL;
-		if ((err = geomMakePoint3D(&p, &x[i], &y[i], &z[i])) != MAL_SUCCEED) { //create point
-			str msg;
-			BBPreleaseref(xBAT->batCacheid);
-			BBPreleaseref(yBAT->batCacheid);
-			BBPreleaseref(zBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.MakePoint", "%s", err);
+		wkb *pointWKB = NULL;
+
+		double x = *((double*) BUNtail(xBAT_iter, i + BUNfirst(xBAT)));
+		double y = *((double*) BUNtail(yBAT_iter, i + BUNfirst(yBAT)));
+		double z = *((double*) BUNtail(zBAT_iter, i + BUNfirst(zBAT)));
+
+		if ((err = geomMakePoint3D(&pointWKB, &x, &y, &z)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
 			GDKfree(err);
-			return msg;
+			
+			goto clean;
 		}
-		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
-		GDKfree(p);
-		p = NULL;
+		BUNappend(outBAT,pointWKB,TRUE); //add the result to the outBAT
+		GDKfree(pointWKB);
+		pointWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(xBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(xBAT->batCacheid);
-	BBPreleaseref(yBAT->batCacheid);
-	BBPreleaseref(zBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+	if(zBAT)
+		BBPreleaseref(zBAT->batCacheid);
+
+	return ret;
 }
 
 /* the bat version og geomMakePoint4D */
-str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id, int* mBAT_id) {
+str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id, int *mBAT_id) {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL, *mBAT = NULL;
-	dbl *x = NULL, *y = NULL, *z = NULL, *m = NULL;
+	BATiter xBAT_iter, yBAT_iter, zBAT_iter, mBAT_iter;
 	BUN i;
-	wkb *p = NULL;
+	str ret = MAL_SUCCEED;
 
-	//get the descriptors of the input BATs
-	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((zBAT = BATdescriptor(*zBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((mBAT = BATdescriptor(*mBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(zBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
-		yBAT->htype != TYPE_void || //header type of y BAT not void
-		zBAT->htype != TYPE_void || //header type of z BAT not void
-		mBAT->htype != TYPE_void || //header type of z BAT not void
-		xBAT->hseqbase != yBAT->hseqbase || 
-			xBAT->hseqbase != zBAT->hseqbase || 
-			xBAT->hseqbase != mBAT->hseqbase || //the idxs of the headers of the BATs are not the same
-		BATcount(xBAT) != BATcount(yBAT) || 
-			BATcount(xBAT) != BATcount(zBAT) ||
-			BATcount(xBAT) != BATcount(mBAT)) { //the number of valid elements in the BATs are not the same
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(zBAT->batCacheid);
-		BBPreleaseref(mBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", "both arguments must have dense and aligned heads");
+	//get the BATs
+	if ( (xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL || 
+	     (zBAT = BATdescriptor(*zBAT_id)) == NULL || (mBAT = BATdescriptor(*mBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.MakePoint", "Problem retrieving BATs");
+		goto clean;
 	}
 
-	//create a new BAT
+	//check if the BATs are dense and aligned
+	if( !BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(zBAT) || !BAThdense(mBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must have dense heads");
+		goto clean;
+	}
+	if( xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT) ||
+	    xBAT->hseqbase != zBAT->hseqbase || BATcount(xBAT) != BATcount(zBAT) ||
+	    xBAT->hseqbase != mBAT->hseqbase || BATcount(xBAT) != BATcount(mBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(zBAT->batCacheid);
-		BBPreleaseref(mBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.MakePoint", "Error creating new BAT");
+		goto clean;
 	}
+
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
 	BATseqbase(outBAT, xBAT->hseqbase);
 
-	//pointers to the first valid elements of the x and y BATS
-	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
-	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
-	z = (dbl *) Tloc(zBAT, BUNfirst(zBAT));
-	m = (dbl *) Tloc(mBAT, BUNfirst(mBAT));
-	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+	//iterator over the BATs	
+	xBAT_iter = bat_iterator(xBAT);
+	yBAT_iter = bat_iterator(yBAT);
+	zBAT_iter = bat_iterator(zBAT);
+	mBAT_iter = bat_iterator(mBAT);
+
+	for (i = BUNfirst(xBAT); i < BATcount(xBAT); i++) { 
 		str err = NULL;
-		if ((err = geomMakePoint4D(&p, &x[i], &y[i], &z[i], &m[i])) != MAL_SUCCEED) { //create point
-			str msg;
-			BBPreleaseref(xBAT->batCacheid);
-			BBPreleaseref(yBAT->batCacheid);
-			BBPreleaseref(zBAT->batCacheid);
-			BBPreleaseref(mBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.MakePoint", "%s", err);
+		wkb *pointWKB = NULL;
+
+		double x = *((double*) BUNtail(xBAT_iter, i + BUNfirst(xBAT)));
+		double y = *((double*) BUNtail(yBAT_iter, i + BUNfirst(yBAT)));
+		double z = *((double*) BUNtail(zBAT_iter, i + BUNfirst(zBAT)));
+		double m = *((double*) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
+
+		if ((err = geomMakePoint4D(&pointWKB, &x, &y, &z, &m)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
 			GDKfree(err);
-			return msg;
+			
+			goto clean;
 		}
-		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
-		GDKfree(p);
-		p = NULL;
+		BUNappend(outBAT,pointWKB,TRUE); //add the result to the outBAT
+		GDKfree(pointWKB);
+		pointWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(xBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(xBAT->batCacheid);
-	BBPreleaseref(yBAT->batCacheid);
-	BBPreleaseref(zBAT->batCacheid);
-	BBPreleaseref(mBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+	if(zBAT)
+		BBPreleaseref(zBAT->batCacheid);
+	if(mBAT)
+		BBPreleaseref(mBAT->batCacheid);
+
+	return ret;
 }
 
-str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* mBAT_id) {
+str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int *mBAT_id) {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *mBAT = NULL;
-	dbl *x = NULL, *y = NULL, *m = NULL;
+	BATiter xBAT_iter, yBAT_iter, mBAT_iter;
 	BUN i;
-	wkb *p = NULL;
+	str ret = MAL_SUCCEED;
 
-	//get the descriptors of the input BATs
-	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ((mBAT = BATdescriptor(*mBAT_id)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", RUNTIME_OBJECT_MISSING);
-	}
-	if ( xBAT->htype != TYPE_void || //header type of x BAT not void
-		yBAT->htype != TYPE_void || //header type of y BAT not void
-		mBAT->htype != TYPE_void || //header type of z BAT not void
-		xBAT->hseqbase != yBAT->hseqbase || 
-			xBAT->hseqbase != mBAT->hseqbase || //the idxs of the headers of the BATs are not the same
-		BATcount(xBAT) != BATcount(yBAT) || 
-			BATcount(xBAT) != BATcount(mBAT)) { //the number of valid elements in the BATs are not the same
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(mBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", "the arguments must have dense and aligned heads");
+	//get the BATs
+	if ( (xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL || 
+	     (mBAT = BATdescriptor(*mBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.MakePoint", "Problem retrieving BATs");
+		goto clean;
 	}
 
-	//create a new BAT
+	//check if the BATs are dense and aligned
+	if( !BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(mBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must have dense heads");
+		goto clean;
+	}
+	if( xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT) ||
+	    xBAT->hseqbase != mBAT->hseqbase || BATcount(xBAT) != BATcount(mBAT) ) {
+		ret = createException(MAL, "batgeom.MakePoint", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(xBAT->batCacheid);
-		BBPreleaseref(yBAT->batCacheid);
-		BBPreleaseref(mBAT->batCacheid);
-		throw(MAL, "batgeom.MakePoint", MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.MakePoint", "Error creating new BAT");
+		goto clean;
 	}
+
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
 	BATseqbase(outBAT, xBAT->hseqbase);
 
-	//pointers to the first valid elements of the x and y BATS
-	x = (dbl *) Tloc(xBAT, BUNfirst(xBAT));
-	y = (dbl *) Tloc(yBAT, BUNfirst(yBAT));
-	m = (dbl *) Tloc(mBAT, BUNfirst(mBAT));
-	for (i = 0; i < BATcount(xBAT); i++) { //iterate over all valid elements
+	//iterator over the BATs	
+	xBAT_iter = bat_iterator(xBAT);
+	yBAT_iter = bat_iterator(yBAT);
+	mBAT_iter = bat_iterator(mBAT);
+
+	for (i = BUNfirst(xBAT); i < BATcount(xBAT); i++) { 
 		str err = NULL;
-		if ((err = geomMakePointM(&p, &x[i], &y[i], &m[i])) != MAL_SUCCEED) { //create point
-			str msg;
-			BBPreleaseref(xBAT->batCacheid);
-			BBPreleaseref(yBAT->batCacheid);
-			BBPreleaseref(mBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.MakePoint", "%s", err);
+		wkb *pointWKB = NULL;
+
+		double x = *((double*) BUNtail(xBAT_iter, i + BUNfirst(xBAT)));
+		double y = *((double*) BUNtail(yBAT_iter, i + BUNfirst(yBAT)));
+		double m = *((double*) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
+
+		if ((err = geomMakePointM(&pointWKB, &x, &y, &m)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
 			GDKfree(err);
-			return msg;
+			
+			goto clean;
 		}
-		BUNappend(outBAT,p,TRUE); //add the point to the new BAT
-		GDKfree(p);
-		p = NULL;
+		BUNappend(outBAT,pointWKB,TRUE); //add the result to the outBAT
+		GDKfree(pointWKB);
+		pointWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(xBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(xBAT->batCacheid);
-	BBPreleaseref(yBAT->batCacheid);
-	BBPreleaseref(mBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+	if(mBAT)
+		BBPreleaseref(mBAT->batCacheid);
+
+	return ret;
 }
 
 /* sets the srid of the geometry - BULK version*/
@@ -442,7 +432,7 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.SetSRID", "The BAT must have dense heads");
+		return createException(MAL, "batgeom.SetSRID", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
@@ -557,7 +547,7 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "The BAT must have dense heads");
+		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
@@ -678,7 +668,7 @@ str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Distance", "The BAT must have dense heads");
+		return createException(MAL, "batgeom.Distance", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
