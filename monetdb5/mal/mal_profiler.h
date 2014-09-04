@@ -58,19 +58,19 @@ typedef struct Mallinfo Mallinfo;
 #define PROFfootprint 21
 #define PROFnuma 22
 
-mal_export str activateCounter(str name);
-mal_export str deactivateCounter(str name);
+mal_export str activateCounter(const char *name);
+mal_export str deactivateCounter(const char *name);
 mal_export int getProfileCounter(int idx);
 mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 
 mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
-mal_export void profilerHeartbeatEvent(str msg, lng ticks);
-mal_export str setLogFile(stream *fd, Module cntxt, str fname);
-mal_export str setLogStream(Module cntxt, str host, int port);
+mal_export void profilerHeartbeatEvent(const char *msg, lng ticks);
+mal_export str setLogFile(stream *fd, Module cntxt, const char *fname);
+mal_export str setLogStream(Module cntxt, const char *host, int port);
 mal_export str setLogStreamStream(Module cntxt, stream *s);
-mal_export str setStartPoint(Module cntxt, str mod, str fcn);
-mal_export str setEndPoint(Module cntxt, str mod, str fcn);
+mal_export str setStartPoint(Module cntxt, const char *mod, const char *fcn);
+mal_export str setEndPoint(Module cntxt, const char *mod, const char *fcn);
 
 mal_export str startProfiling(void);
 mal_export str stopProfiling(void);
@@ -79,10 +79,9 @@ mal_export void initHeartbeat(void);
 mal_export void stopHeartbeat(void);
 mal_export double HeartbeatCPUload(void);
 
-mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
-mal_export void setFilter(Module cntxt, str mod, str fcn);
-mal_export void setFilterOnBlock(MalBlkPtr mb, str mod, str fcn);
-mal_export void clrFilter(Module cntxt, str mod, str fcn);
+mal_export void setFilter(Module cntxt, const char *mod, const char *fcn);
+mal_export void setFilterOnBlock(MalBlkPtr mb, const char *mod, const char *fcn);
+mal_export void clrFilter(Module cntxt, const char *mod, const char *fcn);
 mal_export void setFilterVariable(MalBlkPtr mb, int i);
 mal_export void clrFilterVariable(MalBlkPtr mb, int i);
 mal_export stream *getProfilerStream(void);
@@ -93,8 +92,8 @@ mal_export void MPresetProfiler(stream *fdout);
 mal_export int malProfileMode;
 
 mal_export void clearTrace(void);
-mal_export BAT *getTrace(str ev);
-mal_export int getTraceType(str nme);
+mal_export BAT *getTrace(const char *ev);
+mal_export int getTraceType(const char *nme);
 mal_export void TRACEtable(BAT **r);
 
 mal_export lng getDiskSpace(void);

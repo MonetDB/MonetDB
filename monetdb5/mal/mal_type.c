@@ -232,7 +232,7 @@ newTmpName(char tag, int i)
 }
 
 inline int
-isTmpName(str n)
+isTmpName(const char *n)
 {
 	return n && *n == TMPMARKER ;
 }

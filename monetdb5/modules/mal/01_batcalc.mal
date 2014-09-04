@@ -19813,16 +19813,16 @@ pattern avg(b:bat[:oid,:dbl],s:bat[:oid,:oid]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 
-pattern bit(b:bat[:oid,:void]) :bat[:oid,:bit]
+pattern bit(b:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from void to bit, signal error on overflow";
-pattern bit(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern bit(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from void to bit with candidates list, signal error on overflow";
-pattern bit_noerror(b:bat[:oid,:void]) :bat[:oid,:bit]
+pattern bit_noerror(b:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from void to bit";
-pattern bit_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern bit_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from void to bit with candidates list";
 
@@ -19956,16 +19956,16 @@ pattern bit_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from str to bit with candidates list";
 
-pattern bte(b:bat[:oid,:void]) :bat[:oid,:bte]
+pattern bte(b:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from void to bte, signal error on overflow";
-pattern bte(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:bte]
+pattern bte(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from void to bte with candidates list, signal error on overflow";
-pattern bte_noerror(b:bat[:oid,:void]) :bat[:oid,:bte]
+pattern bte_noerror(b:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from void to bte";
-pattern bte_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:bte]
+pattern bte_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from void to bte with candidates list";
 
@@ -20099,16 +20099,16 @@ pattern bte_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from str to bte with candidates list";
 
-pattern sht(b:bat[:oid,:void]) :bat[:oid,:sht]
+pattern sht(b:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from void to sht, signal error on overflow";
-pattern sht(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:sht]
+pattern sht(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from void to sht with candidates list, signal error on overflow";
-pattern sht_noerror(b:bat[:oid,:void]) :bat[:oid,:sht]
+pattern sht_noerror(b:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from void to sht";
-pattern sht_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:sht]
+pattern sht_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from void to sht with candidates list";
 
@@ -20242,16 +20242,16 @@ pattern sht_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from str to sht with candidates list";
 
-pattern int(b:bat[:oid,:void]) :bat[:oid,:int]
+pattern int(b:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from void to int, signal error on overflow";
-pattern int(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:int]
+pattern int(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from void to int with candidates list, signal error on overflow";
-pattern int_noerror(b:bat[:oid,:void]) :bat[:oid,:int]
+pattern int_noerror(b:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from void to int";
-pattern int_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:int]
+pattern int_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from void to int with candidates list";
 
@@ -20385,16 +20385,16 @@ pattern int_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from str to int with candidates list";
 
-pattern wrd(b:bat[:oid,:void]) :bat[:oid,:wrd]
+pattern wrd(b:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from void to wrd, signal error on overflow";
-pattern wrd(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:wrd]
+pattern wrd(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from void to wrd with candidates list, signal error on overflow";
-pattern wrd_noerror(b:bat[:oid,:void]) :bat[:oid,:wrd]
+pattern wrd_noerror(b:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from void to wrd";
-pattern wrd_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:wrd]
+pattern wrd_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from void to wrd with candidates list";
 
@@ -20528,16 +20528,16 @@ pattern wrd_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from str to wrd with candidates list";
 
-pattern lng(b:bat[:oid,:void]) :bat[:oid,:lng]
+pattern lng(b:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from void to lng, signal error on overflow";
-pattern lng(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:lng]
+pattern lng(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from void to lng with candidates list, signal error on overflow";
-pattern lng_noerror(b:bat[:oid,:void]) :bat[:oid,:lng]
+pattern lng_noerror(b:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from void to lng";
-pattern lng_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:lng]
+pattern lng_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from void to lng with candidates list";
 
@@ -20671,16 +20671,16 @@ pattern lng_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from str to lng with candidates list";
 
-pattern flt(b:bat[:oid,:void]) :bat[:oid,:flt]
+pattern flt(b:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from void to flt, signal error on overflow";
-pattern flt(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:flt]
+pattern flt(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from void to flt with candidates list, signal error on overflow";
-pattern flt_noerror(b:bat[:oid,:void]) :bat[:oid,:flt]
+pattern flt_noerror(b:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from void to flt";
-pattern flt_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:flt]
+pattern flt_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from void to flt with candidates list";
 
@@ -20814,16 +20814,16 @@ pattern flt_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from str to flt with candidates list";
 
-pattern dbl(b:bat[:oid,:void]) :bat[:oid,:dbl]
+pattern dbl(b:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from void to dbl, signal error on overflow";
-pattern dbl(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:dbl]
+pattern dbl(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from void to dbl with candidates list, signal error on overflow";
-pattern dbl_noerror(b:bat[:oid,:void]) :bat[:oid,:dbl]
+pattern dbl_noerror(b:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from void to dbl";
-pattern dbl_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:dbl]
+pattern dbl_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from void to dbl with candidates list";
 
@@ -20957,16 +20957,16 @@ pattern dbl_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from str to dbl with candidates list";
 
-pattern oid(b:bat[:oid,:void]) :bat[:oid,:oid]
+pattern oid(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from void to oid, signal error on overflow";
-pattern oid(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:oid]
+pattern oid(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from void to oid with candidates list, signal error on overflow";
-pattern oid_noerror(b:bat[:oid,:void]) :bat[:oid,:oid]
+pattern oid_noerror(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from void to oid";
-pattern oid_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:oid]
+pattern oid_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from void to oid with candidates list";
 
@@ -21100,16 +21100,16 @@ pattern oid_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from str to oid with candidates list";
 
-pattern str(b:bat[:oid,:void]) :bat[:oid,:str]
+pattern str(b:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from void to str, signal error on overflow";
-pattern str(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:str]
+pattern str(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from void to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:oid,:void]) :bat[:oid,:str]
+pattern str_noerror(b:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from void to str";
-pattern str_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:str]
+pattern str_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from void to str with candidates list";
 

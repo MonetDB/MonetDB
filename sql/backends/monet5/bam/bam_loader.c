@@ -81,8 +81,14 @@ create_reader_thread_data(bam_wrapper * bws, int nr_files, sht nr_threads)
 
 	sht i;
 
+	assert(nr_threads > 0);
+
 	if (d == NULL || reader_lock == NULL || cur_file == NULL
 		|| failure == NULL) {
+		GDKfree(d);
+		GDKfree(reader_lock);
+		GDKfree(cur_file);
+		GDKfree(failure);
 		return NULL;
 	}
 
@@ -543,7 +549,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	FILE *f = NULL;
 
-	char cur;
+	int cur;
 	int line_size;
 	str line = NULL;
 	size_t line_buf_size = 0;
@@ -683,12 +689,13 @@ bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str msg;
 
-	if ((msg =
-		 drop_file(cntxt, "bam.drop_file", file_id,
-			   dbschema)) != MAL_SUCCEED) {
-		throw(MAL, "bam_drop_file",
+	msg = drop_file(cntxt, "bam.drop_file", file_id, dbschema);
+	if (msg != MAL_SUCCEED) {
+		str msg2 = createException(MAL, "bam_drop_file",
 			  "Error when dropping file with file id '" LLFMT
 			  "': %s\n", file_id, msg);
+		GDKfree(msg);
+		return msg2;
 	}
 
 	(void) stk;

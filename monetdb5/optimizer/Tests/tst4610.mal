@@ -10,13 +10,11 @@ optimizer.orcam("user","joinPath");
 
 a:= bat.new(:oid,:int);
 b:= bat.new(:oid,:int);
-br:= bat.reverse(b);
 c:= bat.new(:oid,:int);
-g:= algebra.join(a,br);
-h:= algebra.join(g,c);
+(g1,g2):= algebra.join(a,b);
+(h1,h2):= algebra.join(g,c);
 
 ao := batcalc.oid(a);
 bo := batcalc.oid(b);
-bor := bat.reverse(bo);
-r:= algebra.joinPath(ao,bor,c);
+(r1,r2):= algebra.joinPath(ao,bo,c);
 mdb.List();

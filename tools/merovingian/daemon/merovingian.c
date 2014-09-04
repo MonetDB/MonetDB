@@ -356,6 +356,7 @@ terminateProcess(void *p)
 			" (database '%s') the KILL signal\n",
 			kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
+	msab_freeStatus(&stats);
 	free(dbname);
 	return;
 }

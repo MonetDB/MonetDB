@@ -187,6 +187,36 @@ control_authorise(
 	return 1;
 }
 
+#define send_client(P)							\
+	do {										\
+		if (fout != NULL) {						\
+			mnstr_printf(fout, P "%s", buf2);	\
+			mnstr_flush(fout);					\
+		} else {								\
+			send(msgsock, buf2, len, 0);		\
+		}										\
+	} while (0)
+
+#define send_list()									\
+	do {											\
+		len = snprintf(buf2, sizeof(buf2), "OK\n"); \
+		if (fout == NULL) {							\
+			send(msgsock, buf2, strlen(buf2), 0);	\
+			send(msgsock, pbuf, strlen(pbuf), 0);	\
+		} else {									\
+			char *p, *q = pbuf;						\
+			mnstr_printf(fout, "=OK\n");			\
+			while ((p = strchr(q, '\n')) != NULL) { \
+				*p++ = '\0';						\
+				mnstr_printf(fout, "=%s\n", q);		\
+				q = p;								\
+			}										\
+			if (*q != '\0')							\
+				mnstr_printf(fout, "=%s\n", q);		\
+			mnstr_flush(fout);						\
+		}											\
+	} while (0)
+
 static void ctl_handle_client(
 		const char *origin,
 		int msgsock,
@@ -254,13 +284,6 @@ static void ctl_handle_client(
 		} else {
 			*p++ = '\0';
 			if (strcmp(p, "ping") == 0) {
-#define send_client(P) \
-				if (fout != NULL) { \
-					mnstr_printf(fout, P "%s", buf2); \
-					mnstr_flush(fout); \
-				} else { \
-					send(msgsock, buf2, len, 0); \
-				}
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 			} else if (strcmp(p, "start") == 0) {
@@ -660,6 +683,7 @@ static void ctl_handle_client(
 						Mfprintf(_mero_ctlerr, "%s: set: cannot perform "
 								"client share request: discovery service "
 								"is globally disabled\n", origin);
+						msab_freeStatus(&stats);
 						continue;
 					}
 
@@ -708,23 +732,6 @@ static void ctl_handle_client(
 
 	/* comands below this point are multi line and hence you can't
 	 * combine them, so they disconnect the client afterwards */
-#define send_list() \
-	len = snprintf(buf2, sizeof(buf2), "OK\n"); \
-	if (fout == NULL) { \
-		send(msgsock, buf2, strlen(buf2), 0); \
-		send(msgsock, pbuf, strlen(pbuf), 0); \
-	} else { \
-		char *p, *q = pbuf; \
-		mnstr_printf(fout, "=OK\n"); \
-		while ((p = strchr(q, '\n')) != NULL) { \
-			*p++ = '\0'; \
-			mnstr_printf(fout, "=%s\n", q); \
-			q = p; \
-		} \
-		if (*q != '\0') \
-			mnstr_printf(fout, "=%s\n", q); \
-		mnstr_flush(fout); \
-	}
 
 			} else if (strcmp(p, "version") == 0) {
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
