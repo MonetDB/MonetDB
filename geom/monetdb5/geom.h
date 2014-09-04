@@ -236,6 +236,10 @@ geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *ma
 
 /* BULK */
 
+geom_export str wkbDistance_bat(int* outBAT_id, bat*, bat*);
+geom_export str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id);
+geom_export str wkbDistance_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB);
+
 geom_export str wkbContains_bat(int* outBAT_id, bat*, bat*);
 geom_export str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id);
 geom_export str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB);

@@ -443,6 +443,10 @@ geom.prelude();
 
 module batgeom;
 
+command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbDistance_bat;
+command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbDistance_geom_bat;
+command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbDistance_bat_geom;
+
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;

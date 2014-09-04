@@ -610,6 +610,128 @@ str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
 	return wkbContains_geom_bat(outBAT_id, geomWKB, inBAT_id);
 }
 
+
+
+str wkbDistance_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i=0;
+	str ret = MAL_SUCCEED;
+
+	//get the BATs
+	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.Distance", "Problem retrieving BATs");
+		goto clean;
+	}
+	
+	//check if the BATs are dense and aligned
+	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
+		ret = createException(MAL, "batgeom.Distance", "BATs must have dense heads");
+		goto clean;
+	}
+	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
+		ret = createException(MAL, "batgeom.Distance", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		ret = createException(MAL, "batgeom.Distance", "Error creating new BAT");
+		goto clean;
+	}
+
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL;
+		double distanceVal = 0;
+
+		wkb* aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		wkb* bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) { //check	
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			
+			goto clean;
+		}
+		BUNappend(outBAT,&distanceVal,TRUE); //add the result to the outBAT
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+clean:
+	if(aBAT)
+		BBPreleaseref(aBAT->batCacheid);
+	if(bBAT)
+		BBPreleaseref(bBAT->batCacheid);
+		
+	return ret;
+
+}
+
+str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN i=0;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		return createException(MAL, "batgeom.Distance", "Problem retrieving BATs");
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of aBAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Distance", "The arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Distance", "Error creating new BAT");
+	}
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BATs	
+	inBAT_iter = bat_iterator(inBAT);
+
+	for (i = BUNfirst(inBAT); i < BATcount(inBAT); i++) { 
+		str err = NULL;
+		double distanceVal = 0;
+
+		wkb* inWKB = (wkb*) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+
+		if ((err = wkbDistance(&distanceVal, geomWKB, &inWKB)) != MAL_SUCCEED) { //check
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&distanceVal,TRUE); //add the result to the outBAT
+	}
+
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+
+
+}
+
+str wkbDistance_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
+	return wkbDistance_geom_bat(outBAT_id, geomWKB, inBAT_id);
+}
+
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **//*
