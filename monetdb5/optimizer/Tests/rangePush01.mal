@@ -1,11 +1,11 @@
 # detect empty ranges
 b := bat.new(:oid,:int);
-s1:= algebra.select(b,80,90);
-s2:= algebra.select(b,90,80);
-s3:= algebra.select(b,80,80);
-s4:= algebra.select(b,80,80,true,true);
-s5:= algebra.select(b,80,80,false,true);
-s6:= algebra.select(b,80,80,true,false);
-s7:= algebra.select(b,80,80,false,false);
+s1:= algebra.subselect(b,80,90,true,true,false);
+s2:= algebra.subselect(b,90,80,true,true,false);
+s3:= algebra.subselect(b,80,80,true,true,false);
+s4:= algebra.subselect(b,80,80,true,true,false);
+s5:= algebra.subselect(b,80,80,false,true,false);
+s6:= algebra.subselect(b,80,80,true,false,false);
+s7:= algebra.subselect(b,80,80,false,false,false);
 optimizer.pushranges();
 mdb.List();
