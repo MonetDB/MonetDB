@@ -779,8 +779,9 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 	*geomWKB = NULL;
 	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) &&
-	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = *((*geomWKB)->data + 1) & 0x0f) == *tpe))
+	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = *((*geomWKB)->data + 1) & 0x0f) == *tpe)) {
 		return MAL_SUCCEED;
+	}
 	if (*geomWKB == NULL) {
 		*geomWKB = wkb_nil;
 	}
@@ -2023,6 +2024,7 @@ str wkbBuffer(wkb **out, wkb **geom, dbl *distance) {
 	}
 
 	*out = geos2wkb(GEOSBuffer(geosGeometry, *distance, -1));
+	(*out)->srid = (*geom)->srid;
 
 	GEOSGeom_destroy(geosGeometry);
 
@@ -3139,11 +3141,12 @@ size_t mbrTOSTR(char **dst, size_t *len, mbr *atom) {
 		assert(dstStrLen < GDK_int_max);
 	}
 
-	if (*len < dstStrLen + 1) {
-		if (*dst)
-			GDKfree(*dst);
-		*dst = GDKmalloc(*len = dstStrLen + 1);
-	}
+//	if (*len < dstStrLen + 1) {
+//		if (*dst)
+//			GDKfree(*dst);
+//		*dst = GDKmalloc(*len = dstStrLen + 1);
+//	}
+	*dst = GDKmalloc(*len = dstStrLen + 1);
 
 	if (dstStrLen > 3)
 		snprintf(*dst, *len, "\"%s\"", tempWkt);
@@ -3295,7 +3298,6 @@ size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
 	char* nilStr = "nil";
 	char* toStrPtr = NULL, *itemsNumStr=GDKmalloc((itemsNumDigits+1)*sizeof(char));
 	
-fprintf(stderr, "wkbaTOSTR\n");
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
 
@@ -3358,7 +3360,6 @@ size_t wkbaFROMSTR(char *fromStr, size_t *len, wkba **toArray, int srid) {
 	int items, i;
 	size_t skipBytes=0;
 
-fprintf(stderr, "wkbaFROMSTR\n");
 //IS THERE SPACE OR SOME OTHER CHARACTER?
 
 	//read the number of items from the begining of the string
@@ -3379,7 +3380,6 @@ fprintf(stderr, "wkbaFROMSTR\n");
 /* returns a pointer to a null wkba */
 wkba* wkbaNULL(void) {
 	static wkba nullval;
-fprintf(stderr, "= wkbaNULL\n");
 
 	nullval.itemsNum = ~(int) 0;
 	return (&nullval);
@@ -3388,7 +3388,6 @@ fprintf(stderr, "= wkbaNULL\n");
 BUN wkbaHASH(wkba *wArray) {
 	int j,i;
 	BUN h = 0;
-fprintf(stderr, "= wkbaNULL\n");
 
 	for (j = 0; j < wArray->itemsNum ; j++) {
 		wkb* w = wArray->data[j];
@@ -3402,7 +3401,6 @@ fprintf(stderr, "= wkbaNULL\n");
 
 int wkbaCOMP(wkba *l, wkba *r) {
 	int i, res =0;;
-fprintf(stderr, "= wkbaNULL\n");
 
 	//compare the number of items
 	if (l->itemsNum != r->itemsNum)
@@ -3424,7 +3422,6 @@ wkba* wkbaREAD(wkba *a, stream *s, size_t cnt) {
 
 	(void) cnt;
 	assert(cnt == 1);
-	fprintf(stderr, "= wkbaNULL\n");
 
 	if (mnstr_readInt(s, &items) != 1)
 		return NULL;
@@ -3447,7 +3444,6 @@ int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
 
 	(void) cnt;
 	assert(cnt == 1);
-	fprintf(stderr, "= wkbaNULL\n");
 
 	if (!mnstr_writeInt(s, items))
 		return GDK_FAIL;
@@ -3462,7 +3458,6 @@ int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
 
 var_t wkbaPUT(Heap *h, var_t *bun, wkba *val) {
 	char *base;
-fprintf(stderr, "= wkbaNULL\n");
 
 	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
@@ -3472,18 +3467,15 @@ fprintf(stderr, "= wkbaNULL\n");
 }
 
 void wkbaDEL(Heap *h, var_t *index) {
-	fprintf(stderr, "= wkbaNULL\n");
 HEAP_free(h, *index);
 }
 
 int wkbaLENGTH(wkba *p) {
 	var_t len = wkba_size(p->itemsNum);
 	assert(len <= GDK_int_max);
-	fprintf(stderr, "= wkbaNULL\n");
 return (int) len;
 }
 
 void wkbaHEAP(Heap *heap, size_t capacity) {
-	fprintf(stderr, "= wkbaNULL\n");
 HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }

@@ -805,7 +805,6 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
 	BAT *BATfiltered = NULL, *BAToriginal = NULL;
 	wkb *WKBoriginal = NULL;
-	bit outBIT;
 	BATiter BAToriginal_iter;
 	BUN i=0;
 	mbr* geomMBR;
@@ -847,6 +846,8 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 	for (i = BUNfirst(BAToriginal); i < BATcount(BAToriginal); i++) { 
 		str err = NULL;
 		mbr* MBRoriginal;
+		bit outBIT = 0;
+
 		WKBoriginal = (wkb*) BUNtail(BAToriginal_iter, i + BUNfirst(BAToriginal));
 
 		//create the MBR for each geometry in the BAT
@@ -871,6 +872,7 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 			GDKfree(MBRoriginal);
 			return msg;
 		}
+
 		if(outBIT) {
 			BUNappend(BATfiltered,WKBoriginal, TRUE); //add the result to the bBAT
 			remainingElements++;
