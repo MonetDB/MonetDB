@@ -163,37 +163,37 @@ str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat*
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
 	}
 	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Contains", RUNTIME_OBJECT_MISSING);
 	}
 	
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
-		ret = createException(MAL, "batgeom.wkbContainsFiltered", "BATs must have dense heads");
+		ret = createException(MAL, "batgeom.Contains", "BATs must have dense heads");
 		goto clean;
 	}
 	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
-		ret=createException(MAL, "batgeom.wkbContainsFiltered", "BATs must be aligned");
+		ret=createException(MAL, "batgeom.Contains", "BATs must be aligned");
 		goto clean;
 	}
 
 	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
 	//create the points BAT
 	if((pointsBAT = BATMakePoint2D(xBAT, yBAT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem creating the points from the coordinates");
+		ret = createException(MAL, "batgeom.Contains", "Problem creating the points from the coordinates");
 		goto clean;
 	}
 
 	if((pointsWithSRIDBAT = BATSetSRID(pointsBAT, *srid)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem setting srid to the points");
+		ret = createException(MAL, "batgeom.Contains", "Problem setting srid to the points");
 		goto clean;
 	}
 
 	if((outBAT = BATContains(geomWKB, pointsWithSRIDBAT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem evalauting the contains");
+		ret = createException(MAL, "batgeom.Contains", "Problem evalauting the contains");
 		goto clean;
 	}
 
