@@ -292,6 +292,184 @@ clean:
 	return ret;
 }
 
+static BAT* BATDistance(wkb** geomWKB, BAT* geometriesBAT) {
+	BAT *outBAT = NULL;
+	BATiter geometriesBAT_iter;	
+	BUN p=0, q=0;
+
+	//check if the BAT has dense heads and are aligned
+	if (!BAThdense(geometriesBAT)) {
+		GDKerror("BATDistance: BAT must have dense heads");
+		return NULL;
+	}
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(geometriesBAT), TRANSIENT)) == NULL) {
+		GDKerror("BATDistance: Could not create new BAT for the output");
+		return NULL;
+	}
+
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, geometriesBAT->hseqbase);
+
+	//iterator over the BATs	
+	geometriesBAT_iter = bat_iterator(geometriesBAT);
+	 
+	BATloop(geometriesBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		double val = 0.0;
+
+		wkb *geometryWKB = (wkb*) BUNtail(geometriesBAT_iter, p);
+		if ((err = wkbDistance(&val, geomWKB, &geometryWKB)) != MAL_SUCCEED) {
+			BBPreleaseref(outBAT->batCacheid);
+			GDKerror("BATDistance: %s", err);
+			GDKfree(err);
+			return NULL;
+		}
+		BUNappend(outBAT,&val,TRUE);
+	}
+
+	return outBAT;
+
+}
+
+str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
+	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
+	str ret=MAL_SUCCEED;
+
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
+	}
+	
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
+		ret = createException(MAL, "batgeom.Distance", "BATs must have dense heads");
+		goto clean;
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		ret=createException(MAL, "batgeom.Distance", "BATs must be aligned");
+		goto clean;
+	}
+
+	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
+	//create the points BAT
+	if((pointsBAT = BATMakePoint2D(xBAT, yBAT)) == NULL) {
+		ret = createException(MAL, "batgeom.Distance", "Problem creating the points from the coordinates");
+		goto clean;
+	}
+
+	if((pointsWithSRIDBAT = BATSetSRID(pointsBAT, *srid)) == NULL) {
+		ret = createException(MAL, "batgeom.Distance", "Problem setting srid to the points");
+		goto clean;
+	}
+
+	if((outBAT = BATDistance(geomWKB, pointsWithSRIDBAT)) == NULL) {
+		ret = createException(MAL, "batgeom.Distance", "Problem evalauting the contains");
+		goto clean;
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	goto clean;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+	if(pointsBAT)
+		BBPreleaseref(pointsBAT->batCacheid);
+	if(pointsWithSRIDBAT)
+		BBPreleaseref(pointsWithSRIDBAT->batCacheid);
+	return ret;
+}
+
+str wkbFilteredPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* OIDsBAT_id, int* srid) {
+	BAT *xBAT=NULL, *yBAT=NULL, *OIDsBAT=NULL, *outBAT=NULL, *xFilteredBAT=NULL, *yFilteredBAT=NULL;
+	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
+	str ret=MAL_SUCCEED;
+
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+	}
+	if ((OIDsBAT = BATdescriptor(*OIDsBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+	}
+	
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(OIDsBAT)) {
+		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "BATs must have dense heads");
+		goto clean;
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		ret=createException(MAL, "batgeom.wkbDistanceFiltered", "BATs must be aligned");
+		goto clean;
+	}
+
+	//project the x and y BATs
+	xFilteredBAT = BATproject(OIDsBAT, xBAT);
+	if(xFilteredBAT == NULL) {
+		ret=createException(MAL,"batgeom.wkbDistanceFiltered","Problem projecting xBAT");
+		goto clean;
+	}
+	yFilteredBAT = BATproject(OIDsBAT, yBAT);
+	if(xFilteredBAT == NULL) {
+		ret=createException(MAL,"batgeom.wkbDistanceFiltered","Problem projecting yBAT");
+		goto clean;
+	}
+
+	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
+	//create the points BAT
+	if((pointsBAT = BATMakePoint2D(xFilteredBAT, yFilteredBAT)) == NULL) {
+		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem creating the points from the coordinates");
+		goto clean;
+	}
+	//set the srid	
+	if((pointsWithSRIDBAT = BATSetSRID(pointsBAT, *srid)) == NULL) {
+		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem setting srid to the points");
+		goto clean;
+	}
+	//check the contains
+	if((outBAT = BATDistance(geomWKB, pointsWithSRIDBAT)) == NULL) {
+		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem evalauting the contains");
+		goto clean;
+	}
+
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	goto clean;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
+	if(OIDsBAT)
+		BBPreleaseref(OIDsBAT->batCacheid);
+	if(xFilteredBAT)
+		BBPreleaseref(xFilteredBAT->batCacheid);
+	if(yFilteredBAT)
+		BBPreleaseref(yFilteredBAT->batCacheid);
+	if(pointsBAT)
+		BBPreleaseref(pointsBAT->batCacheid);
+	if(pointsWithSRIDBAT)
+		BBPreleaseref(pointsWithSRIDBAT->batCacheid);
+	return ret;
+}
+
+
 str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
 	BAT *xBAT=NULL, *yBAT=NULL, *xCandidateOIDsBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;

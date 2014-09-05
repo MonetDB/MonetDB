@@ -4026,7 +4026,7 @@ CREATE FUNCTION mbr(geom Geometry) RETURNS mbr external name geom."mbr";
 --Construct a Geometry from a WKT
 CREATE FUNCTION ST_WKTToSQL(wkt string) RETURNS Geometry external name geom."GeomFromText";
 
---Construct a Geoemtry from a WKB
+--Construct a Geometry from a WKB
 CREATE FUNCTION ST_WKBToSQL(geom string) RETURNS Geometry EXTERNAL NAME geom."FromBinary";
 
 --Obtaining WKT from Geometry
@@ -4057,6 +4057,7 @@ CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTE
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
+CREATE FUNCTION ST_Distance(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS boolean EXTERNAL NAME geom."Distance";
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";
