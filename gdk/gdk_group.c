@@ -857,9 +857,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
 		BATseqbase(hn, 0);
-		hn->tkey = 0;
-		hn->tsorted = 0;
-		hn->trevsorted = 0;
+		if (BATcount(hn) <= 1) {
+			hn->tkey = 1;
+			hn->tsorted = 1;
+			hn->trevsorted = 1;
+		} else {
+			hn->tkey = 0;
+			hn->tsorted = 0;
+			hn->trevsorted = 0;
+		}
 		hn->T->nonil = 1;
 		hn->T->nil = 0;
 		*histo = hn;

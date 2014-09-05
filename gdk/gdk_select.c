@@ -122,6 +122,8 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	bn->tkey = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
 	return bn;
 }
 
@@ -155,6 +157,8 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	bn->tkey = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
 	return virtualize(bn);
 }
 
@@ -208,14 +212,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	if (bn->batCount == 1)
 		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
 	/* temporarily set head to nil so that BATorder doesn't materialize */
-	bn->hseqbase = oid_nil;
-	bn->hkey = 0;
-	bn->hsorted = bn->hrevsorted = 1;
+	BATseqbase(bn, oid_nil);
 	bn = BATmirror(BATorder(BATmirror(bn)));
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hsorted = 1;
-	bn->hrevsorted = bn->batCount <= 1;
+	BATseqbase(bn, 0);
 	return bn;
 }
 

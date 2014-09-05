@@ -967,35 +967,35 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
 	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
-		bn->hsorted = b->hsorted || (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hrevsorted = b->hrevsorted || (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = b->hsorted;
+		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
 	} else {
-		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = bn->hrevsorted = 0; /* set based on count later */
 		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
-		bn->tsorted = b->tsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
-		bn->trevsorted = b->trevsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
 	} else {
-		bn->tsorted = bn->trevsorted = (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
 	}
 	if (BATcount(bn) <= 1) {
-		bn->hsorted = 1;
-		bn->hrevsorted = 1;
+		bn->hsorted = BATatoms[b->htype].linear;
+		bn->hrevsorted = BATatoms[b->htype].linear;
 		bn->hkey = 1;
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
+		bn->tsorted = BATatoms[b->ttype].linear;
+		bn->trevsorted = BATatoms[b->ttype].linear;
 		bn->tkey = 1;
 	}
 	if (writable != TRUE)
