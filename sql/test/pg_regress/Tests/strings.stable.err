@@ -29,71 +29,74 @@ stderr of test 'strings` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM '#"(b_d)#"%' FOR '#') IS NULL AS "True";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5) AS "yabadaba";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select split_part('joeuser@mydatabase','@',1) AS "joeuser";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select split_part('joeuser@mydatabase','@',3) AS "empty string";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
 
-MAPI  = (monetdb) /var/tmp/mtest-28555/.s.monetdb.36054
+MAPI  = (monetdb) /var/tmp/mtest-32253/.s.monetdb.36413
 QUERY = select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
+
+
+
 
 
 
