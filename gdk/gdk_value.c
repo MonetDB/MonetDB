@@ -50,6 +50,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+/* Set V to the type/value combination in T/P.  Also see VALinit.  In
+ * this version, if P refers to an external type, no new memory is
+ * allocated, but instead the pointer P is given to V. */
 ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
@@ -91,7 +94,8 @@ VALset(ValPtr v, int t, ptr p)
 	return v;
 }
 
-/* also see VALptr */
+/* Return a pointer to the value contained in V.  Also see VALptr
+ * which returns a const void *. */
 void *
 VALget(ValPtr v)
 {
@@ -108,6 +112,9 @@ VALget(ValPtr v)
 	}
 }
 
+/* Clear V to an empty value (type void, value nil), freeing any
+ * memory allocated for external types.  See VALempty for when V does
+ * not yet contain a value. */
 void
 VALclear(ValPtr v)
 {
@@ -118,6 +125,8 @@ VALclear(ValPtr v)
 	VALempty(v);
 }
 
+/* Initialize V to an empty value (type void, value nil).  See
+ * VALclear for when V already contains a value. */
 void
 VALempty(ValPtr v)
 {
@@ -126,6 +135,9 @@ VALempty(ValPtr v)
 	v->vtype = TYPE_void;
 }
 
+/* Create a copy of S into D, allocating space for external values
+ * (non-fixed sized values).  See VALinit for a version where the
+ * source is not in a VALRecord. */
 ValPtr
 VALcopy(ValPtr d, const ValRecord *s)
 {
@@ -153,10 +165,13 @@ VALcopy(ValPtr d, const ValRecord *s)
 	return d;
 }
 
+/* Create a copy of the type value combination in TPE/S, allocating
+ * space for external values (non-fixed sized values).  See VALcopy
+ * for a version where the source is in a ValRecord. */
 ValPtr
 VALinit(ValPtr d, int tpe, const void *s)
 {
-	if (ATOMextern(tpe) == 0) {
+	if (!ATOMextern(tpe)) {
 		d->vtype = tpe;
 		memcpy(&d->val.ival, s, ATOMlen(tpe, s));
 	} else if (s == 0) {
@@ -175,22 +190,18 @@ VALinit(ValPtr d, int tpe, const void *s)
 	return d;
 }
 
+/* Format the value in RES in the standard way for the type of RES
+ * into a newly allocated buffer which is returned through BUF. */
 int
 VALformat(char **buf, const ValRecord *res)
 {
-	int t = res->vtype;
-
 	*buf = 0;
-	return ATOMformat(t, VALptr(res), buf);
+	return ATOMformat(res->vtype, VALptr(res), buf);
 }
 
-/*
- * The routine VALconvert transforms a value for interpretation in a
- * certain type. It uses some standard cast conventions to do this.
- * The result, a pointer to a value, is returned. If there are illegal
- * values, or type combinations involved, it gives up with an
- * ILLEGALVALUE.
- */
+/* Convert (cast) the value in T to the type TYP, do this in place.
+ * Return a pointer to the converted value, or NULL if the conversion
+ * didn't succeed.  Also see VARconvert. */
 ptr
 VALconvert(int typ, ValPtr t)
 {
@@ -208,7 +219,7 @@ VALconvert(int typ, ValPtr t)
 
 	/* first convert into a new location */
 	if (VARconvert(&dst, t, 0) == GDK_FAIL)
-		return ILLEGALVALUE;
+		return NULL;
 
 	/* then maybe free the old */
 	if (src_tpe != dst.vtype &&
@@ -223,6 +234,10 @@ VALconvert(int typ, ValPtr t)
 	return VALget(t);
 }
 
+/* Compare two values in P and Q and return -1/0/1 depending on
+ * whether P is less than, equal to, or larger than Q. Also return -1
+ * if P or Q is NULL or NIL, or if the types of P and Q are not
+ * equal. */
 int
 VALcmp(const ValRecord *p, const ValRecord *q)
 {
@@ -250,6 +265,7 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 
 }
 
+/* Return TRUE if the value in V is NIL. */
 int
 VALisnil(const ValRecord *v)
 {

@@ -2589,7 +2589,8 @@ gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 #define putenv _putenv
 #endif
 
-/* also see VALget */
+/* Return a pointer to the value contained in V.  Also see VALget
+ * which returns a void *. */
 static inline const void *
 VALptr(const ValRecord *v)
 {
@@ -3332,7 +3333,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 /*
  *
  */
-#define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
 
 #ifndef NDEBUG

@@ -1359,8 +1359,7 @@ convertConstant(int type, ValPtr vr)
 	case TYPE_dbl:
 	case TYPE_wrd:
 	case TYPE_lng:
-		VALconvert(type, vr);
-		if (vr->vtype != type)
+		if (VALconvert(type, vr) == NULL)
 			throw(SYNTAX, "convertConstant", "coercion failed");
 		return MAL_SUCCEED;
 	case TYPE_str:

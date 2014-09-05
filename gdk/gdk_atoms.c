@@ -324,11 +324,9 @@ ATOMformat(int t, const void *p, char **buf)
 {
 	int (*tostr) (str *, int *, const void *);
 
-	if (p && 0 <= t && t < GDKatomcnt &&
-	    (tostr = BATatoms[t].atomToStr)) {
-		int sz = 0, l = (*tostr) (buf, &sz, p);
-
-		return l;
+	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
+		int sz = 0;
+		return (*tostr) (buf, &sz, p);
 	}
 	*buf = GDKmalloc(4);
 	if (*buf == NULL)
