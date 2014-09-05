@@ -28,7 +28,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with two new ones
 					InstrPtr filterInstrPtr, containsInstrPtr;
-					bat filteredOIDsBAT_id;
+					int filteredOIDsBAT_id;
 					
 					//create and put in the MAL plan the new instructions
 					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
@@ -87,50 +87,84 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					actions+=2; //two changes
 				}
 			} else if(strcasecmp(getFunctionId(oldInstrPtr[i]), "distance") == 0 && strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
-				int inputBAT = 0, geomArg =0;
-				InstrPtr bufferInstrPtr, filterInstrPtr;
-				int bufferReturnId, filterReturnId;
+				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
+				if(oldInstrPtr[i]->argc == 5) {
+					//replace the instruction with the new ones
+					InstrPtr bufferInstrPtr, filterInstrPtr, fcnInstrPtr;
+					int bufferReturnId, filterReturnId;
+					
+					//create and put in the MAL plan the new instructions
+					bufferInstrPtr = newStmt(mb, "geom", "Buffer");
+					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
+					fcnInstrPtr = newStmt(mb, "batgeom", "Distance");
+
+					//make new return variables
+					bufferReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], 1));
+					filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+
+					//set the arguments for the Buffer
+					setReturnArgument(bufferInstrPtr, bufferReturnId);
+					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i], 1)); //a TYPE_wkb would be usufull
+					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i+1], 3));
+
+					//set the arguments for the Filter
+					setReturnArgument(filterInstrPtr, filterReturnId);
+					filterInstrPtr = pushArgument(mb, filterInstrPtr, bufferReturnId);
+					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
+					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
+
+					//set the arguments of the contains function
+					setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+				} else {
+					int inputBAT = 0, geomArg =0;
+					InstrPtr bufferInstrPtr, filterInstrPtr;
+					int bufferReturnId, filterReturnId;
 				
-				if(isaBatType(getArgType(mb,oldInstrPtr[i],1))) {
-					inputBAT = 1;
-					geomArg = 2;
-				}
-				
-				if(isaBatType(getArgType(mb,oldInstrPtr[i],2))) {
-					if(inputBAT != 0) {
-						//no Filtering (for now) when both inputs are BATs
-						pushInstruction(mb, oldInstrPtr[i]);
-						continue;
+					if(isaBatType(getArgType(mb,oldInstrPtr[i],1))) {
+						inputBAT = 1;
+						geomArg = 2;
 					}
-					inputBAT = 2;
-					geomArg = 1;
+				
+					if(isaBatType(getArgType(mb,oldInstrPtr[i],2))) {
+						if(inputBAT != 0) {
+							//no Filtering (for now) when both inputs are BATs
+							pushInstruction(mb, oldInstrPtr[i]);
+							continue;
+						}
+						inputBAT = 2;
+						geomArg = 1;
+					}	
+
+					//create two new instruction
+					bufferInstrPtr = newStmt(mb, "geom", "Buffer");
+					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
+				
+					//make new return variables
+					bufferReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], geomArg)); //Buffer returns a geometry
+					filterReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], inputBAT)); //Filter returns a BAT
+
+					//set the arguments for the Buffer
+					setReturnArgument(bufferInstrPtr, bufferReturnId);
+					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i], geomArg));
+					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i+1], 3));
+				
+					//set the arguments for the Filter
+					setReturnArgument(filterInstrPtr, filterReturnId);
+					filterInstrPtr = pushArgument(mb, filterInstrPtr, bufferReturnId);
+					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i], inputBAT));
+	
+					//replace the BAT arguments of the contains function with the BAT of the new instruction (the filtered BAT) 
+					delArgument(oldInstrPtr[i], inputBAT);
+					pushInstruction(mb, oldInstrPtr[i]);
+					setArgument(mb, oldInstrPtr[i], inputBAT, filterReturnId);
+				
+					actions+=3;
 				}
-
-				//create two new instruction
-				bufferInstrPtr = newStmt(mb, "geom", "Buffer");
-				filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-				
-				//make new return variables
-				bufferReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], geomArg)); //Buffer returns a geometry
-				filterReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], inputBAT)); //Filter returns a BAT
-
-				//set the arguments for the Buffer
-				setReturnArgument(bufferInstrPtr, bufferReturnId);
-				bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i], geomArg));
-				bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i+1], 3));
-				
-				//set the arguments for the Filter
-				setReturnArgument(filterInstrPtr, filterReturnId);
-				filterInstrPtr = pushArgument(mb, filterInstrPtr, bufferReturnId);
-				filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i], inputBAT));
-
-				//replace the BAT arguments of the contains function with the BAT of the new instruction (the filtered BAT) 
-				delArgument(oldInstrPtr[i], inputBAT);
-				pushInstruction(mb, oldInstrPtr[i]);
-				setArgument(mb, oldInstrPtr[i], inputBAT, filterReturnId);
-				
-				actions+=3;
-
 			} else //put back all other instructions from batgeom
 				pushInstruction(mb, oldInstrPtr[i]);
 		} else //put all other instructions back
