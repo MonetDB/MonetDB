@@ -1348,6 +1348,12 @@ gdk_export bte ATOMelmshift(int sz);
 		(b)->batCount++;		\
 	} while (0)
 
+#define bunfastapp_nocheck_inc(b, p, t)			\
+	do {						\
+		bunfastapp_nocheck(b, p, t, Tsize(b));	\
+		p++;					\
+	} while (0)
+
 #define bunfastapp(b, t)						\
 	do {								\
 		register BUN _p = BUNlast(b);				\

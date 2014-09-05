@@ -505,9 +505,11 @@ BATappend(BAT *b, BAT *n, bit force)
 					return 0;
 				}
 				m = (oid) (f + sz);
+				b = BATmirror(b); /* so we can use bunfastapp */
 				for (; f < m; f++, r++) {
-					bunfastins_nocheck(b, r, (ptr) &f, NULL, Hsize(b), 0);
+					bunfastapp_nocheck(b, r, (ptr) &f, Tsize(b));
 				}
+				b = BATmirror(b);
 			} else {
 				sz += BATcount(b);
 				BATsetcount(b, sz);
@@ -1564,7 +1566,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 					return NULL;
 				r = BUNfirst(gc);
 				BATloop(g, p, q) {
-					bunfastins_nocheck_inc(gc, r, NULL, s);
+					bunfastapp_nocheck_inc(gc, r, s);
 				}
 			} else {
 				BATiter gi = bat_iterator(g);
