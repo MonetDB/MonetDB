@@ -583,12 +583,13 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 #define leftfetchjoin_delta(TPE)\
-{	TPE *val, *v;\
+{	TPE val, *v;\
+	bte *delta;\
 	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(; first < last; first++, val++){\
+	delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(TPE));\
+	for(; first < last; first++, delta++, val+= *delta){\
 		MOSskipit();\
-		*v++ = *val;\
+		*v++ = val;\
 		task->n--;\
 	}\
 	task->src = (char*) v;\
@@ -613,12 +614,14 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 		case TYPE_hge: leftfetchjoin_delta(hge); break;
 #endif
 		case TYPE_int:
-		{	int *val, *v;
+		{	int val, *v;
+			bte *delta;
 			v= (int*) task->src;
-			val = (int*) (((char*) task->blk) + MosaicBlkSize);
-			for(; first < last; first++, val++){
+			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
+			delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(int));
+			for(; first < last; first++, val+= *delta, delta++){
 				MOSskipit();
-				*v++ = *val;
+				*v++ = val;
 				task->n--;
 			}
 			task->src = (char*) v;

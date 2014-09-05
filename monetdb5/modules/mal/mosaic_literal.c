@@ -40,7 +40,7 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOSgetCnt(blk),bte)); break ;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bit)* MOSgetCnt(blk),bit)); break ;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk),sht)); break ;
@@ -53,13 +53,13 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(wrd)* MOSgetCnt(blk),wrd)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(flt)* MOSgetCnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
-	default:
-		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(date)* MOSgetCnt(blk),date)); 
-		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(daytime)* MOSgetCnt(blk),daytime)); 
-		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(timestamp)* MOSgetCnt(blk),timestamp)); 
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOSgetCnt(blk),bte)); break ;
+		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk),sht)); break ;
+		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk),int)); break ;
+		case 8: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk),lng)); break ;
+		}
 	}
 }
 
@@ -112,6 +112,14 @@ MOScompress_literal(Client cntxt, MOStask task)
 		MOSincCnt(blk,1);
 		task->elm--;
 	}
+	break;
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: LITERALcompress(bte); break ;
+		case 2: LITERALcompress(sht); break ;
+		case 4: LITERALcompress(int); break ;
+		case 8: LITERALcompress(lng); break ;
+		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_literal(cntxt, task);
@@ -153,6 +161,14 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 			((int*)task->src)[i] = ((int*)compressed)[i];
 		task->src += i * sizeof(int);
 	}
+	break;
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: LITERALdecompress(bte); break ;
+		case 2: LITERALdecompress(sht); break ;
+		case 4: LITERALdecompress(int); break ;
+		case 8: LITERALdecompress(lng); break ;
+		}
 	}
 }
 
@@ -320,6 +336,14 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 			}
 		}
 			break;
+	case TYPE_str:
+		// beware we should look at the value
+		switch(task->b->T->width){
+		case 1: break ;
+		case 2: break ;
+		case 4: break ;
+		case 8: break ;
+		}
 		default:
 			if( task->type == TYPE_date)
 				subselect_literal(date); 
@@ -507,6 +531,15 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 				}
 			}
 		} 
+	break;
+	case TYPE_str:
+		// beware we should look at the value
+		switch(task->b->T->width){
+		case 1: break ;
+		case 2: break ;
+		case 4: break ;
+		case 8: break ;
+		}
 	}
 	MOSskip_literal(cntxt,task);
 	task->lb =o;
@@ -556,6 +589,14 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 				task->n--;
 			}
 			task->src = (char*) v;
+		}
+	break;
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: leftfetchjoin_literal(bte); break ;
+		case 2: leftfetchjoin_literal(sht); break ;
+		case 4: leftfetchjoin_literal(int); break ;
+		case 8: leftfetchjoin_literal(lng); break ;
 		}
 	}
 	MOSskip_literal(cntxt,task);
@@ -608,6 +649,15 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 					BUNappend(task->rbat, &o, FALSE);
 				}
 			}
+		}
+	break;
+	case TYPE_str:
+		// beware we should look at the value
+		switch(task->b->T->width){
+		case 1: join_literal(bte); break ;
+		case 2: join_literal(sht); break ;
+		case 4: join_literal(int); break ;
+		case 8: join_literal(lng); break ;
 		}
 	}
 	MOSskip_literal(cntxt,task);

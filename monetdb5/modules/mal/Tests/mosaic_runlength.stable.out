@@ -74,7 +74,8 @@ function user.main():void;
     bat.append(b,9);
     bat.append(b,9);
     b := bat.append(b,b);
-    io.print(b);
+    base := algebra.copy(b);
+    io.print(base);
     x := mosaic.compress(b,"runlength");
 #mosaic.dump(x); 
     z := mosaic.decompress(x);
@@ -199,6 +200,26 @@ function user.main():void;
 #mosaic.dump(xd); 
     zd := mosaic.decompress(xd);
     io.print(zd);
+# handle compression of strings 
+    s := bat.new(:oid,:str);
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"hello world");
+    bat.append(s,"goodbye");
+    bat.append(s,"goodbye");
+    bat.append(s,"goodbye");
+    bat.append(s,"goodbye");
+    bat.append(s,"goodbye");
+    cs := mosaic.compress(s);
+    cc := mosaic.decompress(s);
+    io.print(cc);
 end main;
 #--------------------------#
 # h	t  # name
@@ -767,6 +788,25 @@ end main;
 [ 7@0,	2014-08-14  ]
 [ 8@0,	2014-08-14  ]
 [ 9@0,	2014-08-15  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"hello world"  ]
+[ 1@0,	"hello world"  ]
+[ 2@0,	"hello world"  ]
+[ 3@0,	"hello world"  ]
+[ 4@0,	"hello world"  ]
+[ 5@0,	"hello world"  ]
+[ 6@0,	"hello world"  ]
+[ 7@0,	"hello world"  ]
+[ 8@0,	"hello world"  ]
+[ 9@0,	"hello world"  ]
+[ 10@0,	"goodbye"  ]
+[ 11@0,	"goodbye"  ]
+[ 12@0,	"goodbye"  ]
+[ 13@0,	"goodbye"  ]
+[ 14@0,	"goodbye"  ]
 
 # 20:55:33 >  
 # 20:55:33 >  "Done."

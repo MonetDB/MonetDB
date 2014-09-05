@@ -95,6 +95,7 @@ typedef struct MOSTASK{
 
 	char *dst;		// write pointer into current compressed blocks
 
+	BAT *b;			// source column
 	BUN	elm;		// elements left to compress
 	char *src;		// read pointer into source
 

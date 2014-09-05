@@ -55,6 +55,8 @@ MOSdump_runlength(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"flt  %f", *(flt*) val); break;
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"flt  %f", *(dbl*) val); break;
+	case TYPE_str:
+		mnstr_printf(cntxt->fdout,"str TBD"); break;
 	default:
 		if( task->type == TYPE_date)
 			mnstr_printf(cntxt->fdout,"date %d ", *(int*) val); 
@@ -85,6 +87,8 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(hge),hge)); break;
 #endif
+	case TYPE_str:
+		break;
 	}
 }
 
@@ -131,6 +135,15 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 				break;
 			if ( i > MOSlimit() ) i = MOSlimit();
 			factor = ( (flt)i * sizeof(int))/ (MosaicBlkSize + sizeof(int));
+		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: Estimate(bte); break;
+		case 2: Estimate(sht); break;
+		case 4: Estimate(int); break;
+		case 8: Estimate(lng); break;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -187,6 +200,14 @@ MOScompress_runlength(Client cntxt, MOStask task)
 			task->src += i * sizeof(int);
 		}
 		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: RLEcompress(bte); break;
+		case 2: RLEcompress(sht); break;
+		case 4: RLEcompress(int); break;
+		case 8: RLEcompress(lng); break;
+		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_runlength(cntxt, task);
@@ -229,6 +250,15 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val;
 			task->src += i * sizeof(int);
+		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: RLEdecompress(bte); break;
+		case 2: RLEdecompress(sht); break;
+		case 4: RLEdecompress(int); break;
+		case 8: RLEdecompress(lng); break;
 		}
 	}
 }
@@ -396,6 +426,15 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 		}
 	}
 	break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: break;
+		case 2: break;
+		case 4: break;
+		case 8: break;
+		}
+		break;
 	default:
 		if( task->type == TYPE_date)
 			subselect_runlength(date); 
@@ -518,6 +557,16 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 					*o++ = (oid) first;
 				}
 		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: break;
+		case 2: break;
+		case 4: break;
+		case 8: break;
+		}
+		break;
 	}
 	MOSskip_runlength(cntxt,task);
 	task->lb =o;
@@ -569,6 +618,16 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 			}
 			task->src = (char*) v;
 		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: leftfetchjoin_runlength(bte); break;
+		case 2: leftfetchjoin_runlength(sht); break;
+		case 4: leftfetchjoin_runlength(int); break;
+		case 8: leftfetchjoin_runlength(lng); break;
+		}
+		break;
 	}
 	MOSskip_runlength(cntxt,task);
 	return MAL_SUCCEED;
@@ -620,6 +679,16 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 						BUNappend(task->rbat, &o, FALSE);
 					}
 			}
+			break;
+		case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: break;
+		case 2: break;
+		case 4: break;
+		case 8: break;
+		}
+			break;
 	}
 	MOSskip_runlength(cntxt,task);
 	return MAL_SUCCEED;

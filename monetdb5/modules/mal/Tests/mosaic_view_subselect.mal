@@ -20,9 +20,10 @@ bat.append(b,o);
 bat.append(b,9);
 bat.append(b,9);
 bat.append(b,9);
+base:= algebra.copy(b);
 
 #use a view in the remainder
-v:= algebra.subselect(b,nil:int,nil:int,false,false,false);
+v:= algebra.subselect(base,nil:int,nil:int,false,false,false);
 io.print(v);
 x:= mosaic.compress(b);
 mosaic.dump(x);

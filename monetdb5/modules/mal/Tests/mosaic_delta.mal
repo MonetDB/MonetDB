@@ -10,8 +10,9 @@ bat.append(b,1001);
 bat.append(b,1004);
 bat.append(b,999);
 bat.append(b,977);
+base:= algebra.copy(b);
 
-io.print(b);
+io.print(base);
 x:= mosaic.compress(b,"delta");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);

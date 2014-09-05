@@ -13,8 +13,9 @@ bat.append(b,7);
 bat.append(b,10);
 bat.append(b,13);
 bat.append(b,16);
+base:= algebra.copy(b);
 
-io.print(b);
+io.print(base);
 x:= mosaic.compress(b,"linear");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);
@@ -25,32 +26,32 @@ bat.append(c,0@0);
 bat.append(c,3@0);
 io.print(c);
 
-s:= algebra.thetasubselect(b,c,4,"<");
+s:= algebra.thetasubselect(base,c,4,"<");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,"<");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,c,4,"<=");
+s:= algebra.thetasubselect(base,c,4,"<=");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,"<=");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,c,4,">");
+s:= algebra.thetasubselect(base,c,4,">");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,">");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,c,4,">=");
+s:= algebra.thetasubselect(base,c,4,">=");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,">=");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,c,4,"==");
+s:= algebra.thetasubselect(base,c,4,"==");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,"==");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,c,4,"!=");
+s:= algebra.thetasubselect(base,c,4,"!=");
 io.print(s);
 xs:= mosaic.thetasubselect(x,c,4,"!=");
 io.print(xs);

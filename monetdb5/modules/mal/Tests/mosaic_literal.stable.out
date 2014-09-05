@@ -24,6 +24,7 @@ function user.main():void;
     bat.append(b,19531015);
     bat.append(b,9);
     b := bat.append(b,b);
+    base := algebra.copy(b);
     io.print(b);
     x := mosaic.compress(b,"literal");
 #mosaic.dump(x); 
