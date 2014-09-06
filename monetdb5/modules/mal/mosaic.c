@@ -177,7 +177,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
  */
 
 str
-MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int debug)
+MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplace, int debug)
 {
 	BAT *bsrc, *bcompress;
 	BUN cutoff =0;
@@ -248,45 +248,65 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int debug)
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#compress bat %d properties %s\n",*bid,properties?properties:"");
 #endif
-	// allocate space for the compressed version.
+	// allocate space for a compressed version.
 	// It should always take less space then the orginal column.
 	// But be prepared that a last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
+	if (inplace)
+		bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
+	else
+		bsrc = BATnew(bcompress->htype, bcompress->ttype, BATgrows(bcompress), TRANSIENT);
 
 	if (bsrc == NULL) {
 		BBPreleaseref(bcompress->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 	}
-	// make some work slack
-	bcompress = BATextend(bcompress, BATgrows(bcompress));
-	if( bcompress == NULL){
-		BBPreleaseref(bsrc->batCacheid);
-		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
-	}
+	BATseqbase(bsrc,bcompress->hseqbase);
 
-	// actual compression mosaic
+	// actual compression mosaic task
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPreleaseref(bsrc->batCacheid);
 		BBPreleaseref(bcompress->batCacheid);
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 	}
-	// initialize the non-compressed read pointer
-	task->src = Tloc(bsrc, BUNfirst(bsrc));
-	task->elm = BATcount(bsrc);
-	task->size = bsrc->T->heap.free;
-	task->timer = GDKusec();
 
-	// prepare a compressed heap
-	MOSinit(task,bcompress);
-	MOSinitHeader(task);
+	if( inplace){
+		// initialize in place compression
+		bcompress = BATextend(bcompress, BATgrows(bcompress));
+		if( bcompress == NULL){
+			BBPreleaseref(bsrc->batCacheid);
+			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
+		}
+		// initialize the non-compressed read pointer
+		task->src = Tloc(bsrc, BUNfirst(bsrc));
+		task->elm = BATcount(bsrc);
+		task->size = bsrc->T->heap.free;
+		task->timer = GDKusec();
 
+		MOSinit(task,bcompress);
+		MOSinitHeader(task);
+
+		// claim the server for exclusive use
+		msg = MCstartMaintenance(cntxt,1,0);
+		if( msg != MAL_SUCCEED){
+			GDKfree(task);
+			BBPreleaseref(bsrc->batCacheid);
+			BBPreleaseref(bcompress->batCacheid);
+			throw(MAL, "mosaic.compress", "Can not claim server");
+		}
+	} else {
+		// initialize local compressed copy
+		task->src = Tloc(bcompress, BUNfirst(bcompress));
+		task->elm = BATcount(bcompress);
+		task->size = bcompress->T->heap.free;
+		task->timer = GDKusec();
+
+		MOSinit(task,bsrc);
+		MOSinitHeader(task);
+	}
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
-
-	// claim the server for exclusive use
-	MCstartMaintenance(cntxt,1,0);
 
 	cutoff = task->elm > 1000? task->elm - 1000: task->elm;
 	while(task->elm > 0){
@@ -460,17 +480,27 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int debug)
 	// if we couldnt compress well enough, ignore the result
 	// TODO
 
-	MCexitMaintenance(cntxt);
-	bcompress->batDirty = 1;
-	bcompress->T->heap.free = (size_t) (task->dst - Tloc(bcompress,BUNfirst(bcompress)) );
-	bcompress->T->heap.compressed= 1;
-	bcompress->T->heap.count = BATcount(bsrc);
-	BBPkeepref(*ret = bcompress->batCacheid);
-	BBPreleaseref(bsrc->batCacheid);
+	if( inplace){
+		bcompress->batDirty = 1;
+		bcompress->T->heap.free = (size_t) (task->dst - Tloc(bcompress,BUNfirst(bcompress)) );
+		bcompress->T->heap.compressed= 1;
+		bcompress->T->heap.count = BATcount(bsrc);
+		MCexitMaintenance(cntxt);
+		BBPkeepref(*ret = bcompress->batCacheid);
+		BBPreleaseref(bsrc->batCacheid);
+	} else {
+		BATsetcount(bsrc,BATcount(bcompress));
+		bsrc->batDirty = 1;
+		bsrc->T->heap.free = (size_t) (task->dst - Tloc(bsrc,BUNfirst(bsrc)) );
+		bsrc->T->heap.compressed= 1;
+		bsrc->T->heap.count = BATcount(bcompress);
+		BBPkeepref(*ret = bsrc->batCacheid);
+		BBPreleaseref(bcompress->batCacheid);
+	}
+	GDKfree(task);
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bcompress);
 #endif
-	GDKfree(task);
 	return msg;
 }
 
@@ -486,15 +516,31 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if( pci->argc == 3)
 		prop = *(str*) getArgReference(stk,pci,2);
-	return MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), prop, flg);
+	return MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), prop, 0, flg);
+}
+
+str
+MOScompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	str prop = NULL;
+#ifdef _DEBUG_MOSAIC_
+	int flg = 1;
+#else
+	int flg = 0;
+#endif
+	(void) mb;
+	if( pci->argc == 3)
+		prop = *(str*) getArgReference(stk,pci,2);
+	return MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), prop, 1, flg);
 }
 
 // bulk decompress a heap
 str
-MOSdecompressInternal(Client cntxt, int *ret, int *bid)
+MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 {	
 	BAT *bsrc, *b;
 	MOStask task;
+	str msg;
 	(void) cntxt;
 
 #ifdef _DEBUG_MOSAIC_
@@ -521,21 +567,35 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
-	//copy the compressed heap to its temporary location
-	memcpy(bsrc->T->heap.base, b->T->heap.base, b->T->heap.free);
+	BATseqbase(bsrc,b->hseqbase);
 
-	// inject the de-decompression
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
-	MOSinit(task,bsrc);
-	task->src = Tloc(b, BUNfirst(b));
-	task->timer = GDKusec();
-	// claim the server for exclusive use
-	MCstartMaintenance(cntxt,1,0);
+	if(inplace) {
+		//copy the compressed heap to its temporary location
+		 memcpy(bsrc->T->heap.base, b->T->heap.base, b->T->heap.free);
+	
+		// claim the server for exclusive use
+		msg = MCstartMaintenance(cntxt,1,0);
+		if( msg != MAL_SUCCEED){
+			GDKfree(msg);
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(bsrc->batCacheid);
+			throw(MAL, "mosaic.decompress", "Can not claim server");
+		}
+		MOSinit(task,bsrc);
+		task->src = Tloc(b, BUNfirst(b));
+		task->timer = GDKusec();
+	} else { 
+		// create a local decompressed copy
+		MOSinit(task,b);
+		task->src = Tloc(bsrc, BUNfirst(bsrc));
+		task->timer = GDKusec();
+	} 
 
 	while(task->blk){
 		switch(MOSgetTag(task->blk)){
@@ -571,21 +631,34 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid)
 		}
 	}
 
-	b->batDirty = 1;
-	b->T->heap.free = (size_t) (BATcount(b) * b->T->width);
-	b->T->heap.compressed= 0;
-	task->timer = GDKusec()- task->timer;
-
 	// continue with all work
-	MCexitMaintenance(cntxt);
+	if(inplace) {
+		b->batDirty = 1;
+		b->T->heap.free = (size_t) (BATcount(b) * b->T->width);
+		b->T->heap.compressed= 0;
+
+		MCexitMaintenance(cntxt);
+		BBPreleaseref(bsrc->batCacheid);
+		BBPkeepref( *ret = b->batCacheid);
+	} else {
+		BATsetcount(bsrc,BATcount(b));
+		bsrc->batDirty = 1;
+		bsrc->T->heap.free = (size_t) (BATcount(b) * b->T->width);
+		bsrc->T->heap.compressed= 0;
+        bsrc->hdense = 1;
+        bsrc->hseqbase = 0;
+        bsrc->hkey = 1;
+        BATderiveProps(bsrc,0);
+
+		BBPreleaseref(b->batCacheid);
+		BBPkeepref( *ret = bsrc->batCacheid);
+	}
+	GDKfree(task);
 
 	//if (!b->T->heap.compressed && b->ttype != TYPE_void) {
 		/* inherit original uncompressed tail as view */
 		//bn = inheritCOL( bn, bn->T, b, b->T, VIEWtparent(b) );
 	//}
-	GDKfree(task);
-	BBPreleaseref(bsrc->batCacheid);
-	BBPkeepref( *ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -593,7 +666,14 @@ str
 MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) mb;
-	return MOSdecompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1));
+	return MOSdecompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1),0);
+}
+
+str
+MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) mb;
+	return MOSdecompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1),1);
 }
 
 // The remainders is cloned from the generator code base
@@ -1222,14 +1302,14 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 	case TYPE_flt:
 	case TYPE_dbl:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid2, BBP_physical(bid), type, BATcount(b));
-		MOScompressInternal(cntxt, &ret, &bid2, properties,1);
+		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
 		break;
 	case TYPE_str:
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-			MOScompressInternal(cntxt, &ret, &bid2, properties,1);
+			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}

@@ -174,9 +174,11 @@ if ( task->cl && task->n){\
 #endif
 
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties,int flg);
+mosaic_export str MOScompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties,int inplace,int flg);
 mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid);
+mosaic_export str MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid,int inplace);
 mosaic_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
