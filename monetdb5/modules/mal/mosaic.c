@@ -1259,8 +1259,8 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static void
 MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 {
-	BAT *b,*bn;
-	int ret,bid2;
+	BAT *b,*bn, *br;
+	int ret = 0, bid2 = 0;
 	str type;
 
 	b = BATdescriptor(bid);
@@ -1301,8 +1301,10 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid2, BBP_physical(bid), type, BATcount(b));
+		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
+		br = BATdescriptor(ret);
+		if(br) BBPreclaim(br);
 		break;
 	case TYPE_str:
 		break;
@@ -1310,6 +1312,8 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
+			br = BATdescriptor(ret);
+			if(br) BBPreclaim(br);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}
@@ -1321,7 +1325,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 str
 MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,bid;
+	int i,limit,bid;
 	BUN threshold= 1000;
 	str properties = 0;
 	(void) mb;
@@ -1338,7 +1342,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bid = *(int*) getArgReference(stk,pci,2);
 		MOSanalyseInternal(cntxt, threshold, properties, bid);
 	} else
-    for (i = 1; i < getBBPsize(); i++)
+    for (limit= getBBPsize(),i = 1; i < limit; i++)
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
 			MOSanalyseInternal(cntxt, threshold, properties, i);
 	return MAL_SUCCEED;
