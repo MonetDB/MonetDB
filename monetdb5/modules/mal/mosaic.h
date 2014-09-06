@@ -174,7 +174,7 @@ if ( task->cl && task->n){\
 #endif
 
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties);
+mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties,int flg);
 mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid);
 mosaic_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

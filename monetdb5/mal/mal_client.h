@@ -188,5 +188,7 @@ mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export str MCstartMaintenance(Client cntxt, lng timeout, int abort);
+mal_export str MCexitMaintenance(Client cntxt);
 
 #endif /* _MAL_CLIENT_H_ */

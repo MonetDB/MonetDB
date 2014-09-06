@@ -586,7 +586,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 
 			if( c->storage_type)
-				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type);
+				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type,0);
 			else
 				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
 			if (msg)
