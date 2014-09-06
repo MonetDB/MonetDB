@@ -586,8 +586,9 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 {	TPE val, *v;\
 	bte *delta;\
 	v= (TPE*) task->src;\
+	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(TPE));\
-	for(; first < last; first++, delta++, val+= *delta){\
+	for(; first < last; first++, val+= *delta,delta++){\
 		MOSskipit();\
 		*v++ = val;\
 		task->n--;\

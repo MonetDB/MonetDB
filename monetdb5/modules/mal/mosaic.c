@@ -56,7 +56,6 @@ void MOSblk(MosaicBlk blk)
 	printf("Block tag %d cnt "BUNFMT"\n", MOSgetTag(blk),MOSgetCnt(blk));
 }
 
-#ifdef _DEBUG_MOSAIC_
 static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
@@ -71,7 +70,6 @@ MOSdumpTask(Client cntxt,MOStask task)
 		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , filtername[i], task->blks[i], task->elms[i], task->elms[i]/task->blks[i]);
 	mnstr_printf(cntxt->fdout,"\n");
 }
-#endif
 
 // dump a compressed BAT
 static void
