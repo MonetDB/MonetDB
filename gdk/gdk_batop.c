@@ -505,9 +505,11 @@ BATappend(BAT *b, BAT *n, bit force)
 					return 0;
 				}
 				m = (oid) (f + sz);
+				b = BATmirror(b); /* so we can use bunfastapp */
 				for (; f < m; f++, r++) {
-					bunfastins_nocheck(b, r, (ptr) &f, NULL, Hsize(b), 0);
+					bunfastapp_nocheck(b, r, (ptr) &f, Tsize(b));
 				}
+				b = BATmirror(b);
 			} else {
 				sz += BATcount(b);
 				BATsetcount(b, sz);
@@ -893,10 +895,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 	}
 	if (bn->batCount <= 1) {
-		bn->hsorted = 1;
-		bn->tsorted = 1;
-		bn->hrevsorted = 1;
-		bn->trevsorted = 1;
+		bn->hsorted = BATatoms[b->htype].linear;
+		bn->tsorted = BATatoms[b->ttype].linear;
+		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->trevsorted = BATatoms[b->ttype].linear;
 		BATkey(bn, 1);
 		BATkey(BATmirror(bn), 1);
 	} else {
@@ -1207,7 +1209,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	if (order) {
 		/* prepare order bat */
 		if (o) {
-			/* make copy of input so that we can refine it
+			/* make copy of input so that we can refine it;
 			 * copy can be read-only if we take the shortcut
 			 * below in the case g is "key" */
 			on = BATcopy(o, TYPE_void, TYPE_oid,
@@ -1226,10 +1228,12 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				grps[p] = p;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
+			on->T->nil = 0;
+			on->T->nonil = 1;
 		}
 		BATseqbase(on, 0);
-		on->tsorted = on->trevsorted = 0;
-		on->tdense = 0;
+		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
+		on->tdense = 0;			  /* and hence not dense */
 		*order = on;
 	}
 	if (g) {
@@ -1241,8 +1245,24 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			} else {
 				BBPunfix(bn->batCacheid);
 			}
-			if (order)
+			if (order) {
 				*order = on;
+				if (o) {
+					/* we can inherit sortedness
+					 * after all */
+					on->tsorted = o->tsorted;
+					on->trevsorted = o->trevsorted;
+				} else {
+					/* we didn't rearrange, so
+					 * still sorted */
+					on->tsorted = 1;
+					on->trevsorted = 0;
+				}
+				if (BATcount(on) <= 1) {
+					on->tsorted = 1;
+					on->trevsorted = 1;
+				}
+			}
 			if (groups) {
 				gn = BATcopy(g, TYPE_void, g->ttype, 0, TRANSIENT);
 				if (gn == NULL)
@@ -1546,7 +1566,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 					return NULL;
 				r = BUNfirst(gc);
 				BATloop(g, p, q) {
-					bunfastins_nocheck_inc(gc, r, NULL, s);
+					bunfastapp_nocheck_inc(gc, r, s);
 				}
 			} else {
 				BATiter gi = bat_iterator(g);
