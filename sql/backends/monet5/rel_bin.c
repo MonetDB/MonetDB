@@ -550,13 +550,54 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		int swapped = 0, is_select = 0;
 		sql_exp *re = e->r, *re2 = e->f;
 
+		/* general predicate, select and join */
 		if (get_cmp(e) == cmp_filter) {
-			list *r = e->r;
+			list *args;
+			list *ops;
+			node *n;
+			int first = 1;
 
-			re2 = NULL;
-			re = r->h->data;
-			if (r->h->next)
-				re2 = r->h->next->data;
+		       	ops = sa_list(sql->sa);
+		       	args = e->l;
+			for( n = args->h; n; n = n->next ) {
+				s = NULL;
+				if (!swapped)
+					s = exp_bin(sql, n->data, left, NULL, grp, ext, cnt, NULL); 
+				if (!s && (first || swapped)) {
+					s = exp_bin(sql, n->data, right, NULL, grp, ext, cnt, NULL); 
+					swapped = 1;
+				}
+				if (!s) 
+					return s;
+				if (s->nrcols == 0 && first)
+					s = stmt_const(sql->sa, bin_first_column(sql->sa, swapped?right:left), s); 
+				list_append(ops, s);
+				first = 0;
+			}
+			l = stmt_list(sql->sa, ops);
+		       	ops = sa_list(sql->sa);
+			args = e->r;
+			for( n = args->h; n; n = n->next ) {
+				s = exp_bin(sql, n->data, (swapped || !right)?left:right, NULL, grp, ext, cnt, NULL); 
+				if (!s) 
+					return s;
+				list_append(ops, s);
+			}
+			r = stmt_list(sql->sa, ops);
+
+			if (left && right && exps_card(e->r) > CARD_ATOM) {
+				sql_subfunc *f = e->f;
+				stmt *j = stmt_genjoin(sql->sa, l, r, f, swapped);
+
+				if (j && is_anti(e))
+					j->flag |= ANTI;
+				return j;
+			}
+			assert(!swapped);
+			s = stmt_genselect(sql->sa, l, r, e->f, sel);
+			if (s && is_anti(e))
+				s->flag |= ANTI;
+			return s;
 		}
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0);
@@ -630,37 +671,12 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		}
 		if (re2)
  			r2 = exp_bin(sql, re2, left, right, grp, ext, cnt, sel);
+
 		if (!l || !r || (re2 && !r2)) {
 			assert(0);
 			return NULL;
 		}
 
-		/* general predicate, select and join */
-		if (get_cmp(e) == cmp_filter) {
-			list *ops;
-
-			if (l->nrcols == 0)
-				l = stmt_const(sql->sa, bin_first_column(sql->sa, swapped?right:left), l); 
-
-			if (left && right && re->card > CARD_ATOM && !is_select) {
-				/* find predicate function */
-				sql_subfunc *f = e->f;
-				stmt *j = stmt_joinN(sql->sa, l, r, r2, f, swapped);
-
-				if (j && is_anti(e))
-					j->flag |= ANTI;
-				return j;
-			}
-			ops = sa_list(sql->sa);
-			append(ops, r);
-			if (r2)
-				append(ops, r2);
-			r = stmt_list(sql->sa, ops);
-			s = stmt_genselect(sql->sa, l, r, e->f, sel);
-			if (s && is_anti(e))
-				s->flag |= ANTI;
-			return s;
-		}
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
 		     re->card > CARD_ATOM || 

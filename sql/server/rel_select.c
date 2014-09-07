@@ -2274,53 +2274,68 @@ compare_str2type( char *compare_op)
 }
 
 static sql_rel *
-rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti )
+rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti )
 {
-	sql_exp *L = ls, *R = rs, *e = NULL;
+	node *n;
+	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
 	sql_subfunc *f = NULL;
+	sql_schema *s = sql->session->schema;
+	list *tl, *exps;
 
+	exps = sa_list(sql->sa);
+	tl = sa_list(sql->sa);
+	for (n = l->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		list_append(exps, e);
+		list_append(tl, exp_subtype(e));
+	}
+	for (n = r->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		list_append(exps, e);
+		list_append(tl, exp_subtype(e));
+	}
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
 	/* find filter function */
-	if (rs2)
-		f = sql_bind_func3(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, exp_subtype(ls), exp_subtype(rs), exp_subtype(rs2), F_FILT);
-	else
-		f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, exp_subtype(ls), exp_subtype(rs), F_FILT);
-	if (!f) {
-		f = sql_find_func(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, (rs2)?3:2, F_FILT);
-		if (f) {
-			node *m = f->func->ops->h;
-			sql_arg *a = m->data;
+	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
-			ls = rel_check_type(sql, &a->type, ls, type_equal);
-			a = m->next->data;
-			rs = rel_check_type(sql, &a->type, rs, type_equal);
-			if (rs2) {
-				a = m->next->next->data;
-				rs2 = rel_check_type(sql, &a->type, rs2, type_equal);
-				if (!rs2) 
-					rs = NULL;
+	if (!f) {
+		if ((f = sql_find_func(sql->sa, s, filter_op, list_length(exps), F_FILT)) != NULL) { 
+			node *n,*m = f->func->ops->h;
+			list *nexps = sa_list(sql->sa);
+			for(n = exps->h, m = f->func->ops->h; m && n; m = m->next, n = n->next) {
+				sql_arg *a = m->data;
+				sql_exp *e = n->data;
+
+				e = rel_check_type(sql, &a->type, e, type_equal);
+				list_append(nexps, e);
 			}
+			exps = nexps;
 		}
 	}
-	if (!f || !ls || !rs)
+	if (!f)
 		return NULL;
-	e = exp_filter2(sql->sa, ls, rs, rs2, f, anti);
+	e = exp_filter(sql->sa, l, r, f, anti);
 
 	/* atom or row => select */
-	if (ls->card > rel->card) {
+	if (exps_card(l) > rel->card) {
+		sql_exp *ls = l->h->data;
 		if (ls->name)
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
 		else
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card > rel->card || (rs2 && rs2->card > rel->card)) {
+	if (exps_card(r) > rel->card) {
+		sql_exp *rs = l->h->data;
 		if (rs->name)
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
 		else
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && exp_is_atom(rs) && 
-	   (!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
-		if (ls->card == rs->card && !rs2)  /* bin compare op */
+	if (exps_card(r) <= CARD_ATOM /*&& exp_is_atom(rs) */) {
+		if (exps_card(l) == exps_card(r))  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
@@ -2335,9 +2350,23 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql, rel, L, R, rs2, e);
+		return rel_push_join(sql, rel, L, R, NULL, e);
 	}
 }
+
+static sql_rel *
+rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti )
+{
+	list *l = sa_list(sql->sa);
+	list *r = sa_list(sql->sa);
+
+	list_append(l, ls);
+	list_append(r, rs);
+	if (rs2)
+		list_append(r, rs2);
+	return rel_filter(sql, rel, l, r, "sys", filter_op, anti);
+}
+
 
 static sql_rel *
 rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti )
@@ -2989,16 +3018,36 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel_logical_exp(sql, rel, ro, f);
 	}
 	case SQL_FILTER:
-		/* 2 cases x filter y and x filter (y1,y2) */
+		/* [ x,..] filter [ y,..] */
+		/* todo add anti, [ x,..] NOT filter [ y,...] */
+		/* no correlation */
 	{
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->next->data.sym;
-		symbol *ro2 = NULL;
-		char *filter_op = sc->data.lval->h->next->data.sval;
+		dnode *ln = sc->data.lval->h->data.lval->h;
+		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
+		dlist *filter_op = sc->data.lval->h->next->data.lval;
+		char *fname = qname_fname(filter_op);
+		char *sname = qname_schema(filter_op);
+		list *l, *r;
 
-		if (sc->data.lval->h->next->next->next)
-			ro2 = sc->data.lval->h->next->next->next->data.sym;
-		return rel_compare(sql, rel, lo, ro, ro2, filter_op, f, ek);
+		l = sa_list(sql->sa);
+		r = sa_list(sql->sa);
+		for (; ln; ln = ln->next) {
+			symbol *sym = ln->data.sym;
+
+			sql_exp *e = rel_value_exp(sql, &rel, sym, f, ek);
+			if (!e)
+				return NULL;
+			list_append(l, e);
+		}
+		for (; rn; rn = rn->next) {
+			symbol *sym = rn->data.sym;
+
+			sql_exp *e = rel_value_exp(sql, &rel, sym, f, ek);
+			if (!e)
+				return NULL;
+			list_append(r, e);
+		}
+		return rel_filter(sql, rel, l, r, sname, fname, 0);
 	}
 	case SQL_COMPARE:
 	{

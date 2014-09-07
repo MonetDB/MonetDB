@@ -834,16 +834,16 @@ stmt_atom(sql_allocator *sa, atom *op1)
 }
 
 stmt *
-stmt_genselect(sql_allocator *sa, stmt *l, stmt *rops, sql_subfunc *f, stmt *sub)
+stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub)
 {
 	stmt *s = stmt_create(sa, st_uselect);
 
-	s->op1 = l;
+	s->op1 = lops;
 	s->op2 = rops;
 	s->op3 = sub;
 	s->op4.funcval = dup_subfunc(sa, f);
 	s->flag = cmp_filter;
-	s->nrcols = (l->nrcols == 2) ? 2 : 1;
+	s->nrcols = (lops->nrcols == 2) ? 2 : 1;
 	return s;
 }
 
@@ -963,15 +963,14 @@ stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp, int swapped)
 }
 
 stmt *
-stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op, int swapped)
+stmt_genjoin(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op, int swapped)
 {
 	stmt *s = stmt_create(sa, st_joinN);
 
 	s->op1 = l;
 	s->op2 = r;
-	s->op3 = opt;
 	s->op4.funcval = op;
-	s->nrcols = (opt) ? 3 : 2;
+	s->nrcols = 2;
 	if (swapped)
 		s->flag |= SWAPPED;
 	return s;
