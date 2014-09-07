@@ -45,6 +45,7 @@ MOSinit(MOStask task, BAT *b){
 	base = Tloc(b,BUNfirst(b));
 	assert(base);
 	task->type = b->ttype;
+	task->b = b;
 	task->hdr = (MosaicHdr) base;
 	base += MosaicHdrSize;
 	task->blk = (MosaicBlk)  base;
@@ -223,6 +224,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 	case TYPE_wrd:
 	case TYPE_flt:
 	case TYPE_dbl:
+	case TYPE_str:
 		break;
 	default:
 		// don't compress them
@@ -250,12 +252,12 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 #endif
 	// allocate space for a compressed version.
 	// It should always take less space then the orginal column.
-	// But be prepared that a last block header may  be stored
+	// But be prepared that a header and last block header may  be stored
 	// use a size overshoot. Also be aware of possible dictionary headers
-	if (inplace)
+	//if (inplace)
 		bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
-	else
-		bsrc = BATnew(bcompress->htype, bcompress->ttype, BATgrows(bcompress), TRANSIENT);
+	if( !inplace)
+		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
 
 	if (bsrc == NULL) {
 		BBPreleaseref(bcompress->batCacheid);
@@ -273,7 +275,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 
 	if( inplace){
 		// initialize in place compression
-		bcompress = BATextend(bcompress, BATgrows(bcompress));
+		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
 		if( bcompress == NULL){
 			BBPreleaseref(bsrc->batCacheid);
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
@@ -345,7 +347,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 				factor = fac;
 			}
 		}
-*/
 		if ( filter[MOSAIC_ZONE]){
 			fac = MOSestimate_zone(cntxt,task);
 			if (fac > factor){
@@ -353,6 +354,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 				factor = fac;
 			}
 		}
+*/
 		if ( filter[MOSAIC_DELTA]){
 			fac = MOSestimate_delta(cntxt,task);
 			if ( fac > factor ){
@@ -378,9 +380,9 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 			if( (MOSgetTag(task->blk) == MOSAIC_NONE || MOSgetTag(task->blk) == MOSAIC_ZONE) && MOSgetCnt(task->blk) ){
 				MOSupdateHeader(cntxt,task);
 				if( MOSgetTag(task->blk) == MOSAIC_NONE)
-					MOSskip_literal(cntxt,task);
+					MOSadvance_literal(cntxt,task);
 				else
-					MOSskip_zone(cntxt,task);
+					MOSadvance_zone(cntxt,task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				MOSsetTag(task->blk,MOSAIC_EOL);
@@ -391,9 +393,9 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 			if ( MOSgetCnt(task->blk) == MOSlimit()){
 				MOSupdateHeader(cntxt,task);
 				if( MOSgetTag(task->blk) == MOSAIC_NONE)
-					MOSskip_literal(cntxt,task);
+					MOSadvance_literal(cntxt,task);
 				else
-					MOSskip_zone(cntxt,task);
+					MOSadvance_zone(cntxt,task);
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				MOSsetTag(task->blk,MOSAIC_EOL);
@@ -1257,7 +1259,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // all possible compression options.
 
 static void
-MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
+MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 {
 	BAT *b,*bn, *br;
 	int ret = 0, bid2 = 0;
@@ -1268,7 +1270,7 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 		mnstr_printf(cntxt->fdout,"#nonaccessible %d\n",bid);
 		return;
 	}
-	if( b->ttype == TYPE_void ||  BATcount(b) < threshold){
+	if( b->ttype == TYPE_void ||  BATcount(b) < (BUN) threshold){
 		BBPreleaseref(bid);
 		//mnstr_printf(cntxt->fdout,"#too small %d %s\n",bid, BBP_logical(bid));
 		return;
@@ -1294,19 +1296,18 @@ MOSanalyseInternal(Client cntxt, BUN threshold, str properties, int bid)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
 	case TYPE_wrd:
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
+	case TYPE_str:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
 		br = BATdescriptor(ret);
 		if(br) BBPreclaim(br);
-		break;
-	case TYPE_str:
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
@@ -1326,14 +1327,14 @@ str
 MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,limit,bid;
-	BUN threshold= 1000;
+	int threshold= 1000;
 	str properties = 0;
 	(void) mb;
 	
 
 	if( pci->argc > 1){
 		if( getArgType(mb,pci,1) == TYPE_lng)
-			threshold = *(BUN*) getArgReference(stk,pci,1);
+			threshold = *(int*) getArgReference(stk,pci,1);
 		if( getArgType(mb,pci,1) == TYPE_str)
 			properties = *(str*) getArgReference(stk,pci,1);
 	}

@@ -47,6 +47,15 @@ MOSadvance_variance(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(bte)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),bte)); break;
+		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+		}
+		break;
 	}
 }
 
@@ -100,9 +109,9 @@ MOSskip_variance(Client cntxt, MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define estimateDict(TPE)\
+#define estimateVariance(TPE)\
 {	TPE *v = (TPE*)task->src, val = *v++, delta;\
-	TPE *dict = (TPE*)((char*)task->dst + 2 * MosaicBlkSize);\
+	TPE *dict = (TPE*)((char*)task->dst + 4 * MosaicBlkSize);\
 	task->dst = ((char*) dict)+ sizeof(TPE)*dictsize;\
 	dict[0]= val;\
 	*size = *size+1;\
@@ -119,7 +128,7 @@ MOSskip_variance(Client cntxt, MOStask task)
 			cnt++;\
 		}\
 	}\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);\
+	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);\
 }
 
 // calculate the expected reduction using dictionary in terms of elements compressed
@@ -135,18 +144,18 @@ MOSestimate_variance(Client cntxt, MOStask task)
 	size = (lng*) (((char*)task->dst) + MosaicBlkSize);
 	*size = 0;
 	switch(ATOMstorage(task->type)){
-	case TYPE_sht: estimateDict(sht); break;
-	case TYPE_oid: estimateDict(oid); break;
-	case TYPE_lng: estimateDict(lng); break;
-	case TYPE_wrd: estimateDict(wrd); break;
-	case TYPE_flt: estimateDict(flt); break;
-	case TYPE_dbl: estimateDict(dbl); break;
+	case TYPE_sht: estimateVariance(sht); break;
+	case TYPE_oid: estimateVariance(oid); break;
+	case TYPE_lng: estimateVariance(lng); break;
+	case TYPE_wrd: estimateVariance(wrd); break;
+	case TYPE_flt: estimateVariance(flt); break;
+	case TYPE_dbl: estimateVariance(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: estimateDict(hge); break;
+	case TYPE_hge: estimateVariance(hge); break;
 #endif
 	case TYPE_int:
 		{	int *v = (int*)task->src, val = *v++,delta;
-			int *dict = (int*)((char*)task->dst + 2 * MosaicBlkSize);
+			int *dict = (int*)((char*)task->dst + 3 * MosaicBlkSize);
 			task->dst = ((char*) dict)+ sizeof(int)*dictsize;
 			dict[0]= val;
 			*size = *size+1;
@@ -163,7 +172,16 @@ MOSestimate_variance(Client cntxt, MOStask task)
 					cnt++;
 				}
 			}
-			if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);
+		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: estimateVariance(bte); break;
+		case 2: estimateVariance(sht); break;
+		case 4: estimateVariance(int); break;
+		case 8: estimateVariance(lng); break;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -259,6 +277,14 @@ MOScompress_variance(Client cntxt, MOStask task)
 			task->src = (char*) v;
 		}
 		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: VARDICTcompress(bte); break;
+		case 2: VARDICTcompress(sht); break;
+		case 4: VARDICTcompress(int); break;
+		case 8: VARDICTcompress(lng); break;
+		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_variance(cntxt, task);
@@ -307,6 +333,15 @@ MOSdecompress_variance(Client cntxt, MOStask task)
 				((int*)task->src)[i] = val;
 			}
 			task->src += i * sizeof(int);
+		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: VARDICTdecompress(bte); break;
+		case 2: VARDICTdecompress(sht); break;
+		case 4: VARDICTdecompress(int); break;
+		case 8: VARDICTdecompress(lng); break;
 		}
 	}
 }
@@ -546,6 +581,15 @@ MOSsubselect_variance(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 				}
 			}
 		}
+		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: break;
+		case 2: break;
+		case 4: break;
+		case 8: break;
+		}
 	}
 	MOSskip_variance(cntxt,task);
 	task->lb = o;
@@ -660,6 +704,15 @@ MOSthetasubselect_variance(Client cntxt,  MOStask task, void *val, str oper)
 			}
 		} 
 		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: break;
+		case 2: break;
+		case 4: break;
+		case 8: break;
+		}
+		break;
 	default:
 		if( task->type == TYPE_timestamp){
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize ), v = dict[0];
@@ -751,6 +804,15 @@ MOSleftfetchjoin_variance(Client cntxt,  MOStask task)
 			}
 			task->src = (char*) v;
 		}
+		break;
+		case  TYPE_str:
+			// we only have to look at the index width, not the values
+			switch(task->b->T->width){
+			case 1: leftfetchjoin_variance(bte); break;
+			case 2: leftfetchjoin_variance(sht); break;
+			case 4: leftfetchjoin_variance(int); break;
+			case 8: leftfetchjoin_variance(lng); break;
+			}
 	}
 	MOSskip_variance(cntxt,task);
 	return MAL_SUCCEED;
@@ -804,6 +866,15 @@ MOSjoin_variance(Client cntxt,  MOStask task)
 				}
 			}
 		}
+		break;
+		case  TYPE_str:
+			// we only have to look at the index width, not the values
+			switch(task->b->T->width){
+			case 1: join_variance(bte); break;
+			case 2: join_variance(sht); break;
+			case 4: join_variance(int); break;
+			case 8: join_variance(lng); break;
+			}
 	}
 	MOSskip_variance(cntxt,task);
 	return MAL_SUCCEED;

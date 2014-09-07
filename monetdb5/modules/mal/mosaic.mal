@@ -32,11 +32,11 @@ pattern analyse(properties:str)
 address MOSanalyse
 comment "Apply heap compression on all with minimum threshold";
 
-pattern analyse(threshold:lng)
+pattern analyse(threshold:int)
 address MOSanalyse
 comment "Apply heap compression on all with minimum threshold";
 
-pattern analyse(threshold:lng,b:int)
+pattern analyse(threshold:int,b:int)
 address MOSanalyse
 comment "Apply heap compression on all with minimum threshold";
 

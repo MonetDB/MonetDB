@@ -120,7 +120,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 #define estimateDict(TPE)\
 {	TPE val = *(TPE*)task->src;\
-	TPE *dict = (TPE*)((char*)task->dst + 2 * MosaicBlkSize);\
+	TPE *dict = (TPE*)((char*)task->dst + 3 * MosaicBlkSize);\
 	for(i =0; i<task->elm; i++, val++){\
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == val) {cnt++;break;}\
@@ -133,7 +133,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 		}\
 	}\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);\
+	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);\
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
@@ -161,7 +161,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int val = *(int*)task->src;
-			int *dict = (int*)((char*)task->dst + 2 * MosaicBlkSize);
+			int *dict = (int*)((char*)task->dst + 3 * MosaicBlkSize);
 			for(i =0; i<task->elm; i++, val++){
 				for(j= 0; j< *size; j++)
 					if( dict[j] == val) {cnt++;break;}
@@ -174,7 +174,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 				}
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			if(i) factor = (flt) ((int)i * sizeof(int)) / (2 * MosaicBlkSize + sizeof(int) * dictsize +i);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_

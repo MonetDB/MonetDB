@@ -43,6 +43,13 @@ linear_step(MOStask task, MosaicBlk blk){
 #ifdef HAVE_HGE
 	case TYPE_hge : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(hge));
 #endif
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(bte)); break ;
+		case 2: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(sht)); break ;
+		case 4: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(int)); break ;
+		case 8: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(lng)); break ;
+		}
 	}
 	return 0;
 }
@@ -73,6 +80,8 @@ MOSdump_linear(Client cntxt, MOStask task)
 	case  TYPE_hge:
 		mnstr_printf(cntxt->fdout,"int %.40g %.40g ", (dbl) *(hge*) linear_base(blk), (dbl) *(hge*) linear_step(task,blk)); break;
 #endif
+	case TYPE_str:
+		mnstr_printf(cntxt->fdout,"str TOBEDONE");
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
@@ -95,6 +104,13 @@ MOSadvance_linear(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(hge),hge)); break;
 #endif
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(bte),bte)); break ;
+		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(sht),sht)); break ;
+		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(int),int)); break ;
+		case 8: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(lng),lng)); break ;
+		}
 	}
 }
 
@@ -113,7 +129,7 @@ MOSskip_linear(Client cntxt, MOStask task)
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
 	if( i >= MOSlimit()) i = MOSlimit();\
-	factor =  ( (flt)i * sizeof(TYPE))/(MosaicBlkSize + 2 * sizeof(TYPE));\
+	factor =  ( (flt)i * sizeof(TYPE))/(2 * MosaicBlkSize + 2 * sizeof(TYPE));\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
@@ -135,6 +151,15 @@ MOSestimate_linear(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: Estimate(hge); break;
 #endif
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: Estimate(bte); break;
+		case 2: Estimate(sht); break;
+		case 4: Estimate(int); break;
+		case 8: Estimate(lng); break;
+		}
+	break;
 	case TYPE_int:
 		{	int val = *(int*)task->src;
 			int step = *(int*) (task->src + sizeof(int)) - val;
@@ -142,7 +167,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
 				break;
 			if( i >= MOSlimit()) i = MOSlimit();
-			factor =  ( (flt)i * sizeof(int))/(MosaicBlkSize + 2 * sizeof(int));
+			factor =  ( (flt)i * sizeof(int))/(2 * MosaicBlkSize + 2 * sizeof(int));
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -201,6 +226,14 @@ MOScompress_linear(Client cntxt, MOStask task)
 			task->src += i * sizeof(int);\
 		}
 		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: LINEARcompress(bte); break;
+		case 2: LINEARcompress(sht); break;
+		case 4: LINEARcompress(int); break;
+		case 8: LINEARcompress(lng); break;
+		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_linear(cntxt, task);
@@ -243,6 +276,15 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val + i * step;
 			task->src += i * sizeof(int);
+		}
+	break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: LINEARdecompress(bte); break;
+		case 2: LINEARdecompress(sht); break;
+		case 4: LINEARdecompress(int); break;
+		case 8: LINEARdecompress(lng); break;
 		}
 	}
 }
@@ -412,6 +454,15 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		}
 	}
 	break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: subselect_linear(bte); break;
+		case 2: subselect_linear(sht); break;
+		case 4: subselect_linear(int); break;
+		case 8: subselect_linear(lng); break;
+		}
+	break;
 	default:
 		if( task->type == TYPE_daytime)
 			subselect_linear(daytime); 
@@ -538,6 +589,15 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 				}
 		}
 		break;
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: thetasubselect_linear(bte); break;
+		case 2: thetasubselect_linear(sht); break;
+		case 4: thetasubselect_linear(int); break;
+		case 8: thetasubselect_linear(lng); break;
+		}
+	break;
 	default:
 		if( task->type == TYPE_date)
 			thetasubselect_linear(date); 
@@ -599,6 +659,15 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 			}
 			task->src = (char*) v;
 		}
+		break;
+		case  TYPE_str:
+			// we only have to look at the index width, not the values
+			switch(task->b->T->width){
+			case 1: break;
+			case 2: break;
+			case 4: break;
+			case 8: break;
+			}
 		break;
 		default:
 			if( task->type == TYPE_daytime)
@@ -671,7 +740,16 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 					}
 			}
 		}
-	}
+		break;
+		case  TYPE_str:
+			// we only have to look at the index width, not the values
+			switch(task->b->T->width){
+			case 1: break;
+			case 2: break;
+			case 4: break;
+			case 8: break;
+			}
+		}
 	MOSskip_linear(cntxt,task);
 	return MAL_SUCCEED;
 }

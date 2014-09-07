@@ -44,9 +44,8 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_wrd:
 	case TYPE_flt:
 	case TYPE_dbl:
-		return 1;
 	case TYPE_str:
-		break;
+		return 1;
 	default:
 		if( type == TYPE_date)
 			return 1;

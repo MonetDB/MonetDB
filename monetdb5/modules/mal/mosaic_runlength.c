@@ -87,7 +87,14 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(hge),hge)); break;
 #endif
-	case TYPE_str:
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(bte),bte)); break;
+		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(sht),sht)); break;
+		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(int),int)); break;
+		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(sizeof(lng),lng)); break;
+		}
 		break;
 	}
 }
@@ -106,7 +113,7 @@ MOSskip_runlength(Client cntxt, MOStask task)
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = ( (flt)i * sizeof(TYPE))/ (MosaicBlkSize + sizeof(TYPE));\
+	factor = ( (flt)i * sizeof(TYPE))/ (2 * MosaicBlkSize + sizeof(TYPE));\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
@@ -134,7 +141,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 			if ( ((int*)task->src)[i] != val)
 				break;
 			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ( (flt)i * sizeof(int))/ (MosaicBlkSize + sizeof(int));
+			factor = ( (flt)i * sizeof(int))/ (2 * MosaicBlkSize + sizeof(int));
 		}
 		break;
 	case  TYPE_str:

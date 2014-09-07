@@ -1,6 +1,3 @@
-# Compression of noncompressable column
-
-
 b:= bat.new(:oid,:int);
 bat.append(b,50);
 bat.append(b,19531015);
