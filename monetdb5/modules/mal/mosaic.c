@@ -339,14 +339,14 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 				factor = fac;
 			}
 		}
-/*
 		if ( filter[MOSAIC_VARIANCE]){
 			fac = MOSestimate_variance(cntxt,task);
 			if (fac > factor){
-				cand = MOSAIC_DICT;
+				cand = MOSAIC_VARIANCE;
 				factor = fac;
 			}
 		}
+/*
 		if ( filter[MOSAIC_ZONE]){
 			fac = MOSestimate_zone(cntxt,task);
 			if (fac > factor){

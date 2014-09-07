@@ -29,6 +29,11 @@
 #include "mosaic_dictionary.h"
 #include "mosaic_variance.h"
 
+/*
+ * The dictionary size should be limited or a binary search is required
+ */
+static int vardictsize=8;
+
 void
 MOSadvance_variance(Client cntxt, MOStask task)
 {
@@ -37,23 +42,23 @@ MOSadvance_variance(Client cntxt, MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compressionachievable
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(flt)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(dbl)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(flt)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(dbl)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
-		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(bte)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),bte)); break;
-		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(bte)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),bte)); break;
+		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
 		}
 		break;
 	}
@@ -112,7 +117,7 @@ MOSskip_variance(Client cntxt, MOStask task)
 #define estimateVariance(TPE)\
 {	TPE *v = (TPE*)task->src, val = *v++, delta;\
 	TPE *dict = (TPE*)((char*)task->dst + 4 * MosaicBlkSize);\
-	task->dst = ((char*) dict)+ sizeof(TPE)*dictsize;\
+	task->dst = ((char*) dict)+ sizeof(TPE)*vardictsize;\
 	dict[0]= val;\
 	*size = *size+1;\
 	for(i =0; i<task->elm; i++, val++){\
@@ -121,14 +126,14 @@ MOSskip_variance(Client cntxt, MOStask task)
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == delta) {cnt++;break;}\
 		if ( j == *size){\
-			if ( *size == dictsize)\
+			if ( *size == vardictsize)\
 				break;\
 			dict[j] = delta;\
 			*size= *size+1;\
 			cnt++;\
 		}\
 	}\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);\
+	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * vardictsize +i);\
 }
 
 // calculate the expected reduction using dictionary in terms of elements compressed
@@ -156,7 +161,7 @@ MOSestimate_variance(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *v = (int*)task->src, val = *v++,delta;
 			int *dict = (int*)((char*)task->dst + 3 * MosaicBlkSize);
-			task->dst = ((char*) dict)+ sizeof(int)*dictsize;
+			task->dst = ((char*) dict)+ sizeof(int)*vardictsize;
 			dict[0]= val;
 			*size = *size+1;
 			for(i =0; i<task->elm; i++, v++){
@@ -165,14 +170,14 @@ MOSestimate_variance(Client cntxt, MOStask task)
 				for(j= 0; j< *size; j++)
 					if( dict[j] == delta) {cnt++;break;}
 				if ( j == *size){
-					if ( *size == dictsize)
+					if ( *size == vardictsize)
 						break;
 					dict[j] = delta;
 					*size= *size+1;
 					cnt++;
 				}
 			}
-			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * dictsize +i);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * vardictsize +i);
 		}
 		break;
 	case  TYPE_str:
@@ -195,7 +200,7 @@ MOSestimate_variance(Client cntxt, MOStask task)
 {	TPE *v = (TPE*)task->src, val=*v++, delta;\
 	TPE *dict = (TPE*)((char*)task->blk+ 2 * MosaicBlkSize);\
 	BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;\
-	task->dst = ((char*) dict)+ sizeof(TPE)*dictsize;\
+	task->dst = ((char*) dict)+ sizeof(TPE)*vardictsize;\
 	dict[0]= val;\
 	*size = *size+1;\
 	MOSincCnt(blk,1);\
@@ -209,7 +214,7 @@ MOSestimate_variance(Client cntxt, MOStask task)
 				break;\
 			}\
 		if ( j == *size){\
-			if ( *size == dictsize){\
+			if ( *size == vardictsize){\
 				task->dst += wordaligned(MOSgetCnt(blk) %2,TPE);\
 				break;\
 			}\
@@ -249,7 +254,7 @@ MOScompress_variance(Client cntxt, MOStask task)
 		{	lng *v = (lng*)task->src, val = *v++, delta;
 			lng *dict = (lng*)((char*)task->blk+ 2 * MosaicBlkSize);
 			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
-			task->dst = ((char*) dict)+ sizeof(lng)*dictsize;
+			task->dst = ((char*) dict)+ sizeof(lng)*vardictsize;
 			dict[0]= val;
 			*size = *size+1;
 			MOSincCnt(blk,1);
@@ -263,7 +268,7 @@ MOScompress_variance(Client cntxt, MOStask task)
 						break;
 					}
 				if ( j == *size){
-					if ( *size == dictsize){
+					if ( *size == vardictsize){
 						// align on word boundary
 						task->dst += wordaligned(MOSgetCnt(blk) %2,lng);
 						break;
@@ -293,7 +298,7 @@ MOScompress_variance(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define VARDICTdecompress(TPE)\
-{	bte *idx = (bte*)(compressed + dictsize * sizeof(TPE));\
+{	bte *idx = (bte*)(compressed + vardictsize * sizeof(TPE));\
 	TPE *dict = (TPE*) compressed,val = dict[0];\
 	BUN lim = MOSgetCnt(blk);\
 	((TPE*)task->src)[0] = val;\
@@ -324,7 +329,7 @@ MOSdecompress_variance(Client cntxt, MOStask task)
 	case TYPE_hge: VARDICTdecompress(hge); break;
 #endif
 	case TYPE_int:
-		{	bte *idx = (bte*)(compressed + dictsize * sizeof(int));
+		{	bte *idx = (bte*)(compressed + vardictsize * sizeof(int));
 			int *dict = (int*) compressed,val= dict[0];
 			BUN lim = MOSgetCnt(blk);
 			((int*)task->src)[0] = val;
@@ -351,7 +356,7 @@ MOSdecompress_variance(Client cntxt, MOStask task)
 
 #define subselect_variance(TPE) {\
  	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize ),val= dict[0];\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(TPE));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(TPE));\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 			for( ; first < last; first++, idx++){\
@@ -445,7 +450,7 @@ MOSsubselect_variance(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 	case TYPE_int:
 	// Expanded MOSselect_variance for debugging
 	{ 	int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize) ,val= dict[0];
-		bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
+		bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(int));
 
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -516,7 +521,7 @@ MOSsubselect_variance(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 			subselect_variance(daytime);
 		if( task->type == TYPE_timestamp)
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize) ,val =dict[0];
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(lng));
 			int lownil = timestamp_isnil(*(timestamp*)low);
 			int hghnil = timestamp_isnil(*(timestamp*)hgh);
 
@@ -598,7 +603,7 @@ MOSsubselect_variance(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 
 #define thetasubselect_variance(TPE)\
 { 	TPE low,hgh, *dict,w;\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(lng));\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -668,7 +673,7 @@ MOSthetasubselect_variance(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_int:
 		{ 	int low,hgh;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize ),v=dict[0];
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(int));
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -716,7 +721,7 @@ MOSthetasubselect_variance(Client cntxt,  MOStask task, void *val, str oper)
 	default:
 		if( task->type == TYPE_timestamp){
 		{ 	lng *dict= (lng*) (((char*) task->blk) + 2 * MosaicBlkSize ), v = dict[0];
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(lng));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(lng));
 			lng low,hgh;
 
 			low= hgh = int_nil;
@@ -763,7 +768,7 @@ MOSthetasubselect_variance(Client cntxt,  MOStask task, void *val, str oper)
 #define leftfetchjoin_variance(TPE)\
 {	TPE *v;\
 	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize ),val = dict[0];\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(TPE));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(TPE));\
 	v= (TPE*) task->src;\
 	for(; first < last; first++, val+= dict[*idx++]){\
 		MOSskipit();\
@@ -795,7 +800,7 @@ MOSleftfetchjoin_variance(Client cntxt,  MOStask task)
 		case TYPE_int:
 		{	int *v;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize ),val = dict[0];
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(int));
 			v= (int*) task->src;
 			for(; first < last; first++, val+=dict[*idx++]){
 				MOSskipit();
@@ -821,7 +826,7 @@ MOSleftfetchjoin_variance(Client cntxt,  MOStask task)
 #define join_variance(TPE)\
 {	TPE  *w;\
 	TPE *dict= (TPE*) (((char*) task->blk) + 2 * MosaicBlkSize ),val=dict[0];\
-	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));\
+	bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(int));\
 	for(oo= (oid) first; first < last; first++, val+=dict[*idx++], oo++){\
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
@@ -856,7 +861,7 @@ MOSjoin_variance(Client cntxt,  MOStask task)
 		case TYPE_int:
 		{	int  *w;
 			int *dict= (int*) (((char*) task->blk) + 2 * MosaicBlkSize ), val=dict[0];
-			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + dictsize * sizeof(int));
+			bte *idx = (bte*) (((char*) task->blk) + 2 * MosaicBlkSize + vardictsize * sizeof(int));
 			for(oo= (oid) first; first < last; first++, val+= dict[*idx++], oo++){
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
