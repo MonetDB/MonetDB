@@ -69,6 +69,9 @@ address MOSsubselect;
 pattern subselect(b:bat[:oid,:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
+pattern subselect(b:bat[:oid,:str], low:str, high:str, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
 pattern subselect(b:bat[:oid,:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect
 comment "Overloaded selection routine";
@@ -103,6 +106,9 @@ pattern subselect(b:bat[:oid,:flt], cand:bat[:oid,:oid], low:flt, high:flt, li:b
 address MOSsubselect;
 
 pattern subselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address MOSsubselect;
+
+pattern subselect(b:bat[:oid,:str], cand:bat[:oid,:oid], low:str, high:str, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address MOSsubselect;
 
 pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
@@ -141,6 +147,9 @@ address MOSthetasubselect;
 pattern thetasubselect(b:bat[:oid,:dbl], low:dbl, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
+pattern thetasubselect(b:bat[:oid,:str], low:str, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
 pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect
 comment "Overloaded selection routine";
@@ -177,6 +186,9 @@ address MOSthetasubselect;
 pattern thetasubselect(b:bat[:oid,:dbl], c:bat[:oid,:oid], low:dbl, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect;
 
+pattern thetasubselect(b:bat[:oid,:str], c:bat[:oid,:oid], low:str, oper:str) :bat[:oid,:oid]
+address MOSthetasubselect;
+
 pattern thetasubselect(b:bat[:oid,:timestamp], c:bat[:oid,:oid], low:timestamp, oper:str) :bat[:oid,:oid]
 address MOSthetasubselect
 comment "Overloaded selection routine";
@@ -211,6 +223,9 @@ pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
 address MOSleftfetchjoin;
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address MOSleftfetchjoin;
+
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:str]) :bat[:oid,:str]
 address MOSleftfetchjoin;
 
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
