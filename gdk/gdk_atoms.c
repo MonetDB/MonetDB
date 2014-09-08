@@ -392,8 +392,6 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult08(x)	((x) << 3)
 #define mult16(x)	((x) << 4)
-#define mult10(x)	((x) + (x) + ((x) << 3))
-#define mult7(x)	(((x) << 3) - (x))
 
 #if 0
 int
@@ -1226,10 +1224,17 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 					cur++;
 					c = mult08(c) + base08(*cur);
 					if (num08(cur[1])) {
+						if (c > 037) {
+							/* octal
+							 * escape
+							 * sequence
+							 * out or
+							 * range */
+							return -1;
+						}
 						cur++;
 						c = mult08(c) + base08(*cur);
-						/* if three digits, only look at lower 8 bits */
-						c &= 0377;
+						assert(c >= 0 && c <= 0377);
 					}
 				}
 				break;
