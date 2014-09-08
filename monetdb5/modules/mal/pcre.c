@@ -715,8 +715,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 
 	assert(origin_strs->htype==TYPE_void);
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs), TRANSIENT);
-	if( tmpbat==NULL)
+	if( tmpbat==NULL) {
+		my_pcre_free(pcre_code);
+		GDKfree(ovector);
 		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
+	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
 		len_origin_str = (int) strlen(origin_str);

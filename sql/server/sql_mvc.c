@@ -245,7 +245,7 @@ build up the hash (not copyied in the trans dup)) */
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
-			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit %s done\n", name);
 		return 0;
 	}
 

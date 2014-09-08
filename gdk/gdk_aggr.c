@@ -1497,6 +1497,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
 		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
 		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
+		(*cntsp)->T->nil = 0;
+		(*cntsp)->T->nonil = 1;
 	}
 	BATsetcount(bn, ngrp);
 	BATseqbase(bn, min);

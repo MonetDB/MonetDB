@@ -33,6 +33,7 @@
 #include "bam_db_interface.h"
 #include "bam_export.h"
 
+#define NOT_IMPLEMENTED		/* export is not yet implemented */
 
 typedef struct bam_field {
 	str name;
@@ -42,6 +43,8 @@ typedef struct bam_field {
 	BUN cur;
 } bam_field;
 
+
+#ifndef NOT_IMPLEMENTED
 
 /**
  * Copied directly from bam.h/bam_import.c for use by fill_bam_alig
@@ -185,11 +188,12 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 					FILL_BAM_ALIG_ERR "CIGAR and sequence length inconsistency: %d (SEQ) vs %d (CIGAR)",
 					alignment_nr, c->l_qseq, (int32_t)bam_cigar2qlen(c, bam1_cigar(b)));
 			}
-			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2) + doff;
+			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2);
 			if(p == NULL) {
 				throw(MAL, "fill_bam_alig",
 					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
 			}
+			p += doff;
 			memset(p, 0, (c->l_qseq+1)/2);
 			for (i = 0; i < c->l_qseq; ++i)
 				p[i/2] |= bam_nt16_table[(int)seq[i]] << 4*(1-i%2);
@@ -221,7 +225,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 
 	return MAL_SUCCEED;
 }
-
+#endif
 
 
 
@@ -425,7 +429,8 @@ sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 
-	write_header(output, fields);
+	if ((msg = write_header(output, fields)) != MAL_SUCCEED)
+		goto cleanup;
 
 
 	for (i=0; i<tuple_count; ++i) {
@@ -460,6 +465,14 @@ cleanup:
 str
 bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+#ifdef NOT_IMPLEMENTED
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+#else
 	/* arg 1: path to desired output file */
 	str output_path = *(str *) getArgReference(stk, pci, pci->retc);
 
@@ -477,8 +490,6 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	str sql;
 	str msg = MAL_SUCCEED;
-
-	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
 
 	if ((output = bam_open(output_path, "wb")) == NULL) {
 		msg = createException(MAL, "bam_export", "Could not open output file '%s' for writing", output_path);
@@ -562,5 +573,6 @@ cleanup:
 		unlink(output_header_path);
 	}
 	return msg;
+#endif
 }
 

@@ -40,8 +40,7 @@ SELECT cast('Infinity' as double) + 100.0;
 SELECT cast('Infinity' as double) / cast('Infinity' as double);
 SELECT cast('nan' as double) / cast('nan' as double);
 
-SELECT '' AS five, FLOAT8_TBL.*;
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
 
 SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
 

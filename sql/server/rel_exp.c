@@ -73,13 +73,11 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 }
 
 sql_exp *
-exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti) 
+exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 
-	e->card = l->card;
-	if (e->card == CARD_ATOM && !exp_is_atom(l))
-		e->card = CARD_AGGR;
+	e->card = exps_card(l);
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -87,17 +85,6 @@ exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti)
 	if (anti)
 		set_anti(e);
 	return e;
-}
-
-sql_exp *
-exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f, int anti) 
-{
-	list *r = sa_list(sa);
-
-	append(r, r1);
-	if (r2)
-		append(r, r2);
-	return exp_filter(sa, l, r, f, anti);
 }
 
 sql_exp *
@@ -1537,21 +1524,21 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		ne->flag = e->flag;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_copy(sa, e->l);
 			list *r = exps_copy(sa, e->r);
-			if (l && r)
-				ne = exp_or(sa, l,r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
-			sql_exp *l = exp_copy(sa, e->l);
-			list *r = exps_copy(sa, e->r);
-
 			if (l && r) {
 				if (get_cmp(e) == cmp_filter)
 					ne = exp_filter(sa, l, r, e->f, is_anti(e));
 				else
-					ne = exp_in(sa, l, r, e->flag);
+					ne = exp_or(sa, l, r);
 			}
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			sql_exp *l = exp_copy(sa, e->l);
+			list *r = exps_copy(sa, e->r);
+
+			if (l && r) 
+				ne = exp_in(sa, l, r, e->flag);
 		} else {
 			l = exp_copy(sa, e->l);
 			r = exp_copy(sa, e->r);

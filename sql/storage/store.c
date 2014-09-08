@@ -3422,9 +3422,8 @@ sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "objects");
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskc, "id"), &k->base.id, NULL);
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskc, "id"), &k->base.id, find_sql_column(syskc, "name"), kc->c->base.name, NULL);
 
-	(void) kc;		/* Stefan: unused!? */
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syskc, rid);
 
@@ -3437,10 +3436,8 @@ sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *sysic = find_sql_table(syss, "objects");
-	sql_column *kc_id = find_sql_column(sysic, "id");
-	oid rid = table_funcs.column_find_row(tr, kc_id, &i->base.id, NULL);
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysic, "id"), &i->base.id, find_sql_column(sysic, "name"), kc->c->base.name, NULL);
 
-	(void) kc;		/* Stefan: unused!? */
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, sysic, rid);
 
@@ -3520,9 +3517,8 @@ sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *systc = find_sql_table(syss, "objects");
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(systc, "id"), &i->base.id, NULL);
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(systc, "id"), &i->base.id, find_sql_column(systc, "name"), kc->c->base.name, NULL);
 
-	(void) kc;		/* Stefan: unused!? */
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, systc, rid);
 	if (isGlobal(i->t)) 
@@ -3695,12 +3691,16 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	sql_table *sys_tab_func = find_sql_table(syss, "functions");
 	sql_column *sys_func_col = find_sql_column(sys_tab_func, "id");
 	oid rid_func = table_funcs.column_find_row(tr, sys_func_col, &func->base.id, NULL);
-	if (IS_AGGR(func)) {
+	if (IS_AGGR(func) || 1) {
 		sql_table *sys_tab_args = find_sql_table(syss, "args");
 		sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
-		oid rid_args = table_funcs.column_find_row(tr, sys_args_col, &func->base.id, NULL);
-		assert(rid_args != oid_nil);
-		table_funcs.table_delete(tr, sys_tab_args, rid_args);
+		rids *args = table_funcs.rids_select(tr, sys_args_col, &func->base.id, NULL, NULL);
+		oid r = oid_nil;
+
+
+		for(r = table_funcs.rids_next(args); r != oid_nil; r = table_funcs.rids_next(args)) 
+			table_funcs.table_delete(tr, sys_tab_args, r);
+		table_funcs.rids_destroy(args);
 	}
 
 	assert(rid_func != oid_nil);
@@ -4498,8 +4498,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 	sql_kc *kc = SA_ZNEW(tr->sa, sql_kc);
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
-	sql_table *syskc = find_sql_table(syss, "objects");
-
+	sql_table *syskc = find_sql_table(syss, "objects"); 
 	assert(c);
 	kc->c = c;
 	list_append(k->columns, kc);

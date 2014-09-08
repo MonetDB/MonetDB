@@ -11,7 +11,7 @@ CREATE TABLE tmp (initial integer);
 
 ALTER TABLE tmp ADD COLUMN a integer default 3;
 
-ALTER TABLE tmp ADD COLUMN b name;
+ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 
 ALTER TABLE tmp ADD COLUMN c text;
 
@@ -23,42 +23,42 @@ ALTER TABLE tmp ADD COLUMN f smallint;
 
 ALTER TABLE tmp ADD COLUMN g string;
 
-ALTER TABLE tmp ADD COLUMN h abstime;
+ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 
 ALTER TABLE tmp ADD COLUMN i char;
 
-ALTER TABLE tmp ADD COLUMN j abstime[];
+ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 
 ALTER TABLE tmp ADD COLUMN k integer;
 
-ALTER TABLE tmp ADD COLUMN l tid;
+ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
 
-ALTER TABLE tmp ADD COLUMN m xid;
+ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
 
-ALTER TABLE tmp ADD COLUMN n oidvector;
+ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
 
 --ALTER TABLE tmp ADD COLUMN o lock;
-ALTER TABLE tmp ADD COLUMN p smgr;
+ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 
 ALTER TABLE tmp ADD COLUMN q string;
 
-ALTER TABLE tmp ADD COLUMN r lseg;
+ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 
 ALTER TABLE tmp ADD COLUMN s string;
 
 ALTER TABLE tmp ADD COLUMN t string;
 
-ALTER TABLE tmp ADD COLUMN u tinterval;
+ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 
 ALTER TABLE tmp ADD COLUMN v timestamp;
 
-ALTER TABLE tmp ADD COLUMN w interval;
+ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 
-ALTER TABLE tmp ADD COLUMN x double[];
+ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN y float[];
+ALTER TABLE tmp ADD COLUMN y string; -- float[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN z smallint[];
+ALTER TABLE tmp ADD COLUMN z string; -- smallint[] replaced by string
 
 INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	v, w, x, y, z)
@@ -67,7 +67,7 @@ INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	314159, '(1,1)', '512',
 	'1 2 3 4 5 6 7 8', 'magnetic disk', '(1.1,1.1)', '(4.1,4.1,3.1,3.1)',
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
-	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
+	now, '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 
 SELECT * FROM tmp;
 
@@ -80,7 +80,7 @@ CREATE TABLE tmp (
 
 ALTER TABLE tmp ADD COLUMN a integer;
 
-ALTER TABLE tmp ADD COLUMN b name;
+ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 
 ALTER TABLE tmp ADD COLUMN c text;
 
@@ -92,42 +92,43 @@ ALTER TABLE tmp ADD COLUMN f smallint;
 
 ALTER TABLE tmp ADD COLUMN g string;
 
-ALTER TABLE tmp ADD COLUMN h abstime;
+ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 
 ALTER TABLE tmp ADD COLUMN i char;
 
-ALTER TABLE tmp ADD COLUMN j abstime[];
+ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 
 ALTER TABLE tmp ADD COLUMN k integer;
 
-ALTER TABLE tmp ADD COLUMN l tid;
+ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
 
-ALTER TABLE tmp ADD COLUMN m xid;
+ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
 
-ALTER TABLE tmp ADD COLUMN n oidvector;
+ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
 
 --ALTER TABLE tmp ADD COLUMN o lock;
-ALTER TABLE tmp ADD COLUMN p smgr;
+ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 
 ALTER TABLE tmp ADD COLUMN q string;
 
-ALTER TABLE tmp ADD COLUMN r lseg;
+ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 
 ALTER TABLE tmp ADD COLUMN s string;
 
 ALTER TABLE tmp ADD COLUMN t string;
 
-ALTER TABLE tmp ADD COLUMN u tinterval;
+ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 
 ALTER TABLE tmp ADD COLUMN v timestamp;
 
-ALTER TABLE tmp ADD COLUMN w interval;
+ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 
-ALTER TABLE tmp ADD COLUMN x double[];
+ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN y float[];
+ALTER TABLE tmp ADD COLUMN y string; -- float[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN z smallint[];
+ALTER TABLE tmp ADD COLUMN z string; -- smallint[] replaced by string
+
 
 INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	v, w, x, y, z)
@@ -136,7 +137,7 @@ INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	314159, '(1,1)', '512',
 	'1 2 3 4 5 6 7 8', 'magnetic disk', '(1.1,1.1)', '(4.1,4.1,3.1,3.1)',
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
-	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
+	now, '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 
 SELECT * FROM tmp;
 

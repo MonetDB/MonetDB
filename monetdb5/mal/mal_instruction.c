@@ -717,7 +717,7 @@ getRefName(MalBlkPtr mb, int i)
 }
 
 int
-findVariable(MalBlkPtr mb, str name)
+findVariable(MalBlkPtr mb, const char *name)
 {
 	int i;
 
@@ -1362,8 +1362,7 @@ convertConstant(int type, ValPtr vr)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		VALconvert(type, vr);
-		if (vr->vtype != type)
+		if (VALconvert(type, vr) == NULL)
 			throw(SYNTAX, "convertConstant", "coercion failed");
 		return MAL_SUCCEED;
 	case TYPE_str:

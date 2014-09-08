@@ -41,8 +41,7 @@ SELECT cast('Infinity' as real) / cast('Infinity' as real);
 SELECT cast('nan' as real) / cast('nan' as real);
 
 
-SELECT '' AS five, FLOAT4_TBL.*;
-SELECT '' AS five, * FROM FLOAT4_TBL;
+SELECT '' AS five, FLOAT4_TBL.* FROM FLOAT4_TBL;
 
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
 

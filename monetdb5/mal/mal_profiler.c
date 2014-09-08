@@ -99,10 +99,10 @@ getProfileCounter(int idx){
  * The counters can be set individually.
  */
 str
-activateCounter(str name)
+activateCounter(const char *name)
 {
 	int i;
-	char *s;
+	const char *s;
 
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
@@ -183,7 +183,7 @@ activateCounter(str name)
 }
 
 str
-deactivateCounter(str name)
+deactivateCounter(const char *name)
 {
 	int i;
 	for (i = 0; profileCounter[i].name; i++)
@@ -528,7 +528,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 
 
 str
-setLogFile(stream *fd, Module mod, str fname)
+setLogFile(stream *fd, Module mod, const char *fname)
 {
 	(void)mod;      /* still unused */
 	MT_lock_set(&mal_profileLock, "setLogFile");
@@ -551,7 +551,7 @@ setLogFile(stream *fd, Module mod, str fname)
 }
 
 str
-setLogStream(Module cntxt, str host, int port)
+setLogStream(Module cntxt, const char *host, int port)
 {
 	(void)cntxt;        /* still unused */
 	MT_lock_set(&mal_profileLock, "setLogStream");
@@ -590,7 +590,7 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	if (eventstream && eventstream != GDKout && eventstream != GDKerr) {
+	if (eventstream && eventstream != mal_clients[0].fdout && eventstream != GDKout && eventstream != GDKerr) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
@@ -600,7 +600,7 @@ closeProfilerStream(void)
 }
 
 str
-setStartPoint(Module cntxt, str mod, str fcn)
+setStartPoint(Module cntxt, const char *mod, const char *fcn)
 {
 	(void)cntxt;
 	(void)mod;
@@ -617,7 +617,7 @@ setStartPoint(Module cntxt, str mod, str fcn)
 }
 
 str
-setEndPoint(Module cntxt, str mod, str fcn)
+setEndPoint(Module cntxt, const char *mod, const char *fcn)
 {
 	(void)cntxt;
 	(void)mod;
@@ -708,8 +708,8 @@ getProfilerStream(void)
  * instructions space from a given context. This has been
  * abstracted away.
  */
-int
-instrFilter(InstrPtr pci, str mod, str fcn)
+static int
+instrFilter(InstrPtr pci, const char *mod, const char *fcn)
 {
 	if (pci && getFunctionId(pci) && fcn && mod &&
 			(*fcn == '*' || fcn == getFunctionId(pci)) &&
@@ -727,7 +727,7 @@ static str modFilter[32], fcnFilter[32];
 static int topFilter;
 
 void
-setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
+setFilterOnBlock(MalBlkPtr mb, const char *mod, const char *fcn)
 {
 	int cnt, k, i;
 	InstrPtr p;
@@ -747,12 +747,12 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 }
 
 void
-setFilter(Module cntxt, str mod, str fcn)
+setFilter(Module cntxt, const char *mod, const char *fcn)
 {
 	int j;
 	Module s = cntxt;
 	Symbol t;
-	str matchall = "*";
+	const char *matchall = "*";
 
 	(void)cntxt;
 	if (mod == NULL)
@@ -786,7 +786,7 @@ setFilter(Module cntxt, str mod, str fcn)
  * each separate top level routine.
  */
 void
-clrFilter(Module cntxt, str mod, str fcn)
+clrFilter(Module cntxt, const char *mod, const char *fcn)
 {
 	int j, k;
 	Module s = cntxt;
@@ -904,7 +904,7 @@ TRACEtable(BAT **r)
 }
 
 static BAT *
-TRACEcreate(str hnme, str tnme, int tt)
+TRACEcreate(const char *hnme, const char *tnme, int tt)
 {
 	BAT *b;
 	char buf[128];
@@ -1029,7 +1029,7 @@ clearTrace(void)
 }
 
 BAT *
-getTrace(str nme)
+getTrace(const char *nme)
 {
 	if (TRACE_init == 0)
 		return NULL;
@@ -1063,7 +1063,7 @@ getTrace(str nme)
 }
 
 int
-getTraceType(str nme)
+getTraceType(const char *nme)
 {
 	if (initTrace())
 		return TYPE_any;
@@ -1369,7 +1369,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
-void profilerHeartbeatEvent(str msg, lng ticks)
+void profilerHeartbeatEvent(const char *msg, lng ticks)
 {
 	char logbuffer[LOGLEN], *logbase;
 	char cpuload[BUFSIZ];
