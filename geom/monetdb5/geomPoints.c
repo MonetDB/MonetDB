@@ -396,54 +396,54 @@ str wkbFilteredPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
 	}
 	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
 	}
 	if ((OIDsBAT = BATdescriptor(*OIDsBAT_id)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		throw(MAL, "batgeom.wkbDistanceFiltered", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
 	}
 	
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(OIDsBAT)) {
-		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "BATs must have dense heads");
+		ret = createException(MAL, "batgeom.Distance", "BATs must have dense heads");
 		goto clean;
 	}
 	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
-		ret=createException(MAL, "batgeom.wkbDistanceFiltered", "BATs must be aligned");
+		ret=createException(MAL, "batgeom.Distance", "BATs must be aligned");
 		goto clean;
 	}
 
 	//project the x and y BATs
 	xFilteredBAT = BATproject(OIDsBAT, xBAT);
 	if(xFilteredBAT == NULL) {
-		ret=createException(MAL,"batgeom.wkbDistanceFiltered","Problem projecting xBAT");
+		ret=createException(MAL,"batgeom.Distance","Problem projecting xBAT");
 		goto clean;
 	}
 	yFilteredBAT = BATproject(OIDsBAT, yBAT);
 	if(xFilteredBAT == NULL) {
-		ret=createException(MAL,"batgeom.wkbDistanceFiltered","Problem projecting yBAT");
+		ret=createException(MAL,"batgeom.Distance","Problem projecting yBAT");
 		goto clean;
 	}
 
 	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
 	//create the points BAT
 	if((pointsBAT = BATMakePoint2D(xFilteredBAT, yFilteredBAT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem creating the points from the coordinates");
+		ret = createException(MAL, "batgeom.Distance", "Problem creating the points from the coordinates");
 		goto clean;
 	}
 	//set the srid	
 	if((pointsWithSRIDBAT = BATSetSRID(pointsBAT, *srid)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem setting srid to the points");
+		ret = createException(MAL, "batgeom.Distance", "Problem setting srid to the points");
 		goto clean;
 	}
 	//check the contains
 	if((outBAT = BATDistance(geomWKB, pointsWithSRIDBAT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbDistanceFiltered", "Problem evalauting the contains");
+		ret = createException(MAL, "batgeom.Distance", "Problem evalauting the contains");
 		goto clean;
 	}
 
@@ -478,23 +478,23 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbFilterWithImprints", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Filter", RUNTIME_OBJECT_MISSING);
 	}
 	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
-		throw(MAL, "batgeom.wkbFilterWithImprints", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.Filter", RUNTIME_OBJECT_MISSING);
 	}
 
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		return createException(MAL, "batgeom.wkbFilterWithImprints", "BATs must have dense heads");
+		return createException(MAL, "batgeom.Filter", "BATs must have dense heads");
 	}
 	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		return createException(MAL, "batgeom.wkbFilterWithImprints", "BATs must be aligned");
+		return createException(MAL, "batgeom.Filter", "BATs must be aligned");
 	}
 
 	//create the MBR of the geom
@@ -502,7 +502,7 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 		str msg;
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		msg = createException(MAL, "batgeom.wkbFilterWithImprints", "%s", err);
+		msg = createException(MAL, "batgeom.Filter", "%s", err);
 		GDKfree(err);
 		return msg;
 	}
@@ -514,7 +514,7 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 	if(xCandidateOIDsBAT == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		return createException(MAL,"batgeom.wkbFilterWithImprints","Problem filtering xBAT");
+		return createException(MAL,"batgeom.Filter","Problem filtering xBAT");
 	}
 	
 	//get candidateOIDs using yBAT and xCandidateOIDsBAT
@@ -524,7 +524,7 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 	if(candidateOIDsBAT == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		return createException(MAL,"batgeom.wkbFilterWithImprints","Problem filtering yBAT");
+		return createException(MAL,"batgeom.Filter","Problem filtering yBAT");
 	}
 
 	BBPreleaseref(xBAT->batCacheid);
