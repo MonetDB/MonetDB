@@ -38,3 +38,4 @@ ifthenelse.Bug-3546
 subselect-reverse.Bug-3552
 orderby_on_constant.Bug-3554
 div_by_zero_in_return.Bug-3555
+round-sorted.Bug-3562
