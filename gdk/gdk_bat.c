@@ -382,23 +382,6 @@ BATattach(int tt, const char *heapfile, int role)
 }
 
 /*
- * The routine BATclone creates a bat with the same types as b.
- */
-BAT *
-BATclone(BAT *b, BUN cap, int role)
-{
-	BAT *c = BATnew(b->htype, b->ttype, cap, role);
-
-	if (c) {
-		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
-			BATseqbase(c, b->hseqbase);
-		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
-			BATseqbase(BATmirror(c), b->tseqbase);
-	}
-	return c;
-}
-
-/*
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.

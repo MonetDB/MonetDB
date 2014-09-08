@@ -62,8 +62,6 @@ str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
-BAT *BATclone(BAT *b, BUN capacity, int role)
-	__attribute__((__visibility__("hidden")));
 BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BATstore *bs)
