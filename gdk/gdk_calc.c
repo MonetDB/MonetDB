@@ -7611,6 +7611,19 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 
 #define SHIFT_CHECK(a, b)	((b) < 0 || (b) >= 8 * (int) sizeof(a))
 
+/* In standard C, left shift is undefined if any of the following
+ * conditions hold:
+ * - right operand is negative or larger or equal to the width of the
+ *   left operand;
+ * - left operand is negative;
+ * - left operand times two-to-the-power of the right operand is not
+ *   representable in the (promoted) type of the left operand. */
+#define LSH_CHECK(a, b, TYPE)	(SHIFT_CHECK(a, b) || (a) < 0 || (a) > (GDK_##TYPE##_max >> (b)))
+#define LSH_CHECK_bte(a, b)	LSH_CHECK(a, b, bte)
+#define LSH_CHECK_sht(a, b)	LSH_CHECK(a, b, sht)
+#define LSH_CHECK_int(a, b)	LSH_CHECK(a, b, int)
+#define LSH_CHECK_lng(a, b)	LSH_CHECK(a, b, lng)
+
 static BUN
 lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
@@ -7629,19 +7642,19 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		default:
 			goto unsupported;
@@ -7651,19 +7664,19 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		default:
 			goto unsupported;
@@ -7673,19 +7686,19 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		default:
 			goto unsupported;
@@ -7695,19 +7708,19 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		default:
 			goto unsupported;
