@@ -2745,8 +2745,7 @@ BATmode(BAT *b, int mode)
 
 /* BATassertProps checks whether properties are set correctly.  Under
  * no circumstances will it change any properties.  Note that the
- * "set" property is not checked.  Also note that the "nil" property
- * is not actually used anywhere, but it is checked. */
+ * "nil" property is not actually used anywhere, but it is checked. */
 
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
@@ -2768,6 +2767,8 @@ BATassertHeadProps(BAT *b)
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
 	assert(b->htype != TYPE_bat);
+	/* if BOUND2BTRUE is set, then so must the low order bit */
+	assert(!(b->hkey & BOUND2BTRUE) || (b->hkey & 1)); /* hkey != 2 */
 	assert(isVIEW(b) ||
 	       b->htype == TYPE_void ||
 	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));
