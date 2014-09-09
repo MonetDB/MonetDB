@@ -897,7 +897,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, sqlRef, bindRef);
 			if (q == NULL)
 				return -1;
-			if (s->flag == RD_UPD) {
+			if (s->flag == RD_UPD_ID) {
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
 			} else
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -910,7 +910,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			s->nr = getDestVar(q);
 
-			if (s->flag == RD_UPD) {
+			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			}
@@ -924,7 +924,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			if (q == NULL)
 				return -1;
-			if (s->flag == RD_UPD) {
+			if (s->flag == RD_UPD_ID) {
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
 			} else
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -937,7 +937,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			s->nr = getDestVar(q);
 
-			if (s->flag == RD_UPD) {
+			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			}
