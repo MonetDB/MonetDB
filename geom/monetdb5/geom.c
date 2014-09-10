@@ -1292,16 +1292,21 @@ str wkbGetCoordZ(double *out, wkb **geom) {
 
 /*common code for functions that return geometry */
 static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeometry *), const char *name) {
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+	GEOSGeom geosGeometry, outGeometry;
 
-	if (!geosGeometry) {
+	if (!(geosGeometry = wkb2geos(*geom))) {
 		*out = wkb_nil;
 		throw(MAL, name, "wkb2geos failed");
 	}
 
-	*out = geos2wkb((*func)(geosGeometry));
-
+	outGeometry = (*func)(geosGeometry);
+	//set the srid equal to the srid of the initial geometry
+	GEOSSetSRID(outGeometry, (*geom)->srid);
+	
+	*out = geos2wkb(outGeometry);
+	
 	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(outGeometry);
 
 	return MAL_SUCCEED;
 }
