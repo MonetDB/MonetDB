@@ -1076,10 +1076,7 @@ typedef __int64 lng;
 #error no definition for PDFMT
 #endif
 
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 
 #endif /* _SEEN_MONETDB_CONFIG_H */
