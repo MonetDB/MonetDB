@@ -47,7 +47,7 @@
 
 /* The base type is the storage type if the comparison function and
  * nil values are the same as those of the storage type; otherwise it
- * is the type itself, even if the storage type is different. */
+ * is the type itself. */
 #define BASETYPE(t)	((t) != ATOMstorage(t) &&			\
 			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
 			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) ? \
