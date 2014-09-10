@@ -2,6 +2,7 @@ This README describes the implementation of the ODBC driver code
 (sql/src/odbc/driver/*) for the MonetDB SQL frontend (sql/src/common/*)
 Both are available from  https://sourceforge.net/projects/monetdb/
 
+This file is seriously out of date.
 
 Author : Martin van Dinther
 Date   : 30 august 2002
