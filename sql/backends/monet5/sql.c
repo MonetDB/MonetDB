@@ -1652,7 +1652,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 0, 0);
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
@@ -1673,7 +1673,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
-				bat_destroy(b);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -1736,7 +1735,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 0, 0);
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
@@ -1756,7 +1755,6 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
-				bat_destroy(b);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
