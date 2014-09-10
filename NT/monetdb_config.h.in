@@ -1082,14 +1082,4 @@ typedef __int64 lng;
 #define PTRFMT		"%I64x"
 #define PTRFMTCAST	(unsigned __int64)
 
-#ifdef LIBGDK4
-#define LIBGDK 1
-#endif
-#ifdef LIBSTREAM4
-#define LIBSTREAM 1
-#endif
-#ifdef LIBMAPI4
-#define LIBMAPI 1
-#endif
-
 #endif /* _SEEN_MONETDB_CONFIG_H */
