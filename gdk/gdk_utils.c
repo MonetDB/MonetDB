@@ -650,7 +650,7 @@ GDKmalloc_prefixsize(size_t size)
 	ssize_t *s;
 
 	if ((s = malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG)) != NULL) {
-		assert((((size_t) s) & 7) == 0); /* no MISALIGN */
+		assert((((uintptr_t) s) & 7) == 0); /* no MISALIGN */
 		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);
 		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);
 	}
@@ -808,7 +808,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 		}
 	}
 	/* place MALLOC_EXTRA_SPACE bytes before it */
-	assert((((size_t) blk) & 4) == 0);
+	assert((((uintptr_t) blk) & 4) == 0);
 	blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
 	((ssize_t *) blk)[-1] = (ssize_t) newsize;
 
@@ -1647,9 +1647,9 @@ static inline size_t
 THRsp(void)
 {
 	int l = 0;
-	size_t sp = (size_t) (&l);
+	uintptr_t sp = (uintptr_t) (&l);
 
-	return sp;
+	return (size_t) sp;
 }
 
 static Thread

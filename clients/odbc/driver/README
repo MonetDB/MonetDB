@@ -224,12 +224,12 @@ Most important are:
 - SQLExentedFetch()			/* fetch multiple rows at once */
 - SQLAllocHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
 - SQLFreeHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
-- all the SQL*W() functions	/* the Unicode (UCS-2) variant API functions */
+- all the SQL*W() functions	/* the Unicode (UTF-16) variant API functions */
 
 When these SQL*W() functions are not implemented in a driver the driver
  manager (it must be ODBC 3.0 or higher) will convert those ODBC application
  SQL*W() calls to the ASCII variant (e.g. SQLConnect(), by converting the
- supplied UCS-2 strings to ASCII.
+ supplied UTF-16 strings to ASCII.
 
 TODO 2) Because MonetDB supports UTF-8 strings we should do the conversion
 and thus implement those functions ourselves.
