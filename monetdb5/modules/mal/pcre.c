@@ -819,7 +819,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 					": unsupported flag character '%c'\n", flags[i]);
 		}
 	}
-	if (strcmp(val, (char*)str_nil) == 0) {
+	if (strcmp(val, str_nil) == 0) {
 		*ret = FALSE;
 		return MAL_SUCCEED;
 	}
@@ -1078,7 +1078,7 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 
 	if (!r) {
 		assert(ppat);
-		if (strcmp(ppat, (char*)str_nil) == 0) {
+		if (strcmp(ppat, str_nil) == 0) {
 			*ret = FALSE;
 			if (*isens) {
 				if (strcasecmp(*s, *pat) == 0)
@@ -1202,7 +1202,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
-		if (strcmp(ppat, (char*)str_nil) == 0) {
+		if (strcmp(ppat, str_nil) == 0) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtail(strsi, p);
 

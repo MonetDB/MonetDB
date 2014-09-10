@@ -770,7 +770,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * we left-shift one of them by half the hash-mask width
 		 * to better spread bits and use the entire hash-mask,
 		 * and thus reduce collisions */
-		while (mask>>=1)
+		while (mask >>= 1)
 			bits++;
 		bits /= 2;
 
