@@ -90,17 +90,20 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with the new ones
-					InstrPtr bufferInstrPtr, filterInstrPtr, fcnInstrPtr;
-					int bufferReturnId, filterReturnId;
+					InstrPtr bufferInstrPtr, filterInstrPtr, fcnInstrPtr, projectInstrPtr;
+					int bufferReturnId, filterReturnId, subselectReturnId;
 					
 					//create and put in the MAL plan the new instructions
 					bufferInstrPtr = newStmt(mb, "geom", "Buffer");
 					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
 					fcnInstrPtr = newStmt(mb, "batgeom", "Distance");
-
+					pushInstruction(mb, oldInstrPtr[i+1]);
+					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+		
 					//make new return variables
 					bufferReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], 1));
 					filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+					subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 
 					//set the arguments for the Buffer
 					setReturnArgument(bufferInstrPtr, bufferReturnId);
@@ -120,6 +123,20 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
 					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
 					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+					
+					//the new subselect does not use candidates
+					setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[i+1],0)); //get the variable before changing it
+					setReturnArgument(oldInstrPtr[i+1], subselectReturnId);
+					delArgument(oldInstrPtr[i+1], 2);
+					
+					//add a new function that gets the oids of the original BAT that qualified the distance subselect
+					projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
+					projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
+					
+					//skip the thetasubseelct command
+					i++;
+
+					actions += 5;
 				} else {
 					int inputBAT = 0, geomArg =0;
 					InstrPtr bufferInstrPtr, filterInstrPtr;
