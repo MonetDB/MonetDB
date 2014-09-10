@@ -248,8 +248,8 @@ clean:
 	return ret;
 }
 
-str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* OIDsBAT_id, int* srid) {
-	BAT *xBAT=NULL, *yBAT=NULL, *OIDsBAT=NULL, *outBAT=NULL, *xFilteredBAT=NULL, *yFilteredBAT=NULL;
+str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* candidatesBAT_id, int* srid) {
+	BAT *xBAT=NULL, *yBAT=NULL, *candidatesBAT=NULL, *outBAT=NULL;
 	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
 	str ret=MAL_SUCCEED;
 
@@ -261,14 +261,14 @@ str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 		BBPreleaseref(xBAT->batCacheid);
 		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
 	}
-	if ((OIDsBAT = BATdescriptor(*OIDsBAT_id)) == NULL) {
+	if ((candidatesBAT = BATdescriptor(*candidatesBAT_id)) == NULL) {
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
 		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
 	}
 	
 	//check if the BATs have dense heads and are aligned
-	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(OIDsBAT)) {
+	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(candidatesBAT)) {
 		ret = createException(MAL, "batgeom.wkbContainsFiltered", "BATs must have dense heads");
 		goto clean;
 	}
@@ -277,21 +277,9 @@ str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 		goto clean;
 	}
 
-	//project the x and y BATs
-	xFilteredBAT = BATproject(OIDsBAT, xBAT);
-	if(xFilteredBAT == NULL) {
-		ret=createException(MAL,"batgeom.wkbContainsFiltered","Problem projecting xBAT");
-		goto clean;
-	}
-	yFilteredBAT = BATproject(OIDsBAT, yBAT);
-	if(xFilteredBAT == NULL) {
-		ret=createException(MAL,"batgeom.wkbContainsFiltered","Problem projecting yBAT");
-		goto clean;
-	}
-
 	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
 	//create the points BAT
-	if((pointsBAT = BATMakePoint2D(xFilteredBAT, yFilteredBAT, NULL)) == NULL) {
+	if((pointsBAT = BATMakePoint2D(xBAT, yBAT, candidatesBAT)) == NULL) {
 		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem creating the points from the coordinates");
 		goto clean;
 	}
@@ -315,12 +303,8 @@ clean:
 		BBPreleaseref(xBAT->batCacheid);
 	if(yBAT)
 		BBPreleaseref(yBAT->batCacheid);
-	if(OIDsBAT)
-		BBPreleaseref(OIDsBAT->batCacheid);
-	if(xFilteredBAT)
-		BBPreleaseref(xFilteredBAT->batCacheid);
-	if(yFilteredBAT)
-		BBPreleaseref(yFilteredBAT->batCacheid);
+	if(candidatesBAT)
+		BBPreleaseref(candidatesBAT->batCacheid);
 	if(pointsBAT)
 		BBPreleaseref(pointsBAT->batCacheid);
 	if(pointsWithSRIDBAT)
@@ -391,7 +375,19 @@ str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat*
 		ret=createException(MAL, "batgeom.Distance", "BATs must be aligned");
 		goto clean;
 	}
-
+/* This will be used when custom spatial functions are used 
+	//project the x and y BATs
+	xFilteredBAT = BATproject(candidatesBAT, xBAT);
+	if(xFilteredBAT == NULL) {
+		ret=createException(MAL,"batgeom.wkbContainsFiltered","Problem projecting xBAT");
+		goto clean;
+	}
+	yFilteredBAT = BATproject(candidatesBAT, yBAT);
+	if(xFilteredBAT == NULL) {
+		ret=createException(MAL,"batgeom.wkbContainsFiltered","Problem projecting yBAT");
+		goto clean;
+	}
+*/
 	//here the BAT version of some contain function that takes the BATs of the x y coordinates should be called
 	//create the points BAT
 	if((pointsBAT = BATMakePoint2D(xBAT, yBAT, NULL)) == NULL) {
@@ -425,8 +421,8 @@ clean:
 }
 
 str wkbFilteredPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* candidatesBAT_id, int* srid) {
-	BAT *xBAT=NULL, *yBAT=NULL, *candidatesBAT=NULL, *outBAT=NULL;//, *xFilteredBAT=NULL, *yFilteredBAT=NULL;
-	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL; //, *distancesBAT=NULL;
+	BAT *xBAT=NULL, *yBAT=NULL, *candidatesBAT=NULL, *outBAT=NULL;
+	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
 	str ret=MAL_SUCCEED;
 
 	//get the descriptors of the BATs

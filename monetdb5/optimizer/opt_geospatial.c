@@ -27,28 +27,45 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains") == 0) {
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with two new ones
-					InstrPtr filterInstrPtr, containsInstrPtr;
-					int filteredOIDsBAT_id;
+					InstrPtr filterInstrPtr, fcnInstrPtr, projectInstrPtr;
+					int filterReturnId, subselectReturnId;
 					
 					//create and put in the MAL plan the new instructions
 					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-					containsInstrPtr = newStmt(mb, "batgeom", "Contains");
+					fcnInstrPtr = newStmt(mb, "batgeom", "Contains");
+					pushInstruction(mb, oldInstrPtr[i+1]);
+					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
 
 					//set the return argument of the filter
-					filteredOIDsBAT_id = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-					setReturnArgument(filterInstrPtr, filteredOIDsBAT_id);
+					filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+					setReturnArgument(filterInstrPtr, filterReturnId);
 					//set the input arguments of the filter
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],1));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
 
 					//set the arguments of the contains function
-					setReturnArgument(containsInstrPtr, getArg(oldInstrPtr[i],0));
-					containsInstrPtr = pushArgument(mb, containsInstrPtr, getArg(oldInstrPtr[i],1));
-					containsInstrPtr = pushArgument(mb, containsInstrPtr, getArg(oldInstrPtr[i],2));
-					containsInstrPtr = pushArgument(mb, containsInstrPtr, getArg(oldInstrPtr[i],3));
-					containsInstrPtr = pushArgument(mb, containsInstrPtr, filteredOIDsBAT_id);
-					containsInstrPtr = pushArgument(mb, containsInstrPtr, getArg(oldInstrPtr[i],4));
+					setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
+					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+
+					//the new subselect does not use candidates
+					subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+					setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[i+1],0)); //get the variable before changing it
+					setReturnArgument(oldInstrPtr[i+1], subselectReturnId);
+					delArgument(oldInstrPtr[i+1], 2);
+					
+					//add a new function that gets the oids of the original BAT that qualified the distance subselect
+					projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
+					projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
+					
+					//skip the algebra.subselect command
+					i++;
+
+					actions += 5;
 				} else {
 					int inputBAT = 0;
 					InstrPtr newInstrPtr;
@@ -74,17 +91,15 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				
 					//set the return and input arguments of the new instruction
 					setReturnArgument(newInstrPtr, returnBATId);
-					//newInstrPtr = pushReturn(mb, newInstrPtr, bBATreturnId); //push a second return argument
 					newInstrPtr = pushArgument(mb, newInstrPtr, getArg(oldInstrPtr[i],1));
 					newInstrPtr = pushArgument(mb, newInstrPtr, getArg(oldInstrPtr[i],2));
-
 			
 					//replace the BAT arguments of the contains function with the BAT of the new instruction (the filtered BAT) 
 					delArgument(oldInstrPtr[i], inputBAT);
 					pushInstruction(mb, oldInstrPtr[i]);
 					setArgument(mb, oldInstrPtr[i], inputBAT, returnBATId);
-				
-					actions+=2; //two changes
+
+					actions +=2;
 				}
 			} else if(strcasecmp(getFunctionId(oldInstrPtr[i]), "distance") == 0 && strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
 				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
@@ -116,7 +131,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
 
-					//set the arguments of the contains function
+					//set the arguments of the distance function
 					setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
 					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
 					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
@@ -133,7 +148,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
 					projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
 					
-					//skip the thetasubseelct command
+					//skip the algebra.thetasubselect command
 					i++;
 
 					actions += 5;
