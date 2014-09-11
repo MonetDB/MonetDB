@@ -52,7 +52,7 @@ delta_bind_del(sql_dbat *bat, int access)
 	(void) access; /* satisfy compiler */
 #endif
 	assert(access == RDONLY || access == RD_INS);
-	assert(access!=RD_UPD);
+	assert(access != RD_UPD_ID && access != RD_UPD_VAL);
 
 	b = temp_descriptor(bat->dbid);
 	assert(b);
@@ -78,10 +78,17 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
 #endif
-	assert(access == RD_UPD);
-	if (bat->ubid)
+	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
+	if (bat->ubid) {
+		BAT *t;
 		b = temp_descriptor(bat->ubid);
-	else
+		if (access == RD_UPD_ID)
+			t = BATmirror(BATmark(b, 0));
+		else
+			t = BATmirror(BATmark(BATmirror(b), 0));
+		bat_destroy(b);
+		b = t;
+	} else
 		b = temp_descriptor(e_ubat(type));
 	assert(b);
 	return b;
@@ -90,7 +97,7 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access)
 {
-	BAT *u = NULL, *d, *r;
+	BAT *u = NULL;
 
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -101,20 +108,14 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 		c->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
-	r = u = delta_bind_ubat(c->data, access, c->type.type->localtype);
-	d = delta_bind_del(c->t->data, RD_INS);
-	if (BATcount(d) && BATcount(u)) {
-		r = BATkdiff(u, BATmirror(d));
-		BBPunfix(u->batCacheid);
-	}
-	BBPunfix(d->batCacheid);
-	return r;
+	u = delta_bind_ubat(c->data, access, c->type.type->localtype);
+	return u;
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
-	BAT *u = NULL, *d, *r;
+	BAT *u = NULL;
 
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -125,14 +126,8 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	r = u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
-	d = delta_bind_del(i->t->data, RD_INS);
-	if (BATcount(d)) {
-		r = BATkdiff(u, BATmirror(d));
-		BBPunfix(u->batCacheid);
-	}
-	BBPunfix(d->batCacheid);
-	return r;
+	u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
+	return u;
 }
 
 static BAT *
@@ -176,7 +171,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-	if (access == RD_UPD)
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
 	if (tr)
 		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
@@ -190,7 +185,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		i->data = timestamp_delta(oi->data, tr->stime);
 	}
-	if (access == RD_UPD)
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
 	if (tr)
 		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;

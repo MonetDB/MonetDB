@@ -57,9 +57,6 @@
 
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
-#define FALSE 0
-#define TRUE 1
-
 #define SET_Z(info)(info = info | 0x02)
 #define SET_M(info)(info = info | 0x01)
 
@@ -324,6 +321,8 @@ int yydebug=1;
 	value_commalist
 	pred_exp_list
 	row_commalist
+	filter_arg_list
+	filter_args
 	qname
 	qfunc
 	qrank
@@ -3387,19 +3386,21 @@ existence_test:
 /*|  NOT EXISTS subquery { $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $3 ); }*/
  ;
 
+filter_arg_list:
+       pred_exp				{ $$ = append_symbol(L(), $1); }
+ |     filter_arg_list ',' pred_exp	{ $$ = append_symbol($1, $3);  }
+ ;
+
+filter_args:
+	'[' filter_arg_list ']' 	{ $$ = $2; }
+ ;
+
 filter_exp:
-    pred_exp FILTER_FUNC pred_exp
+ filter_args qname filter_args
 		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_string(l, $2);
-		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_FILTER, l ); }
- |  pred_exp FILTER_FUNC '(' pred_exp ')'  pred_exp 
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_string(l, $2);
-		  append_symbol(l, $6);
-		  append_symbol(l, $4);	/* option last */
+		  append_list(l, $1);
+		  append_list(l, $2);
+		  append_list(l, $3);
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 

@@ -489,7 +489,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *b = store_funcs.bind_col(tr, c, RD_UPD);
+		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
 		cnt |= BATcount(b) > 0;
 		BBPunfix(b->batCacheid);
 	}
@@ -1644,6 +1644,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				BATseqbase(bn, part_nr * psz);
 			} else {
+				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind(m, *sname, *tname, *cname, 0);
 				cnt = BATcount(c);
@@ -1651,23 +1652,38 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
 			b = bn;
+		} else if (upd) {
+			BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
+			int *uvl = (int *) getArgReference(stk, pci, 1);
+
+			BBPkeepref(*bid = b->batCacheid);
+			BBPkeepref(*uvl = uv->batCacheid);
+			return MAL_SUCCEED;
 		}
 		if (upd) {
 			int *uvl = (int *) getArgReference(stk, pci, 1);
 
 			if (BATcount(b)) {
-				BAT *id = BATmirror(BATmark(b, 0));
-				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
+				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
+				BAT *id = BATproject(b, ui); 
+				BAT *vl = BATproject(b, uv);
+				bat_destroy(ui);
+				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
+				sql_schema *s = mvc_bind_schema(m, *sname);
+				sql_table *t = mvc_bind_table(m, s, *tname);
+				sql_column *c = mvc_bind_column(m, t, *cname);
+
 				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(b->T->type);
+				*uvl = e_bat(c->type.type->localtype);
 			}
 			BBPreleaseref(b->batCacheid);
 		} else {
@@ -1711,6 +1727,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				BATseqbase(bn, part_nr * psz);
 			} else {
+				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, *sname, *tname, *iname, 0);
 				cnt = BATcount(c);
@@ -1718,23 +1735,36 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
 			b = bn;
+		} else if (upd) {
+			BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
+			int *uvl = (int *) getArgReference(stk, pci, 1);
+			BBPkeepref(*bid = b->batCacheid);
+			BBPkeepref(*uvl = uv->batCacheid);
+			return MAL_SUCCEED;
 		}
 		if (upd) {
 			int *uvl = (int *) getArgReference(stk, pci, 1);
 
 			if (BATcount(b)) {
-				BAT *id = BATmirror(BATmark(b, 0));
-				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
+				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
+				BAT *id = BATproject(b, ui); 
+				BAT *vl = BATproject(b, uv);
+				bat_destroy(ui);
+				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
+				sql_schema *s = mvc_bind_schema(m, *sname);
+				sql_idx *i = mvc_bind_idx(m, s, *iname);
+
 				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(b->T->type);
+				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_wrd);
 			}
 			BBPreleaseref(b->batCacheid);
 		} else {
@@ -4016,7 +4046,7 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		if (first) {
 			first = 0;
-			b = store_funcs.bind_col(tr, c, 0);
+			b = store_funcs.bind_col(tr, c, RDONLY);
 			msg = CLUSTER_key(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -4030,7 +4060,7 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.cluster", "Can not access descriptor");
 		}
 
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.cluster", "Can not access descriptor");
 		msg = CLUSTER_apply(&bid, b, map);
@@ -4096,7 +4126,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat psum;
 			unsigned int bits = 10, off = 0;
 			first = 0;
-			b = store_funcs.bind_col(tr, c, 0);
+			b = store_funcs.bind_col(tr, c, RDONLY);
 			msg = MKEYbathash(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -4108,7 +4138,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				return msg;
 		}
 
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.cluster", "Can not access descriptor");
 		msg = CLS_map(&bid, &mid, &b->batCacheid);
@@ -4189,7 +4219,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 	bids[i] = 0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
 		c = o->data;
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL || (msg = (*func) (&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
 			for (i--; i >= 0; i--)
 				BBPdecref(bids[i], TRUE);
@@ -4283,7 +4313,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.vacuum", "Can not access descriptor");
 		ordered |= BATtordered(b);
@@ -4466,7 +4496,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_column *c = (sql_column *) ncol->data;
-								BAT *bn = store_funcs.bind_col(tr, c, 0);
+								BAT *bn = store_funcs.bind_col(tr, c, RDONLY);
 								lng sz;
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
@@ -4531,7 +4561,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
 								if (c->type != no_idx) {
-									BAT *bn = store_funcs.bind_idx(tr, c, 0);
+									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */

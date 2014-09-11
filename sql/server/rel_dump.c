@@ -185,7 +185,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		} else if (get_cmp(e) == cmp_filter) {
 			sql_subfunc *f = e->f;
 
-			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			exps_print(sql, fout, e->l, depth, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
@@ -784,16 +784,37 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	/* atom */
 	case '(': 
 		if (b == (r+*pos)) { /* or */
+			int filter = 0;
 			list *lexps,*rexps;
+			char *fname = NULL;
 		       
 			lexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			skipWS(r, pos);
 			if (strncmp(r+*pos, "or",  strlen("or")) == 0) 
 				(*pos)+= (int) strlen("or");
+			else if (strncmp(r+*pos, "filter",  strlen("filter")) == 0) 
+				filter = 1;
 			else
 				return sql_error(sql, -1, "type: missing 'or'\n");
 			skipWS(r, pos);
+			if (filter) {
+				fname = r+*pos;
+
+				skipIdent(r,pos);
+				e = r+*pos;
+				*e = 0;
+				(*pos)++;
+				skipWS(r,pos);
+			}
+
 			rexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
+			if (filter) {
+				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT);
+				if (!func)
+					return sql_error(sql, -1, "filter: missing function '%s'\n", fname);
+					
+				return exp_filter(sql->sa, lexps, rexps, func, 0/* anti*/);
+			}
 			return exp_or(sql->sa, lexps, rexps);
 		}
 		/* fall through */
@@ -1013,32 +1034,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	}
 	if (f >= 0) {
 		skipWS(r,pos);
-		if (f == cmp_in || f == cmp_notin || f == cmp_filter) {
-			char *fname = NULL;
+		if (f == cmp_in || f == cmp_notin) {
 	        	list *exps;
 		       
-			if (f == cmp_filter) {
-				// this produces a clang compile error (e unused)
-				//fname = r+*pos, e;
-				fname = r+*pos;
-
-
-				skipIdent(r,pos);
-				e = r+*pos;
-				*e = 0;
-				(*pos)++;
-				skipWS(r,pos);
-			}
 			exps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
-			else {
-				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT);
-				if (!func)
-					return sql_error(sql, -1, "filter: missing function '%s'\n", fname);
-					
-				return exp_filter(sql->sa, exp, exps, func, 0/* anti*/);
-			}
 		} else {
 			sql_exp *e;
 
