@@ -51,10 +51,10 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_AUTOCOMMIT_ON:
 		case SQL_AUTOCOMMIT_OFF:
-			dbc->sql_attr_autocommit = (SQLUINTEGER) (size_t) ValuePtr;
+			dbc->sql_attr_autocommit = (SQLUINTEGER) (uintptr_t) ValuePtr;
 #ifdef ODBCDEBUG
 			ODBCLOG("SQLSetConnectAttr set autocommit %s\n",
 				dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON ? "on" : "off");
@@ -69,10 +69,10 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 		}
 		return SQL_SUCCESS;
 	case SQL_ATTR_METADATA_ID:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_TRUE:
 		case SQL_FALSE:
-			dbc->sql_attr_metadata_id = (SQLUINTEGER) (size_t) ValuePtr;
+			dbc->sql_attr_metadata_id = (SQLUINTEGER) (uintptr_t) ValuePtr;
 #ifdef ODBCDEBUG
 			ODBCLOG("SQLSetConnectAttr set metadata_id %s\n",
 				dbc->sql_attr_metadata_id == SQL_TRUE ? "true" : "false");
@@ -102,7 +102,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 		}
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
-		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (size_t) ValuePtr;
+		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		if (dbc->mid)
 			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
 		break;

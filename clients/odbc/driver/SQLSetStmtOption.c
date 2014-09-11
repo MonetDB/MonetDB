@@ -78,7 +78,7 @@ SQLSetStmtOption(SQLHSTMT StatementHandle,
 		/* use mapping as described in ODBC 3.0 SDK Help */
 		return SQLSetStmtAttr_(stmt,
 				       Option,
-				       (SQLPOINTER) (size_t) ValuePtr,
+				       (SQLPOINTER) (uintptr_t) ValuePtr,
 				       SQL_NTS);
 	default:
 		/* Invalid attribute/option identifier */

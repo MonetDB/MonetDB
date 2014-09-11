@@ -749,7 +749,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
-		stmt *u = stmt_bat(sql->sa, c, RD_UPD);
+		stmt *u = stmt_bat(sql->sa, c, RD_UPD_ID);
 		sc = stmt_project_delta(sql->sa, sc, u, i);
 		sc = stmt_project(sql->sa, del, sc);
 	} else if (del) { /* always handle the deletes */
@@ -767,7 +767,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);
-		stmt *u = stmt_idxbat(sql->sa, i, RD_UPD);
+		stmt *u = stmt_idxbat(sql->sa, i, RD_UPD_ID);
 		sc = stmt_project_delta(sql->sa, sc, u, ic);
 		sc = stmt_project(sql->sa, del, sc);
 	} else if (del) { /* always handle the deletes */

@@ -819,7 +819,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 					": unsupported flag character '%c'\n", flags[i]);
 		}
 	}
-	if (strcmp(val, (char*)str_nil) == 0) {
+	if (strcmp(val, str_nil) == 0) {
 		*ret = FALSE;
 		return MAL_SUCCEED;
 	}
@@ -1078,7 +1078,7 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 
 	if (!r) {
 		assert(ppat);
-		if (strcmp(ppat, (char*)str_nil) == 0) {
+		if (strcmp(ppat, str_nil) == 0) {
 			*ret = FALSE;
 			if (*isens) {
 				if (strcasecmp(*s, *pat) == 0)
@@ -1202,7 +1202,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
-		if (strcmp(ppat, (char*)str_nil) == 0) {
+		if (strcmp(ppat, str_nil) == 0) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtail(strsi, p);
 
@@ -1236,19 +1236,25 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtail(strsi, p);
 
-				pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
+				if (*s == '\200') {
+					br[i] = bit_nil;
+					r->T->nonil = 0;
+					r->T->nil = 1;
+				} else {
+					pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
 
-				if (pos >= 0)
-					br[i] = *not? FALSE:TRUE;
-				else if (pos == -1)
-					br[i] = *not? TRUE: FALSE;
-				else {
-					BBPreleaseref(strs->batCacheid);
-					BBPreleaseref(r->batCacheid);
-					res = createException(MAL, "pcre.match", OPERATION_FAILED
-							": matching of regular expression (%s) failed with %d", ppat, pos);
-					GDKfree(ppat);
-					return res;
+					if (pos >= 0)
+						br[i] = *not? FALSE:TRUE;
+					else if (pos == -1)
+						br[i] = *not? TRUE: FALSE;
+					else {
+						BBPreleaseref(strs->batCacheid);
+						BBPreleaseref(r->batCacheid);
+						res = createException(MAL, "pcre.match", OPERATION_FAILED
+											  ": matching of regular expression (%s) failed with %d", ppat, pos);
+						GDKfree(ppat);
+						return res;
+					}
 				}
 				i++;
 			}

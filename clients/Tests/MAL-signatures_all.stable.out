@@ -2338,6 +2338,10 @@ command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:b
 address PCREilike_join_pcre;
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.ilike(s:str,pat:str):bit 
+address PCREilike2;
+command algebra.ilike(s:str,pat:str,esc:str):bit 
+address PCREilike3;
 command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGindexjoin;
 comment Hook directly into the index implementation of the join.
@@ -2401,6 +2405,10 @@ command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,caseignore:bit,an
 address PCRElikesubselect1;
 comment Select all head values for which the tail value is "like"	the given (SQL-style) pattern.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
+command algebra.like(s:str,pat:str):bit 
+address PCRElike2;
+command algebra.like(s:str,pat:str,esc:str):bit 
+address PCRElike3;
 command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
@@ -2449,6 +2457,14 @@ command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid]
 address ALGtmark;
 comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
+command algebra.not_ilike(s:str,pat:str):bit 
+address PCREnotilike2;
+command algebra.not_ilike(s:str,pat:str,esc:str):bit 
+address PCREnotilike3;
+command algebra.not_like(s:str,pat:str):bit 
+address PCREnotlike2;
+command algebra.not_like(s:str,pat:str,esc:str):bit 
+address PCREnotlike3;
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
 command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
@@ -2869,6 +2885,22 @@ command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb]
 address wkbcreatepoint_bat;
 comment Construct a point-BAT from two geometry-BATs
 
+command batalgebra.ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
+address BATPCREilike2;
+command batalgebra.ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
+address BATPCREilike;
+command batalgebra.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
+address BATPCRElike2;
+command batalgebra.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
+address BATPCRElike;
+command batalgebra.not_ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
+address BATPCREnotliike2;
+command batalgebra.not_ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
+address BATPCREnotilike;
+command batalgebra.not_like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
+address BATPCREnotlike2;
+command batalgebra.not_like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
+address BATPCREnotlike;
 command batcolor.blue(c:bat[:oid,:color]):bat[:oid,:int] 
 address CLRbatBlue;
 comment Extracts blue component from a color atom

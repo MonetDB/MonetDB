@@ -534,8 +534,8 @@
  * below.  The global variables should not be modified directly.
  */
 #ifndef TRUE
-#define TRUE		1
-#define FALSE		0
+#define TRUE		true
+#define FALSE		false
 #endif
 #define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 

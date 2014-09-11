@@ -382,23 +382,6 @@ BATattach(int tt, const char *heapfile, int role)
 }
 
 /*
- * The routine BATclone creates a bat with the same types as b.
- */
-BAT *
-BATclone(BAT *b, BUN cap, int role)
-{
-	BAT *c = BATnew(b->htype, b->ttype, cap, role);
-
-	if (c) {
-		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
-			BATseqbase(c, b->hseqbase);
-		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
-			BATseqbase(BATmirror(c), b->tseqbase);
-	}
-	return c;
-}
-
-/*
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.
@@ -2797,8 +2780,7 @@ BATmode(BAT *b, int mode)
 
 /* BATassertProps checks whether properties are set correctly.  Under
  * no circumstances will it change any properties.  Note that the
- * "set" property is not checked.  Also note that the "nil" property
- * is not actually used anywhere, but it is checked. */
+ * "nil" property is not actually used anywhere, but it is checked. */
 
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
@@ -2820,6 +2802,8 @@ BATassertHeadProps(BAT *b)
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
 	assert(b->htype != TYPE_bat);
+	/* if BOUND2BTRUE is set, then so must the low order bit */
+	assert(!(b->hkey & BOUND2BTRUE) || (b->hkey & 1)); /* hkey != 2 */
 	assert(isVIEW(b) ||
 	       b->htype == TYPE_void ||
 	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));
