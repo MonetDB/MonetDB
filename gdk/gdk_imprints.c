@@ -644,7 +644,7 @@ BATimprints(BAT *b)
 				imprints->dictcnt = (BUN) hdata[2];
 				imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
 				imprints->imps = (char *) imprints->bins + 64 * b->T->width;
-				imprints->dict = (void *) ((size_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 				b->T->imprints = imprints;
 				close(fd);
 				goto do_return;
@@ -722,7 +722,7 @@ BATimprints(BAT *b)
 		}
 		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
 		imprints->imps = (char *) imprints->bins + 64 * b->T->width;
-		imprints->dict = (void *) ((size_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
 		switch (ATOMstorage(b->T->type)) {
 		case TYPE_bte:

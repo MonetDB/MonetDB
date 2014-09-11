@@ -30,42 +30,32 @@ Ready.
 #-- insert with DEFAULT in the target_list
 #--
 #create table inserttest (col1 integer, col2 integer NOT NULL, col3 text default 'testing');
-#
-#insert into inserttest (col2, col3) values (3, DEFAULT);
-[ 1 ]
-#insert into inserttest (col1, col2, col3) values (DEFAULT, 5, DEFAULT);
-[ 1 ]
-#insert into inserttest values (DEFAULT, 5, 'test');
-[ 1 ]
-#insert into inserttest values (DEFAULT, 7);
-[ 1 ]
+#insert into inserttest (col2, col3) values (3, 'DEFAULT');
+[ 1	]
+#insert into inserttest (col1, col2, col3) values (NULL, 5, 'DEFAULT');
+[ 1	]
+#insert into inserttest values (NULL, 5, 'test');
+[ 1	]
+#insert into inserttest (col1, col2) values (NULL, 7);
+[ 1	]
 #select * from inserttest;
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% sys.inserttest,	sys.inserttest,	sys.inserttest # table_name
 % col1,	col2,	col3 # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	3,	"testing" ]
-[ "",	5,	"testing" ]
-[ "",	5,	"test" ]
-[ "",	7,	"testing" ]
-
-#--
-#-- insert with similar expression / target_list values (all fail)
-#--
-#
-#
-#
-#
+% int,	int,	clob # type
+% 1,	1,	7 # length
+[ NULL,	3,	"DEFAULT"	]
+[ NULL,	5,	"DEFAULT"	]
+[ NULL,	5,	"test"	]
+[ NULL,	7,	"testing"	]
 #select * from inserttest;
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% sys.inserttest,	sys.inserttest,	sys.inserttest # table_name
 % col1,	col2,	col3 # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	3,	"testing" ]
-[ "",	5,	"testing" ]
-[ "",	5,	"test" ]
-[ "",	7,	"testing" ]
-
+% int,	int,	clob # type
+% 1,	1,	7 # length
+[ NULL,	3,	"DEFAULT"	]
+[ NULL,	5,	"DEFAULT"	]
+[ NULL,	5,	"test"	]
+[ NULL,	7,	"testing"	]
 #drop table inserttest;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =

@@ -93,8 +93,9 @@
 
 #define RDONLY 0
 #define RD_INS 1
-#define RD_UPD 2
-#define QUICK  3
+#define RD_UPD_ID 2
+#define RD_UPD_VAL 3
+#define QUICK  4
 
 #define FRAME_ROWS  0 
 #define FRAME_RANGE 1

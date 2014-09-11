@@ -4288,8 +4288,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{66BABD32-D69D-4A89-A7F3-2655D4CD0641}"
-        "PackageCode" = "8:{D9B2D386-1461-43BC-9A63-93F1BA0D7921}"
+        "ProductCode" = "8:{38BA5ECB-FCAA-46C3-BBEE-AA6A09D97B92}"
+        "PackageCode" = "8:{E537E35E-EB72-4AA5-A2F9-E4A4E5D92635}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

@@ -785,7 +785,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * we left-shift one of them by half the hash-mask width
 		 * to better spread bits and use the entire hash-mask,
 		 * and thus reduce collisions */
-		while (mask>>=1)
+		while (mask >>= 1)
 			bits++;
 		bits /= 2;
 
@@ -877,9 +877,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
 		BATseqbase(hn, 0);
-		hn->tkey = 0;
-		hn->tsorted = 0;
-		hn->trevsorted = 0;
+		if (BATcount(hn) <= 1) {
+			hn->tkey = 1;
+			hn->tsorted = 1;
+			hn->trevsorted = 1;
+		} else {
+			hn->tkey = 0;
+			hn->tsorted = 0;
+			hn->trevsorted = 0;
+		}
 		hn->T->nonil = 1;
 		hn->T->nil = 0;
 		*histo = hn;

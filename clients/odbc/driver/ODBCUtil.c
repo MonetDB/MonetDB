@@ -90,9 +90,6 @@ static int utf8chkmsk[] = {
 	0x7c000000
 };
 
-#define LEAD_OFFSET		(0xD800 - (0x10000 >> 10))
-#define SURROGATE_OFFSET	(0x10000 - (0xD800 << 10) - 0xDC00)
-
 /* Convert a SQLWCHAR (UTF-16 encoded string) to UTF-8.  On success,
    clears the location pointed to by errmsg and returns NULL or a
    newly allocated buffer.  On error, assigns a string with an error
@@ -135,13 +132,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 					*errmsg = "High surrogate not followed by low surrogate";
 				return NULL;
 			}
-#if 1
-			if (errmsg)
-				*errmsg = "Code points larger than U+FFFF are not supported";
-			return NULL;
-#else
-			c = (c << 10) + *s1 + SURROGATE_OFFSET;
-#endif
+			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
 		} else if (0xDC00 <= c && c <= 0xDFFF) {
 			/* low surrogate--illegal */
 			if (errmsg)
@@ -165,7 +156,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate followed by low surrogate */
 			s1++;
-			c = (c << 10) + *s1 + SURROGATE_OFFSET;
+			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
 		}
 		for (n = 5; n > 0; n--)
 			if (c & utf8chkmsk[n])
@@ -221,7 +212,7 @@ ODBCutf82wchar(const SQLCHAR *s,
 				;
 			/* n now is number of 10xxxxxx bytes that
 			 * should follow */
-			if (n == 0 || n >= 6)
+			if (n == 0 || n >= 4)
 				return "Illegal UTF-8 sequence";
 			if (s + n > e)
 				return "Truncated UTF-8 sequence";
@@ -244,15 +235,18 @@ ODBCutf82wchar(const SQLCHAR *s,
 				*p++ = c;
 			len++;
 		} else {
-#if 1
-			return "Code points larger than U+FFFF are not supported";
-#else
+			/* 0x10000 <= c && c <= 0x10FFFF
+			 * U-00000000000uuuuuxxxxxxxxxxxxxxxx is encoded as
+			 * 110110wwwwxxxxxx 110111xxxxxxxxxx
+			 * where wwww = uuuuu - 1 (note, uuuuu >= 0x1
+			 * and uuuuu <= 0x10) */
 			if ((buflen -= 2) > 0 && p != NULL) {
-				*p++ = LEAD_OFFSET + (c >> 10);
+				/* high surrogate */
+				*p++ = 0xD800 + ((c - 0x10000) >> 10);
+				/* low surrogate */
 				*p++ = 0xDC00 + (c & 0x3FF);
 			}
 			len += 2;
-#endif
 		}
 	}
 	if (p != NULL)

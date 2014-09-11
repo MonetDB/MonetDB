@@ -382,23 +382,6 @@ BATattach(int tt, const char *heapfile, int role)
 }
 
 /*
- * The routine BATclone creates a bat with the same types as b.
- */
-BAT *
-BATclone(BAT *b, BUN cap, int role)
-{
-	BAT *c = BATnew(b->htype, b->ttype, cap, role);
-
-	if (c) {
-		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
-			BATseqbase(c, b->hseqbase);
-		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
-			BATseqbase(BATmirror(c), b->tseqbase);
-	}
-	return c;
-}
-
-/*
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.
@@ -967,28 +950,36 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
 	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
-		bn->hsorted = b->hsorted || (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hrevsorted = b->hrevsorted || (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = b->hsorted;
+		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
 	} else {
-		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = bn->hrevsorted = 0; /* set based on count later */
 		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
-		bn->tsorted = b->tsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
-		bn->trevsorted = b->trevsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
 	} else {
-		bn->tsorted = bn->trevsorted = (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
+	}
+	if (BATcount(bn) <= 1) {
+		bn->hsorted = BATatoms[b->htype].linear;
+		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->hkey = 1;
+		bn->tsorted = BATatoms[b->ttype].linear;
+		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->tkey = 1;
 	}
 	if (writable != TRUE)
 		bn->batRestricted = BAT_READ;
@@ -2789,8 +2780,7 @@ BATmode(BAT *b, int mode)
 
 /* BATassertProps checks whether properties are set correctly.  Under
  * no circumstances will it change any properties.  Note that the
- * "set" property is not checked.  Also note that the "nil" property
- * is not actually used anywhere, but it is checked. */
+ * "nil" property is not actually used anywhere, but it is checked. */
 
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
@@ -2812,6 +2802,8 @@ BATassertHeadProps(BAT *b)
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
 	assert(b->htype != TYPE_bat);
+	/* if BOUND2BTRUE is set, then so must the low order bit */
+	assert(!(b->hkey & BOUND2BTRUE) || (b->hkey & 1)); /* hkey != 2 */
 	assert(isVIEW(b) ||
 	       b->htype == TYPE_void ||
 	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));

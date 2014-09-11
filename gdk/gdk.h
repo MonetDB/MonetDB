@@ -534,8 +534,8 @@
  * below.  The global variables should not be modified directly.
  */
 #ifndef TRUE
-#define TRUE		1
-#define FALSE		0
+#define TRUE		true
+#define FALSE		false
 #endif
 #define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
@@ -1359,6 +1359,12 @@ gdk_export bte ATOMelmshift(int sz);
 	do {					\
 		tfastins_nocheck(b, p, t, ts);	\
 		(b)->batCount++;		\
+	} while (0)
+
+#define bunfastapp_nocheck_inc(b, p, t)			\
+	do {						\
+		bunfastapp_nocheck(b, p, t, Tsize(b));	\
+		p++;					\
 	} while (0)
 
 #define bunfastapp(b, t)						\
@@ -2599,7 +2605,8 @@ gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 #define putenv _putenv
 #endif
 
-/* also see VALget */
+/* Return a pointer to the value contained in V.  Also see VALget
+ * which returns a void *. */
 static inline const void *
 VALptr(const ValRecord *v)
 {
@@ -3351,7 +3358,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 /*
  *
  */
-#define ILLEGALVALUE	((ptr)-1L)
 #define MAXPARAMS	32
 
 #ifndef NDEBUG

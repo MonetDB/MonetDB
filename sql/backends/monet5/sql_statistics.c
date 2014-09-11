@@ -98,7 +98,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
 						sql_column *c = (sql_column *) ncol->data;
-						BAT *bn = store_funcs.bind_col(tr, c, 0), *br;
+						BAT *bn = store_funcs.bind_col(tr, c, RDONLY), *br;
 						BAT *bsample;
 						lng sz = BATcount(bn);
 

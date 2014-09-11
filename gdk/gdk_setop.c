@@ -442,6 +442,23 @@ batcheck(intersect)
 batcheck(diff)
 
 
+/*
+ * The routine BATclone creates a bat with the same types as b.
+ */
+static BAT *
+BATclone(BAT *b, BUN cap, int role)
+{
+	BAT *c = BATnew(b->htype, b->ttype, cap, role);
+
+	if (c) {
+		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
+			BATseqbase(c, b->hseqbase);
+		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
+			BATseqbase(BATmirror(c), b->tseqbase);
+	}
+	return c;
+}
+
 static BAT *
 diff_intersect(BAT *l, BAT *r, int diff)
 {
@@ -485,16 +502,20 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	    BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn, r);
 	}
-	bn->hsorted = BAThordered(l);
-	bn->hrevsorted = BAThrevordered(l);
-	bn->tsorted = BATtordered(l);
-	bn->trevsorted = BATtrevordered(l);
-	if (BATcount(bn)) {
-		BATkey(bn, BAThkey(l));
-		BATkey(BATmirror(bn), BATtkey(l));
-	} else {
+	if (BATcount(bn) <= 1) {
+		bn->hsorted = 1;
+		bn->hrevsorted = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
+	} else {
+		bn->hsorted = BAThordered(l);
+		bn->hrevsorted = BAThrevordered(l);
+		bn->tsorted = BATtordered(l);
+		bn->trevsorted = BATtrevordered(l);
+		BATkey(bn, BAThkey(l));
+		BATkey(BATmirror(bn), BATtkey(l));
 	}
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = l->T->nonil;
