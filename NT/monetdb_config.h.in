@@ -99,9 +99,6 @@
 /* there is something very similar to asctime_r on Windows: */
 #define asctime_r(t,b,s)	asctime_s(b,s,t)
 
-/* Define to 1 if the system has the type `bool'. */
-/* #undef HAVE_BOOL */
-
 /* Define if you have the cfitsio library */
 /* #undef HAVE_CFITSIO */
 
@@ -699,7 +696,7 @@
 /* #undef HAVE_XMMINTRIN_H */
 
 /* Define to 1 if the system has the type `_Bool'. */
-#define HAVE__BOOL 1
+/* #undef HAVE__BOOL */
 
 #ifdef _WIN64
 /* Define to 1 if you have the `_mul128' function. */
@@ -1035,6 +1032,12 @@ typedef unsigned __int64 uint64_t;
 
 #include <assert.h>
 
+/* normally defined in stdbool.h, but that doesn't exist on Windows */
+#define true 1
+#define false 0
+#define __bool_true_false_are_defined 1
+
+
 #define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, '/'    ); t; t=strchr(t+1, '/'    )) *t=DIR_SEP;}
 #define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, DIR_SEP); t; t=strchr(t+1, DIR_SEP)) *t='/'    ;}
 
@@ -1091,20 +1094,7 @@ typedef __int128_t hge;
 #error no definition for PDFMT
 #endif
 
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
-
-#ifdef LIBGDK4
-#define LIBGDK 1
-#endif
-#ifdef LIBSTREAM4
-#define LIBSTREAM 1
-#endif
-#ifdef LIBMAPI4
-#define LIBMAPI 1
-#endif
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

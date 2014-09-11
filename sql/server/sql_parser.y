@@ -57,9 +57,6 @@
 
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
-#define FALSE 0
-#define TRUE 1
-
 #ifdef HAVE_HGE
 #define MAX_DEC_DIGITS 38
 #else

@@ -3597,7 +3597,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	if (IS_AGGR(func) || 1) {
 		sql_table *sys_tab_args = find_sql_table(syss, "args");
 		sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
-		rids *args = table_funcs.rids_select(tr, sys_args_col, &func->base.id, NULL, NULL);
+		rids *args = table_funcs.rids_select(tr, sys_args_col, &func->base.id, &func->base.id, NULL);
 		oid r = oid_nil;
 
 

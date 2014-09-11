@@ -597,8 +597,9 @@ XMLprdata(const char *val)
 		else if ((*val & 0xFF) < 0x20)	/* control character */
 			mnstr_printf(toConsole_raw, "&#%d;", *val & 0xFF);
 		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
-			int n, m;
-			int c = *val & 0x7F;
+			int n;
+			unsigned int m;
+			unsigned int c = *val & 0x7F;
 
 			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
 				c &= ~m;

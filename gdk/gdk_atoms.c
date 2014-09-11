@@ -416,8 +416,6 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult08(x)	((x) << 3)
 #define mult16(x)	((x) << 4)
-#define mult10(x)	((x) + (x) + ((x) << 3))
-#define mult7(x)	(((x) << 3) - (x))
 
 #if 0
 int
@@ -1306,10 +1304,17 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 					cur++;
 					c = mult08(c) + base08(*cur);
 					if (num08(cur[1])) {
+						if (c > 037) {
+							/* octal
+							 * escape
+							 * sequence
+							 * out or
+							 * range */
+							return -1;
+						}
 						cur++;
 						c = mult08(c) + base08(*cur);
-						/* if three digits, only look at lower 8 bits */
-						c &= 0377;
+						assert(c >= 0 && c <= 0377);
 					}
 				}
 				break;
@@ -1379,6 +1384,17 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 					 * not shortest possible */
 					return -1;
 				}
+				if (utf8char > 0x10FFFF) {
+					/* incorrect UTF-8 sequence:
+					 * value too large */
+					return -1;
+				}
+				if ((utf8char & 0x1FFF800) == 0xD800) {
+					/* incorrect UTF-8 sequence:
+					 * low or high surrogate
+					 * encoded as UTF-8 */
+					return -1;
+				}
 			}
 		} else if (c >= 0x80) {
 			int m;
@@ -1388,10 +1404,10 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 				;
 			/* n now is number of 10xxxxxx bytes that
 			 * should follow */
-			if (n == 0 || n >= 6) {
+			if (n == 0 || n >= 4) {
 				/* incorrect UTF-8 sequence */
 				/* n==0: c == 10xxxxxx */
-				/* n>=6: c == 1111111x */
+				/* n>=4: c == 11111xxx */
 				return -1;
 			}
 			mask = utf8chkmsk[n];
