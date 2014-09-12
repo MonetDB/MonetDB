@@ -1670,24 +1670,53 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 	if (size == 0)
 		return 0;
-	do {
-		errno = 0;
-#ifdef NATIVE_WIN32
-		if (size > INT_MAX)
-			size = elmsize * (INT_MAX / elmsize);
+#ifdef _MSC_VER
+	/* recv only takes an int parameter, and read does not accept
+	 * sockets */
+	if (size > INT_MAX)
+		size = elmsize * (INT_MAX / elmsize);
+#endif
+	for (;;) {
+		if (s->timeout) {
+			struct timeval tv;
+			fd_set fds;
+			int ret;
+
+			errno = 0;
+			FD_ZERO(&fds);
+			FD_SET(s->stream_data.s, &fds);
+			tv.tv_sec = s->timeout / 1000;
+			tv.tv_usec = (s->timeout % 1000) * 1000;
+			ret = select(
+#ifdef _MSC_VER
+				0, /* ignored on Windows */
+#else
+				s->stream_data.s + 1,
+#endif
+				&fds, NULL, NULL, &tv);
+			if (s->timeout_func && (*s->timeout_func)()) {
+				s->errnr = MNSTR_TIMEOUT;
+				return -1;
+			}
+			if (ret == -1) {
+				s->errnr = MNSTR_READ_ERROR;
+				return -1;
+			}
+			if (ret == 0)
+				continue;
+			assert(ret == 1);
+			assert(FD_ISSET(s->stream_data.s, &fds));
+		}
+#ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
 #else
 		nr = read(s->stream_data.s, buf, size);
 #endif
-	} while (nr == -1 && s->timeout > 0 &&
-		 (errno == EAGAIN || errno == EWOULDBLOCK) &&
-		 s->timeout_func && !(*s->timeout_func)());
-	if (nr < 0) {
-		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			s->errnr = MNSTR_TIMEOUT;
-		else
+		if (nr == -1) {
 			s->errnr = MNSTR_READ_ERROR;
-		return -1;
+			return -1;
+		}
+		break;
 	}
 	if (nr == 0)
 		return 0;	/* end of file */
@@ -1704,12 +1733,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		ssize_t n;
 		n = socket_read(s, (char *) buf + nr, 1, (size_t) (size - nr));
 		if (n < 0) {
-			if (s->errnr == MNSTR_TIMEOUT) {
-				/* ignore timeout */
-				s->errnr = MNSTR_NO__ERROR;
-				continue;
-			}
-			/* some other read error is serious */
+			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
 		if (n == 0)	/* unexpected end of file */
@@ -1755,8 +1779,6 @@ socket_update_timeout(stream *s)
 	tv.tv_sec = s->timeout / 1000;
 	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
-	if (s->access == ST_READ)
-		(void) setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 	if (s->access == ST_WRITE)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
