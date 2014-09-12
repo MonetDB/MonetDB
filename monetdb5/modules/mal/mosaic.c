@@ -33,8 +33,9 @@
 #include "mosaic_delta.h"
 #include "mosaic_linear.h"
 #include "mosaic_variance.h"
+#include "mosaic_prefix.h"
 
-static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","zone","EOL"};
+static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","prefix","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -99,6 +100,10 @@ MOSdumpInternal(Client cntxt, BAT *b){
 		case MOSAIC_DELTA:
 			MOSdump_delta(cntxt,task);
 			MOSadvance_delta(cntxt,task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSdump_prefix(cntxt,task);
+			MOSadvance_prefix(cntxt,task);
 			break;
 		case MOSAIC_VARIANCE:
 			MOSdump_variance(cntxt,task);
@@ -339,6 +344,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 				factor = fac;
 			}
 		}
+/*
 		if ( filter[MOSAIC_VARIANCE]){
 			fac = MOSestimate_variance(cntxt,task);
 			if (fac > factor){
@@ -346,7 +352,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 				factor = fac;
 			}
 		}
-/*
 		if ( filter[MOSAIC_ZONE]){
 			fac = MOSestimate_zone(cntxt,task);
 			if (fac > factor){
@@ -359,6 +364,13 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 			fac = MOSestimate_delta(cntxt,task);
 			if ( fac > factor ){
 				cand = MOSAIC_DELTA;
+				factor = fac;
+			}
+		}
+		if ( filter[MOSAIC_PREFIX]){
+			fac = MOSestimate_prefix(cntxt,task);
+			if ( fac > factor ){
+				cand = MOSAIC_PREFIX;
 				factor = fac;
 			}
 		}
@@ -376,6 +388,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		case MOSAIC_DICT:
 		case MOSAIC_DELTA:
 		case MOSAIC_LINEAR:
+		case MOSAIC_PREFIX:
 			// close the non-compressed part
 			if( (MOSgetTag(task->blk) == MOSAIC_NONE || MOSgetTag(task->blk) == MOSAIC_ZONE) && MOSgetCnt(task->blk) ){
 				MOSupdateHeader(cntxt,task);
@@ -427,6 +440,15 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 			//prepare new block header
 			task->elm -= MOSgetCnt(task->blk);
 			MOSadvance_delta(cntxt,task);
+			MOSsetTag(task->blk,MOSAIC_EOL);
+			task->dst = ((char*) task->blk)+ MosaicBlkSize;
+			break;
+		case MOSAIC_PREFIX:
+			MOScompress_prefix(cntxt,task);
+			MOSupdateHeader(cntxt,task);
+			//prepare new block header
+			task->elm -= MOSgetCnt(task->blk);
+			MOSadvance_prefix(cntxt,task);
 			MOSsetTag(task->blk,MOSAIC_EOL);
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			break;
@@ -612,6 +634,10 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		case MOSAIC_DELTA:
 			MOSdecompress_delta(cntxt,task);
 			MOSskip_delta(cntxt,task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSdecompress_prefix(cntxt,task);
+			MOSskip_prefix(cntxt,task);
 			break;
 		case MOSAIC_LINEAR:
 			MOSdecompress_linear(cntxt,task);
@@ -829,6 +855,9 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_DELTA:
 			MOSsubselect_delta(cntxt,task,low,hgh,li,hi,anti);
 			break;
+		case MOSAIC_PREFIX:
+			MOSsubselect_prefix(cntxt,task,low,hgh,li,hi,anti);
+			break;
 		case MOSAIC_LINEAR:
 			MOSsubselect_linear(cntxt,task,low,hgh,li,hi,anti);
 			break;
@@ -952,6 +981,9 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_DELTA:
 			MOSthetasubselect_delta(cntxt,task,low,*oper);
+			break;
+		case MOSAIC_PREFIX:
+			MOSthetasubselect_prefix(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_LINEAR:
 			MOSthetasubselect_linear(cntxt,task,low,*oper);
@@ -1093,6 +1125,9 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_DELTA:
 			MOSleftfetchjoin_delta(cntxt, task);
 			break;
+		case MOSAIC_PREFIX:
+			MOSleftfetchjoin_prefix(cntxt, task);
+			break;
 		case MOSAIC_LINEAR:
 			MOSleftfetchjoin_linear(cntxt, task);
 			break;
@@ -1217,6 +1252,9 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_DELTA:
 			MOSjoin_delta(cntxt, task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSjoin_prefix(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
 			MOSjoin_linear(cntxt, task);

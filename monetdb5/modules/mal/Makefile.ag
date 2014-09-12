@@ -71,6 +71,7 @@ lib_mal = {
 		mosaic_delta.c mosaic_delta.h \
 		mosaic_linear.c mosaic_linear.h \
 		mosaic_variance.c mosaic_variance.h \
+		mosaic_prefix.c mosaic_prefix.h \
 		calc.c batcalc.c
 }
 

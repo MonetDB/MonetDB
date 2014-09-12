@@ -75,6 +75,7 @@ mosaic_dictionary
 mosaic_zone
 mosaic_delta
 mosaic_linear
+mosaic_prefix
 
 mosaic_literal_double
 
