@@ -295,7 +295,7 @@ terminateProcess(void *p)
 			free(dbname);
 			return;
 		default:
-			Mfprintf(stderr, "unknown state: %d", (int)stats->state);
+			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
@@ -347,7 +347,7 @@ terminateProcess(void *p)
 					free(dbname);
 					return;
 				default:
-					Mfprintf(stderr, "unknown state: %d", (int)stats->state);
+					Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
 			}
 		}
