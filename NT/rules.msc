@@ -195,10 +195,11 @@ libr_LIBDEP = R.lib
 LIBR = c:\Program Files\R\R-3.1.0
 !ENDIF
 !IFDEF BITS32
-libr_DLL=$(LIBR)\bin\i386\R.dll
+RDLL=bin\i386\R.dll
 !ELSE
-libr_DLL=$(LIBR)\bin\x64\R.dll
+RDLL=bin\x64\R.dll
 !ENDIF
+libr_DLL=$(LIBR)\$(RDLL)
 libr_LIBS = $(libr_LIBDEP)
 libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 
