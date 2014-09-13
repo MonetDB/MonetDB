@@ -65,7 +65,7 @@ MOSdumpTask(Client cntxt,MOStask task)
 	dbl perc = task->size/100.0;
 
 	mnstr_printf(cntxt->fdout,"# ");
-	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes "LLFMT"\t"LLFMT "\t%3.0f%%\t%10.2fx\t", 
+	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes %10lld\t%10lld\t%3.0f%%\t%10.2fx\t", 
 		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->blks[i])
