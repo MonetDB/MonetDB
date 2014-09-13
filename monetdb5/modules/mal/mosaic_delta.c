@@ -79,7 +79,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
-{	TYPE *w = (TYPE*)task->src, val= *w, delta;\
+{	TYPE *w = (TYPE*)task->src, val= *w, delta = 0;\
 	for(w++,i =1; i<task->elm; i++,w++){\
 		delta = *w -val;\
 		if ( EXPR)\

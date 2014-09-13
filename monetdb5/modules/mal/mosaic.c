@@ -263,6 +263,8 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
 	if( !inplace)
 		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
+	else
+		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
 
 	if (bsrc == NULL) {
 		BBPreleaseref(bcompress->batCacheid);

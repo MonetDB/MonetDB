@@ -72,10 +72,24 @@ void
 MOSadvance_prefix(Client cntxt, MOStask task)
 {
 	int bits, bytes;
+	int size;
 	(void) cntxt;
 
+	size = ATOMsize(task->type);
+	if( ATOMstorage(task->type == TYPE_str))
+			size =task->b->T->width;
 	task->start += MOSgetCnt(task->blk);
-	switch(ATOMsize(task->type)){
+	switch(size){
+	case 1:
+		{ bte *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
+		  bte mask = *dst++;
+		  bte val = *dst++;
+			bits = val & (~mask);
+			bytes = (MOSgetCnt(task->blk) * bits)/8 + ((MOSgetCnt(task->blk) %8) != 0);
+			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
+			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
+		}
+		break;
 	case 2:
 		{ sht *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
 		  sht mask = *dst++;
@@ -118,21 +132,6 @@ MOSskip_prefix(Client cntxt, MOStask task)
 } 
 
 
-#define Estimate(TYPE)\
-{	TYPE *v = (TYPE*) task->src, *w= v+1, val= *v, val2= *w,  mask;\
-	Prefix(bits, mask, val, val2, 8 * sizeof(TYPE));\
-	val = *v & mask;\
-	for(i = 1; i < task->elm; w++, i++){\
-		if ( val != (*w & mask) )\
-			break;\
-	}\
-	if ( i > MOSlimit() ) i = MOSlimit();\
-	bits = i * (8* sizeof(TYPE) -bits);\
-	store = bits/8 + ((bits % 8) >0);\
-	store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,TYPE);\
-	factor = ( (flt)i * sizeof(TYPE))/ store;\
-}
-
 // calculate the expected reduction 
 flt
 MOSestimate_prefix(Client cntxt, MOStask task)
@@ -148,6 +147,21 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			size =task->b->T->width;
 	if( task->elm >= 2)
 	switch(size){
+	case 1:
+		{	bte *v = (bte*) task->src, *w= v+1, val= *v,val2= *w, mask;
+			Prefix(bits, mask, val, val2, 8);
+			val = *v & mask;
+			for(i = 0; i < task->elm; w++, i++){
+				if ( val != (*w & mask) )
+					break;
+			}
+			if ( i > MOSlimit() ) i = MOSlimit();
+			bits = i * (32 -bits);
+			store = bits/8 + ((bits % 8) >0);
+			store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,int);
+			factor = ( (flt)i * sizeof(int))/ store;
+		}
+		break;
 	case 2:
 		{	sht *v = (sht*) task->src, *w= v+1, val= *v,val2= *w, mask;
 			Prefix(bits, mask, val, val2, 16);
@@ -213,14 +227,14 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			size =task->b->T->width;
 	if( task->elm >=2 )
 	switch(size){
-	case 2:
-		{	sht *v = (sht*) task->src, *w= v+1, val = *v, val2 = *w, mask;
-			sht *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
+	case 1:
+		{	bte *v = (bte*) task->src, *w= v+1, val = *v, val2 = *w, mask;
+			bte *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
 			unsigned int m;
 
-			Prefix(bits, mask, val, val2, 16);
-			rbits = 32-bits;
+			Prefix(bits, mask, val, val2, 8);
+			rbits = 8-bits;
 			*dst++ = mask;
 			*dst = *v & mask;
 			*dst = *dst | rbits; // bits outside mask
@@ -229,23 +243,53 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*base = 0;
 			
 			val = *v & mask;	//reference value
-//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			for(w = v, i = 0; i < limit; w++, i++){
 				if ( val  != (*w & mask) )
 					break;
 				m = (unsigned int)( *w & (~mask)); // residu
-//mnstr_printf(cntxt->fdout,"compress %d residu %d %o\n",*w,m,m);
 {	cell = (i * rbits)/32;
 	lshift= 32 -((i * rbits) % 32) ;
 	if ( lshift > rbits){
 		base[cell]= base[cell] | (m << (lshift-rbits));
-		//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d cell %o\n",cell, lshift, rbits, base[cell]);
 	}else{ 
 		rshift= 32 -  ((i+1) * rbits) % 32;
 		base[cell]= base[cell] | (m >> (rbits-lshift));
 		base[cell+1]= 0 | (m  << rshift);
-		//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,
-			//base[cell],base[cell+1], (m >> (rbits-lshift)),  (m <<rshift));
+	}
+}
+			}
+			MOSincCnt(blk,i);
+			task->src += i * sizeof(int);
+		}
+		break;
+	case 2:
+		{	sht *v = (sht*) task->src, *w= v+1, val = *v, val2 = *w, mask;
+			sht *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
+			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			unsigned int m;
+
+			Prefix(bits, mask, val, val2, 16);
+			rbits = 16-bits;
+			*dst++ = mask;
+			*dst = *v & mask;
+			*dst = *dst | rbits; // bits outside mask
+			dst++;
+			base  = (unsigned int*) dst; // start of bit vector
+			*base = 0;
+			
+			val = *v & mask;	//reference value
+			for(w = v, i = 0; i < limit; w++, i++){
+				if ( val  != (*w & mask) )
+					break;
+				m = (unsigned int)( *w & (~mask)); // residu
+{	cell = (i * rbits)/32;
+	lshift= 32 -((i * rbits) % 32) ;
+	if ( lshift > rbits){
+		base[cell]= base[cell] | (m << (lshift-rbits));
+	}else{ 
+		rshift= 32 -  ((i+1) * rbits) % 32;
+		base[cell]= base[cell] | (m >> (rbits-lshift));
+		base[cell+1]= 0 | (m  << rshift);
 	}
 }
 			}
@@ -326,6 +370,24 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	switch(size){
+	case 1:
+		{	bte *dst =  (sht*)  (((char*) blk) + MosaicBlkSize);
+			bte mask = *dst++, val  =  *dst++, v;
+			bte m,m1,m2;
+			BUN lim= MOSgetCnt(blk);
+			rbits = val & (~mask);
+			for(m=1, i=1; i < (BUN) rbits; i++)
+				m= (m << 1) | 1;
+			base = (unsigned int*) dst;
+			val = val & mask;
+			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
+			for(i = 0; i < lim; i++){
+				decompress();
+				((int*)task->src)[i] = v;
+			}
+			task->src += i * sizeof(int);
+		}
+		break;
 	case 2:
 		{	sht *dst =  (sht*)  (((char*) blk) + MosaicBlkSize);
 			sht mask = *dst++, val  =  *dst++, v;
