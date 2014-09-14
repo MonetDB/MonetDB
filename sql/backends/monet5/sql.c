@@ -63,9 +63,10 @@ exp_is_point_select(sql_exp *e)
 		return 1;
 	if (e->type == e_cmp && !e->f && e->flag == (int) cmp_equal) {
 		sql_exp *r = e->r;
+		sql_exp *l = e->l;
 
-		if (r->card <= CARD_AGGR)
-			return 1;
+		if (!is_func(l->type) && r->card <= CARD_AGGR)
+ 			return 1;
 	}
 	return 0;
 }
