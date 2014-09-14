@@ -1,0 +1,18 @@
+b:= bat.new(:oid,:int);
+bat.append(b,50);
+bat.append(b,19531015);
+bat.append(b,9);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(b);
+
+#inplace variant, local decompress
+y:= mosaic.compressStorage(b,"literal");
+z:= mosaic.decompress(y);
+io.print(z);
+
+#inplace variant
+y:= mosaic.compressStorage(b,"literal");
+z:= mosaic.decompressStorage(y);
+io.print(z);

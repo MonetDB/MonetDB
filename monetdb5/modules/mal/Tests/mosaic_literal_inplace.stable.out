@@ -1,0 +1,71 @@
+stdout of test 'mosaic_literal_inplace` in directory 'monetdb5/modules/mal` itself:
+
+
+# 13:43:55 >  
+# 13:43:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32870" "--set" "mapi_usock=/var/tmp/mtest-5579/.s.monetdb.32870" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_literal_inplace.mal"
+# 13:43:55 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32870/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5579/.s.monetdb.32870
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    b := bat.new(:oid,:int);
+    bat.append(b,50);
+    bat.append(b,19531015);
+    bat.append(b,9);
+    b := bat.append(b,b);
+    base := algebra.copy(b);
+    io.print(b);
+#inplace variant, local decompress 
+    y := mosaic.compressStorage(b,"literal");
+    z := mosaic.decompress(y);
+    io.print(z);
+#inplace variant 
+    y := mosaic.compressStorage(b,"literal");
+    z := mosaic.decompressStorage(y);
+    io.print(z);
+end main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	50  ]
+[ 1@0,	19531015  ]
+[ 2@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	50  ]
+[ 1@0,	19531015  ]
+[ 2@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	50  ]
+[ 1@0,	19531015  ]
+[ 2@0,	9  ]
+[ 3@0,	50  ]
+[ 4@0,	19531015  ]
+[ 5@0,	9  ]
+
+# 13:43:57 >  
+# 13:43:57 >  "Done."
+# 13:43:57 >  
+

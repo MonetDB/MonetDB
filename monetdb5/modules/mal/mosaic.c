@@ -326,6 +326,8 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 
 		// cutoff the filters, especially dictionary tests are expensive
 		if( cutoff && cutoff > task->elm){
+			if( task->blks[MOSAIC_PREFIX] == 0)
+				filter[MOSAIC_PREFIX] = 0;
 			if( task->blks[MOSAIC_DICT] == 0)
 				filter[MOSAIC_DICT] = 0;
 			cutoff = 0;

@@ -1,0 +1,30 @@
+stderr of test 'mosaic_literal_inplace` in directory 'monetdb5/modules/mal` itself:
+
+
+# 13:43:55 >  
+# 13:43:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32870" "--set" "mapi_usock=/var/tmp/mtest-5579/.s.monetdb.32870" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_literal_inplace.mal"
+# 13:43:55 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32870
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5579/.s.monetdb.32870
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:43:57 >  
+# 13:43:57 >  "Done."
+# 13:43:57 >  
+

@@ -81,7 +81,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	switch(size){
 	case 1:
-		{ bte *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
+		{ bte *dst = (bte*)  (((char*) task->blk) + MosaicBlkSize);
 		  bte mask = *dst++;
 		  bte val = *dst++;
 			bits = val & (~mask);
@@ -229,7 +229,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	switch(size){
 	case 1:
 		{	bte *v = (bte*) task->src, *w= v+1, val = *v, val2 = *w, mask;
-			bte *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
+			bte *dst = (bte*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
 			unsigned int m;
 
@@ -247,19 +247,19 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				if ( val  != (*w & mask) )
 					break;
 				m = (unsigned int)( *w & (~mask)); // residu
-{	cell = (i * rbits)/32;
-	lshift= 32 -((i * rbits) % 32) ;
-	if ( lshift > rbits){
-		base[cell]= base[cell] | (m << (lshift-rbits));
-	}else{ 
-		rshift= 32 -  ((i+1) * rbits) % 32;
-		base[cell]= base[cell] | (m >> (rbits-lshift));
-		base[cell+1]= 0 | (m  << rshift);
-	}
-}
+				cell = (i * rbits)/32;
+				lshift= 32 -((i * rbits) % 32) ;
+				if ( lshift > rbits){
+					base[cell]= base[cell] | (m << (lshift-rbits));
+				}else{ 
+					rshift= 32 -  ((i+1) * rbits) % 32;
+					base[cell]= base[cell] | (m >> (rbits-lshift));
+					base[cell+1]= 0 | (m  << rshift);
+				}
 			}
 			MOSincCnt(blk,i);
 			task->src += i * sizeof(int);
+			task->dst += (i * rbits)/8 + (i %8) != 0;
 		}
 		break;
 	case 2:
@@ -282,19 +282,19 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				if ( val  != (*w & mask) )
 					break;
 				m = (unsigned int)( *w & (~mask)); // residu
-{	cell = (i * rbits)/32;
-	lshift= 32 -((i * rbits) % 32) ;
-	if ( lshift > rbits){
-		base[cell]= base[cell] | (m << (lshift-rbits));
-	}else{ 
-		rshift= 32 -  ((i+1) * rbits) % 32;
-		base[cell]= base[cell] | (m >> (rbits-lshift));
-		base[cell+1]= 0 | (m  << rshift);
-	}
-}
+				cell = (i * rbits)/32;
+				lshift= 32 -((i * rbits) % 32) ;
+				if ( lshift > rbits){
+					base[cell]= base[cell] | (m << (lshift-rbits));
+				}else{ 
+					rshift= 32 -  ((i+1) * rbits) % 32;
+					base[cell]= base[cell] | (m >> (rbits-lshift));
+					base[cell+1]= 0 | (m  << rshift);
+				}
 			}
 			MOSincCnt(blk,i);
 			task->src += i * sizeof(int);
+			task->dst += (i * rbits)/8 + (i %8) != 0;
 		}
 		break;
 	case 4:
@@ -312,28 +312,28 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*base = 0;
 			
 			val = *v & mask;	//reference value
-//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
+			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			for(w = v, i = 0; i < limit; w++, i++){
 				if ( val  != (*w & mask) )
 					break;
 				m = *w & (~mask); // residu
-//mnstr_printf(cntxt->fdout,"compress %d residu %d %o\n",*w,m,m);
-{	cell = (i * rbits)/32;
-	lshift= 32 -((i * rbits) % 32) ;
-	if ( lshift > rbits){
-		base[cell]= base[cell] | (m << (lshift-rbits));
-		//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d cell %o\n",cell, lshift, rbits, base[cell]);
-	}else{ 
-		rshift= 32 -  ((i+1) * rbits) % 32;
-		base[cell]= base[cell] | (m >> (rbits-lshift));
-		base[cell+1]= 0 | (m  << rshift);
-		//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,
-			//base[cell],base[cell+1], (m >> (rbits-lshift)),  (m <<rshift));
-	}
-}
+				//mnstr_printf(cntxt->fdout,"compress %d residu %d %o\n",*w,m,m);
+				cell = (i * rbits)/32;
+				lshift= 32 -((i * rbits) % 32) ;
+				if ( lshift > rbits){
+					base[cell]= base[cell] | (m << (lshift-rbits));
+					//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d cell %o\n",cell, lshift, rbits, base[cell]);
+				}else{ 
+					rshift= 32 -  ((i+1) * rbits) % 32;
+					base[cell]= base[cell] | (m >> (rbits-lshift));
+					base[cell+1]= 0 | (m  << rshift);
+					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,
+						//base[cell],base[cell+1], (m >> (rbits-lshift)),  (m <<rshift));
+				}
 			}
 			MOSincCnt(blk,i);
 			task->src += i * sizeof(int);
+			task->dst += (i * rbits)/8 + (i %8) != 0;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -371,7 +371,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			size =task->b->T->width;
 	switch(size){
 	case 1:
-		{	bte *dst =  (sht*)  (((char*) blk) + MosaicBlkSize);
+		{	bte *dst =  (bte*)  (((char*) blk) + MosaicBlkSize);
 			bte mask = *dst++, val  =  *dst++, v;
 			bte m,m1,m2;
 			BUN lim= MOSgetCnt(blk);

@@ -113,7 +113,7 @@ MOSskip_runlength(Client cntxt, MOStask task)
 	if ( ((TYPE*)task->src)[i] != val)\
 		break;\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = ( (flt)i * sizeof(TYPE))/ (2 * MosaicBlkSize + sizeof(TYPE));\
+	factor = ( (flt)i * sizeof(TYPE))/ (MosaicBlkSize + sizeof(TYPE));\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
@@ -141,7 +141,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 			if ( ((int*)task->src)[i] != val)
 				break;
 			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ( (flt)i * sizeof(int))/ (2 * MosaicBlkSize + sizeof(int));
+			factor = ( (flt)i * sizeof(int))/ (MosaicBlkSize + sizeof(int));
 		}
 		break;
 	case  TYPE_str:
