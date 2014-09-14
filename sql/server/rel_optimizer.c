@@ -377,6 +377,11 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			}
 			return 6;
 		case cmp_filter:
+			if (exp_card(e->r) > CARD_AGGR) {
+				/* filters for joins are special */
+				*cnt += 1000;
+				return 1000;
+			}
 			*cnt += 2;
 			return 2;
 		case cmp_in: 

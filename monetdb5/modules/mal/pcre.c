@@ -1358,7 +1358,7 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && (*sid) != bat_nil && *sid && (s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -1751,28 +1751,20 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	throw(MAL, "pcre.join", RUNTIME_OBJECT_MISSING);
 }
 
-pcre_export str LIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *esc);
+pcre_export str LIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, str *esc, bat *slid, bat *srid, bit *nil_matches, lng *estimate);
 str
-LIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *esc)
+LIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, str *esc, bat *slid, bat *srid, bit *nil_matches, lng *estimate)
 {
+	(void)nil_matches;
+	(void)estimate;
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
-pcre_export str ILIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *esc);
+pcre_export str ILIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, str *esc, bat *slid, bat *srid, bit *nil_matches, lng *estimate);
 str
-ILIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, str *esc)
+ILIKEsubjoin(bat *r1, bat *r2, bat *lid, bat *rid, str *esc, bat *slid, bat *srid, bit *nil_matches, lng *estimate)
 {
+	(void)nil_matches;
+	(void)estimate;
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
-}
-
-str
-PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc)
-{
-	return PCREsubjoin(l, r, *b, *pat, 0, 0, *esc, 0);
-}
-
-str
-PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc)
-{
-	return PCREsubjoin(l, r, *b, *pat, 0, 0, *esc, 1);
 }

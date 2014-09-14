@@ -703,6 +703,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 		return -1;
 	mod = sql_func_mod(s->op4.funcval->func);
 	fimp = sql_func_imp(s->op4.funcval->func);
+	fimp = strconcat(fimp, "subjoin");
 
 	/* dump left and right operands */
 	_dumpstmt(sql, mb, s->op1);
@@ -722,6 +723,10 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 
 		q = pushArgument(mb, q, op->nr);
 	}
+	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
+	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
+	q = pushBit(mb, q, TRUE);     /* nil_matches */
+	q = pushNil(mb, q, TYPE_lng); /* estimate */
 	s->nr = getDestVar(q);
 
 	if (swapped) {
@@ -1255,6 +1260,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					mod = sql_func_mod(f);
 					fimp = sql_func_imp(f);
+					fimp = strconcat(fimp, "subselect");
 					q = newStmt(mb, mod, convertOperator(fimp));
 					// push pointer to the SQL structure into the MAL call
 					// allows getting argument names for example
@@ -1269,8 +1275,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 						q = pushArgument(mb, q, op->nr);
 					}
+					/* candidate lists */
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
+					else
+						q = pushNil(mb, q, TYPE_bat); 
 
 					for (n = s->op2->op4.lval->h; n; n = n->next) {
 						stmt *op = n->data;
@@ -1556,7 +1565,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_join:{
 			int l;
 			int r;
-			char *jt = "join";
 			char *sjt = "subjoin";
 
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
@@ -1609,14 +1617,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			switch (s->flag) {
 			case cmp_equal:
-				q = newStmt1(mb, algebraRef, jt);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				if (q == NULL)
-					return -1;
-				break;
-			case cmp_equal_nil:
 				q = newStmt1(mb, algebraRef, sjt);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
@@ -1624,6 +1624,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushNil(mb, q, TYPE_bat);
 				q = pushNil(mb, q, TYPE_bat);
 				q = pushBit(mb, q, TRUE);
+				q = pushNil(mb, q, TYPE_lng);
+				if (q == NULL)
+					return -1;
+				break;
+			case cmp_equal_nil: /* nil == nil */
+				q = newStmt1(mb, algebraRef, sjt);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, r);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushBit(mb, q, FALSE);
 				q = pushNil(mb, q, TYPE_lng);
 				if (q == NULL)
 					return -1;
@@ -1637,38 +1649,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				break;
 			case cmp_lt:
-				q = newStmt1(mb, algebraRef, thetajoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, -1);
-				if (q == NULL)
-					return -1;
-				break;
 			case cmp_lte:
-				q = newStmt1(mb, algebraRef, thetajoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, -2);
-				if (q == NULL)
-					return -1;
-				break;
 			case cmp_gt:
-				q = newStmt1(mb, algebraRef, thetajoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, 1);
-				if (q == NULL)
-					return -1;
-				break;
 			case cmp_gte:
-				q = newStmt1(mb, algebraRef, thetajoinRef);
+				q = newStmt1(mb, algebraRef, subthetajoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, 2);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushNil(mb, q, TYPE_bat);
+				if (s->flag == cmp_lt)
+					q = pushInt(mb, q, -1);
+				else if (s->flag == cmp_lte)
+					q = pushInt(mb, q, -2);
+				else if (s->flag == cmp_gt)
+					q = pushInt(mb, q, 1);
+				else if (s->flag == cmp_gte)
+					q = pushInt(mb, q, 2);
+				q = pushBit(mb, q, TRUE);
+				q = pushNil(mb, q, TYPE_lng);
 				if (q == NULL)
 					return -1;
 				break;
