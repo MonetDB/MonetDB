@@ -1620,23 +1620,6 @@ gtr_minmax( sql_trans *tr )
 }
 
 static int 
-tr_update_storage( sql_trans *tr, sql_delta *obat, sql_delta *cbat)
-{
-	int ok = LOG_OK;
-
-	(void)tr;
-	assert(store_nr_active==1);
-
-	assert (obat->bid != 0 && cbat->bid != 0);
-	assert (obat->cached == NULL && cbat->cached == NULL);
-	temp_destroy(obat->bid);
-	obat->bid = cbat->bid;
-	temp_dup(cbat->bid);
-	assert(obat->ibid == cbat->ibid);
-	return ok;
-}
-
-static int 
 tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
 	int ok = LOG_OK;
@@ -1832,10 +1815,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		} else {
 			assert(oc->base.allocated);
-			if ((cc->storage_type && (!oc->storage_type || (strcmp(cc->storage_type, oc->storage_type) != 0))) || (!cc->storage_type && oc->storage_type))
-				tr_update_storage(tr, oc->data, cc->data);
-			else
-				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
+			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
 
 		oc->null = cc->null;
@@ -1880,10 +1860,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 			} else {
 				assert(oi->base.allocated);
-				if (ci->storage_type && (!ci->storage_type || strcmp(ci->storage_type, oi->storage_type) != 0))
-					tr_update_storage(tr, oi->data, ci->data);
-				else
-					tr_update_delta(tr, oi->data, ci->data, 0);
+				tr_update_delta(tr, oi->data, ci->data, 0);
 			}
 
 			if (oi->base.rtime < ci->base.rtime)
@@ -1902,24 +1879,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ft->data)
 		destroy_del(tr, ft);
 	ft->base.allocated = ft->base.rtime = ft->base.wtime = 0;
-	return ok;
-}
-
-static int
-tr_log_storage( sql_trans *tr, sql_delta *cbat )
-{
-	int ok = LOG_OK;
-	BAT *b;
-
-	(void)tr;
-	assert(tr->parent == gtrans);
-	assert(store_nr_active == 1);
-
-	/* log new snapshot */
-	b = temp_descriptor(cbat->bid);
-	logger_add_bat(bat_logger, b, cbat->name);
-	ok = log_bat_persists(bat_logger, b, cbat->name);
-	bat_destroy(b);
 	return ok;
 }
 
@@ -1997,10 +1956,7 @@ log_table(sql_trans *tr, sql_table *ft)
 
 		if (!cc->base.wtime || !cc->base.allocated) 
 			continue;
-		if (ft->access > TABLE_WRITABLE) /* TODO we need a proper way to check for changes off the storage */
-			ok = tr_log_storage(tr, cc->data);
-		else
-			ok = tr_log_delta(tr, cc->data, ft->cleared);
+		ok = tr_log_delta(tr, cc->data, ft->cleared);
 	}
 	if (ok == LOG_OK && ft->idxs.set) {
 		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
@@ -2013,22 +1969,6 @@ log_table(sql_trans *tr, sql_table *ft)
 			ok = tr_log_delta(tr, ci->data, ft->cleared);
 		}
 	}
-	return ok;
-}
-
-static int 
-tr_snapshot_storage( sql_trans *tr, sql_delta *cbat)
-{
-	int ok = LOG_OK;
-	BAT *b = temp_descriptor(cbat->bid);
-
-	assert(tr->parent == gtrans);
-	assert(store_nr_active == 1);
-
-	(void)tr;
-	bat_set_access(b, BAT_READ);
-	BATmode(b, PERSISTENT);
-	bat_destroy(b);
 	return ok;
 }
 
@@ -2067,10 +2007,7 @@ snapshot_table(sql_trans *tr, sql_table *ft)
 
 		if (!cc->base.wtime || !cc->base.allocated) 
 			continue;
-		if (ft->access > TABLE_WRITABLE) /* TODO we need a proper way to check for changes off the storage */
-			tr_snapshot_storage(tr, cc->data);
-		else
-			tr_snapshot_bat(tr, cc->data);
+		tr_snapshot_bat(tr, cc->data);
 	}
 	if (ok == LOG_OK && ft->idxs.set) {
 		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
