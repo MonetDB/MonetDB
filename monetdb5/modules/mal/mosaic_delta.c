@@ -192,9 +192,9 @@ MOScompress_delta(Client cntxt, MOStask task)
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
 		//case 1: no compression achievable
-		case 2: DELTAcompress(oid,(delta < 256)); break;
-		case 4: DELTAcompress(oid,(delta < 256)); break;
-		case 8: DELTAcompress(oid,(delta < 256)); break;
+		case 2: DELTAcompress(sht,(delta < 256)); break;
+		case 4: DELTAcompress(int,(delta < 256)); break;
+		case 8: DELTAcompress(lng,(delta < 256)); break;
 		}
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
