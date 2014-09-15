@@ -31,6 +31,7 @@ str affectedRowsRef;
 str aggrRef;
 str alarmRef;
 str algebraRef;
+str batalgebraRef;
 str appendidxRef;
 str appendRef;
 str assertRef;
@@ -290,6 +291,7 @@ void optimizerInit(void)
 	aggrRef = putName("aggr",4);
 	alarmRef = putName("alarm",5);
 	algebraRef = putName("algebra",7);
+	batalgebraRef = putName("batalgebra",10);
 	appendidxRef = putName("append_idxbat",13);
 	appendRef = putName("append",6);
 	assertRef = putName("assert",6);

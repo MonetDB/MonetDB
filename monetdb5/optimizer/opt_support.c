@@ -849,7 +849,7 @@ int isMapOp(InstrPtr p){
 }
 
 int isLikeOp(InstrPtr p){
-	return	(getModuleId(p) == batstrRef &&
+	return	(getModuleId(p) == batalgebraRef &&
 		(getFunctionId(p) == likeRef || 
 		 getFunctionId(p) == not_likeRef || 
 		 getFunctionId(p) == ilikeRef ||
@@ -881,10 +881,14 @@ int isDiffOp(InstrPtr p){
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
+                 getFunctionId(p) == subjoinRef ||
                  getFunctionId(p) == joinRef ||
                  getFunctionId(p) == antijoinRef || /* is not mat save */
+                 getFunctionId(p) == subantijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
-                 getFunctionId(p) == bandjoinRef)
+                 getFunctionId(p) == subthetajoinRef ||
+                 getFunctionId(p) == bandjoinRef ||
+                 getFunctionId(p) == subbandjoinRef)
 		);
 }
 
@@ -912,21 +916,24 @@ int isFragmentGroup2(InstrPtr p){
 
 int isSubSelect(InstrPtr p)
 {
-	return (getModuleId(p)== algebraRef && (
-			getFunctionId(p)== subselectRef ||
-			getFunctionId(p)== thetasubselectRef ||
-			getFunctionId(p)== likesubselectRef ||
-			getFunctionId(p)== ilikesubselectRef));
+	char *func = getFunctionId(p);
+	size_t l = func?strlen(func):0;
+	
+	return (l >= 9 && getModuleId(p)== algebraRef && 
+	        strcmp(func+l-9,"subselect") == 0);
+}
+
+int isSubJoin(InstrPtr p)
+{
+	char *func = getFunctionId(p);
+	size_t l = func?strlen(func):0;
+	
+	return (l >= 7 && getModuleId(p)== algebraRef && 
+	        strcmp(func+l-7,"subjoin") == 0);
 }
 
 int isFragmentGroup(InstrPtr p){
 	return
-			(getModuleId(p)== pcreRef && (
-			getFunctionId(p)== likeselectRef ||
-			getFunctionId(p)== likeuselectRef  ||
-			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef 
-			))  ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== selectNotNilRef
@@ -934,8 +941,7 @@ int isFragmentGroup(InstrPtr p){
 			isSubSelect(p) ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== mirrorRef 
-			)
-		);
+			));
 }
 
 /*

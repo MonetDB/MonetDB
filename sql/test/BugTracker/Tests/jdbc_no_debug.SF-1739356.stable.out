@@ -47,9 +47,9 @@ Ready.
 
 Operation successful
 
-+-----------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------+
 | mal                                                                 |
-+=============================================================================+
++=====================================================================================+
 | function user.s3_1{autoCommit=true}():void;                              |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
@@ -57,10 +57,10 @@ Operation successful
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
 |     X_64 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);          |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_65 := algebra.subselect(r1_12,2:sht,2:sht,true,true,true);            |
+|     X_65 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2:sht,2:sht,true,true,true); |
 |     X_15 := sql.bind(X_2,"sys","_tables","type",1);         |
-|     X_66 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);         |
-|     X_17 := sql.subdelta(X_64,X_6,X_12,X_65,X_66);                          |
+|     X_67 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);                 |
+|     X_17 := sql.subdelta(X_64,X_6,X_12,X_65,X_67);                                  |
 |     X_18 := sql.bind(X_2,"sys","_tables","id",0);                    |
 |     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22 := sql.bind(X_2,"sys","_tables","id",1);                    |
@@ -81,7 +81,7 @@ Operation successful
 |     sql.exportValue(1,".L1","L1","wrd",64,0,6,X_40,"");                     |
 | end s3_1;                                                                   |
 | # querylog.define("explain select count(*) from tables;","sequential_pipe") |
-+-----------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------+
 31 rows
 
 

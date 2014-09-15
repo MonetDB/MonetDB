@@ -442,8 +442,8 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The two columns should be sorted upfront.
 */
 
-str
-LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
+static str
+LSSTxmatch_intern(int *lres, int *rres, int *lid, int *rid, int *delta)
 {
 	BAT *xl, *xr, *bl, *br;
 	lng *l, *r;
@@ -533,4 +533,14 @@ LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 	BBPkeepref(*lres = xl->batCacheid);
 	BBPkeepref(*rres = xr->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+LSSTxmatchsubjoin(int *lres, int *rres, int *lid, int *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+	(void)sl;
+	(void)sr;
+	(void)nil_matches;
+	(void)estimate;
+	return LSSTxmatch_intern(lres, rres, lid, rid, delta);
 }

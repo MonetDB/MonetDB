@@ -541,6 +541,14 @@ command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 
+command subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubbandjoin
+comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
+
+command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubrangejoin
+comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
+
 # @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL

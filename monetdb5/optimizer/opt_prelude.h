@@ -29,6 +29,7 @@ opt_export  str affectedRowsRef;
 opt_export  str aggrRef;
 opt_export  str alarmRef;
 opt_export  str algebraRef;
+opt_export  str batalgebraRef;
 opt_export  str appendidxRef;
 opt_export  str appendRef;
 opt_export  str assertRef;
