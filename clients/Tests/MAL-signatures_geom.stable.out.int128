@@ -3024,6 +3024,14 @@ pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
+command algebra.subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid,:oid],X_10:bat[:oid,:oid]) 
+address ALGsubrangejoin;
+comment Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2
+
+command algebra.subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (X_10:bat[:oid,:oid],X_11:bat[:oid,:oid]) 
+address ALGsubbandjoin;
+comment Band join: values in l and r match if r - c1 <[=] l <[=] r + c2
+
 command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ALGsubthetajoin;
 comment Theta join with candidate lists
