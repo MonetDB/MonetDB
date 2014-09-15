@@ -51,6 +51,7 @@ MOSadvance_delta(Client cntxt, MOStask task)
 		case 4: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk)-1,int)); break ;
 		case 8: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk)-1,lng)); break ;
 		}
+		break;
 	default:
 		if( task->type == TYPE_timestamp)
 			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOSgetCnt(blk)-1,timestamp)); 
@@ -82,13 +83,12 @@ MOSskip_delta(Client cntxt, MOStask task)
 {	TYPE *w = (TYPE*)task->src, val= *w, delta = 0;\
 	for(w++,i =1; i<task->elm; i++,w++){\
 		delta = *w -val;\
-		if ( EXPR)\
-		if ( delta < -127 || delta >127)\
+		if ( !(EXPR))\
 			break;\
 		val = *w;\
 	}\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = ((float) i * sizeof(TYPE))/  (2 * MosaicBlkSize + sizeof(TYPE)+(bte)i-1);\
+	factor = ((float) i * sizeof(TYPE))/  (2 * MosaicBlkSize + sizeof(TYPE)+i-1);\
 }
 
 // estimate the compression level 
@@ -124,7 +124,8 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *w;
 			}
-			factor = ((float) i * sizeof(int))/  (2 * MosaicBlkSize + sizeof(int)+(bte)i-1);
+			if ( i > MOSlimit() ) i = MOSlimit();
+			factor = ((float) i * sizeof(int))/  (2 * MosaicBlkSize + sizeof(int)+i-1);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
@@ -143,7 +144,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	task->dst += sizeof(TYPE);\
 	for(w++,i =1; i<limit; i++,w++){\
 		delta = *w -val;\
-		if ( EXPR )\
+		if ( !(EXPR) )\
 			break;\
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *w;\
