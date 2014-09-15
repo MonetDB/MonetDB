@@ -56,22 +56,26 @@ algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 
+algebra_export str ALGsubjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, const bit *nil_matches, const lng *estimate);
+algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, const bit *nil_matches, const lng *estimate);
+algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, const bit *nil_matches, const lng *estimate);
+algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, const bit *nil_matches, const lng *estimate);
+algebra_export str ALGsubbandjoin(bat *r1, bat *r2, bat *lid, bat *rid, bat *slid, bat *srid, const void *low, const void *high, const bit *li, const bit *hi, const lng *estimate);
+algebra_export str ALGsubrangejoin(bat *r1, bat *r2, bat *lid, bat *rlid, bat *rhid, bat *slid, bat *srid, const bit *li, const bit *hi, const lng *estimate);
+
+/* legacy join functions */
 algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
 algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, const void *minus, const void *plus, bit *li, bit *hi);
 algebra_export str ALGrangejoin2(int *l, int *r, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
-
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, const void *minus, const void *plus);
 algebra_export str ALGbandjoin(int *result, int *lid, int *rid, const void *minus, const void *plus, bit *li, bit *hi);
 algebra_export str ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
-algebra_export str ALGsubjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
-algebra_export str ALGsubleftjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
-algebra_export str ALGsubouterjoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
-algebra_export str ALGsubthetajoin(bat *r1, bat *r2, bat *l, bat *r, bat *sl, bat *sr, int *op, bit *nil_matches, lng *estimate);
+/* end legacy join functions */
 
 algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
