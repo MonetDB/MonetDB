@@ -142,7 +142,6 @@ opt_export  str mapiRef;
 opt_export  str markHRef;
 opt_export  str markTRef;
 opt_export  str mark_grpRef;
-opt_export  str materializeRef;
 opt_export  str mtimeRef;
 opt_export  str dense_rank_grpRef;
 opt_export  str matRef;

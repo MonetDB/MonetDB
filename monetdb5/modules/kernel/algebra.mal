@@ -641,15 +641,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
 
-# @+ BAT fragmentation commands
-# Various operations for splitting BATs into useful fragments.
-#
-# @- Variable management
-# It is sometimes needed to cast a type at runtime
-command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address ALGmaterialize
-comment "Materialize the void column";
-
 command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
