@@ -188,7 +188,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 	BAT *bsrc, *bcompress;
 	BUN cutoff =0;
 	int i, flg=0;
-	char *c;
 	str msg = MAL_SUCCEED;
 	MOStask task;
 	int cand;
@@ -204,13 +203,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			filter[i]= 1;
 		flg=1;
-	}
-	if( properties && (c = strstr(properties,"test")) ){
-		if ( atoi(c+4) < DICTSIZE){
-			if( atoi(c+4))
-				dictsize = atoi(c+4);
-		} else
-			dictsize = 2;
 	}
 
 	if ((bcompress = BATdescriptor(*bid)) == NULL)
@@ -292,6 +284,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		task->elm = BATcount(bsrc);
 		task->size = bsrc->T->heap.free;
 		task->timer = GDKusec();
+		task->dictsize = task->size < DICTTHRESHOLD? 2: DICTSIZE;
 
 		MOSinit(task,bcompress);
 		MOSinitHeader(task);
@@ -1306,6 +1299,7 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 	BAT *b,*bn, *br;
 	int ret = 0, bid2 = 0;
 	str type;
+	(void) br;
 
 	b = BATdescriptor(bid);
 	if( b == NULL ){
@@ -1347,16 +1341,16 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 	case TYPE_hge:
 #endif
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
-		br = BATdescriptor(ret);
-		if(br) BBPreclaim(br);
+		MOScompressInternal(cntxt, &ret, &bid2, properties,1,1);
+		//br = BATdescriptor(ret);
+		//if(br) BBPreclaim(br);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
-			br = BATdescriptor(ret);
-			if(br) BBPreclaim(br);
+			MOScompressInternal(cntxt, &ret, &bid2, properties,1,1);
+			//br = BATdescriptor(ret);
+			//if(br) BBPreclaim(br);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}

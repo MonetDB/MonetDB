@@ -100,6 +100,7 @@ typedef struct MOSTASK{
 	BUN	elm;		// elements left to compress
 	char *src;		// read pointer into source
 
+	int dictsize;	// entries in a dictionary 
 	lng  xsize,size;// original and compressed size
 	lng timer;		// compression time
 	void *min, *max;// space for zones indices
