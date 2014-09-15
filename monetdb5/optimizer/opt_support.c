@@ -917,7 +917,7 @@ int isFragmentGroup2(InstrPtr p){
 int isSubSelect(InstrPtr p)
 {
 	char *func = getFunctionId(p);
-	int l = func?strlen(func):0;
+	size_t l = func?strlen(func):0;
 	
 	return (l >= 9 && getModuleId(p)== algebraRef && 
 	        strcmp(func+l-9,"subselect") == 0);
@@ -926,7 +926,7 @@ int isSubSelect(InstrPtr p)
 int isSubJoin(InstrPtr p)
 {
 	char *func = getFunctionId(p);
-	int l = func?strlen(func):0;
+	size_t l = func?strlen(func):0;
 	
 	return (l >= 7 && getModuleId(p)== algebraRef && 
 	        strcmp(func+l-7,"subjoin") == 0);
