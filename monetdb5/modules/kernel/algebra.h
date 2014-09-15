@@ -149,6 +149,5 @@ algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 algebra_export str ALGidentity(int *ret, int *bid);
-algebra_export str ALGmaterialize(int *ret, int *bid);
 algebra_export str ALGreuse(int *ret, int *bid);
 #endif

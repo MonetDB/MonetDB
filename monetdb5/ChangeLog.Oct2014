@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Sep 15 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.materialize.
+
 * Fri Aug 29 2014 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.kunique and algebra.tunique.  They were subsumed by
   algebra.subunique.

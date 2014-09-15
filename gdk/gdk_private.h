@@ -76,6 +76,10 @@ void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
+BAT *BATmaterialize(BAT *b)
+	__attribute__((__visibility__("hidden")));
+BAT *BATmaterializeh(BAT *b)
+	__attribute__((__visibility__("hidden")));
 BAT *BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)

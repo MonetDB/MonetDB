@@ -2925,8 +2925,6 @@ gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
 gdk_export BAT *VIEWhead(BAT *b);
 gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
-gdk_export BAT *BATmaterialize(BAT *b);
-gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -3463,16 +3461,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect(_b, (h), (t));				\
-	})
-
-#define BATsample(b, n)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsample([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsample(_b, (n));					\
 	})
 
 #define BATsemijoin(l, r)						\
