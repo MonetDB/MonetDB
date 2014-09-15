@@ -3443,16 +3443,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATuselect(_b, (h), (t));				\
 	})
 
-#define BATsample(b, n)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsample([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsample(_b, (n));					\
-	})
-
 #define BATsemijoin(l, r)						\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
