@@ -284,7 +284,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		task->elm = BATcount(bsrc);
 		task->size = bsrc->T->heap.free;
 		task->timer = GDKusec();
-		task->dictsize = task->size < DICTTHRESHOLD? 2: DICTSIZE;
+		task->dictsize = task->elm < 20? 2: DICTSIZE;
 
 		MOSinit(task,bcompress);
 		MOSinitHeader(task);
@@ -303,6 +303,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		task->elm = BATcount(bcompress);
 		task->size = bcompress->T->heap.free;
 		task->timer = GDKusec();
+		task->dictsize = task->elm < 20? 2: DICTSIZE;
 
 		MOSinit(task,bsrc);
 		MOSinitHeader(task);
@@ -1341,16 +1342,16 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 	case TYPE_hge:
 #endif
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-		MOScompressInternal(cntxt, &ret, &bid2, properties,1,1);
-		//br = BATdescriptor(ret);
-		//if(br) BBPreclaim(br);
+		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
+		br = BATdescriptor(ret);
+		if(br) BBPreclaim(br);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-			MOScompressInternal(cntxt, &ret, &bid2, properties,1,1);
-			//br = BATdescriptor(ret);
-			//if(br) BBPreclaim(br);
+			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
+			br = BATdescriptor(ret);
+			if(br) BBPreclaim(br);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}
