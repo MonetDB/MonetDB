@@ -280,13 +280,14 @@ setConfVal(confkeyval *ckv, char *val) {
 
 char *
 setConfValForKey(confkeyval *list, char *key, char *val) {
+	char buf[256];
+
 	while (list->key != NULL) {
 		if (strcmp(list->key, key) == 0) {
 			return setConfVal(list, val);
 		}
 		list++;
 	}
-	char buf[256];
 	snprintf(buf, sizeof(buf), "key '%s' is not recognized, internal error", key);
 	return(strdup(buf));
 }
