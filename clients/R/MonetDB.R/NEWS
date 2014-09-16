@@ -2,6 +2,9 @@
 - Fixed package date (Thanks, Dimitar)
 - Added sys. schema name to internal queries, so SET SCHEMA xx would not break things (Thanks again, Dimitar)
 - Fixed monetdb:// URL handling on newer R versions (Thanks, Alex)
+- DBI 0.3 compatibility (isValid etc.)
+- deprecated dbTransaction() (DBI has standardized dbBegin())
+- Back to R socket code for peace of mind
 
 0.9.4
 - dbWriteTable overhaul (thanks, Anthony)
