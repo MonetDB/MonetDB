@@ -34,15 +34,16 @@ override_dh_auto_configure:
 	--enable-geom=yes \
 	--enable-gsl=yes \
 	--enable-instrument=no \
-	--enable-jaql=yes \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
+	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-odbc=yes \
 	--enable-oid32=no \
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rdf=no \
+	--enable-rintegration=no \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
