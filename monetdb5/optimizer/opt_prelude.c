@@ -145,7 +145,6 @@ str mapiRef;
 str markHRef;
 str markTRef;
 str mark_grpRef;
-str materializeRef;
 str mtimeRef;
 str multicolumnRef;
 str dense_rank_grpRef;
@@ -404,7 +403,6 @@ void optimizerInit(void)
 	markHRef = putName("markH", 5);
 	markTRef = putName("markT", 5);
 	mark_grpRef = putName("mark_grp", 8);
-	materializeRef = putName("materialize", 11);
 	mtimeRef = putName("mtime", 5);
 	multicolumnRef = putName("multicolumn", 11);
 	dense_rank_grpRef = putName("dense_rank_grp", 14);

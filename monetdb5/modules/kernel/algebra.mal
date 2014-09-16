@@ -541,6 +541,12 @@ command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 
+function subantijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
+	 # JOIN_NE == -3
+	(r1,r2) := subthetajoin(l,r,sl,sr,-3:int,nil_matches,estimate);
+	return (r1,r2);
+end subantijoin;
+
 command subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubbandjoin
 comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
@@ -634,15 +640,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  represents the group extent, i.e., the head is the unique list of group IDs
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
-
-# @+ BAT fragmentation commands
-# Various operations for splitting BATs into useful fragments.
-#
-# @- Variable management
-# It is sometimes needed to cast a type at runtime
-command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address ALGmaterialize
-comment "Materialize the void column";
 
 command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse

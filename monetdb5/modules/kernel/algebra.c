@@ -2205,23 +2205,6 @@ ALGidentity(int *ret, int *bid)
 	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
-str
-ALGmaterialize(int *ret, int *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.materialize", RUNTIME_OBJECT_MISSING);
-	if( b->htype == TYPE_void){
-		bn= BATmaterialize(b);
-		if( bn == NULL)
-			throw(MAL, "algebra.materialize", MAL_MALLOC_FAIL);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		BBPkeepref(*ret= bn->batCacheid);
-	} else
-		BBPkeepref(*ret = b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 str ALGreuse(int *ret, int *bid)
 {
