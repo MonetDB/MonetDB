@@ -116,15 +116,15 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 }
 
 #define estimateDict(TPE)\
-{	TPE val = *(TPE*)task->src;\
+{	TPE *val = (TPE*)task->src;\
 	TPE *dict = (TPE*)((char*)task->dst + 3 * MosaicBlkSize);\
 	for(i =0; i<task->elm; i++, val++){\
 		for(j= 0; j< *size; j++)\
-			if( dict[j] == val) {cnt++;break;}\
+			if( dict[j] == *val) {cnt++;break;}\
 		if ( j == *size){\
 			if ( *size == task->dictsize)\
 				break;\
-			dict[j] = val;\
+			dict[j] = *val;\
 			*size= *size+1;\
 			cnt++;\
 		}\
@@ -157,15 +157,15 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	case TYPE_hge: estimateDict(hge); break;
 #endif
 	case TYPE_int:
-		{	int val = *(int*)task->src;
+		{	int *val = (int*)task->src;
 			int *dict = (int*)((char*)task->dst + 3 * MosaicBlkSize);
 			for(i =0; i<task->elm; i++, val++){
 				for(j= 0; j< *size; j++)
-					if( dict[j] == val) {cnt++;break;}
+					if( dict[j] == *val) {cnt++;break;}
 				if ( j == *size){
 					if ( *size == task->dictsize)
 						break;
-					dict[j] = val;
+					dict[j] = *val;
 					*size= *size+1;
 					cnt++;
 				}
