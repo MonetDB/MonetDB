@@ -35,6 +35,10 @@
 #define R_INTERFACE_PTRS 1
 #define CSTACK_DEFNS 1
 
+/* R redefines these */
+#undef SIZEOF_SIZE_T
+#undef ERROR
+
 #include <Rembedded.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
