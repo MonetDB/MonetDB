@@ -566,9 +566,18 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define  subselect_prefix(TPE) \
-{ 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-\
+#define  subselect_prefix(TPE, TPE2, BITS) \
+{	TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
+	TPE2 mask = *dst++;\
+	TPE2  val  =  (TPE) *dst++,v;\
+	TPE2 m,m1,m2;\
+	TPE2 *base;\
+	TPE2 cell, rbits, lshift, rshift;\
+	TPE value;\
+	m = ~mask;\
+	rbits = val & m;\
+	val = val & mask;\
+	base = (TPE2*) dst;\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 			for( ; first < last; first++){\
@@ -577,27 +586,33 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			}\
 		} else\
 		if( *(TPE*) low == TPE##_nil ){\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
-			if (cmp )\
-			for( ; first < last; first++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
+				if (cmp )\
+					*o++ = (oid) first;\
 			}\
 		} else\
 		if( *(TPE*) hgh == TPE##_nil ){\
-			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (cmp )\
-			for( ; first < last; first++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
+				if (cmp )\
+					*o++ = (oid) first;\
 			}\
 		} else{\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
-					((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (cmp )\
-			for( ; first < last; first++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
+						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
+				if (cmp )\
+					*o++ = (oid) first;\
 			}\
 		}\
 	} else {\
@@ -605,27 +620,33 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			/* nothing is matching */\
 		} else\
 		if( *(TPE*) low == TPE##_nil ){\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
-			if ( !cmp )\
-			for( ; first < last; first++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
+				if ( !cmp )\
+					*o++ = (oid) first;\
 			}\
 		} else\
 		if( *(TPE*) hgh == TPE##_nil ){\
-			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if ( !cmp )\
-			for( ; first < last; first++, val++){\
+			for( ; first < last; first++, val++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
+				if ( !cmp )\
+					*o++ = (oid) first;\
 			}\
 		} else{\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
-					((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (!cmp)\
-			for( ; first < last; first++, val++){\
+			for( ; first < last; first++, val++,i++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
+				decompress(BITS);\
+				value = (TPE) v;\
+				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
+						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
+				if (!cmp)\
+					*o++ = (oid) first;\
 			}\
 		}\
 	}\
@@ -635,13 +656,14 @@ str
 MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
-	BUN first,last;
-	(void) cntxt;
+	BUN i = 0,first,last;
+	MosaicBlk blk= task->blk;
 
 	// set the oid range covered
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
+	(void) cntxt;
 	if (task->cl && *task->cl > last){
 		MOSadvance_prefix(cntxt,task);
 		return MAL_SUCCEED;
@@ -649,21 +671,30 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bit: subselect_prefix(bit); break;
-	case TYPE_bte: subselect_prefix(bte); break;
-	case TYPE_sht: subselect_prefix(sht); break;
-	case TYPE_lng: subselect_prefix(lng); break;
-	case TYPE_oid: subselect_prefix(oid); break;
-	case TYPE_wrd: subselect_prefix(wrd); break;
-	case TYPE_flt: subselect_prefix(flt); break;
-	case TYPE_dbl: subselect_prefix(dbl); break;
+	case TYPE_bit: subselect_prefix(bit,unsigned int, 32); break;
+	case TYPE_bte: subselect_prefix(bte,unsigned int, 32); break;
+	case TYPE_sht: subselect_prefix(sht,unsigned int, 32); break;
+	case TYPE_lng: subselect_prefix(lng,unsigned long, 64); break;
+	case TYPE_oid: subselect_prefix(oid,unsigned long, 64); break;
+	case TYPE_wrd: subselect_prefix(wrd,unsigned long, 64); break;
+	case TYPE_flt: subselect_prefix(flt,unsigned int,  32); break;
+	case TYPE_dbl: subselect_prefix(dbl,unsigned long, 64); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_prefix(hge); break;
+	case TYPE_hge: subselect_prefix(hge,unsigned long long,128); break;
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_prefix for debugging
-	{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
+	{	unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
+		unsigned int mask = *dst++;
+		int  val  =  (int) *dst++,v;
+		unsigned int m,m1,m2;
+		unsigned int *base;
+		unsigned int cell, rbits, lshift, rshift;
 
+		m = ~mask;
+		rbits = val & m;
+		val = val & mask;
+		base = (unsigned int*) dst;
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 				for( ; first < last; first++){
@@ -672,26 +703,29 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 				}
 			} else
 			if( *(int*) low == int_nil ){
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
-				if (cmp )
-				for( ; first < last; first++){
+				for( ; first < last; i++, first++){
 					MOSskipit();
-					*o++ = (oid) first;
+					decompress(32);
+					cmp  =  ((*hi && v <= * (int*)hgh ) || (!*hi && v < *(int*)hgh ));
+					if (cmp )
+						*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
-				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (cmp )
-				for( ; first < last; first++){
+				for( ; first < last; first++,i++){
 					MOSskipit();
-					*o++ = (oid) first;
+					decompress(32);
+					cmp  =  ((*li && v >= * (int*)low ) || (!*li && v > *(int*)low ));
+					if (cmp )
+						*o++ = (oid) first;
 				}
 			} else{
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
-						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (cmp )
-				for( ; first < last; first++){
+				for( ; first < last; first++,i++){
 					MOSskipit();
+					decompress(32);
+					cmp  =  ((*hi && v <= * (int*)hgh ) || (!*hi && v < *(int*)hgh )) &&
+							((*li && v >= * (int*)low ) || (!*li && v > *(int*)low ));
+					if (cmp )
 					*o++ = (oid) first;
 				}
 			}
@@ -700,34 +734,37 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 				/* nothing is matching */
 			} else
 			if( *(int*) low == int_nil ){
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
-				if ( !cmp )
-				for( ; first < last; first++){
+				for( ; first < last; first++, i++){
 					MOSskipit();
-					*o++ = (oid) first;
+					decompress(32);
+					cmp  =  ((*hi && v <= * (int*)hgh ) || (!*hi && v < *(int*)hgh ));
+					if ( !cmp )
+						*o++ = (oid) first;
 				}
 			} else
 			if( *(int*) hgh == int_nil ){
-				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if ( !cmp )
-				for( ; first < last; first++){
+				for( ; first < last; first++,i++){
 					MOSskipit();
-					*o++ = (oid) first;
+					decompress(32);
+					cmp  =  ((*li && v >= * (int*)low ) || (!*li && v > *(int*)low ));
+					if ( !cmp )
+						*o++ = (oid) first;
 				}
 			} else{
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
-						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (!cmp)
-				for( ; first < last; first++){
+				for( ; first < last; first++,i++){
 					MOSskipit();
+					decompress(32);
+					cmp  =  ((*hi && v <= * (int*)hgh ) || (!*hi && v < *(int*)hgh )) &&
+							((*li && v >= * (int*)low ) || (!*li && v > *(int*)low ));
+					if (!cmp)
 					*o++ = (oid) first;
 				}
 			}
 		}
 	}
+/*
 	break;
 	case  TYPE_str:
-		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
 		case 1: break;
 		case 2: break;
@@ -735,65 +772,80 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		case 8: break;
 		}
 		break;
+*/
 	default:
 		if( task->type == TYPE_date)
-			subselect_prefix(date); 
+			subselect_prefix(date,int,32); 
 		if( task->type == TYPE_daytime)
-			subselect_prefix(daytime); 
+			subselect_prefix(daytime,int,32); 
 		if( task->type == TYPE_timestamp)
-			subselect_prefix(lng); 
+			subselect_prefix(lng,long,64); 
 	}
 	MOSadvance_prefix(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_prefix(TPE)\
-{ 	TPE low,hgh,*v;\
+#define thetasubselect_prefix(TPE, TPE2, BITS)\
+{ 	TPE low,hgh;\
+    TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
+    TPE2 mask = *dst++;\
+    TPE2  val  =  (TPE) *dst++,v;\
+    TPE2 m,m1,m2;\
+    TPE2 *base;\
+    TPE2 cell, rbits, lshift, rshift;\
+    TPE value;\
+	m = ~mask;\
+	rbits = val & m;\
+	val = val & mask;\
+	base = (TPE2*) dst;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
-		hgh= *(TPE*) val;\
+		hgh= *(TPE*) input;\
 		hgh = PREVVALUE##TPE(hgh);\
 	} else\
 	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) val;\
+		hgh= *(TPE*) input;\
 	} else\
 	if ( strcmp(oper,">") == 0){\
-		low = *(TPE*) val;\
+		low = *(TPE*) input;\
 		low = NEXTVALUE##TPE(low);\
 	} else\
 	if ( strcmp(oper,">=") == 0){\
-		low = *(TPE*) val;\
+		low = *(TPE*) input;\
 	} else\
 	if ( strcmp(oper,"!=") == 0){\
-		low = hgh = *(TPE*) val;\
+		low = hgh = *(TPE*) input;\
 		anti++;\
 	} else\
 	if ( strcmp(oper,"==") == 0){\
-		hgh= low= *(TPE*) val;\
+		hgh= low= *(TPE*) input;\
 	} \
-	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
-	if( (low == TPE##_nil || * v >= low) && (* v <= hgh || hgh == TPE##_nil) ){\
-			if ( !anti) {\
-				for( ; first < last; first++){\
-					MOSskipit();\
-					*o++ = (oid) first;\
-				}\
-			}\
-	} else\
-	if( anti)\
-		for( ; first < last; first++){\
+	if ( !anti)\
+		for( ; first < last; first++,i++){\
 			MOSskipit();\
+			decompress(BITS);\
+			value = (TPE) v;\
+			if( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) )\
 			*o++ = (oid) first;\
+		}\
+	else\
+		for( ; first < last; first++,i++){\
+			MOSskipit();\
+			decompress(BITS);\
+			value = (TPE) v;\
+			if( !( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) ))\
+				*o++ = (oid) first;\
 		}\
 }
 
 str
-MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 {
 	oid *o;
 	int anti=0;
-	BUN first,last;
+	BUN i=0,first,last;
+	MosaicBlk blk = task->blk;
 	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
@@ -807,54 +859,70 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bit: thetasubselect_prefix(bit); break;
-	case TYPE_bte: thetasubselect_prefix(bte); break;
-	case TYPE_sht: thetasubselect_prefix(sht); break;
-	case TYPE_lng: thetasubselect_prefix(lng); break;
-	case TYPE_oid: thetasubselect_prefix(oid); break;
-	case TYPE_wrd: thetasubselect_prefix(wrd); break;
-	case TYPE_flt: thetasubselect_prefix(flt); break;
-	case TYPE_dbl: thetasubselect_prefix(dbl); break;
+	case TYPE_bit: thetasubselect_prefix(bit, unsigned int, 32); break;
+	case TYPE_bte: thetasubselect_prefix(bte, unsigned int, 32); break;
+	case TYPE_sht: thetasubselect_prefix(sht, unsigned int, 32); break;
+	case TYPE_lng: thetasubselect_prefix(lng, unsigned long, 64); break;
+	case TYPE_oid: thetasubselect_prefix(oid, unsigned long, 64); break;
+	case TYPE_wrd: thetasubselect_prefix(wrd, unsigned long, 64); break;
+	case TYPE_flt: thetasubselect_prefix(flt, unsigned int, 32); break;
+	case TYPE_dbl: thetasubselect_prefix(dbl, unsigned long, 64); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_prefix(hge); break;
+	case TYPE_hge: thetasubselect_prefix(hge, unsigned long long,128); break;
 #endif
 	case TYPE_int:
-		{ 	int low,hgh,*v;
+		{ 	int low,hgh;
+			unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
+			unsigned int mask = *dst++;
+			unsigned int  val  =  (unsigned int) *dst++,v;
+			unsigned int m,m1,m2;
+			unsigned int *base;
+			unsigned int cell, rbits, lshift, rshift;
+			int value;
+
+			m = ~mask;
+			rbits = val & m;
+			val = val & mask;
+			base = (unsigned int*) dst;
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
-				hgh= *(int*) val;
+				hgh= *(int*) input;
 				hgh = PREVVALUEint(hgh);
 			} else
 			if ( strcmp(oper,"<=") == 0){
-				hgh= *(int*) val;
+				hgh= *(int*) input;
 			} else
 			if ( strcmp(oper,">") == 0){
-				low = *(int*) val;
+				low = *(int*) input;
 				low = NEXTVALUEint(low);
 			} else
 			if ( strcmp(oper,">=") == 0){
-				low = *(int*) val;
+				low = *(int*) input;
 			} else
 			if ( strcmp(oper,"!=") == 0){
-				low = hgh = *(int*) val;
+				low = hgh = *(int*) input;
 				anti++;
 			} else
 			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(int*) val;
+				hgh= low= *(int*) input;
 			} 
-			v = (int*) (((char*)task->blk) + MosaicBlkSize);
-			if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
-					if ( !anti) {
-						for( ; first < last; first++){
-							MOSskipit();
-							*o++ = (oid) first;
-						}
-					}
-			} else
-			if( anti)
-				for( ; first < last; first++){
+			if ( !anti)
+				for( ; first < last; first++,i++){
 					MOSskipit();
-					*o++ = (oid) first;
+					decompress(32);
+					value = (int) v;
+					if( (low == int_nil || value >= low) && (value <= hgh || hgh == int_nil) ){
+						*o++ = (oid) first;
+					}
+				}
+			else
+				for( ; first < last; first++,i++){
+					MOSskipit();
+					decompress(32);
+					value = (int) v;
+					if( !((low == int_nil || value >= low) && (value <= hgh || hgh == int_nil) )){
+							*o++ = (oid) first;
+					}
 				}
 		}
 		break;
@@ -873,22 +941,35 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_prefix(TPE)\
-{	TPE val, *v;\
-	v= (TPE*) task->src;\
-	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(; first < last; first++){\
+#define leftfetchjoin_prefix(TPE, TPE2, BITS)\
+{	TPE *r;\
+    TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
+    TPE2 mask = *dst++;\
+    TPE2  val  =  (TPE) *dst++,v;\
+    TPE2 m,m1,m2;\
+    TPE2 *base;\
+    TPE2 cell, rbits, lshift, rshift;\
+    TPE value;\
+	m = ~mask;\
+	rbits = val & m;\
+	val = val & mask;\
+	base = (TPE2*) dst;\
+	r= (TPE*) task->src;\
+	for(; first < last; first++,i++){\
 		MOSskipit();\
-		*v++ = val;\
+		decompress(BITS);\
+		value = (TPE) v;\
+		*r++ = value;\
 		task->n--;\
 	}\
-	task->src = (char*) v;\
+	task->src = (char*) r;\
 }
 
 str
 MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 {
-	BUN first,last;
+	BUN i=0, first,last;
+	MosaicBlk blk= task->blk;
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
@@ -896,36 +977,48 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMstorage(task->type)){
-		case TYPE_bit: leftfetchjoin_prefix(bit); break;
-		case TYPE_bte: leftfetchjoin_prefix(bte); break;
-		case TYPE_sht: leftfetchjoin_prefix(sht); break;
-		case TYPE_lng: leftfetchjoin_prefix(lng); break;
-		case TYPE_oid: leftfetchjoin_prefix(oid); break;
-		case TYPE_wrd: leftfetchjoin_prefix(wrd); break;
-		case TYPE_flt: leftfetchjoin_prefix(flt); break;
-		case TYPE_dbl: leftfetchjoin_prefix(dbl); break;
+		case TYPE_bit: leftfetchjoin_prefix(bit, unsigned int,32); break;
+		case TYPE_bte: leftfetchjoin_prefix(bte, unsigned int,32); break;
+		case TYPE_sht: leftfetchjoin_prefix(sht, unsigned int,32); break;
+		case TYPE_lng: leftfetchjoin_prefix(lng, unsigned long,64); break;
+		case TYPE_oid: leftfetchjoin_prefix(oid, unsigned long,64); break;
+		case TYPE_wrd: leftfetchjoin_prefix(wrd, unsigned long,64); break;
+		case TYPE_flt: leftfetchjoin_prefix(flt, unsigned int,32); break;
+		case TYPE_dbl: leftfetchjoin_prefix(dbl, unsigned long,64); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_prefix(hge); break;
+		case TYPE_hge: leftfetchjoin_prefix(hge, unsigned long long, 128); break;
 #endif
 		case TYPE_int:
-		{	int val, *v;
-			v= (int*) task->src;
-			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
-			for(; first < last; first++){
+		{	int *r;
+			unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
+			unsigned int mask = *dst++;
+			unsigned int  val  =  (unsigned int) *dst++,v;
+			unsigned int m,m1,m2;
+			unsigned int *base;
+			unsigned int cell, rbits, lshift, rshift;
+			int value;
+			m = ~mask;
+			rbits = val & m;
+			val = val & mask;
+			base = (unsigned int*) dst;
+			r= (int*) task->src;
+			for(; first < last; first++,i++){
 				MOSskipit();
-				*v++ = val;
+				decompress(32);
+				value = (int) v;
+				*r++ = value;
 				task->n--;
 			}
-			task->src = (char*) v;
+			task->src = (char*) r;
 		}
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
-		case 1: leftfetchjoin_prefix(bte); break;
-		case 2: leftfetchjoin_prefix(sht); break;
-		case 4: leftfetchjoin_prefix(int); break;
-		case 8: leftfetchjoin_prefix(lng); break;
+		case 1: leftfetchjoin_prefix(bte, unsigned int, 32); break;
+		case 2: leftfetchjoin_prefix(sht, unsigned int, 32); break;
+		case 4: leftfetchjoin_prefix(int, unsigned int, 32); break;
+		case 8: leftfetchjoin_prefix(lng, unsigned long, 64); break;
 		}
 		break;
 	}
@@ -933,22 +1026,37 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define join_prefix(TPE)\
-{	TPE *v, *w;\
-	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+#define join_prefix(TPE,TPE2,BITS)\
+{   TPE *w;\
+	TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
+	TPE2 mask = *dst++;\
+	TPE2  val  =  (TPE2) *dst++,v;\
+	TPE2 m,m1,m2;\
+	TPE2 *base;\
+	TPE2 cell, rbits, lshift, rshift;\
+	TPE value;\
+	m = ~mask;\
+	rbits = val & m;\
+	val = val & mask;\
+	base = (TPE2*) dst;\
 	w = (TPE*) task->src;\
-	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
-	if ( *w == *v)\
-		for(oo= (oid) first; oo < (oid) last; v++, oo++){\
-			BUNappend(task->lbat, &oo, FALSE);\
-			BUNappend(task->rbat, &o, FALSE);\
+	for(n = task->elm, o = 0; n -- > 0; w++,o++){\
+		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){\
+			decompress(BITS);\
+			value = (TPE) v;\
+			if ( *w == value){\
+				BUNappend(task->lbat, &oo, FALSE);\
+				BUNappend(task->rbat, &o, FALSE);\
+			}\
 		}\
+	}\
 }
 
 str
 MOSjoin_prefix(Client cntxt,  MOStask task)
 {
-	BUN n,first,last;
+	BUN i= 0,n,first,last;
+	MosaicBlk blk= task->blk;
 	oid o, oo;
 	(void) cntxt;
 
@@ -957,29 +1065,44 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMstorage(task->type)){
-		case TYPE_bit: join_prefix(bit); break;
-		case TYPE_bte: join_prefix(bte); break;
-		case TYPE_sht: join_prefix(sht); break;
-		case TYPE_lng: join_prefix(lng); break;
-		case TYPE_oid: join_prefix(oid); break;
-		case TYPE_wrd: join_prefix(wrd); break;
-		case TYPE_flt: join_prefix(flt); break;
-		case TYPE_dbl: join_prefix(dbl); break;
+		case TYPE_bit: join_prefix(bit,unsigned int, 32); break;
+		case TYPE_bte: join_prefix(bte,unsigned int, 32); break;
+		case TYPE_sht: join_prefix(sht,unsigned int, 32); break;
+		case TYPE_lng: join_prefix(lng,unsigned long, 64); break;
+		case TYPE_oid: join_prefix(oid,unsigned long, 64); break;
+		case TYPE_wrd: join_prefix(wrd,unsigned long, 64); break;
+		case TYPE_flt: join_prefix(flt,unsigned int, 32); break;
+		case TYPE_dbl: join_prefix(dbl,unsigned long,64); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_prefix(hge); break;
+		case TYPE_hge: join_prefix(hge,unsigned long long, 128); break;
 #endif
 		case TYPE_int:
-			{	int *v, *w;
-				v = (int*) (((char*) task->blk) + MosaicBlkSize);
-				w = (int*) task->src;
-				for(n = task->elm, o = 0; n -- > 0; w++,o++)
-				if ( *w == *v)
-					for(oo= (oid) first; oo < (oid) last; v++, oo++){
+        {   int *w;
+            unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
+            unsigned int mask = *dst++;
+            unsigned int  val  =  (unsigned int) *dst++,v;
+            unsigned int m,m1,m2;
+            unsigned int *base;
+            unsigned int cell, rbits, lshift, rshift;
+            int value;
+            m = ~mask;
+            rbits = val & m;
+            val = val & mask;
+            base = (unsigned int*) dst;
+
+			w = (int*) task->src;
+			for(n = task->elm, o = 0; n -- > 0; w++,o++){
+				for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){
+					decompress(32);
+					value = (int) v;
+					if ( *w == value){
 						BUNappend(task->lbat, &oo, FALSE);
 						BUNappend(task->rbat, &o, FALSE);
 					}
+				}
 			}
-			break;
+		}
+		break;
 		case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
