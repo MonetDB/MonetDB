@@ -1,4 +1,4 @@
-import(DBI,digest,methods)
+import(DBI,digest,methods,bitops)
 
 # export only driver constructor, everything else is DBI stuff..
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)

@@ -21,6 +21,8 @@ x$idkey <- 1:nrow( x )
 # monetdb doesn't like the column name `full`
 x$full <- NULL
 
+names(x) <- tolower(gsub(".","_",names(x),fixed=T))
+
 # load the apiclus1 data set into the monetdb
 dbWriteTable( db , 'apiclus1' , x , overwrite = TRUE )
 cat("#~BeginVariableOutput~#\n")
