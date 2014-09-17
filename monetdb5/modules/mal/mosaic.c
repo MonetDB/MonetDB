@@ -609,6 +609,10 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 			BBPreleaseref(bsrc->batCacheid);
 			throw(MAL, "mosaic.decompress", "Can not claim server");
 		}
+
+		// Now bsrc should be securely saved to avoid database loss 
+		// during the compressions step. TOBEDONE
+		
 		MOSinit(task,bsrc);
 		task->src = Tloc(b, BUNfirst(b));
 		task->timer = GDKusec();
