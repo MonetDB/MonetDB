@@ -125,9 +125,9 @@ freeConfFile(confkeyval *list) {
 }
 
 /**
- * True if the key is not a default property.
+ * Returns true if the key is a default property.
  */
-inline int
+int
 defaultProperty(char *property) {
 	if (property != NULL && strcmp(property, "type") == 0) {
 		return 1;
