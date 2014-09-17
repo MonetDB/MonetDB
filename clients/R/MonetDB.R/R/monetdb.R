@@ -18,6 +18,11 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
   new("MonetDBDriver")
 }
 
+# dbIsValid is missing from the DBI 0.3, so redefine
+setGeneric("dbIsValid", 
+  def = function(dbObj, ...) standardGeneric("dbIsValid"),
+  valueClass = "logical")
+
 setMethod("dbIsValid", "MonetDBDriver", def=function(dbObj, ...) {
   return(TRUE) # driver object cannot be invalid
 })
@@ -139,7 +144,7 @@ valueClass="MonetDBConnection")
 
 
 ### MonetDBConnection
-setClass("MonetDBConnection", representation("DBIConnection", socket="connection", 
+setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
                                              connenv="environment", fetchSize="integer", Id="integer"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
