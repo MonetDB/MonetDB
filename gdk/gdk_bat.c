@@ -2089,6 +2089,10 @@ BATsetcount(BAT *b, BUN cnt)
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
+	if (cnt <= 1) {
+		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
+		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+	}
 	assert(b->batCapacity >= cnt);
 }
 
