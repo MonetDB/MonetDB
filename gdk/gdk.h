@@ -971,7 +971,8 @@ typedef struct {
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_64_BIT_INT	061026	/* version that had no 128-bit integer option, yet */
-#define GDKLIBRARY		061027
+#define GDKLIBRARY_NOCOMPRESS	061027	/* version without compression (mosaic) */
+#define GDKLIBRARY		061030
 
 typedef struct BAT {
 	/* static bat properties */
