@@ -969,9 +969,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
-#define GDKLIBRARY_CHR		061024	/* version that still had chr type */
-#define GDKLIBRARY_SORTED_BYTE	061025	/* version that still had byte-sized sorted flag */
 #define GDKLIBRARY_64_BIT_INT	061026	/* version that had no 128-bit integer option, yet */
 #define GDKLIBRARY		061027
 

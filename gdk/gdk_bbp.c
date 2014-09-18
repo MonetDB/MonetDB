@@ -713,18 +713,10 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	int n;
 
 	(void) oidsize;		/* only used when SIZEOF_OID==8 */
+	(void) bbpversion;	/* could be used to implement compatibility */
 
 	norevsorted = 0; /* default for first case */
-	if (bbpversion <= GDKLIBRARY_SORTED_BYTE ?
-	    sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
-		   "%n",
-		   type, &width, &var, &properties, &nokey0,
-		   &nokey1, &nosorted, &base, &align, &free,
-		   &size, &storage,
-		   &n) < 12
-	    :
-	    sscanf(buf,
+	if (sscanf(buf,
 		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
@@ -965,10 +957,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_64_BIT_INT &&
-	    bbpversion != GDKLIBRARY_SORTED_BYTE &&
-	    bbpversion != GDKLIBRARY_CHR &&
-	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
+	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
