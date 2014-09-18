@@ -373,7 +373,7 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
-			buninsfix(bn, dst, cnt, (oid)(o),		\
+			buninsfix(bn, dst, cnt, o,			\
 				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
 					 * (dbl) (q-p) * 1.1 + 1024),	\
 				  BATcapacity(bn) + q - p, BUN_NONE);	\
@@ -385,7 +385,7 @@ do {									\
 			CAND;						\
 			v = src[o-off];					\
 			assert(cnt < BATcapacity(bn));			\
-			dst[cnt] = (oid)(o);				\
+			dst[cnt] = o;					\
 			cnt += (TEST);					\
 			p++;						\
 		}							\
@@ -663,7 +663,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	scanfunc(NAME, lng, CAND, END)
 
 /* scan/imprints select with candidates */
-scan_sel(candscan, o = (oid) (*candlist++), w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1))
+scan_sel(candscan, o = *candlist++, w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1))
 /* scan/imprints select without candidates */
 scan_sel(fullscan, o = (oid) (p+off), w = (BUN) (q+off))
 
