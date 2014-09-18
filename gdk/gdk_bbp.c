@@ -713,18 +713,10 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	int n;
 
 	(void) oidsize;		/* only used when SIZEOF_OID==8 */
+	(void) bbpversion;	/* could be used to implement compatibility */
 
 	norevsorted = 0; /* default for first case */
-	if (bbpversion <= GDKLIBRARY_SORTED_BYTE ?
-	    sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
-		   "%n",
-		   type, &width, &var, &properties, &nokey0,
-		   &nokey1, &nosorted, &base, &align, &free,
-		   &size, &storage,
-		   &n) < 12
-	    :
-	    sscanf(buf,
+	if (sscanf(buf,
 		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
@@ -733,7 +725,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		   &n) < 13)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
-	if (properties & ~0x0F81)
+	if (properties & ~0x1F81)
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
@@ -770,6 +762,9 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->dense = (properties & 0x0200) != 0;
 	col->nonil = (properties & 0x0400) != 0;
 	col->nil = (properties & 0x0800) != 0;
+	if ((col->heap.compressed = (properties & 0x1000) != 0) != 0 &&
+	    bbpversion <= GDKLIBRARY_NOCOMPRESS)
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: compression flag set in version without compression\n");
 	col->nosorted = (BUN) nosorted;
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
@@ -965,10 +960,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_64_BIT_INT &&
-	    bbpversion != GDKLIBRARY_SORTED_BYTE &&
-	    bbpversion != GDKLIBRARY_CHR &&
-	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
+	    bbpversion != GDKLIBRARY_NOCOMPRESS &&
+	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1243,7 +1236,7 @@ heap_entry(stream *s, COLrec *col)
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
 			  col->width,
 			  col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
-			 (unsigned short) col->sorted | ((unsigned short) col->revsorted << 7) | (((unsigned short) col->key & 0x01) << 8) | ((unsigned short) col->dense << 9) | ((unsigned short) col->nonil << 10) | ((unsigned short) col->nil << 11),
+			 (unsigned short) col->sorted | ((unsigned short) col->revsorted << 7) | (((unsigned short) col->key & 0x01) << 8) | ((unsigned short) col->dense << 9) | ((unsigned short) col->nonil << 10) | ((unsigned short) col->nil << 11) | ((unsigned short) col->heap.compressed << 12),
 			  col->nokey[0],
 			  col->nokey[1],
 			  col->nosorted,
