@@ -731,7 +731,6 @@ typedef struct {
 	bte dirty;		/* specific heap dirty marker */
 	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
-	BUN count;		/* decompression count */
 } Heap;
 
 typedef struct {

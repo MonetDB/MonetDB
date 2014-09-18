@@ -506,7 +506,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		bcompress->batDirty = 1;
 		bcompress->T->heap.free = (size_t) (task->dst - Tloc(bcompress,BUNfirst(bcompress)) );
 		bcompress->T->heap.compressed= 1;
-		bcompress->T->heap.count = BATcount(bsrc);
 		MCexitMaintenance(cntxt);
 		BBPkeepref(*ret = bcompress->batCacheid);
 		BBPreleaseref(bsrc->batCacheid);
@@ -515,7 +514,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		bsrc->batDirty = 1;
 		bsrc->T->heap.free = (size_t) (task->dst - Tloc(bsrc,BUNfirst(bsrc)) );
 		bsrc->T->heap.compressed= 1;
-		bsrc->T->heap.count = BATcount(bcompress);
 		BBPkeepref(*ret = bsrc->batCacheid);
 		BBPreleaseref(bcompress->batCacheid);
 	}
@@ -927,7 +925,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// accumulator for the oids
-	bn = BATnew(TYPE_void, TYPE_oid, b->T->heap.count, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
