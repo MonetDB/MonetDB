@@ -123,9 +123,8 @@ standard software development tools
 	- a lexical analyzer generator (e.g., ``lex`` or ``flex``);
 	- a parser generator (e.g., ``yacc`` or ``bison``).
 
-	If ``lex`` and ``flex`` are missing, you won't be able to
-	build the jaql front end.  If ``yacc`` and ``bison`` are
-	missing, you won't be able to build the SQL front end.
+	If ``yacc`` and ``bison`` are missing, you won't be able to
+	build the SQL front end.
 
 	The following are optional.  They are checked for during
 	configuration and if they are missing, the feature is just

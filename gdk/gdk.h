@@ -725,13 +725,12 @@ typedef struct {
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
 		      forcemap:1,  /* force STORE_MMAP even if heap exists */
-			  compressed:1; /* compress heaps */
+		      compressed:1; /* compress heaps */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
 	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
-	BUN count;		/* decompression count */
 } Heap;
 
 typedef struct {
@@ -1762,8 +1761,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			if ((col)->seq == oid_nil) {			\
 				(col)->nonil = (b)->batCount == 0;	\
 				(col)->nil = !(col)->nonil;		\
-				if( !(col)->heap.compressed) \
-					(col)->revsorted = 1;			\
+				(col)->revsorted = 1;			\
 				(col)->key = (b)->batCount <= 1;	\
 				(col)->dense = 0;			\
 			} else {					\
@@ -1771,13 +1769,11 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->nonil = 1;			\
 				(col)->nil = 0;				\
 				(col)->key = 1;				\
-				if( !(col)->heap.compressed) \
-					(col)->revsorted = (b)->batCount <= 1;	\
+				(col)->revsorted = (b)->batCount <= 1;	\
 			}						\
-			if( !(col)->heap.compressed) \
-				(col)->sorted = 1;				\
+			(col)->sorted = 1;				\
 		} else if ((b)->batCount <= 1) {			\
-			if( !(col)->heap.compressed  && BATatoms[(col)->type].linear) {		\
+			if (BATatoms[(col)->type].linear) {		\
 				(col)->sorted = 1;			\
 				(col)->revsorted = 1;			\
 			}						\
@@ -1804,7 +1800,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->seq = sqbs;			\
 			}						\
 		}							\
-		if( !(col)->heap.compressed && !BATatoms[(col)->type].linear) {			\
+		if (!BATatoms[(col)->type].linear) {			\
 			(col)->sorted = 0;				\
 			(col)->revsorted = 0;				\
 		}							\
@@ -2930,8 +2926,6 @@ gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
 gdk_export BAT *VIEWhead(BAT *b);
 gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
-gdk_export BAT *BATmaterialize(BAT *b);
-gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -3468,16 +3462,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect(_b, (h), (t));				\
-	})
-
-#define BATsample(b, n)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsample([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsample(_b, (n));					\
 	})
 
 #define BATsemijoin(l, r)						\

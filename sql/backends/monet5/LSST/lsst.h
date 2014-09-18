@@ -40,5 +40,6 @@ lsst_export str qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, d
 lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius);
 lsst_export str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-lsst_export str LSSTxmatch(int *l, int *r, int *lid, int *rid, int *delta);
+lsst_export str LSSTxmatchsubjoin(int *l, int *r, int *lid, int *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+
 #endif /* _SQL_LSST_H_ */

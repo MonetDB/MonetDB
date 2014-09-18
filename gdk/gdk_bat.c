@@ -601,6 +601,8 @@ BATclear(BAT *b, int force)
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
+	BATseqbase(b, 0);
+	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
 	return b;
@@ -2122,6 +2124,10 @@ BATsetcount(BAT *b, BUN cnt)
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
+	if (cnt <= 1) {
+		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
+		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+	}
 	assert(b->batCapacity >= cnt);
 }
 
@@ -2816,7 +2822,7 @@ BATassertHeadProps(BAT *b)
 	p = BUNfirst(b);
 	q = BUNlast(b);
 
-	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
+	assert(b->H->heap.compressed || b->H->heap.free >= headsize(b, BUNlast(b)));
 	if (b->htype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->H->heap.size >= b->H->heap.free);
@@ -2880,8 +2886,8 @@ BATassertHeadProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		// not a good moment to test sortedness
-		if( !b->H->heap.compressed && (b->hsorted || b->hrevsorted || !b->hkey) ){
+		/* if compressed, don't look at the data */
+		if (!b->H->heap.compressed && (b->hsorted || b->hrevsorted || !b->hkey)) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */
@@ -3024,8 +3030,6 @@ BATassertProps(BAT *b)
 
 	/* general BAT sanity */
 	assert(b != NULL);
-	if( b->T->heap.compressed)
-		return;
 	bm = BATmirror(b);
 	assert(bm != NULL);
 	assert(b->H == bm->T);

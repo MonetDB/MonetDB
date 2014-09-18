@@ -77,13 +77,13 @@ Ready.
 % .x,	sys.y # table_name
 % value,	i # name
 % tinyint,	tinyint # type
-% 1,	2 # length
+% 1,	1 # length
 [ 8,	8	]
 #select * from generate_series(0,10,2) X, tmp2 Y where Y.i = X.value;
 % .x,	sys.y # table_name
 % value,	i # name
 % tinyint,	tinyint # type
-% 1,	2 # length
+% 1,	1 # length
 [ 8,	8	]
 #select * from generate_series(0,10,2) X, tmp2 Y where X.value = Y.i and value >5;
 % .x,	sys.y # table_name
