@@ -165,10 +165,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				val2 = *w;
 				break;
 			}
-			w = v+1;
 			Prefix(bits, mask, val, val2, 8);
 			val = *v & mask;
-			for(i = 0; i < task->elm; w++, i++){
+			for(w=v, i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -187,10 +186,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				val2 = *w;
 				break;
 			}
-			w = v+1;
 			Prefix(bits, mask, val, val2, 16);
 			val = *v & mask;
-			for(i = 0; i < task->elm; w++, i++){
+			for(w=v,i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -209,10 +207,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				val2 = *w;
 				break;
 			}
-			w = v+1;
 			Prefix(bits, mask, val, val2, 32);
 			val = *v & mask;
-			for(i = 0; i < task->elm; w++, i++){
+			for(w=v,i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -231,10 +228,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				val2 = *w;
 				break;
 			}
-			w = v+1;
 			Prefix(bits, mask, val, val2, 64);
 			val = *v & mask;
-			for(i = 0; i < task->elm; w++, i++){
+			for(w=v, i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
