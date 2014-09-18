@@ -1,6 +1,7 @@
 library(dplyr,quietly=T)
 library(MonetDB.R,quietly=T)
 library(Lahman,quietly=T)
+options(monetdb.debug.query=T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
