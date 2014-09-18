@@ -294,6 +294,12 @@ do {									\
 	}								\
 } while (0)
 
+#define quickins(dst, cnt, o, bn)			\
+	do{						\
+		assert((cnt) < BATcapacity(bn));	\
+		dst[cnt] = (o);				\
+	} while(0)
+
 /* construct the mask */
 #define impsmask(CAND,TEST,B)						\
 do {									\
@@ -329,7 +335,7 @@ do {									\
 					  * (dbl) (q-p) * 1.1 + 1024),	\
 				   BATcapacity(bn) + q - p, BUN_NONE));	\
 	} else {							\
-		impsloop(CAND, TEST, dst[cnt] = o);			\
+		impsloop(CAND, TEST, quickins(dst, cnt, o, bn));	\
 	}								\
 } while (0)
 
@@ -378,6 +384,7 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
+			assert(cnt < BATcapacity(bn));			\
 			dst[cnt] = (oid)(o);				\
 			cnt += (TEST);					\
 			p++;						\
