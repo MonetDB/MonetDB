@@ -2880,8 +2880,8 @@ BATassertHeadProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		// not a good moment to test sortedness
-		if( !b->H->heap.compressed && (b->hsorted || b->hrevsorted || !b->hkey) ){
+		/* if compressed, don't look at the data */
+		if (!b->H->heap.compressed && (b->hsorted || b->hrevsorted || !b->hkey)) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */

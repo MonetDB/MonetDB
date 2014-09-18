@@ -725,7 +725,7 @@ typedef struct {
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
 		      forcemap:1,  /* force STORE_MMAP even if heap exists */
-			  compressed:1; /* compress heaps */
+		      compressed:1; /* compress heaps */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
