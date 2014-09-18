@@ -600,7 +600,7 @@ EOF
 done
 
 for tp1 in $alltypes; do
-    for tp2 in $alltypes; do
+    for tp2 in void $alltypes; do
 	cat <<EOF
 pattern $tp1(b:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDconvertsignal_$tp1
