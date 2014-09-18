@@ -2816,7 +2816,7 @@ BATassertHeadProps(BAT *b)
 	p = BUNfirst(b);
 	q = BUNlast(b);
 
-	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
+	assert(b->H->heap.compressed || b->H->heap.free >= headsize(b, BUNlast(b)));
 	if (b->htype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->H->heap.size >= b->H->heap.free);
@@ -3024,8 +3024,6 @@ BATassertProps(BAT *b)
 
 	/* general BAT sanity */
 	assert(b != NULL);
-	if( b->T->heap.compressed)
-		return;
 	bm = BATmirror(b);
 	assert(bm != NULL);
 	assert(b->H == bm->T);

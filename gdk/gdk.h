@@ -1762,8 +1762,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			if ((col)->seq == oid_nil) {			\
 				(col)->nonil = (b)->batCount == 0;	\
 				(col)->nil = !(col)->nonil;		\
-				if( !(col)->heap.compressed) \
-					(col)->revsorted = 1;			\
+				(col)->revsorted = 1;			\
 				(col)->key = (b)->batCount <= 1;	\
 				(col)->dense = 0;			\
 			} else {					\
@@ -1771,13 +1770,11 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->nonil = 1;			\
 				(col)->nil = 0;				\
 				(col)->key = 1;				\
-				if( !(col)->heap.compressed) \
-					(col)->revsorted = (b)->batCount <= 1;	\
+				(col)->revsorted = (b)->batCount <= 1;	\
 			}						\
-			if( !(col)->heap.compressed) \
-				(col)->sorted = 1;				\
+			(col)->sorted = 1;				\
 		} else if ((b)->batCount <= 1) {			\
-			if( !(col)->heap.compressed  && BATatoms[(col)->type].linear) {		\
+			if (BATatoms[(col)->type].linear) {		\
 				(col)->sorted = 1;			\
 				(col)->revsorted = 1;			\
 			}						\
@@ -1804,7 +1801,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->seq = sqbs;			\
 			}						\
 		}							\
-		if( !(col)->heap.compressed && !BATatoms[(col)->type].linear) {			\
+		if (!BATatoms[(col)->type].linear) {			\
 			(col)->sorted = 0;				\
 			(col)->revsorted = 0;				\
 		}							\
