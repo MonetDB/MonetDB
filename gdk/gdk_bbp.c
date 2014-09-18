@@ -733,6 +733,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		   &n) < 13)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
+	if (properties & ~0x0F81)
+		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
 	/* silently convert chr columns to bte */
