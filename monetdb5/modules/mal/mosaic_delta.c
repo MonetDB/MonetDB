@@ -144,7 +144,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	task->dst += sizeof(TYPE);\
 	for(w++,i =1; i<limit; i++,w++){\
 		delta = *w -val;\
-		if ( !(EXPR) )\
+		if ( EXPR )\
 			break;\
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *w;\
@@ -166,18 +166,18 @@ MOScompress_delta(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
-	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta >127)); break;
-	case TYPE_oid: DELTAcompress(oid,(delta < 256)); break;
+	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
+	case TYPE_oid: DELTAcompress(oid,(delta > 255)); break;
 	case TYPE_wrd: DELTAcompress(wrd,(delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta >127)); break;
 #endif
-	case TYPE_int:
-		{	int *w = (int*)task->src, val= *w, delta;
+	case TYPE_lng:
+		{	lng *w = (lng*)task->src, val= *w, delta;
 			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
-			*(int*)task->dst = val;
-			task->dst += sizeof(int);
+			*(lng*)task->dst = val;
+			task->dst += sizeof(lng);
 			for(w++,i =1; i<limit; i++,w++){
 				delta = *w -val;
 				if ( delta < -127 || delta >127)
@@ -185,7 +185,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				*(bte*)task->dst++ = (bte) delta;
 				val = *w;
 			}
-			task->src += i * sizeof(int);
+			task->src += i * sizeof(lng);
 			MOSincCnt(blk,i);
 		}
 		break;
@@ -228,23 +228,23 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
-	case TYPE_lng: DELTAdecompress(lng); break;
+	case TYPE_int: DELTAdecompress(int); break;
 	case TYPE_oid: DELTAdecompress(oid); break;
 	case TYPE_wrd: DELTAdecompress(wrd); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAdecompress(hge); break;
 #endif
-	case TYPE_int:
-	{ 	int val;
+	case TYPE_lng:
+	{ 	lng val;
 		BUN lim = MOSgetCnt(blk);
 		task->dst = ((char*) task->blk) + MosaicBlkSize;
-		val = *(int*)task->dst ;
-		task->dst += sizeof(int);
+		val = *(lng*)task->dst ;
+		task->dst += sizeof(lng);
 		for(i = 0; i < lim; i++) {
-			((int*)task->src)[i] = val;
+			((lng*)task->src)[i] = val;
 			val += *(bte*) task->dst++;
 		}
-		task->src += i * sizeof(int);
+		task->src += i * sizeof(lng);
 	}
 	break;
 	case  TYPE_str:
