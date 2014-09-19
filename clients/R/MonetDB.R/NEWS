@@ -5,6 +5,8 @@
 - DBI 0.3 compatibility (isValid etc.)
 - deprecated dbTransaction() (DBI has standardized dbBegin())
 - Back to R socket code for peace of mind
+- Code cleanup
+- dplyr integration moved to MonetDB.R
 
 0.9.4
 - dbWriteTable overhaul (thanks, Anthony)

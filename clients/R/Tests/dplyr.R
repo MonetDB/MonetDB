@@ -12,8 +12,11 @@ if (length(args) > 0)
 # the remainder is pretty much the example from the manpage.
 
 # overwrite all args because lahman_monetdb sets a default arg in the first pos.
-srct <- function() lahman_monetdb(host="localhost", dbname=dbname, port=dbport,
-	user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
+# srct <- function() lahman_monetdb(host="localhost", ,
+# 	user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
+
+srct <- function() src_monetdb(dbname=dbname, port=dbport)
+copy_lahman(srct())
 
 # Methods -------------------------------------------------------------------
 batting <- tbl(srct(), "Batting")
