@@ -83,7 +83,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 {	TYPE *w = (TYPE*)task->src, val= *w, delta = 0;\
 	for(w++,i =1; i<task->elm; i++,w++){\
 		delta = *w -val;\
-		if ( !(EXPR))\
+		if ( EXPR)\
 			break;\
 		val = *w;\
 	}\
@@ -101,7 +101,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
-	case TYPE_oid: Estimate_delta(sht,  (delta < 256)); break;
+	case TYPE_oid: Estimate_delta(sht,  (delta > 255)); break;
 	case TYPE_wrd: Estimate_delta(wrd,  (delta < -127 || delta >127)); break;
 	case TYPE_lng: Estimate_delta(lng,  (delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
@@ -111,9 +111,9 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
 		//case 1:  no compression achievable
-		case 2: Estimate_delta(sht, (delta<256)); break;
-		case 4: Estimate_delta(int, (delta<256)); break;
-		case 8: Estimate_delta(lng, (delta<256)); break;
+		case 2: Estimate_delta(sht, (delta > 255)); break;
+		case 4: Estimate_delta(int, (delta > 255)); break;
+		case 8: Estimate_delta(lng, (delta > 255)); break;
 		}
 	break;
 	case TYPE_int:
@@ -193,9 +193,9 @@ MOScompress_delta(Client cntxt, MOStask task)
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
 		//case 1: no compression achievable
-		case 2: DELTAcompress(sht,(delta < 256)); break;
-		case 4: DELTAcompress(int,(delta < 256)); break;
-		case 8: DELTAcompress(lng,(delta < 256)); break;
+		case 2: DELTAcompress(sht,(delta > 255)); break;
+		case 4: DELTAcompress(int,(delta > 255)); break;
+		case 8: DELTAcompress(lng,(delta > 255)); break;
 		}
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
