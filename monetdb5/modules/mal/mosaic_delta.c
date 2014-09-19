@@ -35,21 +35,21 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	task->start += MOSgetCnt(blk);
 	switch(task->type){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(wrd) + MOSgetCnt(blk)-1,wrd)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(int) + MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(oid) + MosaicBlkSize + MOSgetCnt(blk)-1,oid)); break ;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(wrd) + MosaicBlkSize + MOSgetCnt(blk)-1,wrd)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(lng) + MosaicBlkSize + MOSgetCnt(blk)-1,lng)); break ;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
 #endif
 	case TYPE_str:
 		switch(task->b->T->width){
-		case 1: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(bte)* MOSgetCnt(blk)-1,bte)); break ;
-		case 2: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(sht)* MOSgetCnt(blk)-1,sht)); break ;
-		case 4: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(int)* MOSgetCnt(blk)-1,int)); break ;
-		case 8: task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(lng)* MOSgetCnt(blk)-1,lng)); break ;
+		case 1: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(bte)+ MosaicBlkSize + MOSgetCnt(blk)-1,bte)); break ;
+		case 2: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(sht)+ MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
+		case 4: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(int)+ MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
+		case 8: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(lng)+ MosaicBlkSize + MOSgetCnt(blk)-1,lng)); break ;
 		}
 		break;
 	default:
@@ -88,7 +88,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 		val = *w;\
 	}\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = ((float) i * sizeof(TYPE))/  (2 * MosaicBlkSize + sizeof(TYPE)+i-1);\
+	factor = ((float) i * sizeof(TYPE))/  wordaligned(sizeof(int) + MosaicBlkSize + i-1,TYPE);\
 }
 
 // estimate the compression level 
@@ -125,7 +125,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 				val = *w;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ((float) i * sizeof(int))/  (2 * MosaicBlkSize + sizeof(int)+i-1);
+			factor = ((float) i * sizeof(int))/ wordaligned(sizeof(int) + MosaicBlkSize + i-1,int);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.

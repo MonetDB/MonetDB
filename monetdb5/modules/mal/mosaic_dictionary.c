@@ -38,23 +38,23 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	switch(task->type){
 	//case TYPE_bte: CASE_bit: no compression achievable
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(flt)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(dbl)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(sht)+ sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(lng)+ sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(oid)+ sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(wrd)+ sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(flt)+ sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(dbl)+ sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(hge)+ sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
 	default:
 		if( task->type == TYPE_timestamp)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(timestamp)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),timestamp)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(timestamp)+ sizeof(bte) * MOSgetCnt(task->blk),timestamp)); 
 		if( task->type == TYPE_date)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),date)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(date)+ sizeof(bte) * MOSgetCnt(task->blk),date)); 
 		if( task->type == TYPE_daytime)
-				task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + task->dictsize * sizeof(date)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),daytime)); 
+				task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(date)+ sizeof(bte) * MOSgetCnt(task->blk),daytime)); 
 	}
 }
 
@@ -117,7 +117,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 #define estimateDict(TPE)\
 {	TPE *val = (TPE*)task->src;\
-	TPE *dict = (TPE*)((char*)task->dst + 3 * MosaicBlkSize);\
+	TPE *dict = (TPE*)((char*)task->dst + 2 * MosaicBlkSize);\
 	for(i =0; i<task->elm; i++, val++){\
 		for(j= 0; j< *size; j++)\
 			if( dict[j] == *val) {cnt++;break;}\
@@ -130,7 +130,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 		}\
 	}\
 	if ( i > MOSlimit() ) i = MOSlimit();\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * task->dictsize +i);\
+	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(TPE)+ sizeof(bte) * MOSgetCnt(task->blk),TPE);\
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
@@ -158,7 +158,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *val = (int*)task->src;
-			int *dict = (int*)((char*)task->dst + 3 * MosaicBlkSize);
+			int *dict = (int*)((char*)task->dst + 2 * MosaicBlkSize);
 			for(i =0; i<task->elm; i++, val++){
 				for(j= 0; j< *size; j++)
 					if( dict[j] == *val) {cnt++;break;}
@@ -171,7 +171,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 				}
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * task->dictsize +i);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_

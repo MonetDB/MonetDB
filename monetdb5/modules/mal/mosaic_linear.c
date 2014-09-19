@@ -92,24 +92,24 @@ MOSadvance_linear(Client cntxt, MOStask task)
 	(void) cntxt;
 	task->start += MOSgetCnt(task->blk);
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bte),bte)); break;
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(bit),bit)); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(sht),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(int),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(oid),oid)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(lng),lng)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(wrd),wrd)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(flt),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(dbl),dbl)); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte)); break;
+	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(bit),bit)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(int),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(wrd),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(flt),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(dbl),dbl)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + MosaicBlkSize + wordaligned(2 * sizeof(hge),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge)); break;
 #endif
 	case TYPE_str:
 		switch(task->b->T->width){
-		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(bte),bte)); break ;
-		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(sht),sht)); break ;
-		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(int),int)); break ;
-		case 8: task->blk = (MosaicBlk)( ((char*) task->blk) + MosaicBlkSize + wordaligned(2 *sizeof(lng),lng)); break ;
+		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(bte),bte)); break ;
+		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(sht),sht)); break ;
+		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(int),int)); break ;
+		case 8: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(lng),lng)); break ;
 		}
 	}
 }
@@ -129,7 +129,7 @@ MOSskip_linear(Client cntxt, MOStask task)
 	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
 		break;\
 	if( i >= MOSlimit()) i = MOSlimit();\
-	factor =  ( (flt)i * sizeof(TYPE))/(2 * MosaicBlkSize + 2 * sizeof(TYPE));\
+	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
@@ -167,7 +167,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
 				break;
 			if( i >= MOSlimit()) i = MOSlimit();
-			factor =  ( (flt)i * sizeof(int))/(2 * MosaicBlkSize + 2 * sizeof(int));
+			factor =  ( (flt)i * sizeof(int))/wordaligned( MosaicBlkSize + 2 * sizeof(int),int);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_

@@ -42,23 +42,23 @@ MOSadvance_variance(Client cntxt, MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compressionachievable
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(oid)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(wrd)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(flt)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(dbl)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(sht)+ sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(oid)+ sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(lng)+ sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(wrd)+ sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(flt)+ sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(dbl)+ sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(hge)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(hge)+ sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->b->T->width){
-		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(bte)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),bte)); break;
-		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(sht)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(int)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + 2* MosaicBlkSize + vardictsize * sizeof(lng)+ wordaligned(sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(bte)+ sizeof(bte) * MOSgetCnt(task->blk),bte)); break;
+		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(sht)+ sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(lng)+ sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
 		}
 		break;
 	}
@@ -133,7 +133,7 @@ MOSskip_variance(Client cntxt, MOStask task)
 			cnt++;\
 		}\
 	}\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * vardictsize +i);\
+	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(TYPE)+ sizeof(bte) * MOSgetCnt(task->blk),TYPE);\
 }
 
 // calculate the expected reduction using dictionary in terms of elements compressed
@@ -177,7 +177,7 @@ MOSestimate_variance(Client cntxt, MOStask task)
 					cnt++;
 				}
 			}
-			if(i) factor = (flt) ((int)i * sizeof(int)) / (3 * MosaicBlkSize + sizeof(int) * vardictsize +i);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( 2* MosaicBlkSize + vardictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int);
 		}
 		break;
 	case  TYPE_str:

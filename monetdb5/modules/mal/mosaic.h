@@ -81,7 +81,7 @@ typedef int *MosaicBlk;
  * We use an encoding that fits the column type requirements
  */
 #define wordaligned(SZ,TYPE) \
-	 ((SZ) +  ((SZ) % sizeof(int)? sizeof(int) - ((SZ)%sizeof(TYPE)) : 0))
+	 ((SZ) +  ((SZ) % sizeof(TYPE)? sizeof(TYPE) - ((SZ)%sizeof(TYPE)) : 0))
 
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),lng)
 #define MosaicBlkSize  wordaligned(sizeof(lng),lng)
