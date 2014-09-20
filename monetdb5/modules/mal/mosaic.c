@@ -35,7 +35,7 @@
 #include "mosaic_variance.h"
 #include "mosaic_prefix.h"
 
-static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","prefix","zone","EOL"};
+static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","prefix","index","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -614,11 +614,13 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		MOSinit(task,bsrc);
 		task->src = Tloc(b, BUNfirst(b));
 		task->timer = GDKusec();
+		task->dictsize = BATcount(b) < 20? 2: DICTSIZE;
 	} else { 
 		// create a local decompressed copy
 		MOSinit(task,b);
 		task->src = Tloc(bsrc, BUNfirst(bsrc));
 		task->timer = GDKusec();
+		task->dictsize = BATcount(b) < 20? 2: DICTSIZE;
 	} 
 
 	while(task->blk){

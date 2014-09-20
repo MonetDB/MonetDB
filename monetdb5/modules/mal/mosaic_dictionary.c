@@ -33,21 +33,20 @@
 void
 MOSadvance_dictionary(Client cntxt, MOStask task)
 {
-	int *size = (int*) (((char*)task->blk) + MosaicBlkSize);
 	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(sht)+ sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(lng)+ sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(oid)+ sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(wrd)+ sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(flt)+ sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(dbl)+ sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(sht)+ sizeof(bte) * MOSgetCnt(task->blk),sht)); break;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(int)+ sizeof(bte) * MOSgetCnt(task->blk),int)); break;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(lng)+ sizeof(bte) * MOSgetCnt(task->blk),lng)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(oid)+ sizeof(bte) * MOSgetCnt(task->blk),oid)); break;
+	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(wrd)+ sizeof(bte) * MOSgetCnt(task->blk),wrd)); break;
+	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(flt)+ sizeof(bte) * MOSgetCnt(task->blk),flt)); break;
+	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(dbl)+ sizeof(bte) * MOSgetCnt(task->blk),dbl)); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + *size * sizeof(hge)+ sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned(2* MosaicBlkSize + task->dictsize * sizeof(hge)+ sizeof(bte) * MOSgetCnt(task->blk),hge)); break;
 #endif
 	}
 }
@@ -257,7 +256,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define DICTdecompress(TPE)\
 {	TPE *dict =(TPE*)((char*)task->blk+ 2 * MosaicBlkSize);\
-	bte *idx = (bte*)(((char*)dict) + *size * sizeof(TPE));\
+	bte *idx = (bte*)(((char*)dict) + task->dictsize * sizeof(TPE));\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++,idx++)\
 		((TPE*)task->src)[i] = dict[ (bte)*idx];\
@@ -269,10 +268,8 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 {
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
-	int *size;
 	(void) cntxt;
 
-	size = (int*) (((char*)blk) + MosaicBlkSize);
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTdecompress(sht); break;
@@ -286,7 +283,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *dict =(int*)((char*)task->blk+ 2 * MosaicBlkSize);
-			bte *idx = (bte*)(((char*)dict) + *size * sizeof(int));
+			bte *idx = (bte*)(((char*)dict) + task->dictsize * sizeof(int));
 			BUN lim = MOSgetCnt(blk);
 			for(i = 0; i < lim; i++,idx++)
 				((int*)task->src)[i] = dict[ (bte)*idx];
