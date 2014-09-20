@@ -103,7 +103,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 #define estimateDict(TPE)\
 {	TPE *val = (TPE*)task->src;\
-	TPE *dict = (TPE*)GDKzalloc(sizeof(int) * task->dictsize);\
+	TPE *dict = (TPE*)GDKzalloc(sizeof(TPE) * task->dictsize);\
 	if( dict== NULL)\
 		return 1.0;\
 	for(i =0; i<task->elm; i++, val++){\
