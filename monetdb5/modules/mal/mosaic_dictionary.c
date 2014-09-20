@@ -128,7 +128,7 @@ flt
 MOSestimate_dictionary(Client cntxt, MOStask task)
 {	BUN i = -1;
 	int cnt =0,j;
-	int size;
+	int size=0;
 	flt factor= 1.0;
 	(void) cntxt;
 
