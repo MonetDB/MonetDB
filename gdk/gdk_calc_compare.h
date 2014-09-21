@@ -32,7 +32,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 
 	switch (tp1) {
 	case TYPE_void: {
-		oid v;
+		oid v = oid_nil;
 
 		assert(incr1 == 1);
 		assert(tp2 == TYPE_oid || incr2 == 1); /* if void, incr2==1 */

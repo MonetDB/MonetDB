@@ -1752,38 +1752,38 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
 
-		if (!cc->base.wtime || !cc->base.allocated) {
-			cc->data = NULL;
-			cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
-			continue;
-		}
+		if (cc->base.wtime && cc->base.allocated) {
+			assert(oc->base.wtime < cc->base.wtime);
+			if (store_nr_active > 1) { /* move delta */
+				sql_delta *b = cc->data, *p = NULL;
 
-		assert(oc->base.wtime < cc->base.wtime);
-		if (store_nr_active > 1) { /* move delta */
-			sql_delta *b = cc->data, *p = NULL;
-
-			cc->data = NULL;
-			b->next = oc->data;
-			oc->data = b;
-			while (b && b->wtime > oldest->stime) {
-				p = b;
-				b = b->next;
+				cc->data = NULL;
+				b->next = oc->data;
+				oc->data = b;
+				while (b && b->wtime > oldest->stime) {
+					p = b;
+					b = b->next;
+				}
+				if (b && b->wtime > oldest->stime && p) {
+					p->next = NULL;
+					destroy_bat(tr, b);
+				}
+			} else {
+				assert(oc->base.allocated);
+				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 			}
-			if (b && b->wtime > oldest->stime && p) {
-				p->next = NULL;
-				destroy_bat(tr, b);
-			}
-		} else {
-			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
 
 		oc->null = cc->null;
 		oc->unique = cc->unique;
-		if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
 			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
-		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+		if (!cc->storage_type)
+			oc->storage_type = NULL;
+		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
 			oc->def = sa_strdup(tr->sa, cc->def);
+		if (!cc->def)
+			oc->def = NULL;
 
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
