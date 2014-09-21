@@ -4160,7 +4160,7 @@ literal:
 			digits = 1;
 		  if (digits <= 18) {
 		  	double val = strtod($1,NULL);
-		  	lng value = decimal_from_str(s);
+		  	lng value = decimal_from_str(s, NULL);
 
 		  	if (*s == '+' || *s == '-')
 				digits --;
