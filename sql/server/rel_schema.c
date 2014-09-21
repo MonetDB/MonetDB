@@ -1069,7 +1069,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s'", tname);
+		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
+			return sql_error(sql, 02, "42S02!ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
