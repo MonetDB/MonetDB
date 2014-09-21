@@ -569,7 +569,11 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			/* for non empty check for nulls */
 			if (c->null == 0) {
 				void *nilptr = ATOMnilptr(c->type.type->localtype);
-				if (table_funcs.column_find_row(sql->session->tr, nc, nilptr, NULL) != oid_nil)
+				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);  
+				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
+
+				table_funcs.rids_destroy(nils);
+				if (has_nils)
 					return sql_message("40002!ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
