@@ -1,5 +1,3 @@
-require(dplyr)
-
 src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", ...) {
   con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
@@ -72,9 +70,6 @@ sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) 
   monetdb_check_subquery(sql)
   build_sql("(", sql, ") AS ", ident(name), con = con)
 }
-
-
-# sql_analyze.src_monetdb
 
 monetdb_check_subquery <- function(sql) {
   if (grepl("ORDER BY|LIMIT|OFFSET", as.character(sql), ignore.case=TRUE)) {
