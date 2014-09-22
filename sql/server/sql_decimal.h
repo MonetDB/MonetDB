@@ -25,10 +25,10 @@
 #include <gdk.h>
 
 #ifdef HAVE_HGE
-extern hge decimal_from_str(char *dec);
+extern hge decimal_from_str(char *dec, char **end);
 extern char * decimal_to_str(hge v, sql_subtype *t);
 #else
-extern lng decimal_from_str(char *dec);
+extern lng decimal_from_str(char *dec, char **end);
 extern char * decimal_to_str(lng v, sql_subtype *t);
 #endif
 
