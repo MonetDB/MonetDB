@@ -56,6 +56,7 @@ sed -r \
 	-e 's/\bint8\b/bigint/Ig' \
 	-e 's/\bfloat4\b/real/Ig' \
 	-e 's/\bfloat8\b/double/Ig' \
+	-e 's/\bserial8\b/bigint GENERATED ALWAYS AS IDENTITY/Ig' \
 	-e 's/\bnumeric(210,10)\b/numeric(18,10)/Ig' \
 	-e 's/\bfloat8 (*)/cast(\1 as double)/Ig' \
 	-e 's/\bbytea\b/blob/Ig' \

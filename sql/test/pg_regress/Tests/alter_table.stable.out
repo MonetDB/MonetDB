@@ -71,7 +71,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-05 15:48:46.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-19 16:47:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #-- the wolf bug - schema mods caused inconsistent row descriptors 
 #CREATE TABLE tmp (
@@ -117,7 +117,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-05 15:48:46.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-19 16:47:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #--
 #-- rename - check on both non-temp and temp tables
@@ -219,14 +219,13 @@ Ready.
 #-- inheritance related tests
 #create table atacc1 (test int);
 #create table atacc2 (test2 int);
-#create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
-#alter table atacc2 add constraint foo check (test2>0);
-#-- fail and then succeed on atacc2
-#
+#create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
+#insert into atacc2 (test2) values (-3);
+[ 1	]
 #insert into atacc2 (test2) values (3);
 [ 1 ]
-#-- fail and then succeed on atacc3
-#
+#insert into atacc3 (test2) values (-3);
+[ 1	]
 #insert into atacc3 (test2) values (3);
 [ 1 ]
 #drop table atacc3;
@@ -238,6 +237,10 @@ Ready.
 #create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
 #insert into atacc2 (test2) values (-3);
 [ 1 ]
+#insert into atacc2 (test2) values (3);
+[ 1	]
+#insert into atacc3 (test2) values (-3);
+[ 1	]
 #insert into atacc3 (test2) values (3);
 [ 1 ]
 #drop table atacc3;
@@ -323,6 +326,9 @@ Ready.
 #-- add a primary key (fails)
 #insert into atacc1 (test) values (3);
 [ 1 ]
+#delete from atacc1 where test = 2;
+[ 2	]
+#alter table atacc1 add constraint atacc_test1 primary key (test);
 #drop table atacc1;
 #-- let's do another one where the primary key constraint fails when added
 #create table atacc1 ( test int );
@@ -378,9 +384,17 @@ Ready.
 #create table atacc1 (test int not null);
 #alter table atacc1 add constraint "atacc1_pkey" primary key (test);
 #alter table atacc1 drop constraint "atacc1_pkey";
-#alter table atacc1 alter test set not null;
+#alter table atacc1 alter test set null;
+#insert into atacc1 values (null);
+[ 1	]
+#select * from atacc1;
+% sys.atacc1 # table_name
+% test # name
+% int # type
+% 1 # length
+[ NULL	]
 #delete from atacc1;
-[ 0	]
+[ 1	]
 #alter table atacc1 alter test set not null;
 #create view myview as select * from atacc1;
 #
@@ -389,12 +403,18 @@ Ready.
 #drop table atacc1;
 #-- test inheritance
 #create table parent (a int);
-#create table child (b varchar(255)); -- inherits (parent)
+#create table child (a int, b varchar(255)); -- inherits (parent)
+#alter table parent alter a set not null;
+#insert into child (a, b) values (NULL, 'foo');
+[ 1	]
+#insert into child (a, b) values (NULL, 'foo');
+[ 1	]
 #alter table parent alter a set not null;
 #delete from parent;
 [ 0	]
 #delete from child;
-[ 0	]
+[ 2	]
+#alter table child alter a set not null;
 #drop table child;
 #drop table parent;
 #-- test setting and removing default values
@@ -404,12 +424,33 @@ Ready.
 #);
 #insert into def_test default values;
 [ 1 ]
+#select * from def_test;
+% sys.def_test,	sys.def_test # table_name
+% c1,	c2 # name
+% int,	clob # type
+% 1,	15 # length
+[ 5,	"initial_default"	]
 #alter table def_test alter column c1 drop default;
 #insert into def_test default values;
 [ 1 ]
+#select * from def_test;
+% sys.def_test,	sys.def_test # table_name
+% c1,	c2 # name
+% int,	clob # type
+% 1,	15 # length
+[ 5,	"initial_default"	]
+[ NULL,	"initial_default"	]
 #alter table def_test alter column c2 drop default;
 #insert into def_test default values;
 [ 1 ]
+#select * from def_test;
+% sys.def_test,	sys.def_test # table_name
+% c1,	c2 # name
+% int,	clob # type
+% 1,	15 # length
+[ 5,	"initial_default"	]
+[ NULL,	"initial_default"	]
+[ 5,	NULL	]
 #alter table def_test alter column c1 set default 10;
 #alter table def_test alter column c2 set default 'new_default';
 #insert into def_test default values;
@@ -521,6 +562,14 @@ Ready.
 #-- test create as and select into
 #insert into atacc1 values (21, 22, 23);
 [ 1 ]
+#create table test1 as select * from atacc1 WITH DATA;
+#select * from test1;
+% sys.test1,	sys.test1,	sys.test1 # table_name
+% b,	c,	d # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 21,	22,	23	]
+#drop table test1;
 #alter table atacc1 drop c;
 #alter table atacc1 drop d;
 #alter table atacc1 drop b;
@@ -536,7 +585,9 @@ Ready.
 #insert into parent values (1, 2, 3);
 [ 1 ]
 #alter table parent drop a;
-#create table child (d varchar(255)); -- inherits (parent)
+#create table child (b int, c int, d varchar(255)); -- inherits (parent)
+#insert into child values (12, 13, 'testing');
+[ 1	]
 #select * from parent;
 % sys.parent,	sys.parent # table_name
 % b,	c # name
@@ -544,10 +595,11 @@ Ready.
 % 1,	1 # length
 [ 2,	3 ]
 #select * from child;
-% sys.child # table_name
-% d # name
-% varchar # type
-% 0 # length
+% sys.child,	sys.child,	sys.child # table_name
+% b,	c,	d # name
+% int,	int,	varchar # type
+% 2,	2,	7 # length
+[ 12,	13,	"testing"	]
 #alter table parent drop c;
 #select * from parent;
 % sys.parent # table_name
@@ -556,10 +608,11 @@ Ready.
 % 1 # length
 [ 2 ]
 #select * from child;
-% sys.child # table_name
-% d # name
-% varchar # type
-% 0 # length
+% sys.child,	sys.child,	sys.child # table_name
+% b,	c,	d # name
+% int,	int,	varchar # type
+% 2,	2,	7 # length
+[ 12,	13,	"testing"	]
 #drop table child;
 #drop table parent;
 #-- test copy in/out
@@ -597,28 +650,14 @@ Ready.
 #create table p1 (f1 int, f2 int);
 #create table c1 (f1 int not null); -- inherits(p1)
 #alter table p1 drop column f1;
-#-- c1.f1 is still there, but no longer inherited
-#select f1 from c1;
-% sys.c1 # table_name
-% f1 # name
-% int # type
-% 1 # length
-#select f1 from c1;
-% sys.c1 # table_name
-% f1 # name
-% int # type
-% 1 # length
+#drop table c1;
 #drop table p1 cascade;
 #create table p1 (f1 int, f2 int);
 #create table c1 (); -- inherits(p1)
 #-- should be rejected since c1.f1 is inherited
 #
 #alter table p1 drop column f1;
-#select f1 from c1;
-% sys.c1 # table_name
-% f1 # name
-% int # type
-% 1 # length
+#drop table c1;
 #drop table p1 cascade;
 #create table p1 (f1 int, f2 int);
 #create table c1 (); -- inherits(p1)
@@ -641,51 +680,23 @@ Ready.
 #
 #-- should work and drop the attribute in all tables
 #alter table p2 drop column height;
-#alter table p1 add column a1 int check (a1 > 0);
-#alter table p1 add column f2 text;
-#select * from p1;
-% sys.p1,	sys.p1,	sys.p1,	sys.p1 # table_name
-% id,	name,	a1,	f2 # name
-% int,	clob,	int,	clob # type
-% 1,	0,	1,	0 # length
-#update p1 set a1 = a1 + 1, f2 = upper(f2);
-[ 0	]
-#select * from p1;
-% sys.p1,	sys.p1,	sys.p1,	sys.p1 # table_name
-% id,	name,	a1,	f2 # name
-% int,	clob,	int,	clob # type
-% 1,	0,	1,	0 # length
+#drop table c1;
+#drop table p2 cascade;
 #drop table p1 cascade;
-#create table another (f1 int, f2 text);
-#insert into another values(1, 'one');
-[ 1 ]
-#insert into another values(2, 'two');
-[ 1 ]
-#insert into another values(3, 'three');
-[ 1 ]
-#select * from another;
-% sys.another,	sys.another # table_name
-% f1,	f2 # name
-% int,	clob # type
-% 1,	5 # length
-[ 1,	"one" ]
-[ 2,	"two" ]
-[ 3,	"three" ]
-
-#alter table another
-#  alter f1 type text using f2 || ' more',
-#  alter f2 type bigint using f1 * 10;
-#select * from another;
-% sys.another,	sys.another # table_name
-% f1,	f2 # name
-% int,	clob # type
-% 1,	5 # length
-[ 1,	"one"	]
-[ 2,	"two"	]
-[ 3,	"three"	]
-#drop table another;
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
+#create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
+#select oid, * from altstartwith;
+% sys.altstartwith,	sys.altstartwith,	sys.altstartwith # table_name
+% oid,	oid,	col # name
+% oid,	oid,	int # type
+% 3,	3,	1 # length
+#alter table altstartwith drop column oid;
+#select * from altstartwith;
+% sys.altstartwith # table_name
+% col # name
+% int # type
+% 1 # length
+#drop table altstartwith;
+#create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

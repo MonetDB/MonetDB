@@ -274,7 +274,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	b = full_column(tr, key);
 	if (!kvl)
 		kvl = ATOMnilptr(b->ttype);
-	if (!kvh)
+	if (!kvh && key_value_low != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	hi = (kvl == kvh);
 	r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
