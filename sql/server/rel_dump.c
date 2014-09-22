@@ -772,6 +772,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		old = *e;
 		*e = 0;
 		
+		tname = sa_strdup(sql->sa, tname);
+		cname = sa_strdup(sql->sa, cname);
 		if (lrel) { 
 			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
 			if (!exp && rrel)
