@@ -22,11 +22,13 @@
 #include "sql_decimal.h"
 
 lng
-decimal_from_str(char *dec)
+decimal_from_str(char *dec, char **end)
 {
 	lng res = 0;
 	int neg = 0;
 
+	while(isspace(*dec))
+		dec++;
 	if (*dec == '-') {
 		neg = 1;
 		dec++;
@@ -35,12 +37,16 @@ decimal_from_str(char *dec)
 		neg = 0;
 		dec++;
 	}
-	for (; *dec; dec++) {
+	for (; *dec && ((*dec >= '0' && *dec <= '9') || *dec == '.'); dec++) {
 		if (*dec != '.') {
 			res *= 10;
 			res += *dec - '0';
 		}
 	}
+	while(isspace(*dec))
+		dec++;
+	if (end)
+		*end = dec;
 	if (neg)
 		return -res;
 	else

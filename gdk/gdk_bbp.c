@@ -733,6 +733,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		   &n) < 13)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
+	if (properties & ~0x0F81)
+		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
 	/* silently convert chr columns to bte */
@@ -1212,10 +1214,33 @@ BBPexit(void)
  * reclaimed as well.
  */
 static int
-new_bbpentry(stream *s, bat i)
+heap_entry(stream *s, COLrec *col)
 {
 	int t;
 
+	t = col->type;
+	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
+			 BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
+			  col->width,
+			  col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
+			 (unsigned short) col->sorted | ((unsigned short) col->revsorted << 7) | (((unsigned short) col->key & 0x01) << 8) | ((unsigned short) col->dense << 9) | ((unsigned short) col->nonil << 10) | ((unsigned short) col->nil << 11),
+			  col->nokey[0],
+			  col->nokey[1],
+			  col->nosorted,
+			  col->norevsorted,
+			  col->seq,
+			  col->align,
+			  col->heap.free,
+			  col->heap.size,
+			  (int) col->heap.newstorage) < 0)
+		return -1;
+	return 0;
+}
+
+static int
+new_bbpentry(stream *s, bat i)
+{
 #ifndef NDEBUG
 	assert(i > 0);
 	assert(i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "new_bbpentry"));
@@ -1253,39 +1278,9 @@ new_bbpentry(stream *s, bat i)
 			  (unsigned char) BBP_desc(i)->S.map_hheap,
 			  (unsigned char) BBP_desc(i)->S.map_theap) < 0)
 		return -1;
-	t = BBP_desc(i)->H.type;
-	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
-			 BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
-			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
-			  BBP_desc(i)->H.width,
-			  BBP_desc(i)->H.varsized | (BBP_desc(i)->H.vheap ? BBP_desc(i)->H.vheap->hashash << 1 : 0),
-			 ((unsigned short) BBP_desc(i)->H.sorted & 0x01) | (((unsigned short) BBP_desc(i)->H.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->H.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->H.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->H.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->H.nil & 0x01) << 11),
-			  BBP_desc(i)->H.nokey[0],
-			  BBP_desc(i)->H.nokey[1],
-			  BBP_desc(i)->H.nosorted,
-			  BBP_desc(i)->H.norevsorted,
-			  BBP_desc(i)->H.seq,
-			  BBP_desc(i)->H.align,
-			  BBP_desc(i)->H.heap.free,
-			  BBP_desc(i)->H.heap.size,
-			  (int) BBP_desc(i)->H.heap.newstorage) < 0)
+	if (heap_entry(s, &BBP_desc(i)->H) < 0)
 		return -1;
-	t = BBP_desc(i)->T.type;
-	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
-			 BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
-			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
-			  BBP_desc(i)->T.width,
-			  BBP_desc(i)->T.varsized | (BBP_desc(i)->T.vheap ? BBP_desc(i)->T.vheap->hashash << 1 : 0),
-			 ((unsigned short) BBP_desc(i)->T.sorted & 0x01) | (((unsigned short) BBP_desc(i)->T.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->T.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->T.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->T.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->T.nil & 0x01) << 11),
-			  BBP_desc(i)->T.nokey[0],
-			  BBP_desc(i)->T.nokey[1],
-			  BBP_desc(i)->T.nosorted,
-			  BBP_desc(i)->T.norevsorted,
-			  BBP_desc(i)->T.seq,
-			  BBP_desc(i)->T.align,
-			  BBP_desc(i)->T.heap.free,
-			  BBP_desc(i)->T.heap.size,
-			  (int) BBP_desc(i)->T.heap.newstorage) < 0)
+	if (heap_entry(s, &BBP_desc(i)->T) < 0)
 		return -1;
 
 	if (BBP_desc(i)->H.vheap &&
