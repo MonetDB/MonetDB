@@ -86,7 +86,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		  bte val = *dst++;
 			bits = val & (~mask);
 			// be aware that we use longs as bit vectors
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + ((MOSgetCnt(task->blk) %64) != 0));
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -96,7 +96,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		  sht mask = *dst++;
 		  sht val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + ((MOSgetCnt(task->blk) %64) != 0));
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -106,7 +106,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		  int mask = *dst++;
 		  int val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + ((MOSgetCnt(task->blk) %64) != 0));
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -116,7 +116,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		  lng mask = *dst++;
 		  lng val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + ((MOSgetCnt(task->blk) %64) != 0));
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
