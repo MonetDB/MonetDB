@@ -26,10 +26,9 @@ tbl.src_monetdb <- function(src, from, ...) {
   tbl_sql("mownetdb", src = src, from = from, ...)
 }
 
-# sql_create_index.src_monetdb
-
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {
   # prepare gives us column info without actually running a query
+  # TODO: how about more complex queries? 
   dbGetQuery(con,build_sql("PREPARE SELECT * FROM ", ident(sql)))$column
 }
 
@@ -61,9 +60,6 @@ db_create_index.MonetDBConnection <- function(con, table, columns, name = NULL,
 db_analyze.MonetDBConnection <- function(con, table, ...) {
   TRUE
 }
-
-# this should be the default in dplyr anyways...
-db_begin.MonetDBConnection <- function(con, ...) dbBegin(con)
 
 sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) {
   if (is.ident(sql)) return(sql)
