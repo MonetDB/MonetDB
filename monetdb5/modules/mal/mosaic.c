@@ -1342,14 +1342,14 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
+		mnstr_printf(cntxt->fdout,"#%-15s%d\t%-8s\t%s\t"BUNFMT"\t", properties, bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
 		br = BATdescriptor(ret);
 		if(br) BBPreclaim(br);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
-			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
+			mnstr_printf(cntxt->fdout,"#%-15s%d\t%-8s\t%s\t"BUNFMT"\t", properties, bid, BBP_physical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
 			br = BATdescriptor(ret);
 			if(br) BBPreclaim(br);
@@ -1364,25 +1364,39 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 str
 MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,limit,bid;
+	int i,j,limit,bid;
 	int threshold= 1000;
-	str properties = 0;
+	str properties[32] ={0};
+	int top=0;
+	char *c;
 	(void) mb;
 	
 
 	if( pci->argc > 1){
 		if( getArgType(mb,pci,1) == TYPE_lng)
 			threshold = *(int*) getArgReference(stk,pci,1);
-		if( getArgType(mb,pci,1) == TYPE_str)
-			properties = *(str*) getArgReference(stk,pci,1);
+		if( getArgType(mb,pci,1) == TYPE_str){
+			c= properties[0] = *(str*) getArgReference(stk,pci,1);
+			top++;
+			while ( (c=strchr(c,';'))  && top <32){
+				*c++ = 0;
+				properties[top++] = c;
+			}
+		}
 	}
+	if( top == 0) { properties[0]="compressed"; top++;}
 
 	if( pci->argc >2 ){
 		bid = *(int*) getArgReference(stk,pci,2);
-		MOSanalyseInternal(cntxt, threshold, properties, bid);
+		for( j = 0; j < top; j++)
+			MOSanalyseInternal(cntxt, threshold, properties[j], bid);
 	} else
-    for (limit= getBBPsize(),i = 1; i < limit; i++)
+    for (limit= getBBPsize(),i = 1; i < limit; i++){
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
-			MOSanalyseInternal(cntxt, threshold, properties, i);
+			for( j = 0; j < top; j++)
+				MOSanalyseInternal(cntxt, threshold, properties[j], i);
+		if( top > 1)
+			mnstr_printf(cntxt->fdout,"#\n");
+	}
 	return MAL_SUCCEED;
 }
