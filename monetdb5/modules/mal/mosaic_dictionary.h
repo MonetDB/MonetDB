@@ -29,8 +29,9 @@
 #include "mal_client.h"
 
 #define DICTTHRESHOLD 4192
-#define DICTSIZE 128 
+#define DICTSIZE 256 
 
+mosaic_export void MOScreatedictionary(Client cntxt, MOStask task);
 mosaic_export void MOSdump_dictionary(Client cntxt, MOStask task);
 mosaic_export void MOSadvance_dictionary(Client cntxt, MOStask task);
 mosaic_export void MOSskip_dictionary(Client cntxt, MOStask task);

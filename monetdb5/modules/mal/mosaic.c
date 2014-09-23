@@ -284,7 +284,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		task->elm = BATcount(bsrc);
 		task->size = bsrc->T->heap.free;
 		task->timer = GDKusec();
-		task->dictsize = task->elm < 20? 2: DICTSIZE;
 
 		MOSinit(task,bcompress);
 		MOSinitHeader(task);
@@ -303,11 +302,11 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		task->elm = BATcount(bcompress);
 		task->size = bcompress->T->heap.free;
 		task->timer = GDKusec();
-		task->dictsize = task->elm < 20? 2: DICTSIZE;
 
 		MOSinit(task,bsrc);
 		MOSinitHeader(task);
 	}
+	MOScreatedictionary(cntxt,task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
@@ -582,7 +581,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
-	bsrc = BATnew(b->htype,b->ttype,BATcount(b),TRANSIENT);
+	bsrc = BATnew(b->htype,b->ttype,BATcount(b)+ MosaicHdrSize,TRANSIENT);
 	if ( bsrc == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
@@ -614,13 +613,11 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		MOSinit(task,bsrc);
 		task->src = Tloc(b, BUNfirst(b));
 		task->timer = GDKusec();
-		task->dictsize = BATcount(b) < 20? 2: DICTSIZE;
 	} else { 
 		// create a local decompressed copy
 		MOSinit(task,b);
 		task->src = Tloc(bsrc, BUNfirst(bsrc));
 		task->timer = GDKusec();
-		task->dictsize = BATcount(b) < 20? 2: DICTSIZE;
 	} 
 
 	while(task->blk){
