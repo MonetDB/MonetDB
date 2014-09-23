@@ -291,8 +291,8 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 {
 	char *s = strip_extra_zeros(*val);
 	char *dot = strchr(s, '.'), *end = NULL;
-	int digits = _strlen(s) - 1;
-	int scale = digits - (int) (dot - s);
+	int digits = _strlen(s);
+	int scale = digits - (int) (dot - s) - 1;
 	lng value = 0;
 
 	if (!dot) {
@@ -305,7 +305,7 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 	} else { /* we have a dot in the string */
 		digits--;
 	}
-	if (digits <= 0)
+	if (digits < 0)
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
 	value = decimal_from_str(s, &end);
@@ -335,7 +335,7 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
 		}
 	}
-	if (digits <= 0 || digits > *d || *end) {
+	if (value <= -scales[*d] || value >= scales[*d]  || *end) {
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	}
 	*res = (TYPE) value;
