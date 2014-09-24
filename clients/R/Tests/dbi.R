@@ -46,20 +46,21 @@ stopifnot(identical(dbExistsTable(con,tname),TRUE))
 stopifnot(identical(dbExistsTable(con,"monetdbtest2"),FALSE))
 stopifnot(tname %in% dbListTables(con))
 
-stopifnot(identical(dbListFields(con,tname),c("Sepal.Length","Sepal.Width","Petal.Length","Petal.Width","Species")))
+stopifnot(identical(dbListFields(con,tname),c("sepal_length","sepal_width",
+	"petal_length","petal_width","species")))
 # get stuff, first very convenient
 iris2 <- dbReadTable(con,tname)
 stopifnot(identical(dim(iris),dim(iris2)))
 
 
 # then manually
-res <- dbSendQuery(con,"SELECT \"Species\", \"Sepal.Width\" FROM monetdbtest")
+res <- dbSendQuery(con,"SELECT species, sepal_width FROM monetdbtest")
 stopifnot(dbIsValid(res))
 stopifnot(identical(class(res)[[1]],"MonetDBResult"))
 stopifnot(identical(res@env$success,TRUE))
 
-stopifnot(dbColumnInfo(res)[[1,1]] == "Species")
-stopifnot(dbColumnInfo(res)[[2,1]] == "Sepal.Width")
+stopifnot(dbColumnInfo(res)[[1,1]] == "species")
+stopifnot(dbColumnInfo(res)[[2,1]] == "sepal_width")
 
 stopifnot(dbGetInfo(res)$row.count == 150 && res@env$info$rows == 150)
 
@@ -90,7 +91,8 @@ unlink(file)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 iris3 <- dbReadTable(con,tname)
 stopifnot(identical(dim(iris),dim(iris3)))
-stopifnot(identical(dbListFields(con,tname),c("Sepal.Length","Sepal.Width","Petal.Length","Petal.Width","Species")))
+stopifnot(identical(dbListFields(con,tname),c("sepal_length","sepal_width",
+	"petal_length","petal_width","species")))
 dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
 

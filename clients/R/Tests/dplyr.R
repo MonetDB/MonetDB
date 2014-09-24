@@ -9,20 +9,29 @@ dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
 
+if (exists("lahman_monetdb")) {
+	# overwrite all args because lahman_monetdb sets a default arg in the first pos.
+	srct <- function() lahman_monetdb(host="localhost", dbname=dbname, port=dbport ,
+		user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
+} else {
+	srct <- function() src_monetdb(dbname=dbname, port=dbport)
+	copy_lahman(srct())
+}
+
 # the remainder is pretty much the example from the manpage.
-
-# overwrite all args because lahman_monetdb sets a default arg in the first pos.
-# srct <- function() lahman_monetdb(host="localhost", ,
-# 	user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
-
-srct <- function() src_monetdb(dbname=dbname, port=dbport)
-copy_lahman(srct())
 
 # Methods -------------------------------------------------------------------
 batting <- tbl(srct(), "Batting")
 dim(batting)
 colnames(batting)
 head(batting)
+
+# co* verbs
+cc <- collapse(batting)
+cc <- collect(batting)
+cc <- compute(batting)
+head(cc)
+
 
 # Data manipulation verbs ---------------------------------------------------
 filter(batting, yearID > 2005, G > 130)
@@ -52,10 +61,11 @@ stints <- summarise(per_year, stints = max(stint))
 filter(stints, stints > 3)
 summarise(stints, max(stints))
 
+jsrc <- srct()
 # Joins ---------------------------------------------------------------------
-player_info <- select(tbl(srct(), "Master"), playerID, hofID,
+player_info <- select(tbl(jsrc, "Master"), playerID, hofID,
   birthYear)
-hof <- select(filter(tbl(srct(), "HallOfFame"), inducted == "Y"),
+hof <- select(filter(tbl(jsrc, "HallOfFame"), inducted == "Y"),
  hofID, votedBy, category)
 
 # Match players and their hall of fame data
@@ -66,6 +76,8 @@ left_join(player_info, hof)
 semi_join(player_info, hof)
 # Find players not in hof
 anti_join(player_info, hof)
+
+# TODO: set ops
 
 # Arbitrary SQL -------------------------------------------------------------
 # You can also provide sql as is, using the sql function:

@@ -5,7 +5,7 @@ src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monet
   src_sql("monetdb", con, info = dbGetInfo(con))
 }
 
-translate_env.src_monetdb <- function(x) {
+src_translate_env.src_monetdb <- function(x) {
   sql_variant(
     base_scalar,
     sql_translator(.parent = base_agg,
@@ -17,19 +17,22 @@ translate_env.src_monetdb <- function(x) {
   )
 }
 
-brief_desc.src_monetdb <- function(x) {
+sql_join.MonetDBConnection <- function(con, x, y, type = "inner", by = NULL, ...) {
+  NextMethod("sql_join",...)
+}
+
+src_desc.src_monetdb <- function(x) {
   paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ") [", x$info$merovingian_uri,"]")
 }
 
 tbl.src_monetdb <- function(src, from, ...) {
   monetdb_check_subquery(from)
-  tbl_sql("mownetdb", src = src, from = from, ...)
+  tbl_sql("monetdb", src = src, from = from, ...)
 }
 
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {
-  # prepare gives us column info without actually running a query
-  # TODO: how about more complex queries? 
-  dbGetQuery(con,build_sql("PREPARE SELECT * FROM ", ident(sql)))$column
+  # prepare gives us column info without actually running a query. Nice.
+  dbGetQuery(con, build_sql("PREPARE SELECT * FROM ", sql))$column
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -48,10 +51,6 @@ db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
   name
 }
 
-db_begin.MonetDBConnection <- function(con, ...) {
-  dbBegin(con)
-}
-
 db_create_index.MonetDBConnection <- function(con, table, columns, name = NULL,
                                            ...) {
   TRUE
@@ -62,6 +61,7 @@ db_analyze.MonetDBConnection <- function(con, table, ...) {
 }
 
 sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) {
+  print(str(sql))
   if (is.ident(sql)) return(sql)
   monetdb_check_subquery(sql)
   build_sql("(", sql, ") AS ", ident(name), con = con)
@@ -88,3 +88,13 @@ monetdb_queryinfo <- function(conn, query) {
   })
   info
 }
+
+# copied from dplyr's utils.r, sql_subquery needs it
+unique_name <- local({
+  i <- 0
+
+  function() {
+    i <<- i + 1
+    paste0("_W", i)
+  }
+})

@@ -41,37 +41,18 @@ The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
-Creating table: AllstarFull
-Creating table: Appearances
-Creating table: AwardsManagers
-Creating table: AwardsPlayers
-Creating table: AwardsShareManagers
-Creating table: AwardsSharePlayers
-Creating table: Batting
-Creating table: BattingPost
-Creating table: Fielding
-Creating table: FieldingOF
-Creating table: FieldingPost
-Creating table: HallOfFame
-Creating table: LahmanData
-Creating table: Managers
-Creating table: ManagersHalf
-Creating table: Master
-Creating table: Pitching
-Creating table: PitchingPost
-Creating table: Salaries
-Creating table: Schools
-Creating table: SchoolsPlayers
-Creating table: SeriesPost
-Creating table: Teams
-Creating table: TeamsFranchises
-Creating table: TeamsHalf
-Joining by: "hofID"
-Joining by: "hofID"
-Joining by: "hofID"
-Joining by: "hofID"
 
-# 14:31:32 >  
-# 14:31:32 >  "Done."
-# 14:31:32 >  
+Attaching package: ‘MonetDB.R’
+
+The following object is masked from ‘package:dplyr’:
+
+    src_monetdb
+
+Error in .local(drv, ...) : argument is missing, with no default
+Calls: tbl ... dbi_connect.DBIDriver -> dbConnect -> .valueClassTest -> is -> is -> .local
+Execution halted
+
+# 10:34:57 >  
+# 10:34:57 >  "Done."
+# 10:34:57 >  
 

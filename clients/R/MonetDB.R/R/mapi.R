@@ -192,7 +192,9 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 .mapiParseResponse <- function(response) {
   #lines <- .Call("mapiSplitLines", response, PACKAGE="MonetDB.R")
   lines <- strsplit(response, "\n", fixed=TRUE, useBytes=TRUE)[[1]]
-  
+  if (length(lines) < 1) {
+    stop("Invalid response from server. Try re-connecting.")
+  }
   typeLine <- lines[[1]]
   resKey <- substring(typeLine, 1, 1)
   
