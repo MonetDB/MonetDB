@@ -24,7 +24,6 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 		//chech the module and function name
 		if(getModuleId(oldInstrPtr[i]) && !strcasecmp(getModuleId(oldInstrPtr[i]),"batgeom")) 	{
-fprintf(stderr, "%s\n", getFunctionId(oldInstrPtr[i]));
 			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0)  {
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with two new ones
@@ -50,14 +49,14 @@ fprintf(stderr, "%s\n", getFunctionId(oldInstrPtr[i]));
 					//set the arguments for the X, Y projections
 					projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[i],2));
 					setReturnArgument(projectXInstrPtr, projectXReturnId);
-					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
 					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
-
+					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
+					
 					projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[i],3));
 					setReturnArgument(projectYInstrPtr, projectYReturnId);
-					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
 					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
-
+					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
+					
 					////set the arguments of the contains function
 					//setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
 					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
@@ -124,13 +123,16 @@ fprintf(stderr, "%s\n", getFunctionId(oldInstrPtr[i]));
 				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with the new ones
-					InstrPtr bufferInstrPtr, filterInstrPtr, fcnInstrPtr, projectInstrPtr;
-					int bufferReturnId, filterReturnId, subselectReturnId;
+					InstrPtr bufferInstrPtr, filterInstrPtr,/* fcnInstrPtr,*/ projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
+					int bufferReturnId, filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
 					
 					//create and put in the MAL plan the new instructions
 					bufferInstrPtr = newStmt(mb, "geom", "Buffer");
 					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-					fcnInstrPtr = newStmt(mb, "batgeom", "Distance");
+					projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+					projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+					//fcnInstrPtr = newStmt(mb, "batgeom", "Distance");
+					pushInstruction(mb, oldInstrPtr[i]);
 					pushInstruction(mb, oldInstrPtr[i+1]);
 					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
 		
@@ -150,14 +152,30 @@ fprintf(stderr, "%s\n", getFunctionId(oldInstrPtr[i]));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
 
-					//set the arguments of the distance function
-					setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+					//set the arguments for the X, Y projections
+					projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[i],2));
+					setReturnArgument(projectXInstrPtr, projectXReturnId);
+					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
+					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
 					
+					projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[i],3));
+					setReturnArgument(projectYInstrPtr, projectYReturnId);
+					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
+					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
+
+
+					////set the arguments of the distance function
+					//setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+					delArgument(oldInstrPtr[i], 2);
+					setArgument(mb, oldInstrPtr[i], 2, projectXReturnId);
+					delArgument(oldInstrPtr[i], 3);
+					setArgument(mb, oldInstrPtr[i], 3, projectYReturnId);
+
 					//the new subselect does not use candidates
 					setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[i+1],0)); //get the variable before changing it
 					setReturnArgument(oldInstrPtr[i+1], subselectReturnId);

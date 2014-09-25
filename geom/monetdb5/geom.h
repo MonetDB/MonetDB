@@ -264,11 +264,9 @@ geom_export str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coo
 
 /* POINTS */
 
-geom_export str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
-geom_export str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* OIDsBAT_id, int* srid);
-
+geom_export str wkbPointsContains1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
+geom_export str wkbPointsContains2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
 geom_export str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
-geom_export str wkbFilteredPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* OIDsBAT_id, int* srid);
 
 geom_export str wkbFilterWithImprints_geom_bat(bat*, wkb**, bat*, bat*);
 
