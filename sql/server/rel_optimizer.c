@@ -2055,14 +2055,16 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
 
+		rel->l = rel_project(sql->sa, rel->l, rel->exps);
+
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
 			if (e->card > CARD_ATOM) { /* no need to group by on constants */
-				append(gbe, e);
 				if (!exp_name(e))
 					exp_label(sql->sa, e, ++sql->label);
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+				append(gbe, e);
 			}
 			append(exps, e);
 		}

@@ -3072,7 +3072,7 @@ BATproject(BAT *l, BAT *r)
 	}
 	assert(l->ttype == TYPE_oid);
 
-	if (ATOMstorage(tpe) == TYPE_str &&
+	if (ATOMstorage(tpe) == TYPE_str && l->T->nonil &&
 	    (rcount == 0 || lcount > (rcount >> 3))) {
 		/* insert strings as ints, we need to copy the string
 		 * heap whole sale */

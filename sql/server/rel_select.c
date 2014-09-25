@@ -3936,10 +3936,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	if (groupby->op != op_groupby)		/* implicit groupby */
 		*rel = rel_project2groupby(sql, groupby);
-	if (!*rel) {
-		rel_destroy(groupby);
+	if (!*rel)
 		return NULL;
-	}
 
 	if (f == sql_where) {
 		char *uaname = malloc(strlen(aname) + 1);
