@@ -248,6 +248,267 @@ clean:
 	return ret;
 }
 
+//Aternative implementation of contains using ???
+inline double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
+    return ( (P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y) );
+}
+
+//static str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y) {
+static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int *point_y) {
+    BAT *bo = NULL, *bpx = NULL, *bpy = NULL;
+    dbl *px = NULL, *py = NULL;
+    BUN i = 0;
+    unsigned int j = 0;
+    struct timeval stop, start;
+    unsigned long long t;
+    bte *cs = NULL;
+
+	const GEOSCoordSequence *coordSeq;
+	unsigned int geometryPointsNum=0 ;
+
+	/* get the coordinates of the points comprising the geometry */
+	if(!(coordSeq = GEOSGeom_getCoordSeq(geosGeometry)))
+		return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(coordSeq, &geometryPointsNum);
+
+	/*Get the BATs*/
+	if ((bpx = BATdescriptor(*point_x)) == NULL) {
+        	throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+   	}
+
+    	if ((bpy = BATdescriptor(*point_y)) == NULL) {
+        	BBPreleaseref(bpx->batCacheid);
+        	throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+    	}
+
+   	/*Check BATs alignment*/
+    	if ( bpx->htype != TYPE_void || bpy->htype != TYPE_void ||bpx->hseqbase != bpy->hseqbase || BATcount(bpx) != BATcount(bpy)) {
+      		BBPreleaseref(bpx->batCacheid);
+        	BBPreleaseref(bpy->batCacheid);
+        	throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
+    	}
+
+    	/*Create output BAT*/
+    	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+        	BBPreleaseref(bpx->batCacheid);
+        	BBPreleaseref(bpy->batCacheid);
+        	throw(MAL, "geom.point", MAL_MALLOC_FAIL);
+    	}
+    	BATseqbase(bo, bpx->hseqbase);
+
+    	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
+    	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
+    	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+
+    	gettimeofday(&start, NULL);
+    	cs = (bte*) Tloc(bo,BUNfirst(bo));
+    	for (i = 0; i < BATcount(bpx); i++) { //for each point in the x, y BATs
+       		int wn = 0;
+        	for (j = 0; j < geometryPointsNum; j++) { //check each point in the geometry (the exteriorRing)
+			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+			if(GEOSCoordSeq_getX(coordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(coordSeq, j+1, &xNext) == -1)
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+			if(GEOSCoordSeq_getY(coordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(coordSeq, j+1, &yNext) == -1)
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+            		if (yCurrent <= py[i]) {
+                		if (yNext > py[i])
+                    			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
+                        			++wn;
+            		}
+            		else {
+                		if (yNext  <= py[i])
+                    			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
+                        			--wn;
+            		}
+        	}
+        	*cs++ = wn & 1;
+    	}
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    printf("took %llu ms\n", t);
+
+    gettimeofday(&start, NULL);
+    //BATsetcount(bo,cnt);
+    BATderiveProps(bo,FALSE);
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    printf("Append took %llu ms\n", t);
+
+    BBPreleaseref(bpx->batCacheid);
+    BBPreleaseref(bpy->batCacheid);
+    BBPkeepref(*out = bo->batCacheid);
+    return MAL_SUCCEED;
+}
+
+//static str pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, int *point_x, int *point_y) {
+static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interiorRingsNum, int *point_x, int *point_y) {
+    BAT *bo = NULL, *bpx = NULL, *bpy;
+    dbl *px = NULL, *py = NULL;
+    BUN i = 0;
+    unsigned int j = 0, h = 0;
+    bte *cs = NULL;
+
+	const GEOSGeometry *exteriorRingGeometry;
+	const GEOSCoordSequence *exteriorRingCoordSeq;
+	unsigned int exteriorRingPointsNum=0 ;
+
+    /*Get the BATs*/
+    if ((bpx = BATdescriptor(*point_x)) == NULL) {
+        throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+    }
+    if ((bpy = BATdescriptor(*point_y)) == NULL) {
+        BBPreleaseref(bpx->batCacheid);
+        throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+    }
+
+    /*Check BATs alignment*/
+    if ( bpx->htype != TYPE_void ||
+            bpy->htype != TYPE_void ||
+            bpx->hseqbase != bpy->hseqbase ||
+            BATcount(bpx) != BATcount(bpy)) {
+        BBPreleaseref(bpx->batCacheid);
+        BBPreleaseref(bpy->batCacheid);
+        throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
+    }
+
+    /*Create output BAT*/
+    if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+        BBPreleaseref(bpx->batCacheid);
+        BBPreleaseref(bpy->batCacheid);
+        throw(MAL, "geom.point", MAL_MALLOC_FAIL);
+    }
+    BATseqbase(bo, bpx->hseqbase);
+
+	//get the exterior ring of the geometry	
+	if(!(exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry)))
+		return createException(MAL, "batgeom.Contains", "GEOSGetExteriorRing failed");
+
+	/* get the coordinates of the points comprising the exteriorRing */
+	if(!(exteriorRingCoordSeq = GEOSGeom_getCoordSeq(exteriorRingGeometry)))
+		return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the exterior ring */
+	GEOSCoordSeq_getSize(exteriorRingCoordSeq, &exteriorRingPointsNum);
+
+    /*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
+    px = (dbl *) Tloc(bpx, BUNfirst(bpx));
+    py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+   // cnt = BATcount(bpx);
+    cs = (bte*) Tloc(bo,BUNfirst(bo));
+    for (i = 0; i < BATcount(bpx); i++) {
+        int wn = 0;
+
+        //First check the holes
+        for (h = 0; h < interiorRingsNum; h++) {
+		const GEOSGeometry *interiorRingGeometry;
+		const GEOSCoordSequence *interiorRingCoordSeq;
+		unsigned int interiorRingPointsNum=0 ;
+
+		//get the interior ring
+		if(!(interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, h)))
+			return createException(MAL, "batgeom.Contains", "GEOSGetInteriorRingN failed");
+		
+		/* get the coordinates of the points comprising the interior ring */
+		if(!(interiorRingCoordSeq = GEOSGeom_getCoordSeq(interiorRingGeometry)))
+			return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
+	
+		/* get the number of points in the interior ring */
+		GEOSCoordSeq_getSize(interiorRingCoordSeq, &interiorRingPointsNum);
+            
+		wn = 0;
+            	for (j = 0; j < interiorRingPointsNum; j++) { //check each point in the interior ring
+			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+
+			if(GEOSCoordSeq_getX(interiorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(interiorRingCoordSeq, j+1, &xNext) == -1)
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+			if(GEOSCoordSeq_getY(interiorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(interiorRingCoordSeq, j+1, &yNext) == -1)
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+            		if (yCurrent <= py[i]) {
+                		if (yNext > py[i])
+                    			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
+                        			++wn;
+            		} else {
+                		if (yNext  <= py[i])
+                    			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
+                        			--wn;
+            		}
+		}
+
+            	//It is in one of the holes no reason to check the others
+            	if (wn)
+                	break;
+        }
+
+	//found in the holes there is no reason to check the external ring
+        if (wn) 
+            continue;
+
+        /*If not in any of the holes, check inside the Polygon*/
+	for (j = 0; j < exteriorRingPointsNum; j++) { //check each point in the exterior ring)
+		double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(exteriorRingCoordSeq, j+1, &xNext) == -1)
+			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(exteriorRingCoordSeq, j+1, &yNext) == -1)
+			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+        	if (yCurrent <= py[i]) {
+               		if (yNext > py[i])
+               			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
+                       			++wn;
+        	} else {
+                	if (yNext  <= py[i])
+               			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
+                       			--wn;
+            	}
+        }
+        *cs++ = wn&1;
+    }
+   // BATsetcount(bo,cnt);
+    BATderiveProps(bo,FALSE);
+    BBPreleaseref(bpx->batCacheid);
+    BBPreleaseref(bpy->batCacheid);
+    BBPkeepref(*out = bo->batCacheid);
+    return MAL_SUCCEED;
+}
+
+#define POLY_NUM_VERT 120
+#define POLY_NUM_HOLE 10
+
+str wkbPointsContains2_geom_bat(bat* out, wkb** geomWKB, bat* point_x, bat* point_y, int* srid) {
+	int interiorRingsNum = 0;
+	GEOSGeom geosGeometry;
+	str msg = NULL;
+
+	//check if geometry a and the points have the same srid
+	if((*geomWKB)->srid != *srid) 
+		return createException(MAL, "batgeom.Contains", "Geometry and points should have the same srid");
+
+	//get the GEOS representation of the geometry
+	if(!(geosGeometry = wkb2geos(*geomWKB)))
+		return createException(MAL, "batgeom.Contains", "wkb2geos failed");
+	//check if the geometry is a polygon
+	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon)
+		return createException(MAL, "batgeom.Contains", "Geometry should be a polygon");
+
+	//get the number of interior rings of the polygon
+	if((interiorRingsNum = GEOSGetNumInteriorRings(geosGeometry)) == -1) {
+		return createException(MAL, "batgeom.Contains", "GEOSGetNumInteriorRings failed");
+	}
+
+	if(interiorRingsNum > 0) {
+		msg = pnpolyWithHoles_(out, geosGeometry, interiorRingsNum, point_x, point_y);
+	} else {
+		//get the exterior ring
+		const GEOSGeometry *exteriorRingGeometry;
+		if(!(exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry)))
+			return createException(MAL, "batgeom.Contains", "GEOSGetExteriorRing failed");
+		msg = pnpoly_(out, exteriorRingGeometry, point_x, point_y);
+	}
+	return msg;
+}
+
+
 str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* candidatesBAT_id, int* srid) {
 	BAT *xBAT=NULL, *yBAT=NULL, *candidatesBAT=NULL, *outBAT=NULL;
 	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;

@@ -271,3 +271,6 @@ geom_export str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* x
 geom_export str wkbFilteredPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, bat* OIDsBAT_id, int* srid);
 
 geom_export str wkbFilterWithImprints_geom_bat(bat*, wkb**, bat*, bat*);
+
+geom_export double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
+
