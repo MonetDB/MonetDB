@@ -21,10 +21,14 @@
  */
 
 #include "geom.h"
+#include "time.h"
 
 //it gets two BATs with x,y coordinates and returns a new BAT with the points
 static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT, BAT* candidatesBAT) {
 	BAT *outBAT = NULL;
+	oid head=0;
+//	clock_t startTime, endTime;
+//	float seconds = 0.0;
 
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
@@ -64,7 +68,12 @@ static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT, BAT* candidatesBAT) {
 				GDKfree(err);
 				return NULL;
 			}
-			BUNappend(outBAT,point,TRUE); //add the result to the outBAT
+//			startTime = clock();
+			BUNfastins(outBAT, &head, point);
+			head++;
+			//BUNappend(outBAT,point,TRUE); //add the result to the outBAT
+//			endTime = clock();
+//			seconds += (float)(endTime - startTime); 
 			GDKfree(point);
 		}
 	} else {
@@ -98,11 +107,18 @@ static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT, BAT* candidatesBAT) {
 				GDKfree(err);
 				return NULL;
 			}
-			BUNappend(outBAT,point,TRUE); //add the result to the outBAT
+//			startTime = clock();
+			BUNfastins(outBAT, &head, point);
+			head++;
+			//BUNappend(outBAT,point,TRUE); //add the result to the outBAT
+//			endTime = clock();
+//			seconds += (float)(endTime - startTime); 
 			GDKfree(point);
 		}
 	}
 
+//seconds /= CLOCKS_PER_SEC;
+//fprintf(stderr, "BATMakePoint2D: %f secs\n", seconds);
 	return outBAT;
 
 }
@@ -112,6 +128,10 @@ static BAT* BATSetSRID(BAT* pointsBAT, int srid) {
 	BATiter pointsBAT_iter;	
 	BUN p=0, q=0;
 	wkb *pointWKB = NULL;
+	
+	oid head = 0;
+//	clock_t startTime, endTime;
+//	float seconds = 0.0;
 
 	//check if the BAT has dense heads and are aligned
 	if (!BAThdense(pointsBAT)) {
@@ -142,10 +162,17 @@ static BAT* BATSetSRID(BAT* pointsBAT, int srid) {
 			GDKfree(err);
 			return NULL;
 		}
-		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
+//		startTime = clock();
+		BUNfastins(outBAT, &head, outWKB);
+		head++;
+		//BUNappend(outBAT,outWKB,TRUE); //add the result to the outBAT
+//		endTime = clock();
+//		seconds += (float)(endTime - startTime);
 		GDKfree(outWKB);
 		outWKB = NULL;
 	}
+//seconds /= CLOCKS_PER_SEC;
+//fprintf(stderr, "BATSetSRID: %f secs\n", seconds);
 
 	return outBAT;
 }
@@ -155,6 +182,10 @@ static BAT* BATContains(wkb** geomWKB, BAT* geometriesBAT) {
 	BATiter geometriesBAT_iter;	
 	BUN p=0, q=0;
 	wkb *geometryWKB = NULL;
+
+	oid head = 0;
+//	clock_t startTime, endTime;
+//	float seconds = 0.0;
 
 	//check if the BAT has dense heads and are aligned
 	if (!BAThdense(geometriesBAT)) {
@@ -168,9 +199,7 @@ static BAT* BATContains(wkb** geomWKB, BAT* geometriesBAT) {
 		return NULL;
 	}
 
-	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
-	BATseqbase(outBAT, geometriesBAT->hseqbase);
-
+	
 	//iterator over the BATs	
 	geometriesBAT_iter = bat_iterator(geometriesBAT);
 	 
@@ -185,8 +214,20 @@ static BAT* BATContains(wkb** geomWKB, BAT* geometriesBAT) {
 			GDKfree(err);
 			return NULL;
 		}
-		BUNappend(outBAT,&outBIT,TRUE); //add the point to the new BAT
+//		startTime = clock();
+		BUNfastins(outBAT, &head, &outBIT);
+		head++;
+		//BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+//		endTime = clock();
+//		seconds += (float)(endTime - startTime);
 	}
+//set some properties
+//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+BATseqbase(outBAT, geometriesBAT->hseqbase);
+outBAT->tsorted = false;
+outBAT->trevsorted = false;
+//seconds /= CLOCKS_PER_SEC;
+//fprintf(stderr, "BATContains: %f secs\n", seconds);
 
 	return outBAT;
 
@@ -527,6 +568,7 @@ str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 		BBPreleaseref(yBAT->batCacheid);
 		throw(MAL, "batgeom.wkbContainsFiltered", RUNTIME_OBJECT_MISSING);
 	}
+//fprintf(stderr, "Candidates = %d\n", (int)BATcount(candidatesBAT));
 	
 	//check if the BATs have dense heads and are aligned
 	if (!BAThdense(xBAT) || !BAThdense(yBAT) || !BAThdense(candidatesBAT)) {
@@ -544,16 +586,19 @@ str wkbFilteredPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_
 		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem creating the points from the coordinates");
 		goto clean;
 	}
+//fprintf(stderr, "Points = %d\n", (int)BATcount(pointsBAT));
 	//set the srid	
 	if((pointsWithSRIDBAT = BATSetSRID(pointsBAT, *srid)) == NULL) {
 		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem setting srid to the points");
 		goto clean;
 	}
+//fprintf(stderr, "Points with srid = %d\n", (int)BATcount(pointsWithSRIDBAT));
 	//check the contains
 	if((outBAT = BATContains(geomWKB, pointsWithSRIDBAT)) == NULL) {
 		ret = createException(MAL, "batgeom.wkbContainsFiltered", "Problem evalauting the contains");
 		goto clean;
 	}
+//fprintf(stderr, "contains = %d\n", (int)BATcount(outBAT));
 
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
@@ -744,6 +789,136 @@ clean:
 	return ret;
 }
 
+/*
+static BAT* BATMBRfilter(double xmin, double ymin, double xmax, double ymax, wkb** geomWKB, int srid) {
+	BAT *outBAT = NULL, *leftBottomBAT = NULL, *leftTopBAT = NULL, *rightBottomBAT = NULL, *rightTopBAT = NULL;
+	double xmid, ymid;
+	wkb* leftBottomPolygonWKB = NULL, *leftTopPolygonWKB = NULL, *rightBottomPolygonWKB = NULL, *rightTopPolygonWKB = NULL;
+	bit leftBottomBit, leftTopBit, rightBottomBit, rightTopBit;
+	str err;
+	unsigned int candidatesNum = 0;
+
+	//termination condition: If range smaller that thr do not split further
+	if(xmax-xmin < 3.0 || ymax-ymin < 3.0) {
+		fprintf(stderr, "((%f, %f),(%f, %f)): END\n", xmin, ymin, xmax, ymax);
+		return outBAT;
+	}
+
+	xmid = xmin + (xmax-xmin)/2.0;
+	ymid = ymin + (ymax-ymin)/2.0;
+
+	//check the four new polygons
+	//left botton: ((xmin,ymin), (xmid,ymid))
+	fprintf(stderr, "((%f, %f),(%f, %f)): Left Bottom Polygon ((%f, %f),(%f, %f))\n", xmin, ymin, xmax, ymax, xmin, ymin, xmid, ymid);
+	if((err=wkbEnvelopeFromCoordinates(&leftBottomPolygonWKB, &xmin, &ymin, &xmid, &ymid, &srid)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if((err=wkbIntersects(&leftBottomBit, &leftBottomPolygonWKB, geomWKB)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if(leftBottomBit) {
+//		fprintf(stderr, "((%f, %f),(%f, %f)): Left Bottom Polygon intersects with geometry\n", xmin, ymin, xmax, ymax);
+		leftBottomBAT = BATMBRfilter(xmin, ymin, xmid, ymid, geomWKB, srid);
+		if(leftBottomBAT)
+			candidatesNum += BATcount(leftBottomBAT);
+	} else fprintf(stderr, "((%f, %f),(%f, %f)): Left Bottom Polygon does NOT intersect with geometry\n", xmin, ymin, xmax, ymax);
+
+	//left top: ((xmin,ymid),(xmid,ymax))
+	fprintf(stderr, "((%f, %f),(%f, %f)): Left Top Polygon ((%f, %f),(%f, %f))\n", xmin, ymin, xmax, ymax, xmin, ymid, xmid, ymax);
+	if((err=wkbEnvelopeFromCoordinates(&leftTopPolygonWKB, &xmin, &ymid, &xmid, &ymax, &srid)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if((err=wkbIntersects(&leftTopBit, &leftTopPolygonWKB, geomWKB)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if(leftTopBit) {
+//		fprintf(stderr, "((%f, %f),(%f, %f)): Left Top Polygon intersects with geometry\n", xmin, ymin, xmax, ymax);
+		leftTopBAT = BATMBRfilter(xmin, ymid, xmid, ymax, geomWKB, srid);
+		if(leftTopBAT)
+			candidatesNum += BATcount(leftTopBAT);
+
+	} else fprintf(stderr, "((%f, %f),(%f, %f)): Left Top Polygon does NOT intersect with geometry\n", xmin, ymin, xmax, ymax);
+
+	//right bottom: ((xmid,ymin),(xmax,ymid))
+	fprintf(stderr, "((%f, %f),(%f, %f)): Right Bottom Polygon ((%f, %f),(%f, %f))\n", xmin, ymin, xmax, ymax, xmid, ymin, xmax, ymid);
+	if((err=wkbEnvelopeFromCoordinates(&rightBottomPolygonWKB, &xmid, &ymin, &xmax, &ymid, &srid)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if((err=wkbIntersects(&rightBottomBit, &rightBottomPolygonWKB, geomWKB)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if(rightBottomBit) {
+//		fprintf(stderr, "((%f, %f),(%f, %f)): Right Bottom Polygon intersects with geometry\n", xmin, ymin, xmax, ymax);
+		rightBottomBAT = BATMBRfilter(xmid, ymin, xmax, ymid, geomWKB, srid);
+		if(rightBottomBAT)
+			candidatesNum += BATcount(rightBottomBAT);
+
+	} else fprintf(stderr, "((%f, %f),(%f, %f)): Right Bottom Polygon does NOT intersect with geometry\n", xmin, ymin, xmax, ymax);
+
+	//right top: ((xmid,ymid),(xmax,ymax))
+	fprintf(stderr, "((%f, %f),(%f, %f)): Right Top Polygon ((%f, %f),(%f, %f))\n", xmin, ymin, xmax, ymax, xmid, ymid, xmax, ymax);
+	if((err=wkbEnvelopeFromCoordinates(&rightTopPolygonWKB, &xmid, &ymid, &xmax, &ymax, &srid)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if((err=wkbIntersects(&rightTopBit, &rightTopPolygonWKB, geomWKB)) != MAL_SUCCEED) {
+		GDKerror("BATMBRfilter: %s", err);
+		GDKfree(err);
+		return NULL;
+	}
+	if(rightTopBit) {
+//		fprintf(stderr, "((%f, %f),(%f, %f)): Right Top Polygon intersects with geometry\n", xmin, ymin, xmax, ymax);
+		rightTopBAT = BATMBRfilter(xmid, ymid, xmax, ymax, geomWKB, srid);
+		if(rightTopBAT)
+			candidatesNum += BATcount(rightTopBAT);
+
+	} else fprintf(stderr, "((%f, %f),(%f, %f)): Right Top Polygon does NOT intersect with geometry\n", xmin, ymin, xmax, ymax);
+/----/
+
+	//collect all the results and return a new BAT
+	if ((outBAT = BATnew(TYPE_void, TYPE_oid, candidatesNum, TRANSIENT)) == NULL) {
+		GDKerror("BATMBRfilter: Could not create new BAT for the output");
+		return NULL;
+	}
+
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, geometriesBAT->hseqbase);
+
+	//iterator over the BATs	
+	geometriesBAT_iter = bat_iterator(geometriesBAT);
+	 
+	BATloop(geometriesBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		double val = 0.0;
+
+		wkb *geometryWKB = (wkb*) BUNtail(geometriesBAT_iter, p);
+		if ((err = wkbDistance(&val, geomWKB, &geometryWKB)) != MAL_SUCCEED) {
+			BBPreleaseref(outBAT->batCacheid);
+			GDKerror("BATDistance: %s", err);
+			GDKfree(err);
+			return NULL;
+		}
+		BUNappend(outBAT,&val,TRUE);
+	}
+/----/
+	return outBAT;
+
+}
+*/
+
 
 str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
 	BAT *xBAT=NULL, *yBAT=NULL, *xCandidateOIDsBAT=NULL, *candidateOIDsBAT=NULL;
@@ -802,6 +977,8 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 		return createException(MAL,"batgeom.Filter","Problem filtering yBAT");
 	}
 
+fprintf(stderr, "Original MBR contains %u points\n", (unsigned int)BATcount(candidateOIDsBAT));
+//BATMBRfilter(xmin, ymin, xmax, ymax, geomWKB, (*geomWKB)->srid);
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
 	BBPkeepref(*candidateOIDsBAT_id = candidateOIDsBAT->batCacheid);
