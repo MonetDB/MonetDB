@@ -24,15 +24,18 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 		//chech the module and function name
 		if(getModuleId(oldInstrPtr[i]) && !strcasecmp(getModuleId(oldInstrPtr[i]),"batgeom")) 	{
-			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains") == 0) {
+fprintf(stderr, "%s\n", getFunctionId(oldInstrPtr[i]));
+			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0)  {
 				if(oldInstrPtr[i]->argc == 5) {
 					//replace the instruction with two new ones
-					InstrPtr filterInstrPtr, fcnInstrPtr, projectInstrPtr;
-					int filterReturnId, subselectReturnId;
-					
+					InstrPtr filterInstrPtr, /*fcnInstrPtr,*/ projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
+					int filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
 					//create and put in the MAL plan the new instructions
 					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-					fcnInstrPtr = newStmt(mb, "batgeom", "Contains");
+					projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+					projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+					//fcnInstrPtr = newStmt(mb, "batgeom", "Contains1");
+					pushInstruction(mb, oldInstrPtr[i]);
 					pushInstruction(mb, oldInstrPtr[i+1]);
 					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
 
@@ -44,13 +47,29 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
 					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
 
-					//set the arguments of the contains function
-					setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
-					fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+					//set the arguments for the X, Y projections
+					projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[i],2));
+					setReturnArgument(projectXInstrPtr, projectXReturnId);
+					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
+					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
+
+					projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[i],3));
+					setReturnArgument(projectYInstrPtr, projectYReturnId);
+					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
+					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
+
+					////set the arguments of the contains function
+					//setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
+					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
+					//replace the x, y BATs with the filtered version of them
+					delArgument(oldInstrPtr[i], 2);
+					setArgument(mb, oldInstrPtr[i], 2, projectXReturnId);
+					delArgument(oldInstrPtr[i], 3);
+					setArgument(mb, oldInstrPtr[i], 3, projectYReturnId);
 
 					//the new subselect does not use candidates
 					subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
