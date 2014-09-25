@@ -1341,12 +1341,12 @@ str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xm
 
 	if(linearRingGeometry == NULL) {
 		//Gives segmentation fault GEOSCoordSeq_destroy(coordSeq);
-		throw(MAL, "geom.MakeEnvelope", "Error creating LinearRing from coordinates");
+		return createException(MAL, "geom.MakeEnvelope", "Error creating LinearRing from coordinates");
 	}
 	geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
 	if(geosGeometry == NULL) {
 		GEOSGeom_destroy(linearRingGeometry);
-		throw(MAL, "geom.MakeEnvelope", "Error creating Polygon from LinearRing");
+		return createException(MAL, "geom.MakeEnvelope", "Error creating Polygon from LinearRing");
 	}
 	GEOSSetSRID(geosGeometry, *srid);
 
@@ -2150,11 +2150,11 @@ str wkbOverlaps(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	*out = bit_nil;
 
 	if(res == 4)
-		throw(MAL, "geom.Overlaps", "Geometries of different SRID");
+		return createException(MAL, "geom.Overlaps", "Geometries of different SRID");
 	if(res == 3)
-		throw(MAL, "geom.Overlaps", "wkb2geos failed");
+		return createException(MAL, "geom.Overlaps", "wkb2geos failed");
 	if(res == 2)
-		throw(MAL, "geom.Overlaps", "GEOSOverlaps failed");
+		return createException(MAL, "geom.Overlaps", "GEOSOverlaps failed");
 	*out = res;
 
 	return MAL_SUCCEED;
