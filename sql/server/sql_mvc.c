@@ -241,7 +241,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		store_unlock();
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
-build up the hash (not copyied in the trans dup)) */ 
+build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
@@ -280,7 +280,7 @@ build up the hash (not copyied in the trans dup)) */
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
-			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurency conflicts, will ROLLBACK instead");
+			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
@@ -289,13 +289,13 @@ build up the hash (not copyied in the trans dup)) */
 	 * */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("40000!COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
+			char *msg = sql_message("40000!COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
