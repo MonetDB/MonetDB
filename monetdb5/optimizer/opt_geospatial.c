@@ -1,7 +1,56 @@
 #include "monetdb_config.h"
 #include "opt_geospatial.h"
-//#include "mal_instruction.h"
-//#include "mal_interpreter.h"
+
+static void createFilterInstruction(MalBlkPtr mb, InstrPtr *oldInstrPtr, int intructionNum, int filterFirstArgument) {
+	InstrPtr filterInstrPtr, projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
+	int filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
+
+	//create and put in the MAL plan the new instructions
+	filterInstrPtr = newStmt(mb, "batgeom", "Filter");
+	projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+	projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+	pushInstruction(mb, oldInstrPtr[intructionNum]);
+	pushInstruction(mb, oldInstrPtr[intructionNum+1]);
+	projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+
+	//make new return variables
+	filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+	projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[intructionNum],2));
+	projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[intructionNum],3));
+	subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+
+	//set the arguments for filter
+	setReturnArgument(filterInstrPtr, filterReturnId);
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, filterFirstArgument);
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[intructionNum],2));
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[intructionNum],3));
+
+	//set the arguments for the x project
+	setReturnArgument(projectXInstrPtr, projectXReturnId);
+	projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
+	projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[intructionNum], 2));
+					
+	//set the arguments for the y project
+	setReturnArgument(projectYInstrPtr, projectYReturnId);
+	projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
+	projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[intructionNum], 3));
+
+	//set the arguments of the spatial function
+	delArgument(oldInstrPtr[intructionNum], 2);
+	setArgument(mb, oldInstrPtr[intructionNum], 2, projectXReturnId);
+	delArgument(oldInstrPtr[intructionNum], 3);
+	setArgument(mb, oldInstrPtr[intructionNum], 3, projectYReturnId);
+
+	//the new subselect does not use candidates
+	setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[intructionNum+1],0)); //get the variable before changing it
+	setReturnArgument(oldInstrPtr[intructionNum+1], subselectReturnId);
+	delArgument(oldInstrPtr[intructionNum+1], 2);
+					
+	//add a new function that gets the oids of the original BAT that qualified the spatial function
+	projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
+	projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
+
+}
 
 
 int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -26,60 +75,9 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		if(getModuleId(oldInstrPtr[i]) && !strcasecmp(getModuleId(oldInstrPtr[i]),"batgeom")) 	{
 			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0)  {
 				if(oldInstrPtr[i]->argc == 5) {
-					//replace the instruction with two new ones
-					InstrPtr filterInstrPtr, /*fcnInstrPtr,*/ projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
-					int filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
-					//create and put in the MAL plan the new instructions
-					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-					projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-					projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-					//fcnInstrPtr = newStmt(mb, "batgeom", "Contains1");
-					pushInstruction(mb, oldInstrPtr[i]);
-					pushInstruction(mb, oldInstrPtr[i+1]);
-					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
+					//call all necessary intructions for the filter and the evaluation of the spatial relation	
+					createFilterInstruction(mb, oldInstrPtr, i, getArg(oldInstrPtr[i],1));
 
-					//set the return argument of the filter
-					filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-					setReturnArgument(filterInstrPtr, filterReturnId);
-					//set the input arguments of the filter
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],1));
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
-
-					//set the arguments for the X, Y projections
-					projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[i],2));
-					setReturnArgument(projectXInstrPtr, projectXReturnId);
-					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
-					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
-					
-					projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[i],3));
-					setReturnArgument(projectYInstrPtr, projectYReturnId);
-					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
-					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
-					
-					////set the arguments of the contains function
-					//setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
-					//replace the x, y BATs with the filtered version of them
-					delArgument(oldInstrPtr[i], 2);
-					setArgument(mb, oldInstrPtr[i], 2, projectXReturnId);
-					delArgument(oldInstrPtr[i], 3);
-					setArgument(mb, oldInstrPtr[i], 3, projectYReturnId);
-
-					//the new subselect does not use candidates
-					subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-					setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[i+1],0)); //get the variable before changing it
-					setReturnArgument(oldInstrPtr[i+1], subselectReturnId);
-					delArgument(oldInstrPtr[i+1], 2);
-					
-					//add a new function that gets the oids of the original BAT that qualified the distance subselect
-					projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
-					projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
-					
 					//skip the algebra.subselect command
 					i++;
 
@@ -122,69 +120,21 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else if(strcasecmp(getFunctionId(oldInstrPtr[i]), "distance") == 0 && strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
 				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
 				if(oldInstrPtr[i]->argc == 5) {
-					//replace the instruction with the new ones
-					InstrPtr bufferInstrPtr, filterInstrPtr,/* fcnInstrPtr,*/ projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
-					int bufferReturnId, filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
+					InstrPtr bufferInstrPtr;
+					int bufferReturnId;
 					
-					//create and put in the MAL plan the new instructions
+					//create a buffer that will be used for the filter
 					bufferInstrPtr = newStmt(mb, "geom", "Buffer");
-					filterInstrPtr = newStmt(mb, "batgeom", "Filter");
-					projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-					projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-					//fcnInstrPtr = newStmt(mb, "batgeom", "Distance");
-					pushInstruction(mb, oldInstrPtr[i]);
-					pushInstruction(mb, oldInstrPtr[i+1]);
-					projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-		
 					//make new return variables
 					bufferReturnId = newTmpVariable(mb, getArgType(mb, oldInstrPtr[i], 1));
-					filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-					subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-
-					//set the arguments for the Buffer
+					//set the arguments
 					setReturnArgument(bufferInstrPtr, bufferReturnId);
 					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i], 1)); //a TYPE_wkb would be usufull
 					bufferInstrPtr = pushArgument(mb, bufferInstrPtr, getArg(oldInstrPtr[i+1], 3));
+				
+					//call all necessary intructions for the filter and the evaluation of the spatial relation	
+					createFilterInstruction(mb, oldInstrPtr, i, bufferReturnId);
 
-					//set the arguments for the Filter
-					setReturnArgument(filterInstrPtr, filterReturnId);
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, bufferReturnId);
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],2));
-					filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[i],3));
-
-					//set the arguments for the X, Y projections
-					projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[i],2));
-					setReturnArgument(projectXInstrPtr, projectXReturnId);
-					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
-					projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[i], 2));
-					
-					projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[i],3));
-					setReturnArgument(projectYInstrPtr, projectYReturnId);
-					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
-					projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[i], 3));
-
-
-					////set the arguments of the distance function
-					//setReturnArgument(fcnInstrPtr, getArg(oldInstrPtr[i],0));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],1));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],2));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],3));
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, filterReturnId);
-					//fcnInstrPtr = pushArgument(mb, fcnInstrPtr, getArg(oldInstrPtr[i],4));
-					delArgument(oldInstrPtr[i], 2);
-					setArgument(mb, oldInstrPtr[i], 2, projectXReturnId);
-					delArgument(oldInstrPtr[i], 3);
-					setArgument(mb, oldInstrPtr[i], 3, projectYReturnId);
-
-					//the new subselect does not use candidates
-					setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[i+1],0)); //get the variable before changing it
-					setReturnArgument(oldInstrPtr[i+1], subselectReturnId);
-					delArgument(oldInstrPtr[i+1], 2);
-					
-					//add a new function that gets the oids of the original BAT that qualified the distance subselect
-					projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
-					projectInstrPtr = pushArgument(mb, projectInstrPtr, filterReturnId);
-					
 					//skip the algebra.thetasubselect command
 					i++;
 
