@@ -296,6 +296,14 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	return bs;
 }
 
+/**
+ * Create new BAT
+ * int ht: header type
+ * int tt: tail type
+ * BUN cap: BAT capacity
+ * int role: TRANSIENT or PERSISTENT
+ * Returns a new BAT
+ */
 BAT *
 BATnew(int ht, int tt, BUN cap, int role)
 {
