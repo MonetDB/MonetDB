@@ -73,7 +73,7 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 		//chech the module and function name
 		if(getModuleId(oldInstrPtr[i]) && !strcasecmp(getModuleId(oldInstrPtr[i]),"batgeom")) 	{
-			if(strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0)  {
+			if((strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0) || (strcasecmp(getFunctionId(oldInstrPtr[i]), "contains2") == 0))  {
 				if(oldInstrPtr[i]->argc == 5) {
 					//call all necessary intructions for the filter and the evaluation of the spatial relation	
 					createFilterInstruction(mb, oldInstrPtr, i, getArg(oldInstrPtr[i],1));
