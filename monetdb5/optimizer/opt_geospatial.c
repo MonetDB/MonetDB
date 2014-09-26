@@ -1,50 +1,51 @@
 #include "monetdb_config.h"
 #include "opt_geospatial.h"
 
-static void createFilterInstruction(MalBlkPtr mb, InstrPtr *oldInstrPtr, int intructionNum, int filterFirstArgument) {
-	InstrPtr filterInstrPtr, projectInstrPtr, projectXInstrPtr, projectYInstrPtr;
+static void createFilterInstruction(MalBlkPtr mb, InstrPtr *oldInstrPtr, int instructionNum, int filterFirstArgument) {
+	InstrPtr filterInstrPtr, projectXInstrPtr, projectYInstrPtr, projectInstrPtr;
 	int filterReturnId, subselectReturnId, projectXReturnId, projectYReturnId;
 
 	//create and put in the MAL plan the new instructions
 	filterInstrPtr = newStmt(mb, "batgeom", "Filter");
 	projectXInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
 	projectYInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
-	pushInstruction(mb, oldInstrPtr[intructionNum]);
-	pushInstruction(mb, oldInstrPtr[intructionNum+1]);
+	pushInstruction(mb, oldInstrPtr[instructionNum]);
+	pushInstruction(mb, oldInstrPtr[instructionNum+1]);
 	projectInstrPtr = newStmt(mb, "algebra", "leftfetchjoin");				
 
 	//make new return variables
 	filterReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-	projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[intructionNum],2));
-	projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[intructionNum],3));
+	projectXReturnId = newVariable(mb, GDKstrdup("xBATfiltered"), getArgType(mb,oldInstrPtr[instructionNum],2));
+	projectYReturnId = newVariable(mb, GDKstrdup("yBATfiltered"), getArgType(mb,oldInstrPtr[instructionNum],3));
 	subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 
 	//set the arguments for filter
 	setReturnArgument(filterInstrPtr, filterReturnId);
 	filterInstrPtr = pushArgument(mb, filterInstrPtr, filterFirstArgument);
-	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[intructionNum],2));
-	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[intructionNum],3));
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[instructionNum],2));
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[instructionNum],3));
 
 	//set the arguments for the x project
 	setReturnArgument(projectXInstrPtr, projectXReturnId);
 	projectXInstrPtr = pushArgument(mb, projectXInstrPtr, filterReturnId);
-	projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[intructionNum], 2));
+	projectXInstrPtr = pushArgument(mb, projectXInstrPtr, getArg(oldInstrPtr[instructionNum], 2));
 					
 	//set the arguments for the y project
 	setReturnArgument(projectYInstrPtr, projectYReturnId);
 	projectYInstrPtr = pushArgument(mb, projectYInstrPtr, filterReturnId);
-	projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[intructionNum], 3));
+	projectYInstrPtr = pushArgument(mb, projectYInstrPtr, getArg(oldInstrPtr[instructionNum], 3));
 
 	//set the arguments of the spatial function
-	delArgument(oldInstrPtr[intructionNum], 2);
-	setArgument(mb, oldInstrPtr[intructionNum], 2, projectXReturnId);
-	delArgument(oldInstrPtr[intructionNum], 3);
-	setArgument(mb, oldInstrPtr[intructionNum], 3, projectYReturnId);
+	delArgument(oldInstrPtr[instructionNum], 2);
+	setArgument(mb, oldInstrPtr[instructionNum], 2, projectXReturnId);
+	delArgument(oldInstrPtr[instructionNum], 3);
+	setArgument(mb, oldInstrPtr[instructionNum], 3, projectYReturnId);
 
 	//the new subselect does not use candidates
-	setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[intructionNum+1],0)); //get the variable before changing it
-	setReturnArgument(oldInstrPtr[intructionNum+1], subselectReturnId);
-	delArgument(oldInstrPtr[intructionNum+1], 2);
+	setReturnArgument(projectInstrPtr, getArg(oldInstrPtr[instructionNum+1],0)); //get the variable before changing it
+	setReturnArgument(oldInstrPtr[instructionNum+1], subselectReturnId);
+	if(oldInstrPtr[instructionNum+1]->argc == 8)
+		delArgument(oldInstrPtr[instructionNum+1], 2);
 					
 	//add a new function that gets the oids of the original BAT that qualified the spatial function
 	projectInstrPtr = pushArgument(mb, projectInstrPtr, subselectReturnId);
