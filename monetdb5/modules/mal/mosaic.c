@@ -35,7 +35,7 @@
 #include "mosaic_variance.h"
 #include "mosaic_prefix.h"
 
-static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","prefix","index","zone","EOL"};
+static char *filtername[]={"literal","runlength","dictionary","delta","linear","variance","prefix","zone","EOL"};
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -58,6 +58,7 @@ void MOSblk(MosaicBlk blk)
 	printf("Block tag %d cnt "BUNFMT"\n", MOSgetTag(blk),MOSgetCnt(blk));
 }
 
+static float xfactor;
 static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
@@ -66,7 +67,7 @@ MOSdumpTask(Client cntxt,MOStask task)
 
 	mnstr_printf(cntxt->fdout,"# ");
 	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes %10lld\t%10lld\t%3.0f%%\t%10.2fx\t", 
-		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
+		task->timer,task->size,task->xsize, task->xsize/perc, xfactor=(task->xsize ==0 ? 0:(flt)task->size/task->xsize));
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->blks[i])
 		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , filtername[i], task->blks[i], task->elms[i], task->elms[i]/task->blks[i]);
@@ -581,7 +582,7 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
-	bsrc = BATnew(b->htype,b->ttype,BATcount(b)+ MosaicHdrSize,TRANSIENT);
+	bsrc = BATnew(b->htype,b->ttype,BATgrows(b)+ MosaicHdrSize,TRANSIENT);
 	if ( bsrc == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
@@ -1191,7 +1192,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
 	}
 
-	// we assume on compressed argument
+	// we assume one compressed argument
 	if (bl->T->heap.compressed && br->T->heap.compressed ){
 		BBPreleaseref(bl->batCacheid);
 		BBPreleaseref(br->batCacheid);
@@ -1295,7 +1296,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // The analyse routine runs through the BAT dictionary and assess
 // all possible compression options.
 
-static void
+static int
 MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 {
 	BAT *b,*bn, *br=0;
@@ -1306,26 +1307,26 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 	b = BATdescriptor(bid);
 	if( b == NULL ){
 		mnstr_printf(cntxt->fdout,"#nonaccessible %d\n",bid);
-		return;
+		return 0;
 	}
 	if( b->ttype == TYPE_void ||  BATcount(b) < (BUN) threshold){
 		BBPreleaseref(bid);
 		//mnstr_printf(cntxt->fdout,"#too small %d %s\n",bid, BBP_logical(bid));
-		return;
+		return 0;
 	}
 	if ( isVIEW(b) || isVIEWCOMBINE(b) || VIEWtparent(b)) {
 		mnstr_printf(cntxt->fdout,"#ignore view %d %s\n",bid, BBP_logical(bid));
 		BBPreleaseref(bid);
-		return;
+		return 0;
 	}
 	if ( BATcount(b) < MIN_INPUT_COUNT ){
 		mnstr_printf(cntxt->fdout,"#ignore small %d %s\n",bid, BBP_logical(bid));
 		BBPreleaseref(bid);
-		return;
+		return 0;
 	}
 	bn= BATcopy(b,b->htype,b->ttype,TRUE,TRANSIENT);
 	if( bn == NULL)
-		return;
+		return 0;
 	bid2= bn->batCacheid;
 	type = getTypeName(b->ttype);
 	switch( b->ttype){
@@ -1342,23 +1343,24 @@ MOSanalyseInternal(Client cntxt, int threshold, str properties, int bid)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		mnstr_printf(cntxt->fdout,"#%-15s%d\t%-8s\t%s\t"BUNFMT"\t", properties, bid, BBP_physical(bid), type, BATcount(b));
+		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
-		br = BATdescriptor(ret);
-		if(br) BBPreclaim(br);
+		//br = BATdescriptor(ret);
+		//if(br) BBPreclaim(br);
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
-			mnstr_printf(cntxt->fdout,"#%-15s%d\t%-8s\t%s\t"BUNFMT"\t", properties, bid, BBP_physical(bid), type, BATcount(b));
+			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid2, properties,0,1);
-			br = BATdescriptor(ret);
-			if(br) BBPreclaim(br);
+		//	br = BATdescriptor(ret);
+			//if(br) BBPreclaim(br);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
 	}
 	GDKfree(type);
 	BBPreleaseref(bid);
 	BBPreleaseref(bid2);
+	return 1;
 }
 
 str
@@ -1367,7 +1369,8 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,j,limit,bid;
 	int threshold= 1000;
 	str properties[32] ={0};
-	int top=0;
+	float xf[32];
+	int top=0,x=0,mx;
 	char *c;
 	(void) mb;
 	
@@ -1388,15 +1391,34 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( pci->argc >2 ){
 		bid = *(int*) getArgReference(stk,pci,2);
-		for( j = 0; j < top; j++)
-			MOSanalyseInternal(cntxt, threshold, properties[j], bid);
+		for( j = 0; j < top; j++){
+			x+= MOSanalyseInternal(cntxt, threshold, properties[j], bid);
+			xf[j]= xfactor;
+		}
+		if(x >1){
+			mnstr_printf(cntxt->fdout,"#all %d ",bid);
+			for(j=0;j< top; j++)
+				mnstr_printf(cntxt->fdout,"%-15s %9.5f ",properties[j], xf[j]);
+			mnstr_printf(cntxt->fdout,"\n");
+		}
+		x=0;
 	} else
     for (limit= getBBPsize(),i = 1; i < limit; i++){
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
-			for( j = 0; j < top; j++)
-				MOSanalyseInternal(cntxt, threshold, properties[j], i);
-		if( top > 1)
-			mnstr_printf(cntxt->fdout,"#\n");
+			for( j = 0; j < top; j++){
+				x+= MOSanalyseInternal(cntxt, threshold, properties[j], i);
+			xf[j]= xfactor;
+		}
+		if( x >1){
+			mnstr_printf(cntxt->fdout,"#all %d ",i);
+			mx =0;
+			for(j=0;j< top; j++){
+				mnstr_printf(cntxt->fdout,"%-15s %9.5f ",properties[j], xf[j]);
+				if(xf[mx] <= xf[j]) mx =j;
+			}
+			mnstr_printf(cntxt->fdout," %s\n",mx == top-1? "OK":"LOSS");
+		}
+		x=0;
 	}
 	return MAL_SUCCEED;
 }
