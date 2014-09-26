@@ -248,10 +248,12 @@ clean:
 	return ret;
 }
 
-//Aternative implementation of contains using ???
-inline double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
-    return ( (P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y) );
+//Aternative implementation of contains using the winding number method
+inline int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
+    return ( ((P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y)) >= 0.0 ); //set equal to include borders
 }
+
+#define isRight(x0, y0, x1, y1, x2, y2) isLeft(x0, y0, x1, y1, x2, y2)-1
 
 //static str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y) {
 static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int *point_y) {
@@ -259,8 +261,8 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
     dbl *px = NULL, *py = NULL;
     BUN i = 0;
     unsigned int j = 0;
-    struct timeval stop, start;
-    unsigned long long t;
+//    struct timeval stop, start;
+//    unsigned long long t;
     bte *cs = NULL;
 
 	const GEOSCoordSequence *coordSeq;
@@ -302,39 +304,37 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
     	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
     	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
 
-    	gettimeofday(&start, NULL);
+//    	gettimeofday(&start, NULL);
     	cs = (bte*) Tloc(bo,BUNfirst(bo));
     	for (i = 0; i < BATcount(bpx); i++) { //for each point in the x, y BATs
        		int wn = 0;
-        	for (j = 0; j < geometryPointsNum; j++) { //check each point in the geometry (the exteriorRing)
+        	for (j = 0; j < geometryPointsNum-1; j++) { //check each point in the geometry (the exteriorRing)
 			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
 			if(GEOSCoordSeq_getX(coordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(coordSeq, j+1, &xNext) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
 			if(GEOSCoordSeq_getY(coordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(coordSeq, j+1, &yNext) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-            		if (yCurrent <= py[i]) {
-                		if (yNext > py[i])
-                    			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
-                        			++wn;
+			//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+	   		if (yCurrent <= py[i] && yNext >= py[i]) {
+				wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             		}
-            		else {
-                		if (yNext  <= py[i])
-                    			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
-                        			--wn;
+			//the edge goes from big y to small y (downward direction) and the point is somewhere in there
+            		else if (yCurrent >= py[i] && yNext <= py[i]) {
+				wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             		}
         	}
         	*cs++ = wn & 1;
     	}
-    gettimeofday(&stop, NULL);
-    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    printf("took %llu ms\n", t);
+//    gettimeofday(&stop, NULL);
+//    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+//    printf("took %llu ms\n", t);
 
-    gettimeofday(&start, NULL);
-    //BATsetcount(bo,cnt);
+//    gettimeofday(&start, NULL);
+    BATsetcount(bo,BATcount(bpx));
     BATderiveProps(bo,FALSE);
-    gettimeofday(&stop, NULL);
-    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    printf("Append took %llu ms\n", t);
+//    gettimeofday(&stop, NULL);
+//    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+//    printf("Append took %llu ms\n", t);
 
     BBPreleaseref(bpx->batCacheid);
     BBPreleaseref(bpy->batCacheid);
@@ -395,7 +395,6 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
     /*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
     px = (dbl *) Tloc(bpx, BUNfirst(bpx));
     py = (dbl *) Tloc(bpy, BUNfirst(bpx));
-   // cnt = BATcount(bpx);
     cs = (bte*) Tloc(bo,BUNfirst(bo));
     for (i = 0; i < BATcount(bpx); i++) {
         int wn = 0;
@@ -418,22 +417,31 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 		GEOSCoordSeq_getSize(interiorRingCoordSeq, &interiorRingPointsNum);
             
 		wn = 0;
-            	for (j = 0; j < interiorRingPointsNum; j++) { //check each point in the interior ring
+            	for (j = 0; j < interiorRingPointsNum-1; j++) { //check each point in the interior ring
 			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
 
 			if(GEOSCoordSeq_getX(interiorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(interiorRingCoordSeq, j+1, &xNext) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
 			if(GEOSCoordSeq_getY(interiorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(interiorRingCoordSeq, j+1, &yNext) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-            		if (yCurrent <= py[i]) {
-                		if (yNext > py[i])
-                    			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
-                        			++wn;
-            		} else {
-                		if (yNext  <= py[i])
-                    			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
-                        			--wn;
+            		//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+	   		if (yCurrent <= py[i] && yNext >= py[i]) {
+				wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             		}
+			//the edge goes from big y to small y (downward direction) and the point is somewhere in there
+            		else if (yCurrent >= py[i] && yNext <= py[i]) {
+				wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+            		}
+
+		//	if (yCurrent <= py[i]) {
+                //		if (yNext > py[i])
+                  //  			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
+                    //    			++wn;
+            	//	} else {
+                //		if (yNext  <= py[i])
+                  //  			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
+                    //    			--wn;
+            	//	}
 		}
 
             	//It is in one of the holes no reason to check the others
@@ -446,25 +454,33 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
             continue;
 
         /*If not in any of the holes, check inside the Polygon*/
-	for (j = 0; j < exteriorRingPointsNum; j++) { //check each point in the exterior ring)
+	for (j = 0; j < exteriorRingPointsNum-1; j++) { //check each point in the exterior ring)
 		double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
 		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(exteriorRingCoordSeq, j+1, &xNext) == -1)
 			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
 		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(exteriorRingCoordSeq, j+1, &yNext) == -1)
 			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-        	if (yCurrent <= py[i]) {
-               		if (yNext > py[i])
-               			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
-                       			++wn;
-        	} else {
-                	if (yNext  <= py[i])
-               			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
-                       			--wn;
+        	//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+	   	if (yCurrent <= py[i] && yNext >= py[i]) {
+			wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             	}
+		//the edge goes from big y to small y (downward direction) and the point is somewhere in there
+            	else if (yCurrent >= py[i] && yNext <= py[i]) {
+			wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+            	}	
+		//if (yCurrent <= py[i]) {
+               	//	if (yNext > py[i])
+               	//		if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
+                  ///     			++wn;
+        	//} else {
+                //	if (yNext  <= py[i])
+               	//		if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
+                //       			--wn;
+            	//}
         }
         *cs++ = wn&1;
     }
-   // BATsetcount(bo,cnt);
+    BATsetcount(bo,BATcount(bpx));
     BATderiveProps(bo,FALSE);
     BBPreleaseref(bpx->batCacheid);
     BBPreleaseref(bpy->batCacheid);
