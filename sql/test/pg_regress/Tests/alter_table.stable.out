@@ -71,7 +71,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-19 16:47:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-26 09:36:04.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #-- the wolf bug - schema mods caused inconsistent row descriptors 
 #CREATE TABLE tmp (
@@ -117,7 +117,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-19 16:47:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-26 09:36:04.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #--
 #-- rename - check on both non-temp and temp tables
@@ -412,8 +412,11 @@ Ready.
 #alter table parent alter a set not null;
 #delete from parent;
 [ 0	]
+#alter table parent alter a set not null;
+#insert into child (a, b) values (NULL, 'foo');
+[ 1	]
 #delete from child;
-[ 2	]
+[ 3	]
 #alter table child alter a set not null;
 #drop table child;
 #drop table parent;
@@ -450,7 +453,7 @@ Ready.
 % 1,	15 # length
 [ 5,	"initial_default"	]
 [ NULL,	"initial_default"	]
-[ 5,	NULL	]
+[ NULL,	NULL	]
 #alter table def_test alter column c1 set default 10;
 #alter table def_test alter column c2 set default 'new_default';
 #insert into def_test default values;
@@ -462,7 +465,7 @@ Ready.
 % 2,	15 # length
 [ 5,	"initial_default" ]
 [ NULL,	"initial_default"	]
-[ 5,	NULL	]
+[ NULL,	NULL	]
 [ 10,	"new_default" ]
 
 #-- set defaults to an incorrect type: this should fail
@@ -481,7 +484,7 @@ Ready.
 % 2,	15 # length
 [ 5,	"initial_default" ]
 [ NULL,	"initial_default"	]
-[ 5,	NULL	]
+[ NULL,	NULL	]
 [ 10,	"new_default" ]
 #drop view def_view_test;
 #drop table def_test;
@@ -697,6 +700,101 @@ Ready.
 % 1 # length
 #drop table altstartwith;
 #create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
+#select oid > 0, * from altwithoid;
+% sys.L1,	sys.altwithoid,	sys.altwithoid # table_name
+% L1,	oid,	col # name
+% boolean,	oid,	int # type
+% 5,	3,	1 # length
+#select oid > 0, * from altwithoid; -- fails
+% sys.L1,	sys.altwithoid,	sys.altwithoid # table_name
+% L1,	oid,	col # name
+% boolean,	oid,	int # type
+% 5,	3,	1 # length
+#select * from altwithoid;
+% sys.altwithoid,	sys.altwithoid # table_name
+% oid,	col # name
+% oid,	int # type
+% 3,	1 # length
+#drop table altwithoid;
+#create table p1 (f1 int);
+#create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
+#alter table p1 add column a1 int check (a1 > 0);
+#alter table p1 add column f2 text;
+#insert into p1 values (1,2,'abc');
+[ 1	]
+#select * from p1;
+% sys.p1,	sys.p1,	sys.p1 # table_name
+% f1,	a1,	f2 # name
+% int,	int,	clob # type
+% 1,	1,	3 # length
+[ 1,	2,	"abc"	]
+#update p1 set a1 = a1 + 1, f2 = upper(f2);
+[ 1	]
+#select * from p1;
+% sys.p1,	sys.p1,	sys.p1 # table_name
+% f1,	a1,	f2 # name
+% int,	int,	clob # type
+% 1,	1,	3 # length
+[ 1,	3,	"ABC"	]
+#drop table c1 cascade;
+#drop table p1 cascade;
+#create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
+#select * from anothertab;
+% sys.anothertab,	sys.anothertab # table_name
+% atcol1,	atcol2 # name
+% bigint,	boolean # type
+% 1,	5 # length
+#select * from anothertab;
+% sys.anothertab,	sys.anothertab # table_name
+% atcol1,	atcol2 # name
+% bigint,	boolean # type
+% 1,	5 # length
+#insert into anothertab (atcol1, atcol2) values (45, null); -- fails
+[ 1	]
+#select * from anothertab;
+% sys.anothertab,	sys.anothertab # table_name
+% atcol1,	atcol2 # name
+% bigint,	boolean # type
+% 2,	5 # length
+[ 45,	NULL	]
+#select * from anothertab;
+% sys.anothertab,	sys.anothertab # table_name
+% atcol1,	atcol2 # name
+% bigint,	boolean # type
+% 2,	5 # length
+[ 45,	NULL	]
+#alter table anothertab alter column atcol1 drop default;
+#select * from anothertab;
+% sys.anothertab,	sys.anothertab # table_name
+% atcol1,	atcol2 # name
+% bigint,	boolean # type
+% 2,	5 # length
+[ 45,	NULL	]
+#drop table anothertab;
+#create table another (f1 int, f2 text);
+#insert into another values(1, 'one');
+[ 1	]
+#insert into another values(2, 'two');
+[ 1	]
+#insert into another values(3, 'three');
+[ 1	]
+#select * from another;
+% sys.another,	sys.another # table_name
+% f1,	f2 # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"one"	]
+[ 2,	"two"	]
+[ 3,	"three"	]
+#select * from another;
+% sys.another,	sys.another # table_name
+% f1,	f2 # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"one"	]
+[ 2,	"two"	]
+[ 3,	"three"	]
+#drop table another;
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
