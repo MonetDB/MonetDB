@@ -96,7 +96,7 @@ bat.append(b,9);
 b:= bat.append(b,b);
 
 io.print(b);
-x:= mosaic.compress(b);
+x:= mosaic.compress(b,"runlength prefix delta dictionary linear");
 mosaic.dump(x);
 z:= mosaic.decompress(x);
 io.print(z);
