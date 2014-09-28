@@ -194,7 +194,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 
 /* return all expressions, with table name == tname */
 static list *
-rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
+rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 {
 	list *exps;
 
@@ -214,15 +214,15 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_table_projections( sql, rel->l, tname);
+		exps = rel_table_projections( sql, rel->l, tname, level+1);
 		if (exps)
 			return exps;
-		return rel_table_projections( sql, rel->r, tname);
+		return rel_table_projections( sql, rel->r, tname, level+1);
 	case op_apply:
 	case op_semi:
 	case op_anti:
 	case op_select:
-		return rel_table_projections( sql, rel->l, tname);
+		return rel_table_projections( sql, rel->l, tname, level+1);
 
 	case op_topn:
 	case op_sample:
@@ -231,8 +231,8 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_except:
 	case op_inter:
 	case op_project:
-		if (!is_processed(rel))
-			return rel_table_projections( sql, rel->l, tname);
+		if (!is_processed(rel) && level == 0)
+			return rel_table_projections( sql, rel->l, tname, level+1);
 		/* fall through */
 	case op_table:
 	case op_basetable:
@@ -4902,7 +4902,7 @@ rel_table_exp(mvc *sql, sql_rel **rel, symbol *column_e )
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps;
 	
-		if ((exps = rel_table_projections(sql, *rel, tname)) != NULL)
+		if ((exps = rel_table_projections(sql, *rel, tname, 0)) != NULL)
 			return exps;
 		if (!tname)
 			return sql_error(sql, 02,
