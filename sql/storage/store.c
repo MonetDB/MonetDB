@@ -2304,7 +2304,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 	if (fs->dset) {
 		for (n = fs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *fb = n->data;
-			node *tbn = cs_find_name(ts, fb->name);
+			node *tbn = cs_find_id(ts, fb->id);
 
 			if (tbn) {
 				sql_base *tb = tbn->data;
