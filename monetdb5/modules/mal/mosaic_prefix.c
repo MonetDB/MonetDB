@@ -146,8 +146,8 @@ MOSskip_prefix(Client cntxt, MOStask task)
 // calculate the expected reduction 
 flt
 MOSestimate_prefix(Client cntxt, MOStask task)
-{	BUN i = -1;
-	flt factor = 1.0;
+{	BUN i = 0;
+	flt factor = 0.0;
 	int bits, size;
 	lng store;
 	(void) cntxt;
@@ -166,16 +166,18 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 			}
 			Prefix(bits, mask, val, val2, 8);
+			if( bits == 0)
+				break;
 			val = *v & mask;
 			for(w=v, i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			bits = i * (8 -bits);
+			bits = i * (8-bits);
 			store = bits/8 + ((bits % 8) >0);
-			store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,int);
-			factor = ( (flt)i * sizeof(int))/ store;
+			store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
+			factor = ( (flt)i * sizeof(bte))/ store;
 		}
 		break;
 	case 2:
@@ -187,16 +189,18 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 			}
 			Prefix(bits, mask, val, val2, 16);
+			if( bits == 0)
+				break;
 			val = *v & mask;
 			for(w=v,i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			bits = i * (16 -bits);
+			bits = i * (16-bits);
 			store = bits/8 + ((bits % 8) >0);
-			store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,int);
-			factor = ( (flt)i * sizeof(int))/ store;
+			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
+			factor = ( (flt)i * sizeof(sht))/ store;
 		}
 		break;
 	case 4:
@@ -208,17 +212,19 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 			}
 			Prefix(bits, mask, val, val2, 32);
+			if( bits == 0)
+				break;
 			val = *v & mask;
 			for(w=v,i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
-				if ( i > MOSlimit() ) i = MOSlimit();
-				bits = i * (32 -bits);
-				store = bits/8 + ((bits % 8) >0);
-				store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,int);
-				factor = ( (flt)i * sizeof(int))/ store;
-			}
+			if ( i > MOSlimit() ) i = MOSlimit();
+			bits = i * (32-bits);
+			store = bits/8 + ((bits % 8) >0);
+			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
+			factor = ( (flt)i * sizeof(int))/ store;
+		}
 		break;
 	case 8:
 		{	lng *v = (lng*) task->src, *w= v+1, val= *v,val2= *w, mask;
@@ -229,20 +235,23 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 			}
 			Prefix(bits, mask, val, val2, 64);
+			if( bits == 0)
+				break;
 			val = *v & mask;
+			if( bits)
 			for(w=v, i = 0; i < task->elm; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			bits = i * (64 -bits);
+			bits = i * (64-bits);
 			store = bits/8 + ((bits % 8) >0);
-			store = MosaicBlkSize + 2 * sizeof(int) + wordaligned( store,int);
-			factor = ( (flt)i * sizeof(int))/ store;
+			store = wordaligned(MosaicBlkSize + 2 * sizeof(lng) + store,lng);
+			factor = ( (flt)i * sizeof(lng))/ store;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate rle "BUNFMT" elm %4.3f factor\n",i,factor);
+	mnstr_printf(cntxt->fdout,"#estimate prefix "BUNFMT" elm %4.3f factor\n",i,factor);
 #endif
 	return factor;
 }
