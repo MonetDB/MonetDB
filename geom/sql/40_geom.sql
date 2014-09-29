@@ -4058,7 +4058,8 @@ CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTE
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
-CREATE FUNCTION ST_Distance(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS double EXTERNAL NAME geom."Distance";
+CREATE FUNCTION ST_Distance1(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS double EXTERNAL NAME geom."Distance1";
+CREATE FUNCTION ST_Distance2(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS double EXTERNAL NAME geom."Distance2";
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";

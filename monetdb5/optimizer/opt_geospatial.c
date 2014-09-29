@@ -118,8 +118,12 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 					actions +=2;
 				}
-			} else if(strcasecmp(getFunctionId(oldInstrPtr[i]), "distance") == 0 && strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
-				//I should check the theta comparison. In case it is > OR >= then there should be no filtering
+			} else if((strcasecmp(getFunctionId(oldInstrPtr[i]), "distance1") == 0 || strcasecmp(getFunctionId(oldInstrPtr[i]), "distance2") == 0)  
+					&& strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
+				//the filter does not make sense if comparison is > OR >= 
+			//	if(strcmp(getArg(oldInstrPtr[i+1],4), ">")==0 ||  strcmp(getArg(oldInstrPtr[i+1],4),">=")==0) {
+			//		pushInstruction(mb, oldInstrPtr[i]);
+			//	} else 
 				if(oldInstrPtr[i]->argc == 5) {
 					InstrPtr bufferInstrPtr;
 					int bufferReturnId;

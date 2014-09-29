@@ -443,12 +443,13 @@ geom.prelude();
 
 module batgeom;
 
+#the 1 version of the functions use geos the 2 versions have custom implementations
+
 command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_bat;
 command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:dbl] address wkbDistance_bat_geom;
-command Distance(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:dbl] address wkbPointsDistance_geom_bat;
-command Distance(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], o:bat[:oid,:oid], srid:int) :bat[:oid,:dbl] address wkbFilteredPointsDistance_geom_bat;
-
+command Distance1(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:dbl] address wkbPointsDistance1_geom_bat;
+command Distance2(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:dbl] address wkbPointsDistance2_geom_bat;
 
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;

@@ -255,7 +255,6 @@ inline int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, d
 
 #define isRight(x0, y0, x1, y1, x2, y2) isLeft(x0, y0, x1, y1, x2, y2)-1
 
-//static str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y) {
 static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int *point_y) {
     BAT *bo = NULL, *bpx = NULL, *bpy = NULL;
     dbl *px = NULL, *py = NULL;
@@ -432,16 +431,6 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
             		else if (yCurrent >= py[i] && yNext <= py[i]) {
 				wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             		}
-
-		//	if (yCurrent <= py[i]) {
-                //		if (yNext > py[i])
-                  //  			if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
-                    //    			++wn;
-            	//	} else {
-                //		if (yNext  <= py[i])
-                  //  			if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
-                    //    			--wn;
-            	//	}
 		}
 
             	//It is in one of the holes no reason to check the others
@@ -468,15 +457,6 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
             	else if (yCurrent >= py[i] && yNext <= py[i]) {
 			wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
             	}	
-		//if (yCurrent <= py[i]) {
-               	//	if (yNext > py[i])
-               	//		if (isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]) > 0)
-                  ///     			++wn;
-        	//} else {
-                //	if (yNext  <= py[i])
-               	//		if (isLeft(xCurrent, yCurrent, xNext, yNext, px[i], py[i]) < 0)
-                //       			--wn;
-            	//}
         }
         *cs++ = wn&1;
     }
@@ -541,7 +521,7 @@ static BAT* BATDistance(wkb** geomWKB, BAT* geometriesBAT) {
 		return NULL;
 	}
 
-	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	//set the first idx of the new BAT equal to that of the geometries BAT
 	BATseqbase(outBAT, geometriesBAT->hseqbase);
 
 	//iterator over the BATs	
@@ -564,7 +544,7 @@ static BAT* BATDistance(wkb** geomWKB, BAT* geometriesBAT) {
 	return outBAT;
 }
 
-str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+str wkbPointsDistance1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
 	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
 	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
 	str ret=MAL_SUCCEED;
@@ -617,6 +597,123 @@ clean:
 		BBPreleaseref(pointsBAT->batCacheid);
 	if(pointsWithSRIDBAT)
 		BBPreleaseref(pointsWithSRIDBAT->batCacheid);
+	return ret;
+}
+
+
+/* Alternative implementation of distance that computes the euclidean distance of two points
+ * (other geometries are not yet supported)
+ * Using the Euclidean distance is appropriate when the geometries are expressed in projected
+ * reference system, but what happens with the rest? Maybe we should check nd report an error
+ * when a geographic srid is used. PostGIS, however, does not perform any check on the srid
+ * and always computes the Euclidean distance 
+ * */
+
+static BAT* point2point_distance(GEOSGeom geosGeometry, BAT *xBAT, BAT *yBAT) {
+	BAT *outBAT = NULL;
+	const GEOSCoordSequence *coordSeq;
+	double xPointCoordinate = 0.0, yPointCoordinate = 0.0;
+	double *xBATCoordinate = NULL, *yBATCoordinate = NULL, *distancesArray = NULL;
+	BUN i=0;
+
+	//create a new BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(xBAT), TRANSIENT)) == NULL) {
+		GDKerror("BATDistance: Could not create new BAT for the output");
+		return NULL;
+	}
+
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+
+
+	//the geometry is a point. Get the x, y coordinates of it
+	if(!(coordSeq = GEOSGeom_getCoordSeq(geosGeometry))) {
+		GDKerror("batgeom.Distance: GEOSGeom_getCoordSeq failed");
+		return NULL;
+	}
+	if(GEOSCoordSeq_getX(coordSeq, 0, &xPointCoordinate) == -1) {
+		GDKerror("batgeom.Distance: GEOSCoordSeq_getX failed");
+		return NULL;
+	}	
+	if(GEOSCoordSeq_getY(coordSeq, 0, &yPointCoordinate) == -1) {
+		GDKerror("batgeom.Distance: GEOSCoordSeq_getY failed");
+		return NULL;
+	}
+
+	//get the x and y coordinates from the BATs (fixed size)
+	xBATCoordinate = (double*) Tloc(xBAT, BUNfirst(xBAT));
+	yBATCoordinate = (double*) Tloc(yBAT, BUNfirst(yBAT));
+	distancesArray = (double*) Tloc(outBAT,BUNfirst(outBAT));
+	//iterate
+	for (i = 0; i < BATcount(xBAT); i++) {
+       		distancesArray[i] = sqrt(pow((xBATCoordinate[i]-xPointCoordinate), 2.0)+pow((yBATCoordinate[i]-yPointCoordinate), 2.0));
+/*		if(i%1000 == 0) {
+			fprintf(stderr, "%u: %f\n", (unsigned int)i, distancesArray[i]);
+			fprintf(stderr, "\t(%f, %f), (%f, %f)\n", xPointCoordinate, yPointCoordinate, xBATCoordinate[i], yBATCoordinate[i]);
+    		}
+*/
+	}
+
+	BATsetcount(outBAT,BATcount(xBAT));
+	BATderiveProps(outBAT,FALSE);
+
+	return outBAT;
+
+
+}
+
+str wkbPointsDistance2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
+	GEOSGeom geosGeometry;
+	str ret=MAL_SUCCEED;
+
+	//check if geometry a and the points have the same srid
+	if((*geomWKB)->srid != *srid) 
+		return createException(MAL, "batgeom.Distance", "Geometry and points should have the same srid");
+
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "batgeom.Distance", RUNTIME_OBJECT_MISSING);
+	}
+	
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
+		ret = createException(MAL, "batgeom.Distance", "BATs must have dense heads");
+		goto clean;
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		ret=createException(MAL, "batgeom.Distance", "BATs must be aligned");
+		goto clean;
+	}
+
+	//get the GEOS representation of the geometry
+	if(!(geosGeometry = wkb2geos(*geomWKB)))
+		return createException(MAL, "batgeom.Contains", "wkb2geos failed");
+
+	//chech the type of the geometry and choose the appropriate distance function
+	switch(GEOSGeomTypeId(geosGeometry)+1) {
+	case wkbPoint:
+		if((outBAT = point2point_distance(geosGeometry, xBAT, yBAT)) == NULL) {
+			ret = createException(MAL, "batgeom.Distance", "Problem evalauting the contains");
+			goto clean;
+		}
+		break;
+	default:
+		return createException(MAL, "batgeom.Distance", "This Geometry type is not supported");
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	goto clean;
+
+clean:
+	if(xBAT)
+		BBPreleaseref(xBAT->batCacheid);
+	if(yBAT)
+		BBPreleaseref(yBAT->batCacheid);
 	return ret;
 }
 
@@ -808,7 +905,7 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 		return createException(MAL,"batgeom.Filter","Problem filtering yBAT");
 	}
 
-fprintf(stderr, "Original MBR contains %u points\n", (unsigned int)BATcount(candidateOIDsBAT));
+//fprintf(stderr, "Original MBR contains %u points\n", (unsigned int)BATcount(candidateOIDsBAT));
 //BATMBRfilter(xmin, ymin, xmax, ymax, geomWKB, (*geomWKB)->srid);
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
