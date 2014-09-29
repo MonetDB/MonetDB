@@ -32,6 +32,7 @@ const double pi=3.14159265358979323846;
 
 /* the first argument in the functions is the return variable */
 
+#ifdef HAVE_PROJ
 /** convert degrees to radians */
 static void degrees2radians(double *x, double *y, double *z) {
 	(*x) *= pi/180.0;
@@ -46,7 +47,6 @@ static void radians2degrees(double *x, double *y, double *z) {
 	(*z) *= 180.0/pi;
 }
 
-#ifdef HAVE_PROJ
 static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
 	double x=0, y=0, z=0;
 	int* errorNum =0 ;
@@ -334,6 +334,12 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 /* It gets a geometry and transforms its coordinates to the provided srid */
 str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_dst, char** proj4_src_str, char** proj4_dst_str) {
 #ifndef HAVE_PROJ 
+*transformedWKB = NULL;
+geomWKB = geomWKB;
+srid_src = srid_src;
+srid_dst = srid_dst;
+proj4_src_str = proj4_src_str;
+proj4_dst_str = proj4_dst_str;
 return createException(MAL, "geom.Transform", "Function Not Implemented");
 #else
 	projPJ proj4_src, proj4_dst;
@@ -341,8 +347,6 @@ return createException(MAL, "geom.Transform", "Function Not Implemented");
 	int geometryType = -1;
 
 	str ret = MAL_SUCCEED;
-
-
 
 	if(!strcmp(*proj4_src_str, "null"))
 		throw(MAL, "geom.wkbTransform", "Could not find in spatial_ref_sys srid %d\n", *srid_src);

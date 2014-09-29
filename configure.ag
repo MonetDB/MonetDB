@@ -2429,7 +2429,7 @@ AC_ARG_WITH(proj,
 	AS_HELP_STRING([--with-proj=DIR],
 		[proj library is installed in DIR]),
 	have_proj="$withval")
-case "$enable_geom" in
+case "$have_proj" in
 yes|auto)
 	case "$have_proj" in
 	auto|yes)
@@ -2453,14 +2453,14 @@ yes|auto)
 	CPPFLAGS="$save_CPPFLAGS"
 	case "$have_proj" in
 	no)
-		if test "x$enable_geom" = xyes; then
-			AC_MSG_ERROR([$why_have_proj])
-		fi
-		# no proj, so don't compile geom
-		enable_geom=no
-		if test "x$disable_geom" = x; then
-			disable_geom="$why_have_proj"
-		fi
+		#if test "x$enable_geom" = xyes; then
+		#	AC_MSG_ERROR([$why_have_proj])
+		#fi
+		## no proj, so don't compile geom
+		#enable_geom=no
+		#if test "x$disable_geom" = x; then
+		#	disable_geom="$why_have_proj"
+		#fi
 		PROJ_INCS=""
 		PROJ_LIBS=""
 		;;
