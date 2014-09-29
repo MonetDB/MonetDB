@@ -255,16 +255,17 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 }
 
 // insert a series of values into the compressor block using dictionary
-#define dictcompress()\
-cid = (i * hdr->bits)/64;\
-lshift= 64 -((i * hdr->bits) % 64) ;\
-if ( lshift > hdr->bits){\
-	base[cid]= base[cid] | (((unsigned long)j) << (lshift-hdr->bits));\
-}else{ \
-	rshift= 64 -  ((i+1) * hdr->bits) % 64;\
-	base[cid]= base[cid] | (((unsigned long)j) >> (hdr->bits-lshift));\
-	base[cid+1]= 0 | (((unsigned long)j)  << rshift);\
-}
+#define dictcompress(Vector,I,Bits,Value)\
+{int cid,lshift,rshift;\
+	cid = (I * Bits)/64;\
+	lshift= 63 -((I * Bits) % 64) ;\
+	if ( lshift >= Bits){\
+		Vector[cid]= Vector[cid] | (((unsigned long) Value) << (lshift- Bits));\
+	}else{ \
+		rshift= 63 -  ((I+1) * Bits) % 64;\
+		Vector[cid]= Vector[cid] | (((unsigned long) Value) >> (Bits-lshift));\
+		Vector[cid+1]= 0 | (((unsigned long) Value)  << rshift);\
+}}
 
 #define DICTcompress(TPE)\
 {	TPE *val = (TPE*)task->src;\
@@ -279,7 +280,7 @@ if ( lshift > hdr->bits){\
 			break;\
 		else {\
 			MOSincCnt(blk,1);\
-			dictcompress();\
+			dictcompress(base,i,hdr->bits,j);\
 		}\
 	}\
 	assert(i);\
@@ -321,18 +322,18 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
 				MOSfind(j,*val,0,hdr->dictsize);
-				//mnstr_printf(cntxt->fdout,"compress %d %d bits %d\n",*val,j,hdr->bits);
+				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d bits %d\n",i, *val,j,hdr->bits);
 				if( j == hdr->dictsize || dict[j] != *val )
 					break;
 				else {
 					MOSincCnt(blk,1);
 					cid = (i * hdr->bits)/64;
-					lshift= 64 -((i * hdr->bits) % 64) ;
-					if ( lshift > hdr->bits){
+					lshift= 63 -((i * hdr->bits) % 64) ;
+					if ( lshift >= hdr->bits){
 						base[cid]= base[cid] | (((unsigned long)j) << (lshift-hdr->bits));
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d \n",cid, lshift, hdr->bits);
 					}else{ 
-						rshift= 64 -  ((i+1) * hdr->bits) % 64;
+						rshift= 63 -  ((i+1) * hdr->bits) % 64;
 						base[cid]= base[cid] | (((unsigned long)j) >> (hdr->bits-lshift));
 						base[cid+1]= 0 | (((unsigned long)j)  << rshift);
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d %d val %o %o\n", cid, lshift, rshift,
@@ -349,14 +350,14 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define dictdecompress(I)\
 cid = (I * hdr->bits)/64;\
-lshift= 64 -((I * hdr->bits) % 64) ;\
-if ( lshift >hdr->bits){\
+lshift= 63 -((I * hdr->bits) % 64) ;\
+if ( lshift >= hdr->bits){\
 	j = (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask);\
   }else{ \
-	rshift= 64 -  ((I+1) * hdr->bits) % 64;\
+	rshift= 63 -  ((I+1) * hdr->bits) % 64;\
 	m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));\
 	m2 = base[cid+1] >>rshift;\
-	j= 0  | (m1 <<(hdr->bits-lshift)) | m2;\
+	j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;\
   }
 
 #define DICTdecompress(TPE)\
@@ -376,7 +377,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	BUN i;
-	bte j,m1,m2;
+	unsigned int j,m1,m2;
 	int cid, lshift, rshift;
 	unsigned long *base;
 	(void) cntxt;
@@ -399,15 +400,15 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 
 			for(i = 0; i < lim; i++){
 				cid = (i * hdr->bits)/64;
-				lshift= 64 -((i * hdr->bits) % 64) ;
-				if ( lshift >hdr->bits){
+				lshift= 63 -((i * hdr->bits) % 64) ;
+				if ( lshift >= hdr->bits){
 					j = (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask);
 					//mnstr_printf(cntxt->fdout,"[%d] lshift %d m %d\n", cid,  lshift,m1);
 				  }else{ 
-					rshift= 64 -  ((i+1) * hdr->bits) % 64;
+					rshift= 63 -  ((i+1) * hdr->bits) % 64;
 					m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));
 					m2 = (base[cid+1] >>rshift);
-					j= 0 | (m1 <<(hdr->bits-lshift)) | m2;
+					j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;\
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cid %lo %lo val %o %o\n", cid, lshift, rshift,base[cid],base[cid+1], m1,  m2);
 				  }
 				((int*)task->src)[i] = dict[j];

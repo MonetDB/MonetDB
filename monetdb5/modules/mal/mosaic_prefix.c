@@ -151,7 +151,6 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	int bits, size;
 	lng store;
 	(void) cntxt;
-	(void) bits;
 
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
@@ -249,15 +248,15 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 }
 
 #define compress(Vector,I, Bits, Value) \
-{ int cell, lshift, rshift;\
-	cell = (I * Bits)/64;\
-	lshift= 64 -((I * Bits) % 64) ;\
-	if ( lshift > Bits){\
-		Vector[cell]= Vector[cell] | (((unsigned long)Value) << (lshift-Bits));\
+{ int cid, lshift, rshift;\
+	cid = (I * Bits)/64;\
+	lshift= 63 -((I * Bits) % 64) ;\
+	if ( lshift >= Bits){\
+		Vector[cid]= Vector[cid] | (((unsigned long)Value) << (lshift-Bits));\
 	}else{ \
-		rshift= 64 -  ((I+1) * Bits) % 64;\
-		Vector[cell]= Vector[cell] | (((unsigned long)Value) >> (Bits-lshift));\
-		Vector[cell+1]= 0 | (((unsigned long)Value)  << rshift);\
+		rshift= 63 -  ((I+1) * Bits) % 64;\
+		Vector[cid]= Vector[cid] | (((unsigned long)Value) >> (Bits-lshift));\
+		Vector[cid+1]= 0 | (((unsigned long)Value)  << rshift);\
 	}\
 }
 
@@ -379,12 +378,12 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				m = *w & (~mask); // residu
 				//mnstr_printf(cntxt->fdout,"compress %d residu %d %o\n",*w,m,m);
 				cell = (i * rbits)/64;
-				lshift= 64 -((i * rbits) % 64) ;
-				if ( lshift > rbits){
+				lshift= 63 -((i * rbits) % 64) ;
+				if ( lshift >= rbits){
 					base[cell]= base[cell] | (((long)m) << (lshift-rbits));
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d cell %o\n",cell, lshift, rbits, base[cell]);
 				}else{ 
-					rshift= 64 -  ((i+1) * rbits) % 64;
+					rshift= 63 -  ((i+1) * rbits) % 64;
 					base[cell]= base[cell] | (((long)m) >> (rbits-lshift));
 					base[cell+1]= 0 | (((long)m)  << rshift);
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,
@@ -440,12 +439,12 @@ MOScompress_prefix(Client cntxt, MOStask task)
 
 #define decompress(Vector,I)\
 {	int cell = (I * rbits)/64, lshift,rshift;\
-	lshift= 64 -((I * rbits) % 64) ;\
-	if ( lshift > (int)rbits){\
+	lshift= 63 -((I * rbits) % 64) ;\
+	if ( lshift >= (int)rbits){\
 		m1 = (Vector[cell]>> (lshift-rbits)) & ((unsigned long) m);\
 		v = val  | m1;\
 	  }else{ \
-		rshift= 64 -  ((I+1) * rbits) % 64;\
+		rshift= 63 -  ((I+1) * rbits) % 64;\
 		m1 =(Vector[cell] & (((unsigned long)m) >> (rbits-lshift)));\
 		m2 = Vector[cell+1] >>rshift;\
 		v= val | (m1 <<(rbits-lshift)) | m2;\
@@ -519,13 +518,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				cell = (i * rbits)/64;
-				lshift= 64 -((i * rbits) % 64) ;
-				if ( lshift >rbits){
+				lshift= 63 -((i * rbits) % 64) ;
+				if ( lshift >= rbits){
 					m1 = (base[cell]>> (lshift-rbits)) & ((long)m);
 					//mnstr_printf(cntxt->fdout,"[%d]cell %o lshift %d m %d\n", cell,  base[cell],lshift,m1);
 					v = val  | m1;
 				  }else{ 
-					rshift= 64 -  ((i+1) * rbits) % 64;
+					rshift= 63 -  ((i+1) * rbits) % 64;
 					m1 =(base[cell] & ( ((long)m) >> (rbits-lshift)));
 					m2 = base[cell+1] >>rshift;
 					v= val | (m1 <<(rbits-lshift)) | m2;
