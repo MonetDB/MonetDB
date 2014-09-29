@@ -212,8 +212,8 @@ MOScreatedictionary(Client cntxt, MOStask task)
 			}
 		}
 	}
-	MOSdump_dictionary(cntxt, task);
 #ifdef _DEBUG_MOSAIC_
+	MOSdump_dictionary(cntxt, task);
 #endif
 }
 // calculate the expected reduction using DICT in terms of elements compressed
