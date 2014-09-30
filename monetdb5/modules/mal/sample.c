@@ -132,3 +132,24 @@ SAMPLEuniform_dbl(bat *r, bat *b, dbl *p) {
 	BBPunfix(bb->batCacheid);
 	return SAMPLEuniform(r, b, &s);
 }
+
+str
+SAMPLEsubuniform_dbl(bat *r, bat *b, dbl *p) {
+	BAT *bb;
+	double pr = *p;
+	wrd s;
+
+	if ( pr < 0.0 || pr > 1.0 ) {
+		throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
+				" p should be between 0 and 1.0" );
+	} else if (pr == 0) {/* special case */
+		s = 0;
+		return SAMPLEsubuniform(r, b, &s);
+	}
+	if ((bb = BATdescriptor(*b)) == NULL) {
+		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
+	}
+	s = (wrd) (pr*(double)BATcount(bb));
+	BBPunfix(bb->batCacheid);
+	return SAMPLEsubuniform(r, b, &s);
+}
