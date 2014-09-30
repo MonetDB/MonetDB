@@ -266,6 +266,8 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
 
 	const GEOSCoordSequence *coordSeq;
 	unsigned int geometryPointsNum=0 ;
+	double *xPoints, *yPoints; //arrays with the points of the ring
+
 
 	/* get the coordinates of the points comprising the geometry */
 	if(!(coordSeq = GEOSGeom_getCoordSeq(geosGeometry)))
@@ -273,6 +275,10 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
 	
 	/* get the number of points in the geometry */
 	GEOSCoordSeq_getSize(coordSeq, &geometryPointsNum);
+
+	//allocate space for the coordinates
+	xPoints = (double*)GDKmalloc(sizeof(double*)*geometryPointsNum);
+	yPoints = (double*)GDKmalloc(sizeof(double*)*geometryPointsNum);
 
 	/*Get the BATs*/
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -305,22 +311,35 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
 
 //    	gettimeofday(&start, NULL);
     	cs = (bte*) Tloc(bo,BUNfirst(bo));
-    	for (i = 0; i < BATcount(bpx); i++) { //for each point in the x, y BATs
-       		int wn = 0;
-        	for (j = 0; j < geometryPointsNum-1; j++) { //check each point in the geometry (the exteriorRing)
-			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
-			if(GEOSCoordSeq_getX(coordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(coordSeq, j+1, &xNext) == -1)
+    	for (i = 0; i < BATcount(bpx); i++) {
+        	int wn = 0;
+
+		if(i==0) {
+			//read the first point from the external ring
+			if(GEOSCoordSeq_getX(coordSeq, j, &xPoints[0]) == -1) 
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
-			if(GEOSCoordSeq_getY(coordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(coordSeq, j+1, &yNext) == -1)
+			if(GEOSCoordSeq_getY(coordSeq, j, &yPoints[0]) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-			//the edge goes from small y to big y (upward direction) and the point is somewhere in there
-	   		if (yCurrent <= py[i] && yNext >= py[i]) {
-				wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+		}
+        	/*Check if the point is inside the polygon*/
+		for (j = 1; j < geometryPointsNum; j++) { //check each point in the exterior ring)
+			//double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+			if( i == 0) {
+				//it is the first iteration, I need to read the points
+				if(GEOSCoordSeq_getX(coordSeq, j, &xPoints[j]) == -1) 
+					return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+				if(GEOSCoordSeq_getY(coordSeq, j, &yPoints[j]) == -1)
+					return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+
+			}
+	        	//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+		   	if (yPoints[j-1] <= py[i] && yPoints[j] >= py[i]) {
+				wn+=isLeft(xPoints[j-1], yPoints[j-1], xPoints[j], yPoints[j], px[i], py[i]); 
             		}
 			//the edge goes from big y to small y (downward direction) and the point is somewhere in there
-            		else if (yCurrent >= py[i] && yNext <= py[i]) {
-				wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
-            		}
+        	    	else if (yPoints[j-1] >= py[i] && yPoints[j] <= py[i]) {
+				wn+=isRight(xPoints[j-1], yPoints[j-1], xPoints[j], yPoints[j], px[i], py[i]); 
+            		}	
         	}
         	*cs++ = wn & 1;
     	}
@@ -338,6 +357,10 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
     BBPreleaseref(bpx->batCacheid);
     BBPreleaseref(bpy->batCacheid);
     BBPkeepref(*out = bo->batCacheid);
+
+	GDKfree(xPoints);
+	GDKfree(yPoints);
+
     return MAL_SUCCEED;
 }
 
@@ -351,7 +374,9 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 
 	const GEOSGeometry *exteriorRingGeometry;
 	const GEOSCoordSequence *exteriorRingCoordSeq;
-	unsigned int exteriorRingPointsNum=0 ;
+	double **xPoints, **yPoints; //arrays with the points of the rings so that we do not read them every time
+	unsigned int *pointsNum; //array with the number of points in each ring
+	bool checked = false; //used to know when the internal rings have been checked
 
     /*Get the BATs*/
     if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -379,6 +404,10 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
         throw(MAL, "geom.point", MAL_MALLOC_FAIL);
     }
     BATseqbase(bo, bpx->hseqbase);
+	
+	xPoints = (double**)GDKmalloc(sizeof(double**)*(interiorRingsNum+1));
+	yPoints = (double**)GDKmalloc(sizeof(double**)*(interiorRingsNum+1));
+	pointsNum =  (unsigned int*)GDKmalloc(sizeof(unsigned int*)*(interiorRingsNum+1));
 
 	//get the exterior ring of the geometry	
 	if(!(exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry)))
@@ -389,7 +418,11 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 		return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
 	
 	/* get the number of points in the exterior ring */
-	GEOSCoordSeq_getSize(exteriorRingCoordSeq, &exteriorRingPointsNum);
+	GEOSCoordSeq_getSize(exteriorRingCoordSeq, &pointsNum[0]);
+
+	//the exteriorRing is in position 0
+	xPoints[0] = (double*)GDKmalloc(sizeof(double*)*pointsNum[0]);
+	yPoints[0] = (double*)GDKmalloc(sizeof(double*)*pointsNum[0]);
 
     /*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
     px = (dbl *) Tloc(bpx, BUNfirst(bpx));
@@ -398,20 +431,31 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
     for (i = 0; i < BATcount(bpx); i++) {
         int wn = 0;
 
-        /*Check if the point is insode the polygon*/
-	for (j = 0; j < exteriorRingPointsNum-1; j++) { //check each point in the exterior ring)
-		double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
-		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(exteriorRingCoordSeq, j+1, &xNext) == -1)
+	if(i==0 && pointsNum[0]>0) {
+		//read the first point from the external ring
+		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, 0, &xPoints[0][0]) == -1) 
 			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
-		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(exteriorRingCoordSeq, j+1, &yNext) == -1)
+		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, 0, &yPoints[0][0]) == -1)
 			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+	}
+        /*Check if the point is inside the polygon*/
+	for (j = 1; j < pointsNum[0]; j++) { //check each point in the exterior ring)
+		//double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+		if( i == 0) {
+			//it is the first iteration, I need to read the points
+			if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xPoints[0][j]) == -1) 
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+			if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yPoints[0][j]) == -1)
+				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+
+		}
         	//the edge goes from small y to big y (upward direction) and the point is somewhere in there
-	   	if (yCurrent <= py[i] && yNext >= py[i]) {
-			wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+	   	if (yPoints[0][j-1] <= py[i] && yPoints[0][j] >= py[i]) {
+			wn+=isLeft(xPoints[0][j-1], yPoints[0][j-1], xPoints[0][j], yPoints[0][j], px[i], py[i]); 
             	}
 		//the edge goes from big y to small y (downward direction) and the point is somewhere in there
-            	else if (yCurrent >= py[i] && yNext <= py[i]) {
-			wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+            	else if (yPoints[0][j-1] >= py[i] && yPoints[0][j] <= py[i]) {
+			wn+=isRight(xPoints[0][j-1], yPoints[0][j-1], xPoints[0][j], yPoints[0][j], px[i], py[i]); 
             	}	
         }
 	
@@ -421,38 +465,51 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 	if(!wn) 
 		continue;
 	
-	//Inside the polygon, check the holes
+	//inside the polygon, check the holes
         for (h = 0; h < interiorRingsNum; h++) {
-		const GEOSGeometry *interiorRingGeometry;
 		const GEOSCoordSequence *interiorRingCoordSeq;
-		unsigned int interiorRingPointsNum=0 ;
 
-		//get the interior ring
-		if(!(interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, h)))
-			return createException(MAL, "batgeom.Contains", "GEOSGetInteriorRingN failed");
+		if(!checked) {
+			const GEOSGeometry *interiorRingGeometry;
+
+			//get the interior ring
+			if(!(interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, h)))
+				return createException(MAL, "batgeom.Contains", "GEOSGetInteriorRingN failed");
 		
-		/* get the coordinates of the points comprising the interior ring */
-		if(!(interiorRingCoordSeq = GEOSGeom_getCoordSeq(interiorRingGeometry)))
-			return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
+			// get the coordinates of the points comprising the interior ring
+			if(!(interiorRingCoordSeq = GEOSGeom_getCoordSeq(interiorRingGeometry)))
+				return createException(MAL, "batgeom.Contains", "GEOSGeom_getCoordSeq failed");
 	
-		/* get the number of points in the interior ring */
-		GEOSCoordSeq_getSize(interiorRingCoordSeq, &interiorRingPointsNum);
-            
-		wn = 0;
-            	for (j = 0; j < interiorRingPointsNum-1; j++) { //check each point in the interior ring
-			double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+			// get the number of points in the interior ring
+			GEOSCoordSeq_getSize(interiorRingCoordSeq, &pointsNum[h+1]);
 
-			if(GEOSCoordSeq_getX(interiorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(interiorRingCoordSeq, j+1, &xNext) == -1)
+			xPoints[h+1] = (double*)GDKmalloc(sizeof(double*)*pointsNum[h+1]);
+			yPoints[h+1] = (double*)GDKmalloc(sizeof(double*)*pointsNum[h+1]);
+
+			//read the first point from the ring
+			if(GEOSCoordSeq_getX(interiorRingCoordSeq, 0, &xPoints[h+1][0]) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
-			if(GEOSCoordSeq_getY(interiorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(interiorRingCoordSeq, j+1, &yNext) == -1)
+			if(GEOSCoordSeq_getY(interiorRingCoordSeq, 0, &yPoints[h+1][0]) == -1)
 				return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-            		//the edge goes from small y to big y (upward direction) and the point is somewhere in there
-	   		if (yCurrent <= py[i] && yNext >= py[i]) {
-				wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+		}
+          
+		wn = 0;
+
+            	for (j = 1; j < pointsNum[h+1]; j++) { //check each point in the interior ring
+			if(!checked) {
+				//it is the first iteration, I need to read the points
+				if(GEOSCoordSeq_getX(interiorRingCoordSeq, j, &xPoints[h+1][j]) == -1) 
+					return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+				if(GEOSCoordSeq_getY(interiorRingCoordSeq, j, &yPoints[h+1][j]) == -1)
+					return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+			}
+        		//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+	   		if (yPoints[h+1][j-1] <= py[i] && yPoints[h+1][j] >= py[i]) {
+				wn+=isLeft(xPoints[h+1][j-1], yPoints[h+1][j-1], xPoints[h+1][j], yPoints[h+1][j], px[i], py[i]); 
             		}
 			//the edge goes from big y to small y (downward direction) and the point is somewhere in there
-            		else if (yCurrent >= py[i] && yNext <= py[i]) {
-				wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+        	    	else if (yPoints[h+1][j-1] >= py[i] && yPoints[h+1][j] <= py[i]) {
+				wn+=isRight(xPoints[h+1][j-1], yPoints[h+1][j-1], xPoints[h+1][j], yPoints[h+1][j], px[i], py[i]); 
             		}
 		}
 
@@ -462,6 +519,8 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
                 	break;
 		}
         }
+
+	checked = true;
     }
 
     BATsetcount(bo,BATcount(bpx));
@@ -469,6 +528,22 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
     BBPreleaseref(bpx->batCacheid);
     BBPreleaseref(bpy->batCacheid);
     BBPkeepref(*out = bo->batCacheid);
+
+	GDKfree(xPoints[0]);
+	GDKfree(yPoints[0]);
+
+	//if there are no points this is not allocated and thus does not need to be freed
+	if(checked) {
+		for(i = 1; i< interiorRingsNum+1; i++) {
+			GDKfree(xPoints[i]);
+			GDKfree(yPoints[i]);
+		}
+	}
+
+	GDKfree(xPoints);
+	GDKfree(yPoints);
+	GDKfree(pointsNum);
+
     return MAL_SUCCEED;
 }
 
