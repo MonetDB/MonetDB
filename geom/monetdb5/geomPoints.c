@@ -398,7 +398,30 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
     for (i = 0; i < BATcount(bpx); i++) {
         int wn = 0;
 
-        //First check the holes
+        /*Check if the point is insode the polygon*/
+	for (j = 0; j < exteriorRingPointsNum-1; j++) { //check each point in the exterior ring)
+		double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
+		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(exteriorRingCoordSeq, j+1, &xNext) == -1)
+			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
+		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(exteriorRingCoordSeq, j+1, &yNext) == -1)
+			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
+        	//the edge goes from small y to big y (upward direction) and the point is somewhere in there
+	   	if (yCurrent <= py[i] && yNext >= py[i]) {
+			wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+            	}
+		//the edge goes from big y to small y (downward direction) and the point is somewhere in there
+            	else if (yCurrent >= py[i] && yNext <= py[i]) {
+			wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
+            	}	
+        }
+	
+	*cs++ = wn&1;
+
+	//not inside the external ring. There is no need to continue checking the holes
+	if(!wn) 
+		continue;
+	
+	//Inside the polygon, check the holes
         for (h = 0; h < interiorRingsNum; h++) {
 		const GEOSGeometry *interiorRingGeometry;
 		const GEOSCoordSequence *interiorRingCoordSeq;
@@ -434,32 +457,13 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 		}
 
             	//It is in one of the holes no reason to check the others
-            	if (wn)
+            	if (wn) {
+			*(cs-1)=0; //reset to 0;
                 	break;
+		}
         }
-
-	//found in the holes there is no reason to check the external ring
-        if (wn) 
-            continue;
-
-        /*If not in any of the holes, check inside the Polygon*/
-	for (j = 0; j < exteriorRingPointsNum-1; j++) { //check each point in the exterior ring)
-		double xCurrent=0.0, yCurrent=0.0, xNext=0.0, yNext=0.0;
-		if(GEOSCoordSeq_getX(exteriorRingCoordSeq, j, &xCurrent) == -1 || GEOSCoordSeq_getX(exteriorRingCoordSeq, j+1, &xNext) == -1)
-			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getX failed");
-		if(GEOSCoordSeq_getY(exteriorRingCoordSeq, j, &yCurrent) == -1 || GEOSCoordSeq_getY(exteriorRingCoordSeq, j+1, &yNext) == -1)
-			return createException(MAL, "batgeom.Contains", "GEOSCoordSeq_getY failed");
-        	//the edge goes from small y to big y (upward direction) and the point is somewhere in there
-	   	if (yCurrent <= py[i] && yNext >= py[i]) {
-			wn+=isLeft( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
-            	}
-		//the edge goes from big y to small y (downward direction) and the point is somewhere in there
-            	else if (yCurrent >= py[i] && yNext <= py[i]) {
-			wn+=isRight( xCurrent, yCurrent, xNext, yNext, px[i], py[i]); 
-            	}	
-        }
-        *cs++ = wn&1;
     }
+
     BATsetcount(bo,BATcount(bpx));
     BATderiveProps(bo,FALSE);
     BBPreleaseref(bpx->batCacheid);
