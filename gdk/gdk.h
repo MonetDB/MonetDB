@@ -802,7 +802,6 @@ typedef struct {
 		wrd wval;
 		flt fval;
 		ptr pval;
-		struct BAT *Bval; /* this field is only used by mel */
 		bat bval;
 		str sval;
 		dbl dval;
