@@ -102,14 +102,14 @@ SAMPLEuniform_dbl(bat *r, bat *b, dbl *p) {
 	wrd s;
 
 	if ( pr < 0.0 || pr > 1.0 ) {
-		throw(MAL, "sample.uniform", ILLEGAL_ARGUMENT
+		throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
 				" p should be between 0 and 1.0" );
 	} else if (pr == 0) {/* special case */
 		s = 0;
 		return SAMPLEuniform(r, b, &s);
 	}
 	if ((bb = BATdescriptor(*b)) == NULL) {
-		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
+		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
 	s = (wrd) (pr*(double)BATcount(bb));
 	BBPunfix(bb->batCacheid);
