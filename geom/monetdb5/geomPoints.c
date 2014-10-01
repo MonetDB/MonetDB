@@ -1157,23 +1157,27 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 	return MAL_SUCCEED;
 }
 
-static char *
-PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb, BUN n, double minx, double maxx, double miny, double maxy) {
+static BAT*
+PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb, BUN n, double minx, double maxx, double miny, double maxy) {
 	unsigned long csize = 0, u;
 	oid *candidates;
 	unsigned char mbrcellxmin, mbrcellxmax, mbrcellymin, mbrcellymax, k,l;
 	int shift = sizeof(sht) * 8 / 2;
 	unsigned long i;
-	str msg;
+	BAT* bres = NULL;
 
         /* assert calling sanity */
-        assert(*bres != NULL && x != NULL && y != NULL && batx != NULL && baty != NULL);
+        assert(x != NULL && y != NULL && batx != NULL && baty != NULL);
 	
 	/* read the pbsm index to memory */
 	if (pbsm_idx == NULL || oids == NULL) {
+		str err;
 		/* the index has not been materialized/loaded yet */
-		if ((msg = PBSMcreateindex(x, y, n, minx, maxx, miny, maxy)) != MAL_SUCCEED)
-			return msg;
+		if ((err = PBSMcreateindex(x, y, n, minx, maxx, miny, maxy)) != MAL_SUCCEED) {
+			GDKerror("PBSMarraycontains16: %s", err);
+			GDKfree(err);
+			return NULL;
+		}
 	}
 
 	/* generate a pbsm value from the geometry */
@@ -1192,8 +1196,10 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 	}
 
 	/* get candidate oid from the pbsm index */
-	if ((candidates = GDKmalloc(csize * sizeof(oid))) == NULL)
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
+	if ((candidates = GDKmalloc(csize * sizeof(oid))) == NULL) {
+		GDKerror("PBSMarraycontains16: Problem allocating space");
+		return NULL;
+	}
 	i = 0;
 	for (k = mbrcellxmin; k <= mbrcellxmax; k++) {
 		for (l = mbrcellymin; l <= mbrcellymax; l++) {
@@ -1209,64 +1215,66 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 		}
 	}
 
+
+//it creates the bres bat twice. In this function and the one that calls it
 	assert(BAThdense(batx) && BAThdense(baty));
 
-	if ((*bres = BATnew(TYPE_void, TYPE_oid, csize, TRANSIENT)) == NULL) {
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
+	if ((bres = BATnew(TYPE_void, TYPE_oid, csize, TRANSIENT)) == NULL) {
+		GDKerror("PBSMarraycontains16: Could not create new BAT for the output");
+		return NULL;
 	}
+	BATseqbase(bres, batx->hseqbase); //the results BAT is aligned with the x and y BATs
 
 	for (i = 0; i < csize; i++) {
 		oid *o = &(candidates[i]);
-		BUNfastins(*bres, NULL, o);
+		BUNfastins(bres, NULL, o);
 	}
 
 	/* candidates are expected to be ordered */
-	BATseqbase(*bres, oid_nil); // avoid materialization of the void head
-	*bres = BATmirror(BATorder(BATmirror(*bres)));
-	BATseqbase(*bres, 0);
+	BATseqbase(bres, oid_nil); // avoid materialization of the void head
+	bres = BATmirror(BATorder(BATmirror(bres)));
+	BATseqbase(bres, 0);
 
 	//BATkey(BATmirror(*bres), TRUE);
-	(*bres)->hdense = 1;
-	(*bres)->hsorted = 1;
-	(*bres)->tsorted = 1;
+	(bres)->hdense = 1;
+	(bres)->hsorted = 1;
+	(bres)->tsorted = 1;
 	//(*bres)->tkey = TRUE;
-	BATderiveProps(*bres, false);
+	BATderiveProps(bres, false);
 	
 	/* clean up */
 	//GDKfree(pbsm_idx);
 	//GDKfree(oids);
 
-        return MAL_SUCCEED;
+        return bres;
 }
 
-static char *
-PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g, 
-	   double *minx, double *maxx, double *miny, double *maxy)
+static BAT*
+PBSMselect_(BAT *bx, BAT *by, mbr *g, double minx, double maxx, double miny, double maxy)
 {
-	BAT *bres = NULL;
 	BUN n;
-	char *msg = NULL;
 	dbl *x = NULL, *y = NULL;
 
-	assert (ret != NULL);
         assert (bx != NULL && by != NULL);
 
 	n = BATcount(bx);
 
-	if (bx->ttype != by->ttype)
-		throw(MAL, "batpbsm.contains16", "tails of input BATs must be identical");
-
+	if (bx->ttype != by->ttype) {
+		GDKerror("PBSMselect_: tails of input BATs are not identical");
+		return NULL;
+	}
 	/* get direct access to the tail arrays */
         x = (dbl*) Tloc(bx, BUNfirst(bx));
         y = (dbl*) Tloc(by, BUNfirst(by));
 
-	/* allocate result BAT */
-	bres = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
-	if (bres == NULL)
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
+	///* allocate result BAT */
+	//bres = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
+	////
+//	if (bres == NULL)
+//		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
 
-	msg = PBSMarraycontains16( &bres, x, bx, y , by, g, n, *minx, *maxx, *miny, *maxy);
-
+	return PBSMarraycontains16(x, bx, y , by, g, n, minx, maxx, miny, maxy);
+/*
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	} else {
@@ -1274,9 +1282,67 @@ PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g,
 	}
 
 	return msg;
+*/
 }
 
 str wkbFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
+	BAT *xBAT=NULL, *yBAT=NULL, *candidateOIDsBAT=NULL;
+	mbr* geomMBR;
+	str err;
+	clock_t t;
+	double xmin = 85000, xmax = 86000, ymin = 446250, ymax = 447500;
+
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Filter", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "batgeom.Filter", RUNTIME_OBJECT_MISSING);
+	}
+
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, "batgeom.Filter", "BATs must have dense heads");
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, "batgeom.Filter", "BATs must be aligned");
+	}
+
+	//create the MBR of the geom
+	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
+		str msg;
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		msg = createException(MAL, "batgeom.Filter", "%s", err);
+		GDKfree(err);
+		return msg;
+	}
+	t = clock();
+	if(!(candidateOIDsBAT = PBSMselect_(xBAT, yBAT, geomMBR, xmin, xmax, ymin, ymax))) {
+//	if(((err = PBSMselect_(&candidateOIDsBAT, xBAT, yBAT, geomMBR, &xmin, &xmax, &ymin, &ymax)) != MAL_SUCCEED)
+//		|| (candidateOIDsBAT == NULL)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL,"batgeom.Filter","Problem filtering BAT");
+	}
+	t = clock() - t;
+	fprintf(stderr, "[PREFILTERING] PBSM: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+
+
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPkeepref(*candidateOIDsBAT_id = candidateOIDsBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+/*
+str wkbFilterWithImprintsAndPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
 	BAT *xBAT=NULL, *yBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;
 	str err;
@@ -1330,4 +1396,4 @@ str wkbFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBA
 
 	return MAL_SUCCEED;
 }
-
+*/
