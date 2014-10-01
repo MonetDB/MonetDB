@@ -273,7 +273,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
  * The hash key and the oid are materialized to prepare for reclustering.
  */
 str
-CLUSTER_key( bat *M, bat *B){
+CLUSTER_key( bat *M, const bat *B){
 	BAT *map, *b;
 
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -326,7 +326,7 @@ typedef struct{
 } Basket;
 
 str  
-CLUSTER_map(bat *RB, bat *B)
+CLUSTER_map(bat *RB, const bat *B)
 {
 	BUN rng,bsize, bnr=0, h, N= 2; /* number of buckets */
 	BAT *b, *map;
@@ -476,9 +476,9 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 str  
 CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res =(int *) getArgReference(stk, pci, 0);
-	bat *CMAP =(int *) getArgReference(stk, pci, 1);
-	bat *B =(int *) getArgReference(stk, pci, 2);
+	bat *res =(bat *) getArgReference(stk, pci, 0);
+	const bat *CMAP =(bat *) getArgReference(stk, pci, 1);
+	const bat *B =(bat *) getArgReference(stk, pci, 2);
 	BAT *cmap = NULL, *b = NULL;
 	str msg= MAL_SUCCEED;
 
@@ -501,13 +501,15 @@ str
 CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *map,*b;
-	int *res, hid, mid, *bid,i;
+	bat *res, hid, mid;
+	const bat *bid;
+	int i;
 	str msg= MAL_SUCCEED;
 	(void) cntxt;
 	(void) mb;
 
-	res =(int *) getArgReference(stk, pci, 0);
-	bid = (int*) getArgReference(stk,pci,pci->retc);
+	res =(bat *) getArgReference(stk, pci, 0);
+	bid = (bat*) getArgReference(stk,pci,pci->retc);
 	msg = CLUSTER_key(&hid,bid);
 	if (msg)
 		return msg;
@@ -2331,8 +2333,8 @@ str
 CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	bat *bid = (bat *) getArgReference(stk, pci, pci->retc);
-	bat *psum = (bat *) getArgReference(stk, pci, pci->retc+1);
+	const bat *bid = (bat *) getArgReference(stk, pci, pci->retc);
+	const bat *psum = (bat *) getArgReference(stk, pci, pci->retc+1);
 	BAT *b, *pb;
 	wrd *cnt, *end;
 	BUN l = 0, h = l;

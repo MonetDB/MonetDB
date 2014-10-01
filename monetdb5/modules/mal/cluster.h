@@ -36,8 +36,8 @@
 #define cluster_export extern
 #endif
 
-cluster_export str CLUSTER_key( bat *M, bat *B);
-cluster_export str CLUSTER_map(bat *RB, bat *B);
+cluster_export str CLUSTER_key( bat *M, const bat *B);
+cluster_export str CLUSTER_map(bat *RB, const bat *B);
 cluster_export str CLUSTER_apply(bat *bid, BAT *nb, BAT *cmap);
 cluster_export str CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

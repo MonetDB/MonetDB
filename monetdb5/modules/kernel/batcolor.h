@@ -43,22 +43,22 @@
 #include <iconv.h>
 #endif
 
-batcolor_export str CLRbatColor(int *ret, int *l);
-batcolor_export str CLRbatStr(int *ret, int *l);
-batcolor_export str CLRbatRed(int *ret, int *l);
-batcolor_export str CLRbatGreen(int *ret, int *l);
-batcolor_export str CLRbatBlue(int *ret, int *l);
-batcolor_export str CLRbatSaturation(int *ret, int *l);
-batcolor_export str CLRbatValue(int *ret, int *l);
-batcolor_export str CLRbatHue(int *ret, int *l);
-batcolor_export str CLRbatHueInt(int *ret, int *l);
-batcolor_export str CLRbatSaturationInt(int *ret, int *l);
-batcolor_export str CLRbatValueInt(int *ret, int *l);
-batcolor_export str CLRbatLuminance(int *ret, int *l);
-batcolor_export str CLRbatCr(int *ret, int *l);
-batcolor_export str CLRbatCb(int *ret, int *l);
+batcolor_export str CLRbatColor(bat *ret, const bat *l);
+batcolor_export str CLRbatStr(bat *ret, const bat *l);
+batcolor_export str CLRbatRed(bat *ret, const bat *l);
+batcolor_export str CLRbatGreen(bat *ret, const bat *l);
+batcolor_export str CLRbatBlue(bat *ret, const bat *l);
+batcolor_export str CLRbatSaturation(bat *ret, const bat *l);
+batcolor_export str CLRbatValue(bat *ret, const bat *l);
+batcolor_export str CLRbatHue(bat *ret, const bat *l);
+batcolor_export str CLRbatHueInt(bat *ret, const bat *l);
+batcolor_export str CLRbatSaturationInt(bat *ret, const bat *l);
+batcolor_export str CLRbatValueInt(bat *ret, const bat *l);
+batcolor_export str CLRbatLuminance(bat *ret, const bat *l);
+batcolor_export str CLRbatCr(bat *ret, const bat *l);
+batcolor_export str CLRbatCb(bat *ret, const bat *l);
 
-batcolor_export str CLRbatHsv(int *ret, int *l, int *bid2, int *bid3);
-batcolor_export str CLRbatRgb(int *ret, int *l, int *bid2, int *bid3);
-batcolor_export str CLRbatycc(int *ret, int *l, int *bid2, int *bid3);
+batcolor_export str CLRbatHsv(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
+batcolor_export str CLRbatRgb(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
+batcolor_export str CLRbatycc(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
 #endif 

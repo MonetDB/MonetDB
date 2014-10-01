@@ -141,7 +141,7 @@ TKNZRopen(int *ret, str *in)
 		BATkey(b, FALSE);
 		BATseqbase(b, 0);
 		tokenBAT[INDEX].val = b;
-		if (BKCsetName(&r, (int *) &(b->batCacheid), (str *) &batname) != MAL_SUCCEED)
+		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		if (BKCsetPersistent(&r, (int *) &(b->batCacheid)) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
@@ -277,7 +277,7 @@ TKNZRappend(oid *pos, str *s)
 			
 			tokenBAT[i].val = bVal;
 
-			if (BKCsetName(&r, (int *) &(bVal->batCacheid), (str *) &batname)
+			if (BKCsetName(&r, &bVal->batCacheid, (const char*const*) &batname)
 				!= MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
@@ -304,7 +304,7 @@ TKNZRappend(oid *pos, str *s)
 			
 			tokenBAT[i].idx = bIdx;
 
-			if ((msg = BKCsetName(&r, (int *) &(bIdx->batCacheid), (str *) &batname)) != MAL_SUCCEED) {
+			if ((msg = BKCsetName(&r, &bIdx->batCacheid, (const char*const*) &batname)) != MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
 				return msg;
