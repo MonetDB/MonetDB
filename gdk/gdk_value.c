@@ -277,14 +277,19 @@ VALisnil(const ValRecord *v)
 	case TYPE_sht:
 		return v->val.shval == sht_nil;
 	case TYPE_int:
-	case TYPE_bat:
 		return v->val.ival == int_nil;
+	case TYPE_wrd:
+		return v->val.wval == wrd_nil;
 	case TYPE_lng:
 		return v->val.lval == lng_nil;
 	case TYPE_flt:
 		return v->val.fval == flt_nil;
 	case TYPE_dbl:
 		return v->val.dval == dbl_nil;
+	case TYPE_oid:
+		return v->val.oval == oid_nil;
+	case TYPE_bat:
+		return v->val.bval == bat_nil || v->val.bval == 0;
 	default:
 		break;
 	}
