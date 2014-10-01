@@ -1346,7 +1346,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.ival) {
+	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.bval != bat_nil) {
 		BAT *b, *bs;
 
 		b = BATdescriptor(v->val.ival);

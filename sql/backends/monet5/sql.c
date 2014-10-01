@@ -2254,7 +2254,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t nr, inr = 0;
 	oid sb = 0;
 
-	*res = 0;
+	*res = bat_nil;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	tr = m->session->tr;

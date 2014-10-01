@@ -109,7 +109,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	if (tt == TYPE_any){
-		*ret = 0;
+		*ret = bat_nil;
 		return MAL_SUCCEED;
 	}
 

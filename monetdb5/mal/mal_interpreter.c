@@ -637,7 +637,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					lhs = &stk->stk[pci->argv[k]];
 					rhs = &stk->stk[pci->argv[i]];
 					VALcopy(lhs, rhs);
-					if (lhs->vtype == TYPE_bat && lhs->val.bval)
+					if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
 						BBPincref(lhs->val.bval, TRUE);
 				}
 				FREE_EXCEPTION(ret);
@@ -767,7 +767,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 					for (i = 0; i < pci->retc; i++) {
 						if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
-							stk->stk[getArg(pci, i)].val.bval) {
+							stk->stk[getArg(pci, i)].val.bval != bat_nil &&
+							stk->stk[getArg(pci, i)].val.bval != 0) {
 							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
 								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
@@ -803,15 +804,15 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(getArgType(mb, pci, i))) {
 							bat bid = stk->stk[a].val.bval;
 
-							if (i < pci->retc && backup[i].val.bval) {
+							if (i < pci->retc && backup[i].val.bval != bat_nil) {
 								bat bx = backup[i].val.bval;
-								backup[i].val.bval = 0;
+								backup[i].val.bval = bat_nil;
 								BBPdecref(bx, TRUE);
 							}
 							if (garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 								bid = abs(stk->stk[garbage[i]].val.bval);
-								stk->stk[garbage[i]].val.bval = 0;
+								stk->stk[garbage[i]].val.bval = bat_nil;
 								BBPdecref(bid, TRUE);
 							}
 						} else if (i < pci->retc &&
@@ -1376,8 +1377,8 @@ void garbageElement(Client cntxt, ValPtr v)
 		bat bid = abs(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
-		v->val.bval = 0;
-		if (bid == 0)
+		v->val.bval = bat_nil;
+		if (bid == bat_nil)
 			return;
 		if (!BBP_lrefs(bid))
 			return;

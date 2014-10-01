@@ -1016,7 +1016,7 @@ BKCdestroy(bit *r, int *bid)
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
-	*bid = 0;
+	*bid = bat_nil;
 	BATmode(b, TRANSIENT);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;

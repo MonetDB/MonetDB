@@ -361,7 +361,7 @@ ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -399,7 +399,7 @@ ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -708,9 +708,9 @@ do_join(bat *r1, bat *r2, bat *lid, bat *rid, bat *r2id, bat *slid, bat *srid,
 		goto fail;
 	if ((right = BATdescriptor(*rid)) == NULL)
 		goto fail;
-	if (slid && *slid && (candleft = BATdescriptor(*slid)) == NULL)
+	if (slid && *slid != bat_nil && (candleft = BATdescriptor(*slid)) == NULL)
 		goto fail;
-	if (srid && *srid && (candright = BATdescriptor(*srid)) == NULL)
+	if (srid && *srid != bat_nil && (candright = BATdescriptor(*srid)) == NULL)
 		goto fail;
 	if (estimate == NULL || *estimate < 0 || *estimate == lng_nil || *estimate > (lng) BUN_MAX)
 		est = BUN_NONE;
@@ -991,7 +991,7 @@ ALGsubunique2(bat *result, bat *bid, bat *sid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
 	}
@@ -1591,11 +1591,11 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *g
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
-	if (order && *order && (o = BATdescriptor(*order)) == NULL) {
+	if (order && *order != bat_nil && (o = BATdescriptor(*order)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
 	}
-	if (group && *group && (g = BATdescriptor(*group)) == NULL) {
+	if (group && *group != bat_nil && (g = BATdescriptor(*group)) == NULL) {
 		if (o)
 			BBPreleaseref(o->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -2150,7 +2150,7 @@ ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATmirror(b);
 	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
-		*ret = 0;
+		*ret = bat_nil;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
 	}
 	bn = BATmirror(bn);
@@ -2176,7 +2176,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
 	if (bn == NULL) {
-		*ret = 0;
+		*ret = bat_nil;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
 	}
 	if (!(bn->batDirty&2))

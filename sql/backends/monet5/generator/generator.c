@@ -577,7 +577,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	if( pci->argc == 5){ // candidate list included
 		cndid = *(int*) getArgReference(stk,pci, 2);
-		if( cndid){
+		if( cndid != bat_nil){
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
 				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
