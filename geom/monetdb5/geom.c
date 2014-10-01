@@ -1196,7 +1196,6 @@ static str wkbBasicInt(int *out, wkb *geom, int (*func)(const GEOSGeometry *), c
 		GDKerrbuf[0]='\0'; 
 	}
 	return ret;
-
 }
 
 

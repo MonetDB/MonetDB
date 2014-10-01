@@ -376,7 +376,7 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 	const GEOSCoordSequence *exteriorRingCoordSeq;
 	double **xPoints, **yPoints; //arrays with the points of the rings so that we do not read them every time
 	unsigned int *pointsNum; //array with the number of points in each ring
-	bool checked = false; //used to know when the internal rings have been checked
+	bte checked = 0; //used to know when the internal rings have been checked
 
     /*Get the BATs*/
     if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -467,7 +467,7 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 	
 	//inside the polygon, check the holes
         for (h = 0; h < interiorRingsNum; h++) {
-		const GEOSCoordSequence *interiorRingCoordSeq;
+		const GEOSCoordSequence *interiorRingCoordSeq = NULL;
 
 		if(!checked) {
 			const GEOSGeometry *interiorRingGeometry;
@@ -520,7 +520,7 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 		}
         }
 
-	checked = true;
+	checked = 1;
     }
 
     BATsetcount(bo,BATcount(bpx));
