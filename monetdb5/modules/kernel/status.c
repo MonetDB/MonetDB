@@ -49,7 +49,7 @@
 #endif
 
 static void
-pseudo(int *ret, int *ret2, BAT *bn, BAT *b) {
+pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 	BATmode(bn,TRANSIENT);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);

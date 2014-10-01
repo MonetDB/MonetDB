@@ -131,14 +131,14 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter bi;
 	BAT *b;
 	oid *head;
-	int *bid;
+	bat *bid;
 	ValPtr tail;
 
 	(void) cntxt;
 	(void) mb;
-	head = (oid *) getArgReference(stk, pci, 0);
-	tail = getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk, pci, 2);
+	head = getArgReference_oid(stk, pci, 0);
+	tail = &stk->stk[pci->argv[1]];
+	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
@@ -168,9 +168,9 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	head = (oid *) getArgReference(stk, pci, 0);
-	tail = getArgReference(stk,pci,1);
-	bid = (bat *) getArgReference(stk, pci, 2);
+	head = getArgReference_oid(stk, pci, 0);
+	tail = &stk->stk[pci->argv[1]];
+	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);

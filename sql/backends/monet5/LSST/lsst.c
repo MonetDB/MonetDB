@@ -370,9 +370,9 @@ static void _qserv_computeEdges( double *edges, double *verts, int nv)
   */
 str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	dbl ra = *(dbl*) getArgReference(stk,pci,1);
-	dbl dec = *(dbl*) getArgReference(stk,pci,2);
+	int *ret = getArgReference_int(stk,pci,0);
+	dbl ra = *getArgReference_dbl(stk,pci,1);
+	dbl dec = *getArgReference_dbl(stk,pci,2);
 
 	double x, y, z, w;
 	dbl *edges, *nv;
@@ -381,7 +381,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	/* If any input is null, the result is 0. */
 	for (i = 1; i <pci->argc; ++i) {
-		if ( *(dbl*) getArgReference(stk,pci,i) == dbl_nil){
+		if ( *getArgReference_dbl(stk,pci,i) == dbl_nil){
 			*ret = int_nil;
 			return MAL_SUCCEED;
 		}
@@ -407,7 +407,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
 	}
 	for (i = 3; i <pci->argc; ++i) 
-		nv[i-3] =  *(dbl*) getArgReference(stk,pci,i);
+		nv[i-3] =  *getArgReference_dbl(stk,pci,i);
 	_qserv_computeEdges(edges,nv, nedges);
 	GDKfree(nv);
 

@@ -844,23 +844,23 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1 || pci->retc == 2);
 	assert(pci->argc - pci->retc >= 4 && pci->argc - pci->retc <= 6);
 
-	n = * (wrd *) getArgReference(stk, pci, pci->argc - 3);
+	n = * getArgReference_wrd(stk, pci, pci->argc - 3);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
-	ret1 = getArgReference(stk, pci, 0);
+	ret1 = getArgReference_bat(stk, pci, 0);
 	if (pci->retc == 2)
-		ret2 = getArgReference(stk, pci, 1);
-	bid = * (bat *) getArgReference(stk, pci, pci->retc);
+		ret2 = getArgReference_bat(stk, pci, 1);
+	bid = *getArgReference_bat(stk, pci, pci->retc);
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
 	if (pci->argc - pci->retc > 4) {
-		sid = * (bat *) getArgReference(stk, pci, pci->retc + 1);
+		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
 		if ((s = BATdescriptor(sid)) == NULL) {
 			BBPreleaseref(bid);
 			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
 		}
 		if (pci->argc - pci->retc > 5) {
-			gid = * (bat *) getArgReference(stk, pci, pci->retc + 2);
+			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 			if ((g = BATdescriptor(gid)) == NULL) {
 				BBPreleaseref(bid);
 				BBPreleaseref(sid);
@@ -868,8 +868,8 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	asc = * (bit *) getArgReference(stk, pci, pci->argc - 2);
-	distinct = * (bit *) getArgReference(stk, pci, pci->argc - 1);
+	asc = * getArgReference_bit(stk, pci, pci->argc - 2);
+	distinct = * getArgReference_bit(stk, pci, pci->argc - 1);
 	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, distinct);
 	BBPreleaseref(b->batCacheid);
 	if (s)
@@ -2138,9 +2138,9 @@ ALGprojectNIL(bat *ret, const bat *bid)
 str
 ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = getArgReference(stk, pci, 0);
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	const ValRecord *v = &stk->stk[getArg(pci, 1)];
-	bat bid = * (bat *) getArgReference(stk, pci, 2);
+	bat bid = * getArgReference_bat(stk, pci, 2);
 	BAT *b, *bn;
 
 	(void) cntxt;
@@ -2165,8 +2165,8 @@ ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = getArgReference(stk, pci, 0);
-	bat bid = * (bat *) getArgReference(stk, pci, 1);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	bat bid = * getArgReference_bat(stk, pci, 1);
 	const ValRecord *v = &stk->stk[getArg(pci, 2)];
 	BAT *b, *bn;
 

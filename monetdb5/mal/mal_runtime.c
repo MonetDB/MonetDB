@@ -271,7 +271,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
     BAT *b;
 	BUN cnt;
     lng total = 0;
-	int bid;
+	bat bid;
 
 	if ( !mb || !stk)
 		return ;

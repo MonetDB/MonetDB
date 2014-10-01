@@ -1106,25 +1106,26 @@ OPTvectorOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	oid *o;
 	BUN rows;
-	int i,bid;
+	int i;
+	bat bid;
 	BAT *b;
 	(void) cntxt;
 	(void) mb;
 
-	bid = *(int*) getArgReference(stk, pci, pci->retc);
+	bid = *getArgReference_bat(stk, pci, pci->retc);
 	b = BBPquickdesc(bid, FALSE);
 	if (b == NULL)
 		throw(SQL,"centipede.vector","Can not access BAT");
 	rows = BATcount(b);
-	o= (oid*) getArgReference(stk,pci,0);
+	o= getArgReference_oid(stk,pci,0);
 	*o = 0;
 	if ( pci->retc >= 2 ) {
 		for ( i= 1; i < pci->retc-1; i++){
-			o= (oid*) getArgReference(stk, pci, i);
+			o= getArgReference_oid(stk, pci, i);
 			*o = (oid) ((rows * i ) / (pci->retc - 1)  + 1); /* last one excluded */
 		}
 		/* i == pci->retc-1 */
-		o= (oid*) getArgReference(stk,pci,i);
+		o= getArgReference_oid(stk,pci,i);
 		*o = oid_nil;
 	}
 	return MAL_SUCCEED;

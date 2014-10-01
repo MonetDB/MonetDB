@@ -294,11 +294,11 @@ QLOGempty(int *ret)
 str
 QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	oid *ret = (oid*) getArgReference(stk,pci,0);
-	str *q = (str*) getArgReference(stk,pci,1);
-	str *pipe = (str*) getArgReference(stk,pci,2);
-	str  *usr = (str*) getArgReference(stk,pci,3);
-	lng *tick = (lng*) getArgReference(stk,pci,4);
+	oid *ret = getArgReference_oid(stk,pci,0);
+	str *q = getArgReference_str(stk,pci,1);
+	str *pipe = getArgReference_str(stk,pci,2);
+	str  *usr = getArgReference_str(stk,pci,3);
+	lng *tick = getArgReference_lng(stk,pci,4);
 	oid o;
 
 	(void) cntxt;
@@ -323,15 +323,15 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *tick1  = (lng*) getArgReference(stk,pci,1);
-	lng *tick2  = (lng*) getArgReference(stk,pci,2);
-	str *arg	= (str*) getArgReference(stk,pci,3);
-	wrd *tuples = (wrd*) getArgReference(stk,pci,4);
-	lng *xtime  = (lng*) getArgReference(stk,pci,5);
-	lng *rtime  = (lng*) getArgReference(stk,pci,6);
-	int *cpu	= (int*) getArgReference(stk,pci,7);
-	int *iowait = (int*) getArgReference(stk,pci,8);
-	lng *space  = (lng*) getArgReference(stk,pci,9);
+	lng *tick1  = getArgReference_lng(stk,pci,1);
+	lng *tick2  = getArgReference_lng(stk,pci,2);
+	str *arg	= getArgReference_str(stk,pci,3);
+	wrd *tuples = getArgReference_wrd(stk,pci,4);
+	lng *xtime  = getArgReference_lng(stk,pci,5);
+	lng *rtime  = getArgReference_lng(stk,pci,6);
+	int *cpu	= getArgReference_int(stk,pci,7);
+	int *iowait = getArgReference_int(stk,pci,8);
+	lng *space  = getArgReference_lng(stk,pci,9);
 	(void) cntxt;
 
 	initQlog();

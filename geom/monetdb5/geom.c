@@ -80,7 +80,7 @@ geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
 geom_export str wkbgetcoordX(double *out, wkb **geom);
 geom_export str wkbgetcoordY(double *out, wkb **geom);
 geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
-geom_export str wkbcreatepoint_bat(int *out, int *x, int *y);
+geom_export str wkbcreatepoint_bat(int *out, bat *x, bat *y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbDimension(int *out, wkb **geom);
 geom_export str wkbGeometryTypeId(int *out, wkb **geom);
@@ -768,7 +768,7 @@ wkbcreatepoint(wkb **out, dbl *x, dbl *y)
 }
 
 str
-wkbcreatepoint_bat(int *out, int *ix, int *iy)
+wkbcreatepoint_bat(int *out, bat *ix, bat *iy)
 {
 	BAT *bo = NULL, *bx = NULL, *by = NULL;
 	dbl *x = NULL, *y = NULL;

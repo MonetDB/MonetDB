@@ -27,7 +27,7 @@
 #include "bbp.h"
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2) {
+pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
 	if (BBPindex(buf) <= 0)
@@ -44,14 +44,14 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	ValPtr lhs;
-	int i = -1;
+	bat i;
 	int ht,tt;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	lhs = getArgReference(stk,pci,0); 
-	name = *(str*) getArgReference(stk, pci, 1);
+	lhs = &stk->stk[pci->argv[0]];
+	name = *getArgReference_str(stk, pci, 1);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
 	i = BBPindex(name);

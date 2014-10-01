@@ -34,7 +34,7 @@
 #include "inspect.h"
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2, str X3) {
+pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
 	if (BBPindex(buf) <= 0)
@@ -62,7 +62,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	int *ret = (int *) getArgReference(stk,pci,0);
+	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
@@ -92,7 +92,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	int *ret = (int *) getArgReference(stk,pci,0);
+	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
@@ -123,7 +123,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	int *ret = (int *) getArgReference(stk,pci,0);
+	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
@@ -156,7 +156,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
-	int *ret = (int *) getArgReference(stk,pci,0);
+	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
@@ -188,7 +188,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
-	int *ret = (int *) getArgReference(stk,pci,0);
+	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 
@@ -219,9 +219,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	bat *ret = getArgReference_bat(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	BAT *b;
 	(void)mb;
@@ -255,9 +255,9 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	bat *ret = getArgReference_bat(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	str ps, tail;
 	BAT *b;
@@ -298,9 +298,9 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	bat *ret = getArgReference_bat(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	str ps, tail;
 	BAT *b;
@@ -342,9 +342,9 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	bat *ret = getArgReference_bat(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	BAT *b;
 	(void) mb;
@@ -372,9 +372,9 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *ret = (str*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	str *ret = getArgReference_str(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	char *buf;
 	size_t len,lim;
@@ -538,7 +538,7 @@ INSPECTcalcSize(MalBlkPtr mb){
 
 str
 INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	lng *ret = (lng*) getArgReference(stk,p,0);
+	lng *ret = getArgReference_lng(stk,p,0);
 
 
 	*ret= INSPECTcalcSize(mb);
@@ -550,9 +550,9 @@ INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str
 INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = (lng*) getArgReference(stk,pci,0);
-	str *mod = (str*) getArgReference(stk,pci,1);
-	str *fcn = (str*) getArgReference(stk,pci,2);
+	lng *ret = getArgReference_lng(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
 	Symbol s;
 	(void) mb;
 
@@ -597,7 +597,7 @@ INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *ret;
 	(void) stk;
 	(void) cntxt;
-	ret = (bit *) getArgReference(stk, pci, 0);
+	ret = getArgReference_bit(stk, pci, 0);
 	*ret = getArgType(mb,pci,1)== getArgType(mb,pci,2);
 	return MAL_SUCCEED;
 }
@@ -607,15 +607,15 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *hn, *tn =0;
 
-	hn = (str *) getArgReference(stk, pci, 0);
+	hn = getArgReference_str(stk, pci, 0);
 
 	(void) cntxt;
 	if( pci->retc== 2){
-		tn = (str *) getArgReference(stk, pci, 1);
+		tn = getArgReference_str(stk, pci, 1);
 		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
 		*tn = getTypeName(getColumnType(getArgType(mb, pci, 2)));
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
-		int *bid= (int*) getArgReference(stk,pci,1);
+		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
 		if ((b = BATdescriptor(*bid)) ) {
 			*hn = getTypeName(newBatType((b->htype==TYPE_void?TYPE_oid:b->htype),b->ttype));

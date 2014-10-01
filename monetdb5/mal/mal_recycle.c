@@ -1015,7 +1015,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 }
 
 str 
-RECYCLEresetBAT(Client cntxt, int bid)
+RECYCLEresetBAT(Client cntxt, bat bid)
 {
 	int i,j, actions =0;
 	char *release;
