@@ -1375,22 +1375,18 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	
 
-	if( pci->argc > 1){
-		if( getArgType(mb,pci,1) == TYPE_lng)
-			threshold = *(int*) getArgReference(stk,pci,1);
-		if( getArgType(mb,pci,1) == TYPE_str){
-			c= properties[0] = *(str*) getArgReference(stk,pci,1);
-			top++;
-			while ( (c=strchr(c,';'))  && top <32){
-				*c++ = 0;
-				properties[top++] = c;
-			}
+	if(pci->argc > 1 && getArgType(mb,pci,1) == TYPE_str){
+		c= properties[0] = *(str*) getArgReference(stk,pci,1);
+		top++;
+		while ( (c=strchr(c,';'))  && top <32){
+			*c++ = 0;
+			properties[top++] = c;
 		}
 	}
 	if( top == 0) { properties[0]="compressed"; top++;}
 
-	if( pci->argc >2 ){
-		bid = *(int*) getArgReference(stk,pci,2);
+	if( pci->argc >1 ){
+		bid = *(int*) getArgReference(stk,pci,pci->argc-1);
 		for( j = 0; j < top; j++){
 			x+= MOSanalyseInternal(cntxt, threshold, properties[j], bid);
 			xf[j]= xfactor;

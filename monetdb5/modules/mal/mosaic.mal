@@ -32,14 +32,13 @@ pattern analyse(properties:str)
 address MOSanalyse
 comment "Apply heap compression on all with minimum threshold";
 
-pattern analyse(threshold:int)
+pattern analyse(properties:str,b:int)
 address MOSanalyse
-comment "Apply heap compression on all with minimum threshold";
+comment "Apply heap compression on a single column";
 
-pattern analyse(threshold:int,b:int)
+pattern analyse(b:int)
 address MOSanalyse
-comment "Apply heap compression on all with minimum threshold";
-
+comment "Apply default heap compression on a specific column";
 
 pattern dump(b:bat[:oid,:any])
 address MOSdump
