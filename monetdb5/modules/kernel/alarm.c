@@ -32,7 +32,8 @@
  * the cpu clock.They return an integer and string, respectively.
  */
 #include "monetdb_config.h"
-#include "alarm.h"
+#include "mal.h"
+#include <signal.h>
 #include <time.h>
 
 #ifdef WIN32
@@ -54,6 +55,14 @@ alarm_export str ALARMtimers(int *res);
 alarm_export str ALARMctime(str *res);
 alarm_export str ALARMepoch(int *res);
 alarm_export str ALARMtime(int *res);
+
+#define MAXtimer                200
+
+typedef struct {
+	str action;		/* MIL action (as a string) */
+	MT_Sema sema;		/* barrier */
+	time_t alarm_time;	/* time when the alarm goes off */
+} monet_timer_t;
 
 static monet_timer_t timer[MAXtimer];
 static int timerTop = 0;
