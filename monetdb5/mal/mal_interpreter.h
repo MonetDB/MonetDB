@@ -128,6 +128,14 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 		assert(v->vtype == TYPE_lng);				\
 		&v->val.lval;								\
 	})
+#ifdef HAVE_HGE
+#define getArgReference_hge(s, pci, k)				\
+	({												\
+		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
+		assert(v->vtype == TYPE_hge);				\
+		&v->val.hval;								\
+	})
+#endif
 #define getArgReference_str(s, pci, k)				\
 	({												\
 		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
@@ -147,6 +155,9 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_flt(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.fval)
 #define getArgReference_dbl(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.dval)
 #define getArgReference_lng(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.lval)
+#ifdef HAVE_HGE
+#define getArgReference_hge(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.hval)
+#endif
 #define getArgReference_str(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.sval)
 #endif
 
