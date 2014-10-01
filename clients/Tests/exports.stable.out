@@ -146,7 +146,7 @@ BAT *BATkunion(BAT *b, BAT *c);
 BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 BAT *BATmark(BAT *b, oid base);
-BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
+BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
 void *BATmax(BAT *b, void *aggr);
 size_t BATmemsize(BAT *b, int dirty);
 BAT *BATmergecand(BAT *a, BAT *b);

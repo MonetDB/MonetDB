@@ -1612,7 +1612,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
 gdk_export BAT *BATmark(BAT *b, oid base);
-gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
+gdk_export BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
 
