@@ -1581,10 +1581,14 @@ store_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (store_nr_active || GDKexiting() ||
-			logger_funcs.changes() < 1000) {
+		if (GDKexiting() || logger_funcs.changes() < 1000) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
+		}
+		while (store_nr_active) { /* find a moment to flush */
+			MT_lock_unset(&bs_lock, "store_manager");
+			MT_sleep_ms(50);
+			MT_lock_set(&bs_lock, "store_manager");
 		}
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
