@@ -1167,7 +1167,7 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 }
 
 static str
-JSONunfoldInternal(int *od, int *key, int *val, json *js)
+JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 {
 	BAT *bo = NULL, *bk, *bv;
 	oid o = 0;
@@ -1413,7 +1413,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *result, *row;
 	int i;
 	size_t len, lim, l;
-	str *ret;
+	json *ret;
 	BUN j, cnt;
 
 	(void) cntxt;
@@ -1442,7 +1442,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		result[len] = 0;
 	}
 	result[len - 1] = ']';
-	ret = (str *) getArgReference(stk, pci, 0);
+	ret = getArgReference_TYPE(stk, pci, 0, json);
 	*ret = result;
 	return MAL_SUCCEED;
 }
@@ -1516,13 +1516,13 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		result[len] = 0;
 	}
 	result[len - 1] = ']';
-	ret = (str *) getArgReference(stk, pci, 0);
+	ret = getArgReference_TYPE(stk, pci, 0, json);
 	*ret = result;
 	return MAL_SUCCEED;
 }
 
 static str
-JSONfoldKeyValue(str *ret, int *id, int *key, int *values)
+JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 {
 	BAT *bo = 0, *bk = 0, *bv;
 	BATiter boi, bki, bvi;
@@ -1654,31 +1654,31 @@ JSONfoldKeyValue(str *ret, int *id, int *key, int *values)
 str
 JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *id = 0, *key = 0, *val = 0;
+	bat *id = 0, *key = 0, *val = 0;
 	json *js;
 
 	(void) cntxt;
 	(void) mb;
 
 	if (pci->retc == 1) {
-		val = (int *) getArgReference(stk, pci, 0);
+		val = getArgReference_bat(stk, pci, 0);
 	} else if (pci->retc == 2) {
 		id = 0;
-		key = (int *) getArgReference(stk, pci, 0);
-		val = (int *) getArgReference(stk, pci, 1);
+		key = getArgReference_bat(stk, pci, 0);
+		val = getArgReference_bat(stk, pci, 1);
 	} else if (pci->retc == 3) {
-		id = (int *) getArgReference(stk, pci, 0);
-		key = (int *) getArgReference(stk, pci, 1);
-		val = (int *) getArgReference(stk, pci, 2);
+		id = getArgReference_bat(stk, pci, 0);
+		key = getArgReference_bat(stk, pci, 1);
+		val = getArgReference_bat(stk, pci, 2);
 	}
-	js = (json *) getArgReference(stk, pci, pci->retc);
+	js = getArgReference_TYPE(stk, pci, pci->retc, json);
 	return JSONunfoldInternal(id, key, val, js);
 }
 
 str
 JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *id = 0, *key = 0, *val = 0;
+	bat *id = 0, *key = 0, *val = 0;
 	str *ret;
 
 	(void) cntxt;
@@ -1686,23 +1686,23 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(pci->retc == 1);
 	if (pci->argc - pci->retc == 1) {
-		val = (int *) getArgReference(stk, pci, 1);
+		val = getArgReference_bat(stk, pci, 1);
 	} else if (pci->argc - pci->retc == 2) {
 		id = 0;
-		key = (int *) getArgReference(stk, pci, 1);
-		val = (int *) getArgReference(stk, pci, 2);
+		key = getArgReference_bat(stk, pci, 1);
+		val = getArgReference_bat(stk, pci, 2);
 	} else {
 		assert(pci->argc - pci->retc == 3);
-		id = (int *) getArgReference(stk, pci, 1);
-		key = (int *) getArgReference(stk, pci, 2);
-		val = (int *) getArgReference(stk, pci, 3);
+		id = getArgReference_bat(stk, pci, 1);
+		key = getArgReference_bat(stk, pci, 2);
+		val = getArgReference_bat(stk, pci, 3);
 	}
-	ret = (str *) getArgReference(stk, pci, 0);
+	ret = getArgReference_TYPE(stk, pci, 0, json);
 	return JSONfoldKeyValue(ret, id, key, val);
 }
 
 str
-JSONtextString(str *ret, int *bid)
+JSONtextString(str *ret, bat *bid)
 {
 	(void) ret;
 	(void) bid;

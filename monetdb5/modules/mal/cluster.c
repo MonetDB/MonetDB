@@ -292,7 +292,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
  * The hash key and the oid are materialized to prepare for reclustering.
  */
 str
-CLUSTER_key( bat *M, bat *B){
+CLUSTER_key( bat *M, const bat *B){
 	BAT *map, *b;
 
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -348,7 +348,7 @@ typedef struct{
 } Basket;
 
 str  
-CLUSTER_map(bat *RB, bat *B)
+CLUSTER_map(bat *RB, const bat *B)
 {
 	BUN rng,bsize, bnr=0, h, N= 2; /* number of buckets */
 	BAT *b, *map;
@@ -501,9 +501,9 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 str  
 CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res =(int *) getArgReference(stk, pci, 0);
-	bat *CMAP =(int *) getArgReference(stk, pci, 1);
-	bat *B =(int *) getArgReference(stk, pci, 2);
+	bat *res =getArgReference_bat(stk, pci, 0);
+	const bat *CMAP =getArgReference_bat(stk, pci, 1);
+	const bat *B =getArgReference_bat(stk, pci, 2);
 	BAT *cmap = NULL, *b = NULL;
 	str msg= MAL_SUCCEED;
 
@@ -526,13 +526,15 @@ str
 CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *map,*b;
-	int *res, hid, mid, *bid,i;
+	bat *res, hid, mid;
+	const bat *bid;
+	int i;
 	str msg= MAL_SUCCEED;
 	(void) cntxt;
 	(void) mb;
 
-	res =(int *) getArgReference(stk, pci, 0);
-	bid = (int*) getArgReference(stk,pci,pci->retc);
+	res =getArgReference_bat(stk, pci, 0);
+	bid = getArgReference_bat(stk,pci,pci->retc);
 	msg = CLUSTER_key(&hid,bid);
 	if (msg)
 		return msg;
@@ -544,7 +546,7 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
 
 	for ( i=pci->retc; i<pci->argc; i++){
-		bid = (int*) getArgReference(stk,pci,i);
+		bid = getArgReference_bat(stk,pci,i);
 		b = BATdescriptor(*bid);
 		if ( b== NULL)
 			throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
@@ -2612,8 +2614,8 @@ str
 CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	bat *bid = (bat *) getArgReference(stk, pci, pci->retc);
-	bat *psum = (bat *) getArgReference(stk, pci, pci->retc+1);
+	const bat *bid = getArgReference_bat(stk, pci, pci->retc);
+	const bat *psum = getArgReference_bat(stk, pci, pci->retc+1);
 	BAT *b, *pb;
 	wrd *cnt, *end;
 	BUN l = 0, h = l;
@@ -2634,7 +2636,7 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	end = cnt + BATcount(pb);
 
 	for( i = 0; i<pci->retc && cnt < end; i++, cnt++) {
-		bat *res = (bat*) getArgReference(stk, pci, i);
+		bat *res = getArgReference_bat(stk, pci, i);
 		BAT *v;
 
 		assert((lng) *cnt <= (lng) BUN_MAX);

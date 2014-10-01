@@ -79,8 +79,8 @@ FCTgetLocations(int *ret)
 str
 FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str mod = *(str*) getArgReference(stk, pci, 1);
-	str fcn = *(str*) getArgReference(stk, pci, 2);
+	str mod = *getArgReference_str(stk, pci, 1);
+	str fcn = *getArgReference_str(stk, pci, 2);
 	Symbol s;
 	(void) mb;
 

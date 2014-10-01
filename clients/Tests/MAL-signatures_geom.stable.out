@@ -41079,15 +41079,11 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
 comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
 comment Returns the oids of a uniform sample of size s
 

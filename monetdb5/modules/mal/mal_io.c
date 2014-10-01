@@ -86,7 +86,7 @@ str
 IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
 {
 	int tpe = getArgType(mb, pci, indx);
-	ptr val = (ptr) getArgReference(stk, pci, indx);
+	ptr val = getArgReference(stk, pci, indx);
 	stream *fp = cntxt->fdout;
 
 	(void) mb;
@@ -104,7 +104,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (isaBatType(tpe) ) {
 		BAT *b;
 
-		if (*(int *) val == 0) {
+		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
 			mnstr_printf(fp,"nil");
@@ -112,7 +112,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(int *) val);
+		b = BATdescriptor(*(bat *) val);
 		if (b == NULL) {
 			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
 		}
@@ -504,7 +504,7 @@ tstagain:
 str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *fmt = (str*) getArgReference(stk,pci,1);
+	str *fmt = getArgReference_str(stk,pci,1);
 	str fmt2 = NULL;
 	str msg= MAL_SUCCEED;
 
@@ -537,9 +537,9 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 str
 IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *fmt = (str*) getArgReference(stk,pci,2);
+	str *fmt = getArgReference_str(stk,pci,2);
 	str fmt2 = NULL;
-	stream *f= (stream*) getArgReference(stk,pci,1);
+	stream *f= (stream *) getArgReference(stk,pci,1);
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
@@ -585,7 +585,7 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 	(void) cntxt;
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
-		val = (ptr) getArgReference(stk, pci, i);
+		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
 			for (k = 0; k < nbats; k++)
 				BBPunfix(piv[k]->batCacheid);
@@ -610,7 +610,7 @@ str
 IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	order = *(int *) getArgReference(stk, pci, 1);
+	order = *getArgReference_int(stk, pci, 1);
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, TRUE, TRUE);
 }
 
@@ -627,7 +627,7 @@ IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int order;
 
 	fp = *(stream **) getArgReference(stk, pci, 1);
-	order = *(int *) getArgReference(stk, pci, 2);
+	order = *getArgReference_int(stk, pci, 2);
 	(void) order;		/* fool compiler */
 	return IOtableAll(fp, cntxt, mb, stk, pci, 3, 1, TRUE, TRUE);
 }
@@ -651,7 +651,7 @@ str
 IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	order = *(int *) getArgReference(stk, pci, 1);
+	order = *getArgReference_int(stk, pci, 1);
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 

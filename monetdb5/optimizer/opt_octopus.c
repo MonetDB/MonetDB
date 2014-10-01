@@ -1358,7 +1358,7 @@ OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str 
 OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
+	int *ret = getArgReference_int(stk,pci,0);
 
 	(void) cntxt;
 	*ret = OPTlegAdviceInternal(mb,stk,pci);

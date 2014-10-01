@@ -203,7 +203,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( msg != MAL_SUCCEED)
 		return msg;
-	BSKTelements(tbl = *(str *) getArgReference(stk, pci, 1), buf, &lsch, &ltbl);
+	BSKTelements(tbl = *getArgReference_str(stk, pci, 1), buf, &lsch, &ltbl);
 	BSKTtolower(lsch);
 	BSKTtolower(ltbl);
 
@@ -336,7 +336,8 @@ str
 BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
-	int bskt, i, k, *ret;
+	int bskt, i, k;
+	bat *ret;
 	BAT *b, *bn = 0, *bo = 0, *bs, *v;
 	int cnt = 0;
 	timestamp start, finish;
@@ -344,7 +345,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	tbl = *(str *) getArgReference(stk, pci, pci->argc - 1);
+	tbl = *getArgReference_str(stk, pci, pci->argc - 1);
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0)
@@ -380,7 +381,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bs = BATselect(baskets[bskt].primary[k], &start, &finish);
 
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			if (BATcount(bo) == 0)
 				bn = BATnew(b->htype, b->ttype, BATTINY, TRANSIENT);
@@ -405,7 +406,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* take care of sliding windows */
 		MT_lock_set(&baskets[bskt].lock, "lock basket");
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
 
 			/* we may be too early, all BATs are aligned */
@@ -430,7 +431,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* straight copy of the basket */
 		MT_lock_set(&baskets[bskt].lock, "lock basket");
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			cnt = (int) BATcount(b);
@@ -449,12 +450,13 @@ str
 BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
-	int bskt, i, j, ret;
+	int bskt, i, j;
+	bat ret;
 	BAT *b, *bn;
 
 	(void) cntxt;
 	(void) mb;
-	tbl = *(str *) getArgReference(stk, pci, pci->retc);
+	tbl = *getArgReference_str(stk, pci, pci->retc);
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0)
@@ -465,7 +467,7 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* copy the content of the temporary BATs into the basket */
 	MT_lock_set(&baskets[bskt].lock, "lock basket");
 	for (j = 2, i = 0; i < baskets[bskt].colcount; i++, j++) {
-		ret = *(int *) getArgReference(stk, pci, j);
+		ret = *getArgReference_bat(stk, pci, j);
 		b = baskets[bskt].primary[i];
 		bn = BATdescriptor(ret);
 		BATappend(b, bn, TRUE);

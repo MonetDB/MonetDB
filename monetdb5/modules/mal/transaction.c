@@ -96,13 +96,14 @@ TRNsubcommit(bit *ret, int *bid)
 str
 TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}
@@ -116,13 +117,14 @@ TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.abort",  RUNTIME_OBJECT_MISSING);
 		}
@@ -135,13 +137,14 @@ TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}

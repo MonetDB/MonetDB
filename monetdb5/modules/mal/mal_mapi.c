@@ -861,12 +861,12 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 
 str
 SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *key =(int*) getArgReference(stk,pci,0);
-	str *host = (str*) getArgReference(stk,pci,1);
-	int *port = (int*) getArgReference(stk,pci,2);
-	str *username = (str*) getArgReference(stk,pci,3);
-	str *password= (str*) getArgReference(stk,pci,4);
-	str *lang = (str*) getArgReference(stk,pci,5);
+	int *key =getArgReference_int(stk,pci,0);
+	str *host = getArgReference_str(stk,pci,1);
+	int *port = getArgReference_int(stk,pci,2);
+	str *username = getArgReference_str(stk,pci,3);
+	str *password= getArgReference_str(stk,pci,4);
+	str *lang = getArgReference_str(stk,pci,5);
 
 	(void) mb;
 	return SERVERconnectAll(cntxt, key,host,port,username,password,lang);
@@ -876,13 +876,13 @@ SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str
 SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *key =(int*) getArgReference(stk,pci,0);
-	str *host = (str*) getArgReference(stk,pci,1);
-	int *port = (int*) getArgReference(stk,pci,2);
-	str *dbalias = (str*) getArgReference(stk,pci,3);
-	str *username = (str*) getArgReference(stk,pci,4);
-	str *password= (str*) getArgReference(stk,pci,5);
-	str *lang = (str*) getArgReference(stk,pci,6);
+	int *key =getArgReference_int(stk,pci,0);
+	str *host = getArgReference_str(stk,pci,1);
+	int *port = getArgReference_int(stk,pci,2);
+	str *dbalias = getArgReference_str(stk,pci,3);
+	str *username = getArgReference_str(stk,pci,4);
+	str *password= getArgReference_str(stk,pci,5);
+	str *lang = getArgReference_str(stk,pci,6);
 	int i;
 	str msg=MAL_SUCCEED;
 
@@ -904,12 +904,12 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int *key =(int*) getArgReference(stk,pci,0);
-	str *host = (str*) getArgReference(stk,pci,1);
-	int *port = (int*) getArgReference(stk,pci,2);
-	str *username = (str*) getArgReference(stk,pci,3);
-	str *password= (str*) getArgReference(stk,pci,4);
-	str *lang = (str*) getArgReference(stk,pci,5);
+	int *key =getArgReference_int(stk,pci,0);
+	str *host = getArgReference_str(stk,pci,1);
+	int *port = getArgReference_int(stk,pci,2);
+	str *username = getArgReference_str(stk,pci,3);
+	str *password= getArgReference_str(stk,pci,4);
+	str *lang = getArgReference_str(stk,pci,5);
 	int i;
 	str msg=MAL_SUCCEED, nme= "anonymous";
 
@@ -1447,14 +1447,14 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	char *s,*fld, *qry=0;
 
 	(void) cntxt;
-	key= * (int*) getArgReference(stk,pci,pci->retc);
+	key= * getArgReference_int(stk,pci,pci->retc);
 	accessTest(key, "rpc");
 #ifdef MAPI_TEST
 	mnstr_printf(cntxt->fdout,"about to send: %s\n",qry);
 #endif
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
-		fld= * (str*) getArgReference(stk,pci,i);
+		fld= * getArgReference_str(stk,pci,i);
 		if( qry == 0)
 			qry= GDKstrdup(fld);
 		else {
@@ -1497,7 +1497,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_str:
 				SERVERfieldAnalysis(fld,
 					getVarType(mb,getArg(pci,j)),
-					getArgReference(stk,pci,j));
+					&stk->stk[pci->argv[j]]);
 				break;
 			default:
 				throw(MAL, "mapi.rpc",
@@ -1518,7 +1518,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  */
 str
 SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *ret;
+	bat *ret;
 	int *key;
 	str *qry,err= MAL_SUCCEED;
 	int i;
@@ -1530,9 +1530,9 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int ht,tt;
 
 	(void) cntxt;
-	ret= (int*) getArgReference(stk,pci,0);
-	key= (int*) getArgReference(stk,pci,pci->retc);
-	qry= (str*) getArgReference(stk,pci,pci->retc+1);
+	ret= getArgReference_bat(stk,pci,0);
+	key= getArgReference_int(stk,pci,pci->retc);
+	qry= getArgReference_str(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
 	ht= getHeadType(getVarType(mb,getArg(pci,0)));
 	tt= getColumnType(getVarType(mb,getArg(pci,0)));
@@ -1588,9 +1588,9 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	char *w=0, buf[BUFSIZ];
 
 	(void) cntxt;
-	key= (int*) getArgReference(stk,pci,pci->retc);
-	nme= (str*) getArgReference(stk,pci,pci->retc+1);
-	val= (ptr) getArgReference(stk,pci,pci->retc+2);
+	key= getArgReference_int(stk,pci,pci->retc);
+	nme= getArgReference_str(stk,pci,pci->retc+1);
+	val= getArgReference(stk,pci,pci->retc+2);
 	accessTest(*key, "put");
 	switch( (tpe=getArgType(mb,pci, pci->retc+2)) ){
 	case TYPE_bat:{
@@ -1650,9 +1650,9 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	char *w=0, buf[BUFSIZ];
 
 	(void) cntxt;
-	ret= (str*) getArgReference(stk,pci,0);
-	nme= (str*) getArgReference(stk,pci,pci->retc);
-	val= (ptr) getArgReference(stk,pci,pci->retc+1);
+	ret= getArgReference_str(stk,pci,0);
+	nme= getArgReference_str(stk,pci,pci->retc);
+	val= getArgReference(stk,pci,pci->retc+1);
 	switch( (tpe=getArgType(mb,pci, pci->retc+1)) ){
 	case TYPE_bat:
 	case TYPE_ptr:
@@ -1680,14 +1680,14 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	char buf[BUFSIZ];
 
 	(void) cntxt;
-	key= (int*) getArgReference(stk,pci,pci->retc);
-	nme= (str*) getArgReference(stk,pci,pci->retc+1);
+	key= getArgReference_int(stk,pci,pci->retc);
+	nme= getArgReference_str(stk,pci,pci->retc+1);
 	accessTest(*key, "bind");
 	if( pci->argc == 6) {
 		char *tn;
-		tab= (str*) getArgReference(stk,pci,pci->retc+2);
-		col= (str*) getArgReference(stk,pci,pci->retc+3);
-		i= *(int*) getArgReference(stk,pci,pci->retc+4);
+		tab= getArgReference_str(stk,pci,pci->retc+2);
+		col= getArgReference_str(stk,pci,pci->retc+3);
+		i= *getArgReference_int(stk,pci,pci->retc+4);
 		tn = getTypeName(getColumnType(getVarType(mb,getDestVar(pci))));
 		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
@@ -1695,8 +1695,8 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			*nme, *tab,*col,i);
 		GDKfree(tn);
 	} else if( pci->argc == 5) {
-		tab= (str*) getArgReference(stk,pci,pci->retc+2);
-		i= *(int*) getArgReference(stk,pci,pci->retc+3);
+		tab= getArgReference_str(stk,pci,pci->retc+2);
+		i= *getArgReference_int(stk,pci,pci->retc+3);
 		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
 	} else {

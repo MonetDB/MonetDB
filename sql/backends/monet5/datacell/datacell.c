@@ -138,10 +138,10 @@ DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *host = (str *) getArgReference(stk, pci, 2);
-	int *port = (int *) getArgReference(stk, pci, 3);
+	int *ret = getArgReference_int(stk, pci, 0);
+	str *tbl = getArgReference_str(stk, pci, 1);
+	str *host = getArgReference_str(stk, pci, 2);
+	int *port = getArgReference_int(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
 	str *protocol;
 	str *mode;
@@ -154,7 +154,7 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	rc = RCfind(*tbl);
 	if ( pci->argc == 6 && rc != NULL ){
-		protocol = (str *) getArgReference(stk, pci, 4);
+		protocol = getArgReference_str(stk, pci, 4);
 		if ( strcmp("tcp", *protocol) == 0)
 			rc->protocol = TCP;
 		else
@@ -169,7 +169,7 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL,"datacell.register","Illegal protocol");
 
-		mode = (str *) getArgReference(stk, pci, 5);
+		mode = getArgReference_str(stk, pci, 5);
 		if ( strcmp("active", *mode) == 0)
 			rc->mode = BSKTACTIVE;
 		else
@@ -189,10 +189,10 @@ DCbasket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str
 DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *host = (str *) getArgReference(stk, pci, 2);
-	int *port = (int *) getArgReference(stk, pci, 3);
+	int *ret = getArgReference_int(stk, pci, 0);
+	str *tbl = getArgReference_str(stk, pci, 1);
+	str *host = getArgReference_str(stk, pci, 2);
+	int *port = getArgReference_int(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
 	Emitter em;
 	str *protocol, *mode;
@@ -204,7 +204,7 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	em = EMfind(*tbl);
 	if ( pci->argc == 6 && em != NULL ){
-		protocol = (str *) getArgReference(stk, pci, 4);
+		protocol = getArgReference_str(stk, pci, 4);
 		if ( strcmp("tcp", *protocol) == 0)
 			em->protocol = TCP;
 		else
@@ -219,7 +219,7 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL,"datacell.register","Illegal protocol");
 
-		mode = (str *) getArgReference(stk, pci, 5);
+		mode = getArgReference_str(stk, pci, 5);
 		if ( strcmp("active", *mode) == 0)
 			em->mode = BSKTACTIVE;
 		else
@@ -235,7 +235,7 @@ str
 DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
-	str tbl = *(str *) getArgReference(stk, pci, 1);
+	str tbl = *getArgReference_str(stk, pci, 1);
 	str msg1= MAL_SUCCEED, msg2 = MAL_SUCCEED;
 
 	if ( strcmp(tbl,"*")== 0){
@@ -264,7 +264,7 @@ str
 DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
-	str tbl = *(str *) getArgReference(stk, pci, 1);
+	str tbl = *getArgReference_str(stk, pci, 1);
 
 	if ( strcmp(tbl,"*")== 0){
 		RCresume(&ret);
@@ -283,7 +283,7 @@ str
 DCstopObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret;
-	str nme = *(str *) getArgReference(stk, pci, 1);
+	str nme = *getArgReference_str(stk, pci, 1);
 
 	(void) cntxt;
 	(void) mb;
@@ -302,7 +302,7 @@ DCstopObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str nme = *(str *) getArgReference(stk, pci, 1);
+	str nme = *getArgReference_str(stk, pci, 1);
 	str def;
 	Symbol s = NULL;
 	MalBlkPtr qry;
@@ -331,7 +331,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (s == NULL) {
 		if (pci->argc == 3) {
-			def = *(str *) getArgReference(stk, pci, 2);
+			def = *getArgReference_str(stk, pci, 2);
 			msg = SQLstatementIntern(cntxt, &def, lnme, 0, 0);
 			if (msg)
 				return msg;

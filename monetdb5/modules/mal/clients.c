@@ -44,7 +44,7 @@
 #endif
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2) {
+pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
 	if (BBPindex(buf) <= 0)
@@ -60,8 +60,8 @@ str
 CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	*(int*) getArgReference(stk,pci,0) = cntxt->listing;
-	cntxt->listing = *(int*) getArgReference(stk,pci,1);
+	*getArgReference_int(stk,pci,0) = cntxt->listing;
+	cntxt->listing = *getArgReference_int(stk,pci,1);
 	return MAL_SUCCEED;
 }
 
@@ -70,7 +70,7 @@ CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	assert(cntxt - mal_clients <= INT_MAX);
-	*(int*) getArgReference(stk,pci,0) = (int) (cntxt - mal_clients);
+	*getArgReference_int(stk,pci,0) = (int) (cntxt - mal_clients);
 	return MAL_SUCCEED;
 }
 
@@ -79,9 +79,9 @@ CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	if (cntxt->scenario)
-		*(str *) getArgReference(stk,pci,0) = GDKstrdup(cntxt->scenario);
+		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	else
-		*(str *) getArgReference(stk,pci,0) = GDKstrdup("nil");
+		*getArgReference_str(stk,pci,0) = GDKstrdup("nil");
 	return MAL_SUCCEED;
 }
 
@@ -91,10 +91,10 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	msg = setScenario(cntxt, *(str *) getArgReference(stk,pci,1));
-	*(str *) getArgReference(stk,pci,0) = 0;
+	msg = setScenario(cntxt, *getArgReference_str(stk,pci,1));
+	*getArgReference_str(stk,pci,0) = 0;
 	if (msg == NULL)
-		*(str *) getArgReference(stk,pci,0) = GDKstrdup(cntxt->scenario);
+		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	return msg;
 }
 
@@ -139,8 +139,8 @@ CLTtimeConvert(time_t l, char *s){
 str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret=  (int *) getArgReference(stk,pci,0);
-	int *ret2=  (int *) getArgReference(stk,pci,0);
+	bat *ret=  getArgReference_bat(stk,pci,0);
+	bat *ret2=  getArgReference_bat(stk,pci,0);
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	char s[26];
@@ -296,7 +296,7 @@ CLTusers(int *ret)
 str
 CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str* fname = (str *) getArgReference(stk,pci,1);
+	str* fname = getArgReference_str(stk,pci,1);
 	(void) mb;
 
 	if( cntxt->history){
@@ -325,7 +325,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( pci->argc==2 && cntxt->idx != 0)
 		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	if ( pci->argc==2)
-		id = *(int*) getArgReference(stk,pci,1);
+		id = *getArgReference_int(stk,pci,1);
 	else id =cntxt->idx;
 
 	if (id == 0 && cntxt->fdout != GDKout )
@@ -341,7 +341,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int id=  *(int *) getArgReference(stk,pci,1);
+	int id=  *getArgReference_int(stk,pci,1);
 	(void) mb;
 	if ( cntxt->user == mal_clients[id].user || 
 		mal_clients[0].user == cntxt->user){
@@ -354,7 +354,7 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *id=  (int *) getArgReference(stk,pci,1);
+	int *id=  getArgReference_int(stk,pci,1);
 	(void) cntxt;
 	(void) mb;
     return MCsuspendClient(*id);
@@ -366,7 +366,7 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng sto;
 	(void) mb;
-	sto=  *(lng *) getArgReference(stk,pci,1);
+	sto=  *getArgReference_lng(stk,pci,1);
 	cntxt->stimeout = sto * 1000 * 1000;
     return MAL_SUCCEED;
 }
@@ -375,10 +375,10 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng qto,sto;
 	(void) mb;
-	qto=  *(lng *) getArgReference(stk,pci,1);
+	qto=  *getArgReference_lng(stk,pci,1);
 	cntxt->qtimeout = qto * 1000 * 1000;
 	if ( pci->argc == 3){
-		sto=  *(lng *) getArgReference(stk,pci,2);
+		sto=  *getArgReference_lng(stk,pci,2);
 		cntxt->stimeout = sto * 1000 * 1000;
 	}
     return MAL_SUCCEED;
@@ -386,8 +386,8 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *qto=  (lng *) getArgReference(stk,pci,0);
-	lng *sto=  (lng *) getArgReference(stk,pci,1);
+	lng *qto=  getArgReference_lng(stk,pci,0);
+	lng *sto=  getArgReference_lng(stk,pci,1);
 	(void) mb;
 	*qto = cntxt->qtimeout;
 	*sto = cntxt->stimeout;
@@ -454,9 +454,9 @@ str CLTbackendsum(str *ret, str *pw) {
 }
 
 str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	oid *ret = (oid *)getArgReference(stk, pci, 0);
-	str *usr = (str *)getArgReference(stk, pci, 1);
-	str *pw = (str *)getArgReference(stk, pci, 2);
+	oid *ret = getArgReference_oid(stk, pci, 0);
+	str *usr = getArgReference_str(stk, pci, 1);
+	str *pw = getArgReference_str(stk, pci, 2);
 
 	(void)mb;
 	
@@ -467,21 +467,21 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr;
 	(void)mb;
 
-	usr = (str *)getArgReference(stk, pci, 1);
+	usr = getArgReference_str(stk, pci, 1);
 
 	return AUTHremoveUser(&cntxt, usr);
 }
 
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *ret = (str *)getArgReference(stk, pci, 0);
+	str *ret = getArgReference_str(stk, pci, 0);
 	(void)mb;
 
 	return AUTHgetUsername(ret, &cntxt);
 }
 
 str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *ret = (str *)getArgReference(stk, pci, 0);
-	str *user = (str *)getArgReference(stk, pci, 1);
+	str *ret = getArgReference_str(stk, pci, 0);
+	str *user = getArgReference_str(stk, pci, 1);
 
 	(void)mb;
 
@@ -489,8 +489,8 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 }
 
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = (str *)getArgReference(stk, pci, 1);
-	str *new = (str *)getArgReference(stk, pci, 2);
+	str *old = getArgReference_str(stk, pci, 1);
+	str *new = getArgReference_str(stk, pci, 2);
 
 	(void)mb;
 
@@ -498,8 +498,8 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = (str *)getArgReference(stk, pci, 1);
-	str *new = (str *)getArgReference(stk, pci, 2);
+	str *old = getArgReference_str(stk, pci, 1);
+	str *new = getArgReference_str(stk, pci, 2);
 
 	(void)mb;
 
@@ -507,8 +507,8 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = (str *)getArgReference(stk, pci, 1);
-	str *new = (str *)getArgReference(stk, pci, 2);
+	str *usr = getArgReference_str(stk, pci, 1);
+	str *new = getArgReference_str(stk, pci, 2);
 
 	(void)mb;
 
@@ -516,8 +516,8 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = (str *)getArgReference(stk, pci, 1);
-	str *pw = (str *)getArgReference(stk, pci, 2);
+	str *usr = getArgReference_str(stk, pci, 1);
+	str *pw = getArgReference_str(stk, pci, 2);
 	str ch = "";
 	str algo = "SHA1";
 	oid id;
@@ -532,7 +532,7 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 }
 
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	bat *ret = (bat *)getArgReference(stk, pci, 0);
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	BAT *r = NULL;
 	str tmp;
 
@@ -547,23 +547,23 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 str
 CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *ret  = (str*) getArgReference(stk,pci,0);
-	int delay = *(int*) getArgReference(stk,pci,1);
+	str *ret  = getArgReference_str(stk,pci,0);
+	int delay = *getArgReference_int(stk,pci,1);
 	bit force = FALSE;
 	int leftover;
 	char buf[1024]={"safe to stop last connection"};
 
 	if ( pci->argc == 3) 
-		force = *(bit*) getArgReference(stk,pci,2);
+		force = *getArgReference_bit(stk,pci,2);
 
 	(void) mb;
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte:
 	case TYPE_sht:
-		delay = *(sht*) getArgReference(stk,pci,1);
+		delay = *getArgReference_sht(stk,pci,1);
 		break;
 	default:
-		delay = *(int*) getArgReference(stk,pci,1);
+		delay = *getArgReference_int(stk,pci,1);
 	}
 
 	if ( cntxt->user != mal_clients[0].user)
@@ -586,12 +586,12 @@ str
 CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *user = NULL, *login = NULL, *stimeout = NULL, *qtimeout = NULL, *last= NULL, *active= NULL;
-	int *userId = (int*) getArgReference(stk,pci,0);
-	int *loginId = (int*) getArgReference(stk,pci,1);
-	int *stimeoutId = (int*) getArgReference(stk,pci,2);
-	int *lastId = (int*) getArgReference(stk,pci,3);
-	int *qtimeoutId = (int*) getArgReference(stk,pci,4);
-	int *activeId = (int*) getArgReference(stk,pci,5);
+	int *userId = getArgReference_int(stk,pci,0);
+	int *loginId = getArgReference_int(stk,pci,1);
+	int *stimeoutId = getArgReference_int(stk,pci,2);
+	int *lastId = getArgReference_int(stk,pci,3);
+	int *qtimeoutId = getArgReference_int(stk,pci,4);
+	int *activeId = getArgReference_int(stk,pci,5);
     Client c;
 	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;

@@ -34,65 +34,56 @@
 #include "monetdb_config.h"
 #include "batcolor.h"
 
-#define prepareOperand(X,Y,Z)								\
-	if( (X= BATdescriptor(*Y)) == NULL )					\
-		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING);
-#define prepareOperand2(X,Y,A,B,Z)							\
-	if( (X= BATdescriptor(*Y)) == NULL )					\
-		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING);	\
-	if( (A= BATdescriptor(*B)) == NULL ){					\
-		BBPreleaseref(X->batCacheid);						\
-		throw(MAL, "batstr."Z, RUNTIME_OBJECT_MISSING);		\
-	}
-#define prepareResult(X,Y,T,Z)						\
-	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
-	if( X == NULL){									\
-		BBPreleaseref(Y->batCacheid);				\
-		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL);	\
-	}												\
-	if( Y->htype== TYPE_void)						\
-		BATseqbase(X, Y->hseqbase);					\
-	X->hsorted=Y->hsorted;							\
-	X->hrevsorted=Y->hrevsorted;					\
-	X->tsorted=0;									\
-	X->trevsorted=0;
-#define finalizeResult(X,Y,Z)									\
-	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ);	\
-	*X = (Y)->batCacheid;										\
-	BBPkeepref(*(X));											\
-	BBPreleaseref(Z->batCacheid);
-
-#define BATwalk(X1,X2,X3,X4)											\
-str CLRbat##X1(int *ret, int *l)										\
+#define BATwalk(NAME,FUNC,TYPE1,TYPE2)									\
+str CLRbat##NAME(bat *ret, const bat *l)								\
 {																		\
 	BATiter bi;															\
 	BAT *bn, *b;														\
 	BUN p,q;															\
-	X3 *x;																\
-	X4 y, *yp = &y;														\
+	TYPE1 *x;															\
+	TYPE2 y, *yp = &y;													\
 																		\
-	prepareOperand(b,l,#X1);											\
-	prepareResult(bn,b,getTypeIndex(#X4,-1,TYPE_int),#X1);				\
+	if( (b= BATdescriptor(*l)) == NULL )								\
+		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+	bn= BATnew(b->htype,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+	if( bn == NULL){													\
+		BBPreleaseref(b->batCacheid);									\
+		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
+	}																	\
+	if( b->htype== TYPE_void)											\
+		BATseqbase(bn, b->hseqbase);									\
+	bn->hsorted=b->hsorted;												\
+	bn->hrevsorted=b->hrevsorted;										\
+	bn->tsorted=0;														\
+	bn->trevsorted=0;													\
+	bn->T->nil = 0;														\
+	bn->T->nonil = 1;													\
 																		\
 	bi = bat_iterator(b);												\
 																		\
 	BATloop(b, p, q) {													\
 		ptr h = BUNhead(bi,p);											\
-		x= (X3 *) BUNtail(bi,p);										\
-		if (x== 0 || *x == X3##_nil) {									\
-			y = (X4)X4##_nil;											\
+		x= (TYPE1 *) BUNtail(bi,p);										\
+		if (x== 0 || *x == TYPE1##_nil) {								\
+			y = (TYPE2) TYPE2##_nil;									\
 			bn->T->nonil = 0;											\
+			bn->T->nil = 1;												\
 		} else															\
-			X2(yp,x);													\
+			FUNC(yp,x);													\
 		bunfastins(bn, h, yp);											\
 	}																	\
 	bn->H->nonil = b->H->nonil;											\
-	finalizeResult(ret,bn,b);											\
+	bn->H->nil = b->H->nil;												\
+	if (!(bn->batDirty & 2))											\
+		bn = BATsetaccess(bn, BAT_READ);								\
+	*ret = bn->batCacheid;												\
+	BBPkeepref(*ret);													\
+	BBPreleaseref(b->batCacheid);										\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
 	BBPreleaseref(b->batCacheid);										\
 	BBPreleaseref(bn->batCacheid);										\
-	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");	\
+	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
 BATwalk(Color,CLRcolor,str,color)
@@ -114,23 +105,42 @@ BATwalk(Luminance,CLRluminance,color,int)
 BATwalk(Cr,CLRcr,color,int)
 BATwalk(Cb,CLRcb,color,int)
 
-#define BATwalk3(X1,X2,X3,X4)											\
-str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)					\
+#define BATwalk3(NAME,FUNC,TYPE)										\
+str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\
 	BUN p,q,p2,p3;														\
-	X3 *x, *x2, *x3;													\
-	X4 y, *yp = &y;														\
+	TYPE *x, *x2, *x3;													\
+	color y, *yp = &y;													\
 																		\
-	prepareOperand(b,l,#X1);											\
+	b= BATdescriptor(*l);												\
 	b2= BATdescriptor(*bid2);											\
-	if(b2== NULL)														\
-		throw(MAL, "batcolor." #X1,RUNTIME_OBJECT_MISSING);				\
 	b3= BATdescriptor(*bid3);											\
-	if(b3== NULL)														\
-		throw(MAL, "batcolor." #X1,RUNTIME_OBJECT_MISSING);				\
-	prepareResult(bn,b,getTypeIndex(#X4,-1,TYPE_int),#X1);				\
+	if (b == NULL || b2 == NULL || b3 == NULL) {						\
+		if (b)															\
+			BBPreleaseref(b->batCacheid);								\
+		if (b2)															\
+			BBPreleaseref(b2->batCacheid);								\
+		if (b3)															\
+			BBPreleaseref(b3->batCacheid);								\
+		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+	}																	\
+	bn= BATnew(b->htype,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
+	if( bn == NULL){													\
+		BBPreleaseref(b->batCacheid);									\
+		BBPreleaseref(b2->batCacheid);									\
+		BBPreleaseref(b3->batCacheid);									\
+		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
+	}																	\
+	if( b->htype== TYPE_void)											\
+		BATseqbase(bn, b->hseqbase);									\
+	bn->hsorted=b->hsorted;												\
+	bn->hrevsorted=b->hrevsorted;										\
+	bn->tsorted=0;														\
+	bn->trevsorted=0;													\
+	bn->T->nil = 0;														\
+	bn->T->nonil = 1;													\
 																		\
 	bi = bat_iterator(b);												\
 	b2i = bat_iterator(b2);												\
@@ -140,29 +150,39 @@ str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)					\
 	p3= BUNfirst(b3);													\
 	BATloop(b, p, q) {													\
 		ptr h = BUNhead(bi,p);											\
-		x= (X3 *) BUNtail(bi,p);										\
-		x2= (X3 *) BUNtail(b2i,p);										\
-		x3= (X3 *) BUNtail(b3i,p);										\
-		if (x== 0 || *x == X3##_nil ||									\
-		   x2== 0 || *x2 == X3##_nil ||									\
-		   x3== 0 || *x3 == X3##_nil) {									\
-			y = X4##_nil;												\
+		x= (TYPE *) BUNtail(bi,p);										\
+		x2= (TYPE *) BUNtail(b2i,p);									\
+		x3= (TYPE *) BUNtail(b3i,p);									\
+		if (x== 0 || *x == TYPE##_nil ||								\
+			x2== 0 || *x2 == TYPE##_nil ||								\
+			x3== 0 || *x3 == TYPE##_nil) {								\
+			y = color_nil;												\
 			bn->T->nonil = 0;											\
+			bn->T->nil = 1;												\
 		} else															\
-			X2(yp,x,x2,x3);												\
+			FUNC(yp,x,x2,x3);											\
 		bunfastins(bn, h, yp);											\
 		p2++;															\
 		p3++;															\
 	}																	\
 	bn->H->nonil = b->H->nonil;											\
-	finalizeResult(ret,bn,b);											\
+	bn->H->nil = b->H->nil;												\
+	if (!(bn->batDirty & 2))											\
+		bn = BATsetaccess(bn, BAT_READ);								\
+	*ret = bn->batCacheid;												\
+	BBPkeepref(*ret);													\
+	BBPreleaseref(b->batCacheid);										\
+	BBPreleaseref(b2->batCacheid);										\
+	BBPreleaseref(b3->batCacheid);										\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
 	BBPreleaseref(b->batCacheid);										\
+	BBPreleaseref(b2->batCacheid);										\
+	BBPreleaseref(b3->batCacheid);										\
 	BBPreleaseref(bn->batCacheid);										\
-	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");	\
+	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk3(Hsv,CLRhsv,flt,color)
-BATwalk3(Rgb,CLRrgb,int,color)
-BATwalk3(ycc,CLRycc,int,color)
+BATwalk3(Hsv,CLRhsv,flt)
+BATwalk3(Rgb,CLRrgb,int)
+BATwalk3(ycc,CLRycc,int)

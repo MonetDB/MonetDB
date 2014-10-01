@@ -155,7 +155,7 @@ MANIFOLDjob(MULTItask *mut)
 				args[i] =  (void*) & mut->args[i].s; 
 			}
 		} else {
-			args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
+			args[i] = (char *) getArgReference(mut->stk,mut->pci,i);
 		}
 	}
 
@@ -268,7 +268,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// prepare iterators
 	for( i = pci->retc+2; i < pci->argc; i++){
 		if ( isaBatType(getArgType(mb,pci,i)) ){
-			mat[i].b = BATdescriptor( *(int*) getArgReference(stk,pci,i));
+			mat[i].b = BATdescriptor( *getArgReference_bat(stk,pci,i));
 			if ( mat[i].b == NULL){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -292,7 +292,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mat[i].o = BUNfirst(mat[i].b);
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
-			mat[i].last = mat[i].first = (void*) getArgReference(stk,pci,i);
+			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
 		}
 	}
 
@@ -331,7 +331,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
-	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
+	BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
@@ -348,6 +348,6 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     char buf[BUFSIZ];
     (void) mb;
     (void) cntxt;
-    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *)getArgReference(stk,p,p->retc), (char *)getArgReference(stk,p,p->retc+1));
+    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *) getArgReference(stk,p,p->retc), (char *) getArgReference(stk,p,p->retc+1));
     throw(MAL, "opt.remap", "%s",buf);
 }

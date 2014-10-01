@@ -44,30 +44,30 @@
 str
 MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *ret = (int*) getArgReference(stk,p,0);
+	int *ret = getArgReference_int(stk,p,0);
 	(void) cntxt;
 	(void) mb; 
 	if( p->argc == 1){
 		*ret = 0;
 	} else
-		*ret= *(int*) getArgReference(stk,p,1);
+		*ret= *getArgReference_int(stk,p,1);
 	return MAL_SUCCEED;
 }
 str
 MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *ret = (int*) getArgReference(stk,p,0);
+	int *ret = getArgReference_int(stk,p,0);
 	int i, idx = *ret;
 
 	(void) cntxt;
 	(void) mb; 
 	for(i=1; i< p->argc; i++)
-	if( *(int*) getArgReference(stk,p,i) == idx){
+	if( *getArgReference_int(stk,p,i) == idx){
 		i++;
 		break;
 	}
 	if( i < p->argc)
-		*ret= *(int*) getArgReference(stk,p,i);
+		*ret= *getArgReference_int(stk,p,i);
 	else
 		*ret = 0;
 	(void) mb; 
@@ -86,7 +86,8 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *ret = (int*) getArgReference(stk,p,0);
+	int i;
+	bat *ret = getArgReference_bat(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0;
 	int tt = TYPE_any;
@@ -94,7 +95,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 
 	for (i = 1; i < p->argc; i++) {
-		int bid = stk->stk[getArg(p,i)].val.ival;
+		bat bid = stk->stk[getArg(p,i)].val.bval;
 		b = BBPquickdesc(abs(bid),FALSE);
 		if (b && bid < 0)
 			b = BATmirror(b);
@@ -109,7 +110,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	if (tt == TYPE_any){
-		*ret = 0;
+		*ret = bat_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -143,7 +144,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *ret = (int*) getArgReference(stk,p,0);
+	bat *ret = getArgReference_bat(stk,p,0);
 	int	pieces;
 	BAT *b, *bb, *bn;
 	size_t newsize;
@@ -194,7 +195,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, i1 = p->argc, i2 = -1, *ret = (int*) getArgReference(stk,p,0);
+	int i, i1 = p->argc, i2 = -1;
+	bat *ret = getArgReference_bat(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0, fst, lst, cnt, c;
 	int ht = TYPE_any, tt = TYPE_any;
@@ -202,20 +204,20 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	assert(p->argc > 3);
 	switch getArgType(mb,p,1) {
 	case TYPE_wrd:
-		fst = (BUN) *(wrd*) getArgReference(stk,p,1);
+		fst = (BUN) *getArgReference_wrd(stk,p,1);
 		break;
 	case TYPE_lng:
-		fst = (BUN) *(lng*) getArgReference(stk,p,1);
+		fst = (BUN) *getArgReference_lng(stk,p,1);
 		break;
 	case TYPE_int:
-		fst = (BUN) *(int*) getArgReference(stk,p,1);
+		fst = (BUN) *getArgReference_int(stk,p,1);
 		break;
 	default:
 		throw(MAL, "mat.packSlice", "wrong type for lower bound");
 	}
 	switch getArgType(mb,p,2) {
 	case TYPE_wrd: {
-		wrd l = *(wrd*) getArgReference(stk,p,2);
+		wrd l = *getArgReference_wrd(stk,p,2);
 		if (l == wrd_nil)
 			lst = BUN_MAX; /* no upper bound */
 		else
@@ -223,7 +225,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		break;
 	}
 	case TYPE_lng: {
-		lng l = *(lng*) getArgReference(stk,p,2);
+		lng l = *getArgReference_lng(stk,p,2);
 		if (l == lng_nil)
 			lst = BUN_MAX; /* no upper bound */
 		else
@@ -231,7 +233,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		break;
 	}
 	case TYPE_int: {
-		int l = *(int*) getArgReference(stk,p,2);
+		int l = *getArgReference_int(stk,p,2);
 		if (l == int_nil)
 			lst = BUN_MAX; /* no upper bound */
 		else
@@ -331,7 +333,8 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpack2Internal(MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret;
+	int i;
+	bat *ret;
 	BAT *b, *bn;
 	BUN cap=0;
 
@@ -364,7 +367,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 		BATappend(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
-	ret= (int*) getArgReference(stk,p,0);
+	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -388,7 +391,8 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j= 0, *ret = (int*) getArgReference(stk,p,0);
+	int i,j= 0;
+	bat *ret = getArgReference_bat(stk,p,0);
 	int top=0;
 	oid  **o_end, **o_src, *o, *oo, onxt;
 	BAT *b, *bn, *bm, **bats;
@@ -489,7 +493,8 @@ MATmergepack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret, type, first = 1;
+	int i, type, first = 1;
+	bat *ret;
 	BAT *bn;
 
 	(void) cntxt;
@@ -507,7 +512,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
     BATsettrivprop(bn);
     BATderiveProps(bn,FALSE);
-	ret= (int*) getArgReference(stk,p,0);
+	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -847,8 +852,8 @@ MATproject_( BAT *map, BAT **bats, int len )
 str
 MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *res_id = (bat*) getArgReference(stk,pci,0);
-	bat map_id = *(bat*) getArgReference(stk,pci,1);
+	bat *res_id = getArgReference_bat(stk,pci,0);
+	bat map_id = *getArgReference_bat(stk,pci,1);
 	BAT *res = NULL, *map;
 	/* rest of the args are parts, (excluding result and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
@@ -862,7 +867,7 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!map)
 		goto error;
 	for (i=2; i<pci->argc; i++) {
-		bat id = *(bat*) getArgReference(stk,pci,i);
+		bat id = *getArgReference_bat(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
 		if (!bats[i-2])
 			goto error;
@@ -1758,8 +1763,8 @@ MATsort_bte( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 static str
 MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 {
-	bat *res_id = (bat*) getArgReference(stk,pci,0); /* result sorted */
-	bat *map_id = (bat*) getArgReference(stk,pci,1); /* result map */
+	bat *res_id = getArgReference_bat(stk,pci,0); /* result sorted */
+	bat *map_id = getArgReference_bat(stk,pci,1); /* result map */
 	BAT *res = NULL, *map = NULL;
 	/* rest of the args are sorted parts, (excluding sorted and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
@@ -1770,7 +1775,7 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	if( bats == NULL)
 		throw(SQL, "mat.sortTail",MAL_MALLOC_FAIL);
 	for (i=2; i<pci->argc; i++) {
-		bat id = *(bat*) getArgReference(stk,pci,i);
+		bat id = *getArgReference_bat(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
 		if (!bats[i-2])
 			goto error;

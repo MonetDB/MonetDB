@@ -31,14 +31,14 @@ str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *tag, *user, *query, *estimate, *started, *progress, *activity, *oids;
-	int *t = (int*) getArgReference(stk,pci,0);
-	int *u = (int*) getArgReference(stk,pci,1);
-	int *s = (int*) getArgReference(stk,pci,2);
-	int *e = (int*) getArgReference(stk,pci,3);
-	int *p = (int*) getArgReference(stk,pci,4);
-	int *a = (int*) getArgReference(stk,pci,5);
-	int *o = (int*) getArgReference(stk,pci,6);
-	int *q = (int*) getArgReference(stk,pci,7);
+	bat *t = getArgReference_bat(stk,pci,0);
+	bat *u = getArgReference_bat(stk,pci,1);
+	bat *s = getArgReference_bat(stk,pci,2);
+	bat *e = getArgReference_bat(stk,pci,3);
+	bat *p = getArgReference_bat(stk,pci,4);
+	bat *a = getArgReference_bat(stk,pci,5);
+	bat *o = getArgReference_bat(stk,pci,6);
+	bat *q = getArgReference_bat(stk,pci,7);
 	lng now;
 	int i, prog;
 	str usr;
@@ -164,9 +164,9 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
-	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
-	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
+	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
+	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		/* Does this happen?
@@ -195,9 +195,9 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
-	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
-	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
+	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
+	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		/* Does this happen?
@@ -226,9 +226,9 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
-	case TYPE_sht: tag = *(sht*) getArgReference(stk,pci,1); break;
-	case TYPE_int: tag = *(int*) getArgReference(stk,pci,1); break;
-	case TYPE_lng: tag = *(lng*) getArgReference(stk,pci,1); break;
+	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
+	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
+	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		/* Does this happen?
