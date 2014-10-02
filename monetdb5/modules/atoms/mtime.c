@@ -2241,7 +2241,7 @@ str
 MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
 {
 	*ret = *tzone_nil;
-	if (*minutes != lng_nil && abs(*minutes) < 24 * 60) {
+	if (*minutes != lng_nil && *minutes < 24 * 60 && -*minutes < 24 * 60) {
 		set_offset(ret, (int) *minutes);
 		ret->dst = FALSE;
 	}

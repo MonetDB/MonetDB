@@ -28,17 +28,17 @@
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define json_export extern __declspec(dllimport)
+#define jsonutil_export extern __declspec(dllimport)
 #else
-#define json_export extern __declspec(dllexport)
+#define jsonutil_export extern __declspec(dllexport)
 #endif
 #else
-#define json_export extern
+#define jsonutil_export extern
 #endif
 
 #include "json.h"
 
-json_export str
+jsonutil_export str
 JSONresultSet(json *res,bat *u, bat *rev, bat *js);
 
 #endif
