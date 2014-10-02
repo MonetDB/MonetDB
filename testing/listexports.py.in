@@ -61,36 +61,45 @@ def extract(f):
             args = tuple(map(lambda x: x.strip(), args.split(',')))
             defines[name] = (args, body)
         else:
-            for name, (args, body) in defines.items():
-                pat = r'\b%s\b' % name
-                sep = r'\('
-                for arg in args:
-                    pat = pat + sep + r'([^,(]*(?:\([^,(]*\)[^,(]*)*)'
-                    sep = ','
-                pat += r'\)'
-                repl = {}
-                r = re.compile(pat)
-                res = r.search(line)
-                while res is not None:
-                    pars = map(lambda x: x.strip(), res.groups())
-                    pat = r'\b(?:'
-                    sep = ''
-                    for a, p in zip(args, pars):
-                        repl[a] = p
-                        pat += sep + a
-                        sep = '|'
-                    pat += r')\b'
-                    bd = body
-                    if pat != r'\b(?:)\b':
-                        r2 = re.compile(pat)
-                        res2 = r2.search(bd)
-                        while res2 is not None:
-                            a = res2.group(0)
-                            bd = bd[:res2.start(0)] + repl[a] + bd[res2.end(0):]
-                            res2 = r2.search(bd, res2.start(0) + len(repl[a]))
-                    bd = bd.replace('##', '')
-                    line = line[:res.start(0)] + bd + line[res.end(0):]
-                    res = r.search(line, res.start(0) + len(bd))
+            tried = {}
+            changed = True
+            while changed:
+                changed = False
+                for name, (args, body) in defines.items():
+                    if name in tried:
+                        continue
+                    pat = r'\b%s\b' % name
+                    sep = r'\('
+                    for arg in args:
+                        pat = pat + sep + r'([^,(]*(?:\([^,(]*\)[^,(]*)*)'
+                        sep = ','
+                    pat += r'\)'
+                    repl = {}
+                    r = re.compile(pat)
+                    res = r.search(line)
+                    if res is not None:
+                        tried[name] = True
+                        changed = True
+                    while res is not None:
+                        pars = map(lambda x: x.strip(), res.groups())
+                        pat = r'\b(?:'
+                        sep = ''
+                        for a, p in zip(args, pars):
+                            repl[a] = p
+                            pat += sep + a
+                            sep = '|'
+                        pat += r')\b'
+                        bd = body
+                        if pat != r'\b(?:)\b':
+                            r2 = re.compile(pat)
+                            res2 = r2.search(bd)
+                            while res2 is not None:
+                                a = res2.group(0)
+                                bd = bd[:res2.start(0)] + repl[a] + bd[res2.end(0):]
+                                res2 = r2.search(bd, res2.start(0) + len(repl[a]))
+                        bd = bd.replace('##', '')
+                        line = line[:res.start(0)] + bd + line[res.end(0):]
+                        res = r.search(line, res.start(0) + len(bd))
             if not cldef.match(line):
                 ndata.append(line)
     data = '\n'.join(ndata)
