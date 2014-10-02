@@ -243,6 +243,9 @@ str wkbPointsContains1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat
 	}
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+//	fprintf(stderr, "Contains1: IN %u - OUT %u\n", (unsigned int)BATcount(xBAT), (unsigned int)BATcount(outBAT));
+
 	goto clean;
 
 clean:
@@ -305,7 +308,7 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
         	BBPreleaseref(bpy->batCacheid);
         	throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
     	}
-
+;
     	/*Create output BAT*/
     	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
         	BBPreleaseref(bpx->batCacheid);
@@ -369,6 +372,7 @@ static str pnpoly_(int *out, const GEOSGeometry *geosGeometry, int *point_x, int
 
 	GDKfree(xPoints);
 	GDKfree(yPoints);
+//fprintf(stderr, "Contains2: IN %u - OUT %u\n", (unsigned int)BATcount(bpx), (unsigned int)BATcount(bo));
 
     return MAL_SUCCEED;
 }
