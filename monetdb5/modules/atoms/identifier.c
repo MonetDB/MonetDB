@@ -33,8 +33,9 @@
 
 int TYPE_identifier;
 
-str IDprelude(void)
+str IDprelude(void *ret)
 {
+	(void) ret;
 	TYPE_identifier = ATOMindex("identifier");
 	return MAL_SUCCEED;
 }
@@ -46,7 +47,7 @@ str IDprelude(void)
  * Returns the number of chars read
  */
 int
-IDfromString(str src, int *len, str *retval)
+IDfromString(str src, int *len, identifier *retval)
 {
 	if (src == NULL) {
 		*len = 0;
@@ -65,7 +66,7 @@ IDfromString(str src, int *len, str *retval)
  * Returns the length of the string
  */
 int
-IDtoString(str *retval, int *len, str handle)
+IDtoString(str *retval, int *len, identifier handle)
 {
 	int hl = (int)strlen(handle) + 1;
 	if (*len < hl) {
@@ -83,7 +84,7 @@ IDtoString(str *retval, int *len, str handle)
  * to parse the string.
  */
 str
-IDentifier(str *retval, str *in)
+IDentifier(identifier *retval, str *in)
 {
 	int len = 0;
 

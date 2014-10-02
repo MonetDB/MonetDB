@@ -647,7 +647,7 @@ SERVERlisten_port(int *ret, int *pid)
  */
 
 str
-SERVERstop(int *ret)
+SERVERstop(void *ret)
 {
 fprintf(stderr, "SERVERstop\n");
 	ATOMIC_SET(serverexiting, 1, atomicLock, "SERVERstop");
@@ -661,7 +661,7 @@ fprintf(stderr, "SERVERstop\n");
 
 
 str
-SERVERsuspend(int *res)
+SERVERsuspend(void *res)
 {
 	(void) res;
 	ATOMIC_SET(serveractive, 0, atomicLock, "SERVERsuspend");
@@ -669,7 +669,7 @@ SERVERsuspend(int *res)
 }
 
 str
-SERVERresume(int *res)
+SERVERresume(void *res)
 {
 	ATOMIC_SET(serveractive, 1, atomicLock, "SERVERsuspend");
 	(void) res;
@@ -677,7 +677,7 @@ SERVERresume(int *res)
 }
 
 str
-SERVERclient(int *res, stream **In, stream **Out)
+SERVERclient(void *res, stream **In, stream **Out)
 {
 	(void) res;
 	/* in embedded mode we allow just one client */
@@ -898,7 +898,7 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg= SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(&i, key, dbalias);
+		msg = SERVERsetAlias(NULL, key, dbalias);
 	return msg;
 }
 
@@ -923,7 +923,7 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	msg= SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(&i, key, &nme);
+		msg = SERVERsetAlias(NULL, key, &nme);
 	return msg;
 }
 
@@ -940,12 +940,12 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	} while (0)
 
 str
-SERVERsetAlias(int *ret, int *key, str *dbalias){
+SERVERsetAlias(void *ret, int *key, str *dbalias){
 	int i;
 	Mapi mid;
 	accessTest(*key, "setAlias");
     SERVERsessions[i].dbalias= GDKstrdup(*dbalias);
-	*ret = 0;
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
@@ -963,47 +963,47 @@ SERVERlookup(int *ret, str *dbalias)
 }
 
 str
-SERVERtrace(int *ret, int *key, int *flag){
+SERVERtrace(void *ret, int *key, int *flag){
 	(void )ret;
 	mapi_trace(SERVERsessions[*key].mid,*flag);
 	return MAL_SUCCEED;
 }
 
 str
-SERVERdisconnect(int *ret, int *key){
+SERVERdisconnect(void *ret, int *key){
 	int i;
 	Mapi mid;
+	(void) ret;
 	accessTest(*key, "disconnect");
 	mapi_disconnect(mid);
 	if( SERVERsessions[i].dbalias)
 		GDKfree(SERVERsessions[i].dbalias);
 	SERVERsessions[i].c= 0;
 	SERVERsessions[i].dbalias= 0;
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str
-SERVERdestroy(int *ret, int *key){
+SERVERdestroy(void *ret, int *key){
 	int i;
 	Mapi mid;
+	(void) ret;
 	accessTest(*key, "destroy");
 	mapi_destroy(mid);
 	SERVERsessions[i].c= 0;
 	if( SERVERsessions[i].dbalias)
 		GDKfree(SERVERsessions[i].dbalias);
 	SERVERsessions[i].dbalias= 0;
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str
-SERVERreconnect(int *ret, int *key){
+SERVERreconnect(void *ret, int *key){
 	int i;
 	Mapi mid;
+	(void) ret;
 	accessTest(*key, "destroy");
 	mapi_reconnect(mid);
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
@@ -1197,12 +1197,12 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 }
 
 str
-SERVERfetch_field_void(oid *ret, int *key, int *fnr){
+SERVERfetch_field_void(void *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
-	accessTest(*key, "fetch_field");
+	(void) ret;
 	(void) fnr;
-	*ret = oid_nil;
+	accessTest(*key, "fetch_field");
 	throw(MAL, "mapi.fetch_field_void","defaults to nil");
 }
 
@@ -1279,7 +1279,7 @@ SERVERfetch_reset(int *ret, int *key){
 }
 
 str
-SERVERfetch_field_bat(int *bid, int *key){
+SERVERfetch_field_bat(bat *bid, int *key){
 	int i,j,cnt;
 	Mapi mid;
 	char *fld;

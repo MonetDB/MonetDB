@@ -43,26 +43,26 @@ typedef str url;
 
 url_export str escape_str(str *retval, str s);
 url_export str unescape_str(str *retval, str s);
-url_export str URLnoop(str *url, str *val);
-url_export str URLnew(str *url, str *val);
-url_export str URLgetAnchor(str *retval, str *val);
-url_export str URLgetBasename(str *retval, str *t);
-url_export str URLgetContent(str *retval, str *Str1);
-url_export str URLgetContext(str *retval, str *val);
-url_export str URLgetDomain(str *retval, str *tv);
-url_export str URLgetExtension(str *retval, str *tv);
-url_export str URLgetFile(str *retval, str *tv);
-url_export str URLgetHost(str *retval, str *tv);
-url_export str URLgetPort(str *retval, str *tv);
-url_export str URLgetProtocol(str *retval, str *tv);
-url_export str URLgetQuery(str *retval, str *tv);
-url_export str URLgetUser(str *retval, str *tv);
-url_export str URLgetRobotURL(str *retval, str *tv);
-url_export str URLisaURL(bit *retval, str *tv);
-url_export str URLnew4(str *url, str *protocol, str *server,
+url_export str URLnoop(url *u, url *val);
+url_export str URLnew(url *u, str *val);
+url_export str URLgetAnchor(str *retval, url *val);
+url_export str URLgetBasename(str *retval, url *t);
+url_export str URLgetContent(str *retval, url *Str1);
+url_export str URLgetContext(str *retval, url *val);
+url_export str URLgetDomain(str *retval, url *tv);
+url_export str URLgetExtension(str *retval, url *tv);
+url_export str URLgetFile(str *retval, url *tv);
+url_export str URLgetHost(str *retval, url *tv);
+url_export str URLgetPort(str *retval, url *tv);
+url_export str URLgetProtocol(str *retval, url *tv);
+url_export str URLgetQuery(str *retval, url *tv);
+url_export str URLgetUser(str *retval, url *tv);
+url_export str URLgetRobotURL(str *retval, url *tv);
+url_export str URLisaURL(bit *retval, url *tv);
+url_export str URLnew4(url *u, str *protocol, str *server,
 		int *port, str *file);
-url_export str URLnew3(str *url, str *protocol, str *server, str *file);
-url_export int URLfromString(str src, int *len, str *url);
+url_export str URLnew3(url *u, str *protocol, str *server, str *file);
+url_export int URLfromString(str src, int *len, str *u);
 url_export int URLtoString(str *s, int *len, str src);
 
 #endif /* URL_H */

@@ -93,7 +93,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 }
 
 str
-TKNZRopen(int *ret, str *in)
+TKNZRopen(void *ret, str *in)
 {
 	int depth;
 	bat r;
@@ -177,7 +177,7 @@ TKNZRopen(int *ret, str *in)
 }
 
 str
-TKNZRclose(int *r)
+TKNZRclose(void *r)
 {
 	int i;
 	(void) r;
@@ -392,7 +392,7 @@ TKNZRappend(oid *pos, str *s)
 
 #define SIZE (1 * 1024 * 1024)
 str
-TKNZRdepositFile(int *r, str *fnme)
+TKNZRdepositFile(void *r, str *fnme)
 {
 	stream *fs;
 	bstream *bs;
@@ -577,7 +577,7 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TKNZRgetIndex(int *r)
+TKNZRgetIndex(bat *r)
 {
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -587,7 +587,7 @@ TKNZRgetIndex(int *r)
 }
 
 str
-TKNZRgetLevel(int *r, int *level)
+TKNZRgetLevel(bat *r, int *level)
 {
 	BAT* view;
 	if (TRANS == NULL)
@@ -602,7 +602,7 @@ TKNZRgetLevel(int *r, int *level)
 }
 
 str
-TKNZRgetCount(int *r)
+TKNZRgetCount(bat *r)
 {
 	BAT *b;
 	int i;
@@ -627,7 +627,7 @@ TKNZRgetCount(int *r)
 }
 
 str
-TKNZRgetCardinality(int *r)
+TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;
 	int i;

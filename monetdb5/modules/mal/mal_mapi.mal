@@ -72,7 +72,7 @@ command disconnect():int
 address SERVERdisconnectALL
 comment "Close connections with all remote Mserver.";
 
-command setAlias(dbalias:str)
+command setAlias(key:int,dbalias:str)
 address SERVERsetAlias
 comment "Give the channel a logical name.";
 
@@ -203,7 +203,7 @@ comment "Send a simple query for execution and fetch result.";
 pattern rpc(key:int,qry:str):bat[:oid,:any_2]
 address SERVERmapi_rpc_bat;
 
-command rpc(key:int,qry:str):void
+command rpc(key:int,qry:str):int
 address SERVERquery
 comment "Send a simple query for execution.";
 

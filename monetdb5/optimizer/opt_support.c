@@ -195,7 +195,7 @@ lng optDebug;
  * Front-ends can set a collection of optimizers by name or their pipe alias.
  */
 str
-OPTsetDebugStr(int *ret, str *nme)
+OPTsetDebugStr(void *ret, str *nme)
 {
 	int i;
 	str name= *nme, t, s, env = 0;

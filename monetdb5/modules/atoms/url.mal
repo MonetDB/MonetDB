@@ -28,7 +28,7 @@ address URLnoop
 comment "Create an URL from a string literal";
 
 command calc.url(s:str) :url
-address URLnoop
+address URLnew
 comment "Create an URL from a string literal";
 
 command calc.url(s:url) :url

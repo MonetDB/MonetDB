@@ -47,8 +47,8 @@
 int TYPE_mbr;
 
 geom_export wkb *wkbNULL(void);
-geom_export bat *geom_prelude(void);
-geom_export void geom_epilogue(void);
+geom_export str geom_prelude(void *ret);
+geom_export str geom_epilogue(void *ret);
 geom_export mbr *mbrNULL(void);
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
@@ -77,10 +77,10 @@ geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 geom_export str wkbMBR(mbr **res, wkb **geom);
 geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
-geom_export str wkbgetcoordX(double *out, wkb **geom);
-geom_export str wkbgetcoordY(double *out, wkb **geom);
+geom_export str wkbgetcoordX(dbl *out, wkb **geom);
+geom_export str wkbgetcoordY(dbl *out, wkb **geom);
 geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
-geom_export str wkbcreatepoint_bat(int *out, bat *x, bat *y);
+geom_export str wkbcreatepoint_bat(bat *out, bat *x, bat *y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbDimension(int *out, wkb **geom);
 geom_export str wkbGeometryTypeId(int *out, wkb **geom);
@@ -108,18 +108,21 @@ geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
-bat *
-geom_prelude(void)
+str
+geom_prelude(void *ret)
 {
+	(void) ret;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
-	return NULL;
+	return MAL_SUCCEED;
 }
 
-void
-geom_epilogue(void)
+str
+geom_epilogue(void *ret)
 {
+	(void) ret;
 	libgeom_exit();
+	return MAL_SUCCEED;
 }
 
 /*
@@ -700,7 +703,7 @@ geos2wkb(GEOSGeom geosGeometry)
 }
 
 static str
-wkbgetcoordXY(double *out, wkb **geom,
+wkbgetcoordXY(dbl *out, wkb **geom,
 	      int (*func)(const GEOSCoordSequence *, unsigned int, double *),
 	      const char *name)
 {
@@ -737,13 +740,13 @@ wkbgetcoordXY(double *out, wkb **geom,
 }
 
 str
-wkbgetcoordX(double *out, wkb **geom)
+wkbgetcoordX(dbl *out, wkb **geom)
 {
 	return wkbgetcoordXY(out, geom, GEOSCoordSeq_getX, "geom.X");
 }
 
 str
-wkbgetcoordY(double *out, wkb **geom)
+wkbgetcoordY(dbl *out, wkb **geom)
 {
 	return wkbgetcoordXY(out, geom, GEOSCoordSeq_getY, "geom.Y");
 }
@@ -768,7 +771,7 @@ wkbcreatepoint(wkb **out, dbl *x, dbl *y)
 }
 
 str
-wkbcreatepoint_bat(int *out, bat *ix, bat *iy)
+wkbcreatepoint_bat(bat *out, bat *ix, bat *iy)
 {
 	BAT *bo = NULL, *bx = NULL, *by = NULL;
 	dbl *x = NULL, *y = NULL;

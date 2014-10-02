@@ -243,7 +243,7 @@ SRVPOOLconnect(str *c, str *uri)
 
 /* switch local/remote execution */
 str
-SRVPOOLlocal(int *ret, int *flag)
+SRVPOOLlocal(void *ret, bit *flag)
 {
 	(void) ret;
 	localExecution= *flag != 0;

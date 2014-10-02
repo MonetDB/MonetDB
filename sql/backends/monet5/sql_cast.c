@@ -101,7 +101,7 @@ SQLtimestamp_2_str(str *res, timestamp *val)
 }
 
 str
-batnil_2_timestamp(int *res, int *bid)
+batnil_2_timestamp(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -127,7 +127,7 @@ batnil_2_timestamp(int *res, int *bid)
 }
 
 str
-batstr_2_timestamp(int *res, int *bid)
+batstr_2_timestamp(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -199,7 +199,7 @@ SQLdaytime_2_str(str *res, daytime *val)
 }
 
 str
-batnil_2_daytime(int *res, int *bid)
+batnil_2_daytime(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -225,7 +225,7 @@ batnil_2_daytime(int *res, int *bid)
 }
 
 str
-batstr_2_daytime(int *res, int *bid)
+batstr_2_daytime(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -297,7 +297,7 @@ SQLdate_2_str(str *res, date *val)
 }
 
 str
-batnil_2_date(int *res, int *bid)
+batnil_2_date(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -323,7 +323,7 @@ batnil_2_date(int *res, int *bid)
 }
 
 str
-batstr_2_date(int *res, int *bid)
+batstr_2_date(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -395,7 +395,7 @@ SQLsqlblob_2_str(str *res, sqlblob * val)
 }
 
 str
-batnil_2_sqlblob(int *res, int *bid)
+batnil_2_sqlblob(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -421,7 +421,7 @@ batnil_2_sqlblob(int *res, int *bid)
 }
 
 str
-batstr_2_sqlblob(int *res, int *bid)
+batstr_2_sqlblob(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;

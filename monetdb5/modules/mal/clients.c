@@ -180,7 +180,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTLogin(int *nme, int *ret)
+CLTLogin(bat *nme, bat *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	BAT *u = BATnew(TYPE_void, TYPE_oid, 12, TRANSIENT);
@@ -211,7 +211,7 @@ CLTLogin(int *nme, int *ret)
 }
 
 str
-CLTLastCommand(int *ret)
+CLTLastCommand(bat *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	int i;
@@ -233,7 +233,7 @@ CLTLastCommand(int *ret)
 }
 
 str
-CLTActions(int *ret)
+CLTActions(bat *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_int, 12, TRANSIENT);
 	int i;
@@ -252,7 +252,7 @@ CLTActions(int *ret)
 	return MAL_SUCCEED;
 }
 str
-CLTTime(int *ret)
+CLTTime(bat *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_lng, 12, TRANSIENT);
 	int i;
@@ -275,7 +275,7 @@ CLTTime(int *ret)
  * Produce a list of clients currently logged in
  */
 str
-CLTusers(int *ret)
+CLTusers(bat *ret)
 {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
 	int i;
@@ -395,7 +395,7 @@ CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTwakeup(int *ret, int *id)
+CLTwakeup(void *ret, int *id)
 {
     (void) ret;     /* fool compiler */
     return MCawakeClient(*id);

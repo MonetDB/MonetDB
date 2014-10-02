@@ -106,7 +106,7 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
 	return msg;
@@ -120,7 +120,7 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "msql");
 	return msg;
@@ -129,10 +129,12 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str SQLinit(void);
 
 str
-SQLprelude(void)
+SQLprelude(void *ret)
 {
 	str tmp;
 	Scenario ms, s = getFreeScenario();
+
+	(void) ret;
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
@@ -178,11 +180,12 @@ SQLprelude(void)
 }
 
 str
-SQLepilogue(void)
+SQLepilogue(void *ret)
 {
 	char *s = "sql", *m = "msql";
 	str res;
 
+	(void) ret;
 	if (SQLinitialized) {
 		mvc_exit();
 		SQLinitialized = FALSE;
@@ -1103,7 +1106,7 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit

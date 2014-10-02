@@ -438,7 +438,7 @@ DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCdump(int *ret)
+DCdump(void *ret)
 {
 	BSKTdump(ret);
 	RCdump();
@@ -448,67 +448,67 @@ DCdump(int *ret)
 }
 
 str
-DCthreshold(int *ret, str *bskt, int *mi)
+DCthreshold(bit *ret, str *bskt, int *mi)
 {
 	return BSKTthreshold(ret, bskt, mi);
 }
 
 str
-DCwindow(int *ret, str *bskt, lng *sz, lng *slide)
+DCwindow(bit *ret, str *bskt, lng *sz, lng *slide)
 {
 	return BSKTwindow(ret, bskt, sz, slide);
 }
 
 str
-DCwindowBte(int *ret, str *bskt, bte *szin, bte *slidein)
+DCwindowBte(bit *ret, str *bskt, bte *szin, bte *slidein)
 {
 	lng sz = *szin,slide= *slidein;
 	return BSKTwindow(ret, bskt, &sz, &slide);
 }
 
 str
-DCwindowInt(int *ret, str *bskt, int *szin, int *slidein)
+DCwindowInt(bit *ret, str *bskt, int *szin, int *slidein)
 {
 	lng sz = *szin,slide= *slidein;
 	return BSKTwindow(ret, bskt, &sz, &slide);
 }
 
 str
-DCwindowSht(int *ret, str *bskt, sht *szin, sht *slidein)
+DCwindowSht(bit *ret, str *bskt, sht *szin, sht *slidein)
 {
 	lng sz = *szin, slide= *slidein;
 	return BSKTwindow(ret, bskt, &sz, &slide);
 }
 
 str
-DCtimewindow(int *ret, str *bskt, lng *sz, lng *slide)
+DCtimewindow(bit *ret, str *bskt, lng *sz, lng *slide)
 {
 	return BSKTtimewindow(ret, bskt, sz, slide);
 }
 
 str
-DCbeatBte(int *ret, str *bskt, bte *beat)
+DCbeatBte(bit *ret, str *bskt, bte *beat)
 {
 	lng b= *beat;
 	return BSKTbeat(ret, bskt, &b);
 }
 
 str
-DCbeatSht(int *ret, str *bskt, sht *beat)
+DCbeatSht(bit *ret, str *bskt, sht *beat)
 {
 	lng b= *beat;
 	return BSKTbeat(ret, bskt, &b);
 }
 
 str
-DCbeatInt(int *ret, str *bskt, int *beat)
+DCbeatInt(bit *ret, str *bskt, int *beat)
 {
 	lng b= *beat;
 	return BSKTbeat(ret, bskt, &b);
 }
 
 str
-DCbeat(int *ret, str *bskt, lng *beat)
+DCbeat(bit *ret, str *bskt, lng *beat)
 {
 	return BSKTbeat(ret, bskt, beat);
 }

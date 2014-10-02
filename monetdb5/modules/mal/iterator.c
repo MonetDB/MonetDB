@@ -57,7 +57,7 @@
  * size.
  */
 str
-ITRnewChunk(lng *res, int *vid, int *bid, lng *granule)
+ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
 	BUN cnt, first;
@@ -86,7 +86,7 @@ ITRnewChunk(lng *res, int *vid, int *bid, lng *granule)
  * The granule size may differ in each call.
  */
 str
-ITRnextChunk(lng *res, int *vid, int *bid, lng *granule)
+ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
 	BUN i;

@@ -46,7 +46,7 @@
 int TYPE_blob;
 int TYPE_sqlblob;
 
-blob_export str BLOBprelude(void);
+blob_export str BLOBprelude(void *ret);
 
 blob_export int BLOBtostr(str *tostr, int *l, blob *pin);
 blob_export int BLOBfromstr(char *instr, int *l, blob **val);
@@ -63,7 +63,7 @@ blob_export str BLOBtoblob(blob **retval, str *s);
 blob_export str BLOBfromblob(str *retval, blob **b);
 blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
 blob_export str BLOBeoln(char *src, char *end);
-blob_export int BLOBnitems(int *ret, blob *b);
+blob_export str BLOBnitems(int *ret, blob *b);
 blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 blob_export int BLOBwrite(blob *a, stream *s, size_t cnt);
@@ -75,8 +75,9 @@ blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
 blob_export str BLOB_isnil(bit *retval, blob *val);
 
 str
-BLOBprelude(void)
+BLOBprelude(void *ret)
 {
+	(void) ret;
 	TYPE_blob = ATOMindex("blob");
 	TYPE_sqlblob = ATOMindex("sqlblob");
 	return MAL_SUCCEED;
@@ -534,12 +535,12 @@ BLOBput(Heap *h, var_t *bun, blob *val)
 	return blob_put(h, bun, val);
 }
 
-int
+str
 BLOBnitems(int *ret, blob *b)
 {
 	assert(b->nitems <INT_MAX);
 	*ret = (int) b->nitems;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 int
@@ -614,7 +615,7 @@ BLOBblob_fromstr(blob **b, str *s)
 
 
 str
-BLOBsqlblob_fromstr(blob **b, str *s)
+BLOBsqlblob_fromstr(sqlblob **b, str *s)
 {
 	int len = 0;
 

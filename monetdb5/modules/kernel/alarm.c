@@ -46,12 +46,12 @@
 #define alarm_export extern
 #endif
 
-alarm_export str ALARMprelude(void);
-alarm_export str ALARMepilogue(void);
+alarm_export str ALARMprelude(void *ret);
+alarm_export str ALARMepilogue(void *ret);
 alarm_export str ALARMusec(lng *ret);
-alarm_export str ALARMsleep(int *res, int *secs);
-alarm_export str ALARMsetalarm(int *res, int *secs, str *action);
-alarm_export str ALARMtimers(int *res);
+alarm_export str ALARMsleep(void *res, int *secs);
+alarm_export str ALARMsetalarm(void *res, int *secs, str *action);
+alarm_export str ALARMtimers(bat *res);
 alarm_export str ALARMctime(str *res);
 alarm_export str ALARMepoch(int *res);
 alarm_export str ALARMtime(int *res);
@@ -114,8 +114,9 @@ CLKsignal(int nr)
 
 
 str
-ALARMprelude(void)
+ALARMprelude(void *ret)
 {
+	(void) ret;
 #ifdef SIGALRM
 	(void) signal(SIGALRM, (void (*)()) CLKsignal);
 #endif
@@ -123,10 +124,11 @@ ALARMprelude(void)
 }
 
 str
-ALARMepilogue(void)
+ALARMepilogue(void *ret)
 {
 	int k;
 
+	(void) ret;
 #if (defined(SIGALRM) && defined(SIG_IGN))
 /* HACK to pacify compiler */
 #if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
@@ -150,7 +152,7 @@ ALARMusec(lng *ret)
 }
 
 str
-ALARMsleep(int *res, int *secs)
+ALARMsleep(void *res, int *secs)
 {
 	(void) res;		/* fool compilers */
 	if (*secs < 0)
@@ -171,7 +173,7 @@ ALARMsleep(int *res, int *secs)
 }
 
 str
-ALARMsetalarm(int *res, int *secs, str *action)
+ALARMsetalarm(void *res, int *secs, str *action)
 {
 	(void) res;
 	(void) secs;
@@ -180,7 +182,7 @@ ALARMsetalarm(int *res, int *secs, str *action)
 }
 
 str
-ALARMtimers(int *res)
+ALARMtimers(bat *res)
 {
 	(void) res;		/* fool compiler */
 	throw(MAL, "alarm.timers", PROGRAM_NYI);

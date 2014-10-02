@@ -95,7 +95,7 @@ RCfind(str nme)
  * The standard tuple layout for MonetDB interaction is used.
  */
 static str
-RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int protocol, int delay)
+RCreceptorStartInternal(void *ret, str *tbl, str *host, int *port, int mode, int protocol, int delay)
 {
 	Receptor rc;
 	int idx, i, j, len;
@@ -165,13 +165,13 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	return MAL_SUCCEED;
 }
 str
-RCreceptorStart(int *ret, str *tbl, str *host, int *port)
+RCreceptorStart(void *ret, str *tbl, str *host, int *port)
 {
 	return RCreceptorStartInternal(ret, tbl, host, port, BSKTPASSIVE, TCP, PAUSEDEFAULT);
 }
 
 str
-RCreceptorPause(int *ret, str *nme)
+RCreceptorPause(void *ret, str *nme)
 {
 	Receptor rc;
 
@@ -188,7 +188,7 @@ RCreceptorPause(int *ret, str *nme)
 }
 
 str
-RCreceptorResume(int *ret, str *nme)
+RCreceptorResume(void *ret, str *nme)
 {
 	Receptor rc;
 
@@ -205,7 +205,7 @@ RCreceptorResume(int *ret, str *nme)
 }
 
 str
-RCpause(int *ret)
+RCpause(void *ret)
 {
 	Receptor rc;
 	str msg = MAL_SUCCEED;
@@ -216,7 +216,7 @@ RCpause(int *ret)
 }
 
 str
-RCresume(int *ret)
+RCresume(void *ret)
 {
 	Receptor rc;
 	str msg = MAL_SUCCEED;
@@ -226,7 +226,7 @@ RCresume(int *ret)
 	return msg;
 }
 
-str RCreceptorStop(int *ret, str *nme)
+str RCreceptorStop(void *ret, str *nme)
 {
 	Receptor rc, rb;
 
@@ -252,7 +252,7 @@ str RCreceptorStop(int *ret, str *nme)
 }
 
 str
-RCstop(int *ret)
+RCstop(void *ret)
 {
 	Receptor r, o;
 	for (r = rcAnchor; r; r = o) {
@@ -263,7 +263,7 @@ RCstop(int *ret)
 }
 
 str
-RCscenario(int *ret, str *nme, str *fname, int *seq)
+RCscenario(void *ret, str *nme, str *fname, int *seq)
 {
 	Receptor rc;
 	rc = RCfind(*nme);
@@ -279,7 +279,7 @@ RCscenario(int *ret, str *nme, str *fname, int *seq)
 }
 
 str
-RCgenerator(int *ret, str *nme, str *modnme, str *fcnnme)
+RCgenerator(void *ret, str *nme, str *modnme, str *fcnnme)
 {
 	Receptor rc;
 	rc = RCfind(*nme);
@@ -889,9 +889,10 @@ dumpReceptor(Receptor rc)
 }
 
 str
-RCdump(void)
+RCdump(void *ret)
 {
 	Receptor rc = rcAnchor;
+	(void) ret;
 	for (; rc; rc = rc->nxt)
 		dumpReceptor(rc);
 	if (rcError)
@@ -900,7 +901,7 @@ RCdump(void)
 }
 /* provide a tabular view for inspection */
 str
-RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int *statusId, int *seenId, int *cyclesId, int *receivedId, int *pendingId)
+RCtable(bat *nameId, bat *hostId, bat *portId, bat *protocolId, bat *modeId, bat *statusId, bat *seenId, bat *cyclesId, bat *receivedId, bat *pendingId)
 {
 	BAT *name = NULL, *seen = NULL, *pending = NULL, *received = NULL, *cycles = NULL;
 	BAT *protocol = NULL, *mode = NULL, *status = NULL, *port = NULL, *host = NULL;

@@ -423,7 +423,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTatom_names(int *ret)
+INSPECTatom_names(bat *ret)
 {
 	int i;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
@@ -441,7 +441,7 @@ INSPECTatom_names(int *ret)
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetEnvironment(int *ret, int *ret2)
+INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 
@@ -477,7 +477,7 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 }
 
 str
-INSPECTatom_sup_names(int *ret)
+INSPECTatom_sup_names(bat *ret)
 {
 	int i, k;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
@@ -499,7 +499,7 @@ INSPECTatom_sup_names(int *ret)
 }
 
 str
-INSPECTatom_sizes(int *ret)
+INSPECTatom_sizes(bat *ret)
 {
 	int i;
 	int s;

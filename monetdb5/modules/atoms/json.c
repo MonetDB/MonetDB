@@ -228,7 +228,7 @@ JSONdumpInternal(JSON *jt, int depth)
 }
 
 str
-JSONdump(int *ret, json *val)
+JSONdump(void *ret, json *val)
 {
 	JSON *jt = JSONparse(*val, FALSE);
 
@@ -306,7 +306,7 @@ JSONisarray(bit *ret, json *js)
 }
 
 str
-JSONprelude(int *ret)
+JSONprelude(void *ret)
 {
 	(void) ret;
 	TYPE_json = ATOMindex("json");
@@ -1217,7 +1217,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 
 
 str
-JSONkeyTable(int *ret, json *js)
+JSONkeyTable(bat *ret, json *js)
 {
 	BAT *bn;
 	char *r;
@@ -1272,7 +1272,7 @@ JSONkeyArray(json *ret, json *js)
 
 
 str
-JSONvalueTable(int *ret, json *js)
+JSONvalueTable(bat *ret, json *js)
 {
 	BAT *bn;
 	char *r;
@@ -1693,7 +1693,7 @@ JSONtextString(str *ret, bat *bid)
 
 
 str
-JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg)
+JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg)
 {
 	(void) ret;
 	(void) bid;

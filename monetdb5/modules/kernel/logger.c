@@ -100,12 +100,13 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 		*dirname, *version);
 }
 
-logger_export str logger_destroy_wrap( logger *L ) ;
+logger_export str logger_destroy_wrap(void *ret, logger *L ) ;
 
 str
-logger_destroy_wrap( logger *L )
+logger_destroy_wrap(void *ret, logger *L )
 {
 	logger *l = *(logger**)L;
+	(void) ret;
 	if (l) {
 		logger_destroy(l);
 		return MAL_SUCCEED;

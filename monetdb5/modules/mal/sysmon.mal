@@ -17,27 +17,27 @@
 
 module sysmon;
 
-command pause(id:sht)
+pattern pause(id:sht)
 address SYSMONpause;
-command pause(id:int)
+pattern pause(id:int)
 address SYSMONpause;
-command pause(id:lng)
+pattern pause(id:lng)
 address SYSMONpause
 comment "Temporary suspend a single query";
 
-command resume(id:sht)
+pattern resume(id:sht)
 address SYSMONresume;
-command resume(id:int)
+pattern resume(id:int)
 address SYSMONresume;
-command resume(id:lng)
+pattern resume(id:lng)
 address SYSMONresume
 comment "Resume processing ";
 
-command stop(id:sht)
+pattern stop(id:sht)
 address SYSMONstop;
-command stop(id:int)
+pattern stop(id:int)
 address SYSMONstop;
-command stop(id:lng)
+pattern stop(id:lng)
 address SYSMONstop
 comment "Stop a single query a.s.a.p.";
 

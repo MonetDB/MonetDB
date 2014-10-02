@@ -719,7 +719,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
-str RAPIprelude(void) {
+str RAPIprelude(void *ret) {
+	(void) ret;
 	MT_lock_init(&rapiLock, "rapi_lock");
 
 	if (RAPIEnabled()) {

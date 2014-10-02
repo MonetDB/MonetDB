@@ -268,7 +268,7 @@ str VLTremove(timestamp *ret, str *t)
 }
 
 str
-VLTepilogue(int *ret)
+VLTepilogue(void *ret)
 {
 	(void)ret;
 	return MAL_SUCCEED;

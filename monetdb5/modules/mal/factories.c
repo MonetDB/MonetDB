@@ -26,7 +26,7 @@
 #include "factories.h"
 
 str
-FCTgetPlants(int *ret, int *ret2)
+FCTgetPlants(bat *ret, bat *ret2)
 {
 	(void) ret;
 	(void) ret2;
@@ -41,21 +41,21 @@ FCTgetCaller(int *ret)
 }
 
 str
-FCTgetOwners(int *ret)
+FCTgetOwners(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getOwner", PROGRAM_NYI);
 }
 
 str
-FCTgetArrival(int *ret)
+FCTgetArrival(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getArrival", PROGRAM_NYI);
 }
 
 str
-FCTgetDeparture(int *ret)
+FCTgetDeparture(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getDeparture", PROGRAM_NYI);

@@ -1213,7 +1213,7 @@ union lng_tzone {
 #include "mal_exception.h"
 
 str
-MTIMEnil2date(date *ret, const int *src)
+MTIMEnil2date(date *ret, const void *src)
 {
 	(void) src;
 	*ret = date_nil;
@@ -1245,7 +1245,7 @@ static BAT *timezone_name = NULL;
 static BAT *timezone_def = NULL;
 
 str
-MTIMEprelude(void)
+MTIMEprelude(void *ret)
 {
 	const char *msg = NULL;
 	ValRecord vr;
@@ -1258,6 +1258,7 @@ MTIMEprelude(void)
 	BAT *tzbatnme;
 	BAT *tzbatdef;
 
+	(void) ret;
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
 
@@ -1334,14 +1335,16 @@ MTIMEprelude(void)
 }
 
 str
-MTIMEepilogue(void)
+MTIMEepilogue(void *ret)
 {
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str
-MTIMEsynonyms(const bit *allow)
+MTIMEsynonyms(void *ret, const bit *allow)
 {
+	(void) ret;
 	if (*allow != bit_nil)
 		synonyms = *allow;
 	return MAL_SUCCEED;
@@ -1366,7 +1369,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 }
 
 str
-MTIMEtzone_set_local(int res, const tzone *z)
+MTIMEtzone_set_local(void *res, const tzone *z)
 {
 	(void) res;					/* fool compilers */
 	return tzone_set_local(z);
@@ -2229,6 +2232,17 @@ MTIMEtzone_create(tzone *ret, const int *minutes)
 	*ret = *tzone_nil;
 	if (*minutes != int_nil && abs(*minutes) < 24 * 60) {
 		set_offset(ret, *minutes);
+		ret->dst = FALSE;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
+{
+	*ret = *tzone_nil;
+	if (*minutes != lng_nil && abs(*minutes) < 24 * 60) {
+		set_offset(ret, (int) *minutes);
 		ret->dst = FALSE;
 	}
 	return MAL_SUCCEED;
