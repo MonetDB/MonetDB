@@ -150,7 +150,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 str
-CMDcloseProfilerStream(int *res)
+CMDcloseProfilerStream(void *res)
 {
 	(void) res;
 	return closeProfilerStream();
@@ -233,7 +233,7 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return startProfiling();
 }
 str
-CMDnoopProfiler(int *res)
+CMDnoopProfiler(void *res)
 {
 	(void) res;		/* fool compiler */
 	return MAL_SUCCEED;
@@ -244,7 +244,7 @@ CMDnoopProfiler(int *res)
  * Tracing an active system.
  */
 str
-CMDclearTrace(int *res)
+CMDclearTrace(void *res)
 {
 	(void) res;		/* fool compiler */
 	clearTrace();
@@ -252,14 +252,14 @@ CMDclearTrace(int *res)
 }
 
 str
-CMDdumpTrace(int *res)
+CMDdumpTrace(void *res)
 {
 	(void) res;		/* fool compiler */
 	throw(MAL, "profiler.dump", PROGRAM_NYI);
 }
 
 str
-CMDgetTrace(int *res, str *ev)
+CMDgetTrace(bat *res, str *ev)
 {
 	BAT *bn;
 
@@ -273,7 +273,7 @@ CMDgetTrace(int *res, str *ev)
 }
 
 str
-CMDcleanup(int *ret){
+CMDcleanup(void *ret){
 	(void) ret;
 	return cleanupProfiler();
 }
@@ -319,7 +319,7 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
-CMDtomograph(int *ret)
+CMDtomograph(void *ret)
 {
 	(void) ret;
 	return MAL_SUCCEED;

@@ -238,11 +238,10 @@ int BSKTmemberCount(str tbl)
  * The locks are designated towards the baskets.
  * If you can not grab the lock then we have to wait.
  */
-str BSKTlock(int *ret, str *tbl, int *delay)
+str BSKTlock(void *ret, str *tbl, int *delay)
 {
 	int bskt;
 
-	*ret = 0;
 	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
@@ -255,32 +254,31 @@ str BSKTlock(int *ret, str *tbl, int *delay)
 #endif
 	(void) delay;  /* control spinlock */
 	(void) ret;
-	*ret = 1;
 	return MAL_SUCCEED;
 }
 
 
-str BSKTlock2(int *ret, str *tbl)
+str BSKTlock2(void *ret, str *tbl)
 {
 	int delay = 0;
 	return BSKTlock(ret, tbl, &delay);
 }
 
-str BSKTunlock(int *ret, str *tbl)
+str BSKTunlock(void *ret, str *tbl)
 {
 	int bskt;
 
+	(void) ret;
 	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
-	*ret = 0;
 	MT_lock_unset(&baskets[bskt].lock, "lock basket");
 	return MAL_SUCCEED;
 }
 
 
 str
-BSKTdrop(int *ret, str *tbl)
+BSKTdrop(void *ret, str *tbl)
 {
 	int bskt;
 
@@ -300,7 +298,7 @@ BSKTdrop(int *ret, str *tbl)
 }
 
 str
-BSKTreset(int *ret)
+BSKTreset(void *ret)
 {
 	int i;
 	for (i = 1; i < bsktLimit; i++)
@@ -309,7 +307,7 @@ BSKTreset(int *ret)
 	return MAL_SUCCEED;
 }
 str
-BSKTdump(int *ret)
+BSKTdump(void *ret)
 {
 	int bskt;
 
@@ -525,7 +523,7 @@ BSKTupdateInstruction(MalBlkPtr mb, str tbl)
 }
 
 str
-BSKTthreshold(int *ret, str *tbl, int *sz)
+BSKTthreshold(bit *ret, str *tbl, int *sz)
 {
 	int bskt;
 	bskt = BSKTlocate(*tbl);
@@ -541,7 +539,7 @@ BSKTthreshold(int *ret, str *tbl, int *sz)
 }
 
 str
-BSKTwindow(int *ret, str *tbl, lng *sz, lng *stride)
+BSKTwindow(bit *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -565,7 +563,7 @@ BSKTwindow(int *ret, str *tbl, lng *sz, lng *stride)
 }
 
 str
-BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *stride)
+BSKTtimewindow(bit *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -587,7 +585,7 @@ BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *stride)
 }
 
 str
-BSKTbeat(int *ret, str *tbl, lng *sz)
+BSKTbeat(bit *ret, str *tbl, lng *sz)
 {
 	int bskt, tst;
 	timestamp ts, tn;
@@ -608,7 +606,7 @@ BSKTbeat(int *ret, str *tbl, lng *sz)
 
 /* provide a tabular view for inspection */
 str
-BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *eventsId)
+BSKTtable(bat *nameId, bat *thresholdId, bat * winsizeId, bat *winstrideId, bat *timesliceId, bat *timestrideId, bat *beatId, bat *seenId, bat *eventsId)
 {
 	BAT *name = NULL, *seen = NULL, *events = NULL;
 	BAT *threshold = NULL, *winsize = NULL, *winstride = NULL, *beat = NULL;
@@ -700,7 +698,7 @@ wrapup:
 }
 
 str
-BSKTtableerrors(int *nameId, int *errorId)
+BSKTtableerrors(bat *nameId, bat *errorId)
 {
 	BAT  *name, *error;
 	BATiter bi;

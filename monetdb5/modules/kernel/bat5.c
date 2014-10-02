@@ -1387,10 +1387,11 @@ BKCgetKey(bit *ret, const bat *bid)
 }
 
 str
-BKCpersists(bat *r, const bat *bid, const bit *flg)
+BKCpersists(void *r, const bat *bid, const bit *flg)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
@@ -1399,12 +1400,11 @@ BKCpersists(bat *r, const bat *bid, const bit *flg)
 		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
 	}
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetPersistent(bat *r, const bat *bid)
+BKCsetPersistent(void *r, const bat *bid)
 {
 	bit flag= TRUE;
 	return BKCpersists(r, bid, &flag);
@@ -1424,7 +1424,7 @@ BKCisPersistent(bit *res, const bat *bid)
 }
 
 str
-BKCsetTransient(bat *r, const bat *bid)
+BKCsetTransient(void *r, const bat *bid)
 {
 	bit flag = FALSE;
 	return BKCpersists(r, bid, &flag);
@@ -1705,10 +1705,11 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
  * Role Management
  */
 char *
-BKCsetRole(bat *r, const bat *bid, const char * const *hname, const char * const *tname)
+BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setRole", RUNTIME_OBJECT_MISSING);
 	}
@@ -1722,16 +1723,16 @@ BKCsetRole(bat *r, const bat *bid, const char * const *hname, const char * const
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetColumn(bat *r, const bat *bid, const char * const *tname)
+BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 {
 	BAT *b;
 	str dummy;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setColumn", RUNTIME_OBJECT_MISSING);
 	}
@@ -1744,15 +1745,15 @@ BKCsetColumn(bat *r, const bat *bid, const char * const *tname)
 	BATroles(b, dummy, *tname);
 	GDKfree(dummy);
 	BBPreleaseref(b->batCacheid);
-	*r =0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetColumns(bat *r, const bat *bid, const char * const *hname, const char * const *tname)
+BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setColumns", RUNTIME_OBJECT_MISSING);
 	}
@@ -1766,23 +1767,22 @@ BKCsetColumns(bat *r, const bat *bid, const char * const *hname, const char * co
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
-	*r =0;
 	return MAL_SUCCEED;
 }
 
 
 str
-BKCsetName(bat *r, const bat *bid, const char * const *s)
+BKCsetName(void *r, const bat *bid, const char * const *s)
 {
 	BAT *b;
 	bit res, *rp = &res;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 	}
 	CMDrename(rp, b, *s);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
@@ -1849,12 +1849,11 @@ BKCcold(bat *res, const char * const *input)
 }
 
 str
-BKCcoldBAT(bat *res, const bat *bid)
+BKCcoldBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
 	(void) res;
-	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
@@ -1864,23 +1863,21 @@ BKCcoldBAT(bat *res, const bat *bid)
 }
 
 str
-BKCheat(bat *res, const char * const *input)
+BKCheat(lng *res, const bat *bid)
 {
-	int bid = BBPindex(*input);
-
-	if (bid) {
-		*res = BBPLASTUSED(BBP_lastused(bid));
+	bat b = BBPcheck(*bid, "BKCheat");
+	if (b) {
+		*res = BBPLASTUSED(BBP_lastused(b));
 	}
 	throw(MAL, "bat", PROGRAM_NYI);
 }
 
 str
-BKChotBAT(bat *res, const bat *bid)
+BKChotBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
 	(void) res;
-	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
@@ -1897,10 +1894,11 @@ BKCsave(bit *res, const char * const *input)
 }
 
 str
-BKCsave2(bat *r, const bat *bid)
+BKCsave2(void *r, const bat *bid)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
@@ -1908,7 +1906,6 @@ BKCsave2(bat *r, const bat *bid)
 	if (b && BATdirty(b))
 		BBPsave(b);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 

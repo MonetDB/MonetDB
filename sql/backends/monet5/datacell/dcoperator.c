@@ -32,7 +32,7 @@
 #include "dcoperator.h"
 #include "mal_builder.h"
 
-str DCselect(int *ret, int *bid, ptr low, ptr high)
+str DCselect(bat *ret, bat *bid, ptr low, ptr high)
 {
 	int *rdel = NULL;
 	/*BAT *b;*/
@@ -45,7 +45,7 @@ str DCselect(int *ret, int *bid, ptr low, ptr high)
 }
 
 
-str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh)
+str DCselectInsert(void *ret, bat *res, bat *bid, lng *low, lng *hgh)
 {
 	BAT *b, *r;
 
@@ -107,7 +107,7 @@ str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh)
  * case. It also re-uses oids, which may become a semantic
  * problem quickly.
  */
-str DCdeleteUpperSlice(int *ret, int *bid, int *pos)
+str DCdeleteUpperSlice(void *ret, bat *bid, int *pos)
 {
 	BAT *b;
 	int *readerT, *writerT;
@@ -142,7 +142,7 @@ str DCdeleteUpperSlice(int *ret, int *bid, int *pos)
  * @-
  * The operator below is only working for a very limited cases.
  */
-str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid)
+str DCreplaceTailBasedOnHead(void *ret, bat *res, bat *bid)
 {
 	BAT *b, *r;
 	oid *readerH_b;
@@ -195,7 +195,7 @@ str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid)
 }
 
 
-str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh)
+str DCselectInsertDelete(void *ret, bat *res, bat *bid, lng *low, lng *hgh)
 {
 	BAT *b, *r;
 
@@ -275,7 +275,7 @@ str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh)
 
 
 str
-DCsliceStrict(int *ret, bat *bid, lng *start, lng *end)
+DCsliceStrict(bat *ret, bat *bid, lng *start, lng *end)
 {
 	BAT *b, *bn = NULL;
 

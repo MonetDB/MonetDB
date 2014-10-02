@@ -537,8 +537,9 @@ MATdummy(int *ret, str *grp){
 	return MAL_SUCCEED;
 }
 str
-MATinfo(int *ret, str *grp, str *elm){
-	(void) grp; (void) elm; (void) ret;
+MATinfo(bat *ret, str *grp, str *elm){
+	(void) grp; (void) elm;
+	*ret = bat_nil;
 	return MAL_SUCCEED;
 }
 

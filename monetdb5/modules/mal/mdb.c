@@ -748,7 +748,7 @@ TBL_getdir(void)
 }
 
 str
-CMDmodules(int *bid)
+CMDmodules(bat *bid)
 {
 	BAT *b = TBL_getdir();
 

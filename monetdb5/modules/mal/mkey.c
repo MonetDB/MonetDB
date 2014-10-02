@@ -683,7 +683,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits, int *bid){
+MKEYconstbulk_rotate_xor_hash(bat *ret, wrd *h, int *nbits, bat *bid){
 	BAT *b, *bn=0;
 	str msg;
 
@@ -701,7 +701,7 @@ MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits, int *bid){
 }
 
 str
-MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
+MKEYbulk_rotate_xor_hash(bat *ret, bat *hid, int *nbits, bat *bid){
 	BAT *hn, *b, *bn=0;
 	str msg;
 

@@ -424,7 +424,7 @@ XMLpi(str *ret, str *target, str *value)
 }
 
 str
-XMLroot(str *ret, str *val, str *version, str *standalone)
+XMLroot(xml *ret, xml *val, str *version, str *standalone)
 {
 	size_t len = 0, i = 0;
 	str buf;
@@ -632,8 +632,9 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 int TYPE_xml;
 
 str
-XMLprelude(void)
+XMLprelude(void *ret)
 {
+	(void) ret;
 	TYPE_xml = ATOMindex("xml");
 	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();

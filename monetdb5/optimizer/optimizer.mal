@@ -346,9 +346,9 @@ address OPTwrapper;
 pattern optimizer.prejoin(mod:str, fcn:str):str
 address OPTwrapper
 comment "Dead code optimizer";
-command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1])(c:bat[:oid,:oid],d:bat[:oid,:any_1])
-address ALGprejoin
-comment "Recluster the table to reduce random access behavior.";
+# command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1])(c:bat[:oid,:oid],d:bat[:oid,:any_1])
+# address ALGprejoin
+# comment "Recluster the table to reduce random access behavior.";
 
 
 #opt_pushranges.mal

@@ -357,7 +357,7 @@ str_2num(TYPE *res, str *v, int *len)
 }
 
 str
-batnil_2dec(int *res, int *bid, int *d, int *sc)
+batnil_2dec(bat *res, bat *bid, int *d, int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -385,7 +385,7 @@ batnil_2dec(int *res, int *bid, int *d, int *sc)
 }
 
 str
-batstr_2dec(int *res, int *bid, int *d, int *sc)
+batstr_2dec(bat *res, bat *bid, int *d, int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -416,14 +416,14 @@ batstr_2dec(int *res, int *bid, int *d, int *sc)
 }
 
 str
-batnil_2num(int *res, int *bid, int *len)
+batnil_2num(bat *res, bat *bid, int *len)
 {
 	int zero = 0;
 	return batnil_2dec(res, bid, len, &zero);
 }
 
 str
-batstr_2num(int *res, int *bid, int *len)
+batstr_2num(bat *res, bat *bid, int *len)
 {
 	BAT *b, *dst;
 	BATiter bi;

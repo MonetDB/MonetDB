@@ -131,7 +131,7 @@ opt_export int isSubSelect(InstrPtr q);
 opt_export int isSubJoin(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
-opt_export str OPTsetDebugStr(int *ret, str *nme);
+opt_export str OPTsetDebugStr(void *ret, str *nme);
 /*
  * @-
  * The optimizerCheck is defensive. In some cases, e.g. coercion,

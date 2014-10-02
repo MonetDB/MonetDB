@@ -1558,9 +1558,6 @@ bat_iterator(BAT *b)
  * to insert BUNs at the end of the BAT, but not to modify anything
  * that already was in there.
  */
-#ifndef BATcount
-gdk_export BUN BATcount(BAT *b);
-#endif
 gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);

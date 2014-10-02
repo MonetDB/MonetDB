@@ -687,7 +687,7 @@ IOdatafile(str *ret, str *fnme){
 }
 
 str
-IOexport(bit *ret, int *bid, str *fnme)
+IOexport(bit *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	stream *s;
@@ -720,7 +720,7 @@ IOexport(bit *ret, int *bid, str *fnme)
  */
 #define COMMA ','
 str
-IOimport(int *ret, int *bid, str *fnme)
+IOimport(bat *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	int (*hconvert) (const char *, int *, ptr *);

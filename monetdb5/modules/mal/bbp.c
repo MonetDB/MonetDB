@@ -98,7 +98,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-CMDbbpNames(int *ret)
+CMDbbpNames(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -136,14 +136,14 @@ CMDgetPageSize(int *ret)
 }
 
 str
-CMDbbpName(str *ret, int *bid)
+CMDbbpName(str *ret, bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
 	return MAL_SUCCEED;
 }
 
 str
-CMDbbpCount(int *ret)
+CMDbbpCount(bat *ret)
 {
 	BAT *b, *bn;
 	int i;
@@ -174,7 +174,7 @@ CMDbbpCount(int *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
-CMDbbpLocation(int *ret)
+CMDbbpLocation(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -206,7 +206,7 @@ CMDbbpLocation(int *ret)
 #define monet_modulesilent (GDKdebug&PERFMASK)
 
 str
-CMDbbpHeat(int *ret)
+CMDbbpHeat(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -239,7 +239,7 @@ CMDbbpHeat(int *ret)
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
 str
-CMDbbpDirty(int *ret)
+CMDbbpDirty(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -267,7 +267,7 @@ CMDbbpDirty(int *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
-CMDbbpStatus(int *ret)
+CMDbbpStatus(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -292,7 +292,7 @@ CMDbbpStatus(int *ret)
 }
 
 str
-CMDbbpKind(int *ret)
+CMDbbpKind(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -322,7 +322,7 @@ CMDbbpKind(int *ret)
 }
 
 str
-CMDbbpRefCount(int *ret)
+CMDbbpRefCount(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -346,7 +346,7 @@ CMDbbpRefCount(int *ret)
 }
 
 str
-CMDbbpLRefCount(int *ret)
+CMDbbpLRefCount(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -370,14 +370,14 @@ CMDbbpLRefCount(int *ret)
 }
 
 str
-CMDbbpgetIndex(int *res, int *bid)
+CMDbbpgetIndex(int *res, bat *bid)
 {
 	*res= *bid;
 	return MAL_SUCCEED;
 }
 
 str
-CMDgetBATrefcnt(int *res, int *bid)
+CMDgetBATrefcnt(int *res, bat *bid)
 {
 	BAT *b;
 
@@ -390,7 +390,7 @@ CMDgetBATrefcnt(int *res, int *bid)
 }
 
 str
-CMDgetBATlrefcnt(int *res, int *bid)
+CMDgetBATlrefcnt(int *res, bat *bid)
 {
 	BAT *b;
 

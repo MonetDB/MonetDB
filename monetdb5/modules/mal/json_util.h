@@ -36,7 +36,9 @@
 #define json_export extern
 #endif
 
+#include "json.h"
+
 json_export str
-JSONresultSet(str *res,bat *u, bat *rev, bat *js);
+JSONresultSet(json *res,bat *u, bat *rev, bat *js);
 
 #endif

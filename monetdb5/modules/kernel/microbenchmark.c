@@ -356,12 +356,12 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
  */
 
 str
-MBMrandom(int *ret, oid *base, wrd *size, int *domain){
+MBMrandom(bat *ret, oid *base, wrd *size, int *domain){
 	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
 }
 
 str
-MBMrandom_seed(int *ret, oid *base, wrd *size, int *domain, const int *seed){
+MBMrandom_seed(bat *ret, oid *base, wrd *size, int *domain, const int *seed){
 	BAT *bn = NULL;
 
 	BATrandom(&bn, base, size, domain, *seed);
@@ -374,7 +374,7 @@ MBMrandom_seed(int *ret, oid *base, wrd *size, int *domain, const int *seed){
 
 
 str
-MBMuniform(int *ret, oid *base, wrd *size, int *domain){
+MBMuniform(bat *ret, oid *base, wrd *size, int *domain){
 	BAT *bn = NULL;
 
 	BATuniform(&bn, base, size, domain);
@@ -386,7 +386,7 @@ MBMuniform(int *ret, oid *base, wrd *size, int *domain){
 }
 
 str
-MBMnormal(int *ret, oid *base, wrd *size, int *domain, int *stddev, int *mean){
+MBMnormal(bat *ret, oid *base, wrd *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
@@ -398,7 +398,7 @@ MBMnormal(int *ret, oid *base, wrd *size, int *domain, int *stddev, int *mean){
 
 
 str
-MBMmix(int *bn, int *batid)
+MBMmix(bat *bn, bat *batid)
 {
 	BUN n, r, i;
 	BUN firstbun, p, q;
@@ -429,7 +429,7 @@ MBMmix(int *bn, int *batid)
 }
 
 str
-MBMskewed(int *ret, oid *base, wrd *size, int *domain, int *skew){
+MBMskewed(bat *ret, oid *base, wrd *size, int *domain, int *skew){
 	BAT *bn = NULL;
 
 	BATskewed(&bn, base, size, domain, skew);

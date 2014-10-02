@@ -89,7 +89,7 @@ static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
  */
-str RMTresolve(int *ret, str *pat) {
+str RMTresolve(bat *ret, str *pat) {
 #ifdef WIN32
 	throw(MAL, "remote.resolve", "merovingian is not available on "
 			"your platform, sorry"); /* please upgrade to Linux, etc. */
@@ -260,7 +260,7 @@ str RMTconnect(
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(Client cntxt, str *conn) {
+str RMTdisconnect(void *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -268,12 +268,7 @@ str RMTdisconnect(Client cntxt, str *conn) {
 				"is NULL or nil");
 
 
-	/* The return is obfuscated by the debug cntxt argument */
-#ifdef _DEBUG_REMOTE
-	mnstr_printf(cntxt->fdout, "#disconnect link %s\n", *conn);
-#else
-	(void) cntxt;
-#endif
+	(void) ret;
 
 	/* we need a lock because the same user can be handled by multiple
 	 * threads */
@@ -291,9 +286,6 @@ str RMTdisconnect(Client cntxt, str *conn) {
 			}
 
 			MT_lock_set(&c->lock, "remote.disconnect"); /* shared connection */
-#ifdef _DEBUG_REMOTE
-			mnstr_printf(cntxt->fdout, "#disconnect link %s\n", c->name);
-#endif
 			mapi_disconnect(c->mconn);
 			mapi_destroy(c->mconn);
 			MT_lock_unset(&c->lock, "remote.disconnect");
@@ -411,7 +403,7 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	return(MAL_SUCCEED);
 }
 
-str RMTprelude(int *ret) {
+str RMTprelude(void *ret) {
 	int type = 0;
 
 	(void)ret;
@@ -435,7 +427,7 @@ str RMTprelude(int *ret) {
 	return(MAL_SUCCEED);
 }
 
-str RMTepilogue(int *ret) {
+str RMTepilogue(void *ret) {
 	connection c, t;
 
 	(void)ret;

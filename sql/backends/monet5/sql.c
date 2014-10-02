@@ -2962,7 +2962,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 str
-zero_or_one(ptr ret, int *bid)
+zero_or_one(ptr ret, bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
@@ -3011,7 +3011,7 @@ zero_or_one(ptr ret, int *bid)
 }
 
 str
-not_unique(bit *ret, int *bid)
+not_unique(bit *ret, bat *bid)
 {
 	BAT *b;
 
@@ -4121,7 +4121,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		if (first) {
 			bat psum;
-			unsigned int bits = 10, off = 0;
+			int bits = 10, off = 0;
 			first = 0;
 			b = store_funcs.bind_col(tr, c, RDONLY);
 			msg = MKEYbathash(&hid, &b->batCacheid);
@@ -4717,7 +4717,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 str
-STRindex_int(int *i, str src, bit *u)
+STRindex_int(int *i, str *src, bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4773,7 +4773,7 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_sht(sht *i, str src, bit *u)
+STRindex_sht(sht *i, str *src, bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4829,7 +4829,7 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_bte(bte *i, str src, bit *u)
+STRindex_bte(bte *i, str *src, bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4885,7 +4885,7 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 }
 
 str
-STRstrings(str *i, str src)
+STRstrings(str *i, str *src)
 {
 	(void)src;
 	*i = 0;

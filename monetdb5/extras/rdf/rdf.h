@@ -48,7 +48,7 @@ RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 rdf_export str 
 RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
 rdf_export str 
-RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
+RDFleftfetchjoin_sorted(bat *result, bat* lid, bat *rid);
 
 rdf_export str 
 TKNZRrdf2str (bat *res, bat *bid, bat *map);

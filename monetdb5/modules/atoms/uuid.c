@@ -56,7 +56,7 @@ typedef struct {
 #define uuid_export extern
 #endif
 
-uuid_export bat *UUIDprelude(void);
+uuid_export str UUIDprelude(void *ret);
 uuid_export int UUIDcompare(const uuid *l, const uuid *r);
 uuid_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
 uuid_export BUN UUIDhash(const void *u);
@@ -73,12 +73,13 @@ uuid_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
-bat *
-UUIDprelude(void)
+str
+UUIDprelude(void *ret)
 {
+	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), sizeof(oid), "uuid");
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 #define UUIDisnil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)

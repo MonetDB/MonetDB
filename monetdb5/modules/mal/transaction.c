@@ -51,14 +51,14 @@
 transaction_export str TRNglobal_sync(bit *ret);
 transaction_export str TRNglobal_abort(bit *ret);
 transaction_export str TRNglobal_commit(bit *ret);
-transaction_export str TRNsub_commit(bit *ret, int *bid);
+transaction_export str TRNsub_commit(bit *ret, bat *bid);
 transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNsubcommit(bit *ret, int *bid);
-transaction_export str TRNtrans_prev(int *ret, int *bid);
-transaction_export str TRNtrans_alpha(int *ret, int *bid);
-transaction_export str TRNtrans_delta(int *ret, int *bid);
+transaction_export str TRNsubcommit(bit *ret, bat *bid);
+transaction_export str TRNtrans_prev(bat *ret, bat *bid);
+transaction_export str TRNtrans_alpha(bat *ret, bat *bid);
+transaction_export str TRNtrans_delta(bat *ret, bat *bid);
 
 #include "mal_exception.h"
 str
@@ -82,7 +82,7 @@ TRNglobal_commit(bit *ret)
 	return MAL_SUCCEED;
 }
 str
-TRNsubcommit(bit *ret, int *bid)
+TRNsubcommit(bit *ret, bat *bid)
 {
 	BAT *b;
 	b= BATdescriptor(*bid);
@@ -155,7 +155,7 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-TRNtrans_prev(int *ret, int *bid)
+TRNtrans_prev(bat *ret, bat *bid)
 {
 	BAT *b,*bn= NULL;
 	b= BATdescriptor(*bid);
@@ -168,13 +168,13 @@ TRNtrans_prev(int *ret, int *bid)
 }
 
 str
-TRNtrans_alpha(int *ret, int *bid)
+TRNtrans_alpha(bat *ret, bat *bid)
 {
 	return BKCgetAlpha(ret, bid);
 }
 
 str
-TRNtrans_delta(int *ret, int *bid)
+TRNtrans_delta(bat *ret, bat *bid)
 {
 	return BKCgetDelta(ret, bid);
 }

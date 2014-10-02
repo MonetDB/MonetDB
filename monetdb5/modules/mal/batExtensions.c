@@ -198,7 +198,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 }
 
 str
-CMDBATderivedByName(int *ret, str *nme)
+CMDBATderivedByName(bat *ret, str *nme)
 {
 	BAT *bn;
 	int bid;
@@ -300,19 +300,20 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDBATimprints(int *ret, int *bid)
+CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	BATimprints(b);
-	BBPkeepref(*ret = b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str
-CMDBATimprintsize(lng *ret, int *bid)
+CMDBATimprintsize(lng *ret, bat *bid)
 {
 	BAT *b;
 

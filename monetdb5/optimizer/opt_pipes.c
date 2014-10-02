@@ -341,7 +341,7 @@ getPipeDefinition(str name)
 }
 
 str
-getPipeCatalog(int *nme, int *def, int *stat)
+getPipeCatalog(bat *nme, bat *def, bat *stat)
 {
 	BAT *b, *bn, *bs;
 	int i;

@@ -562,17 +562,17 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include <mal_exception.h>
 
 str
-CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	bte *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
 	if ((bits) != 0)
@@ -647,20 +647,20 @@ CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 }
 
 str
-CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	sht *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -732,20 +732,20 @@ CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 }
 
 str
-CLS_create_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_int( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	int *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -817,20 +817,20 @@ CLS_create_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 }
 
 str
-CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	wrd *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -902,20 +902,20 @@ CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 }
 
 str
-CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	lng *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -988,17 +988,17 @@ CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 #ifdef HAVE_HGE
 str
-CLS_create_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_hge( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	hge *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
 	if ((bits) != 0)
@@ -1069,20 +1069,20 @@ CLS_create_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 #endif
 
 str
-CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	dbl *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1153,20 +1153,20 @@ CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	return MAL_SUCCEED;
 }
 str
-CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
+CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	flt *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1238,20 +1238,20 @@ CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 }
 
 str
-CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	bte *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1359,20 +1359,20 @@ CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 }
 
 str
-CLS_create2_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_sht( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	sht *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1480,20 +1480,20 @@ CLS_create2_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 }
 
 str
-CLS_create2_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_int( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	int *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1601,20 +1601,20 @@ CLS_create2_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 }
 
 str
-CLS_create2_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_wrd( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	wrd *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1722,20 +1722,20 @@ CLS_create2_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 }
 
 str
-CLS_create2_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_lng( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	lng *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -1844,17 +1844,17 @@ CLS_create2_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 
 #ifdef HAVE_HGE
 str
-CLS_create2_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_hge( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	hge *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
 	if ((bits) != 0)
@@ -1966,20 +1966,20 @@ CLS_create2_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 #endif
 
 str
-CLS_create2_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_flt( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	flt *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -2087,20 +2087,20 @@ CLS_create2_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned in
 }
 
 str
-CLS_create2_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
+CLS_create2_dbl( bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
+	int bits = *Bits;
 	dbl *bt, *be, *bs; 
 	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (bits >= sizeof(int)*8)
+	if (bits >= (int)sizeof(int)*8 || bits < 0)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((bits) != 0)
+	if (bits != 0)
 		bits--;
 	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)

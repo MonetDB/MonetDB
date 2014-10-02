@@ -67,13 +67,13 @@ typedef struct _connection {
 #define remote_export extern
 #endif
 
-remote_export str RMTprelude(int *ret);
-remote_export str RMTepilogue(int *ret);
-remote_export str RMTresolve(int *ret, str *pat);
+remote_export str RMTprelude(void *ret);
+remote_export str RMTepilogue(void *ret);
+remote_export str RMTresolve(bat *ret, str *pat);
 remote_export str RMTconnectScen( str *ret, str *ouri, str *user, str *passwd, str *scen);
 remote_export str RMTconnect( str *ret, str *uri, str *user, str *passwd);
 
-remote_export str RMTdisconnect(Client cntxt, str *conn);
+remote_export str RMTdisconnect(void *ret, str *conn);
 remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);

@@ -404,7 +404,7 @@ cleanup_fields(bam_field fields[11]) {
 #define CUR_INT(field, i) (*(int *) BUNtail(field.iter, (field.cur+i)))
 
 str
-sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* arg 1: path to desired output file */
 	str output_path = *getArgReference_str(stk, pci, pci->retc);
@@ -463,7 +463,7 @@ cleanup:
 
 
 str
-bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 #ifdef NOT_IMPLEMENTED
 	(void) cntxt;
