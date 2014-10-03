@@ -29,6 +29,7 @@
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include <stream.h>
+#include "streams.h"			/* for Stream */
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -100,7 +101,7 @@ mal_mapi_export str SERVERmapi_rpc_single_bat(Client cntxt, MalBlkPtr mb, MalStk
 mal_mapi_export str SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_mapi_export str SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_mapi_export str SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_mapi_export str SERVERclient(void *res, stream **In, stream **Out);
+mal_mapi_export str SERVERclient(void *res, const Stream *In, const Stream *Out);
 mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */

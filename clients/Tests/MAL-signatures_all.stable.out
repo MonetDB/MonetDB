@@ -31673,7 +31673,7 @@ command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2],force:bit):bat[:an
 address BKCbat_inplace_force;
 comment inplace replace values on the given locations
 
-command bat.inplace(o:bat[:any_1,:any_2],id:any_1,t:any_2,force:bit):bat[:any_1,:any_2] 
+command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2,force:bit):bat[:oid,:any_2] 
 address BKCbun_inplace_force;
 comment inplace replace values on the given locations
 
@@ -31681,7 +31681,7 @@ command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2]):bat[:any_1,:any_2
 address BKCbat_inplace;
 comment inplace replace values on the given locations
 
-command bat.inplace(o:bat[:any_1,:any_2],id:any_1,t:any_2):bat[:any_1,:any_2] 
+command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2):bat[:oid,:any_2] 
 address BKCbun_inplace;
 comment inplace replace values on the given locations
 
@@ -40184,7 +40184,7 @@ comment The pow(x,y) function  returns the value of x raised to the power of y.
 command mmath.pow(x:flt,y:flt):flt 
 address MATHbinary_POWflt;
 command mmath.rand{unsafe}(v:int):int 
-address MATHrandint;
+address MATHrandintseed;
 comment return a random number
 
 command mmath.rand{unsafe}():int 
@@ -42218,7 +42218,7 @@ pattern sysmon.stop(id:sht):void
 address SYSMONstop;
 command timezone.#fromstr():timezone 
 address tzone_fromstr;
-command timezone.str():str 
+command timezone.str(z:timezone):str 
 address MTIMEtzone_tostr;
 command timezone.timestamp(secs:int):timestamp 
 address MTIMEtimestamp;

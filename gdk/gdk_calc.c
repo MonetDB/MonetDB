@@ -773,7 +773,7 @@ BATcalcsign(BAT *b, BAT *s)
 	 * first, positive comes after) and NILs stay in the same
 	 * position */
 	bn->T->sorted = b->T->sorted || cnt <= 1 || nils == cnt;
-	bn->T->revsorted = bn->T->revsorted || cnt <= 1 || nils == cnt;
+	bn->T->revsorted = b->T->revsorted || cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;

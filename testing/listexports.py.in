@@ -47,15 +47,8 @@ cmtre = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
 # in "export"
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 
-# white space
-spcre = re.compile(r'\s+')
-
 # the function or variable name
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
-
-# some regexps helping to normalize the output
-strre = re.compile(r'([^ *])\*')
-comre = re.compile(r',\s*')
 
 def extract(f):
     decls = []
@@ -73,18 +66,7 @@ def extract(f):
     res = expre.search(data)
     while res is not None:
         pos = res.end(0)
-        decl = res.group('decl')
-        decl = spcre.sub(' ', decl) \
-            .replace(' ;', ';') \
-            .replace(' (', '(') \
-            .replace('( ', '(') \
-            .replace(' )', ')') \
-            .replace(') ', ')') \
-            .replace('* ', '*') \
-            .replace(' ,', ',') \
-            .replace(')__attribute__', ') __attribute__')
-        decl = strre.sub(r'\1 *', decl)
-        decl = comre.sub(', ', decl)
+        decl = exportutils.normalize(res.group('decl'))
         res = nmere.search(decl)
         if res is not None:
             decls.append((res.group('name'), decl))

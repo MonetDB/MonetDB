@@ -281,6 +281,15 @@ MATHrandint(int *res)
 }
 
 str
+MATHrandintseed(int *res, const int *seed)
+{
+	/* coverity[dont_call] */
+	srand(*seed);
+	*res = rand();
+	return MAL_SUCCEED;
+}
+
+str
 MATHsrandint(void *ret, const int *seed)
 {
 	(void) ret;

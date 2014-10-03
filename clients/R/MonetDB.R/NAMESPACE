@@ -1,10 +1,10 @@
-import(DBI,digest,methods,bitops)
+import(DBI,digest,methods)
 
 # export only driver constructor, everything else is DBI stuff..
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,dbIsValid)
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction)
 # shorthands
 export(mc,mq)
 
@@ -18,8 +18,8 @@ useDynLib(MonetDB.R)
 
 # dplyr.R
 export(src_monetdb)
-export(translate_env.src_monetdb)
-export(brief_desc.src_monetdb)
+export(src_translate_env.src_monetdb)
+export(src_desc.src_monetdb)
 export(tbl.src_monetdb)
 export(db_query_fields.MonetDBConnection)
 export(db_query_rows.MonetDBConnection)
@@ -27,5 +27,6 @@ export(db_save_query.MonetDBConnection)
 export(db_insert_into.MonetDBConnection)
 export(db_create_index.MonetDBConnection)
 export(db_analyze.MonetDBConnection)
-export(db_begin.MonetDBConnection)
 export(sql_subquery.MonetDBConnection)
+export(sql_join.MonetDBConnection)
+export(monetdb_queryinfo)

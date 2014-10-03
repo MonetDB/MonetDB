@@ -10,6 +10,13 @@ defre = re.compile(r'^[ \t]*#[ \t]*define[ \t]+'            # #define
 # line starting with a "#"
 cldef = re.compile(r'^[ \t]*#', re.MULTILINE)
 
+# white space
+spcre = re.compile(r'\s+')
+
+# some regexps helping to normalize a declaration
+strre = re.compile(r'([^ *])\*')
+comre = re.compile(r',\s*')
+
 # do something a bit like the C preprocessor
 #
 # we expand function-like macros and remove all ## sequences from the
@@ -72,3 +79,17 @@ def preprocess(data):
             if not cldef.match(line):
                 ndata.append(line)
     return '\n'.join(ndata)
+
+def normalize(decl):
+    decl = spcre.sub(' ', decl) \
+                .replace(' ;', ';') \
+                .replace(' (', '(') \
+                .replace('( ', '(') \
+                .replace(' )', ')') \
+                .replace(') ', ')') \
+                .replace('* ', '*') \
+                .replace(' ,', ',') \
+                .replace(')__attribute__', ') __attribute__')
+    decl = strre.sub(r'\1 *', decl)
+    decl = comre.sub(', ', decl)
+    return decl

@@ -134,8 +134,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
         stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
       }
       
-      length <- bitShiftR(unpacked,1)
-      final <- bitAnd(unpacked,1)
+      length <- bitwShiftR(unpacked,1)
+      final  <- bitwAnd(unpacked,1)
           
       if (length == 0) break
       resp <- c(resp,readChar(con, length, useBytes = TRUE))    
@@ -167,7 +167,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       bytes <- nchar(req)
       pos <- pos + bytes
       final <- max(nchar(msg) - pos,0) == 0            
-      header <- as.integer(bitOr(bitShiftL(bytes,1),as.numeric(final)))
+      header <- as.integer(bitwOr(bitwShiftL(bytes,1),as.numeric(final)))
       writeBin(header, con, 2,endian="little")
       writeChar(req,con,bytes,useBytes=TRUE,eos=NULL)
     }
@@ -192,7 +192,9 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 .mapiParseResponse <- function(response) {
   #lines <- .Call("mapiSplitLines", response, PACKAGE="MonetDB.R")
   lines <- strsplit(response, "\n", fixed=TRUE, useBytes=TRUE)[[1]]
-  
+  if (length(lines) < 1) {
+    stop("Invalid response from server. Try re-connecting.")
+  }
   typeLine <- lines[[1]]
   resKey <- substring(typeLine, 1, 1)
   
@@ -313,11 +315,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   salt <- credentials[[1]][1]
   
   if (!(endhashfunc %in% HASH_ALGOS)) {
-    stop(paste("Server-requested end hash function", endhashfunc, "is not available"))
+    stop("Server-requested end hash function ", endhashfunc, " is not available")
   }
   
   if (!(pwhashfunc %in% HASH_ALGOS)) {
-    stop(paste("Server-requested password hash function", pwhashfunc, "is not available"))
+    stop("Server-requested password hash function ", pwhashfunc, " is not available")
   }
   
   # We first hash the password with the server-requested hash function 
@@ -349,7 +351,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
         .mapiAuthenticate(con, dbname, user, password, endhashfunc)
       }
       if (protocol == "monetdb") {
-        stop(paste0("Forwarding to another server (", link, ") not supported."))
+        stop("Forwarding to another server (", link, ") not supported.")
       }
     }
     if (respKey == MSG_MESSAGE) {
