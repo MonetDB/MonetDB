@@ -677,7 +677,7 @@ SERVERresume(void *res)
 }
 
 str
-SERVERclient(void *res, stream **In, stream **Out)
+SERVERclient(void *res, const Stream *In, const Stream *Out)
 {
 	(void) res;
 	/* in embedded mode we allow just one client */
