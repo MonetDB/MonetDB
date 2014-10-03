@@ -41,3 +41,4 @@ div_by_zero_in_return.Bug-3555
 round-sorted.Bug-3562
 locate-offset.Bug-3563
 aggr-with-limit.Bug-3498
+sign-sorted.Bug-3594
