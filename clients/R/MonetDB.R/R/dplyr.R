@@ -40,7 +40,8 @@ db_query_rows.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
-  dbWriteTable(con,table,values,append=T,transaction=F,csvdump=T)
+  dbWriteTable(con,dbQuoteIdentifier(con,table),values,
+    append=T,transaction=F,csvdump=T)
 }
 
 db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
@@ -61,7 +62,6 @@ db_analyze.MonetDBConnection <- function(con, table, ...) {
 }
 
 sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) {
-  print(str(sql))
   if (is.ident(sql)) return(sql)
   monetdb_check_subquery(sql)
   build_sql("(", sql, ") AS ", ident(name), con = con)

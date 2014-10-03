@@ -33,6 +33,10 @@ stderr of test 'dplyr` in directory 'clients/R` itself:
 
 Attaching package: ‘dplyr’
 
+The following object is masked from ‘package:MonetDB.R’:
+
+    src_monetdb
+
 The following objects are masked from ‘package:stats’:
 
     filter, lag
@@ -41,18 +45,37 @@ The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
+Creating table: AllstarFull
+Creating table: Appearances
+Creating table: AwardsManagers
+Creating table: AwardsPlayers
+Creating table: AwardsShareManagers
+Creating table: AwardsSharePlayers
+Creating table: Batting
+Creating table: BattingPost
+Creating table: Fielding
+Creating table: FieldingOF
+Creating table: FieldingPost
+Creating table: HallOfFame
+Creating table: LahmanData
+Creating table: Managers
+Creating table: ManagersHalf
+Creating table: Master
+Creating table: Pitching
+Creating table: PitchingPost
+Creating table: Salaries
+Creating table: Schools
+Creating table: SchoolsPlayers
+Creating table: SeriesPost
+Creating table: Teams
+Creating table: TeamsFranchises
+Creating table: TeamsHalf
+Joining by: "playerID"
+Joining by: "playerID"
+Joining by: "playerID"
+Joining by: "playerID"
 
-Attaching package: ‘MonetDB.R’
-
-The following object is masked from ‘package:dplyr’:
-
-    src_monetdb
-
-Error in .local(drv, ...) : argument is missing, with no default
-Calls: tbl ... dbi_connect.DBIDriver -> dbConnect -> .valueClassTest -> is -> is -> .local
-Execution halted
-
-# 10:34:57 >  
-# 10:34:57 >  "Done."
-# 10:34:57 >  
+# 15:33:59 >  
+# 15:33:59 >  "Done."
+# 15:33:59 >  
 

@@ -209,8 +209,9 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 })
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-  #TODO: make this work with more cases
-  tolower(name) %in% tolower(dbListTables(conn,sys_tables=T))
+  # TODO: this is evil... 
+  return(tolower(gsub("(^\"|\"$)","",as.character(name))) %in% 
+    tolower(dbListTables(conn,sys_tables=T)))
 })
 
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
