@@ -34,7 +34,7 @@
 	"# This file is used by monetdbd\n\n"
 
 /* these are the properties used for starting an mserver */
-static confkeyval _internal_prop_keys[50] = {
+static confkeyval _internal_prop_keys[] = {
 	{"type",     NULL, 0, STR},
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
@@ -62,7 +62,7 @@ getDefaultProps(void)
 
 /**
  * Writes the given key-value list to MEROPROPFILE in the given path.
- * Returns 0 when the properties could be successfully written to the file.
+ * Returns 0 when the properties could be written to the file.
  */
 inline int
 writeProps(confkeyval *ckv, const char *path)
@@ -79,30 +79,6 @@ writeProps(confkeyval *ckv, const char *path)
 		if (ckv->val != NULL)
 			fprintf(cnf, "%s=%s\n", ckv->key, ckv->val);
 		ckv++;
-	}
-
-	fflush(cnf);
-	fclose(cnf);
-
-	return(0);
-}
-
-/**
- * Appends additional (non-default) property MEROPROPFILE in the given path.
- * Returns 0 when the property could be successfully appended to the file.
- */
-static inline int
-appendProp(confkeyval *ckv, const char *path)
-{
-	char file[1024];
-	FILE *cnf;
-
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
-	if ((cnf = fopen(file, "a")) == NULL)
-		return(1);
-
-	if (ckv->key != NULL && ckv->val != NULL) {
-		fprintf(cnf, "%s=%s\n", ckv->key, ckv->val);
 	}
 
 	fflush(cnf);
@@ -161,25 +137,6 @@ readProps(confkeyval *ckv, const char *path)
 }
 
 /**
- * Read all properties from a  property file.
- * Returns 0 when reading the property file succeeded.
- */
-inline int
-readAllProps(confkeyval *ckv, const char *path)
-{
-	char file[1024];
-	FILE *cnf;
-
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
-	if ((cnf = fopen(file, "r")) != NULL) {
-		readConfFileFull(ckv, cnf);
-		fclose(cnf);
-		return(0);
-	}
-	return(1);
-}
-
-/**
  * Read properties from buf, filling in the requested key-values.
  */
 inline void
@@ -217,8 +174,15 @@ setProp(char *path, char *key, char *val)
 
 	readProps(props, path);
 	kv = findConfKey(props, key);
-	if (kv != NULL && (err = setConfVal(kv, val)) != NULL) {
-		/* first just attempt to set the value (type-check) in memory */
+	if (kv == NULL) {
+		snprintf(buf, sizeof(buf), "no such property: %s", key);
+		freeConfFile(props);
+		free(props);
+		return(strdup(buf));
+	}
+
+	/* first just attempt to set the value (type-check) in memory */
+	if ((err = setConfVal(kv, val)) != NULL) {
 		freeConfFile(props);
 		free(props);
 		return(err);
@@ -261,24 +225,10 @@ setProp(char *path, char *key, char *val)
 				value++;
 			}
 		}
-
-		/* ok, if we've reached this point we can write this stuff out! */
-		/* Let's check if this was a default property of an additional one.
-		 * Non-default properties will have a NULL kv */
-		if (kv == NULL) {
-			confkeyval *addProperty = (struct _confkeyval *) malloc(sizeof(struct _confkeyval));
-			addProperty->key = strdup(key);
-			addProperty->val = strdup(val);
-			addProperty->ival = 0;
-			addProperty->type = STR;
-
-			appendProp(addProperty, path);
-			free(addProperty);
-		} else {
-			writeProps(props, path);
-		}
 	}
 
+	/* ok, if we've reached this point we can write this stuff out! */
+	writeProps(props, path);
 	freeConfFile(props);
 	free(props);
 

@@ -40,14 +40,11 @@ typedef struct _confkeyval {
 } confkeyval;
 
 void readConfFile(confkeyval *list, FILE *cnf);
-void readConfFileFull(confkeyval *list, FILE *cnf);
 void freeConfFile(confkeyval *list);
-int defaultProperty(char *key);
 confkeyval *findConfKey(confkeyval *list, char *key);
 char *getConfVal(confkeyval *list, char *key);
 int getConfNum(confkeyval *list, char *key);
 char *setConfVal(confkeyval *ckv, char *val);
-char *setConfValForKey(confkeyval *list, char *key, char *val);
 void secondsToString(char *buf, time_t t, int longness);
 void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf, unsigned int len);

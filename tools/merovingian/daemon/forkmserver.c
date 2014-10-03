@@ -63,7 +63,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upmin[8];
 	char upavg[8];
 	char upmax[8];
-	confkeyval *ckv, *kv, *list;
+	confkeyval *ckv, *kv;
 	SABdbState state;
 
 	er = msab_getStatus(stats, database);
@@ -113,7 +113,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 
 	ckv = getDefaultProps();
-	readAllProps(ckv, (*stats)->path);
+	readProps(ckv, (*stats)->path);
 	kv = findConfKey(ckv, "type");
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_db_props, "type");
@@ -280,8 +280,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char nclients[24];
 		char pipeline[512];
 		char *readonly = NULL;
-		char *argv[512];	/* for the exec arguments */
-		char property_other[1024];
+		char *argv[24];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
 
@@ -323,6 +322,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(ckv, "readonly");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			readonly = "--readonly";
+
+		freeConfFile(ckv);
+		free(ckv); /* can make ckv static and reuse it all the time */
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -388,24 +390,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (readonly != NULL) {
 			argv[c++] = readonly;
 		}
-		/* get the rest (non-default) mserver props set in the conf file */
-		list = ckv;
-		while (list->key != NULL) {
-			if (list->val != NULL && !defaultProperty(list->key)) {
-				argv[c++] = "--set";
-				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
-				argv[c++] = property_other;
-			}
-			list++;
-		}
-
 		/* keep this one last for easy copy/paste with gdb */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-
 		argv[c++] = NULL;
-
-		freeConfFile(ckv);
-		free(ckv); /* can make ckv static and reuse it all the time */
 
 		fprintf(stdout, "arguments:");
 		for (c = 0; argv[c] != NULL; c++) {
