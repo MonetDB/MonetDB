@@ -36,7 +36,7 @@
 #include "opt_dataflow.h"
 
 int
-OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0, fnd, mvc = 0;
 	int bskt, i, j, k, limit, slimit;

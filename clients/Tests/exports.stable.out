@@ -1483,6 +1483,7 @@ str MATHbinary_ROUNDdbl(dbl *res, dbl *a, int *b);
 str MATHbinary_ROUNDflt(flt *res, flt *a, int *b);
 str MATHpi(dbl *pi);
 str MATHrandint(int *res);
+str MATHrandintseed(int *res, const int *seed);
 str MATHsqlrandint(int *res, int *seed);
 str MATHsrandint(void *ret, const int *seed);
 str MATHunary_ACOSdbl(dbl *res, dbl *a);

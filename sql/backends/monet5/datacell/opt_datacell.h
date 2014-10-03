@@ -25,5 +25,5 @@
 
 //#define OPTDEBUGdatacell   if (1)
 #define OPTDEBUGdatacell  if (optDebug & (1 << DEBUG_OPT_DATACELL))
-opt_export int OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif

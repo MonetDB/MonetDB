@@ -211,7 +211,7 @@ command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
 address BKCappend_val_force_wrap
 comment "append the value u to i";
 
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2) :bat[:any_1,:any_2]
+command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2) :bat[:oid,:any_2]
 address BKCbun_inplace
 comment "inplace replace values on the given locations";
 
@@ -219,7 +219,7 @@ command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCbat_inplace
 comment "inplace replace values on the given locations";
 
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
+command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2, force:bit) :bat[:oid,:any_2]
 address BKCbun_inplace_force
 comment "inplace replace values on the given locations";
 
