@@ -134,8 +134,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
         stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
       }
       
-      length <- bitShiftR(unpacked,1)
-      final <- bitAnd(unpacked,1)
+      length <- bitwShiftR(unpacked,1)
+      final  <- bitwAnd(unpacked,1)
           
       if (length == 0) break
       resp <- c(resp,readChar(con, length, useBytes = TRUE))    
@@ -167,7 +167,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       bytes <- nchar(req)
       pos <- pos + bytes
       final <- max(nchar(msg) - pos,0) == 0            
-      header <- as.integer(bitOr(bitShiftL(bytes,1),as.numeric(final)))
+      header <- as.integer(bitwOr(bitwShiftL(bytes,1),as.numeric(final)))
       writeBin(header, con, 2,endian="little")
       writeChar(req,con,bytes,useBytes=TRUE,eos=NULL)
     }

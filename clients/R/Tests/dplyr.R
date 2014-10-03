@@ -1,5 +1,9 @@
 library(dplyr,quietly=T)
-library(MonetDB.R,quietly=T)
+ll <- NULL
+if (Sys.getenv("TSTTRGDIR") != "") {
+	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
+}
+library(MonetDB.R,quietly=T,lib.loc=ll)
 library(Lahman,quietly=T)
 options(monetdb.debug.query=T)
 
@@ -9,10 +13,12 @@ dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
 
+# old way
 if (exists("lahman_monetdb")) {
 	# overwrite all args because lahman_monetdb sets a default arg in the first pos.
 	srct <- function() lahman_monetdb(host="localhost", dbname=dbname, port=dbport ,
 		user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
+# new way
 } else {
 	srct <- function() src_monetdb(dbname=dbname, port=dbport)
 	copy_lahman(srct())
