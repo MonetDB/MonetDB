@@ -72,6 +72,45 @@ readConfFile(confkeyval *list, FILE *cnf) {
 }
 
 /**
+ * Parses the given file stream matching the and writes all values to the list.
+ */
+void
+readConfFileFull(confkeyval *list, FILE *cnf) {
+	char buf[1024];
+	char *key, *val;
+	char *separator = "=";
+	char *err;
+	confkeyval *t = list;
+
+	/* iterate until the end of the array */
+	while (list->key != NULL) {
+		list++;
+	}
+	/* read the file a line at a time */
+	while (fgets(buf, sizeof(buf), cnf) != NULL) {
+		if (strlen(buf) > 1 && buf[0] != '#') {
+			/* tokenize */
+			key = strtok(buf, separator);
+			val = strtok(NULL, separator);
+			/* strip trailing newline */
+			val = strtok(val, "\n");
+			/* check if it is default property or not. those are set in a special way */
+			if (defaultProperty(key)) {
+				if ((err = setConfValForKey(t, key, val)) != NULL) {
+					free(err); /* ignore, just fall back to default */
+				}
+			} else {
+				list->key = strdup(key);
+				list->val = strdup(val);
+				list->ival = 0;
+				list->type = STR;
+				list++;
+			}
+		}
+	}
+}
+
+/**
  * Frees the values allocated by readConfFile().
  */
 inline void
@@ -83,6 +122,27 @@ freeConfFile(confkeyval *list) {
 		}
 		list++;
 	}
+}
+
+/**
+ * True if the key is not a default property.
+ */
+inline int
+defaultProperty(char *property) {
+	if (property != NULL && strcmp(property, "type") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "shared") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "nthreads") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "readonly") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "nclients") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "mfunnel") == 0) {
+		return 1;
+	}
+	return 0;
 }
 
 /**
@@ -216,6 +276,19 @@ setConfVal(confkeyval *ckv, char *val) {
 	ckv->ival = ival;
 
 	return(NULL);
+}
+
+char *
+setConfValForKey(confkeyval *list, char *key, char *val) {
+	while (list->key != NULL) {
+		if (strcmp(list->key, key) == 0) {
+			return setConfVal(list, val);
+		}
+		list++;
+	}
+	char buf[256];
+	snprintf(buf, sizeof(buf), "key '%s' is not recognized, internal error", key);
+	return(strdup(buf));
 }
 
 /**
