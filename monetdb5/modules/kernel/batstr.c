@@ -67,9 +67,9 @@ batstr_export str STRbatRstrSearch(bat *ret, bat *l, bat *r);
 batstr_export str STRbatRstrSearchcst(bat *ret, bat *l, str *cst);
 batstr_export str STRcstRstrSearchbat(bat *ret, str *cst, bat *r);
 batstr_export str STRbatTail(bat *ret, bat *l, bat *r);
-batstr_export str STRbatTailcst(bat *ret, bat *l, bat *cst);
+batstr_export str STRbatTailcst(bat *ret, bat *l, int *cst);
 batstr_export str STRbatWChrAt(bat *ret, bat *l, bat *r);
-batstr_export str STRbatWChrAtcst(bat *ret, bat *l, bat *cst);
+batstr_export str STRbatWChrAtcst(bat *ret, bat *l, int *cst);
 batstr_export str STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep);
 
 batstr_export str STRbatLower(bat *ret, bat *l);
@@ -1211,7 +1211,7 @@ bunins_failed:
 	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatTailcst(bat *ret, bat *l, bat *cst)
+str STRbatTailcst(bat *ret, bat *l, int *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -1275,7 +1275,7 @@ bunins_failed:
 	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatWChrAtcst(bat *ret, bat *l, bat *cst)
+str STRbatWChrAtcst(bat *ret, bat *l, int *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;

@@ -281,8 +281,9 @@ MATHrandint(int *res)
 }
 
 str
-MATHsrandint(int *seed)
+MATHsrandint(void *ret, const int *seed)
 {
+	(void) ret;
 	srand(*seed);
 	return MAL_SUCCEED;
 }

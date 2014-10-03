@@ -239,7 +239,7 @@ command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command deleteHead(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :void
+command deleteHead(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :bat[:any_1, :any_2]
 address BKCdelete_bat
 comment "Delete from the first BAT all BUNs with a corresponding head  
         in the second.";

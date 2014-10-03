@@ -404,10 +404,10 @@ cleanup_fields(bam_field fields[11]) {
 #define CUR_INT(field, i) (*(int *) BUNtail(field.iter, (field.cur+i)))
 
 str
-sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* arg 1: path to desired output file */
-	str output_path = *(str *) getArgReference(stk, pci, pci->retc);
+	str output_path = *getArgReference_str(stk, pci, pci->retc);
 
 
 	stream *output = NULL;
@@ -463,7 +463,7 @@ cleanup:
 
 
 str
-bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 #ifdef NOT_IMPLEMENTED
 	(void) cntxt;
@@ -474,7 +474,7 @@ bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "bam_export", "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
 #else
 	/* arg 1: path to desired output file */
-	str output_path = *(str *) getArgReference(stk, pci, pci->retc);
+	str output_path = *getArgReference_str(stk, pci, pci->retc);
 
 	bamFile output = NULL;
 	bam_field fields[11];

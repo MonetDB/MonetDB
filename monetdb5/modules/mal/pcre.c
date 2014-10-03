@@ -55,7 +55,7 @@ pcre_export str PCREindex(int *ret, pcre *pat, str *val);
 pcre_export str PCREpatindex(int *ret, str *pat, str *val);
 
 pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
-pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
+pcre_export str PCREreplace_bat_wrap(bat *res, bat *or, str *pat, str *repl, str *flags);
 
 pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre *val);
 pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
@@ -63,22 +63,22 @@ pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCRElike2(bit *ret, str *s, str *pat);
 pcre_export str PCREnotlike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCREnotlike2(bit *ret, str *s, str *pat);
-pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
-pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
-pcre_export str BATPCREnotlike(int *ret, int *b, str *pat, str *esc);
-pcre_export str BATPCREnotlike2(int *ret, int *b, str *pat);
+pcre_export str BATPCRElike(bat *ret, bat *b, str *pat, str *esc);
+pcre_export str BATPCRElike2(bat *ret, bat *b, str *pat);
+pcre_export str BATPCREnotlike(bat *ret, bat *b, str *pat, str *esc);
+pcre_export str BATPCREnotlike2(bat *ret, bat *b, str *pat);
 pcre_export str PCREilike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCREilike2(bit *ret, str *s, str *pat);
 pcre_export str PCREnotilike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCREnotilike2(bit *ret, str *s, str *pat);
-pcre_export str BATPCREilike(int *ret, int *b, str *pat, str *esc);
-pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
-pcre_export str BATPCREnotilike(int *ret, int *b, str *pat, str *esc);
-pcre_export str BATPCREnotilike2(int *ret, int *b, str *pat);
-pcre_export str PCREselect(int *res, str *pattern, int *bid);
-pcre_export str PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
-pcre_export str PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
-pcre_export str pcre_init(void);
+pcre_export str BATPCREilike(bat *ret, bat *b, str *pat, str *esc);
+pcre_export str BATPCREilike2(bat *ret, bat *b, str *pat);
+pcre_export str BATPCREnotilike(bat *ret, bat *b, str *pat, str *esc);
+pcre_export str BATPCREnotilike2(bat *ret, bat *b, str *pat);
+pcre_export str PCREselect(bat *res, str *pattern, bat *bid);
+pcre_export str PCRElike_join_pcre(bat *l, bat *r, bat *b, bat *pat, str *esc);
+pcre_export str PCREilike_join_pcre(bat *l, bat *r, bat *b, bat *pat, str *esc);
+pcre_export str pcre_init(void *ret);
 pcre_export str PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti);
 pcre_export str PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti);
 pcre_export str PCRElikesubselect3(bat *ret, bat *bid, str *pat, str *esc, bit *anti);
@@ -789,8 +789,9 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 }
 
 str
-pcre_init(void)
+pcre_init(void *ret)
 {
+	(void) ret;
 	pcre_malloc = my_pcre_malloc;
 	pcre_free = my_pcre_free;
 	return NULL;
@@ -961,7 +962,7 @@ PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags){
 }
 
 str
-PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
+PCREreplace_bat_wrap(bat *res, bat *bid, str *pat, str *repl, str *flags){
 	BAT *b,*bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -977,7 +978,7 @@ PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
 }
 
 str
-PCREselect(int *res, str *pattern, int *bid)
+PCREselect(bat *res, str *pattern, bat *bid)
 {
 	BAT *bn = NULL, *strs;
 	str msg;
@@ -1177,7 +1178,7 @@ PCREnotilike2(bit *ret, str *s, str *pat)
 }
 
 static str
-BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
+BATPCRElike3(bat *ret, bat *bid, str *pat, str *esc, bit *isens, bit *not)
 {
 	char *ppat = NULL;
 	str res = sql2pcre(&ppat, *pat, *esc);
@@ -1282,7 +1283,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 }
 
 str
-BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
+BATPCRElike(bat *ret, bat *bid, str *pat, str *esc)
 {
 	bit no = FALSE;
 
@@ -1290,7 +1291,7 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 }
 
 str
-BATPCRElike2(bat *ret, int *bid, str *pat)
+BATPCRElike2(bat *ret, bat *bid, str *pat)
 {
 	char *esc = "\\";
 
@@ -1298,7 +1299,7 @@ BATPCRElike2(bat *ret, int *bid, str *pat)
 }
 
 str
-BATPCREnotlike(bat *ret, int *bid, str *pat, str *esc)
+BATPCREnotlike(bat *ret, bat *bid, str *pat, str *esc)
 {
 	bit no = FALSE;
 	bit yes = TRUE;
@@ -1307,7 +1308,7 @@ BATPCREnotlike(bat *ret, int *bid, str *pat, str *esc)
 }
 
 str
-BATPCREnotlike2(bat *ret, int *bid, str *pat)
+BATPCREnotlike2(bat *ret, bat *bid, str *pat)
 {
 	char *esc = "\\";
 
@@ -1315,7 +1316,7 @@ BATPCREnotlike2(bat *ret, int *bid, str *pat)
 }
 
 str
-BATPCREilike(bat *ret, int *bid, str *pat, str *esc)
+BATPCREilike(bat *ret, bat *bid, str *pat, str *esc)
 {
 	bit yes = TRUE;
 	bit no = FALSE;
@@ -1324,7 +1325,7 @@ BATPCREilike(bat *ret, int *bid, str *pat, str *esc)
 }
 
 str
-BATPCREilike2(bat *ret, int *bid, str *pat)
+BATPCREilike2(bat *ret, bat *bid, str *pat)
 {
 	char *esc = "\\";
 
@@ -1332,7 +1333,7 @@ BATPCREilike2(bat *ret, int *bid, str *pat)
 }
 
 str
-BATPCREnotilike(bat *ret, int *bid, str *pat, str *esc)
+BATPCREnotilike(bat *ret, bat *bid, str *pat, str *esc)
 {
 	bit yes = TRUE;
 
@@ -1340,7 +1341,7 @@ BATPCREnotilike(bat *ret, int *bid, str *pat, str *esc)
 }
 
 str
-BATPCREnotilike2(bat *ret, int *bid, str *pat)
+BATPCREnotilike2(bat *ret, bat *bid, str *pat)
 {
 	char *esc = "\\";
 

@@ -735,7 +735,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	DataFlow flow = NULL;
 	str msg = MAL_SUCCEED;
 	int size;
-	int *ret;
+	bit *ret;
 	int i;
 
 #ifdef DEBUG_FLOW
@@ -746,7 +746,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");
-	ret = (int*) getArgReference(stk,getInstrPtr(mb,startpc),0);
+	ret = getArgReference_bit(stk,getInstrPtr(mb,startpc),0);
 	*ret = FALSE;
 	if (stk->cmd) {
 		*ret = TRUE;

@@ -86,172 +86,172 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 	case 0: ret = (str)(*pci->fcn)();
 		break;
 	case 1: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0));
+			getArgReference(stk, pci, 0));
 		break;
 	case 2: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1));
 		break;
 	case 3: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2));
 		break;
 	case 4: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3));
 		break;
 	case 5: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4));
 		break;
 	case 6: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5));
 		break;
 	case 7: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6));
 		break;
 	case 8: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7));
 		break;
 	case 9: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8));
 		break;
 	case 10: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9));
 		break;
 	case 11: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10));
 		break;
 	case 12: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10),
-			(ptr)getArgReference(stk, pci, 11));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10),
+			getArgReference(stk, pci, 11));
 		break;
 	case 13: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10),
-			(ptr)getArgReference(stk, pci, 11),
-			(ptr)getArgReference(stk, pci, 12));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10),
+			getArgReference(stk, pci, 11),
+			getArgReference(stk, pci, 12));
 		break;
 	case 14: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10),
-			(ptr)getArgReference(stk, pci, 11),
-			(ptr)getArgReference(stk, pci, 12),
-			(ptr)getArgReference(stk, pci, 13));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10),
+			getArgReference(stk, pci, 11),
+			getArgReference(stk, pci, 12),
+			getArgReference(stk, pci, 13));
 		break;
 	case 15: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10),
-			(ptr)getArgReference(stk, pci, 11),
-			(ptr)getArgReference(stk, pci, 12),
-			(ptr)getArgReference(stk, pci, 13),
-			(ptr)getArgReference(stk, pci, 14));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10),
+			getArgReference(stk, pci, 11),
+			getArgReference(stk, pci, 12),
+			getArgReference(stk, pci, 13),
+			getArgReference(stk, pci, 14));
 		break;
 	case 16: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0),
-			(ptr)getArgReference(stk, pci, 1),
-			(ptr)getArgReference(stk, pci, 2),
-			(ptr)getArgReference(stk, pci, 3),
-			(ptr)getArgReference(stk, pci, 4),
-			(ptr)getArgReference(stk, pci, 5),
-			(ptr)getArgReference(stk, pci, 6),
-			(ptr)getArgReference(stk, pci, 7),
-			(ptr)getArgReference(stk, pci, 8),
-			(ptr)getArgReference(stk, pci, 9),
-			(ptr)getArgReference(stk, pci, 10),
-			(ptr)getArgReference(stk, pci, 11),
-			(ptr)getArgReference(stk, pci, 12),
-			(ptr)getArgReference(stk, pci, 13),
-			(ptr)getArgReference(stk, pci, 14),
-			(ptr)getArgReference(stk, pci, 15));
+			getArgReference(stk, pci, 0),
+			getArgReference(stk, pci, 1),
+			getArgReference(stk, pci, 2),
+			getArgReference(stk, pci, 3),
+			getArgReference(stk, pci, 4),
+			getArgReference(stk, pci, 5),
+			getArgReference(stk, pci, 6),
+			getArgReference(stk, pci, 7),
+			getArgReference(stk, pci, 8),
+			getArgReference(stk, pci, 9),
+			getArgReference(stk, pci, 10),
+			getArgReference(stk, pci, 11),
+			getArgReference(stk, pci, 12),
+			getArgReference(stk, pci, 13),
+			getArgReference(stk, pci, 14),
+			getArgReference(stk, pci, 15));
 		break;
 	default:
 		throw(MAL, "mal.interpreter", "too many arguments for command call");
@@ -640,7 +640,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					lhs = &stk->stk[pci->argv[k]];
 					rhs = &stk->stk[pci->argv[i]];
 					VALcopy(lhs, rhs);
-					if (lhs->vtype == TYPE_bat && lhs->val.bval)
+					if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
 						BBPincref(lhs->val.bval, TRUE);
 				}
 				FREE_EXCEPTION(ret);
@@ -770,7 +770,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 					for (i = 0; i < pci->retc; i++) {
 						if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
-							stk->stk[getArg(pci, i)].val.bval) {
+							stk->stk[getArg(pci, i)].val.bval != bat_nil &&
+							stk->stk[getArg(pci, i)].val.bval != 0) {
 							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
 								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
@@ -806,15 +807,15 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(getArgType(mb, pci, i))) {
 							bat bid = stk->stk[a].val.bval;
 
-							if (i < pci->retc && backup[i].val.bval) {
+							if (i < pci->retc && backup[i].val.bval != bat_nil) {
 								bat bx = backup[i].val.bval;
-								backup[i].val.bval = 0;
+								backup[i].val.bval = bat_nil;
 								BBPdecref(bx, TRUE);
 							}
 							if (garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 								bid = abs(stk->stk[garbage[i]].val.bval);
-								stk->stk[garbage[i]].val.bval = 0;
+								stk->stk[garbage[i]].val.bval = bat_nil;
 								BBPdecref(bid, TRUE);
 							}
 						} else if (i < pci->retc &&
@@ -1218,7 +1219,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 str
 safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int depth = *(int*)getArgReference(stk, pci, 1);
+	int depth = *getArgReference_int(stk, pci, 1);
 	(void)cntxt;
 	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
@@ -1393,8 +1394,8 @@ void garbageElement(Client cntxt, ValPtr v)
 		bat bid = abs(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
-		v->val.bval = 0;
-		if (bid == 0)
+		v->val.bval = bat_nil;
+		if (bid == bat_nil)
 			return;
 		if (!BBP_lrefs(bid))
 			return;

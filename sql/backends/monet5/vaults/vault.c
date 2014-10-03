@@ -154,9 +154,9 @@ static size_t my_fwrite(void *buffer, size_t size, size_t nmemb, void *stream)
 str
 VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	timestamp *ret = (timestamp*) getArgReference(stk,pci,0);
-	str *source = (str*) getArgReference(stk,pci,1);
-	str *target = (str*) getArgReference(stk,pci,2);
+	timestamp *ret = getArgReference_TYPE(stk,pci,0,timestamp);
+	str *source = getArgReference_str(stk,pci,1);
+	str *target = getArgReference_str(stk,pci,2);
 	str msg = MAL_SUCCEED;
 
 #ifdef HAVE_CURL
@@ -268,7 +268,7 @@ str VLTremove(timestamp *ret, str *t)
 }
 
 str
-VLTepilogue(int *ret)
+VLTepilogue(void *ret)
 {
 	(void)ret;
 	return MAL_SUCCEED;

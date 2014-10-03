@@ -67,7 +67,7 @@ MRcleanCloud(void)
 }
 
 str
-MRgetCloud(int *ret, str *mrcluster)
+MRgetCloud(bat *ret, str *mrcluster)
 {
 	str msg;
 	BAT *cloud;

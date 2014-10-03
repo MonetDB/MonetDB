@@ -3115,9 +3115,9 @@ show_unified_events(BAT **ret)
 static counter cntrs[32];
 static int ctop=0;
 
-counters_export str CNTRSinit(int *ret);
+counters_export str CNTRSinit(void *ret);
 str
-CNTRSinit(int *ret){
+CNTRSinit(void *ret){
 	(void) ret;
 	init_counters();
 	return MAL_SUCCEED;
@@ -3140,9 +3140,9 @@ CNTRSreset(int *ret, int *idx, int *ev1, int *ev2){
 	(void) ret;
 	return MAL_SUCCEED;
 }
-counters_export str CNTRSstop(int *ret, int *idx);
+counters_export str CNTRSstop(void *ret, int *idx);
 str
-CNTRSstop(int *ret, int *idx){
+CNTRSstop(void *ret, int *idx){
 	(void) ret;
 	if( *idx <0 || *idx>= 32)
 		throw(MAL, "counters.start", ILLEGAL_ARGUMENT " Counter handle out of range");
@@ -3197,9 +3197,9 @@ CNTRScounter2str(str *ret, int *idx){
 	throw(MAL, "counters.bat","NYI");
 }
 
-counters_export str CNTRSnativeEvents(int *ret);
+counters_export str CNTRSnativeEvents(bat *ret);
 str
-CNTRSnativeEvents(int *ret){
+CNTRSnativeEvents(bat *ret){
 	BAT *bn=0;
 	show_native_events(&bn);
 	if( bn == NULL)
@@ -3209,9 +3209,9 @@ CNTRSnativeEvents(int *ret){
 	return MAL_SUCCEED;
 }
 
-counters_export str CNTRSunifiedEvents(int *ret);
+counters_export str CNTRSunifiedEvents(bat *ret);
 str
-CNTRSunifiedEvents(int *ret){
+CNTRSunifiedEvents(bat *ret){
 	BAT *bn=0;
 	show_unified_events(&bn);
 	if( bn == NULL)

@@ -153,7 +153,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 	for(j=0; j< q->argc; j++){
 		v= &getVarConstant(mb,getArg(q,j));
 		if(isaBatType(getArgType(mb, q,j)) ){
-			if( v->val.bval ){
+			if( v->val.bval != bat_nil ){
 				BBPdecref(abs(v->val.bval), TRUE);
 				if (!BBP_lrefs(v->val.bval)){
 					v->vtype= TYPE_int;
@@ -712,7 +712,7 @@ static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfile outerprof)
 {
     int i, j, pc= -1;
-    bat bid= 0, nbid= 0;
+    bat bid= bat_nil, nbid= bat_nil;
     InstrPtr q;
 
     MT_lock_set(&recycleLock, "recycle");
@@ -746,7 +746,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 			if (subsmp){
 				BAT *b1, *b2;
 				nbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-				if( bid == 0){
+				if( bid == bat_nil){
 					bid = nbid;
 					pc = i;
 				} else {
@@ -785,7 +785,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
     /*
      * We have a candidate table 
      */
-    if (bid ) {
+    if (bid != bat_nil) {
         int k;
 		RuntimeProfileRecord prof;
 
@@ -1015,7 +1015,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 }
 
 str 
-RECYCLEresetBAT(Client cntxt, int bid)
+RECYCLEresetBAT(Client cntxt, bat bid)
 {
 	int i,j, actions =0;
 	char *release;

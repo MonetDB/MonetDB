@@ -42,13 +42,13 @@
 #define gsl_export extern
 #endif
 
-gsl_export str GSLchisqProb(double *retval, double * chi2, double * datapoints);
-gsl_export str GSLbat_chisqProb_cst(bat *retval, bat * chi2, double * datapoints);
-gsl_export str GSLcst_chisqProb_bat(bat *retval, double * chi2, bat * datapoints);
+gsl_export str GSLchisqProb(dbl *retval, dbl * chi2, dbl * datapoints);
+gsl_export str GSLbat_chisqProb_cst(bat *retval, bat * chi2, dbl * datapoints);
+gsl_export str GSLcst_chisqProb_bat(bat *retval, dbl * chi2, bat * datapoints);
 gsl_export str GSLbat_chisqProb_bat(bat *retval, bat * chi2, bat * datapoints);
 
 static str
-gsl_chisqprob(double * retval, double chi2, double datapoints) 
+gsl_chisqprob(dbl * retval, dbl chi2, dbl datapoints) 
 {
 	*retval = dbl_nil;
 	if ((chi2 == dbl_nil) || (chi2 < 0))
@@ -60,7 +60,7 @@ gsl_chisqprob(double * retval, double chi2, double datapoints)
 }
 
 static str
-gsl_bat_chisqprob_cst(bat * retval, bat chi2, double datapoints) 
+gsl_bat_chisqprob_cst(bat * retval, bat chi2, dbl datapoints) 
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -98,7 +98,7 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, double datapoints)
 }
 
 static str
-gsl_cst_chisqprob_bat(bat * retval, double chi2, bat datapoints) 
+gsl_cst_chisqprob_bat(bat * retval, dbl chi2, bat datapoints) 
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -172,19 +172,19 @@ gsl_bat_chisqprob_bat(bat * retval, bat chi2, bat datapoints)
 }
 
 str
-GSLchisqProb(double *retval, double * chi2, double * datapoints) 
+GSLchisqProb(dbl *retval, dbl * chi2, dbl * datapoints) 
 {
 	return gsl_chisqprob(retval, *chi2, *datapoints);
 }
 
 str
-GSLbat_chisqProb_cst(bat *retval, bat * chi2, double * datapoints) 
+GSLbat_chisqProb_cst(bat *retval, bat * chi2, dbl * datapoints) 
 {
 	return gsl_bat_chisqprob_cst(retval, *chi2, *datapoints);
 }
 
 str
-GSLcst_chisqProb_bat(bat *retval, double * chi2, bat * datapoints) 
+GSLcst_chisqProb_bat(bat *retval, dbl * chi2, bat * datapoints) 
 {
 	return gsl_cst_chisqprob_bat(retval, *chi2, *datapoints);
 }

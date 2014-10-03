@@ -486,7 +486,7 @@ command timezone(s:int):timezone
 address MTIMEtzone_create
 comment "Convert the int to a timezone.";
 command timezone(s:lng):timezone
-address MTIMEtzone_create
+address MTIMEtzone_create_lng
 comment "Convert the int to a timezone.";
 command timezone(mi:int,s:zrule,erule:zrule):timezone
 address MTIMEtzone_create_dst

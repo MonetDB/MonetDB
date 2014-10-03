@@ -61,7 +61,7 @@ command sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre
 comment "Convert a SQL like pattern with the given escape character into a PCRE pattern.";
 
-pattern prelude() :void
+command prelude() :void
 address pcre_init
 comment "Initialize pcre";
 

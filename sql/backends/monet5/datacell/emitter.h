@@ -61,16 +61,16 @@ typedef struct EMITTER {
 #define adapters_export extern
 #endif
 
-adapters_export str EMemitterStart(int *ret, str *tbl, str *host, int *port);
-adapters_export str EMemitterPause(int *ret, str *nme);
-adapters_export str EMemitterResume(int *ret, str *nme);
-adapters_export str EMemitterStop(int *ret, str *nme);
+adapters_export str EMemitterStart(void *ret, str *tbl, str *host, int *port);
+adapters_export str EMemitterPause(void *ret, str *nme);
+adapters_export str EMemitterResume(void *ret, str *nme);
+adapters_export str EMemitterStop(void *ret, str *nme);
 adapters_export Emitter EMfind(str nme);
-adapters_export str EMpause(int *ret);
-adapters_export str EMresume(int *ret);
-adapters_export str EMstop(int *ret);
-adapters_export str EMdump(void);
-adapters_export str EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *mode, int *statusId, int *seenId, int *cyclesId, int *sentId, int *pendingId);
+adapters_export str EMpause(void *ret);
+adapters_export str EMresume(void *ret);
+adapters_export str EMstop(void *ret);
+adapters_export str EMdump(void *ret);
+adapters_export str EMtable(bat *nameId, bat *hostId, bat *portId, bat *protocolId, bat *mode, bat *statusId, bat *seenId, bat *cyclesId, bat *sentId, bat *pendingId);
 
 #endif
 

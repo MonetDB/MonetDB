@@ -188,7 +188,7 @@ QOTindex(str nme)
 }
 
 str
-QOTgetStatistics(int *ret, str *nme)
+QOTgetStatistics(bat *ret, str *nme)
 {
 	int idx;
 

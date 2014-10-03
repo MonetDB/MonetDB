@@ -36,38 +36,38 @@
 #define cluster_export extern
 #endif
 
-cluster_export str CLUSTER_key( bat *M, bat *B);
-cluster_export str CLUSTER_map(bat *RB, bat *B);
+cluster_export str CLUSTER_key( bat *M, const bat *B);
+cluster_export str CLUSTER_map(bat *RB, const bat *B);
 cluster_export str CLUSTER_apply(bat *bid, BAT *nb, BAT *cmap);
 cluster_export str CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
-cluster_export str  CLS_create_bte(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_bte(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_bte(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_bte(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
-cluster_export str  CLS_create_sht(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_sht(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_sht(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_sht(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
-cluster_export str  CLS_create_int(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_int(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_int(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_int(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
-cluster_export str  CLS_create_wrd(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_wrd(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_wrd(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_wrd(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
-cluster_export str  CLS_create_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_lng(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_lng(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_lng(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
 #ifdef HAVE_HGE
-cluster_export str  CLS_create_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_hge(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_hge(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_hge(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 #endif
 
-cluster_export str  CLS_create_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_flt(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_flt(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_flt(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
-cluster_export str  CLS_create_dbl(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
-cluster_export str  CLS_create2_dbl(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+cluster_export str  CLS_create_dbl(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset);
+cluster_export str  CLS_create2_dbl(bat *rpsum, bat *rcmap, bat *b, int *bits, int *offset, bit *order);
 
 cluster_export str  CLS_map(bat *rb, bat *cmap, bat *b);
 cluster_export str  CLS_map2(bat *rb, bat *psum, bat *cmap, bat *b);

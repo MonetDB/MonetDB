@@ -144,7 +144,7 @@ SQLtimestamp_2_str(str *res, timestamp *val)
 }
 
 str
-batnil_2_timestamp(int *res, int *bid)
+batnil_2_timestamp(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -170,7 +170,7 @@ batnil_2_timestamp(int *res, int *bid)
 }
 
 str
-batstr_2_timestamp(int *res, int *bid)
+batstr_2_timestamp(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -242,7 +242,7 @@ SQLdaytime_2_str(str *res, daytime *val)
 }
 
 str
-batnil_2_daytime(int *res, int *bid)
+batnil_2_daytime(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -268,7 +268,7 @@ batnil_2_daytime(int *res, int *bid)
 }
 
 str
-batstr_2_daytime(int *res, int *bid)
+batstr_2_daytime(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -340,7 +340,7 @@ SQLdate_2_str(str *res, date *val)
 }
 
 str
-batnil_2_date(int *res, int *bid)
+batnil_2_date(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -366,7 +366,7 @@ batnil_2_date(int *res, int *bid)
 }
 
 str
-batstr_2_date(int *res, int *bid)
+batstr_2_date(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -438,7 +438,7 @@ SQLsqlblob_2_str(str *res, sqlblob * val)
 }
 
 str
-batnil_2_sqlblob(int *res, int *bid)
+batnil_2_sqlblob(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -464,7 +464,7 @@ batnil_2_sqlblob(int *res, int *bid)
 }
 
 str
-batstr_2_sqlblob(int *res, int *bid)
+batstr_2_sqlblob(bat *res, bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -532,14 +532,14 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = (str *) getArgReference(stk, pci, 0);
-	int eclass = *(int *) getArgReference(stk, pci, 1);
-	int d = *(int *) getArgReference(stk, pci, 2);
-	int s = *(int *) getArgReference(stk, pci, 3);
-	int has_tz = *(int *) getArgReference(stk, pci, 4);
-	ptr p = (ptr) getArgReference(stk, pci, 5);
+	str *res = getArgReference_str(stk, pci, 0);
+	int eclass = *getArgReference_int(stk, pci, 1);
+	int d = *getArgReference_int(stk, pci, 2);
+	int s = *getArgReference_int(stk, pci, 3);
+	int has_tz = *getArgReference_int(stk, pci, 4);
+	ptr p = getArgReference(stk, pci, 5);
 	int tpe = getArgType(mb, pci, 5);
-	int len = *(int *) getArgReference(stk, pci, 6);
+	int len = *getArgReference_int(stk, pci, 6);
 	mvc *m = NULL;
 	str msg;
 
@@ -562,13 +562,13 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	char *r = NULL;
-	int *res = (int *) getArgReference(stk, pci, 0);
-	int *eclass = (int *) getArgReference(stk, pci, 1);
-	int *d1 = (int *) getArgReference(stk, pci, 2);
-	int *s1 = (int *) getArgReference(stk, pci, 3);
-	int *has_tz = (int *) getArgReference(stk, pci, 4);
-	int *bid = (int *) getArgReference(stk, pci, 5);
-	int *digits = (int *) getArgReference(stk, pci, 6);
+	bat *res = getArgReference_bat(stk, pci, 0);
+	int *eclass = getArgReference_int(stk, pci, 1);
+	int *d1 = getArgReference_int(stk, pci, 2);
+	int *s1 = getArgReference_int(stk, pci, 3);
+	int *has_tz = getArgReference_int(stk, pci, 4);
+	bat *bid = getArgReference_bat(stk, pci, 5);
+	int *digits = getArgReference_int(stk, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;

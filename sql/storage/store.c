@@ -1649,11 +1649,15 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock, "store_manager");
-		if (store_nr_active || GDKexiting() ||
-			(logger_funcs.changes() < 1000 && shared_transactions_drift <= shared_drift_threshold)) {
-			MT_lock_unset(&bs_lock, "store_manager");
-			continue;
-		}
+        if (GDKexiting() || (logger_funcs.changes() < 1000 && shared_transactions_drift <= shared_drift_threshold)) {
+            MT_lock_unset(&bs_lock, "store_manager");
+            continue;
+        }
+        while (store_nr_active) { /* find a moment to flush */
+            MT_lock_unset(&bs_lock, "store_manager");
+            MT_sleep_ms(50);
+            MT_lock_set(&bs_lock, "store_manager");
+        }
 
 		if (create_shared_logger) {
 			/* (re)load data from shared write-ahead log */
@@ -2401,7 +2405,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 	if (fs->dset) {
 		for (n = fs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *fb = n->data;
-			node *tbn = cs_find_name(ts, fb->name);
+			node *tbn = cs_find_id(ts, fb->id);
 
 			if (tbn) {
 				sql_base *tb = tbn->data;

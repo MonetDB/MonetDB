@@ -27,7 +27,7 @@
 #include "json_util.h"
 
 str
-JSONresultSet(str *res, bat *uuid, bat *rev, bat *js)
+JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 {
 	BAT *bu, *br, *bj;
 	char *result;

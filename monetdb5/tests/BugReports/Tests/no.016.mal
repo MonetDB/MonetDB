@@ -31,7 +31,7 @@
 #	io.print("var a := bat.new(int, int);");
 	a := bat.new(nil:oid,nil:int);
 #	io.print("a.sample(1).print();");
-	aa_a := sample.uniform(a,1:wrd);
+	aa_a := sample.subuniform(a,1:wrd);
 	ba_a := io.print(aa_a);
 #	io.print("quit();");
 	ca_a := clients.quit();

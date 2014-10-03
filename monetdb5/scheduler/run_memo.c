@@ -155,16 +155,16 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	target = getArg(p, 2);
 	if (getArgType(mb, p, 1) == TYPE_int && p->argc >= 3 && (p->argc - 1) % 2 == 0) {
 		/* choice pairs */
-		mincost = *(int *) getArgReference(stk, p, 1);
+		mincost = *getArgReference_int(stk, p, 1);
 		for (i = 3; i < p->argc; i += 2) {
-			cost = *(int *) getArgReference(stk, p, i);
+			cost = *getArgReference_int(stk, p, i);
 			if (cost < mincost && !isVarDisabled(mb, getArg(p, i + 1))) {
 				mincost = cost;
 				target = getArg(p, i + 1);
 			}
 		}
 	} else if (getArgType(mb, p, 1) == TYPE_str) {
-		nme = *(str *) getArgReference(stk, p, 1);
+		nme = *getArgReference_str(stk, p, 1);
 		/* should be generalized to allow an arbitrary user defined function */
 		if (strcmp(nme, "getVolume") != 0)
 			throw(MAL, "scheduler.choice", ILLEGAL_ARGUMENT "Illegal cost function");
@@ -240,7 +240,7 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	lng *cost = (lng *) getArgReference(stk, p, 0);
+	lng *cost = getArgReference_lng(stk, p, 0);
 	(void) mb;
 
 	(void) cntxt;
@@ -255,7 +255,7 @@ RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	lng *cost = (lng *) getArgReference(stk, p, 0);
+	lng *cost = getArgReference_lng(stk, p, 0);
 	(void) mb;
 	(void) cntxt;
 

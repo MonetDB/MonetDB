@@ -42,11 +42,11 @@
 #define datacell_export extern
 #endif
 
-datacell_export str DCselect(int *ret, int *bid, ptr low, ptr high);
-datacell_export str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh);
-datacell_export str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh);
-datacell_export str DCdeleteUpperSlice(int *ret, int *bid, int *pos);
-datacell_export str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid);
-datacell_export str DCsliceStrict(int *ret, bat *bid, lng *start, lng *end);
+datacell_export str DCselect(bat *ret, bat *bid, ptr low, ptr high);
+datacell_export str DCselectInsert(void *ret, bat *res, bat *bid, lng *low, lng *hgh);
+datacell_export str DCselectInsertDelete(void *ret, bat *res, bat *bid, lng *low, lng *hgh);
+datacell_export str DCdeleteUpperSlice(void *ret, bat *bid, int *pos);
+datacell_export str DCreplaceTailBasedOnHead(void *ret, bat *res, bat *bid);
+datacell_export str DCsliceStrict(bat *ret, bat *bid, lng *start, lng *end);
 #endif
 

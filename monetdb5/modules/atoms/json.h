@@ -99,15 +99,15 @@ json_export str JSONisarray(bit *ret, json *j);
 json_export str JSONlength(int *ret, json *j);
 json_export str JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-json_export str JSONkeyTable(int *ret, json *j);
-json_export str JSONvalueTable(int *ret, json *j);
+json_export str JSONkeyTable(bat *ret, json *j);
+json_export str JSONvalueTable(bat *ret, json *j);
 json_export str JSONkeyArray(json *ret, json *arg);
 json_export str JSONvalueArray(json *ret, json *arg);
 
-json_export str JSONtextString(str *ret, int *bid);
-json_export str JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg);
-json_export str JSONdump(int *ret, json *val);
-json_export str JSONprelude(int *ret);
+json_export str JSONtextString(str *ret, bat *bid);
+json_export str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
+json_export str JSONdump(void *ret, json *val);
+json_export str JSONprelude(void *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

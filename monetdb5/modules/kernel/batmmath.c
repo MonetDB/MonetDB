@@ -46,7 +46,7 @@
 
 
 #define scienceFcnImpl(X1,X2,X3)							\
-str CMDscience_bat_##X2##_##X1(int *ret, int *bid)			\
+str CMDscience_bat_##X2##_##X1(bat *ret, bat *bid)			\
 {															\
 	BAT *b,*bn;												\
 	X2 *o, *p, *q;											\
@@ -82,7 +82,7 @@ str CMDscience_bat_##X2##_##X1(int *ret, int *bid)			\
 }
 
 #define scienceBinaryImpl(X1,X2,X3)								\
-str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)	\
+str CMDscience_bat_cst_##X1##_##X2(bat *ret, bat *bid, X2 *d)	\
 {																\
 	BAT *b,*bn;													\
 	X2 *o, *p, *q;												\
