@@ -344,6 +344,7 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'MERCURIAL'            : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -2762,7 +2763,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
-            if CONDITIONALS['HAVE_LIBR'] == '#':
+            if CONDITIONALS['HAVE_LIBR']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3653,6 +3654,7 @@ def main(argv) :
         else:
             ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
 
+
     global TSTTRGBASE
     TSTTRGBASE = env['TSTTRGBASE']
     global TSTSRCBASE
@@ -3667,6 +3669,19 @@ def main(argv) :
         env['TSTPREF'] = dftTSTPREF
     global TSTPREF
     TSTPREF = env['TSTPREF']
+
+    # check whether we have a Mercurial clone
+    BACK = os.getcwd()
+    try:
+        os.chdir(TSTSRCBASE)
+        proc = process.Popen(['hg', 'root'], stdout = process.PIPE)
+        out, err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['MERCURIAL'] = '#' # True
+        proc = None
+    except:
+        pass
+    os.chdir(BACK)
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
