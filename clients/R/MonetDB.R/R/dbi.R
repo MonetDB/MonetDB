@@ -18,11 +18,6 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
   new("MonetDBDriver")
 }
 
-# dbIsValid is missing from the DBI 0.3, so redefine
-setGeneric("dbIsValid", 
-  def = function(dbObj, ...) standardGeneric("dbIsValid"),
-  valueClass = "logical")
-
 setMethod("dbIsValid", "MonetDBDriver", def=function(dbObj, ...) {
   return(invisible(TRUE)) # driver object cannot be invalid
 })
@@ -225,7 +220,7 @@ setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
 setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  dbGetQuery(conn, paste0("SELECT * FROM ", name))
+  dbGetQuery(conn,paste0("SELECT * FROM ", name))
 })
 
 # This one does all the work in this class

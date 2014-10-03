@@ -315,11 +315,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   salt <- credentials[[1]][1]
   
   if (!(endhashfunc %in% HASH_ALGOS)) {
-    stop(paste("Server-requested end hash function", endhashfunc, "is not available"))
+    stop("Server-requested end hash function ", endhashfunc, " is not available")
   }
   
   if (!(pwhashfunc %in% HASH_ALGOS)) {
-    stop(paste("Server-requested password hash function", pwhashfunc, "is not available"))
+    stop("Server-requested password hash function ", pwhashfunc, " is not available")
   }
   
   # We first hash the password with the server-requested hash function 
@@ -351,7 +351,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
         .mapiAuthenticate(con, dbname, user, password, endhashfunc)
       }
       if (protocol == "monetdb") {
-        stop(paste0("Forwarding to another server (", link, ") not supported."))
+        stop("Forwarding to another server (", link, ") not supported.")
       }
     }
     if (respKey == MSG_MESSAGE) {

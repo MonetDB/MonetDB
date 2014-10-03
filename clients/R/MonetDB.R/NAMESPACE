@@ -4,7 +4,7 @@ import(DBI,digest,methods,bitops)
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,dbIsValid)
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction)
 # shorthands
 export(mc,mq)
 
