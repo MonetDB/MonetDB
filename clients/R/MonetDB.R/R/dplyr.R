@@ -17,10 +17,6 @@ src_translate_env.src_monetdb <- function(x) {
   )
 }
 
-sql_join.MonetDBConnection <- function(con, x, y, type = "inner", by = NULL, ...) {
-  NextMethod("sql_join",...)
-}
-
 src_desc.src_monetdb <- function(x) {
   paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ") [", x$info$merovingian_uri,"]")
 }
