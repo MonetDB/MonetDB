@@ -36,7 +36,7 @@
 #define sphinx_export extern
 #endif
 
-sphinx_export str SPHINXsearchIndexLimit(bat *ret, str *query, str *index, int *limit);
+sphinx_export str SPHINXsearchIndexLimit(bat *ret, const str *query, const str *index, const int *limit);
 
 #endif /* SPHINX_H */
 

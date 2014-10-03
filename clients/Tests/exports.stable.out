@@ -687,8 +687,8 @@ str AGGRsubvariance_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nil
 str AGGRsubvariancecand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
 str AGGRsubvariancep_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils, bit *abort_on_error);
 str AGGRsubvariancepcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils, bit *abort_on_error);
-str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
-str AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
+str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
 str AGGRsum2_bte(bat *retval, bat *bid, bat *eid);
 str AGGRsum2_dbl(bat *retval, bat *bid, bat *eid);
 str AGGRsum2_flt(bat *retval, bat *bid, bat *eid);
