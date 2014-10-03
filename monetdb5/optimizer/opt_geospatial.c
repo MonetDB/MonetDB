@@ -95,7 +95,7 @@ static void fixSubselect(MalBlkPtr mb, InstrPtr *oldInstrPtr, int instructionNum
 	subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 	setReturnArgument(oldInstrPtr[instructionNum], subselectReturnId);
 	if(oldInstrPtr[instructionNum]->argc == 8) {
-		fprintf(stderr, "secondArg %d\n", getArg(oldInstrPtr[instructionNum], 2));
+//		fprintf(stderr, "secondArg %d\n", getArg(oldInstrPtr[instructionNum], 2));
 
 		//check if the second argument to this subselect is something coming from another subselect
 		for(k = 0; k<subselects; k++) {

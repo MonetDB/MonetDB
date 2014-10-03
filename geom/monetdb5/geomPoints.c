@@ -262,7 +262,8 @@ clean:
 
 //Aternative implementation of contains using the winding number method
 inline int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
-    return ( ((P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y)) >= 0.0 ); //set equal to include borders
+	//borders are not included
+    return ( ((P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y)) > 0.0 ); 
 }
 
 #define isRight(x0, y0, x1, y1, x2, y2) isLeft(x0, y0, x1, y1, x2, y2)-1
@@ -1009,14 +1010,227 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 /* PBSM */
 
 static char *
-PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy) {
-	FILE *f;
+PBSMcomputeindex1(const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
+	sht *cells;
 	BAT *pbsm;
-        sht *cells;
 	unsigned long i;
 	int shift = sizeof(sht) * 8 / 2;
         sht prevCell, cell;
         unsigned long m = 0, prevO;
+
+
+	if((pbsm = BATnew(TYPE_void, TYPE_sht, n, TRANSIENT)) == NULL)
+		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
+	cells = (sht*) Tloc(pbsm, BUNfirst(pbsm));
+	
+	// calculate the pbsm values
+	for (i = 0; i < n; i++) {
+		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
+                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		cells[i] = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
+	}
+
+	// order the BAT according to the cell values
+	/* set some properties */
+	BATsetcount(pbsm,n);
+	BATseqbase(pbsm, 0);
+	pbsm->hsorted = 1; 
+	pbsm->hrevsorted = (BATcount(pbsm) <= 1);
+	pbsm->tsorted = 0;
+	pbsm->trevsorted = 0;
+	pbsm->hdense = true;
+	pbsm->tdense = false;
+	BATseqbase(pbsm, seqbase);
+	BATmaterialize(pbsm);
+	//BATderiveProps(pbsm, false);
+	//BATassertProps(pbsm);
+	pbsm = BATorder(BATmirror(pbsm));
+	//BATprint(pbsm);
+	
+	// compress the head
+        cells = (sht*) Hloc(pbsm, BUNfirst(pbsm));
+	oids  = (oid*) Tloc(pbsm, BUNfirst(pbsm));
+
+        prevCell = cells[0];
+        cell = cells[0];
+        m = 0;
+        prevO = 0;
+        for (i = 0; i < n; i++) {
+                cell = cells[i];
+
+                if (cell == prevCell) {
+                        m++;
+                } else {
+                        pbsm_idx[cell - SHRT_MIN].offset = prevO;
+                        pbsm_idx[cell - SHRT_MIN].count = m;
+                        prevCell = cell;
+                        prevO = i;
+                        m = 1;
+                }
+        }
+        pbsm_idx[cell - SHRT_MIN].offset = prevO;
+        pbsm_idx[cell - SHRT_MIN].count = m;
+	
+	// clean up
+	pbsm->T->heap.base = NULL; // need to keep the oids array
+        BBPreleaseref(pbsm->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+
+static char *
+PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
+	unsigned long *tmpCount;
+	unsigned long i;
+	int shift = sizeof(sht) * 8 / 2;
+
+	if ((pbsm_idx = GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
+		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
+
+	if ((oids = GDKmalloc(n * sizeof(oid))) == NULL) {
+		GDKfree(pbsm_idx);
+		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
+	}
+
+	if ((tmpCount = GDKmalloc(USHRT_MAX * sizeof(unsigned long))) == NULL) {
+		GDKfree(pbsm_idx);
+		GDKfree(oids);
+		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
+	}
+
+	for (i = 0; i < USHRT_MAX; i++) {
+		pbsm_idx[i].count = 0;
+		pbsm_idx[i].offset = 0;
+	}
+
+	for (i = 0; i < USHRT_MAX; i++) {
+		tmpCount[i] = 0;
+	}
+
+	// count pbsm values per cell
+	for (i = 0; i < n; i++) {
+		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
+                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		sht cell = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
+		pbsm_idx[cell - SHRT_MIN].count++;	
+	}
+
+	// compute the offset values before filling in the oid array
+	pbsm_idx[0].offset = 0;
+	for (i = 1; i < USHRT_MAX; i++) {
+		pbsm_idx[i].offset = pbsm_idx[i-1].offset + pbsm_idx[i-1].count;
+	}
+
+	// fill in the oid array
+	for (i = 0; i < n; i++) {
+		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
+                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		sht cell = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
+		unsigned long position = pbsm_idx[cell - SHRT_MIN].offset + tmpCount[cell - SHRT_MIN];
+		oids[position] = i + seqbase;
+		tmpCount[cell - SHRT_MIN]++;
+	}
+
+	GDKfree(tmpCount);	
+
+	return MAL_SUCCEED;
+}
+
+//creates the pbsm index and stores it in a file (provided by the user)
+str pbsmIndex_bat(int *res, int *xBAT_id, int *yBAT_id, double* xmin, double* ymin, double* xmax, double* ymax, char** filename1) {
+	BAT *xBAT=NULL, *yBAT=NULL;
+	double *x = NULL, *y=NULL;
+	char *idxFilename = NULL, *dataFilename = NULL;
+	char *idxEnding = ".idx";
+	char *dataEnding= ".dat";
+	FILE *f;
+	BUN n = 0;
+char* filename = *filename1;
+fprintf(stderr, "%s\n", filename);
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		throw(MAL, "batgeom.pbsmIndex", RUNTIME_OBJECT_MISSING);
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		throw(MAL, "batgeom.pbsmIndex", RUNTIME_OBJECT_MISSING);
+	}
+
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, "batgeom.pbsmIndex", "BATs must have dense heads");
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, "batgeom.pbsmIndex", "BATs must be aligned");
+	}
+
+	n = BATcount(xBAT);
+	*res = 0;
+
+	/* get direct access to the tail arrays */
+        x = (dbl*) Tloc(xBAT, BUNfirst(xBAT));
+        y = (dbl*) Tloc(yBAT, BUNfirst(yBAT));
+
+	//crete the index
+	if (PBSMcomputeindex2(x, y, n, *xmin, *xmax, *ymin, *ymax, 0) != MAL_SUCCEED) {
+		return createException(MAL, "batgeom.pbsmIndex", "Failed to compute index (2).");
+	}
+	//delete the files for the index if they arleady exist
+	idxFilename = (char*)GDKmalloc(sizeof(char)*(strlen(filename)+5));
+	dataFilename = (char*)GDKmalloc(sizeof(char)*(strlen(filename)+5));
+	strcpy(idxFilename, filename);
+	strcpy(idxFilename+strlen(filename), idxEnding);
+	strcpy(dataFilename, filename);
+	strcpy(dataFilename+strlen(filename), dataEnding);
+	
+
+	/* Save the index for future use (sloppiness acknowledged) */
+	if ((f = fopen(idxFilename, "wb"))) {
+		if (fwrite(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX,f) != USHRT_MAX) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+
+			throw(MAL, "batgeom.pbsmIndex", "Could not save the PBSM index to disk (target: 20m-pbsm16.idx)");
+		}
+                fflush(f);
+                fclose(f);
+	}
+
+	if ((f = fopen(dataFilename, "wb"))) {
+		if (fwrite(oids, sizeof(oids[0]), n, f) != n) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+
+			throw(MAL, "batgeom.pbsmIndex", "Could not save the PBSM index to disk (target: 20m-pbsm16.dat)");
+		}
+                fflush(f);
+                fclose(f);
+	}
+
+	GDKfree(idxFilename);
+	GDKfree(dataFilename);
+
+
+	return MAL_SUCCEED;
+}
+
+
+
+static char *
+PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
+	FILE *f;
+	unsigned long i;
 	clock_t t = clock();
 
 	assert (pbsm_idx == NULL && oids == NULL);
@@ -1065,72 +1279,14 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 	} 
 
 	/* No. Let's compute the grid! */
+
 	// version 1
-	if((pbsm = BATnew(TYPE_void, TYPE_sht, n, TRANSIENT)) == NULL)
-		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
-	cells = (sht*) Tloc(pbsm, BUNfirst(pbsm));
-	
-	// version 1: calculate the pbsm values
-	for (i = 0; i < n; i++) {
-		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
-                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
-		cells[i] = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
-	}
-
-	// version 1: order the BAT according to the cell values
-	/* set some properties */
-	BATsetcount(pbsm,n);
-	BATseqbase(pbsm, 0);
-	pbsm->hsorted = 1; 
-	pbsm->hrevsorted = (BATcount(pbsm) <= 1);
-	pbsm->tsorted = 0;
-	pbsm->trevsorted = 0;
-	pbsm->hdense = true;
-	pbsm->tdense = false;
-	BATmaterialize(pbsm);
-	//BATderiveProps(pbsm, false);
-	//BATassertProps(pbsm);
-	pbsm = BATorder(BATmirror(pbsm));
-	//BATprint(pbsm);
-	
-	// version 1: compress the head
-        cells = (sht*) Hloc(pbsm, BUNfirst(pbsm));
-	oids  = (oid*) Tloc(pbsm, BUNfirst(pbsm));
-
-        prevCell = cells[0];
-        cell = cells[0];
-        m = 0;
-        prevO = 0;
-        for (i = 0; i < n; i++) {
-                cell = cells[i];
-
-                if (cell == prevCell) {
-                        m++;
-                } else {
-                        pbsm_idx[cell - SHRT_MIN - 1].offset = prevO;
-                        pbsm_idx[cell - SHRT_MIN - 1].count = m;
-                        prevCell = cell;
-                        prevO = i;
-                        m = 1;
-                }
-        }
-        pbsm_idx[cell - SHRT_MIN - 1].offset = prevO;
-        pbsm_idx[cell - SHRT_MIN - 1].count = m;
-	
-	// version 1: clean up
-	pbsm->T->heap.base = NULL; // need to keep the oids array
-        BBPreleaseref(pbsm->batCacheid);	
-
-	
+	if ( false && PBSMcomputeindex1(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
+		throw(MAL, "pbsm.createindex", "Failed to compute index (1).");
+	//
 	// version 2
-	// do one pass to compute the counts needed
-	// do second pass to assign oid at the appropriate places
-
-	/* 
-	 * 
-	 * TODO 
-	 *
-	 */
+	if ( true && PBSMcomputeindex2(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
+		throw(MAL, "pbsm.createindex", "Failed to compute index (2).");
 
 	t = clock() - t;
 	fprintf(stderr, "[PBSM] Index population: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
@@ -1177,7 +1333,7 @@ PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  mbr *mbb, BUN n, dou
 	if (pbsm_idx == NULL || oids == NULL) {
 		str err;
 		/* the index has not been materialized/loaded yet */
-		if ((err = PBSMcreateindex(x, y, n, minx, maxx, miny, maxy)) != MAL_SUCCEED) {
+		if ((err = PBSMcreateindex(x, y, n, minx, maxx, miny, maxy, batx->hseqbase)) != MAL_SUCCEED) {
 			GDKerror("PBSMarraycontains16: %s", err);
 			GDKfree(err);
 			return NULL;
