@@ -962,7 +962,7 @@ pattern calc.second_interval( v:lng, ek:int, sk:int ) :lng
 address second_interval
 comment "cast lng to a second_interval and check for overflow";
 
-command calc.rowid(v:any_1, schema:str, table:str) :oid
+pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 

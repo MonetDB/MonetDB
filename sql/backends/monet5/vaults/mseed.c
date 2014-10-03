@@ -121,9 +121,9 @@ str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 str
 MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	int *vid = (int*) getArgReference(stk,pci,1);
-	str *targetfile = (str*) getArgReference(stk,pci,2);
+	int *ret = getArgReference_int(stk,pci,0);
+	int *vid = getArgReference_int(stk,pci,1);
+	str *targetfile = getArgReference_str(stk,pci,2);
 	str msg = MAL_SUCCEED;
 	MSRecord *msr = 0;
 
@@ -294,9 +294,9 @@ wrapup:
 str
 MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret0 = (int*) getArgReference(stk,pci,0);
-	int *ret1 = (int*) getArgReference(stk,pci,1);
-	str *targetfile = (str*) getArgReference(stk,pci,2);
+	bat *ret0 = getArgReference_bat(stk,pci,0);
+	bat *ret1 = getArgReference_bat(stk,pci,1);
+	str *targetfile = getArgReference_str(stk,pci,2);
 	str msg;
 	BAT *btime, *bdata;
 

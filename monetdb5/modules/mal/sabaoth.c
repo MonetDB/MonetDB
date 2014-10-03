@@ -49,27 +49,27 @@
 #include <mal_sabaoth.h>	/* for the implementation of the functions */
 #include "sabaoth.h"
 
-str SABprelude(int *ret) {
+str SABprelude(void *ret) {
 	(void)ret;
 
 	return(MAL_SUCCEED);
 }
 
-str SABepilogue(int *ret) {
+str SABepilogue(void *ret) {
 	(void)ret;
 
 	return(MAL_SUCCEED);
 }
 
-str SABmarchScenario(int *ret, str *lang){
+str SABmarchScenario(void *ret, str *lang){
 	return SABAOTHmarchScenario(ret, lang);
 }
 
-str SABretreatScenario(int *ret, str *lang){
+str SABretreatScenario(void *ret, str *lang){
 	return SABAOTHretreatScenario(ret, lang);
 }
 
-str SABmarchConnection(int *ret, str *host, int *port) {
+str SABmarchConnection(void *ret, str *host, int *port) {
 	return SABAOTHmarchConnection(ret, host, port);
 }
 

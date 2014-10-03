@@ -53,15 +53,15 @@ command threshold(tbl:str,N:int):bit
 address BSKTthreshold
 comment "Set an acceptance threshold of N events before inspecting";
 
-command window{unsafe}(tbl:str,N:int, S:int):bit
+command window{unsafe}(tbl:str,N:lng, S:lng):bit
 address BSKTwindow
 comment "Use a window of N event and slide S afterwards";
 
-command timewindow{unsafe}(tbl:str, N:int, S:int):bit
+command timewindow{unsafe}(tbl:str, N:lng, S:lng):bit
 address BSKTtimewindow
 comment "Use a window of N milliseconds and slide S milliseconds afterwards";
 
-command beat(tbl:str,N:int):bit
+command beat(tbl:str,N:lng):bit
 address BSKTbeat
 comment "Set an delay to N milliseconds";
 
@@ -69,7 +69,7 @@ command reset():void
 address BSKTreset
 comment "Remove all baskets";
 
-command errors():bat[:str,:bat]
+command errors() (:bat[:oid,:str],:bat[:oid,:str])
 address BSKTtableerrors
 comment "Return the table with all errors";
 

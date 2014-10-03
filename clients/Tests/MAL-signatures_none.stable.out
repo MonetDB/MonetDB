@@ -2579,10 +2579,6 @@ command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat
 address ALGouterjoin;
 comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
 
-command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1]) (c:bat[:oid,:oid],d:bat[:oid,:any_1]) 
-address ALGprejoin;
-comment Recluster the table to reduce random access behavior.
-
 pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant, e.g. [0~b]
@@ -3190,9 +3186,9 @@ command batmmath.exp(x:bat[:oid,:flt]):bat[:oid,:flt]
 address CMDscience_bat_flt_exp;
 command batmmath.exp(x:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address CMDscience_bat_dbl_exp;
-command batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+pattern batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 address CMDbatMODsignal;
-command batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+pattern batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
 address CMDbatMODsignal;
 command batmmath.floor(x:bat[:oid,:flt]):bat[:oid,:flt] 
 address CMDscience_bat_flt_floor;
@@ -31541,7 +31537,7 @@ command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):void 
+command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):bat[:any_1,:any_2] 
 address BKCdelete_bat;
 comment Delete from the first BAT all BUNs with a corresponding head          in the second.
 
@@ -37513,7 +37509,7 @@ command calc.ptr(v:ptr):ptr
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
 
-command calc.rowid(v:any_1,schema:str,table:str):oid 
+pattern calc.rowid(v:any_1,schema:str,table:str):oid 
 address sql_rowid;
 comment return the next rowid
 
@@ -38140,7 +38136,7 @@ address URLnoop;
 comment Create an URL from a string literal
 
 command calc.url(s:str):url 
-address URLnoop;
+address URLnew;
 comment Create an URL from a string literal
 
 pattern calc.void(v:str):void 
@@ -39537,7 +39533,7 @@ command mapi.query(mid:int,qry:str):int
 address SERVERquery;
 comment Send the query for execution
 
-command mapi.rpc(key:int,qry:str):void 
+command mapi.rpc(key:int,qry:str):int 
 address SERVERquery;
 comment Send a simple query for execution.
 
@@ -39567,7 +39563,7 @@ command mapi.resume():void
 address SERVERresume;
 comment Resume connection listeners.
 
-command mapi.setAlias(dbalias:str):void 
+command mapi.setAlias(key:int,dbalias:str):void 
 address SERVERsetAlias;
 comment Give the channel a logical name.
 
@@ -40294,7 +40290,7 @@ address MTIMEtzone_create_dst;
 comment create a timezone as an hour difference	from GMT and a DST.
 
 command mtime.timezone(s:lng):timezone 
-address MTIMEtzone_create;
+address MTIMEtzone_create_lng;
 comment Convert the int to a timezone.
 
 command mtime.timezone(s:int):timezone 
@@ -40712,7 +40708,7 @@ command pcre.match(s:str,pat:str):bit
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
 
-pattern pcre.prelude():void 
+command pcre.prelude():void 
 address pcre_init;
 comment Initialize pcre
 
@@ -40980,15 +40976,11 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
 comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
 comment Returns the oids of a uniform sample of size s
 
@@ -41965,31 +41957,31 @@ command streams.writeStr{unsafe}(s:streams,data:str):void
 address mnstr_write_stringwrap;
 comment write data on the stream
 
-command sysmon.pause(id:lng):void 
+pattern sysmon.pause(id:lng):void 
 address SYSMONpause;
 comment Temporary suspend a single query
 
-command sysmon.pause(id:int):void 
+pattern sysmon.pause(id:int):void 
 address SYSMONpause;
-command sysmon.pause(id:sht):void 
+pattern sysmon.pause(id:sht):void 
 address SYSMONpause;
 pattern sysmon.queue() (tag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],qrytag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-command sysmon.resume(id:lng):void 
+pattern sysmon.resume(id:lng):void 
 address SYSMONresume;
 comment Resume processing 
 
-command sysmon.resume(id:int):void 
+pattern sysmon.resume(id:int):void 
 address SYSMONresume;
-command sysmon.resume(id:sht):void 
+pattern sysmon.resume(id:sht):void 
 address SYSMONresume;
-command sysmon.stop(id:lng):void 
+pattern sysmon.stop(id:lng):void 
 address SYSMONstop;
 comment Stop a single query a.s.a.p.
 
-command sysmon.stop(id:int):void 
+pattern sysmon.stop(id:int):void 
 address SYSMONstop;
-command sysmon.stop(id:sht):void 
+pattern sysmon.stop(id:sht):void 
 address SYSMONstop;
 command timezone.#fromstr():timezone 
 address tzone_fromstr;

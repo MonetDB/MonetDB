@@ -35,7 +35,7 @@
  */
 #define VLTnoop(TPE)\
 		{	TPE s;\
-			s = pci->argc == 3 ? 1: *(TPE*) getArgReference(stk,pci, 3);\
+			s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3);\
 			if( s == 0) zeroerror++;\
 			if( s == TPE##_nil) nullerr++;\
 		}
@@ -53,10 +53,10 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTnoop(flt); break;
 	case TYPE_dbl: VLTnoop(dbl); break;
 	default:
-	{	timestamp s;
+	{	lng s;
 		if (tpe == TYPE_timestamp){
-			s = *(timestamp*) getArgReference(stk,pci, 3);
-			if( timestamp_isnil(s)) nullerr++;
+			s = *getArgReference_lng(stk,pci, 3);
+			if( s == lng_nil) nullerr++;
 		} else throw(MAL,"generator.noop","unknown data type %d", getArgType(mb,pci,1));
 	}
 	}
@@ -73,11 +73,11 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define VLTmaterialize(TPE)						\
 	do {								\
 		TPE *v, f, l, s;					\
-		f = *(TPE*) getArgReference(stk, pci, 1);		\
-		l = *(TPE*) getArgReference(stk, pci, 2);		\
+		f = *getArgReference_##TPE(stk, pci, 1);		\
+		l = *getArgReference_##TPE(stk, pci, 2);		\
 		if ( pci->argc == 3) \
 			s = f<l? (TPE) 1: (TPE)-1;\
-		else s =  *(TPE*) getArgReference(stk,pci, 3);\
+		else s =  *getArgReference_##TPE(stk,pci, 3);\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
 			throw(MAL, "generator.table",			\
 			      "Illegal generator range");		\
@@ -133,11 +133,11 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				       &stk->stk[pci->argv[2]]) == GDK_FAIL)
 				throw(MAL, "generator.table",
 				      "Illegal generator expression range");
-			f = *(timestamp *) getArgReference(stk, pci, 1);
-			l = *(timestamp *) getArgReference(stk, pci, 2);
+			f = *getArgReference_TYPE(stk, pci, 1, timestamp);
+			l = *getArgReference_TYPE(stk, pci, 2, timestamp);
 			if ( pci->argc == 3) 
 					throw(MAL,"generator.table","Timestamp step missing");
-			s = *(lng *) getArgReference(stk, pci, 3);
+			s = *getArgReference_lng(stk, pci, 3);
 			if (s == 0 ||
 			    (s > 0 && ret.val.btval > 0) ||
 			    (s < 0 && ret.val.btval < 0) ||
@@ -191,7 +191,7 @@ VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg =  VLTgenerator_table_(&bn, cntxt, mb, stk, pci);
 	if( msg == MAL_SUCCEED){
-		*(bat*) getArgReference(stk, pci, 0) = bn->batCacheid;
+		*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
 	return msg;
@@ -223,11 +223,11 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 	do {								\
 		TPE f, l, s, low, hgh;					\
 									\
-		f = * (TPE *) getArgReference(stk, p, 1);		\
-		l = * (TPE *) getArgReference(stk, p, 2);		\
+		f = * getArgReference_##TPE(stk, p, 1);		\
+		l = * getArgReference_##TPE(stk, p, 2);		\
 		if ( p->argc == 3) \
 			s = f<l? (TPE) 1: (TPE)-1;\
-		else s = * (TPE *) getArgReference(stk, p, 3); \
+		else s = * getArgReference_##TPE(stk, p, 3); \
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.subselect",		\
 			      "Illegal generator range");		\
@@ -235,8 +235,8 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 		if ((TPE)(n * s + f) != l)				\
 			n++;						\
 									\
-		low = * (TPE *) getArgReference(stk, pci, i);		\
-		hgh = * (TPE *) getArgReference(stk, pci, i + 1);	\
+		low = * getArgReference_##TPE(stk, pci, i);		\
+		hgh = * getArgReference_##TPE(stk, pci, i + 1);	\
 									\
 		if (low == TPE##_nil && hgh == TPE##_nil) {		\
 			if (li && hi && !anti) {			\
@@ -311,7 +311,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		      "Could not locate definition for object");
 
 	if (pci->argc == 8) {	/* candidate list included */
-		bat candid = *(bat*) getArgReference(stk, pci, 2);
+		bat candid = *getArgReference_bat(stk, pci, 2);
 		if (candid) {
 			cand = BATdescriptor(candid);
 			if (cand == NULL)
@@ -323,9 +323,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else
 		i = 2;
 
-	li = * (bit *) getArgReference(stk, pci, i + 2);
-	hi = * (bit *) getArgReference(stk, pci, i + 3);
-	anti = * (bit *) getArgReference(stk, pci, i + 4);
+	li = * getArgReference_bit(stk, pci, i + 2);
+	hi = * getArgReference_bit(stk, pci, i + 3);
+	anti = * getArgReference_bit(stk, pci, i + 4);
 
 	switch ( tpe = getArgType(mb, pci, i)) {
 	case TYPE_bte: calculate_range(bte, sht); break;
@@ -341,11 +341,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lng tss;
 			oid *ol;
 
-			tsf = *(timestamp *) getArgReference(stk, p, 1);
-			tsl = *(timestamp *) getArgReference(stk, p, 2);
+			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
+			tsl = *getArgReference_TYPE(stk, p, 2, timestamp);
 			if ( p->argc == 3) 
 					throw(MAL,"generator.table","Timestamp step missing");
-			tss = *(lng *) getArgReference(stk, p, 3);
+			tss = *getArgReference_lng(stk, p, 3);
 			if ( tss == 0 || 
 				timestamp_isnil(tsf) || timestamp_isnil(tsl) ||
 				 (tss > 0 && (tsf.days > tsl.days || (tsf.days == tsl.days && tsf.msecs > tsl.msecs) )) ||
@@ -353,8 +353,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				)
 				throw(MAL, "generator.subselect", "Illegal generator range");
 
-			tlow = *(timestamp*) getArgReference(stk,pci,i);
-			thgh = *(timestamp*) getArgReference(stk,pci,i+1);
+			tlow = *getArgReference_TYPE(stk,pci,i, timestamp);
+			thgh = *getArgReference_TYPE(stk,pci,i+1, timestamp);
 
 			if( hi && !timestamp_isnil(thgh) )
 				thgh.msecs++;
@@ -401,7 +401,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn->tkey = 1;
 			bn->T->nil = 0;
 			bn->T->nonil = 1;
-			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
 		} else
@@ -484,7 +484,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATseqbase(BATmirror(bn), o1);
 		}
 	}
-	* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -513,11 +513,11 @@ float nextafterf(float x, float y);
 #define VLTthetasubselect(TPE,ABS) {\
 	TPE f,l,s, low, hgh;\
 	BUN j; oid *v;\
-	f = *(TPE*) getArgReference(stk,p, 1);\
-	l = *(TPE*) getArgReference(stk,p, 2);\
+	f = *getArgReference_##TPE(stk,p, 1);\
+	l = *getArgReference_##TPE(stk,p, 2);\
 	if ( p->argc == 3) \
 		s = f<l? (TPE) 1: (TPE)-1;\
-	else s =  *(TPE*) getArgReference(stk,p, 3);\
+	else s =  *getArgReference_##TPE(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
 	cap = (BUN)(ABS(l-f)/ABS(s));\
@@ -528,25 +528,25 @@ float nextafterf(float x, float y);
 	low= hgh = TPE##_nil;\
 	v = (oid*) Tloc(bn,BUNfirst(bn));\
 	if ( strcmp(oper,"<") == 0){\
-		hgh= *(TPE*) getArgReference(stk,pci,idx);\
+		hgh= *getArgReference_##TPE(stk,pci,idx);\
 		hgh = PREVVALUE##TPE(hgh);\
 	} else\
 	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) getArgReference(stk,pci,idx);\
+		hgh= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
 	if ( strcmp(oper,">") == 0){\
-		low= *(TPE*) getArgReference(stk,pci,idx);\
+		low= *getArgReference_##TPE(stk,pci,idx);\
 		low = NEXTVALUE##TPE(low);\
 	} else\
 	if ( strcmp(oper,">=") == 0){\
-		low= *(TPE*) getArgReference(stk,pci,idx);\
+		low= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
 	if ( strcmp(oper,"!=") == 0){\
-		hgh= low= *(TPE*) getArgReference(stk,pci,idx);\
+		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
 		anti++;\
 	} else\
 	if ( strcmp(oper,"==") == 0){\
-		hgh= low= *(TPE*) getArgReference(stk,pci,idx);\
+		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
 		throw(MAL,"generator.thetasubselect","Unknown operator");\
 	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
@@ -562,7 +562,8 @@ float nextafterf(float x, float y);
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, cndid =0, c= 0, anti =0,tpe;
+	int idx, c= 0, anti =0,tpe;
+	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
 	BUN cap,j;
 	lng cn= 0;
@@ -576,8 +577,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		throw(MAL,"generator.thetasubselect","Could not locate definition for object");
 
 	if( pci->argc == 5){ // candidate list included
-		cndid = *(int*) getArgReference(stk,pci, 2);
-		if( cndid){
+		cndid = *getArgReference_bat(stk,pci, 2);
+		if( cndid != bat_nil){
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
 				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
@@ -585,7 +586,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		} 
 		idx = 3;
 	} else idx = 2;
-	oper= *(str*) getArgReference(stk,pci,idx+1);
+	oper= *getArgReference_str(stk,pci,idx+1);
 
 	// check the step direction
 	
@@ -603,11 +604,11 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			lng  s;
 			oid *v;
 
-			f = *(timestamp*) getArgReference(stk,p, 1);
-			l = *(timestamp*) getArgReference(stk,p, 2);
+			f = *getArgReference_TYPE(stk,p, 1, timestamp);
+			l = *getArgReference_TYPE(stk,p, 2, timestamp);
 			if ( p->argc == 3) 
 					throw(MAL,"generator.table","Timestamp step missing");
-			s = *(lng*) getArgReference(stk,p, 3);
+			s = *getArgReference_lng(stk,p, 3);
 			if ( s == 0 || 
 				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
 				 (s < 0 && (f.days < l.days || (f.days == l.days && f.msecs < l.msecs) )) 
@@ -616,21 +617,21 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			hgh = low = *timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
-				hgh= *(timestamp*) getArgReference(stk,pci,idx);
+				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
 			} else
 			if ( strcmp(oper,"<=") == 0){
-				hgh= *(timestamp*) getArgReference(stk,pci,idx) ;
+				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
 				hgh.msecs++;
 			} else
 			if ( strcmp(oper,">") == 0){
-				low= *(timestamp*) getArgReference(stk,pci,idx);
+				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
 				low.msecs++;
 			} else
 			if ( strcmp(oper,">=") == 0){
-				low= *(timestamp*) getArgReference(stk,pci,idx);
+				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
 			} else
 			if ( strcmp(oper,"!=") == 0){
-				hgh= low= *(timestamp*) getArgReference(stk,pci,idx);
+				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
 				anti++;
 			} else
 			if ( strcmp(oper,"==") != 0)
@@ -669,7 +670,7 @@ wrapup:
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		BATderiveProps(bn,0);
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return msg;
 }
@@ -677,11 +678,11 @@ wrapup:
 #define VLTleftfetchjoin(TPE) {\
 	TPE f,l,s, val;\
 	TPE *v;\
-	f = *(TPE*) getArgReference(stk,p, 1);\
-	l = *(TPE*) getArgReference(stk,p, 2);\
+	f = *getArgReference_##TPE(stk,p, 1);\
+	l = *getArgReference_##TPE(stk,p, 2);\
 	if ( p->argc == 3) \
 		s = f<l? (TPE) 1: (TPE)-1;\
-	else s = * (TPE *) getArgReference(stk, p, 3); \
+	else s = * getArgReference_##TPE(stk, p, 3); \
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.leftfetchjoin","Illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
@@ -701,7 +702,8 @@ wrapup:
 
 str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int bid =0, c= 0, tpe, *ret;
+	int c= 0, tpe;
+	bat bid = 0, *ret;
 	BAT *b, *bn = NULL;
 	BUN cnt;
 	oid *ol =0, o= 0;
@@ -711,15 +713,15 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
 
-	ret = (int*) getArgReference(stk,pci,0);
-	b = BATdescriptor(bid = *(int*) getArgReference(stk,pci,1));
+	ret = getArgReference_bat(stk,pci,0);
+	b = BATdescriptor(bid = *getArgReference_bat(stk,pci,1));
 	if( b == NULL)
 		throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 
 	// if it does not exist we should fall back to the ordinary leftfetchjoin to try
 	// it might have been materialized already
 	if( p == NULL){
-		bn = BATdescriptor( *(int*) getArgReference(stk,pci,2));
+		bn = BATdescriptor( *getArgReference_bat(stk,pci,2));
 		if( bn == NULL)
 			throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 		msg = ALGleftfetchjoin(ret, &b->batCacheid, &bn->batCacheid);
@@ -745,11 +747,11 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			timestamp f,l, val;
 			lng s,t;
 			timestamp *v;
-			f = *(timestamp*) getArgReference(stk,p, 1);
-			l = *(timestamp*) getArgReference(stk,p, 2);
+			f = *getArgReference_TYPE(stk,p, 1, timestamp);
+			l = *getArgReference_TYPE(stk,p, 2, timestamp);
 			if ( p->argc == 3) 
 					throw(MAL,"generator.table","Timestamp step missing");
-			s =  *(lng*) getArgReference(stk,p, 3);
+			s =  *getArgReference_lng(stk,p, 3);
 			if ( s == 0 ||
 				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
 				(s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) )
@@ -788,7 +790,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		bn->hseqbase = 0;
 		bn->hkey = 1;
 		BATderiveProps(bn,0);
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -796,11 +798,11 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 /* The operands of a join operation can either be defined on a generator */
 #define VLTjoin(TPE, ABS) \
 	{ TPE f,l,s; TPE *v; BUN w;\
-	f = *(TPE*) getArgReference(stk,p, 1);\
-	l = *(TPE*) getArgReference(stk,p, 2);\
+	f = *getArgReference_##TPE(stk,p, 1);\
+	l = *getArgReference_##TPE(stk,p, 2);\
 	if ( p->argc == 3) \
 		s = f<l? (TPE) 1: (TPE)-1;\
-	else s = * (TPE *) getArgReference(stk, p, 3); \
+	else s = * getArgReference_##TPE(stk, p, 3); \
 	incr = s > 0;\
 	v = (TPE*) Tloc(bl,BUNfirst(bl));\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
@@ -827,13 +829,13 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// we assume at most one of the arguments to refer to the generator
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
 	if( p == NULL){
-		bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
+		bl = BATdescriptor(*getArgReference_bat(stk,pci,2));
 		if( bl == NULL)
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	}
 	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 	if ( q == NULL){
-		br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
+		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
 		if( br == NULL){
 			BBPreleaseref(bl->batCacheid);
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
@@ -874,9 +876,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch(tpe){
 	case TYPE_bte: //VLTjoin(bte,abs); break; 
 	{ bte f,l,s; bte *v; BUN w;
-	f = *(bte*) getArgReference(stk,p, 1);
-	l = *(bte*) getArgReference(stk,p, 2);
-	s = *(bte*) getArgReference(stk,p, 3);
+	f = *getArgReference_bte(stk,p, 1);
+	l = *getArgReference_bte(stk,p, 2);
+	s = *getArgReference_bte(stk,p, 3);
 	incr = s > 0;
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.join","Illegal range");
@@ -919,11 +921,11 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	brn->trevsorted = !incr || c <= 1;			\
 	BATderiveProps(brn,0);
 	if( q){
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
-		BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= brn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,1)= bln->batCacheid);
 	} else {
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
-		BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	}
 	return msg;
 }

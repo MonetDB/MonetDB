@@ -933,7 +933,7 @@ BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid)
 str
 BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *ret = (bat *) getArgReference(stk, pci, 0);
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	BAT *bn;
 	BATiter *bi;
 	BUN *p, *q;
@@ -962,7 +962,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* collect the admin for the xml elements */
 	for (i = pci->retc; i < pci->argc; i++) {
-		if ((bi[i].b = BATdescriptor(*(bat *) getArgReference(stk, pci, i))) == NULL)
+		if ((bi[i].b = BATdescriptor(*getArgReference_bat(stk, pci, i))) == NULL)
 			break;
 		p[i] = BUNfirst(bi[i].b);
 		q[i] = BUNlast(bi[i].b);

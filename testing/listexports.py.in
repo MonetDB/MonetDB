@@ -19,6 +19,9 @@ import os
 import sys
 import re
 
+import exportutils
+
+# sets of directories that end up in the same shared object
 dirlist = {
     'gdk': ['gdk', 'common/options', 'common/utils'],
     'mapi': ['clients/mapilib'],
@@ -26,15 +29,31 @@ dirlist = {
     'stream': ['common/stream'],
     }
 libs = sorted(dirlist.keys())
+
+# directories we skip
 skipdirs = ['extras']
+
+# individual files we skip
 skipfiles = ['monet_getopt.h']
+
+# where the files are
 srcdir = r'@SOURCE@'
 blddir = r'@BUILD@'
 
+# comments (/* ... */ where ... is as short as possible)
 cmtre = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
-expre = re.compile(r'^[ \t]*(?:__declspec\(noreturn\)[ \t]+)?[a-zA-Z_0-9]*export\s+(?P<decl>[^;]*;)', re.MULTILINE)
+
+# the export command; note the keyword we look for is a word that ends
+# in "export"
+expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
+
+# white space
 spcre = re.compile(r'\s+')
+
+# the function or variable name
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
+
+# some regexps helping to normalize the output
 strre = re.compile(r'([^ *])\*')
 comre = re.compile(r',\s*')
 
@@ -48,6 +67,9 @@ def extract(f):
         res = cmtre.search(data, res.start(0))
     # remove \ <newline> combo's
     data = data.replace('\\\n', '')
+
+    data = exportutils.preprocess(data)
+
     res = expre.search(data)
     while res is not None:
         pos = res.end(0)
@@ -91,14 +113,18 @@ def findfiles(dirlist, skipfiles = [], skipdirs = []):
     names, decls = list(zip(*decls))
     return decls
 
-for lib in libs:
-    dirs = dirlist[lib]
-    dl = [os.path.join(srcdir, d) for d in dirs]
-    if srcdir != blddir:
-        dl.extend([os.path.join(blddir, d) for d in dirs])
-    decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
-    sys.stdout.write('# %s\n' % lib)
-    for d in decls:
-        sys.stdout.write(d)
+def main():
+    for lib in libs:
+        dirs = dirlist[lib]
+        dl = [os.path.join(srcdir, d) for d in dirs]
+        if srcdir != blddir:
+            dl.extend([os.path.join(blddir, d) for d in dirs])
+        decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
+        sys.stdout.write('# %s\n' % lib)
+        for d in decls:
+            sys.stdout.write(d)
+            sys.stdout.write('\n')
         sys.stdout.write('\n')
-    sys.stdout.write('\n')
+
+if __name__ == '__main__':
+    main()

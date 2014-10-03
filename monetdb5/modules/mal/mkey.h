@@ -142,9 +142,9 @@ mkey_export str  MKEYhash_dbl(wrd *ret, dbl *v);
 mkey_export str  MKEYhash_lng(wrd *ret, lng *v);
 mkey_export str  MKEYhash_str(wrd *ret, str *v);
 mkey_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits,int *bid);
+mkey_export str  MKEYbulk_rotate_xor_hash(bat *ret, bat *hid, int *nbits,bat *bid);
 mkey_export str  MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits,int *bid);
+mkey_export str  MKEYconstbulk_rotate_xor_hash(bat *ret, wrd *h, int *nbits,bat *bid);
 mkey_export str  MKEYbathash(bat *res, bat *bid );
 
 #endif /* _MKEY_H */

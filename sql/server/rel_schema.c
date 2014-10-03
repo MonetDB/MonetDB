@@ -1007,6 +1007,9 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_error(sql, 02, "42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		return NULL;
 	}
+	if (!name) 
+		name = auth;
+	assert(name);
 	if (mvc_bind_schema(sql, name)) {
 		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
 		return NULL;
@@ -1016,9 +1019,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret;
 
-		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, 
-			   dlist_get_schema_name(auth_name),
-			   schema_auth(auth_name), 0);
+		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;

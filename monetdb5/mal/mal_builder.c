@@ -419,7 +419,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		_t = defConstant(mb,tpe,&cst);
 	} else {
 		cst.vtype = TYPE_bat;
-		cst.val.bval = 0;
+		cst.val.bval = bat_nil;
 		_t = defConstant(mb,TYPE_bat,&cst);
 		mb->var[_t]->type = tpe;
 	}

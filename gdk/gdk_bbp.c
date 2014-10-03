@@ -1625,9 +1625,11 @@ BBPindex(const char *nme)
 BATstore *
 BBPgetdesc(bat i)
 {
+	if (i == bat_nil)
+		return NULL;
 	if (i < 0)
 		i = -i;
-	if (i != bat_nil && i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPgetdesc") && i && BBP_logical(i)) {
+	if (i != 0 && i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPgetdesc") && i && BBP_logical(i)) {
 		return BBP_desc(i);
 	}
 	return NULL;
@@ -3048,7 +3050,7 @@ BBPquickdesc(bat bid, int delaccess)
 {
 	BAT *b;
 
-	if ( bid == 0)
+	if (bid == bat_nil || bid == 0)
 		return NULL;
 	if (bid < 0) {
 		GDKerror("BBPquickdesc: called with negative batid.\n");

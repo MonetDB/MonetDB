@@ -65,7 +65,6 @@ void tstAligned(void)
 	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.btval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }

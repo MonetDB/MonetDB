@@ -194,9 +194,9 @@ MKEYbathash(bat *res, bat *bid )
 str
 MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	wrd *dst = (wrd*) getArgReference(stk,p,0);
-	wrd *h = (wrd*) getArgReference(stk,p,1);
-	int *rotate = (int*) getArgReference(stk,p,2);
+	wrd *dst = getArgReference_wrd(stk,p,0);
+	wrd *h = getArgReference_wrd(stk,p,1);
+	int *rotate = getArgReference_int(stk,p,2);
 	int tpe = getArgType(mb,p,3);
 	ptr *pval = (ptr) getArgReference(stk,p,3);
 	int lbit = *rotate;
@@ -354,9 +354,9 @@ while (cur < end) {\
 str
 MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *res = (int*) getArgReference(stk,p,0);
-	int *hid = (int*) getArgReference(stk,p,1);
-	int *rotate = (int*) getArgReference(stk,p,2);
+	bat *res = getArgReference_bat(stk,p,0);
+	bat *hid = getArgReference_bat(stk,p,1);
+	int *rotate = getArgReference_int(stk,p,2);
 	int tpe = getArgType(mb,p,3);
 	ptr *pval = (ptr) getArgReference(stk,p,3);
 	wrd *dst, *src, *end;
@@ -587,8 +587,8 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int tpe = getArgType(mb,p,1);
 
 	(void) cntxt;
-	ret= (wrd*) getArgReference(stk,p,0);
-	val= (ptr) getArgReference(stk,p,1);
+	ret= getArgReference_wrd(stk,p,0);
+	val= getArgReference(stk,p,1);
 	if (ATOMextern(tpe))
 		val = *(ptr*)val;
 	else if (tpe == TYPE_str)
@@ -598,7 +598,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits, int *bid){
+MKEYconstbulk_rotate_xor_hash(bat *ret, wrd *h, int *nbits, bat *bid){
 	BAT *b, *bn=0;
 	str msg;
 
@@ -616,7 +616,7 @@ MKEYconstbulk_rotate_xor_hash(int *ret, wrd *h, int *nbits, int *bid){
 }
 
 str
-MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
+MKEYbulk_rotate_xor_hash(bat *ret, bat *hid, int *nbits, bat *bid){
 	BAT *hn, *b, *bn=0;
 	str msg;
 

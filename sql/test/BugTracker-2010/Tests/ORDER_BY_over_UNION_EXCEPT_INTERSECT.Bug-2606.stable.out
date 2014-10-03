@@ -61,14 +61,18 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | distinct union (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | group by (
-| | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
@@ -90,14 +94,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | distinct union (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | group by (
-| | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
@@ -119,14 +127,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | distinct union (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | group by (
-| | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as L.a ]
 ) [ L.a ] [ L.a ASC ]
@@ -148,11 +160,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | except (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -171,11 +185,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | except (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -194,11 +210,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | except (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -217,11 +235,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | intersect (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -240,11 +260,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | intersect (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -263,11 +285,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | intersect (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -286,14 +310,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | distinct union (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | group by (
-| | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606b) [ t2606b.a ] COUNT 
+| | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
 | ) [ t2606a.a as t.a ]
 ) [ t.a ] [ t.a ASC ]
@@ -315,11 +343,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | except (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
@@ -338,11 +368,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 43 # length
+% 45 # length
 project (
 | intersect (
 | | group by (
-| | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | project (
+| | | | table(sys.t2606a) [ t2606a.a ] COUNT 
+| | | ) [ t2606a.a ]
 | | ) [ t2606a.a ] [ t2606a.a ],
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 

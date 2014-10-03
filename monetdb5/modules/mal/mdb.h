@@ -49,7 +49,7 @@ mdb_export str MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str CMDmodules(int *bid);
+mdb_export str CMDmodules(bat *bid);
 mdb_export str MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetDebug(int *ret);

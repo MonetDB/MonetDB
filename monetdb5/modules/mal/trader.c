@@ -162,9 +162,9 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 
 str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *c = (lng *) getArgReference(stk,pci,0);
-	str fnname = *(str *) getArgReference(stk,pci,1);
-	sht bidtype = *(sht *) getArgReference(stk,pci,2);
+	lng *c = getArgReference_lng(stk,pci,0);
+	str fnname = *getArgReference_str(stk,pci,1);
+	sht bidtype = *getArgReference_sht(stk,pci,2);
 	Symbol sym;
 	static char fname[BUFSIZ] = "";
 	static str biddingLog = NULL;
@@ -216,10 +216,10 @@ str TRADERmakeBids(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
 
-	bidtype = *(sht *) getArgReference(stk,pci,pci->retc);
+	bidtype = *getArgReference_sht(stk,pci,pci->retc);
 	for ( i = 0; i < n ; i++){
-		fnname = *(str *) getArgReference(stk,pci,i + pci->retc + 1);
-		bid = (lng *) getArgReference(stk,pci,i);
+		fnname = *getArgReference_str(stk,pci,i + pci->retc + 1);
+		bid = getArgReference_lng(stk,pci,i);
 	    sym = findSymbol(cntxt->nspace, octopusRef, fnname);
 	    if ( sym == NULL)
     	    throw(MAL,"trader.makeBids", RUNTIME_SIGNATURE_MISSING "%s", fnname);

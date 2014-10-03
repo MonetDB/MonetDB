@@ -33,8 +33,8 @@
 #define iterator_export extern
 #endif
 
-iterator_export str ITRnewChunk(lng *res, int *vid, int *bid, lng *granule);
-iterator_export str ITRnextChunk(lng *res, int *vid, int *bid, lng *granule);
+iterator_export str ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule);
+iterator_export str ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule);
 iterator_export str ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 iterator_export str ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

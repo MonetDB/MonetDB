@@ -53,7 +53,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (argc > 1 && getVarType(mb, getArg(pci, argc - 1)) == TYPE_lng) {
-		samplesize = *(lng *) getArgReference(stk, pci, pci->argc - 1);
+		samplesize = *getArgReference_lng(stk, pci, pci->argc - 1);
 		argc--;
 	}
 	dquery = (char *) GDKzalloc(8192);
@@ -70,11 +70,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	switch (argc) {
 	case 4:
-		col = *(str *) getArgReference(stk, pci, 3);
+		col = *getArgReference_str(stk, pci, 3);
 	case 3:
-		tbl = *(str *) getArgReference(stk, pci, 2);
+		tbl = *getArgReference_str(stk, pci, 2);
 	case 2:
-		sch = *(str *) getArgReference(stk, pci, 1);
+		sch = *getArgReference_str(stk, pci, 1);
 	}
 #ifdef DEBUG_SQL_STATISTICS
 	mnstr_printf(cntxt->fdout, "analyze %s.%s.%s sample " LLFMT "\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize);

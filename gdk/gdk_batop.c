@@ -1526,7 +1526,7 @@ BATmark(BAT *b, oid oid_base)
 	} while (0)
 
 BAT *
-BATmark_grp(BAT *b, BAT *g, oid *s)
+BATmark_grp(BAT *b, BAT *g, const oid *s)
 {
 	BAT *bn = NULL, *gc = NULL;
 	bit trivprop = FALSE;

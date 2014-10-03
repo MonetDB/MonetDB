@@ -38,9 +38,9 @@ typedef str identifier;
 #endif
 
 identifier_export int TYPE_identifier;
-identifier_export str IDprelude(void);
-identifier_export int IDfromString(str src, int *len, str *retval);
-identifier_export int IDtoString(str *retval, int *len, str handle);
-identifier_export str IDentifier(str *retval, str *in);
+identifier_export str IDprelude(void *ret);
+identifier_export int IDfromString(str src, int *len, identifier *retval);
+identifier_export int IDtoString(str *retval, int *len, identifier handle);
+identifier_export str IDentifier(identifier *retval, str *in);
 #endif /* _IDTYPE_DEF */
 

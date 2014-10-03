@@ -28,7 +28,7 @@ lib_kernel = {
 	NOINST
 	SOURCES = \
 		aggr.c \
-		alarm.c alarm.h \
+		alarm.c \
 		algebra.c algebra.h \
 		bat5.c bat5.h \
 		batcolor.c batcolor.h \

@@ -57,7 +57,7 @@
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2, str X3) {
+pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
 	if (BBPindex(buf) <= 0)
@@ -86,7 +86,7 @@ MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 	if (p->argc > 1) {
-		b = *(int *) getArgReference(stk, p, 1);
+		b = *getArgReference_int(stk, p, 1);
 	} else
 		b = stk->cmd;
 	if (b)
@@ -108,7 +108,7 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if( p->argc == 2){
 		/* debug running process */
-		pid = *(int *) getArgReference(stk, p, 1);
+		pid = *getArgReference_int(stk, p, 1);
 		if( pid< 0 || pid >= MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHCLIENT)
 			throw(MAL, "mdb.start", ILLEGAL_ARGUMENT " Illegal process id");
 		c= mal_clients+pid;
@@ -165,7 +165,7 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) mb;		/* still unused */
-	b = *(bit *) getArgReference(stk, p, 1);
+	b = *getArgReference_bit(stk, p, 1);
 	MDBtraceFlag(cntxt, stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
 }
@@ -176,7 +176,7 @@ MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str v;
 
 	(void) cntxt;
-	v = *(str *) getArgReference(stk, p, 1);
+	v = *getArgReference_str(stk, p, 1);
 	mdbSetBreakRequest(cntxt, mb, v, 't');
 	stk->cmd = 'c';
 	cntxt->itrace = 'c';
@@ -234,7 +234,7 @@ MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int b;
 
 	(void) mb;		/* still unused */
-	b = *(bit *) getArgReference(stk, p, 1);
+	b = *getArgReference_bit(stk, p, 1);
 	stk->cmd = cntxt->itrace = (b? (int) 'C':0);
 	return MAL_SUCCEED;
 }
@@ -248,8 +248,8 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (stk != 0) {
-		modnme = *(str*) getArgReference(stk, p, 1);
-		fcnnme = *(str*) getArgReference(stk, p, 2);
+		modnme = *getArgReference_str(stk, p, 1);
+		fcnnme = *getArgReference_str(stk, p, 2);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
@@ -282,7 +282,7 @@ getStkDepth(MalStkPtr s)
 str
 MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int *ret = (int *) getArgReference(s, p, 0);
+	int *ret = getArgReference_int(s, p, 0);
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
@@ -312,8 +312,8 @@ MDBgetFrame(BAT *b, BAT*bn, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 str
 MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
-	int *ret = (int *) getArgReference(s, p, 0);
-	int *ret2 = (int *) getArgReference(s, p, 1);
+	bat *ret = getArgReference_bat(s, p, 0);
+	bat *ret2 = getArgReference_bat(s, p, 1);
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
@@ -332,8 +332,9 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str
 MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
-	int n, *ret = (int *) getArgReference(s, p, 0);
-	int *ret2 = (int *) getArgReference(s, p, 1);
+	int n;
+	bat *ret = getArgReference_bat(s, p, 0);
+	bat *ret2 = getArgReference_bat(s, p, 1);
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	
@@ -345,7 +346,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
 
-	n = *(int *) getArgReference(s, p, 2);
+	n = *getArgReference_int(s, p, 2);
 	if (n < 0 || n >= getStkDepth(s)){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
@@ -361,8 +362,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b, *bn;
 	str msg;
 	char *buf;
-	int *ret = (int *) getArgReference(s, p, 0);
-	int *ret2 = (int *) getArgReference(s, p, 1);
+	bat *ret = getArgReference_bat(s, p, 0);
+	bat *ret2 = getArgReference_bat(s, p, 1);
 	int k = 0;
 	size_t len,l;
 
@@ -433,8 +434,8 @@ MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (stk != 0) {
-		modnme = *(str*) getArgReference(stk, p, 1);
-		fcnnme = *(str*) getArgReference(stk, p, 2);
+		modnme = *getArgReference_str(stk, p, 1);
+		fcnnme = *getArgReference_str(stk, p, 2);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
@@ -475,8 +476,8 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = *(str*) getArgReference(stk, p, 1);
-	str fcnnme = *(str*) getArgReference(stk, p, 2);
+	str modnme = *getArgReference_str(stk, p, 1);
+	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
@@ -499,8 +500,8 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = *(str*) getArgReference(stk, p, 1);
-	str fcnnme = *(str*) getArgReference(stk, p, 2);
+	str modnme = *getArgReference_str(stk, p, 1);
+	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
@@ -523,8 +524,8 @@ MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = *(str*) getArgReference(stk, p, 1);
-	str fcnnme = *(str*) getArgReference(stk, p, 2);
+	str modnme = *getArgReference_str(stk, p, 1);
+	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
@@ -542,7 +543,8 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
-	int i, *ret = (int *) getArgReference(stk, p, 0);
+	int i;
+	bat *ret = getArgReference_bat(stk, p, 0);
 	str ps;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 
@@ -625,11 +627,11 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (stk != 0) {
 		if (p->argc == 2) {
 			modnme = fcnnme = NULL;
-			fname = *(str*) getArgReference(stk, p, 1);
+			fname = *getArgReference_str(stk, p, 1);
 		} else {
-			modnme = *(str*) getArgReference(stk, p, 1);
-			fcnnme = *(str*) getArgReference(stk, p, 2);
-			fname = *(str*) getArgReference(stk, p, 3);
+			modnme = *getArgReference_str(stk, p, 1);
+			fcnnme = *getArgReference_str(stk, p, 2);
+			fname = *getArgReference_str(stk, p, 3);
 		}
 	} else {
 		modnme = getArgDefault(mb, p, 1);
@@ -665,9 +667,9 @@ str MDBdummy(int *ret){
 str
 MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str modnme = *(str*) getArgReference(stk, pci, 1);
-	str fcnnme = *(str*) getArgReference(stk, pci, 2);
-	bit b=  *(bit*) getArgReference(stk,pci,3);
+	str modnme = *getArgReference_str(stk, pci, 1);
+	str fcnnme = *getArgReference_str(stk, pci, 2);
+	bit b=  *getArgReference_bit(stk,pci,3);
 	(void) cntxt;
 	(void) mb;
 	if ( mdbSetTrap(cntxt,modnme,fcnnme,b) )
@@ -746,7 +748,7 @@ TBL_getdir(void)
 }
 
 str
-CMDmodules(int *bid)
+CMDmodules(bat *bid)
 {
 	BAT *b = TBL_getdir();
 

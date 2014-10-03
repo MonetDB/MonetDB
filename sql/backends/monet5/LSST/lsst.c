@@ -368,20 +368,21 @@ static void _qserv_computeEdges( double *edges, double *verts, int nv)
   * @li vertices lie in counter-clockwise order when viewed from a position
   * @li outside the unit sphere and inside the half-space containing them.
   */
-str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	dbl ra = *(dbl*) getArgReference(stk,pci,1);
-	dbl dec = *(dbl*) getArgReference(stk,pci,2);
+	int *ret = getArgReference_int(stk,pci,0);
+	dbl ra = *getArgReference_dbl(stk,pci,1);
+	dbl dec = *getArgReference_dbl(stk,pci,2);
 
 	double x, y, z, w;
 	dbl *edges, *nv;
 	int i, nedges= (pci->argc-3)/2;
 
 	(void) mb;
+	(void) cntxt;
 	/* If any input is null, the result is 0. */
 	for (i = 1; i <pci->argc; ++i) {
-		if ( *(dbl*) getArgReference(stk,pci,i) == dbl_nil){
+		if ( *getArgReference_dbl(stk,pci,i) == dbl_nil){
 			*ret = int_nil;
 			return MAL_SUCCEED;
 		}
@@ -407,7 +408,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
 	}
 	for (i = 3; i <pci->argc; ++i) 
-		nv[i-3] =  *(dbl*) getArgReference(stk,pci,i);
+		nv[i-3] =  *getArgReference_dbl(stk,pci,i);
 	_qserv_computeEdges(edges,nv, nedges);
 	GDKfree(nv);
 
@@ -443,7 +444,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 */
 
 str
-LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
+LSSTxmatch(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 {
 	BAT *xl, *xr, *bl, *br;
 	lng *l, *r;

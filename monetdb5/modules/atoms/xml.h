@@ -57,7 +57,7 @@ xml_export str XMLcontent(xml *x, str *s);
 xml_export str XMLisdocument(bit *x, str *s);
 xml_export str XMLcomment(xml *x, str *s);
 xml_export str XMLpi(xml *x, str *target, str *s);
-xml_export str XMLroot(str *x, str *v, str *version, str *standalone);
+xml_export str XMLroot(xml *x, xml *v, str *version, str *standalone);
 xml_export str XMLparse(xml *x, str *doccont, str *s, str *option);
 xml_export str XMLattribute(xml *ret, str *name, str *val);
 xml_export str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
@@ -68,6 +68,6 @@ xml_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 xml_export size_t XMLquotestring(const char *s, char *buf, size_t len);
 xml_export size_t XMLunquotestring(const char **p, char q, char *buf);
 
-xml_export str XMLprelude(void);
+xml_export str XMLprelude(void *ret);
 
 #endif /* XML_H */

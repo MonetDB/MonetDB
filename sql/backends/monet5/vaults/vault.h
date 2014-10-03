@@ -45,7 +45,7 @@ vault_export str VLTsetLocation(str *ret, str *src);
 vault_export str VLTgetLocation(str *ret);
 vault_export str VLTremove(timestamp *ret, str *t);
 vault_export str VLTbasename(str *ret, str *fnme, str *splot);
-vault_export  str VLTepilogue(int *ret);
+vault_export  str VLTepilogue(void *ret);
 
 vault_export char vaultpath[BUFSIZ];
 #endif /* _VAULT_H */

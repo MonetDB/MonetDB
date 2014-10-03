@@ -192,7 +192,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	if (getProfileCounter(PROFfootprint) ){
 		for (i = 0; i < pci->retc; i++)
-			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
+			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval != bat_nil){
 				/* avoid simple alias operations */
 				fnd= 0;
 				for ( j= pci->retc; j< pci->argc; j++)
@@ -271,7 +271,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
     BAT *b;
 	BUN cnt;
     lng total = 0;
-	int bid;
+	bat bid;
 
 	if ( !mb || !stk)
 		return ;

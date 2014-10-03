@@ -101,38 +101,40 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 str
 SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *ret = (str *) getArgReference(stk, pci, 0);
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	(void) stk;
+	(void) pci;
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
-	*ret = 0;
 	return msg;
 }
 
 str
 SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *ret = (str *) getArgReference(stk, pci, 0);
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	(void) stk;
+	(void) pci;
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "msql");
-	*ret = 0;
 	return msg;
 }
 
 static str SQLinit(void);
 
 str
-SQLprelude(void)
+SQLprelude(void *ret)
 {
 	str tmp;
 	Scenario ms, s = getFreeScenario();
+
+	(void) ret;
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
@@ -178,11 +180,12 @@ SQLprelude(void)
 }
 
 str
-SQLepilogue(void)
+SQLepilogue(void *ret)
 {
 	char *s = "sql", *m = "msql";
 	str res;
 
+	(void) ret;
 	if (SQLinitialized) {
 		mvc_exit();
 		SQLinitialized = FALSE;
@@ -1103,7 +1106,7 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
@@ -1550,12 +1553,12 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *expr = (str *) getArgReference(stk, pci, 1);
+	str *expr = getArgReference_str(stk, pci, 1);
 	bit output = TRUE;
 
 	(void) mb;
 	if (pci->argc == 3)
-		output = *(bit *) getArgReference(stk, pci, 2);
+		output = *getArgReference_bit(stk, pci, 2);
 
 	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output);
 }
@@ -1563,8 +1566,8 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *ret = (str *) getArgReference(stk, pci, 0);
-	str *expr = (str *) getArgReference(stk, pci, 1);
+	str *ret = getArgReference_str(stk, pci, 0);
+	str *expr = getArgReference_str(stk, pci, 1);
 	str msg;
 
 	(void) mb;
@@ -1586,7 +1589,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *fd;
 	bstream *bfd;
-	str *name = (str *) getArgReference(stk, pci, 1);
+	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
 	str *expr;
 	mvc *m;
@@ -2459,8 +2462,8 @@ SQLengine(Client c)
 str
 SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *flg = (bit *) getArgReference(stk, pci, 1);
-	str *msg = (str *) getArgReference(stk, pci, 2);
+	bit *flg = getArgReference_bit(stk, pci, 1);
+	str *msg = getArgReference_str(stk, pci, 2);
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
@@ -2478,8 +2481,8 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *flg = (int *) getArgReference(stk, pci, 1);
-	str *msg = (str *) getArgReference(stk, pci, 2);
+	int *flg = getArgReference_int(stk, pci, 1);
+	str *msg = getArgReference_str(stk, pci, 2);
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
@@ -2497,8 +2500,8 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	wrd *flg = (wrd *) getArgReference(stk, pci, 1);
-	str *msg = (str *) getArgReference(stk, pci, 2);
+	wrd *flg = getArgReference_wrd(stk, pci, 1);
+	str *msg = getArgReference_str(stk, pci, 2);
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
@@ -2516,8 +2519,8 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *flg = (lng *) getArgReference(stk, pci, 1);
-	str *msg = (str *) getArgReference(stk, pci, 2);
+	lng *flg = getArgReference_lng(stk, pci, 1);
+	str *msg = getArgReference_str(stk, pci, 2);
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {

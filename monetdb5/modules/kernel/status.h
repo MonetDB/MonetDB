@@ -32,16 +32,16 @@
 
 status_export str SYSgetmem_cursize(lng *num);
 status_export str SYSgetmem_maxsize(lng *num);
-status_export str SYSsetmem_maxsize(int *ret, lng *num);
+status_export str SYSsetmem_maxsize(void *ret, const lng *num);
 status_export str SYSgetvm_cursize(lng *num);
 status_export str SYSgetvm_maxsize(lng *num);
-status_export str SYSsetvm_maxsize(lng *num);
-status_export str SYSioStatistics(int *ret,int *ret2);
-status_export str SYScpuStatistics(int *ret, int *ret2);
-status_export str SYSmemStatistics(int *ret, int *ret2);
-status_export str SYSmem_usage(int *ret, int *ret2, lng *minsize);
-status_export str SYSvm_usage(int *ret, int *ret2, lng *minsize);
-status_export str SYSgdkEnv(int *ret, int *ret2);
-status_export str SYSgdkThread(int *ret, int *ret2);
+status_export str SYSsetvm_maxsize(void *ret, const lng *num);
+status_export str SYSioStatistics(bat *ret, bat *ret2);
+status_export str SYScpuStatistics(bat *ret, bat *ret2);
+status_export str SYSmemStatistics(bat *ret, bat *ret2);
+status_export str SYSmem_usage(bat *ret, bat *ret2, const lng *minsize);
+status_export str SYSvm_usage(bat *ret, bat *ret2, const lng *minsize);
+status_export str SYSgdkEnv(bat *ret, bat *ret2);
+status_export str SYSgdkThread(bat *ret, bat *ret2);
 
 #endif

@@ -79,7 +79,7 @@
 	do {												\
 		tpe v;											\
 		retsxp = PROTECT(NEW_INTEGER(1));				\
-		v = *(tpe*) getArgReference(stk,pci,i);			\
+		v = *getArgReference_##tpe(stk,pci,i);			\
 		if ( v == tpe##_nil)							\
 			INTEGER_POINTER(retsxp)[0] = 	NA_INTEGER; \
 		else											\
@@ -90,7 +90,7 @@
 	do {												\
 		tpe v;											\
 		retsxp = PROTECT(NEW_NUMERIC(1));				\
-		v = * (tpe*) getArgReference(stk,pci,i);		\
+		v = * getArgReference_##tpe(stk,pci,i);			\
 		if ( v == tpe##_nil)							\
 			NUMERIC_POINTER(retsxp)[0] = 	NA_REAL;	\
 		else											\
@@ -398,7 +398,7 @@ rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
-	str exprStr = *(str*) getArgReference(stk, pci, pci->retc + 1);
+	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	SEXP x, env, retval;
 	SEXP varname = R_NilValue;
@@ -481,14 +481,14 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str)
-				BUNappend(b, *(str*) getArgReference(stk, pci, i), FALSE);
+				BUNappend(b, *getArgReference_str(stk, pci, i), FALSE);
 			else
 				BUNappend(b, getArgReference(stk, pci, i), FALSE);
 			BATsetcount(b, 1);
 			BATseqbase(b, 0);
 			BATsettrivprop(b);
 		} else {
-			b = BATdescriptor(*(int*) getArgReference(stk, pci, i));
+			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -599,7 +599,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
 		int bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
-		int *ret = (int *) getArgReference(stk, pci, i);
 		cnt = (BUN) ret_rows;
 
 		// hand over the vector into a BAT
@@ -702,10 +701,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
-			*ret = b->batCacheid;
+			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
-			VALinit(getArgReference(stk, pci, i), bat_type,
+			VALinit(&stk->stk[pci->argv[i]], bat_type,
 					Tloc(b, BUNfirst(b)));
 		}
 		msg = MAL_SUCCEED;
@@ -720,7 +719,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
-str RAPIprelude(void) {
+str RAPIprelude(void *ret) {
+	(void) ret;
 	MT_lock_init(&rapiLock, "rapi_lock");
 
 	if (RAPIEnabled()) {

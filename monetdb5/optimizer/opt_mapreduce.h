@@ -22,7 +22,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export str MRgetCloud(int *ret, str *nme);
+opt_export str MRgetCloud(bat *ret, str *nme);
 
 opt_export int OPTmapreduceImplementation( Client cntxt, MalBlkPtr reduce, MalStkPtr stk, InstrPtr pc);
 

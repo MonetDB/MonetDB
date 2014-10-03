@@ -45,42 +45,42 @@ CMDraise(str *ret, str *msg)
 }
 
 str
-MALassertBit(int *ret, bit *val, str *msg){
+MALassertBit(void *ret, bit *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == bit_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
-MALassertInt(int *ret, int *val, str *msg){
+MALassertInt(void *ret, int *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == int_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
-MALassertLng(int *ret, lng *val, str *msg){
+MALassertLng(void *ret, lng *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == lng_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
-MALassertSht(int *ret, sht *val, str *msg){
+MALassertSht(void *ret, sht *val, str *msg){
 	(void) ret;
 	if( *val == 0 || *val == sht_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
-MALassertOid(int *ret, oid *val, str *msg){
+MALassertOid(void *ret, oid *val, str *msg){
 	(void) ret;
 	if( *val == oid_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
-MALassertStr(int *ret, str *val, str *msg){
+MALassertStr(void *ret, str *val, str *msg){
 	(void) ret;
 	if( *val == str_nil)
 		throw(MAL, "mal.assert", "%s", *msg);
@@ -114,7 +114,7 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *s;
 
 	(void) mb;		/* fool compiler */
-	s = (str *) getArgReference(stk, pci, 1);
+	s = getArgReference_str(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
 	callString(cntxt, *s, FALSE);
@@ -124,8 +124,8 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str mod = *(str*) getArgReference(stk,pci,1);
-	str fcn = *(str*) getArgReference(stk,pci,2);
+	str mod = *getArgReference_str(stk,pci,1);
+	str fcn = *getArgReference_str(stk,pci,2);
 	char buf[BUFSIZ];
 
 	(void) mb;		/* fool compiler */
@@ -140,7 +140,7 @@ CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
+	bit *ret = getArgReference_bit(stk,pci,0);
 	int pc = getPC(mb,pci);
 
 	if ( pc <0 || pc > pci->jump)
@@ -177,11 +177,10 @@ str
 CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Symbol sym= NULL;
-	int *ret = (int *) getArgReference(stk,pci,0);
-	str *mod = (str *) getArgReference(stk,pci,1);
-	str *fcn = (str *) getArgReference(stk,pci,2);
-	str *code = (str *) getArgReference(stk,pci,3);
-	str *help = (str *) getArgReference(stk,pci,4);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
+	str *code = getArgReference_str(stk,pci,3);
+	str *help = getArgReference_str(stk,pci,4);
 	InstrPtr sig;
 	str msg;
 
@@ -198,13 +197,12 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		setFunctionId(sig, sym->name);
 		insertSymbol(findModule(cntxt->nspace, getModuleId(sig)), sym);
 	}
-	*ret = 0;
 	return msg;
 }
 str
 CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str s = *(str *) getArgReference(stk,pci,1);
+	str s = *getArgReference_str(stk,pci,1);
 	char *msg = NULL;
 	(void) mb;
 

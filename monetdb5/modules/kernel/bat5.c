@@ -414,11 +414,11 @@ CMDbatsize(lng *tot, BAT *b, int force)
  * BBP Management, IO
  */
 static int
-CMDrename(bit *retval, BAT *b, str s)
+CMDrename(bit *retval, BAT *b, const char *s)
 {
 	int ret;
 	int c;
-	char *t = s;
+	const char *t = s;
 
 	for ( ; (c = *t) != 0; t++) {
 		if (c != '_' && !GDKisalnum(c)) {
@@ -445,7 +445,7 @@ CMDrename(bit *retval, BAT *b, str s)
 }
 
 static int
-CMDunload(bit *res, str input)
+CMDunload(bit *res, const char *input)
 {
 	bat bid = abs(BBPindex(input));
 
@@ -464,7 +464,7 @@ CMDunload(bit *res, str input)
 }
 
 static int
-CMDsave(bit *res, str input)
+CMDsave(bit *res, const char *input)
 {
 	bat bid = BBPindex(input);
 	BAT *b;
@@ -496,7 +496,7 @@ CMDsave(bit *res, str input)
 
 
 str
-BKCnewBAT(int *res, int *ht, int *tt, BUN *cap, int role)
+BKCnewBAT(bat *res, const int *ht, const int *tt, const BUN *cap, int role)
 {
 	BAT *bn;
 
@@ -511,7 +511,7 @@ BKCnewBAT(int *res, int *ht, int *tt, BUN *cap, int role)
 }
 
 str
-BKCattach(int *ret, int *tt, str *heapfile)
+BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 {
 	BAT *bn;
 
@@ -524,18 +524,19 @@ BKCattach(int *ret, int *tt, str *heapfile)
 }
 
 str
-BKCdensebat(int *ret, wrd *size)
+BKCdensebat(bat *ret, const wrd *size)
 {
 	BAT *bn;
+	wrd sz = *size;
 
-	if (*size < 0)
-		*size = 0;
-	if (*size > (wrd) BUN_MAX)
-		*size = (wrd) BUN_MAX;
-	bn = BATnew(TYPE_void, TYPE_void, (BUN) *size, TRANSIENT);
+	if (sz < 0)
+		sz = 0;
+	if (sz > (wrd) BUN_MAX)
+		sz = (wrd) BUN_MAX;
+	bn = BATnew(TYPE_void, TYPE_void, (BUN) sz, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);
-	BATsetcount(bn, (BUN) *size);
+	BATsetcount(bn, (BUN) sz);
 	BATseqbase(bn, 0);
 	BATseqbase(BATmirror(bn), 0);
 	*ret = bn->batCacheid;
@@ -544,7 +545,7 @@ BKCdensebat(int *ret, wrd *size)
 }
 
 str
-BKCreverse(int *ret, int *bid)
+BKCreverse(bat *ret, const bat *bid)
 {
 	BAT *b, *bn = NULL;
 
@@ -560,7 +561,7 @@ BKCreverse(int *ret, int *bid)
 }
 
 str
-BKCmirror(int *ret, int *bid)
+BKCmirror(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 
@@ -588,7 +589,7 @@ BKCmirror(int *ret, int *bid)
 }
 
 str
-BKCrevert(int *r, int *bid)
+BKCrevert(bat *r, const bat *bid)
 {
 	BAT *bn, *b;
 
@@ -606,7 +607,7 @@ BKCrevert(int *r, int *bid)
 }
 
 str
-BKCorder(int *r, int *bid)
+BKCorder(bat *r, const bat *bid)
 {
 	BAT *bn, *b;
 
@@ -624,7 +625,7 @@ BKCorder(int *r, int *bid)
 }
 
 str
-BKCorder_rev(int *r, int *bid)
+BKCorder_rev(bat *r, const bat *bid)
 {
 	BAT *bn, *b;
 
@@ -642,7 +643,7 @@ BKCorder_rev(int *r, int *bid)
 }
 
 char *
-BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
+BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t)
 {
 	BAT *bn, *b;
 
@@ -672,7 +673,7 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 }
 
 char *
-BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
+BKCinsert_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force)
 {
 	BAT *bn, *b;
 
@@ -702,7 +703,7 @@ BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 }
 
 str
-BKCinsert_bat(int *r, int *bid, int *sid)
+BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *bn, *b, *s;
 
@@ -725,7 +726,7 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 }
 
 str
-BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
+BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 {
 	BAT *bn, *b, *s;
 
@@ -749,7 +750,7 @@ BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 
 
 str
-BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
+BKCreplace_bun(bat *r, const bat *bid, const void *h, const void *t)
 {
 	BAT *bn, *b;
 
@@ -779,7 +780,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 }
 
 str
-BKCreplace_bat(int *r, int *bid, int *sid)
+BKCreplace_bat(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *b, *bn, *s;
 
@@ -802,7 +803,7 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 }
 
 str
-BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
+BKCreplace_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force)
 {
 	BAT *b, *bn;
 
@@ -832,7 +833,7 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 }
 
 str
-BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
+BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 {
 	BAT *b, *bn, *s;
 
@@ -855,7 +856,7 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 }
 
 char *
-BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
+BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t)
 {
 	BAT *b, *bn;
 
@@ -885,7 +886,7 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 }
 
 char *
-BKCdelete(int *r, int *bid, const void *h)
+BKCdelete(bat *r, const bat *bid, const void *h)
 {
 	BAT *b, *bn;
 
@@ -909,7 +910,7 @@ BKCdelete(int *r, int *bid, const void *h)
 }
 
 str
-BKCdelete_all(int *r, int *bid)
+BKCdelete_all(bat *r, const bat *bid)
 {
 	BAT *b, *bn;
 
@@ -925,7 +926,7 @@ BKCdelete_all(int *r, int *bid)
 }
 
 str
-BKCdelete_bat_bun(int *r, int *bid, int *sid)
+BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *b, *bn, *s;
 
@@ -948,7 +949,7 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 }
 
 str
-BKCdelete_bat(int *r, int *bid, int *sid)
+BKCdelete_bat(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *bn, *b, *s;
 
@@ -990,13 +991,13 @@ CMDdestroy(bit *res, const char *input)
 }
 
 str
-BKCdestroy_bat(bit *r, str *input)
+BKCdestroy_bat(bit *r, const char * const *input)
 {
 	return CMDdestroy(r, *input);
 }
 
 str
-BKCdestroyImmediate(bit *r, int *bid)
+BKCdestroyImmediate(bit *r, const bat *bid)
 {
 	BAT *b;
 	char buf[512];
@@ -1009,21 +1010,21 @@ BKCdestroyImmediate(bit *r, int *bid)
 }
 
 char *
-BKCdestroy(bit *r, int *bid)
+BKCdestroy(bit *r, bat *bid)
 {
 	BAT *b;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
-	*bid = 0;
+	*bid = bat_nil;
 	BATmode(b, TRANSIENT);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
-BKCappend_wrap(int *r, int *bid, int *uid)
+BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 {
 	BAT *bn, *b, *u;
 
@@ -1046,7 +1047,7 @@ BKCappend_wrap(int *r, int *bid, int *uid)
 }
 
 str
-BKCappend_val_wrap(int *r, int *bid, ptr u)
+BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
 {
 	BAT *bn, *b;
 
@@ -1070,7 +1071,7 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 }
 
 str
-BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
+BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u)
 {
 	BAT *bn, *b;
 
@@ -1096,7 +1097,7 @@ BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
 }
 
 char *
-BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
+BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 {
 	BAT *bn, *b, *u;
 
@@ -1123,7 +1124,7 @@ BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 }
 
 str
-BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
+BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force)
 {
 	BAT *bn, *b;
 
@@ -1147,7 +1148,7 @@ BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
 }
 
 str
-BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
+BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 {
 	BAT *b;
 
@@ -1163,7 +1164,7 @@ BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 }
 
 str
-BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
+BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const bit *force)
 {
 	BAT *b;
 
@@ -1179,7 +1180,7 @@ BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
 }
 
 str
-BKCbat_inplace(int *r, int *bid, int *rid)
+BKCbat_inplace(bat *r, const bat *bid, const bat *rid)
 {
 	BAT *b, *d;
 
@@ -1200,7 +1201,7 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 }
 
 str
-BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
+BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bit *force)
 {
 	BAT *b, *d;
 
@@ -1224,7 +1225,7 @@ BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 /*end of SQL enhancement */
 
 char *
-BKCgetAlpha(int *r, int *bid)
+BKCgetAlpha(bat *r, const bat *bid)
 {
 	BAT *b, *bn;
 
@@ -1239,7 +1240,7 @@ BKCgetAlpha(int *r, int *bid)
 }
 
 char *
-BKCgetDelta(int *r, int *bid)
+BKCgetDelta(bat *r, const bat *bid)
 {
 	BAT *b, *bn;
 
@@ -1254,7 +1255,7 @@ BKCgetDelta(int *r, int *bid)
 }
 
 str
-BKCgetCapacity(lng *res, bat *bid)
+BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
 	if (BBPcheck(*bid, "bat.getCapacity")) {
@@ -1268,7 +1269,7 @@ BKCgetCapacity(lng *res, bat *bid)
 }
 
 str
-BKCgetHeadType(str *res, bat *bid)
+BKCgetHeadType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
 
@@ -1285,7 +1286,7 @@ BKCgetHeadType(str *res, bat *bid)
 }
 
 str
-BKCgetColumnType(str *res, int *bid)
+BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
 
@@ -1302,7 +1303,7 @@ BKCgetColumnType(str *res, int *bid)
 }
 
 str
-BKCgetRole(str *res, int *bid)
+BKCgetRole(str *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1315,7 +1316,7 @@ BKCgetRole(str *res, int *bid)
 }
 
 str
-BKCsetkey(int *res, int *bid, bit *param)
+BKCsetkey(bat *res, const bat *bid, const bit *param)
 {
 	BAT *b;
 
@@ -1329,7 +1330,7 @@ BKCsetkey(int *res, int *bid, bit *param)
 }
 
 str
-BKCisSorted(bit *res, int *bid)
+BKCisSorted(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1342,7 +1343,7 @@ BKCisSorted(bit *res, int *bid)
 }
 
 str
-BKCisSortedReverse(bit *res, int *bid)
+BKCisSortedReverse(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1361,7 +1362,7 @@ BKCisSortedReverse(bit *res, int *bid)
  */
 
 str
-BKCgetKey(bit *ret, int *bid)
+BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
 
@@ -1386,10 +1387,11 @@ BKCgetKey(bit *ret, int *bid)
 }
 
 str
-BKCpersists(int *r, int *bid, bit *flg)
+BKCpersists(void *r, const bat *bid, const bit *flg)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
@@ -1398,19 +1400,18 @@ BKCpersists(int *r, int *bid, bit *flg)
 		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
 	}
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetPersistent(int *r, int *bid)
+BKCsetPersistent(void *r, const bat *bid)
 {
 	bit flag= TRUE;
 	return BKCpersists(r, bid, &flag);
 }
 
 str
-BKCisPersistent(bit *res, int *bid)
+BKCisPersistent(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1423,14 +1424,14 @@ BKCisPersistent(bit *res, int *bid)
 }
 
 str
-BKCsetTransient(int *r, int *bid)
+BKCsetTransient(void *r, const bat *bid)
 {
 	bit flag = FALSE;
 	return BKCpersists(r, bid, &flag);
 }
 
 str
-BKCisTransient(bit *res, int *bid)
+BKCisTransient(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1443,7 +1444,7 @@ BKCisTransient(bit *res, int *bid)
 }
 
 str
-BKCsetWriteMode(int *res, int *bid)
+BKCsetWriteMode(bat *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1456,7 +1457,7 @@ BKCsetWriteMode(int *res, int *bid)
 }
 
 str
-BKChasWriteMode(bit *res, int *bid)
+BKChasWriteMode(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1468,7 +1469,7 @@ BKChasWriteMode(bit *res, int *bid)
 }
 
 str
-BKCsetReadMode(int *res, int *bid)
+BKCsetReadMode(bat *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1481,7 +1482,7 @@ BKCsetReadMode(int *res, int *bid)
 }
 
 str
-BKChasReadMode(bit *res, int *bid)
+BKChasReadMode(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1493,7 +1494,7 @@ BKChasReadMode(bit *res, int *bid)
 }
 
 str
-BKCsetAppendMode(int *res, int *bid)
+BKCsetAppendMode(bat *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1506,7 +1507,7 @@ BKCsetAppendMode(int *res, int *bid)
 }
 
 str
-BKChasAppendMode(bit *res, int *bid)
+BKChasAppendMode(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1518,7 +1519,7 @@ BKChasAppendMode(bit *res, int *bid)
 }
 
 str
-BKCsetAccess(int *res, int *bid, str *param)
+BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 {
 	BAT *b;
 	int m;
@@ -1546,7 +1547,7 @@ BKCsetAccess(int *res, int *bid, str *param)
 }
 
 str
-BKCgetAccess(str *res, int *bid)
+BKCgetAccess(str *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1578,7 +1579,7 @@ BKCgetAccess(str *res, int *bid)
  * Where necessary use the primary view to access the properties
  */
 str
-BKCinfo(int *ret1, int *ret2, int *bid)
+BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 {
 	BAT *bk = NULL, *bv= NULL, *b;
 
@@ -1598,7 +1599,7 @@ BKCinfo(int *ret1, int *ret2, int *bid)
 }
 
 str
-BKCbatdisksize(lng *tot, int *bid){
+BKCbatdisksize(lng *tot, const bat *bid){
 	BAT *b;
 	if ((b = BATdescriptor(abs(*bid))) == NULL)
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
@@ -1608,7 +1609,7 @@ BKCbatdisksize(lng *tot, int *bid){
 }
 
 str
-BKCbatvmsize(lng *tot, int *bid){
+BKCbatvmsize(lng *tot, const bat *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
@@ -1619,7 +1620,7 @@ BKCbatvmsize(lng *tot, int *bid){
 }
 
 str
-BKCbatsize(lng *tot, int *bid){
+BKCbatsize(lng *tot, const bat *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
@@ -1630,7 +1631,7 @@ BKCbatsize(lng *tot, int *bid){
 }
 
 str
-BKCgetStorageSize(lng *tot, int *bid)
+BKCgetStorageSize(lng *tot, const bat *bid)
 {
 	BAT *b;
 
@@ -1641,7 +1642,7 @@ BKCgetStorageSize(lng *tot, int *bid)
 	return MAL_SUCCEED;
 }
 str
-BKCgetSpaceUsed(lng *tot, int *bid)
+BKCgetSpaceUsed(lng *tot, const bat *bid)
 {
 	BAT *b;
 	size_t size = BATSTORESIZE;
@@ -1683,7 +1684,7 @@ BKCgetStorageSize_str(lng *tot, str batname)
  * Synced BATs
  */
 str
-BKCisSynced(bit *ret, int *bid1, int *bid2)
+BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 {
 	BAT *b1, *b2;
 
@@ -1704,10 +1705,11 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
  * Role Management
  */
 char *
-BKCsetRole(int *r, int *bid, char **hname, char **tname)
+BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setRole", RUNTIME_OBJECT_MISSING);
 	}
@@ -1721,16 +1723,16 @@ BKCsetRole(int *r, int *bid, char **hname, char **tname)
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetColumn(int *r, int *bid, str *tname)
+BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 {
 	BAT *b;
 	str dummy;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setColumn", RUNTIME_OBJECT_MISSING);
 	}
@@ -1743,15 +1745,15 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	BATroles(b, dummy, *tname);
 	GDKfree(dummy);
 	BBPreleaseref(b->batCacheid);
-	*r =0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCsetColumns(int *r, int *bid, str *hname, str *tname)
+BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setColumns", RUNTIME_OBJECT_MISSING);
 	}
@@ -1765,28 +1767,27 @@ BKCsetColumns(int *r, int *bid, str *hname, str *tname)
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
-	*r =0;
 	return MAL_SUCCEED;
 }
 
 
 str
-BKCsetName(int *r, int *bid, str *s)
+BKCsetName(void *r, const bat *bid, const char * const *s)
 {
 	BAT *b;
 	bit res, *rp = &res;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 	}
 	CMDrename(rp, b, *s);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCgetBBPname(str *ret, int *bid)
+BKCgetBBPname(str *ret, const bat *bid)
 {
 	BAT *b;
 
@@ -1799,14 +1800,14 @@ BKCgetBBPname(str *ret, int *bid)
 }
 
 str
-BKCunload(bit *res, str *input)
+BKCunload(bit *res, const char * const *input)
 {
 	CMDunload(res, *input);
 	return MAL_SUCCEED;
 }
 
 str
-BKCisCached(bit *res, int *bid)
+BKCisCached(bit *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1819,7 +1820,7 @@ BKCisCached(bit *res, int *bid)
 }
 
 str
-BKCload(int *res, str *input)
+BKCload(bat *res, const char * const *input)
 {
 	bat bid = BBPindex(*input);
 
@@ -1832,7 +1833,7 @@ BKCload(int *res, str *input)
 }
 
 str
-BKChot(int *res, str *input)
+BKChot(bat *res, const char * const *input)
 {
 	(void) res;		/* fool compiler */
 	BBPhot(BBPindex(*input));
@@ -1840,7 +1841,7 @@ BKChot(int *res, str *input)
 }
 
 str
-BKCcold(int *res, str *input)
+BKCcold(bat *res, const char * const *input)
 {
 	(void) res;		/* fool compiler */
 	BBPcold(BBPindex(*input));
@@ -1848,12 +1849,11 @@ BKCcold(int *res, str *input)
 }
 
 str
-BKCcoldBAT(int *res, int *bid)
+BKCcoldBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
 	(void) res;
-	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
@@ -1863,23 +1863,21 @@ BKCcoldBAT(int *res, int *bid)
 }
 
 str
-BKCheat(int *res, str *input)
+BKCheat(lng *res, const bat *bid)
 {
-	int bid = BBPindex(*input);
-
-	if (bid) {
-		*res = BBPLASTUSED(BBP_lastused(bid));
+	bat b = BBPcheck(*bid, "BKCheat");
+	if (b) {
+		*res = BBPLASTUSED(BBP_lastused(b));
 	}
 	throw(MAL, "bat", PROGRAM_NYI);
 }
 
 str
-BKChotBAT(int *res, int *bid)
+BKChotBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
 	(void) res;
-	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
@@ -1889,17 +1887,18 @@ BKChotBAT(int *res, int *bid)
 }
 
 str
-BKCsave(bit *res, str *input)
+BKCsave(bit *res, const char * const *input)
 {
 	CMDsave(res, *input);
 	return MAL_SUCCEED;
 }
 
 str
-BKCsave2(int *r, int *bid)
+BKCsave2(void *r, const bat *bid)
 {
 	BAT *b;
 
+	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
@@ -1907,12 +1906,11 @@ BKCsave2(int *r, int *bid)
 	if (b && BATdirty(b))
 		BBPsave(b);
 	BBPreleaseref(b->batCacheid);
-	*r = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
+BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *hhp, const int *thp)
 {
 	BAT *b;
 
@@ -1920,15 +1918,12 @@ BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 		throw(MAL, "bat.mmap", RUNTIME_OBJECT_MISSING);
 	}
 	/* == int_nil means no change */
-	if (*hbns == int_nil)
-		*hbns = b->batMaphead;
-	if (*tbns == int_nil)
-		*tbns = b->batMaptail;
-	if (b->H->vheap && *hhp == int_nil)
-		*hhp = b->batMaphheap;
-	if (b->T->vheap && *thp == int_nil)
-		*thp = b->batMaptheap;
-	if (BATmmap(b, *hbns, *tbns, *hhp, *thp, 0) == 0) {
+	if (BATmmap(b,
+				*hbns == int_nil ? b->batMaphead : *hbns,
+				*tbns == int_nil ? b->batMaptail : *tbns,
+				b->H->vheap && *hhp == int_nil ? b->batMaphheap : *hhp,
+				b->T->vheap && *thp == int_nil ? b->batMaptheap : *thp,
+				0) == 0) {
 		*res = TRUE;
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
@@ -1939,7 +1934,7 @@ BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 }
 
 str
-BKCmmap2(bit *res, int *bid, int *mode)
+BKCmmap2(bit *res, const bat *bid, const int *mode)
 {
 	return BKCmmap(res, bid, mode, mode, mode, mode);
 }
@@ -1948,7 +1943,7 @@ BKCmmap2(bit *res, int *bid, int *mode)
  * Accelerator Control
  */
 str
-BKCaccbuild(int *ret, int *bid, str *acc, ptr *param)
+BKCaccbuild(bat *ret, const bat *bid, const char * const *acc, const ptr *param)
 {
 	(void) bid;
 	(void) acc;
@@ -1958,7 +1953,7 @@ BKCaccbuild(int *ret, int *bid, str *acc, ptr *param)
 }
 
 str
-BKCaccbuild_std(int *ret, int *bid, int *acc)
+BKCaccbuild_std(bat *ret, const bat *bid, const int *acc)
 {
 	(void) bid;
 	(void) acc;
@@ -1968,7 +1963,7 @@ BKCaccbuild_std(int *ret, int *bid, int *acc)
 
 
 str
-BKCsetHash(bit *ret, int *bid, bit *prop)
+BKCsetHash(bit *ret, const bat *bid, const bit *prop)
 {
 	BAT *b;
 
@@ -1983,7 +1978,7 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 }
 
 str
-BKCsetSequenceBase(int *r, int *bid, oid *o)
+BKCsetSequenceBase(bat *r, const bat *bid, const oid *o)
 {
     BAT *b;
 
@@ -1997,7 +1992,7 @@ BKCsetSequenceBase(int *r, int *bid, oid *o)
 }
 
 str
-BKCsetSequenceBaseNil(int *r, int *bid, oid *o)
+BKCsetSequenceBaseNil(bat *r, const bat *bid, const oid *o)
 {
 	oid ov = oid_nil;
 
@@ -2006,7 +2001,7 @@ BKCsetSequenceBaseNil(int *r, int *bid, oid *o)
 }
 
 str
-BKCgetSequenceBase(oid *r, int *bid)
+BKCgetSequenceBase(oid *r, const bat *bid)
 {
 	BAT *b;
 
@@ -2038,7 +2033,7 @@ BKCgetSequenceBase(oid *r, int *bid)
 	} while (0)
 
 str
-BKCshrinkBAT(int *ret, int *bid, int *did)
+BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
 	BUN cnt =0;
@@ -2125,7 +2120,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 }
 
 str
-BKCshrinkBATmap(int *ret, int *bid, int *did)
+BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
 	oid lim,oidx = 0, *o, *ol;
@@ -2212,7 +2207,7 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 	} while (0)
 
 str
-BKCreuseBAT(int *ret, int *bid, int *did)
+BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
 	oid oidx = 0, bidx, *o, *ol;
@@ -2304,7 +2299,7 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 }
 
 str
-BKCreuseBATmap(int *ret, int *bid, int *did)
+BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
 	oid bidx, oidx = 0, *o, *ol;
@@ -2370,7 +2365,7 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 }
 
 str
-BKCmergecand(bat *ret, bat *aid, bat *bid)
+BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 {
 	BAT *a, *b, *bn;
 
@@ -2392,7 +2387,7 @@ BKCmergecand(bat *ret, bat *aid, bat *bid)
 }
 
 str
-BKCintersectcand(bat *ret, bat *aid, bat *bid)
+BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 {
 	BAT *a, *b, *bn;
 

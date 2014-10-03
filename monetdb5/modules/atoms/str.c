@@ -1105,9 +1105,10 @@ struct UTF8_lower_upper {
 
 static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat;
 
-bat *
-strPrelude(void)
+str
+strPrelude(void *ret)
 {
+	(void) ret;
 	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
@@ -1133,8 +1134,9 @@ strPrelude(void)
 }
 
 str
-strEpilogue(void)
+strEpilogue(void *ret)
 {
+	(void) ret;
 	if (UTF8_upperBat)
 		BBPunfix(UTF8_upperBat->batCacheid);
 	if (UTF8_lowerBat)
