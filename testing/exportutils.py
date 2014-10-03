@@ -35,50 +35,53 @@ def preprocess(data):
             args = tuple(map(lambda x: x.strip(), args.split(',')))
             if len(args) == 1 and args[0] == '':
                 args = ()       # empty argument list
-            defines[name] = (args, body)
+            if not defines.has_key(name) or not defines[name][1].strip():
+                defines[name] = (args, body)
         else:
-            tried = {}
             changed = True
             while changed:
-                changed = False
-                for name, (args, body) in defines.items():
-                    if name in tried:
-                        continue
-                    pat = r'\b%s\b' % name
-                    sep = r'\('
-                    for arg in args:
-                        pat = pat + sep + r'([^,(]*(?:\([^,(]*\)[^,(]*)*)'
-                        sep = ','
-                    pat += r'\)'
-                    repl = {}
-                    r = re.compile(pat)
-                    res = r.search(line)
-                    if res is not None:
-                        tried[name] = True
-                        changed = True
-                    while res is not None:
-                        bd = body
-                        if len(args) > 0:
-                            pars = map(lambda x: x.strip(), res.groups())
-                            pat = r'\b(?:'
-                            sep = ''
-                            for arg, par in zip(args, pars):
-                                repl[arg] = par
-                                pat += sep + arg
-                                sep = '|'
-                            pat += r')\b'
-                            r2 = re.compile(pat)
-                            res2 = r2.search(bd)
-                            while res2 is not None:
-                                arg = res2.group(0)
-                                bd = bd[:res2.start(0)] + repl[arg] + bd[res2.end(0):]
-                                res2 = r2.search(bd, res2.start(0) + len(repl[arg]))
-                            bd = bd.replace('##', '')
-                        line = line[:res.start(0)] + bd + line[res.end(0):]
-                        res = r.search(line, res.start(0) + len(bd))
+                line, changed = replace(line, defines, [])
             if not cldef.match(line):
                 ndata.append(line)
     return '\n'.join(ndata)
+
+def replace(line, defines, tried):
+    changed = False
+    for name, (args, body) in defines.items():
+        if name in tried:
+            continue
+        pat = r'\b%s\b' % name
+        sep = r'\('
+        for arg in args:
+            pat = pat + sep + r'([^,(]*(?:\([^,(]*\)[^,(]*)*)'
+            sep = ','
+        pat += r'\)'
+        repl = {}
+        r = re.compile(pat)
+        res = r.search(line)
+        while res is not None:
+            bd = body
+            changed = True
+            if len(args) > 0:
+                pars = map(lambda x: x.strip(), res.groups())
+                pat = r'\b(?:'
+                sep = ''
+                for arg, par in zip(args, pars):
+                    repl[arg] = par
+                    pat += sep + arg
+                    sep = '|'
+                pat += r')\b'
+                r2 = re.compile(pat)
+                res2 = r2.search(bd)
+                while res2 is not None:
+                    arg = res2.group(0)
+                    bd = bd[:res2.start(0)] + repl[arg] + bd[res2.end(0):]
+                    res2 = r2.search(bd, res2.start(0) + len(repl[arg]))
+            bd, changed = replace(bd, defines, tried + [name])
+            bd = bd.replace('##', '')
+            line = line[:res.start(0)] + bd + line[res.end(0):]
+            res = r.search(line, res.start(0) + len(bd))
+    return line, changed
 
 def normalize(decl):
     decl = spcre.sub(' ', decl) \
