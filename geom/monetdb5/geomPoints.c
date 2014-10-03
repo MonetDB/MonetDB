@@ -1162,7 +1162,7 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 }
 
 static BAT*
-PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb, BUN n, double minx, double maxx, double miny, double maxy) {
+PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  mbr *mbb, BUN n, double minx, double maxx, double miny, double maxy) {
 	unsigned long csize = 0, u;
 	oid *candidates;
 	unsigned char mbrcellxmin, mbrcellxmax, mbrcellymin, mbrcellymax, k,l;
@@ -1171,7 +1171,7 @@ PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb,
 	BAT* bres = NULL;
 
         /* assert calling sanity */
-        assert(x != NULL && y != NULL && batx != NULL && baty != NULL);
+        assert(x != NULL && y != NULL && batx != NULL );
 	
 	/* read the pbsm index to memory */
 	if (pbsm_idx == NULL || oids == NULL) {
@@ -1221,7 +1221,7 @@ PBSMarraycontains16(const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb,
 
 
 //it creates the bres bat twice. In this function and the one that calls it
-	assert(BAThdense(batx) && BAThdense(baty));
+	assert(BAThdense(batx) );
 
 	if ((bres = BATnew(TYPE_void, TYPE_oid, csize, TRANSIENT)) == NULL) {
 		GDKerror("PBSMarraycontains16: Could not create new BAT for the output");
@@ -1277,7 +1277,7 @@ PBSMselect_(BAT *bx, BAT *by, mbr *g, double minx, double maxx, double miny, dou
 //	if (bres == NULL)
 //		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
 
-	return PBSMarraycontains16(x, bx, y , by, g, n, minx, maxx, miny, maxy);
+	return PBSMarraycontains16(x, bx, y , g, n, minx, maxx, miny, maxy);
 /*
 	if (msg != MAL_SUCCEED) {
 		return msg;
@@ -1335,7 +1335,7 @@ str wkbFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBA
 		return createException(MAL,"batgeom.Filter","Problem filtering BAT");
 	}
 	t = clock() - t;
-	fprintf(stderr, "[PREFILTERING] PBSM: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+	fprintf(stderr, "[PREFILTERING] PBSM: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
 
 	BBPreleaseref(xBAT->batCacheid);

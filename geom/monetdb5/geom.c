@@ -3360,7 +3360,7 @@ size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
 
 	*len = strlen(*toStr)+1;
 	assert(*len < (size_t) GDK_int_max);
-	return (toStrPtr-*toStr);
+	return (size_t)(toStrPtr-*toStr);
 }
 
 /* return number of parsed characters. */
