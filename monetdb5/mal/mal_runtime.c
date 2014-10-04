@@ -187,7 +187,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	assert(pci);
 	assert(prof);
 	/* always collect the MAL instruction execution time */
-	pci->ticks += GDKusec() - prof->ticks;
+	pci->ticks = GDKusec() - prof->ticks;
 	pci->calls++;
 
 	if (getProfileCounter(PROFfootprint) ){
