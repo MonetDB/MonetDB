@@ -899,8 +899,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
-			} else
+			} else {
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+				setVarUDFtype(mb, getArg(q, 0));
+			}
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
