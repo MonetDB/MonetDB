@@ -42,3 +42,4 @@ round-sorted.Bug-3562
 locate-offset.Bug-3563
 aggr-with-limit.Bug-3498
 sign-sorted.Bug-3594
+nil_2dec_lng.Bug-3592
