@@ -196,7 +196,17 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe =getColumnType(getArgType(mb,pci,0));
+	tpe = TYPE_any;
+	for( i = pci->retc+2; i < pci->argc; i++)
+		if ( isaBatType(getArgType(mb,pci,i)) ){
+			tpe =getColumnType(getArgType(mb,pci,i));
+			break;
+		}
+	if( tpe == TYPE_any || tpe == TYPE_void){
+		freeMalBlk(nmb);
+		return NULL;
+	}
+	
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
 	setVarFixed(nmb,k);
@@ -205,6 +215,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getColumnType(getArgType(mb,pci,i));
+		if( tpe == TYPE_any || tpe == TYPE_void){
+			freeMalBlk(nmb);
+			return NULL;
+		}
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 		setVarUDFtype(nmb,k);
