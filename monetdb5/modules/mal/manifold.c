@@ -47,6 +47,7 @@ typedef struct{
 	void *last;
 	int	size;
 	int type;
+	BUN cnt;
 	BATiter bi;
 	BUN  o;
 	BUN  q;
@@ -67,12 +68,15 @@ typedef struct{
 // keep the last error message received
 #define ManifoldLoop(Type, ...) {			\
 	Type *v = (Type*) mut->args[0].first; 		\
-	for( ; p<q ; p += mut->args[mut->fvar].size){ 	\
+	oid oo, olimit = mut->args[mut->fvar].cnt; \
+	for( oo= 0; oo < olimit; oo++){\
 		msg = (*mut->pci->fcn)(v, __VA_ARGS__); \
-		if (msg) 				\
-			break;				\
+		if (msg) break;				\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+			if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+				args[i] = (void*)  &mut->args[i].o;	 \
+				mut->args[i].o++;		\
+			} else if(ATOMstorage(mut->args[i].type) < TYPE_str ) { \
 				args[i] += mut->args[i].size;	\
 			} else if (ATOMvarsized(mut->args[i].type)) { \
 				mut->args[i].o++;		\
@@ -100,13 +104,17 @@ case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
 case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
 case TYPE_str: \
 default:\
-	for( ; p< q ; p += mut->args[mut->fvar].size){ 		\
+{   oid oo, olimit = mut->args[mut->fvar].cnt; \
+	for( oo= 0; oo < olimit; oo++){\
 		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
 		if (msg)					\
 			break;					\
 		bunfastapp(mut->args[0].b, (void*) y);	\
 		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+			if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+				args[i] = (void*)  &mut->args[i].o;	 \
+				mut->args[i].o++;		\
+			} else if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] += mut->args[i].size;	\
 			} else if(ATOMvarsized(mut->args[i].type)){	\
 				mut->args[i].o++;		\
@@ -119,7 +127,7 @@ default:\
 			}					\
 		}						\
 	}							\
-}
+} }
 
 // single argument is preparatory step for GDK_mapreduce
 // Only the last error message is returned, the value of
@@ -127,7 +135,6 @@ default:\
 static str
 MANIFOLDjob(MULTItask *mut)
 {	int i;
-	char *p, *q;
 	char **args;
 	str y = NULL, msg= MAL_SUCCEED;
 
@@ -138,9 +145,9 @@ MANIFOLDjob(MULTItask *mut)
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
 		if ( mut->args[i].b ){
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	
 				args[i] = (char*) mut->args[i].first;
-			} else if(ATOMvarsized(mut->args[i].type)){	\
+			} else if(ATOMvarsized(mut->args[i].type)){	
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s; 
 			} else {
@@ -155,8 +162,6 @@ MANIFOLDjob(MULTItask *mut)
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
 #endif
-	p = (char*)  mut->args[mut->fvar].first;
-	q = (char*)  mut->args[mut->fvar].last;
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
 	case 4: Manifoldbody(args[3]); break;
@@ -202,7 +207,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 			tpe =getColumnType(getArgType(mb,pci,i));
 			break;
 		}
-	if( tpe == TYPE_any || tpe == TYPE_void){
+	if( tpe == TYPE_any ){
 		freeMalBlk(nmb);
 		return NULL;
 	}
@@ -215,10 +220,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getColumnType(getArgType(mb,pci,i));
-		if( tpe == TYPE_any || tpe == TYPE_void){
-			freeMalBlk(nmb);
-			return NULL;
-		}
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 		setVarUDFtype(nmb,k);
@@ -253,6 +254,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MULTIarg *mat;
 	int i, tpe= 0;
 	BUN cnt = 0;
+	oid o = 0;
 	str msg = MAL_SUCCEED;
 	MALfcn fcn;
 
@@ -293,8 +295,14 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				mat[i].size = Tsize(mat[i].b);
 			else
 				mat[i].size = BATatoms[ATOMstorage(tpe)].size;
-			mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
-			mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
+			mat[i].cnt = cnt;
+			if ( mat[i].b->ttype == TYPE_void){
+				o = mat[i].b->tseqbase;
+				mat[i].first = mat[i].last = (void*) &o;
+			} else {
+				mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
+				mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
+			}
 			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].o = BUNfirst(mat[i].b);
 			mat[i].q = BUNlast(mat[i].b);
@@ -350,8 +358,7 @@ wrapup:
 }
 
 // The old code
-str
-MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     char buf[BUFSIZ];
     (void) mb;
     (void) cntxt;
