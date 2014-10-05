@@ -102,7 +102,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       continue <- FALSE
       tryCatch ({
         # open socket with 5-sec timeout so we can check whether everything works
-        socket <- socket <<- .mapiConnect(host, port, 5)
+        suppressWarnings(socket <- socket <<- .mapiConnect(host, port, 5))
         # authenticate
         .mapiAuthenticate(socket, dbname, user, password, language=language)
         .mapiDisconnect(socket)

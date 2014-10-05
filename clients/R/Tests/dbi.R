@@ -17,7 +17,7 @@ tname <- "monetdbtest"
 drv <- dbDriver("MonetDB")
 stopifnot(identical(dbGetInfo(drv)$name,"MonetDBDriver"))
 
-con <- conn <- dbConnect(drv, port=dbport, dbname=dbname)
+con <- conn <- dbConnect(drv, port=dbport, dbname=dbname, wait=T)
 stopifnot(identical(class(con)[[1]],"MonetDBConnection"))
 
 # basic MAPI/SQL test
