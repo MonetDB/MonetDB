@@ -201,17 +201,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe = TYPE_any;
-	for( i = pci->retc+2; i < pci->argc; i++)
-		if ( isaBatType(getArgType(mb,pci,i)) ){
-			tpe =getColumnType(getArgType(mb,pci,i));
-			break;
-		}
-	if( tpe == TYPE_any ){
-		freeMalBlk(nmb);
-		return NULL;
-	}
-	
+	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
 	setVarFixed(nmb,k);
