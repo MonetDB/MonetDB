@@ -162,7 +162,7 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
+int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)

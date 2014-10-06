@@ -367,7 +367,7 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, char *logdir, int cat_version)
+bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;

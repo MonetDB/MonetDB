@@ -120,7 +120,7 @@ int is_commutative(char *fnm)
 }
 
 void
-base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name)
+base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name)
 {
 	b->id = id;
 
@@ -203,7 +203,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 }
 
 int 
-sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale)
+sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale)
 {
 	/* todo add approximate info
 	 * if digits/scale == 0 and no approximate with digits/scale == 0

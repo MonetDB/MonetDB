@@ -192,7 +192,7 @@ mvc_trans(mvc *m)
 }
 
 int
-mvc_commit(mvc *m, int chain, char *name)
+mvc_commit(mvc *m, int chain, const char *name)
 {
 	sql_trans *cur, *tr = m->session->tr;
 	int ok = SQL_OK;//, wait = 0;
@@ -288,7 +288,7 @@ build up the hash (not copyied in the trans dup)) */
 }
 
 int
-mvc_rollback(mvc *m, int chain, char *name)
+mvc_rollback(mvc *m, int chain, const char *name)
 {
 	int res = 0;
 	sql_trans *tr = m->session->tr;
@@ -347,7 +347,7 @@ mvc_rollback(mvc *m, int chain, char *name)
  * but keep the current changes.
  * */
 int
-mvc_release(mvc *m, char *name)
+mvc_release(mvc *m, const char *name)
 {
 	int ok = SQL_OK;
 	int res = Q_TRANS;
@@ -550,7 +550,7 @@ mvc_destroy(mvc *m)
 }
 
 sql_type *
-mvc_bind_type(mvc *sql, char *name)
+mvc_bind_type(mvc *sql, const char *name)
 {
 	sql_type *t = sql_trans_bind_type(sql->session->tr, NULL, name);
 
@@ -560,7 +560,7 @@ mvc_bind_type(mvc *sql, char *name)
 }
 
 sql_type *
-schema_bind_type(mvc *sql, sql_schema *s, char *name)
+schema_bind_type(mvc *sql, sql_schema *s, const char *name)
 {
 	sql_type *t = find_sql_type(s, name);
 
@@ -573,7 +573,7 @@ schema_bind_type(mvc *sql, sql_schema *s, char *name)
 }
 
 sql_func *
-mvc_bind_func(mvc *sql, char *name)
+mvc_bind_func(mvc *sql, const char *name)
 {
 	sql_func *t = sql_trans_bind_func(sql->session->tr, name);
 
@@ -583,7 +583,7 @@ mvc_bind_func(mvc *sql, char *name)
 }
 
 list *
-schema_bind_func(mvc *sql, sql_schema * s, char *name, int type)
+schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type)
 {
 	list *func_list = find_all_sql_func(s, name, type);
 
@@ -596,7 +596,7 @@ schema_bind_func(mvc *sql, sql_schema * s, char *name, int type)
 }
 
 sql_schema *
-mvc_bind_schema(mvc *m, char *sname)
+mvc_bind_schema(mvc *m, const char *sname)
 {
 	sql_trans *tr = m->session->tr;
 	sql_schema *s;
@@ -617,7 +617,7 @@ mvc_bind_schema(mvc *m, char *sname)
 }
 
 sql_table *
-mvc_bind_table(mvc *m, sql_schema *s, char *tname)
+mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
 	sql_table *t = NULL;
 
@@ -641,7 +641,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 }
 
 sql_column *
-mvc_bind_column(mvc *m, sql_table *t, char *cname)
+mvc_bind_column(mvc *m, sql_table *t, const char *cname)
 {
 	sql_column *c;
 
@@ -680,7 +680,7 @@ mvc_first_column(mvc *m, sql_table *t)
 }
 
 sql_key *
-mvc_bind_key(mvc *m, sql_schema *s, char *kname)
+mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
 	node *n = list_find_name(s->keys, kname);
 	sql_key *k;
@@ -697,7 +697,7 @@ mvc_bind_key(mvc *m, sql_schema *s, char *kname)
 }
 
 sql_idx *
-mvc_bind_idx(mvc *m, sql_schema *s, char *iname)
+mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
 	node *n = list_find_name(s->idxs, iname);
 	sql_idx *i;
@@ -751,7 +751,7 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 }
 
 sql_trigger *
-mvc_bind_trigger(mvc *m, sql_schema *s, char *tname)
+mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
 	node *n = list_find_name(s->triggers, tname);
 	sql_trigger *trigger;
@@ -768,7 +768,7 @@ mvc_bind_trigger(mvc *m, sql_schema *s, char *tname)
 }
 
 sql_type *
-mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int radix, char *impl)
+mvc_create_type(mvc *sql, sql_schema * s, const char *name, int digits, int scale, int radix, const char *impl)
 {
 	sql_type *t = NULL;
 
@@ -780,7 +780,7 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, char *name, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
 {
 	sql_func *f = NULL;
 
@@ -813,7 +813,7 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
+mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
 {
 	sql_schema *s = NULL;
 
@@ -833,7 +833,7 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 }
 
 sql_ukey *
-mvc_create_ukey(mvc *m, sql_table *t, char *name, key_type kt)
+mvc_create_ukey(mvc *m, sql_table *t, const char *name, key_type kt)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_ukey %s %u\n", t->base.name, kt);
@@ -853,7 +853,7 @@ mvc_create_ukey_done(mvc *m, sql_key *k)
 }
 
 sql_fkey *
-mvc_create_fkey(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
+mvc_create_fkey(mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
@@ -895,7 +895,7 @@ mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 }
 
 sql_idx *
-mvc_create_idx(mvc *m, sql_table *t, char *name, idx_type it)
+mvc_create_idx(mvc *m, sql_table *t, const char *name, idx_type it)
 {
 	sql_idx *i;
 
@@ -934,7 +934,7 @@ mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 }
 
 sql_trigger * 
-mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement )
+mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement )
 {
 	sql_trigger *i;
 
@@ -964,7 +964,7 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 
 
 sql_table *
-mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int persistence, int commit_action, int sz)
+mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
 {
 	sql_table *t = NULL;
 
@@ -981,7 +981,7 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 }
 
 sql_table *
-mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, bit system)
+mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system)
 {
 	sql_table *t = NULL;
 
@@ -999,7 +999,7 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, b
 }
 
 sql_table *
-mvc_create_remote(mvc *m, sql_schema *s, char *name, int persistence, char *loc)
+mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, const char *loc)
 {
 	sql_table *t = NULL;
 
@@ -1032,7 +1032,7 @@ mvc_clear_table(mvc *m, sql_table *t)
 }
 
 sql_column *
-mvc_create_column_(mvc *m, sql_table *t, char *name, char *type, int digits)
+mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, int digits)
 {
 	sql_subtype tpe;
 
@@ -1043,7 +1043,7 @@ mvc_create_column_(mvc *m, sql_table *t, char *name, char *type, int digits)
 }
 
 sql_column *
-mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
+mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
@@ -1132,7 +1132,7 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 }
 
 int
-mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng)
+mvc_connect_catalog(mvc *m, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_connect_catalog of database %s on server %s\n",db, server);
@@ -1142,7 +1142,7 @@ mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, ch
 }
 
 int
-mvc_disconnect_catalog(mvc *m, char *db_alias)
+mvc_disconnect_catalog(mvc *m, const char *db_alias)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_disconnect_catalog for db_alias %s\n",db_alias);
@@ -1226,7 +1226,7 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 static void
-stack_set(mvc *sql, int var, char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
+stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
 {
 	sql_var *v;
 	if (var == sql->sizevars) {
@@ -1251,33 +1251,33 @@ stack_set(mvc *sql, int var, char *name, sql_subtype *type, sql_rel *rel, sql_ta
 }
 
 void 
-stack_push_var(mvc *sql, char *name, sql_subtype *type)
+stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
 	stack_set(sql, sql->topvars++, name, type, NULL, NULL, 0, 0);
 }
 
 void 
-stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type)
+stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
 	stack_set(sql, sql->topvars++, name, type, var, NULL, 0, 0);
 }
 
 void 
-stack_push_table(mvc *sql, char *name, sql_rel *var, sql_table *t)
+stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
 	stack_set(sql, sql->topvars++, name, NULL, var, t, 0, 0);
 }
 
 
 void 
-stack_push_rel_view(mvc *sql, char *name, sql_rel *var)
+stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
 	stack_set(sql, sql->topvars++, name, NULL, var, NULL, 1, 0);
 }
 
 
 void
-stack_set_var(mvc *sql, char *name, ValRecord *v)
+stack_set_var(mvc *sql, const char *name, ValRecord *v)
 {
 	int i;
 
@@ -1290,7 +1290,7 @@ stack_set_var(mvc *sql, char *name, ValRecord *v)
 }
 
 ValRecord *
-stack_get_var(mvc *sql, char *name)
+stack_get_var(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1303,7 +1303,7 @@ stack_get_var(mvc *sql, char *name)
 }
 
 void 
-stack_push_frame(mvc *sql, char *name)
+stack_push_frame(mvc *sql, const char *name)
 {
 	stack_set(sql, sql->topvars++, name, NULL, NULL, NULL, 0, 1);
 	sql->frame++;
@@ -1341,7 +1341,7 @@ stack_pop_frame(mvc *sql)
 }
 
 sql_subtype *
-stack_find_type(mvc *sql, char *name)
+stack_find_type(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1354,7 +1354,7 @@ stack_find_type(mvc *sql, char *name)
 }
 
 sql_table *
-stack_find_table(mvc *sql, char *name)
+stack_find_table(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1367,7 +1367,7 @@ stack_find_table(mvc *sql, char *name)
 }
 
 sql_rel *
-stack_find_rel_view(mvc *sql, char *name)
+stack_find_rel_view(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1380,7 +1380,7 @@ stack_find_rel_view(mvc *sql, char *name)
 }
 
 int 
-stack_find_var(mvc *sql, char *name)
+stack_find_var(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1393,7 +1393,7 @@ stack_find_var(mvc *sql, char *name)
 }
 
 sql_rel *
-stack_find_rel_var(mvc *sql, char *name)
+stack_find_rel_var(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1406,7 +1406,7 @@ stack_find_rel_var(mvc *sql, char *name)
 }
 
 int 
-frame_find_var(mvc *sql, char *name)
+frame_find_var(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1418,7 +1418,7 @@ frame_find_var(mvc *sql, char *name)
 }
 
 int
-stack_find_frame(mvc *sql, char *name)
+stack_find_frame(mvc *sql, const char *name)
 {
 	int i, frame = sql->frame;
 
@@ -1432,7 +1432,7 @@ stack_find_frame(mvc *sql, char *name)
 }
 
 int
-stack_has_frame(mvc *sql, char *name)
+stack_has_frame(mvc *sql, const char *name)
 {
 	int i;
 
@@ -1460,7 +1460,7 @@ stack_nr_of_declared_tables(mvc *sql)
 }
 
 void
-stack_set_string(mvc *sql, char *name, char *val)
+stack_set_string(mvc *sql, const char *name, const char *val)
 {
 	ValRecord *v = stack_get_var(sql, name);
 
@@ -1472,7 +1472,7 @@ stack_set_string(mvc *sql, char *name, char *val)
 }
 
 str
-stack_get_string(mvc *sql, char *name)
+stack_get_string(mvc *sql, const char *name)
 {
 	ValRecord *v = stack_get_var(sql, name);
 
@@ -1482,7 +1482,7 @@ stack_get_string(mvc *sql, char *name)
 }
 
 void
-stack_set_number(mvc *sql, char *name, lng val)
+stack_set_number(mvc *sql, const char *name, lng val)
 {
 	ValRecord *v = stack_get_var(sql, name);
 
@@ -1525,7 +1525,7 @@ val_get_number(ValRecord *v)
 }
 
 lng
-stack_get_number(mvc *sql, char *name)
+stack_get_number(mvc *sql, const char *name)
 {
 	ValRecord *v = stack_get_var(sql, name);
 	return val_get_number(v);

@@ -23,10 +23,10 @@
 
 /*Function to create a connection*/
 int
-sql_trans_connect_catalog(sql_trans* tr, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lang)
+sql_trans_connect_catalog(sql_trans *tr, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lang)
 {
 	int id = store_next_oid(), port_l = port;
-	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_schema *s = find_sql_schema(tr, "sys");
 	sql_table *t = find_sql_table(s, "connections");
 	sql_column *c_server = find_sql_column(t, "server");
 	sql_column *c_db = find_sql_column(t, "db");
@@ -42,15 +42,15 @@ sql_trans_connect_catalog(sql_trans* tr, char *server, int port, char *db, char 
 
 /*Function to drop the connection*/
 int
-sql_trans_disconnect_catalog(sql_trans* tr, char * db_alias)
+sql_trans_disconnect_catalog(sql_trans *tr, const char *db_alias)
 {
 	oid rid = oid_nil;
 	int id = 0;
-	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* t = find_sql_table(s, "connections");
+	sql_schema *s = find_sql_schema(tr, "sys");
+	sql_table *t = find_sql_table(s, "connections");
 
-	sql_column * col_db_alias = find_sql_column(t, "db_alias");
-	sql_column * col_id = find_sql_column(t, "id");
+	sql_column *col_db_alias = find_sql_column(t, "db_alias");
+	sql_column *col_id = find_sql_column(t, "id");
 
 	rid = table_funcs.column_find_row(tr, col_db_alias, db_alias, NULL);
 	if (rid != oid_nil) {
@@ -63,10 +63,10 @@ sql_trans_disconnect_catalog(sql_trans* tr, char * db_alias)
 }
 
 int
-sql_trans_disconnect_catalog_ALL(sql_trans* tr)
+sql_trans_disconnect_catalog_ALL(sql_trans *tr)
 {
-	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* t = find_sql_table(s, "connections");
+	sql_schema *s = find_sql_schema(tr, "sys");
+	sql_table *t = find_sql_table(s, "connections");
 
 	sql_trans_clear_table(tr, t);
 	return 1;

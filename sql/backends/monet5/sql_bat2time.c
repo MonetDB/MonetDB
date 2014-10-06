@@ -36,7 +36,7 @@
 #include "mal_instruction.h"
 
 str
-batstr_2time_timestamp(bat *res, bat *bid, int *digits)
+batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -70,7 +70,7 @@ batstr_2time_timestamp(bat *res, bat *bid, int *digits)
 }
 
 str
-battimestamp_2time_timestamp(bat *res, bat *bid, int *digits)
+battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -104,7 +104,7 @@ battimestamp_2time_timestamp(bat *res, bat *bid, int *digits)
 }
 
 str
-batnil_2time_timestamp(bat *res, bat *bid, int *digits)
+batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -138,7 +138,7 @@ batnil_2time_timestamp(bat *res, bat *bid, int *digits)
 }
 
 str
-batstr_2time_daytime(bat *res, bat *bid, int *digits)
+batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -172,7 +172,7 @@ batstr_2time_daytime(bat *res, bat *bid, int *digits)
 }
 
 str
-batdaytime_2time_daytime(bat *res, bat *bid, int *digits)
+batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -206,7 +206,7 @@ batdaytime_2time_daytime(bat *res, bat *bid, int *digits)
 }
 
 str
-batnil_2time_daytime(bat *res, bat *bid, int *digits)
+batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BATiter bi;
