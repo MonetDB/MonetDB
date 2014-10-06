@@ -175,9 +175,6 @@ int RAPIinstalladdons(void);
 
 static int RAPIinitialize(void) {
 // TODO: check for header/library version mismatch?
-#ifdef RIF_HAS_RSIGHAND
-	R_SignalHandlers=0;
-#endif
 	// set R_HOME for packages etc. We know this from our configure script
 	setenv("R_HOME", RHOME, TRUE);
 
@@ -186,7 +183,7 @@ static int RAPIinitialize(void) {
 		structRstart rp;
 		Rstart Rp = &rp;
 		char *rargv[] = { "R", "--slave", "--vanilla" };
-		int stat;
+		int stat = 0;
 
 		R_DefParams(Rp);
 		Rp->R_Slave = (Rboolean) TRUE;
@@ -205,16 +202,14 @@ static int RAPIinitialize(void) {
 		R_SetParams(Rp);
 	}
 
-	// yes, again...
-#ifdef RIF_HAS_RSIGHAND
-	R_SignalHandlers=0;
-#endif
-
 	/* disable stack checking, because threads will throw it off */
 	R_CStackLimit = (uintptr_t) -1;
 	/* redirect input/output and set error handler */
 	R_Outputfile = NULL;
 	R_Consolefile = NULL;
+	/* we do not want R to handle any signal, will interfere with monetdbd */
+	R_SignalHandlers = 0;
+	/* we want control R's output and input */
 	ptr_R_WriteConsoleEx = writeConsoleEx;
 	ptr_R_WriteConsole = writeConsole;
 	ptr_R_ReadConsole = NULL;
