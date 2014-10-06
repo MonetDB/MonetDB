@@ -896,14 +896,15 @@ IMPSremove(BAT *b)
 	assert(!VIEWtparent(b));
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-	imprints = b->T->imprints;
-	b->T->imprints = NULL;
+	if ((imprints = b->T->imprints) != NULL) {
+		b->T->imprints = NULL;
 
-	HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-		   b->batCacheid > 0 ? "timprints" : "himprints");
+		HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
+			   b->batCacheid > 0 ? "timprints" : "himprints");
 
-	GDKfree(imprints->imprints);
-	GDKfree(imprints);
+		GDKfree(imprints->imprints);
+		GDKfree(imprints);
+	}
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
