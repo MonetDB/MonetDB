@@ -1,5 +1,6 @@
 src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", ...) {
+  require(dplyr)
   con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
     user = user, password = password, ...)
   src_sql("monetdb", con, info = dbGetInfo(con))
