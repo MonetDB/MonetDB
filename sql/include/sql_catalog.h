@@ -175,8 +175,8 @@ typedef struct sql_base {
 	char *name;
 } sql_base;
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name);
-extern void base_set_name(sql_base * b, char *name);
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name);
+extern void base_set_name(sql_base * b, const char *name);
 extern void base_destroy(sql_base * b);
 
 typedef struct changeset {
@@ -193,7 +193,7 @@ extern void cs_add(changeset * cs, void *elm, int flag);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
 extern int cs_size(changeset * cs);
-extern node *cs_find_name(changeset * cs, char *name);
+extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
@@ -535,32 +535,32 @@ extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
 extern int base_key(sql_base *b);
-extern node *list_find_name(list *l, char *name);
+extern node *list_find_name(list *l, const char *name);
 extern node *list_find_id(list *l, int id);
 extern node *list_find_base_id(list *l, int id);
 
-extern sql_key *find_sql_key(sql_table *t, char *kname);
+extern sql_key *find_sql_key(sql_table *t, const char *kname);
 
-extern sql_idx *find_sql_idx(sql_table *t, char *kname);
+extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
-extern sql_column *find_sql_column(sql_table *t, char *cname);
+extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
-extern sql_table *find_sql_table(sql_schema *s, char *tname);
+extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
 extern node *find_sql_table_node(sql_schema *s, int id);
 
-extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
+extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
 
-extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
+extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, int id);
 extern node *find_sql_schema_node(sql_trans *t, int id);
 
-extern sql_type *find_sql_type(sql_schema * s, char *tname);
-extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
+extern sql_type *find_sql_type(sql_schema * s, const char *tname);
+extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
 
-extern sql_func *find_sql_func(sql_schema * s, char *tname);
-extern list *find_all_sql_func(sql_schema * s, char *tname, int type);
-extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
+extern sql_func *find_sql_func(sql_schema * s, const char *tname);
+extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
+extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 

@@ -51,9 +51,9 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	return full_column_( c, d, s);
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
+static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
 static oid
-column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
+column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
 	BUN q;

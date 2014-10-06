@@ -19,7 +19,6 @@
 
 #include "monetdb_config.h"
 #include "opt_groups.h"
-#include "group.h"
 
 int
 OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

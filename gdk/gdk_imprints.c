@@ -818,32 +818,32 @@ BATimprints(BAT *b)
 #define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
 
 int
-IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
+IMPSgetbin(int tpe, bte bits, const char *inbins, const void *v)
 {
 	int ret = -1;
 
 	switch (tpe) {
 	case TYPE_bte:
 	{
-		bte *bins = (bte *) inbins;
+		const bte *bins = (bte *) inbins;
 		BINSIZE(bits, getbin, bte);
 	}
 		break;
 	case TYPE_sht:
 	{
-		sht *bins = (sht *) inbins;
+		const sht *bins = (sht *) inbins;
 		BINSIZE(bits, getbin, sht);
 	}
 		break;
 	case TYPE_int:
 	{
-		int *bins = (int *) inbins;
+		const int *bins = (int *) inbins;
 		BINSIZE(bits, getbin, int);
 	}
 		break;
 	case TYPE_lng:
 	{
-		lng *bins = (lng *) inbins;
+		const lng *bins = (lng *) inbins;
 		BINSIZE(bits, getbin, lng);
 	}
 		break;
@@ -857,13 +857,13 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 #endif
 	case TYPE_flt:
 	{
-		flt *bins = (flt *) inbins;
+		const flt *bins = (flt *) inbins;
 		BINSIZE(bits, getbin, flt);
 	}
 		break;
 	case TYPE_dbl:
 	{
-		dbl *bins = (dbl *) inbins;
+		const dbl *bins = (dbl *) inbins;
 		BINSIZE(bits, getbin, dbl);
 	}
 		break;

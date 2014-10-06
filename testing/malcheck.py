@@ -127,6 +127,11 @@ def process(f):
                             decls[name] = (tuple(a), f)
             res = expre.search(data, pos)
 
+report_const = False
+if len(sys.argv) > 1 and sys.argv[1] == '-c':
+    del sys.argv[1]
+    report_const = True
+
 if len(sys.argv) > 1:
     files = sys.argv[1:]
 else:
@@ -159,6 +164,8 @@ for rtypes, atypes, malf, func, f in malfuncs:
                     t = args[0][0]
                 if t != args[0][0]:
                     print '%s in %s: argument %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                elif report_const and not args[0][1]:
+                    print '%s in %s: argument %d not const for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
                 del args[0]
 
 for malf, func, f in malpats:

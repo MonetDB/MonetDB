@@ -100,7 +100,7 @@ MNisinf(double x)
 #define floor_unary(x, z)     *z = floor(*x)
 
 static str
-math_unary_ISNAN(bit *res, dbl *a)
+math_unary_ISNAN(bit *res, const dbl *a)
 {
 #ifdef DEBUG
 	printf("math_unary_ISNAN\n");
@@ -114,7 +114,7 @@ math_unary_ISNAN(bit *res, dbl *a)
 }
 
 static str
-math_unary_ISINF(int *res, dbl *a)
+math_unary_ISINF(int *res, const dbl *a)
 {
 #ifdef DEBUG
 	printf("math_unary_ISINF\n");
@@ -132,7 +132,7 @@ math_unary_ISINF(int *res, dbl *a)
 }
 
 static str
-math_unary_FINITE(bit *res, dbl *a)
+math_unary_FINITE(bit *res, const dbl *a)
 {
 #ifdef DEBUG
 	printf("math_unary_FINITE\n");
@@ -145,83 +145,93 @@ math_unary_FINITE(bit *res, dbl *a)
 	return MAL_SUCCEED;
 }
 
-#define unopbaseM5(X1,X2,X3)\
-str MATHunary##X1##X3 (X3 *res , X3 *a ) {\
-	dbl tmp1,tmp2;\
-	str msg= MAL_SUCCEED;\
-	if (*a == X3##_nil) {\
-		*res =X3##_nil;\
-	} else {\
-		tmp1= *a;\
-		X2##_unary( &tmp1, &tmp2 );\
-		*res = (X3) tmp2;\
-	}\
-   return msg;\
+#define unopbaseM5(X1,X2,X3)					\
+str												\
+MATHunary##X1##X3(X3 *res , const X3 *a)		\
+{												\
+	dbl tmp1,tmp2;								\
+	str msg= MAL_SUCCEED;						\
+	if (*a == X3##_nil) {						\
+		*res =X3##_nil;							\
+	} else {									\
+		tmp1= *a;								\
+		X2##_unary( &tmp1, &tmp2);				\
+		*res = (X3) tmp2;						\
+	}											\
+   return msg;									\
 }
 
-#define unopM5(X1,X2) \
-str MATHunary##X1##dbl(dbl *res , dbl *a ) {\
-	dbl tmp1,tmp2;\
-	str msg= MAL_SUCCEED;\
-	if (*a == dbl_nil) {\
-		*res =dbl_nil;\
-	} else {\
-		tmp1= *a;\
-		X2##_unary( &tmp1, &tmp2 );\
-		*res = (dbl) tmp2;\
-	}\
-   return msg;\
-}\
-str MATHunary##X1##flt(flt *res , flt *a ) {\
-	dbl tmp1,tmp2;\
-	str msg= MAL_SUCCEED;\
-	if (*a == flt_nil) {\
-		*res =flt_nil;\
-	} else {\
-		tmp1= *a;\
-		X2##_unary( &tmp1, &tmp2 );\
-		*res = (flt) tmp2;\
-	}\
-   return msg;\
+#define unopM5(X1,X2)							\
+str												\
+MATHunary##X1##dbl(dbl *res , const dbl *a)		\
+{												\
+	dbl tmp1,tmp2;								\
+	str msg= MAL_SUCCEED;						\
+	if (*a == dbl_nil) {						\
+		*res =dbl_nil;							\
+	} else {									\
+		tmp1= *a;								\
+		X2##_unary( &tmp1, &tmp2);				\
+		*res = (dbl) tmp2;						\
+	}											\
+   return msg;									\
+}												\
+str												\
+MATHunary##X1##flt(flt *res , const flt *a)		\
+{												\
+	dbl tmp1,tmp2;								\
+	str msg= MAL_SUCCEED;						\
+	if (*a == flt_nil) {						\
+		*res =flt_nil;							\
+	} else {									\
+		tmp1= *a;								\
+		X2##_unary( &tmp1, &tmp2);				\
+		*res = (flt) tmp2;						\
+	}											\
+   return msg;									\
 }
 
-#define binopbaseM5(X1,X2,X3)\
-str MATHbinary##X1##X3(X3 *res, X3 *a, X3 *b ) {\
-   if (*a == X3##_nil || *b == X3##_nil) {\
-		*res = X3##_nil;\
-   } else {\
-		dbl r1 ,a1 = *a, b1 = *b;\
-		X2##_binary( &a1, &b1, &r1);\
-		*res= (X3) r1;\
-   }\
-   return MAL_SUCCEED;\
+#define binopbaseM5(X1,X2,X3)							\
+str														\
+MATHbinary##X1##X3(X3 *res, const X3 *a, const X3 *b)	\
+{														\
+   if (*a == X3##_nil || *b == X3##_nil) {				\
+		*res = X3##_nil;								\
+   } else {												\
+		dbl r1 ,a1 = *a, b1 = *b;						\
+		X2##_binary( &a1, &b1, &r1);					\
+		*res= (X3) r1;									\
+   }													\
+   return MAL_SUCCEED;									\
 }
 
-#define binopM5(X,Y) \
-  binopbaseM5(X,Y,dbl)\
+#define binopM5(X,Y)							\
+  binopbaseM5(X,Y,dbl)							\
   binopbaseM5(X,Y,flt)
 
-#define roundM5(X1)\
-str MATHbinary_ROUND##X1(X1 *res, X1 *x, int *y) {\
-  if(*x == X1##_nil || *y == int_nil) {\
-	*res = X1##_nil;\
-  } else {\
-	dbl factor = pow(10,*y), integral;\
-	dbl tmp = *y>0?modf(*x,&integral):*x;\
-\
-	tmp *= factor;\
-	if(tmp>=0)\
-	  tmp = floor(tmp+0.5);\
-	else\
-	  tmp = ceil(tmp-0.5);\
-	tmp /= factor;\
-\
-	if(*y>0)\
-	  tmp += integral;\
-\
-	*res = (X1) tmp;\
-  }\
-  return MAL_SUCCEED;\
+#define roundM5(X1)											\
+str															\
+MATHbinary_ROUND##X1(X1 *res, const X1 *x, const int *y)	\
+{															\
+  if(*x == X1##_nil || *y == int_nil) {						\
+	*res = X1##_nil;										\
+  } else {													\
+	dbl factor = pow(10,*y), integral;						\
+	dbl tmp = *y>0?modf(*x,&integral):*x;					\
+															\
+	tmp *= factor;											\
+	if(tmp>=0)												\
+	  tmp = floor(tmp+0.5);									\
+	else													\
+	  tmp = ceil(tmp-0.5);									\
+	tmp /= factor;											\
+															\
+	if(*y>0)												\
+	  tmp += integral;										\
+															\
+	*res = (X1) tmp;										\
+  }															\
+  return MAL_SUCCEED;										\
 }
 
 
@@ -255,19 +265,19 @@ roundM5(dbl)
 roundM5(flt)
 
 str
-MATHunary_ISNAN(bit *res, dbl *a)
+MATHunary_ISNAN(bit *res, const dbl *a)
 {
 	return math_unary_ISNAN(res, a);
 }
 
 str
-MATHunary_ISINF(int *res, dbl *a)
+MATHunary_ISINF(int *res, const dbl *a)
 {
 	return math_unary_ISINF(res, a);
 }
 
 str
-MATHunary_FINITE(bit *res, dbl *a)
+MATHunary_FINITE(bit *res, const dbl *a)
 {
 	return math_unary_FINITE(res, a);
 }
@@ -298,7 +308,7 @@ MATHsrandint(void *ret, const int *seed)
 }
 
 str
-MATHsqlrandint(int *res, int *seed)
+MATHsqlrandint(int *res, const int *seed)
 {
 	srand(*seed);
 	/* coverity[dont_call] */

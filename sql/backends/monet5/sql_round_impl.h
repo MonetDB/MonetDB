@@ -60,7 +60,7 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
+dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
@@ -70,7 +70,7 @@ dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
 }
 
 str
-bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
+bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -193,7 +193,7 @@ round_body(TYPE v, int d, int s, int r)
 }
 
 str
-round_wrap(TYPE *res, TYPE *v, int *d, int *s, bte *r)
+round_wrap(TYPE *res, const TYPE *v, const int *d, const int *s, const bte *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r && d && s);
@@ -203,7 +203,7 @@ round_wrap(TYPE *res, TYPE *v, int *d, int *s, bte *r)
 }
 
 str
-bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
+bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -276,7 +276,7 @@ bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 }
 
 str
-nil_2dec(TYPE *res, void *val, int *d, int *sc)
+nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 {
 	(void) val;
 	(void) d;
@@ -287,7 +287,7 @@ nil_2dec(TYPE *res, void *val, int *d, int *sc)
 }
 
 str
-str_2dec(TYPE *res, str *val, int *d, int *sc)
+str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 {
 	char *s = strip_extra_zeros(*val);
 	char *dot = strchr(s, '.'), *end = NULL;
@@ -343,21 +343,21 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 }
 
 str
-nil_2num(TYPE *res, void *v, int *len)
+nil_2num(TYPE *res, const void *v, const int *len)
 {
 	int zero = 0;
 	return nil_2dec(res, v, len, &zero);
 }
 
 str
-str_2num(TYPE *res, str *v, int *len)
+str_2num(TYPE *res, const str *v, const int *len)
 {
 	int zero = 0;
 	return str_2dec(res, v, len, &zero);
 }
 
 str
-batnil_2dec(bat *res, bat *bid, int *d, int *sc)
+batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -385,7 +385,7 @@ batnil_2dec(bat *res, bat *bid, int *d, int *sc)
 }
 
 str
-batstr_2dec(bat *res, bat *bid, int *d, int *sc)
+batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -416,14 +416,14 @@ batstr_2dec(bat *res, bat *bid, int *d, int *sc)
 }
 
 str
-batnil_2num(bat *res, bat *bid, int *len)
+batnil_2num(bat *res, const bat *bid, const int *len)
 {
 	int zero = 0;
 	return batnil_2dec(res, bid, len, &zero);
 }
 
 str
-batstr_2num(bat *res, bat *bid, int *len)
+batstr_2num(bat *res, const bat *bid, const int *len)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -454,7 +454,7 @@ batstr_2num(bat *res, bat *bid, int *len)
 }
 
 str
-dec2second_interval(lng *res, int *sc, TYPE *dec, int *ek, int *sk)
+dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, const int *sk)
 {
 	BIG value = *dec;
 

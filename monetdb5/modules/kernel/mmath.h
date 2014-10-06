@@ -43,14 +43,14 @@ extern double fabs(double x);
 #endif
 
 #define unopbaseM5_export(X1,X2)\
-mmath_export str MATHunary##X1##X2(X2 *res , X2 *a );
+mmath_export str MATHunary##X1##X2(X2 *res, const X2 *a);
 
 #define unopM5_export(X1)\
   unopbaseM5_export(X1,dbl)\
   unopbaseM5_export(X1,flt)
 
 #define binopbaseM5_export(X1,X2,X3)\
-mmath_export str MATHbinary##X1##X2(X2 *res, X2 *a, X3 *b );
+mmath_export str MATHbinary##X1##X2(X2 *res, const X2 *a, const X3 *b);
 
 #define binopM5_export(X1)\
   binopbaseM5_export(X1,dbl,dbl)\
@@ -84,12 +84,12 @@ unopM5_export(_FLOOR)
 binopbaseM5_export(_ROUND,dbl,int)
 binopbaseM5_export(_ROUND,flt,int)
 
-mmath_export str MATHunary_ISNAN(bit *res, dbl *a);
-mmath_export str MATHunary_ISINF(int *res, dbl *a);
-mmath_export str MATHunary_FINITE(bit *res, dbl *a);
+mmath_export str MATHunary_ISNAN(bit *res, const dbl *a);
+mmath_export str MATHunary_ISINF(int *res, const dbl *a);
+mmath_export str MATHunary_FINITE(bit *res, const dbl *a);
 mmath_export str MATHrandint(int *res);
 mmath_export str MATHrandintseed(int *res, const int *seed);
 mmath_export str MATHsrandint(void *ret, const int *seed);
-mmath_export str MATHsqlrandint(int *res, int *seed);
+mmath_export str MATHsqlrandint(int *res, const int *seed);
 mmath_export str MATHpi(dbl *pi);
 #endif /* __MMATH_H__ */

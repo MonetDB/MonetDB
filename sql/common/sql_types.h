@@ -72,7 +72,7 @@ extern int is_commutative(char *fnm); 	/* return 1, if commutative */
 
 extern char *sql_bind_alias(char *alias);
 
-extern int sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale);
+extern int sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
 extern sql_subtype *sql_bind_subtype(sql_allocator *sa, char *name, unsigned int digits, unsigned int scale);

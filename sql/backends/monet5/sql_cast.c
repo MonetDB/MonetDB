@@ -38,7 +38,7 @@
 #include "mal_instruction.h"
 
 str
-nil_2_timestamp(timestamp *res, void *val)
+nil_2_timestamp(timestamp *res, const void *val)
 {
 	(void) val;
 	*res = *timestamp_nil;
@@ -46,7 +46,7 @@ nil_2_timestamp(timestamp *res, void *val)
 }
 
 str
-str_2_timestamp(timestamp *res, str *val)
+str_2_timestamp(timestamp *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -69,7 +69,7 @@ str_2_timestamp(timestamp *res, str *val)
 }
 
 str
-SQLtimestamp_2_str(str *res, timestamp *val)
+SQLtimestamp_2_str(str *res, const timestamp *val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -79,7 +79,7 @@ SQLtimestamp_2_str(str *res, timestamp *val)
 }
 
 str
-batnil_2_timestamp(bat *res, bat *bid)
+batnil_2_timestamp(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -105,7 +105,7 @@ batnil_2_timestamp(bat *res, bat *bid)
 }
 
 str
-batstr_2_timestamp(bat *res, bat *bid)
+batstr_2_timestamp(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -136,7 +136,7 @@ batstr_2_timestamp(bat *res, bat *bid)
 }
 
 str
-nil_2_daytime(daytime *res, void *val)
+nil_2_daytime(daytime *res, const void *val)
 {
 	(void) val;
 	*res = daytime_nil;
@@ -144,7 +144,7 @@ nil_2_daytime(daytime *res, void *val)
 }
 
 str
-str_2_daytime(daytime *res, str *val)
+str_2_daytime(daytime *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -167,7 +167,7 @@ str_2_daytime(daytime *res, str *val)
 }
 
 str
-SQLdaytime_2_str(str *res, daytime *val)
+SQLdaytime_2_str(str *res, const daytime *val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -177,7 +177,7 @@ SQLdaytime_2_str(str *res, daytime *val)
 }
 
 str
-batnil_2_daytime(bat *res, bat *bid)
+batnil_2_daytime(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -203,7 +203,7 @@ batnil_2_daytime(bat *res, bat *bid)
 }
 
 str
-batstr_2_daytime(bat *res, bat *bid)
+batstr_2_daytime(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -234,7 +234,7 @@ batstr_2_daytime(bat *res, bat *bid)
 }
 
 str
-nil_2_date(date *res, void *val)
+nil_2_date(date *res, const void *val)
 {
 	(void) val;
 	*res = date_nil;
@@ -242,7 +242,7 @@ nil_2_date(date *res, void *val)
 }
 
 str
-str_2_date(date *res, str *val)
+str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -265,7 +265,7 @@ str_2_date(date *res, str *val)
 }
 
 str
-SQLdate_2_str(str *res, date *val)
+SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -275,7 +275,7 @@ SQLdate_2_str(str *res, date *val)
 }
 
 str
-batnil_2_date(bat *res, bat *bid)
+batnil_2_date(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -301,7 +301,7 @@ batnil_2_date(bat *res, bat *bid)
 }
 
 str
-batstr_2_date(bat *res, bat *bid)
+batstr_2_date(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -332,7 +332,7 @@ batstr_2_date(bat *res, bat *bid)
 }
 
 str
-nil_2_sqlblob(sqlblob * *res, void *val)
+nil_2_sqlblob(sqlblob * *res, const void *val)
 {
 	(void) val;
 	*res = ATOMnilptr(TYPE_blob);
@@ -340,7 +340,7 @@ nil_2_sqlblob(sqlblob * *res, void *val)
 }
 
 str
-str_2_sqlblob(sqlblob * *res, str *val)
+str_2_sqlblob(sqlblob * *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -363,7 +363,7 @@ str_2_sqlblob(sqlblob * *res, str *val)
 }
 
 str
-SQLsqlblob_2_str(str *res, sqlblob * val)
+SQLsqlblob_2_str(str *res, const sqlblob * val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -373,7 +373,7 @@ SQLsqlblob_2_str(str *res, sqlblob * val)
 }
 
 str
-batnil_2_sqlblob(bat *res, bat *bid)
+batnil_2_sqlblob(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -399,7 +399,7 @@ batnil_2_sqlblob(bat *res, bat *bid)
 }
 
 str
-batstr_2_sqlblob(bat *res, bat *bid)
+batstr_2_sqlblob(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
