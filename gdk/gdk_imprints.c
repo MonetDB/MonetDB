@@ -550,6 +550,7 @@ BATimprints(BAT *b)
 {
 	BAT *o = NULL;
 	Imprints *imprints;
+	lng t0 =0,t1=0;
 
 	assert(BAThdense(b));	/* assert void head */
 
@@ -590,6 +591,7 @@ BATimprints(BAT *b)
 	}
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
+	t0= GDKusec();
 	if (b->T->imprints == NULL) {
 		BAT *smp, *s;
 		BUN cnt;
@@ -795,6 +797,9 @@ BATimprints(BAT *b)
 		}
 		b->T->imprints = imprints;
 	}
+ 
+        t1 = GDKusec();
+        ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
   do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");

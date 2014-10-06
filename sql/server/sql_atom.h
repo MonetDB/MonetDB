@@ -71,5 +71,12 @@ extern lng atom_get_int(atom *a);
 #endif
 
 extern int atom_cmp(atom *a1, atom *a2);
+
+#ifdef HAVE_HGE
+extern hge scales[39];
+#else
+extern lng scales[19];
+#endif
+
 #endif /* _SQL_ATOM_H_ */
 

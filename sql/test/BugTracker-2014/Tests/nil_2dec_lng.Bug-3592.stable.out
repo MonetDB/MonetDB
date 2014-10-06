@@ -1,0 +1,133 @@
+stdout of test 'nil_2dec_lng.Bug-3592` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 23:28:04 >  
+# 23:28:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38459" "--set" "mapi_usock=/var/tmp/mtest-19113/.s.monetdb.38459" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 23:28:04 >  
+
+# MonetDB 5 server v11.19.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38459/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19113/.s.monetdb.38459
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 23:28:04 >  
+# 23:28:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19113" "--port=38459"
+# 23:28:04 >  
+
+#create table foo_nil_2dec (t timestamp,v decimal(18,9));
+#insert into foo_nil_2dec values (now(),42);
+[ 1	]
+#insert into foo_nil_2dec values (now(),43);
+[ 1	]
+#select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
+% .L5,	.L5 # table_name
+% L2,	v # name
+% bigint,	decimal # type
+% 13,	20 # length
+[ 1412467200000,	42.000000000	]
+[ 1412467200000,	43.000000000	]
+[ 1412467200000,	NULL	]
+[ 1412467200000,	NULL	]
+#explain select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
+% .explain # table_name
+% mal # name
+% clob # type
+% 187 # length
+function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
+barrier X_115 := language.dataflow();
+    X_6:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
+    X_5 := sql.mvc();
+    X_67:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec",0,2);
+    X_70:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",0,0,2);
+    (X_72:bat[:oid,:oid] ,X_73:bat[:oid,:timestamp] ) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,0,2);
+    X_82 := sql.delta(X_70,X_72,X_73);
+    X_84 := algebra.leftfetchjoin(X_67,X_82);
+    X_16 := calc.timestamp(A0,7);
+    X_86 := algebra.project(X_84,X_16);
+    X_88 := batmtime.diff(X_84,X_86);
+    X_69:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec",1,2);
+    X_71:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",0,1,2);
+    (X_74:bat[:oid,:oid] ,X_75:bat[:oid,:timestamp] ) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,1,2);
+    X_14:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",1);
+    X_83 := sql.delta(X_71,X_74,X_75,X_14);
+    X_85 := algebra.leftfetchjoin(X_69,X_83);
+    X_87 := algebra.project(X_85,X_16);
+    X_89 := batmtime.diff(X_85,X_87);
+    X_104 := mat.packIncrement(X_88,2);
+    X_18:bat[:oid,:lng]  := mat.packIncrement(X_104,X_89);
+    X_19 := bat.append(X_6,X_18,true);
+    X_20 := calc.timestamp(A1,7);
+    X_92 := algebra.project(X_84,X_20);
+    X_94 := batmtime.diff(X_84,X_92);
+    X_93 := algebra.project(X_85,X_20);
+    X_95 := batmtime.diff(X_85,X_93);
+    X_106 := mat.packIncrement(X_94,2);
+    X_21:bat[:oid,:lng]  := mat.packIncrement(X_106,X_95);
+    X_22 := bat.append(X_19,X_21,true);
+    X_24:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
+    X_76:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",0,0,2);
+    (X_78:bat[:oid,:oid] ,X_79:bat[:oid,:lng] ) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,0,2);
+    X_96 := sql.delta(X_76,X_78,X_79);
+    X_98 := algebra.leftfetchjoin(X_67,X_96);
+    X_77:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",0,1,2);
+    (X_80:bat[:oid,:oid] ,X_81:bat[:oid,:lng] ) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,1,2);
+    X_32:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",1);
+    X_97 := sql.delta(X_77,X_80,X_81,X_32);
+    X_99 := algebra.leftfetchjoin(X_69,X_97);
+    X_108 := mat.packIncrement(X_98,2);
+    X_34 := mat.packIncrement(X_108,X_99);
+    X_35 := bat.append(X_24,X_34,true);
+    X_100:bat[:oid,:void]  := algebra.project(X_84,A2);
+    language.pass(X_67);
+    language.pass(X_69);
+    language.pass(X_84);
+exit X_115;
+    X_118:bat[:void,:oid]  := bat.reverse(X_100);
+    X_120 := bat.new(nil:oid,nil:lng);
+barrier (X_124,X_125) := iterator.new(X_100);
+    X_127 := calc.lng(X_125,18,9);
+    X_128 := algebra.fetch(X_118,X_124);
+    bat.insert(X_120,X_128,X_127);
+    redo (X_124,X_125) := iterator.next(X_100);
+exit (X_124,X_125);
+    X_100:bat[:oid,:void]  := nil:bat[:oid,:void];
+    X_118:bat[:void,:oid]  := nil:bat[:void,:oid];
+    X_102 := X_120;
+    X_101:bat[:oid,:void]  := algebra.project(X_85,A2);
+    X_134:bat[:void,:oid]  := bat.reverse(X_101);
+    X_136 := bat.new(nil:oid,nil:lng);
+barrier (X_138,X_139) := iterator.new(X_101);
+    X_141 := calc.lng(X_139,18,9);
+    X_142 := algebra.fetch(X_134,X_138);
+    bat.insert(X_136,X_142,X_141);
+    redo (X_138,X_139) := iterator.next(X_101);
+exit (X_138,X_139);
+    X_101:bat[:oid,:void]  := nil:bat[:oid,:void];
+    X_134:bat[:void,:oid]  := nil:bat[:void,:oid];
+    X_103 := X_136;
+    X_110 := mat.packIncrement(X_102,2);
+    X_36:bat[:oid,:lng]  := mat.packIncrement(X_110,X_103);
+    X_41 := bat.append(X_35,X_36,true);
+    X_42 := sql.resultSet(2,1,X_22);
+    sql.rsColumn(X_42,".L5","L2","bigint",64,0,X_22);
+    sql.rsColumn(X_42,".L5","v","decimal",18,9,X_41);
+    X_50 := io.stdout();
+    sql.exportResult(X_50,X_42);
+end s5_1;
+# querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe")
+
+# 23:28:04 >  
+# 23:28:04 >  "Done."
+# 23:28:04 >  
+

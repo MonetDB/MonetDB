@@ -562,7 +562,7 @@ atom_num_digits( atom *a )
 }
 
 #ifdef HAVE_HGE
-static hge scales[] = {
+hge scales[39] = {
 	(hge) LL_CONSTANT(1),
 	(hge) LL_CONSTANT(10),
 	(hge) LL_CONSTANT(100),
@@ -603,7 +603,7 @@ static hge scales[] = {
 	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
 };
 #else
-static lng scales[] = {
+lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),

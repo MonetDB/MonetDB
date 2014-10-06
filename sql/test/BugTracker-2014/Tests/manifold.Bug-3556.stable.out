@@ -1,0 +1,510 @@
+stdout of test 'manifold.Bug-3556` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:13:38 >  
+# 14:13:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38920" "--set" "mapi_usock=/var/tmp/mtest-29507/.s.monetdb.38920" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:13:38 >  
+
+# MonetDB 5 server v11.19.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38920/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29507/.s.monetdb.38920
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 14:13:38 >  
+# 14:13:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29507" "--port=38920"
+# 14:13:38 >  
+
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, id as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 173 # length
+function user.s1_1{autoCommit=true}(A0:str,A1:str):void;
+barrier X_189 := language.dataflow();
+    X_4 := sql.mvc();
+    X_44:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",0,8);
+    X_59:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,0,8);
+    (X_67:bat[:oid,:oid] ,X_68:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,0,8);
+    X_117 := sql.delta(X_59,X_67,X_68);
+    X_125 := algebra.leftfetchjoin(X_44,X_117);
+    X_140 := mal.manifold("str","replace",X_125,A0,A1);
+    X_46:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",1,8);
+    X_60:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,1,8);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,1,8);
+    X_118 := sql.delta(X_60,X_69,X_70);
+    X_127 := algebra.leftfetchjoin(X_46,X_118);
+    X_141 := mal.manifold("str","replace",X_127,A0,A1);
+    X_48:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",2,8);
+    X_61:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,2,8);
+    (X_71:bat[:oid,:oid] ,X_72:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,2,8);
+    X_119 := sql.delta(X_61,X_71,X_72);
+    X_129 := algebra.leftfetchjoin(X_48,X_119);
+    X_142 := mal.manifold("str","replace",X_129,A0,A1);
+    X_50:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",3,8);
+    X_62:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,3,8);
+    (X_73:bat[:oid,:oid] ,X_74:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,3,8);
+    X_120 := sql.delta(X_62,X_73,X_74);
+    X_131 := algebra.leftfetchjoin(X_50,X_120);
+    X_143 := mal.manifold("str","replace",X_131,A0,A1);
+    X_52:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",4,8);
+    X_63:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,4,8);
+    (X_75:bat[:oid,:oid] ,X_76:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,4,8);
+    X_121 := sql.delta(X_63,X_75,X_76);
+    X_133 := algebra.leftfetchjoin(X_52,X_121);
+    X_144 := mal.manifold("str","replace",X_133,A0,A1);
+    X_54:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",5,8);
+    X_64:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,5,8);
+    (X_78:bat[:oid,:oid] ,X_79:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,5,8);
+    X_122 := sql.delta(X_64,X_78,X_79);
+    X_135 := algebra.leftfetchjoin(X_54,X_122);
+    X_145 := mal.manifold("str","replace",X_135,A0,A1);
+    X_56:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",6,8);
+    X_65:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,6,8);
+    (X_80:bat[:oid,:oid] ,X_81:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,6,8);
+    X_123 := sql.delta(X_65,X_80,X_81);
+    X_137 := algebra.leftfetchjoin(X_56,X_123);
+    X_146 := mal.manifold("str","replace",X_137,A0,A1);
+    X_58:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",7,8);
+    X_66:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,7,8);
+    (X_82:bat[:oid,:oid] ,X_83:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,7,8);
+    X_10:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",1);
+    X_124 := sql.delta(X_66,X_82,X_83,X_10);
+    X_139 := algebra.leftfetchjoin(X_58,X_124);
+    X_147 := mal.manifold("str","replace",X_139,A0,A1);
+    X_165 := mat.packIncrement(X_140,8);
+    X_166 := mat.packIncrement(X_165,X_141);
+    X_167 := mat.packIncrement(X_166,X_142);
+    X_168 := mat.packIncrement(X_167,X_143);
+    X_169 := mat.packIncrement(X_168,X_144);
+    X_170 := mat.packIncrement(X_169,X_145);
+    X_171 := mat.packIncrement(X_170,X_146);
+    X_12:bat[:oid,:str]  := mat.packIncrement(X_171,X_147);
+    X_99:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,7,8);
+    (X_115:bat[:oid,:oid] ,X_116:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,7,8);
+    X_16:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",1);
+    X_156 := sql.delta(X_99,X_115,X_116,X_16);
+    X_164 := algebra.leftfetchjoin(X_58,X_156);
+    X_97:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,6,8);
+    (X_113:bat[:oid,:oid] ,X_114:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,6,8);
+    X_155 := sql.delta(X_97,X_113,X_114);
+    X_163 := algebra.leftfetchjoin(X_56,X_155);
+    X_95:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,5,8);
+    (X_111:bat[:oid,:oid] ,X_112:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,5,8);
+    X_154 := sql.delta(X_95,X_111,X_112);
+    X_162 := algebra.leftfetchjoin(X_54,X_154);
+    X_93:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,4,8);
+    (X_108:bat[:oid,:oid] ,X_109:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,4,8);
+    X_153 := sql.delta(X_93,X_108,X_109);
+    X_161 := algebra.leftfetchjoin(X_52,X_153);
+    X_91:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,3,8);
+    (X_106:bat[:oid,:oid] ,X_107:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,3,8);
+    X_152 := sql.delta(X_91,X_106,X_107);
+    X_160 := algebra.leftfetchjoin(X_50,X_152);
+    X_89:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,2,8);
+    (X_104:bat[:oid,:oid] ,X_105:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,2,8);
+    X_151 := sql.delta(X_89,X_104,X_105);
+    X_159 := algebra.leftfetchjoin(X_48,X_151);
+    X_87:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,1,8);
+    (X_102:bat[:oid,:oid] ,X_103:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,1,8);
+    X_150 := sql.delta(X_87,X_102,X_103);
+    X_158 := algebra.leftfetchjoin(X_46,X_150);
+    X_85:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,0,8);
+    (X_100:bat[:oid,:oid] ,X_101:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,0,8);
+    X_149 := sql.delta(X_85,X_100,X_101);
+    X_157 := algebra.leftfetchjoin(X_44,X_149);
+    language.pass(X_58);
+    language.pass(X_56);
+    language.pass(X_54);
+    language.pass(X_52);
+    language.pass(X_50);
+    language.pass(X_48);
+    language.pass(X_46);
+    language.pass(X_44);
+exit X_189;
+    X_18 := sql.resultSet(2,1,X_12);
+    sql.rsColumn(X_18,"sys.L1","L1","varchar",0,0,X_12);
+    X_173 := mat.packIncrement(X_157,8);
+    X_174 := mat.packIncrement(X_173,X_158);
+    X_175 := mat.packIncrement(X_174,X_159);
+    X_176 := mat.packIncrement(X_175,X_160);
+    X_177 := mat.packIncrement(X_176,X_161);
+    X_178 := mat.packIncrement(X_177,X_162);
+    X_179 := mat.packIncrement(X_178,X_163);
+    X_17 := mat.packIncrement(X_179,X_164);
+    sql.rsColumn(X_18,"sys.x","id","int",32,0,X_17);
+    X_27 := io.stdout();
+    sql.exportResult(X_27,X_18);
+end s1_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n  from sys.functions\n) as x;","default_pipe")
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, id + 1 as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 177 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:lng):void;
+barrier X_247 := language.dataflow();
+    X_5 := sql.mvc();
+    X_45:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",0,8);
+    X_61:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,0,8);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,0,8);
+    X_119 := sql.delta(X_61,X_69,X_70);
+    X_134 := algebra.leftfetchjoin(X_45,X_119);
+    X_86:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,0,8);
+    (X_102:bat[:oid,:oid] ,X_103:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,0,8);
+    X_142 := sql.delta(X_86,X_102,X_103);
+    X_151 := algebra.leftfetchjoin(X_45,X_142);
+    X_159 := algebra.project(X_151,A0);
+    X_174 := algebra.project(X_151,A1);
+    X_182 := mal.manifold("str","replace",X_134,X_159,X_174);
+    X_47:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",1,8);
+    X_62:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,1,8);
+    (X_71:bat[:oid,:oid] ,X_72:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,1,8);
+    X_121 := sql.delta(X_62,X_71,X_72);
+    X_135 := algebra.leftfetchjoin(X_47,X_121);
+    X_88:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,1,8);
+    (X_104:bat[:oid,:oid] ,X_105:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,1,8);
+    X_143 := sql.delta(X_88,X_104,X_105);
+    X_152 := algebra.leftfetchjoin(X_47,X_143);
+    X_161 := algebra.project(X_152,A0);
+    X_175 := algebra.project(X_152,A1);
+    X_183 := mal.manifold("str","replace",X_135,X_161,X_175);
+    X_49:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",2,8);
+    X_63:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,2,8);
+    (X_73:bat[:oid,:oid] ,X_74:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,2,8);
+    X_123 := sql.delta(X_63,X_73,X_74);
+    X_136 := algebra.leftfetchjoin(X_49,X_123);
+    X_90:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,2,8);
+    (X_106:bat[:oid,:oid] ,X_107:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,2,8);
+    X_144 := sql.delta(X_90,X_106,X_107);
+    X_153 := algebra.leftfetchjoin(X_49,X_144);
+    X_163 := algebra.project(X_153,A0);
+    X_176 := algebra.project(X_153,A1);
+    X_184 := mal.manifold("str","replace",X_136,X_163,X_176);
+    X_51:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",3,8);
+    X_64:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,3,8);
+    (X_75:bat[:oid,:oid] ,X_76:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,3,8);
+    X_125 := sql.delta(X_64,X_75,X_76);
+    X_137 := algebra.leftfetchjoin(X_51,X_125);
+    X_92:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,3,8);
+    (X_108:bat[:oid,:oid] ,X_109:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,3,8);
+    X_145 := sql.delta(X_92,X_108,X_109);
+    X_154 := algebra.leftfetchjoin(X_51,X_145);
+    X_165 := algebra.project(X_154,A0);
+    X_177 := algebra.project(X_154,A1);
+    X_185 := mal.manifold("str","replace",X_137,X_165,X_177);
+    X_53:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",4,8);
+    X_65:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,4,8);
+    (X_78:bat[:oid,:oid] ,X_79:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,4,8);
+    X_127 := sql.delta(X_65,X_78,X_79);
+    X_138 := algebra.leftfetchjoin(X_53,X_127);
+    X_94:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,4,8);
+    (X_111:bat[:oid,:oid] ,X_112:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,4,8);
+    X_146 := sql.delta(X_94,X_111,X_112);
+    X_155 := algebra.leftfetchjoin(X_53,X_146);
+    X_167 := algebra.project(X_155,A0);
+    X_178 := algebra.project(X_155,A1);
+    X_186 := mal.manifold("str","replace",X_138,X_167,X_178);
+    X_55:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",5,8);
+    X_66:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,5,8);
+    (X_80:bat[:oid,:oid] ,X_81:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,5,8);
+    X_129 := sql.delta(X_66,X_80,X_81);
+    X_139 := algebra.leftfetchjoin(X_55,X_129);
+    X_96:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,5,8);
+    (X_113:bat[:oid,:oid] ,X_114:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,5,8);
+    X_147 := sql.delta(X_96,X_113,X_114);
+    X_156 := algebra.leftfetchjoin(X_55,X_147);
+    X_169 := algebra.project(X_156,A0);
+    X_179 := algebra.project(X_156,A1);
+    X_187 := mal.manifold("str","replace",X_139,X_169,X_179);
+    X_57:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",6,8);
+    X_67:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,6,8);
+    (X_82:bat[:oid,:oid] ,X_83:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,6,8);
+    X_131 := sql.delta(X_67,X_82,X_83);
+    X_140 := algebra.leftfetchjoin(X_57,X_131);
+    X_98:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,6,8);
+    (X_115:bat[:oid,:oid] ,X_116:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,6,8);
+    X_148 := sql.delta(X_98,X_115,X_116);
+    X_157 := algebra.leftfetchjoin(X_57,X_148);
+    X_171 := algebra.project(X_157,A0);
+    X_180 := algebra.project(X_157,A1);
+    X_188 := mal.manifold("str","replace",X_140,X_171,X_180);
+    X_59:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions",7,8);
+    X_68:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0,7,8);
+    (X_84:bat[:oid,:oid] ,X_85:bat[:oid,:str] ) := sql.bind(X_5,"sys","functions","name",2,7,8);
+    X_11:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",1);
+    X_133 := sql.delta(X_68,X_84,X_85,X_11);
+    X_141 := algebra.leftfetchjoin(X_59,X_133);
+    X_100:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0,7,8);
+    (X_117:bat[:oid,:oid] ,X_118:bat[:oid,:int] ) := sql.bind(X_5,"sys","functions","id",2,7,8);
+    X_14:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",1);
+    X_149 := sql.delta(X_100,X_117,X_118,X_14);
+    X_158 := algebra.leftfetchjoin(X_59,X_149);
+    X_173 := algebra.project(X_158,A0);
+    X_181 := algebra.project(X_158,A1);
+    X_189 := mal.manifold("str","replace",X_141,X_173,X_181);
+    X_214 := mat.packIncrement(X_182,8);
+    X_215 := mat.packIncrement(X_214,X_183);
+    X_216 := mat.packIncrement(X_215,X_184);
+    X_217 := mat.packIncrement(X_216,X_185);
+    X_218 := mat.packIncrement(X_217,X_186);
+    X_219 := mat.packIncrement(X_218,X_187);
+    X_220 := mat.packIncrement(X_219,X_188);
+    X_15:bat[:oid,:str]  := mat.packIncrement(X_220,X_189);
+    X_198 := batcalc.lng(X_158);
+    X_213 := batcalc.+(X_198,A2);
+    X_197 := batcalc.lng(X_157);
+    X_211 := batcalc.+(X_197,A2);
+    X_196 := batcalc.lng(X_156);
+    X_209 := batcalc.+(X_196,A2);
+    X_195 := batcalc.lng(X_155);
+    X_207 := batcalc.+(X_195,A2);
+    X_194 := batcalc.lng(X_154);
+    X_205 := batcalc.+(X_194,A2);
+    X_193 := batcalc.lng(X_153);
+    X_203 := batcalc.+(X_193,A2);
+    X_192 := batcalc.lng(X_152);
+    X_201 := batcalc.+(X_192,A2);
+    X_191 := batcalc.lng(X_151);
+    X_199 := batcalc.+(X_191,A2);
+    language.pass(X_45);
+    language.pass(X_47);
+    language.pass(X_49);
+    language.pass(X_51);
+    language.pass(X_53);
+    language.pass(X_55);
+    language.pass(X_57);
+    language.pass(X_59);
+    language.pass(X_158);
+    language.pass(X_157);
+    language.pass(X_156);
+    language.pass(X_155);
+    language.pass(X_154);
+    language.pass(X_153);
+    language.pass(X_152);
+    language.pass(X_151);
+exit X_247;
+    X_19 := sql.resultSet(2,1,X_15);
+    sql.rsColumn(X_19,"sys.L1","L1","varchar",0,0,X_15);
+    X_222 := mat.packIncrement(X_199,8);
+    X_224 := mat.packIncrement(X_222,X_201);
+    X_225 := mat.packIncrement(X_224,X_203);
+    X_226 := mat.packIncrement(X_225,X_205);
+    X_227 := mat.packIncrement(X_226,X_207);
+    X_228 := mat.packIncrement(X_227,X_209);
+    X_229 := mat.packIncrement(X_228,X_211);
+    X_18:bat[:oid,:lng]  := mat.packIncrement(X_229,X_213);
+    sql.rsColumn(X_19,"sys.x","id","bigint",64,0,X_18);
+    X_29 := io.stdout();
+    sql.exportResult(X_29,X_19);
+end s2_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n  from sys.functions\n) as x;","default_pipe")
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, abs(id) as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 178 # length
+function user.s3_1{autoCommit=true}(A0:str,A1:str):void;
+barrier X_230 := language.dataflow();
+    X_4 := sql.mvc();
+    X_44:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",0,8);
+    X_60:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,0,8);
+    (X_68:bat[:oid,:oid] ,X_69:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,0,8);
+    X_118 := sql.delta(X_60,X_68,X_69);
+    X_133 := algebra.leftfetchjoin(X_44,X_118);
+    X_85:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,0,8);
+    (X_101:bat[:oid,:oid] ,X_102:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,0,8);
+    X_141 := sql.delta(X_85,X_101,X_102);
+    X_150 := algebra.leftfetchjoin(X_44,X_141);
+    X_158 := algebra.project(X_150,A0);
+    X_173 := algebra.project(X_150,A1);
+    X_181 := mal.manifold("str","replace",X_133,X_158,X_173);
+    X_46:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",1,8);
+    X_61:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,1,8);
+    (X_70:bat[:oid,:oid] ,X_71:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,1,8);
+    X_120 := sql.delta(X_61,X_70,X_71);
+    X_134 := algebra.leftfetchjoin(X_46,X_120);
+    X_87:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,1,8);
+    (X_103:bat[:oid,:oid] ,X_104:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,1,8);
+    X_142 := sql.delta(X_87,X_103,X_104);
+    X_151 := algebra.leftfetchjoin(X_46,X_142);
+    X_160 := algebra.project(X_151,A0);
+    X_174 := algebra.project(X_151,A1);
+    X_182 := mal.manifold("str","replace",X_134,X_160,X_174);
+    X_48:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",2,8);
+    X_62:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,2,8);
+    (X_72:bat[:oid,:oid] ,X_73:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,2,8);
+    X_122 := sql.delta(X_62,X_72,X_73);
+    X_135 := algebra.leftfetchjoin(X_48,X_122);
+    X_89:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,2,8);
+    (X_105:bat[:oid,:oid] ,X_106:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,2,8);
+    X_143 := sql.delta(X_89,X_105,X_106);
+    X_152 := algebra.leftfetchjoin(X_48,X_143);
+    X_162 := algebra.project(X_152,A0);
+    X_175 := algebra.project(X_152,A1);
+    X_183 := mal.manifold("str","replace",X_135,X_162,X_175);
+    X_50:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",3,8);
+    X_63:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,3,8);
+    (X_74:bat[:oid,:oid] ,X_75:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,3,8);
+    X_124 := sql.delta(X_63,X_74,X_75);
+    X_136 := algebra.leftfetchjoin(X_50,X_124);
+    X_91:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,3,8);
+    (X_107:bat[:oid,:oid] ,X_108:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,3,8);
+    X_144 := sql.delta(X_91,X_107,X_108);
+    X_153 := algebra.leftfetchjoin(X_50,X_144);
+    X_164 := algebra.project(X_153,A0);
+    X_176 := algebra.project(X_153,A1);
+    X_184 := mal.manifold("str","replace",X_136,X_164,X_176);
+    X_52:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",4,8);
+    X_64:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,4,8);
+    (X_77:bat[:oid,:oid] ,X_78:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,4,8);
+    X_126 := sql.delta(X_64,X_77,X_78);
+    X_137 := algebra.leftfetchjoin(X_52,X_126);
+    X_93:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,4,8);
+    (X_110:bat[:oid,:oid] ,X_111:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,4,8);
+    X_145 := sql.delta(X_93,X_110,X_111);
+    X_154 := algebra.leftfetchjoin(X_52,X_145);
+    X_166 := algebra.project(X_154,A0);
+    X_177 := algebra.project(X_154,A1);
+    X_185 := mal.manifold("str","replace",X_137,X_166,X_177);
+    X_54:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",5,8);
+    X_65:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,5,8);
+    (X_79:bat[:oid,:oid] ,X_80:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,5,8);
+    X_128 := sql.delta(X_65,X_79,X_80);
+    X_138 := algebra.leftfetchjoin(X_54,X_128);
+    X_95:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,5,8);
+    (X_112:bat[:oid,:oid] ,X_113:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,5,8);
+    X_146 := sql.delta(X_95,X_112,X_113);
+    X_155 := algebra.leftfetchjoin(X_54,X_146);
+    X_168 := algebra.project(X_155,A0);
+    X_178 := algebra.project(X_155,A1);
+    X_186 := mal.manifold("str","replace",X_138,X_168,X_178);
+    X_56:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",6,8);
+    X_66:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,6,8);
+    (X_81:bat[:oid,:oid] ,X_82:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,6,8);
+    X_130 := sql.delta(X_66,X_81,X_82);
+    X_139 := algebra.leftfetchjoin(X_56,X_130);
+    X_97:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,6,8);
+    (X_114:bat[:oid,:oid] ,X_115:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,6,8);
+    X_147 := sql.delta(X_97,X_114,X_115);
+    X_156 := algebra.leftfetchjoin(X_56,X_147);
+    X_170 := algebra.project(X_156,A0);
+    X_179 := algebra.project(X_156,A1);
+    X_187 := mal.manifold("str","replace",X_139,X_170,X_179);
+    X_58:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions",7,8);
+    X_67:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0,7,8);
+    (X_83:bat[:oid,:oid] ,X_84:bat[:oid,:str] ) := sql.bind(X_4,"sys","functions","name",2,7,8);
+    X_10:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",1);
+    X_132 := sql.delta(X_67,X_83,X_84,X_10);
+    X_140 := algebra.leftfetchjoin(X_58,X_132);
+    X_99:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0,7,8);
+    (X_116:bat[:oid,:oid] ,X_117:bat[:oid,:int] ) := sql.bind(X_4,"sys","functions","id",2,7,8);
+    X_13:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",1);
+    X_148 := sql.delta(X_99,X_116,X_117,X_13);
+    X_157 := algebra.leftfetchjoin(X_58,X_148);
+    X_172 := algebra.project(X_157,A0);
+    X_180 := algebra.project(X_157,A1);
+    X_188 := mal.manifold("str","replace",X_140,X_172,X_180);
+    X_198 := mat.packIncrement(X_181,8);
+    X_199 := mat.packIncrement(X_198,X_182);
+    X_200 := mat.packIncrement(X_199,X_183);
+    X_201 := mat.packIncrement(X_200,X_184);
+    X_202 := mat.packIncrement(X_201,X_185);
+    X_203 := mat.packIncrement(X_202,X_186);
+    X_204 := mat.packIncrement(X_203,X_187);
+    X_14:bat[:oid,:str]  := mat.packIncrement(X_204,X_188);
+    X_197 := batcalc.abs(X_157);
+    X_196 := batcalc.abs(X_156);
+    X_195 := batcalc.abs(X_155);
+    X_194 := batcalc.abs(X_154);
+    X_193 := batcalc.abs(X_153);
+    X_192 := batcalc.abs(X_152);
+    X_191 := batcalc.abs(X_151);
+    X_190 := batcalc.abs(X_150);
+    language.pass(X_44);
+    language.pass(X_46);
+    language.pass(X_48);
+    language.pass(X_50);
+    language.pass(X_52);
+    language.pass(X_54);
+    language.pass(X_56);
+    language.pass(X_58);
+    language.pass(X_157);
+    language.pass(X_156);
+    language.pass(X_155);
+    language.pass(X_154);
+    language.pass(X_153);
+    language.pass(X_152);
+    language.pass(X_151);
+    language.pass(X_150);
+exit X_230;
+    X_18 := sql.resultSet(2,1,X_14);
+    sql.rsColumn(X_18,"sys.L1","L1","varchar",0,0,X_14);
+    X_206 := mat.packIncrement(X_190,8);
+    X_207 := mat.packIncrement(X_206,X_191);
+    X_208 := mat.packIncrement(X_207,X_192);
+    X_209 := mat.packIncrement(X_208,X_193);
+    X_210 := mat.packIncrement(X_209,X_194);
+    X_211 := mat.packIncrement(X_210,X_195);
+    X_212 := mat.packIncrement(X_211,X_196);
+    X_17:bat[:oid,:int]  := mat.packIncrement(X_212,X_197);
+    sql.rsColumn(X_18,"sys.x","id","int",32,0,X_17);
+    X_28 := io.stdout();
+    sql.exportResult(X_28,X_18);
+end s3_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n  from sys.functions\n) as x;","default_pipe")
+
+# 14:13:39 >  
+# 14:13:39 >  "Done."
+# 14:13:39 >  
+

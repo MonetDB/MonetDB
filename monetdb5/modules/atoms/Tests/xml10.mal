@@ -35,7 +35,7 @@ bat.insert(g,0@0,0@0);
 bat.insert(g,1@0,0@0);
 bat.insert(g,2@0,1@0);
 
-k:= algebra.join(g,te);
+k:= algebra.leftfetchjoin(g,te);
 io.print(k);
 l:= algebra.subsort(k,false,false);
 io.print(l);
