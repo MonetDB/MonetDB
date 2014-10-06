@@ -325,7 +325,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			readonly = "--readonly";
 
 		kv = findConfKey(ckv, "embedr");
-		if (kv->val != NULL && strcmp(kv->val, "false") != 0)
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			embeddedr = "embedded_r=true";
 
 		freeConfFile(ckv);
@@ -392,7 +392,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
 		}
-		if (embeddedr[0] != '\0') {
+		if (embeddedr != NULL) {
 			argv[c++] = "--set"; argv[c++] = embeddedr;
 		}
 		if (readonly != NULL) {
