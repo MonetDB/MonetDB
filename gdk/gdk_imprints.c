@@ -795,29 +795,30 @@ IMPSremove(BAT *b) {
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
-	imprints = b->T->imprints;
-	b->T->imprints = NULL;
+	if ((imprints = b->T->imprints) != NULL) {
+		b->T->imprints = NULL;
 
-	if (imprints->imps->storage != STORE_MEM)
-		HEAPdelete(imprints->imps,
-				BBP_physical(b->batCacheid), "imps");
-	else
-		HEAPfree(imprints->imps);
-	if (imprints->dict->storage != STORE_MEM)
-		HEAPdelete(imprints->dict,
-				BBP_physical(b->batCacheid), "dict");
-	else
-		HEAPfree(imprints->dict);
-	if (imprints->bins->storage != STORE_MEM)
-		HEAPdelete(imprints->bins,
-				BBP_physical(b->batCacheid), "bins");
-	else
-		HEAPfree(imprints->bins);
+		if (imprints->imps->storage != STORE_MEM)
+			HEAPdelete(imprints->imps,
+					BBP_physical(b->batCacheid), "imps");
+		else
+			HEAPfree(imprints->imps);
+		if (imprints->dict->storage != STORE_MEM)
+			HEAPdelete(imprints->dict,
+					BBP_physical(b->batCacheid), "dict");
+		else
+			HEAPfree(imprints->dict);
+		if (imprints->bins->storage != STORE_MEM)
+			HEAPdelete(imprints->bins,
+					BBP_physical(b->batCacheid), "bins");
+		else
+			HEAPfree(imprints->bins);
 
-	GDKfree(imprints->imps);
-	GDKfree(imprints->dict);
-	GDKfree(imprints->bins);
-	GDKfree(imprints);
+		GDKfree(imprints->imps);
+		GDKfree(imprints->dict);
+		GDKfree(imprints->bins);
+		GDKfree(imprints);
+	}
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 			"BATimprints");
