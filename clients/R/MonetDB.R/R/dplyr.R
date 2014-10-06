@@ -1,19 +1,19 @@
 src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", ...) {
-  require(dplyr)
+  requireNamespace("dplyr", quietly = TRUE)
   con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
     user = user, password = password, ...)
-  src_sql("monetdb", con, info = dbGetInfo(con))
+  dplyr::src_sql("monetdb", con, info = dbGetInfo(con))
 }
 
 src_translate_env.src_monetdb <- function(x) {
-  sql_variant(
-    base_scalar,
-    sql_translator(.parent = base_agg,
-      n = function() sql("COUNT(*)"),
-      sd =  sql_prefix("STDDEV_SAMP"),
-      var = sql_prefix("VAR_SAMP"),
-      median = sql_prefix("MEDIAN")
+  dplyr::sql_variant(
+    dplyr::base_scalar,
+    dplyr::sql_translator(.parent = dplyr::base_agg,
+      n = function() dplyr::sql("COUNT(*)"),
+      sd =  dplyr::sql_prefix("STDDEV_SAMP"),
+      var = dplyr::sql_prefix("VAR_SAMP"),
+      median = dplyr::sql_prefix("MEDIAN")
     )
   )
 }
@@ -24,12 +24,12 @@ src_desc.src_monetdb <- function(x) {
 
 tbl.src_monetdb <- function(src, from, ...) {
   monetdb_check_subquery(from)
-  tbl_sql("monetdb", src = src, from = from, ...)
+  dplyr::tbl_sql("monetdb", src = src, from = from, ...)
 }
 
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {
   # prepare gives us column info without actually running a query. Nice.
-  dbGetQuery(con, build_sql("PREPARE SELECT * FROM ", sql))$column
+  dbGetQuery(con, dplyr::build_sql("PREPARE SELECT * FROM ", sql))$column
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -43,7 +43,7 @@ db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
 
 db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
                                             ...) {
-  tt_sql <- build_sql("CREATE TEMPORARY TABLE ", ident(name), " AS ",
+  tt_sql <- dplyr::build_sql("CREATE TEMPORARY TABLE ", dplyr::ident(name), " AS ",
     sql, " WITH DATA", con = con)
   dbGetQuery(con, tt_sql)
   name
@@ -59,9 +59,9 @@ db_analyze.MonetDBConnection <- function(con, table, ...) {
 }
 
 sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) {
-  if (is.ident(sql)) return(sql)
+  if (dplyr::is.ident(sql)) return(sql)
   monetdb_check_subquery(sql)
-  build_sql("(", sql, ") AS ", ident(name), con = con)
+  dplyr::build_sql("(", sql, ") AS ", dplyr::ident(name), con = con)
 }
 
 monetdb_check_subquery <- function(sql) {
