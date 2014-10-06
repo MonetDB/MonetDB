@@ -1124,10 +1124,10 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 
 	// fill in the oid array
 	for (i = 0; i < n; i++) {
-		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
-                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		unsigned char cellx = ((unsigned char)((x[i] - minx)/(maxx - minx)))*UCHAR_MAX;
+                unsigned char celly = ((unsigned char)((y[i] - miny)/(maxy - miny)))*UCHAR_MAX;
 		sht cell = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
-		unsigned long position = pbsm_idx[cell - SHRT_MIN].offset + tmpCount[cell - SHRT_MIN];
+		unsigned long position = (unsigned long)pbsm_idx[cell - SHRT_MIN].offset + (unsigned long)tmpCount[cell - SHRT_MIN];
 		oids[position] = i + seqbase;
 		tmpCount[cell - SHRT_MIN]++;
 	}
@@ -1289,7 +1289,7 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 		throw(MAL, "pbsm.createindex", "Failed to compute index (2).");
 
 	t = clock() - t;
-	fprintf(stderr, "[PBSM] Index population: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+	fprintf(stderr, "[PBSM] Index population: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
 	/* Save the index for future use (sloppiness acknowledged) */
 	if ((f = fopen("20m-pbsm16.idx", "wb"))) {

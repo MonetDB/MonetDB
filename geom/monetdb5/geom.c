@@ -1216,6 +1216,7 @@ str wkbGeometryType(char** out, wkb** geomWKB, int* flag) {
 /* returns the number of dimensions of the geometry */
 str wkbCoordDim(int *out, wkb **geom) {
 	return wkbBasicInt(out, *geom, GEOSGeom_getCoordinateDimension, "geom.CoordDim");
+	return MAL_SUCCEED; //it gives error if not his present (?)
 }
 
 /* returns the inherent dimension of the geometry, e.g 0 for point */
