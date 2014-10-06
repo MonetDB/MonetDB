@@ -31,10 +31,12 @@
 #define group_export extern
 #endif
 
-group_export str GRPsubgroup1(bat *ngid, bat *next, bat *nhis, bat *bid);
+group_export str GRPsubgroup1(bat *ngid, bat *next, bat *nhis,
+							  const bat *bid);
 group_export str GRPsubgroup2(bat *ngid, bat *next, bat *nhis,
-							  bat *bid, bat *gid);
+							  const bat *bid, const bat *gid);
 group_export str GRPsubgroup4(bat *ngid, bat *next, bat *nhis,
-							  bat *bid, bat *gid, bat *eid, bat *hid);
+							  const bat *bid, const bat *gid,
+							  const bat *eid, const bat *hid);
 
 #endif /* _GROUP_H_ */
