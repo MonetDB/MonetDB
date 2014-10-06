@@ -499,7 +499,7 @@ atom_num_digits( atom *a )
 	return inlen;
 }
 
-static lng scales[] = {
+lng scales[19] = {
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),

@@ -59,5 +59,8 @@ extern void atom_dump(atom *a, stream *s);
 extern lng atom_get_int(atom *a);
 
 extern int atom_cmp(atom *a1, atom *a2);
+
+extern lng scales[19];
+
 #endif /* _SQL_ATOM_H_ */
 
