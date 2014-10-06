@@ -39,7 +39,6 @@
  */
 #include "monetdb_config.h"
 #include "mat.h"
-#include "group.h"
 
 str
 MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
