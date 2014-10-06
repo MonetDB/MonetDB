@@ -280,6 +280,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char nclients[24];
 		char pipeline[512];
 		char *readonly = NULL;
+		char *embeddedr = NULL;
 		char *argv[24];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
@@ -322,6 +323,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(ckv, "readonly");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			readonly = "--readonly";
+
+		kv = findConfKey(ckv, "embedr");
+		if (kv->val != NULL && strcmp(kv->val, "false") != 0)
+			embeddedr = "embedded_r=true";
 
 		freeConfFile(ckv);
 		free(ckv); /* can make ckv static and reuse it all the time */
@@ -386,6 +391,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
+		}
+		if (embeddedr[0] != '\0') {
+			argv[c++] = "--set"; argv[c++] = embeddedr;
 		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;
