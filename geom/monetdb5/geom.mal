@@ -435,7 +435,6 @@ end YMaxFromMBR;
 #address ordinatesMBR
 #comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
 
-
 command prelude():void	address geom_prelude;
 command epilogue():void address geom_epilogue;
 
@@ -451,14 +450,12 @@ command pbsmIndex{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl
 command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_bat;
 command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:dbl] address wkbDistance_bat_geom;
-command Distance1(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:dbl] address wkbPointsDistance1_geom_bat;
-command Distance2(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:dbl] address wkbPointsDistance2_geom_bat;
+command Distance(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int, filterVrs:int, spatialVrs:int) :bat[:oid,:dbl] address wkbPointsDistance_geom_bat;
 
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
-command Contains1(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:bit] address wkbPointsContains1_geom_bat;
-command Contains2(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:bit] address wkbPointsContains2_geom_bat;
+command Contains(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int, filterVrs:int, spatialVrs:int) :bat[:oid,:bit] address wkbPointsContains_geom_bat;
 
 #only one argument should be BAT
 #command Filter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbFilter_bat
@@ -466,10 +463,8 @@ command Contains2(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid
 command Filter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFilter_geom_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
 command Filter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbFilter_bat_geom;
-command Filter(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:oid] address wkbFilterWithImprints_geom_bat
-comment "Filters x,y coordinates in the BATs using imprints";
-command Filter1(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:oid] address wkbFilterWithPBSM_geom_bat
-comment "Filters x,y coordinates in the BATs using PBSM";
+command Filter(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], filterVrs:int) :bat[:oid,:oid] address wkbPointsFilter_geom_bat
+comment "Filters x,y coordinates in the BATs";
 
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat

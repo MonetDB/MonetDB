@@ -24,6 +24,7 @@
 #include "time.h"
 #include "unistd.h"
 
+/*
 typedef struct pbsm_ptr {
 	BUN offset;
 	unsigned long count;
@@ -35,7 +36,7 @@ static mbr *limits = NULL;
 
 //hard coded filename
 static char* filename = "../pbsmIndex_20m";
-
+*/
 
 //it gets two BATs with x,y coordinates and returns a new BAT with the points
 static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT) {
@@ -206,7 +207,7 @@ outBAT->trevsorted = false;
 
 }
 
-str wkbPointsContains1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+static str wkbPointsGeomContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
 	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
 	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
 	str ret=MAL_SUCCEED;
@@ -266,7 +267,7 @@ clean:
 }
 
 //Aternative implementation of contains using the winding number method
-inline int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
+static inline int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y) {
 	//borders are not included
     return ( ((P1x - P0x) * (P2y - P0y) - (P2x -  P0x) * (P1y - P0y)) > 0.0 ); 
 }
@@ -571,7 +572,7 @@ static str pnpolyWithHoles_(int *out, GEOSGeom geosGeometry, unsigned int interi
 #define POLY_NUM_VERT 120
 #define POLY_NUM_HOLE 10
 
-str wkbPointsContains2_geom_bat(bat* out, wkb** geomWKB, bat* point_x, bat* point_y, int* srid) {
+static str wkbPointsWindingContains_geom_bat(bat* out, wkb** geomWKB, bat* point_x, bat* point_y, int* srid) {
 	int interiorRingsNum = 0;
 	GEOSGeom geosGeometry;
 	str msg = NULL;
@@ -644,7 +645,7 @@ static BAT* BATDistance(wkb** geomWKB, BAT* geometriesBAT) {
 	return outBAT;
 }
 
-str wkbPointsDistance1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+static str wkbPointsGeomDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
 	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
 	BAT *pointsBAT = NULL, *pointsWithSRIDBAT=NULL;
 	str ret=MAL_SUCCEED;
@@ -762,7 +763,7 @@ static BAT* point2point_distance(GEOSGeom geosGeometry, BAT *xBAT, BAT *yBAT) {
 
 }
 
-str wkbPointsDistance2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+static str wkbPointsCartesianDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
 	BAT *xBAT=NULL, *yBAT=NULL, *outBAT=NULL;
 	GEOSGeom geosGeometry;
 	str ret=MAL_SUCCEED;
@@ -817,7 +818,7 @@ clean:
 	return ret;
 }
 
-str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
+static str wkbPointsFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
 	BAT *xBAT=NULL, *yBAT=NULL, *xCandidateOIDsBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;
 	str err;
@@ -880,4 +881,42 @@ str wkbFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat*
 	BBPreleaseref(yBAT->batCacheid);
 	BBPkeepref(*candidateOIDsBAT_id = candidateOIDsBAT->batCacheid);
 	return MAL_SUCCEED;
+}
+
+
+/*Wrappers that choose the version of the spatial function and the filter that should be used*/
+
+str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid, int* filterVersion, int* spatialVersion) {
+	(void) *filterVersion; //not used here but in the MAL optimiser
+	switch(*spatialVersion) {
+	case 1: 
+		return wkbPointsGeomContains_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);	
+	case 2:
+		return wkbPointsWindingContains_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);
+	default:
+		return createException(MAL, "batgeom.Contains", "Unknown Contains version");
+	}
+}
+
+str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid, int* filterVersion, int* spatialVersion) {
+	(void) *filterVersion; //not used here but in the MAL optimiser
+	switch(*spatialVersion) {
+	case 1: 
+		return wkbPointsGeomDistance_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);	
+	case 2:
+		return wkbPointsCartesianDistance_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);
+	default:
+		return createException(MAL, "batgeom.Distance", "Unknown Distance version");
+	}
+}
+
+str wkbPointsFilter_geom_bat(bat* candidatesBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int *filterVersion) {
+	switch(*filterVersion) {
+	case 1:
+		return wkbPointsFilterWithImprints_geom_bat(candidatesBAT_id, geomWKB, xBAT_id, yBAT_id);
+	//case 2:
+	//	return wkbPointsFilterWithPBSM_geom_bat(candidatesBAT_id, geomWKB, xBAT_id, yBAT_id);
+	default:
+		return createException(MAL, "batgeom.Filter", "Unknown Filter version");
+	}
 }

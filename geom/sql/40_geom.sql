@@ -4052,14 +4052,12 @@ CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTER
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
 CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Within";
 CREATE FUNCTION ST_Contains(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Contains";
-CREATE FUNCTION ST_Contains1(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS boolean EXTERNAL NAME geom."Contains1";
-CREATE FUNCTION ST_Contains2(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS boolean EXTERNAL NAME geom."Contains2";
+CREATE FUNCTION ST_Contains(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer, filterVersion integer, spatialVersion integer) RETURNS boolean EXTERNAL NAME geom."Contains";
 CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Overlaps";
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
-CREATE FUNCTION ST_Distance1(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS double EXTERNAL NAME geom."Distance1";
-CREATE FUNCTION ST_Distance2(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer) RETURNS double EXTERNAL NAME geom."Distance2";
+CREATE FUNCTION ST_Distance(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer, filterVersion integer, spatialVersion integer) RETURNS double EXTERNAL NAME geom."Distance";
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";

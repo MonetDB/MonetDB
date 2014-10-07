@@ -264,12 +264,9 @@ geom_export str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coo
 
 /* POINTS */
 
-geom_export str wkbPointsContains1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
-geom_export str wkbPointsContains2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
-geom_export str wkbPointsDistance1_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
-geom_export str wkbPointsDistance2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid);
+geom_export str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid, int* filterVersion, int* spatialVersion);
 
-geom_export str wkbFilterWithImprints_geom_bat(bat*, wkb**, bat*, bat*);
-geom_export str wkbFilterWithPBSM_geom_bat(bat*, wkb**, bat*, bat*);
+geom_export str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid, int* filterVersion, int* spatialVersion);
 
-geom_export int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
+geom_export str wkbPointsFilter_geom_bat(bat*, wkb**, bat*, bat*, int* filterVersion);
+

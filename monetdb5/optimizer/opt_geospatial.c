@@ -43,6 +43,8 @@ static void createFilterInstruction(MalBlkPtr mb, InstrPtr *oldInstrPtr, int ins
 	filterInstrPtr = pushArgument(mb, filterInstrPtr, filterFirstArgument);
 	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[instructionNum],2));
 	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[instructionNum],3));
+	//thi argument is the filter version
+	filterInstrPtr = pushArgument(mb, filterInstrPtr, getArg(oldInstrPtr[instructionNum],5));
 
 	//set the arguments for the x project
 	setReturnArgument(projectXInstrPtr, projectXReturnId);
@@ -173,8 +175,8 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if((filterReturnId = getSubselectSecondInput(getArg(oldInstrPtr[i], 1))) > 0)
 				fixSubselect(mb, oldInstrPtr, i, filterReturnId);
 		} else if(getModuleId(oldInstrPtr[i]) && !strcasecmp(getModuleId(oldInstrPtr[i]),"batgeom")) 	{
-			if((strcasecmp(getFunctionId(oldInstrPtr[i]), "contains1") == 0) || (strcasecmp(getFunctionId(oldInstrPtr[i]), "contains2") == 0))  {
-				if(oldInstrPtr[i]->argc == 5) {
+			if( strcasecmp(getFunctionId(oldInstrPtr[i]), "contains") == 0 )  {
+				if(oldInstrPtr[i]->argc == (5+2)) { //+2 -> the verion arguments
 					//call all necessary intructions for the filter and the evaluation of the spatial relation	
 					createFilterInstruction(mb, oldInstrPtr, i, getArg(oldInstrPtr[i],1));
 
@@ -217,13 +219,13 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 					actions +=2;
 				}
-			} else if((strcasecmp(getFunctionId(oldInstrPtr[i]), "distance1") == 0 || strcasecmp(getFunctionId(oldInstrPtr[i]), "distance2") == 0)  
+			} else if( (strcasecmp(getFunctionId(oldInstrPtr[i]), "distance") == 0)  
 					&& strcasecmp(getFunctionId(oldInstrPtr[i+1]), "thetasubselect") == 0) {
 				//the filter does not make sense if comparison is > OR >= 
 			//	if(strcmp(getArg(oldInstrPtr[i+1],4), ">")==0 ||  strcmp(getArg(oldInstrPtr[i+1],4),">=")==0) {
 			//		pushInstruction(mb, oldInstrPtr[i]);
 			//	} else 
-				if(oldInstrPtr[i]->argc == 5) {
+				if(oldInstrPtr[i]->argc == (5+2)) { //+2 the version arguments
 					InstrPtr bufferInstrPtr;
 					int bufferReturnId;
 					
