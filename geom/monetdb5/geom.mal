@@ -443,8 +443,8 @@ geom.prelude();
 
 module batgeom;
 
-#unsafe prevents mitosis from parallelising it
-command pbsmIndex{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, filename:str) :bat[:oid,:int] address pbsmIndex_bat;
+#unsafe prevents mitosis from parallelising it (no it is not true)
+command pbsmIndex{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndex_bat;
 
 #the 1 version of the functions use geos the 2 versions have custom implementations
 

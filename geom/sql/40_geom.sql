@@ -4426,5 +4426,5 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
 
-CREATE FUNCTION PBSMIndex(x double, y double, xmin double, ymin double, xmax double, ymax double, filenane string) RETURNS integer EXTERNAL NAME geom."pbsmIndex";
+CREATE FUNCTION PBSMIndex(x double, y double, xmin double, ymin double, xmax double, ymax double) RETURNS integer EXTERNAL NAME geom."pbsmIndex";
 

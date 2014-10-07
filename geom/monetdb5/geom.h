@@ -271,9 +271,5 @@ geom_export str wkbPointsDistance2_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* 
 
 geom_export str wkbFilterWithImprints_geom_bat(bat*, wkb**, bat*, bat*);
 geom_export str wkbFilterWithPBSM_geom_bat(bat*, wkb**, bat*, bat*);
-geom_export str wkbFilterWithImprints_geom_bat(bat*, wkb**, bat*, bat*);
-geom_export str wkbFilterWithImprintsAndPBSM_geom_bat(bat*, wkb**, bat*, bat*);
 
 geom_export int isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
-
-geom_export str pbsmIndex_bat(int *res, int *xBAT_id, int *yBAT_id, double* xmin, double* ymin, double* xmax, double* ymax, char** filename);
