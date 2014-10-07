@@ -924,11 +924,11 @@ static str createFilenames(str module) {
 	return MAL_SUCCEED;
 }
 
-static str allocateStructs(str module, unsigned int numberOfOIDs) {
+static str allocateStructs(unsigned int numberOfOIDs) {
 	unsigned short i=0;
 
 	if ((pbsm_idx = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
-		return createException(MAL, module, "Problem allocating space for pbsm_idx");
+		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for pbsm_idx");
 
 	for (i = 0; i < USHRT_MAX; i++) {
 		pbsm_idx[i].count = 0;
@@ -937,45 +937,48 @@ static str allocateStructs(str module, unsigned int numberOfOIDs) {
 
 	if ((oids = (oid*)GDKmalloc(numberOfOIDs * sizeof(oid))) == NULL) {
 		GDKfree(pbsm_idx);
-		return createException(MAL, module, "Problem allocating space for oids");
+		pbsm_idx = NULL;
+		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for oids");
 	}
 
 	if ((limits = (pbsm_info*)GDKmalloc(sizeof(pbsm_info))) == NULL) {
 		GDKfree(pbsm_idx);
+		pbsm_idx = NULL;
 		GDKfree(oids);
-		return createException(MAL, module, "Problem allocating space for limits");
+		oids = NULL;
+		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for limits");
 	}
 
 	return MAL_SUCCEED;
 }
 
-static str store(str module, unsigned int numberOfOIDs) {
+static str store(void) {
 	FILE *f;
 	str ret = MAL_SUCCEED;
 
 	if ((f = fopen(idxFilename, "wb"))) {
 		if (fwrite(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX,f) != USHRT_MAX) {
 			fclose(f);
-			ret = createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", idxFilename);
+			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", idxFilename);
 			goto clean;
 		}
                 fflush(f);
                 fclose(f);
 	} else {
-		ret = createException(MAL, module, "Could not open for writting (target: %s)", idxFilename);
+		ret = createException(MAL, " geomPoints.c:store", " Could not open for writting (target: %s)", idxFilename);
 		goto clean;
 	}
 
 	if ((f = fopen(dataFilename, "wb"))) {
-		if (fwrite(oids, sizeof(oids[0]), numberOfOIDs, f) != numberOfOIDs) {
+		if (fwrite(oids, sizeof(oids[0]), limits->oidsNum, f) != limits->oidsNum) {
 			fclose(f);
-			ret = createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", dataFilename);
+			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", dataFilename);
 			goto clean;
 		}
                 fflush(f);
                 fclose(f);
 	} else {
-		ret = createException(MAL, module, "Could not open for writting (target: %s)", dataFilename);
+		ret = createException(IO, " geomPoints.c:store", " Could not open for writting (target: %s)", dataFilename);
 		goto clean;
 	}
 
@@ -983,90 +986,107 @@ static str store(str module, unsigned int numberOfOIDs) {
 	if ((f = fopen(limitsFilename, "wb"))) {
 		if (fwrite(limits, sizeof(*limits), 1, f) != 1) {
 			fclose(f);
-			ret = createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", limitsFilename);
+			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", limitsFilename);
 			goto clean;
 		}
                 fflush(f);
                 fclose(f);
 	} else {
-		ret = createException(MAL, module, "Could not open for writting (target: %s)", limitsFilename);
+		ret = createException(IO, " geomPoints.c:store", " Could not open for writting (target: %s)", limitsFilename);
 		goto clean;
 	}
 
 
 	GDKfree(idxFilename);
+	idxFilename = NULL;
 	GDKfree(dataFilename);
+	dataFilename = NULL;
 	GDKfree(limitsFilename);
+	limitsFilename = NULL;
 
 	return MAL_SUCCEED;
 
 clean:
 	GDKfree(pbsm_idx);
+	pbsm_idx = NULL;
 	GDKfree(oids);
+	oids = NULL;
 	GDKfree(limits);
+	limits = NULL;
 	GDKfree(idxFilename);
+	idxFilename = NULL;
 	GDKfree(dataFilename);
+	dataFilename = NULL;
 	GDKfree(limitsFilename);
+	limitsFilename = NULL;
 
 	return ret;
 }
 
-static str load(str module, unsigned int numberOfOIDs, bit* found) {
+static str load(void) {
 	FILE *f;
 	str ret = MAL_SUCCEED;
-	*found = 0;
 
 	if ((f = fopen(idxFilename, "rb"))) {
-		*found = 1;
 		if (fread(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX, f) != USHRT_MAX) {
 			fclose(f);
-			ret = createException(MAL, module, "Could not read the PBSM index from disk (source: %s)", idxFilename);
+			ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", idxFilename);
 			goto clean;
 		}
 		fclose(f);
 		
-		if ((f = fopen(dataFilename, "rb"))) {
-			if (fread(oids, sizeof(oids[0]), numberOfOIDs, f) != numberOfOIDs) {
-				fclose(f);
-				ret = createException(MAL, module, "Could not read the PBSM index from disk (source: %s)", dataFilename);
-				goto clean;
-			}
-
-			fclose(f);
-		} else {
-			ret = createException(MAL, module, "Could not read file %s.", dataFilename);
-			goto clean;
-		}
-		
 		if ((f = fopen(limitsFilename, "rb"))) {
 			if (fread(limits, sizeof(*limits), 1, f) != 1) {
 				fclose(f);
-				ret = createException(MAL, module, "Could not read the PBSM index from disk (source: %s)", limitsFilename);
+				ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", limitsFilename);
 				goto clean;
 			}
 
 			fclose(f);
 		} else {
-			ret = createException(MAL, module, "Could not read file %s.", limitsFilename);
+			ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", limitsFilename);
+			goto clean;
+		}
+		
+		if ((f = fopen(dataFilename, "rb"))) {
+			if (fread(oids, sizeof(oids[0]), limits->oidsNum, f) != limits->oidsNum) {
+				fclose(f);
+				ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", dataFilename);
+				goto clean;
+			}
+
+			fclose(f);
+		} else {
+			ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", dataFilename);
 			goto clean;
 		}
 		
 		//index has been loaded, files are not needed anymore
 		GDKfree(idxFilename);
+		idxFilename = NULL;
 		GDKfree(dataFilename);
+		dataFilename = NULL;
 		GDKfree(limitsFilename);
+		limitsFilename = NULL;
+		return MAL_SUCCEED;
+
 	}
-
 	
-	return MAL_SUCCEED;
-
+	ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", idxFilename);
+	
 clean:
 	GDKfree(pbsm_idx);
+	pbsm_idx = NULL;
 	GDKfree(oids);
+	oids = NULL;
 	GDKfree(limits);
+	limits = NULL;
 	GDKfree(idxFilename);
+	idxFilename = NULL;
 	GDKfree(dataFilename);
+	dataFilename = NULL;
 	GDKfree(limitsFilename);
+	limitsFilename = NULL;
 
 	return ret;
 }
@@ -1147,7 +1167,7 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 	unsigned long i;
 	int shift = sizeof(sht) * 8 / 2;
 
-	if ((tmpCount = GDKmalloc(USHRT_MAX * sizeof(unsigned long))) == NULL) {
+	if ((tmpCount = (unsigned long*)GDKmalloc(USHRT_MAX * sizeof(unsigned long))) == NULL) {
 		GDKfree(pbsm_idx);
 		GDKfree(oids);
 		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
@@ -1193,15 +1213,20 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 }
 
 
-static char *
-PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
+static char* PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
 	//FILE *f;
 	//unsigned long i;
        	clock_t t = clock();
 	str err;
-	bit found =0;
-
 	assert (pbsm_idx == NULL && oids == NULL && limits == NULL);
+
+(void) *x;
+(void) *y;
+(void) minx;
+(void) maxx;
+(void) miny;
+(void) maxy, 
+(void) seqbase;
 
 	//create the filenames
 	if((err = createFilenames("batgeom.pbsmIndex")) != MAL_SUCCEED) {
@@ -1211,7 +1236,7 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 	}
 
 	//allocate memory for the necessary structures
-	if((err = allocateStructs("batgeom.pbsmIndex", n)) != MAL_SUCCEED) {
+	if((err = allocateStructs(n)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
 		GDKfree(err);
 		
@@ -1223,7 +1248,7 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 	}
 
 	//load the index if it does not already exist
-	if((err = load("batgeom.Filter", n, &found)) != MAL_SUCCEED) {
+	if((err = load()) != MAL_SUCCEED) {
 		str msg = createException(MAL, "batgeom.Filter", "%s", err);
 		GDKfree(err);
 		return msg;
@@ -1232,7 +1257,8 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 	fprintf(stderr, "[PBSM] Index loading: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
 	//the index does not exits. Create it.
-	if(!found) {
+/*	if(!found) {
+
 fprintf(stderr, "Creating index\n");
 	
 		// version 1
@@ -1255,8 +1281,7 @@ fprintf(stderr, "createIndex CREATE: (%f,%f) - (%f, %f) \t %u \n", limits->xmin,
 
 	} else
 fprintf(stderr, "createIndex LOAD: (%f,%f) - (%f, %f) \t %u \n", limits->xmin, limits->ymin, limits->xmax, limits->ymax, limits->oidsNum);
-
-
+*/
 	
 	return MAL_SUCCEED;
 }
@@ -1477,7 +1502,7 @@ str pbsmIndex_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, double* xmin, doub
 	}
 
 	//allocate memory for the necessary structures
-	if((err = allocateStructs("batgeom.pbsmIndex", n)) != MAL_SUCCEED) {
+	if((err = allocateStructs(n)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
 		GDKfree(err);
 		
@@ -1498,7 +1523,7 @@ str pbsmIndex_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, double* xmin, doub
 	}
 
 	//Store the indices to files for future use
-	if((err = store("batgeom.pbsmIndex", n)) != MAL_SUCCEED) {
+	if((err = store()) != MAL_SUCCEED) {
 		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
 		GDKfree(err);
 		return msg;
@@ -1516,6 +1541,8 @@ str pbsmIndex_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, double* xmin, doub
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+if(false) PBSMcomputeindex1(x, y, n, *xmin, *xmax, *ymin, *ymax, xBAT->hseqbase);
 
 	return MAL_SUCCEED;
 }
