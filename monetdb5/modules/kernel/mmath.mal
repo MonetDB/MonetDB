@@ -200,7 +200,7 @@ address MATHrandint
 comment "return a random number";
 
 command rand{unsafe} (v:int) :int 
-address MATHrandintseed
+address MATHrandintarg
 comment "return a random number";
 
 command srand(seed:int) :void 

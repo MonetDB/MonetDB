@@ -291,10 +291,10 @@ MATHrandint(int *res)
 }
 
 str
-MATHrandintseed(int *res, const int *seed)
+MATHrandintarg(int *res, const int *dummy)
 {
+	(void) dummy;
 	/* coverity[dont_call] */
-	srand(*seed);
 	*res = rand();
 	return MAL_SUCCEED;
 }
