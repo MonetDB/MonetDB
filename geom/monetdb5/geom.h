@@ -270,3 +270,4 @@ geom_export str wkbPointsDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* x
 
 geom_export str wkbPointsFilter_geom_bat(bat*, wkb**, bat*, bat*, int* filterVersion);
 
+geom_export str pbsmIndex_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, double* xmin, double* ymin, double* xmax, double* ymax);
