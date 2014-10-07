@@ -114,7 +114,8 @@ default:\
 			if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
 				args[i] = (void*)  &mut->args[i].o;	 \
 				mut->args[i].o++;		\
-			} else if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+			} else if(mut->args[i].size == 0 || \
+					  ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
 				args[i] += mut->args[i].size;	\
 			} else if(ATOMvarsized(mut->args[i].type)){	\
 				mut->args[i].o++;		\
@@ -298,6 +299,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
+			mat[i].type = getArgType(mb, pci, i);
 		}
 	}
 
