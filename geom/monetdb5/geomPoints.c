@@ -32,7 +32,7 @@ typedef struct pbsm_ptr {
 
 static pbsm_ptr *pbsm_idx = NULL;
 static oid *oids = NULL;
-//static mbr *limits = NULL;
+static mbr *limits = NULL;
 
 //hard coded filename
 static char* filename = "../pbsmIndex_20m";
@@ -916,6 +916,126 @@ static str createFilenames(str module) {
 	return MAL_SUCCEED;
 }
 
+static str allocateStructs(str module, unsigned int numberOfOIDs) {
+	unsigned short i=0;
+
+	if ((pbsm_idx = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
+		return createException(MAL, module, "Problem allocating space for pbsm_idx");
+
+	for (i = 0; i < USHRT_MAX; i++) {
+		pbsm_idx[i].count = 0;
+		pbsm_idx[i].offset = 0;
+	}
+
+	if ((oids = (oid*)GDKmalloc(numberOfOIDs * sizeof(oid))) == NULL) {
+		GDKfree(pbsm_idx);
+		return createException(MAL, module, "Problem allocating space for oids");
+	}
+
+	if ((limits = (mbr*)GDKmalloc(sizeof(mbr))) == NULL) {
+		GDKfree(pbsm_idx);
+		GDKfree(oids);
+		return createException(MAL, module, "Problem allocating space for limits");
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str store(str module, unsigned int numberOfOIDs) {
+	FILE *f;
+
+	if ((f = fopen(idxFilename, "wb"))) {
+		if (fwrite(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX,f) != USHRT_MAX) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+			return createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", idxFilename);
+		}
+                fflush(f);
+                fclose(f);
+	}
+
+	if ((f = fopen(dataFilename, "wb"))) {
+		if (fwrite(oids, sizeof(oids[0]), numberOfOIDs, f) != numberOfOIDs) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+			return createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", dataFilename);
+		}
+                fflush(f);
+                fclose(f);
+	}
+	
+	if ((f = fopen(limitsFilename, "wb"))) {
+		if (fwrite(limits, sizeof(*limits), 1, f) != 1) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+			return createException(MAL, module, "Could not save the PBSM index to disk (target: %s)", limitsFilename);
+		}
+                fflush(f);
+                fclose(f);
+	}
+	return MAL_SUCCEED;
+}
+
+static str load(str module, unsigned int numberOfOIDs, bit* found) {
+	FILE *f;
+	*found = 0;
+
+	if ((f = fopen(idxFilename, "rb"))) {
+		*found = 1;
+		if (fread(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX, f) != USHRT_MAX) {
+			fclose(f);
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+			return createException(MAL, module, "Could not read the PBSM index from disk (source: %s)", idxFilename);
+		}
+		fclose(f);
+		
+		if ((f = fopen(dataFilename, "rb"))) {
+			if (fread(oids, sizeof(oids[0]), numberOfOIDs, f) != numberOfOIDs) {
+				fclose(f);
+				GDKfree(pbsm_idx);
+				GDKfree(oids);
+				GDKfree(limits);
+				GDKfree(idxFilename);
+				GDKfree(dataFilename);
+				GDKfree(limitsFilename);
+				return createException(MAL, module, "Could not read the PBSM index from disk (source: %s)", dataFilename);
+			}
+
+			fclose(f);
+		} else {
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+			return createException(MAL, module, "Could not read the PBSM index (.dat).");
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+ 
 static char *
 PBSMcomputeindex1(const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
 	sht *cells;
@@ -1047,41 +1167,99 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 
 static char *
 PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
-	FILE *f;
-	unsigned long i;
+	//FILE *f;
+	//unsigned long i;
        	clock_t t = clock();
+	str err;
+	bit found =0;
 
-	assert (pbsm_idx == NULL && oids == NULL);
+	assert (pbsm_idx == NULL && oids == NULL && limits == NULL);
 
-	createFilenames("batgeom.Filter");
-	
-	if ((pbsm_idx = GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
-		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
-
-	for (i = 0; i < USHRT_MAX; i++) {
-		pbsm_idx[i].count = 0;
-		pbsm_idx[i].offset = 0;
+	if((err = createFilenames("batgeom.Filter")) != MAL_SUCCEED) {
+		str msg = createException(MAL, "batgeom.Filter", "%s", err);
+		GDKfree(err);
+		return msg;
 	}
 
-	/* have we precomputed the grid? */
+	if((err = allocateStructs("batgeom.Filter", n)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "batgeom.Filter", "%s", err);
+		GDKfree(err);
+		
+		GDKfree(idxFilename);
+		GDKfree(dataFilename);
+		GDKfree(limitsFilename);
+
+		return msg;
+	}
+
+	//load the index if it does not already exist
+	if((err = load("batgeom.Filter", n, &found)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "batgeom.Filter", "%s", err);
+		GDKfree(err);
+		
+		GDKfree(idxFilename);
+		GDKfree(dataFilename);
+		GDKfree(limitsFilename);
+
+		return msg;
+	}
+	t = clock() - t;
+	fprintf(stderr, "[PBSM] Index loading: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+
+	//the index does not exits. Create it.
+	if(!found) {
+fprintf(stderr, "Creating index\n");
+	
+		// version 1
+		if ( false && PBSMcomputeindex1(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
+			throw(MAL, "pbsm.createindex", "Failed to compute index (1).");
+		// version 2
+		if ( true && PBSMcomputeindex2(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
+			throw(MAL, "pbsm.createindex", "Failed to compute index (2).");
+
+		t = clock() - t;
+		fprintf(stderr, "[PBSM] Index population: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+
+		//Store the indices to files for future use
+		if((err = store("batgeom.Filter", n)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "batgeom.Filter", "%s", err);
+			GDKfree(err);
+		
+			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
+
+			return msg;
+		}
+	}
+	
+/*
+	// have we precomputed the grid?
 	if ((f = fopen(idxFilename, "rb"))) {
 		if (fread(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX, f) != USHRT_MAX) {
 			fclose(f);
 			GDKfree(pbsm_idx);
+			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
 			throw(MAL, "batpbsm.contains16", "Could not read the PBSM index from disk (source: %s)", idxFilename);
 		}
 		fclose(f);
-
-		if ((oids = GDKmalloc(n * sizeof(oid))) == NULL) {
-			GDKfree(pbsm_idx);
-			throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
-		}
-
+		
 		if ((f = fopen(dataFilename, "rb"))) {
 			if (fread(oids, sizeof(oids[0]), n, f) != n) {
 				fclose(f);
 				GDKfree(pbsm_idx);
 				GDKfree(oids);
+				GDKfree(limits);
+				GDKfree(idxFilename);
+				GDKfree(dataFilename);
+				GDKfree(limitsFilename);
 				throw(MAL, "batpbsm.contains16", "Could not read the PBSM index from disk (source: %s)", dataFilename);
 			}
 
@@ -1094,44 +1272,20 @@ PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, do
 		} else {
 			GDKfree(pbsm_idx);
 			GDKfree(oids);
+			GDKfree(limits);
+			GDKfree(idxFilename);
+			GDKfree(dataFilename);
+			GDKfree(limitsFilename);
 			throw(MAL, "batpbsm.contains16", "Could not read the PBSM index (.dat).");
 		}
 	} 
 
-	/* No. Let's compute the grid! */
-	// version 1
-	if ( false && PBSMcomputeindex1(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
-		throw(MAL, "pbsm.createindex", "Failed to compute index (1).");
-	//
-	// version 2
-	if ( true && PBSMcomputeindex2(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
-		throw(MAL, "pbsm.createindex", "Failed to compute index (2).");
+*/	/* No. Let's compute the grid! */
+	
 
-	t = clock() - t;
-	fprintf(stderr, "[PBSM] Index population: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
-
-	/* Save the index for future use (sloppiness acknowledged) */
-	if ((f = fopen(idxFilename, "wb"))) {
-		if (fwrite(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX,f) != USHRT_MAX) {
-			fclose(f);
-			GDKfree(pbsm_idx);
-			GDKfree(oids);
-			throw(MAL, "batpbsm.contains16", "Could not save the PBSM index to disk (target: %s)", idxFilename);
-		}
-                fflush(f);
-                fclose(f);
-	}
-
-	if ((f = fopen(dataFilename, "wb"))) {
-		if (fwrite(oids, sizeof(oids[0]), n, f) != n) {
-			fclose(f);
-			GDKfree(pbsm_idx);
-			GDKfree(oids);
-			throw(MAL, "batpbsm.contains16", "Could not save the PBSM index to disk (target: %s)", dataFilename);
-		}
-                fflush(f);
-                fclose(f);
-	}
+	GDKfree(idxFilename);
+	GDKfree(dataFilename);
+	GDKfree(limitsFilename);
 
 	return MAL_SUCCEED;
 }
@@ -1173,7 +1327,7 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 
 	/* get candidate oid from the pbsm index */
 	if ((candidates = GDKmalloc(csize * sizeof(oid))) == NULL)
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
+		return createException(MAL, "batgeom.Filter", "Problem allocating space for %lu oids", csize);
 	i = 0;
 	for (k = mbrcellxmin; k <= mbrcellxmax; k++) {
 		for (l = mbrcellymin; l <= mbrcellymax; l++) {
@@ -1192,7 +1346,7 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 	assert(BAThdense(batx) && BAThdense(baty));
 
 	if ((*bres = BATnew(TYPE_void, TYPE_oid, csize, TRANSIENT)) == NULL) {
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
+		return createException(MAL, "batgeom.Filter", "Problem allocating space for the output BAT");
 	}
 
 	for (i = 0; i < csize; i++) {
@@ -1256,7 +1410,7 @@ PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g,
 	return msg;
 }
 
-static str wkbFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
+static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
 	BAT *xBAT=NULL, *yBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;
 	str err;
@@ -1296,9 +1450,12 @@ static str wkbFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, b
 	t = clock();
 	if(((err = PBSMselect_(&candidateOIDsBAT, xBAT, yBAT, geomMBR, &xmin, &xmax, &ymin, &ymax)) != MAL_SUCCEED)
 		|| (candidateOIDsBAT == NULL)) {
+		str msg;
 		BBPreleaseref(xBAT->batCacheid);
 		BBPreleaseref(yBAT->batCacheid);
-		return createException(MAL,"batgeom.Filter","Problem filtering BAT");
+		msg = createException(MAL, "batgeom.Filter", "%s", err);
+		GDKfree(err);
+		return msg;
 	}
 	t = clock() - t;
 	fprintf(stderr, "[PREFILTERING] PBSM: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
@@ -1343,7 +1500,7 @@ str wkbPointsFilter_geom_bat(bat* candidatesBAT_id, wkb** geomWKB, bat* xBAT_id,
 	case 1:
 		return wkbPointsFilterWithImprints_geom_bat(candidatesBAT_id, geomWKB, xBAT_id, yBAT_id);
 	case 2:
-		return wkbFilterWithPBSM_geom_bat(candidatesBAT_id, geomWKB, xBAT_id, yBAT_id);
+		return wkbPointsFilterWithPBSM_geom_bat(candidatesBAT_id, geomWKB, xBAT_id, yBAT_id);
 	default:
 		return createException(MAL, "batgeom.Filter", "Unknown Filter version");
 	}
