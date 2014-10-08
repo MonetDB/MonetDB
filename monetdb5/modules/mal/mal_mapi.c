@@ -238,8 +238,14 @@ SERVERlistenThread(SOCKET *Sock)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval < 0) {
-			if (MT_geterrno() != EINTR) {
+		if (retval == SOCKET_ERROR) {
+			if (
+#ifdef _MSC_VER
+				WSAGetLastError() != WSAEINTR
+#else
+				errno != EINTR
+#endif
+				) {
 				msg = "select failed";
 				goto error;
 			}
@@ -247,7 +253,13 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR || !ATOMIC_GET(serveractive, atomicLock, "SERVERlistenThread")) {
+				if (
+#ifdef _MSC_VER
+					WSAGetLastError() != WSAEINTR
+#else
+					errno != EINTR
+#endif
+					|| !ATOMIC_GET(serveractive, atomicLock, "SERVERlistenThread")) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -263,7 +275,13 @@ SERVERlistenThread(SOCKET *Sock)
 			struct cmsghdr *cmsg;
 
 			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR) {
+				if (
+#ifdef _MSC_VER
+					WSAGetLastError() != WSAEINTR
+#else
+					errno != EINTR
+#endif
+					) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -463,7 +481,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					strerror(errno));
 		}
 
-		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) ) {
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
 			char *err = strerror(errno);
 			GDKfree(psock);
 			if (usockfile)
@@ -483,16 +501,17 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		do {
 			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			if (bind(sock, (SOCKPTR) &server, length) < 0) {
+			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
 				if (
-#ifdef EADDRINUSE
-						errno == EADDRINUSE &&
+#ifdef _MSC_VER
+					WSAGetLastError() == WSAEADDRINUSE &&
 #else
-#ifdef WSAEADDRINUSE
-						errno == WSAEADDRINUSE &&
+#ifdef EADDRINUSE
+					errno == EADDRINUSE &&
+#else
 #endif
 #endif
-						autosense && port <= 65535)
+					autosense && port <= 65535)
 				{
 					port++;
 					continue;
@@ -509,7 +528,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			}
 		} while (1);
 
-		if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
 			if (usockfile)
@@ -550,7 +569,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
-		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
+		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			closesocket(usock);
 			unlink(usockfile);

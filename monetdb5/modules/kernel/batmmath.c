@@ -66,7 +66,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	p = (TYPE *) Tloc(b, BUNfirst(b));								\
 	q = (TYPE *) Tloc(b, BUNlast(b));								\
 																	\
-	errno = 0;														\
+	set_errno(0);														\
 	feclearexcept(FE_ALL_EXCEPT);									\
 	if (b->T->nonil) {												\
 		for (; p < q; o++, p++)										\
@@ -115,7 +115,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	p = (TYPE *) Tloc(b, BUNfirst(b));									\
 	q = (TYPE *) Tloc(b, BUNlast(b));									\
 																		\
-	errno = 0;															\
+	set_errno(0);															\
 	feclearexcept(FE_ALL_EXCEPT);										\
 	if (b->T->nonil) {													\
 		for (; p < q; o++, p++)											\

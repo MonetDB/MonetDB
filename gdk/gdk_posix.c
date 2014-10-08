@@ -1156,20 +1156,15 @@ win_errmap_t win_errmap[] = {
 
 #define GDK_WIN_ERRNO_TLS 13
 
+#undef _errno
 int *
 win_errno(void)
 {
 	/* get address of thread-local Posix errno; refresh its value
 	 * from WIN32 error code */
 	int i, err = GetLastError() & 0xff;
-	int *result = TlsGetValue(GDK_WIN_ERRNO_TLS);
+	int *result = _errno();
 
-	if (result == NULL) {
-		result = (int *) malloc(sizeof(int));
-		*result = 0;
-		TlsSetValue(GDK_WIN_ERRNO_TLS, result);
-	}
-	*result = ENOSYS;	/* fallback error */
 	for (i = 0; win_errmap[i].w != 0; ++i) {
 		if (err == win_errmap[i].w) {
 			*result = win_errmap[i].e;
@@ -1178,6 +1173,20 @@ win_errno(void)
 	}
 	SetLastError(err);
 	return result;
+}
+
+void
+set_errno(int e)
+{
+	int i;
+
+	for (i = 0; win_errmap[i].w != 0; i++) {
+		if (win_errmap[i].e == e) {
+			SetLastError(win_errmap[i].w);
+			break;
+		}
+	}
+	_set_errno(e);
 }
 #endif
 

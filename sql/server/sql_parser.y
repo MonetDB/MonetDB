@@ -4170,7 +4170,7 @@ literal:
 			char *p = $1;
 			double val;
 
-			errno = 0;
+			set_errno(0);
 			val = strtod($1,&p);
 			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);
@@ -4189,7 +4189,7 @@ literal:
   		  char *p = $1;
 		  double val;
 
-		  errno = 0;
+		  set_errno(0);
  		  val = strtod($1,&p);
 		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);

@@ -151,6 +151,9 @@
 /* If the system has a working fdatasync */
 /* #undef HAVE_FDATASYNC */
 
+/* Define to 1 if you have the <fenv.h> header file. */
+/* #undef HAVE_FENV_H */
+
 /* Define to 1 if you have the `fpclass' function. */
 #define HAVE_FPCLASS 1
 

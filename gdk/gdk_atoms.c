@@ -764,7 +764,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		 * normalized double, and may or may not set errno to
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
-		errno = 0;
+		set_errno(0);
 		d = strtod(src, &pe);
 		p = pe;
 		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
@@ -806,7 +806,7 @@ fltFromStr(const char *src, int *len, flt **dst)
 		 * normalized float, and may or may not set errno to
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
-		errno = 0;
+		set_errno(0);
 		f = strtof(src, &pe);
 		p = pe;
 		while (GDKisspace(*p))

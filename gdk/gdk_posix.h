@@ -247,10 +247,15 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define link		win_link
 #endif
 
-#endif
-
 #define _errno		win_errno
 
 gdk_export int *win_errno(void);
+gdk_export void set_errno(int);
+
+#else
+
+#define set_errno(e)	(errno = (e))
+
+#endif	/* NATIVE_WIN32 */
 
 #endif /* GDK_POSIX_H */
