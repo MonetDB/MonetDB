@@ -293,7 +293,7 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	char *dot = strchr(s, '.'), *end = NULL;
 	int digits = _strlen(s);
 	int scale = digits - (int) (dot - s) - 1;
-	lng value = 0;
+	BIG value = 0;
 
 	if (!dot) {
 		if (GDK_STRNIL(*val)) {
@@ -322,7 +322,7 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 		/* the current scale is too big, decrease it by correctly rounding */
 		/* we should round properly, and check for overflow (res >= 10^digits+scale) */
 		int dff = scale - *sc;	/* CANNOT be 0 */
-		lng rnd = scales[dff] >> 1;
+		BIG rnd = scales[dff] >> 1;
 
 		if (value > 0)
 			value += rnd;
