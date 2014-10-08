@@ -114,9 +114,9 @@ full_column(sql_trans *tr, sql_column *c)
 	return delta_full_bat(c, c->data, isTemp(c));
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
+static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
 static oid
-column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
+column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
 	BAT *b = NULL, *s = NULL, *r = NULL;

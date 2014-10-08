@@ -1508,7 +1508,7 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_getVersion(lng *version, int *clientid)
+mvc_getVersion(lng *version, const int *clientid)
 {
 	mvc *m = NULL;
 	Client cntxt = MCgetClient(*clientid);
@@ -1597,7 +1597,7 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 }
 
 BAT *
-mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
+mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
@@ -1962,25 +1962,25 @@ setwritable(BAT *b)
 }
 
 str
-DELTAbat2(bat *result, bat *col, bat *uid, bat *uval)
+DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval)
 {
 	return DELTAbat(result, col, uid, uval, NULL);
 }
 
 str
-DELTAsub2(bat *result, bat *col, bat *cid, bat *uid, bat *uval)
+DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
 {
 	return DELTAsub(result, col, cid, uid, uval, NULL);
 }
 
 str
-DELTAproject2(bat *result, bat *sub, bat *col, bat *uid, bat *uval)
+DELTAproject2(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
 {
 	return DELTAproject(result, sub, col, uid, uval, NULL);
 }
 
 str
-DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
+DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
@@ -2034,7 +2034,7 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 }
 
 str
-DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
+DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
@@ -2154,7 +2154,7 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 }
 
 str
-DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
+DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *s, *c, *u_id, *u_val, *u, *i = NULL, *res, *tres;
 
@@ -2962,7 +2962,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 str
-zero_or_one(ptr ret, bat *bid)
+zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
@@ -3011,7 +3011,7 @@ zero_or_one(ptr ret, bat *bid)
 }
 
 str
-not_unique(bit *ret, bat *bid)
+not_unique(bit *ret, const bat *bid)
 {
 	BAT *b;
 
@@ -3062,7 +3062,7 @@ HASHfndTwice(BAT *b, ptr v)
 }
 
 str
-not_unique_oids(bat *ret, bat *bid)
+not_unique_oids(bat *ret, const bat *bid)
 {
 	BAT *b, *bn = NULL;
 
@@ -3149,7 +3149,7 @@ not_unique_oids(bat *ret, bat *bid)
 
 /* row case */
 str
-SQLidentity(bat *ret, bat *bid)
+SQLidentity(bat *ret, const bat *bid)
 {
 	BAT *bn, *b;
 
@@ -3163,7 +3163,7 @@ SQLidentity(bat *ret, bat *bid)
 }
 
 str
-BATSQLidentity(bat *ret, bat *bid)
+BATSQLidentity(bat *ret, const bat *bid)
 {
 	return BKCmirror(ret, bid);
 }
@@ -3194,71 +3194,6 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 }
 
-#ifdef HAVE_HGE
-static hge scales[39] = {
-	(hge) LL_CONSTANT(1),
-	(hge) LL_CONSTANT(10),
-	(hge) LL_CONSTANT(100),
-	(hge) LL_CONSTANT(1000),
-	(hge) LL_CONSTANT(10000),
-	(hge) LL_CONSTANT(100000),
-	(hge) LL_CONSTANT(1000000),
-	(hge) LL_CONSTANT(10000000),
-	(hge) LL_CONSTANT(100000000),
-	(hge) LL_CONSTANT(1000000000),
-	(hge) LL_CONSTANT(10000000000),
-	(hge) LL_CONSTANT(100000000000),
-	(hge) LL_CONSTANT(1000000000000),
-	(hge) LL_CONSTANT(10000000000000),
-	(hge) LL_CONSTANT(100000000000000),
-	(hge) LL_CONSTANT(1000000000000000),
-	(hge) LL_CONSTANT(10000000000000000),
-	(hge) LL_CONSTANT(100000000000000000),
-	(hge) LL_CONSTANT(1000000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
-};
-#else
-static lng scales[19] = {
-	LL_CONSTANT(1),
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
-};
-#endif
-
 /*
  * The core modules of Monet provide just a limited set of
  * mathematical operators. The extensions required to support
@@ -3267,7 +3202,7 @@ static lng scales[19] = {
  */
 
 str
-daytime_2time_daytime(daytime *res, daytime *v, int *digits)
+daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 
@@ -3281,14 +3216,14 @@ daytime_2time_daytime(daytime *res, daytime *v, int *digits)
 }
 
 str
-second_interval_2_daytime(daytime *res, lng *s, int *digits)
+second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	*res = (daytime) *s;
 	return daytime_2time_daytime(res, res, digits);
 }
 
 str
-nil_2time_daytime(daytime *res, void *v, int *digits)
+nil_2time_daytime(daytime *res, const void *v, const int *digits)
 {
 	(void) digits;
 	(void) v;
@@ -3297,7 +3232,7 @@ nil_2time_daytime(daytime *res, void *v, int *digits)
 }
 
 str
-str_2time_daytime(daytime *res, str *v, int *digits)
+str_2time_daytime(daytime *res, const str *v, const int *digits)
 {
 	int len = sizeof(daytime), pos;
 
@@ -3312,7 +3247,7 @@ str_2time_daytime(daytime *res, str *v, int *digits)
 }
 
 str
-timestamp_2_daytime(daytime *res, timestamp *v, int *digits)
+timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 	int msec = v->msecs;
@@ -3327,7 +3262,7 @@ timestamp_2_daytime(daytime *res, timestamp *v, int *digits)
 }
 
 str
-date_2_timestamp(timestamp *res, date *v, int *digits)
+date_2_timestamp(timestamp *res, const date *v, const int *digits)
 {
 	(void) digits;		/* no precision needed */
 	res->days = *v;
@@ -3336,7 +3271,7 @@ date_2_timestamp(timestamp *res, date *v, int *digits)
 }
 
 str
-timestamp_2time_timestamp(timestamp *res, timestamp *v, int *digits)
+timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 
@@ -3354,7 +3289,7 @@ timestamp_2time_timestamp(timestamp *res, timestamp *v, int *digits)
 }
 
 str
-nil_2time_timestamp(timestamp *res, void *v, int *digits)
+nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 {
 	(void) digits;
 	(void) v;
@@ -3363,7 +3298,7 @@ nil_2time_timestamp(timestamp *res, void *v, int *digits)
 }
 
 str
-str_2time_timestamp(timestamp *res, str *v, int *digits)
+str_2time_timestamp(timestamp *res, const str *v, const int *digits)
 {
 	int len = sizeof(timestamp), pos;
 
@@ -3378,7 +3313,7 @@ str_2time_timestamp(timestamp *res, str *v, int *digits)
 }
 
 str
-SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta)
+SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 {
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
@@ -3401,7 +3336,7 @@ sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
 sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
 */
 str
-SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
+SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -3443,7 +3378,7 @@ SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
 }
 
 str
-SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
+SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -3483,7 +3418,7 @@ SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
 }
 
 str
-month_interval_str(int *ret, str *s, int *d, int *sk)
+month_interval_str(int *ret, const str *s, const int *d, const int *sk)
 {
 	lng res;
 
@@ -3495,7 +3430,7 @@ month_interval_str(int *ret, str *s, int *d, int *sk)
 }
 
 str
-second_interval_str(lng *res, str *s, int *d, int *sk)
+second_interval_str(lng *res, const str *s, const int *d, const int *sk)
 {
 	if (interval_from_str(*s, *d, *sk, res) < 0)
 		throw(SQL, "calc.second_interval", "wrong format (%s)", *s);
@@ -3604,7 +3539,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-second_interval_daytime(lng *res, daytime *s, int *d, int *sk)
+second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
 {
 	int k = digits2sk(*d);
 	lng r = *(int *) s;
@@ -3856,7 +3791,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *name)
+do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b, *g;
 	BUN p, q;
@@ -3917,7 +3852,7 @@ do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *
 }
 
 static str
-do_sql_rank(bat *rid, bat *bid, int nrank, int dense, const char *name)
+do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b;
 	BATiter bi;
@@ -3961,27 +3896,27 @@ do_sql_rank(bat *rid, bat *bid, int nrank, int dense, const char *name)
 }
 
 str
-sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
 {
 	(void) gpe;
 	return do_sql_rank_grp(rid, bid, gid, 1, 0, "sql.rank_grp");
 }
 
 str
-sql_dense_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
 {
 	(void) gpe;
 	return do_sql_rank_grp(rid, bid, gid, 2, 1, "sql.dense_rank_grp");
 }
 
 str
-sql_rank(bat *rid, bat *bid)
+sql_rank(bat *rid, const bat *bid)
 {
 	return do_sql_rank(rid, bid, 1, 0, "sql.rank");
 }
 
 str
-sql_dense_rank(bat *rid, bat *bid)
+sql_dense_rank(bat *rid, const bat *bid)
 {
 	return do_sql_rank(rid, bid, 2, 1, "sql.dense_rank");
 }
@@ -4717,7 +4652,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 str
-STRindex_int(int *i, str *src, bit *u)
+STRindex_int(int *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4725,7 +4660,7 @@ STRindex_int(int *i, str *src, bit *u)
 }
 
 str
-BATSTRindex_int(bat *res, bat *src, bit *u)
+BATSTRindex_int(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4773,7 +4708,7 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_sht(sht *i, str *src, bit *u)
+STRindex_sht(sht *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4781,7 +4716,7 @@ STRindex_sht(sht *i, str *src, bit *u)
 }
 
 str
-BATSTRindex_sht(bat *res, bat *src, bit *u)
+BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4829,7 +4764,7 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_bte(bte *i, str *src, bit *u)
+STRindex_bte(bte *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4837,7 +4772,7 @@ STRindex_bte(bte *i, str *src, bit *u)
 }
 
 str
-BATSTRindex_bte(bat *res, bat *src, bit *u)
+BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4885,7 +4820,7 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 }
 
 str
-STRstrings(str *i, str *src)
+STRstrings(str *i, const str *src)
 {
 	(void)src;
 	*i = 0;
@@ -4893,7 +4828,7 @@ STRstrings(str *i, str *src)
 }
 
 str
-BATSTRstrings(bat *res, bat *src)
+BATSTRstrings(bat *res, const bat *src)
 {
 	BAT *s, *r;
 	Heap *h;

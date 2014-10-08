@@ -1,36 +1,35 @@
 src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", ...) {
+  requireNamespace("dplyr")
   con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
     user = user, password = password, ...)
-  src_sql("monetdb", con, info = dbGetInfo(con))
+  dplyr::src_sql("monetdb", con, info = dbGetInfo(con))
 }
 
-translate_env.src_monetdb <- function(x) {
-  sql_variant(
-    base_scalar,
-    sql_translator(.parent = base_agg,
-      n = function() sql("COUNT(*)"),
-      sd =  sql_prefix("STDDEV_SAMP"),
-      var = sql_prefix("VAR_SAMP"),
-      median = sql_prefix("MEDIAN")
+src_translate_env.src_monetdb <- function(x) {
+  dplyr::sql_variant(
+    dplyr::base_scalar,
+    dplyr::sql_translator(.parent = dplyr::base_agg,
+      n = function() dplyr::sql("COUNT(*)"),
+      sd =  dplyr::sql_prefix("STDDEV_SAMP"),
+      var = dplyr::sql_prefix("VAR_SAMP"),
+      median = dplyr::sql_prefix("MEDIAN")
     )
   )
 }
 
-brief_desc.src_monetdb <- function(x) {
+src_desc.src_monetdb <- function(x) {
   paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ") [", x$info$merovingian_uri,"]")
 }
 
 tbl.src_monetdb <- function(src, from, ...) {
   monetdb_check_subquery(from)
-  tbl_sql("mownetdb", src = src, from = from, ...)
+  dplyr::tbl_sql("monetdb", src = src, from = from, ...)
 }
 
-# sql_create_index.src_monetdb
-
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {
-  # prepare gives us column info without actually running a query
-  dbGetQuery(con,build_sql("PREPARE SELECT * FROM ", ident(sql)))$column
+  # prepare gives us column info without actually running a query. Nice.
+  dbGetQuery(con, dplyr::build_sql("PREPARE SELECT * FROM ", sql))$column
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -38,19 +37,16 @@ db_query_rows.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
-  dbWriteTable(con,table,values,append=T,transaction=F,csvdump=T)
+  dbWriteTable(con,dbQuoteIdentifier(con,table),values,
+    append=T,transaction=F,csvdump=T)
 }
 
 db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
                                             ...) {
-  tt_sql <- build_sql("CREATE TEMPORARY TABLE ", ident(name), " AS ",
+  tt_sql <- dplyr::build_sql("CREATE TEMPORARY TABLE ", dplyr::ident(name), " AS ",
     sql, " WITH DATA", con = con)
   dbGetQuery(con, tt_sql)
   name
-}
-
-db_begin.MonetDBConnection <- function(con, ...) {
-  dbBegin(con)
 }
 
 db_create_index.MonetDBConnection <- function(con, table, columns, name = NULL,
@@ -62,13 +58,10 @@ db_analyze.MonetDBConnection <- function(con, table, ...) {
   TRUE
 }
 
-# this should be the default in dplyr anyways...
-db_begin.MonetDBConnection <- function(con, ...) dbBegin(con)
-
 sql_subquery.MonetDBConnection <- function(con, sql, name = unique_name(), ...) {
-  if (is.ident(sql)) return(sql)
+  if (dplyr::is.ident(sql)) return(sql)
   monetdb_check_subquery(sql)
-  build_sql("(", sql, ") AS ", ident(name), con = con)
+  dplyr::build_sql("(", sql, ") AS ", dplyr::ident(name), con = con)
 }
 
 monetdb_check_subquery <- function(sql) {
@@ -92,3 +85,13 @@ monetdb_queryinfo <- function(conn, query) {
   })
   info
 }
+
+# copied from dplyr's utils.r, sql_subquery needs it
+unique_name <- local({
+  i <- 0
+
+  function() {
+    i <<- i + 1
+    paste0("_W", i)
+  }
+})

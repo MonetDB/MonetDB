@@ -351,7 +351,7 @@ command fromstr():timezone
 address tzone_fromstr;
 command tostr():str
 address tzone_tostr;
-command str():str
+command str(z:timezone):str
 address MTIMEtzone_tostr;
 command timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;

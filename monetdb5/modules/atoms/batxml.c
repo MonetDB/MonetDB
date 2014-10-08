@@ -73,8 +73,8 @@ batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 batxml_export str BATXMLagg(bat *ret, const bat *bid, const bat *grp);
 batxml_export str BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *e);
 batxml_export str BATXMLgroup(xml *ret, const bat *bid);
-batxml_export str AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
-batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
+batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
 
 #define prepareResult(X,Y,tpe,Z,free)				\
@@ -1662,7 +1662,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 str
-AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
+AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
@@ -1709,7 +1709,7 @@ AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_ni
 }
 
 str
-AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
+AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
 	return AGGRsubxmlcand(retval, bid, gid, eid, NULL, skip_nils);
 }

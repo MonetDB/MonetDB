@@ -466,6 +466,8 @@ main(int argc, char *argv[])
 	kv->val = strdup("yes");
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedr");
+	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
 	kv = findConfKey(_mero_db_props, "type");

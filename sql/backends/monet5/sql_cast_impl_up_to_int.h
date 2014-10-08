@@ -33,7 +33,7 @@
 
 
 str
-FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
+FUN(,TP1,_2_,TP2) (TP2 *res, const TP1 *v)
 {
 	/* shortcut nil */
 	if (*v == NIL(TP1)) {
@@ -48,7 +48,7 @@ FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
 }
 
 str
-FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
+FUN(bat,TP1,_2_,TP2) (int *res, const int *bid)
 {
 	BAT *b, *bn;
 	TP1 *p, *q;
@@ -103,7 +103,7 @@ FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
 }
 
 str
-FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
+FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 {
 	int scale = *s1;
 	TP2 r, h = (*v < 0) ? -5 : 5;
@@ -124,7 +124,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
 }
 
 str
-FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
+FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
 {
 	int p = *d2, inlen = 1;
 	TP1 cpyval = *v;
@@ -159,14 +159,14 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
 }
 
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
+FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	int zero = 0;
 	return FUN(,TP1,_dec2dec_,TP2)(res, &zero, v, d2, s2);
 }
 
 str
-FUN(bat,TP1,_dec2_,TP2) (int *res, int *s1, int *bid)
+FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 {
 	BAT *b, *bn;
 	TP1 *p, *q;
@@ -231,7 +231,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, int *s1, int *bid)
 }
 
 str
-FUN(bat,TP1,_dec2dec_,TP2) (int *res, int *S1, int *bid, int *d2, int *S2)
+FUN(bat,TP1,_dec2dec_,TP2) (int *res, const int *S1, const int *bid, const int *d2, const int *S2)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -262,7 +262,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (int *res, int *S1, int *bid, int *d2, int *S2)
 }
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (int *res, int *bid, int *d2, int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
 	BATiter bi;

@@ -1688,7 +1688,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		types = new String[1];
 		results = new String[1][1];
 
-		columns[0] = "TABLE_TYPE";
+		columns[0] = "TABLE_CAT";
 		types[0] = "varchar";
 		results[0][0] = getEnv("gdk_dbname");
 

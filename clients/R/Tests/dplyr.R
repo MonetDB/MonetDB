@@ -1,7 +1,10 @@
+ll <- NULL
+if (Sys.getenv("TSTTRGDIR") != "") {
+	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
+}
+library(MonetDB.R,quietly=T,lib.loc=ll)
 library(dplyr,quietly=T)
-library(MonetDB.R,quietly=T)
 library(Lahman,quietly=T)
-options(monetdb.debug.query=T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -9,20 +12,32 @@ dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
 
+# old way
+if (exists("lahman_monetdb")) {
+	# overwrite all args because lahman_monetdb sets a default arg in the first pos.
+	dps <- lahman_monetdb(host="localhost", dbname=dbname, port=dbport ,
+		user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
+# new way
+} else {
+	dps <-  src_monetdb(dbname=dbname, port=dbport)
+	copy_lahman(dps)
+}
+
 # the remainder is pretty much the example from the manpage.
 
-# overwrite all args because lahman_monetdb sets a default arg in the first pos.
-# srct <- function() lahman_monetdb(host="localhost", ,
-# 	user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
-
-srct <- function() src_monetdb(dbname=dbname, port=dbport)
-copy_lahman(srct())
 
 # Methods -------------------------------------------------------------------
-batting <- tbl(srct(), "Batting")
+batting <- tbl(dps, "Batting")
 dim(batting)
 colnames(batting)
 head(batting)
+
+# co* verbs
+cc <- collapse(batting)
+cc <- collect(batting)
+# cc <- compute(batting)
+# head(cc)
+
 
 # Data manipulation verbs ---------------------------------------------------
 filter(batting, yearID > 2005, G > 130)
@@ -53,10 +68,10 @@ filter(stints, stints > 3)
 summarise(stints, max(stints))
 
 # Joins ---------------------------------------------------------------------
-player_info <- select(tbl(srct(), "Master"), playerID, hofID,
+player_info <- select(tbl(dps, "Master"), playerID,
   birthYear)
-hof <- select(filter(tbl(srct(), "HallOfFame"), inducted == "Y"),
- hofID, votedBy, category)
+hof <- select(filter(tbl(dps, "HallOfFame"), inducted == "Y"),
+ playerID, votedBy, category)
 
 # Match players and their hall of fame data
 inner_join(player_info, hof)
@@ -67,9 +82,11 @@ semi_join(player_info, hof)
 # Find players not in hof
 anti_join(player_info, hof)
 
+# TODO: set ops
+
 # Arbitrary SQL -------------------------------------------------------------
 # You can also provide sql as is, using the sql function:
-batting2008 <- tbl(srct(),
+batting2008 <- tbl(dps,
   sql('SELECT * FROM "Batting" WHERE "yearID" = 2008'))
 batting2008
 

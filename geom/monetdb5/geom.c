@@ -50,19 +50,19 @@ geom_export wkb *wkbNULL(void);
 geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 geom_export mbr *mbrNULL(void);
-geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
+geom_export int mbrFROMSTR(const char *src, int *len, mbr **atom);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
 geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
-geom_export str mbrFromString(mbr **w, str *src);
+geom_export str mbrFromString(mbr **w, const str *src);
 geom_export str mbrFromMBR(mbr **w, mbr **src);
 geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
-geom_export int wkbFROMSTR(char *src, int *len, wkb **atom);
-geom_export str wkbFromString(wkb **w, str *wkt);
+geom_export int wkbFROMSTR(const char *src, int *len, wkb **atom);
+geom_export str wkbFromString(wkb **w, const str *wkt);
 geom_export str wkbFromWKB(wkb **w, wkb **src);
-geom_export str wkbFromText(wkb **w, str *wkt, int *tpe);
+geom_export str wkbFromText(wkb **w, const str *wkt, const int *tpe);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
 geom_export wkb *wkbNULL(void);
@@ -74,13 +74,13 @@ geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
 geom_export int wkbLENGTH(wkb *p);
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
-geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
+geom_export str ordinatesMBR(mbr **res, const flt *minX, const flt *minY, const flt *maxX, const flt *maxY);
 geom_export str wkbMBR(mbr **res, wkb **geom);
 geom_export wkb *geos2wkb(GEOSGeom geosGeometry);
 geom_export str wkbgetcoordX(dbl *out, wkb **geom);
 geom_export str wkbgetcoordY(dbl *out, wkb **geom);
-geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
-geom_export str wkbcreatepoint_bat(bat *out, bat *x, bat *y);
+geom_export str wkbcreatepoint(wkb **out, const dbl *x, const dbl *y);
+geom_export str wkbcreatepoint_bat(bat *out, const bat *x, const bat *y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbDimension(int *out, wkb **geom);
 geom_export str wkbGeometryTypeId(int *out, wkb **geom);
@@ -98,7 +98,7 @@ geom_export str wkbCrosses(bit *out, wkb **a, wkb **b);
 geom_export str wkbWithin(bit *out, wkb **a, wkb **b);
 geom_export str wkbContains(bit *out, wkb **a, wkb **b);
 geom_export str wkbOverlaps(bit *out, wkb **a, wkb **b);
-geom_export str wkbRelate(bit *out, wkb **a, wkb **b, str *pattern);
+geom_export str wkbRelate(bit *out, wkb **a, wkb **b, const str *pattern);
 geom_export str wkbArea(dbl *out, wkb **a);
 geom_export str wkbLength(dbl *out, wkb **a);
 geom_export str wkbDistance(dbl *out, wkb **a, wkb **b);
@@ -106,7 +106,7 @@ geom_export str wkbIntersection(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
-geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
+geom_export str wkbBuffer(wkb **out, wkb **geom, const dbl *distance);
 
 str
 geom_prelude(void *ret)
@@ -155,7 +155,7 @@ mbrNULL(void)
 /* return number of parsed characters. */
 
 int
-mbrFROMSTR(char *src, int *len, mbr **atom)
+mbrFROMSTR(const char *src, int *len, mbr **atom)
 {
 	int nil = 0;
 	int nchars = 0;	/* The number of characters parsed; the return value. */
@@ -312,7 +312,7 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 }
 
 str
-mbrFromString(mbr **w, str *src)
+mbrFromString(mbr **w, const str *src)
 {
 	int len = *w ? (int) sizeof(mbr) : 0;
 	char *errbuf;
@@ -397,7 +397,7 @@ wkbTOSTR(char **dst, int *len, wkb *atom)
 /* return number of parsed characters. */
 
 int
-wkbFROMSTR(char *src, int *len, wkb **atom)
+wkbFROMSTR(const char *src, int *len, wkb **atom)
 {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	unsigned char *wkbSer = NULL;	/* The "well known binary" serialization of the geometry object. */
@@ -447,7 +447,7 @@ wkbFROMSTR(char *src, int *len, wkb **atom)
 }
 
 str
-wkbFromString(wkb **w, str *wkt)
+wkbFromString(wkb **w, const str *wkt)
 {
 	int len = 0;
 	char *errbuf;
@@ -486,7 +486,7 @@ wkbFromWKB(wkb **w, wkb **src)
 }
 
 str
-wkbFromText(wkb **w, str *wkt, int *tpe)
+wkbFromText(wkb **w, const str *wkt, const int *tpe)
 {
 	int len = 0, te = *tpe;
 	char *errbuf;
@@ -643,7 +643,7 @@ wkbPUT(Heap *h, var_t *bun, wkb *val)
  */
 
 str
-ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
+ordinatesMBR(mbr **res, const flt *minX, const flt *minY, const flt *maxX, const flt *maxY)
 {
 	if ((*res = (mbr *) GDKmalloc(sizeof(mbr))) == NULL)
 		throw(MAL, "geom.mbr", MAL_MALLOC_FAIL);
@@ -752,7 +752,7 @@ wkbgetcoordY(dbl *out, wkb **geom)
 }
 
 str
-wkbcreatepoint(wkb **out, dbl *x, dbl *y)
+wkbcreatepoint(wkb **out, const dbl *x, const dbl *y)
 {
 	GEOSCoordSeq pnt;
 	if (*x == dbl_nil || *y == dbl_nil) {
@@ -771,7 +771,7 @@ wkbcreatepoint(wkb **out, dbl *x, dbl *y)
 }
 
 str
-wkbcreatepoint_bat(bat *out, bat *ix, bat *iy)
+wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 {
 	BAT *bo = NULL, *bx = NULL, *by = NULL;
 	dbl *x = NULL, *y = NULL;
@@ -1054,7 +1054,7 @@ wkbOverlaps(bit *out, wkb **a, wkb **b)
 }
 
 str
-wkbRelate(bit *out, wkb **a, wkb **b, str *pattern)
+wkbRelate(bit *out, wkb **a, wkb **b, const str *pattern)
 {
 	GEOSGeom ga = wkb2geos(*a);
 	GEOSGeom gb = wkb2geos(*b);
@@ -1215,7 +1215,7 @@ wkbSymDifference(wkb **out, wkb **a, wkb **b)
 }
 
 str
-wkbBuffer(wkb **out, wkb **geom, dbl *distance)
+wkbBuffer(wkb **out, wkb **geom, const dbl *distance)
 {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 

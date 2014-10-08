@@ -70,7 +70,7 @@
 #include "gdk_logger.h"
 #include <string.h>
 
-static BUN BUNfndT(BAT *b, ptr v)
+static BUN BUNfndT(BAT *b, const void *v)
 {
 	return BUNfnd(BATmirror(b), v);
 }
@@ -200,7 +200,7 @@ log_read_string(logger *l)
 }
 
 static int
-log_write_string(logger *l, char *n)
+log_write_string(logger *l, const char *n)
 {
 	size_t len = strlen(n) + 1;	/* log including EOS */
 
@@ -774,7 +774,7 @@ tr_abort(logger *lg, trans *tr)
 /* Update the last transaction id written in the catalog file.
  * Mostly used by the shared logger. */
 static int
-logger_update_catalog_file(logger *lg, char *dir, char *filename, int role)
+logger_update_catalog_file(logger *lg, const char *dir, const char *filename, int role)
 {
 	FILE *fp;
 	int bak_exists;
@@ -1158,7 +1158,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static int
-logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *filename, char *bak) {
+logger_create_catalog_file(int debug, logger *lg, const char *fn, FILE *fp, const char *filename, char *bak) {
 	log_bid bid = 0;
 	/* catalog does not exist, so the log file also
 	 * shouldn't exist */
@@ -1227,7 +1227,7 @@ logger_create_catalog_file(int debug, logger *lg, char *fn, FILE *fp, char *file
  * require a logical reference we also add a logical
  * reference for the persistent bats */
 static int
-logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *catalog_bid, bat *catalog_nme) {
+logger_find_persistent_catalog(logger *lg, const char *fn, FILE *fp, char *bak, bat *catalog_bid, bat *catalog_nme) {
 	BUN p, q;
 	BAT *b = BATdescriptor(*catalog_bid), *n;
 	if (b == 0)
@@ -1264,7 +1264,7 @@ logger_find_persistent_catalog(logger *lg, char *fn, FILE *fp, char *bak, bat *c
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, char *fn, char *logdir, int shared) {
+logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int shared) {
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
@@ -1301,7 +1301,7 @@ logger_set_logdir_path(char *filename, char *fn, char *logdir, int shared) {
  * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
-logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
+logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
@@ -1553,7 +1553,7 @@ logger_load(int debug, char* fn, char filename[BUFSIZ], logger* lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, char *local_logdir)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
 	char filename[BUFSIZ];
@@ -1668,7 +1668,7 @@ logger_reload(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
 
@@ -1692,7 +1692,7 @@ logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr
 /* Create a new shared logger, that is for slaves reading the master log directory.
  * Assumed to be read-only */
 logger *
-logger_create_shared(int debug, char *fn, char *logdir, char *local_logdir,int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = NULL;
 
@@ -1913,7 +1913,7 @@ logger_sequence(logger *lg, int seq, lng *id)
  * should simply introduce a versioning scheme.
  */
 int
-log_bat_persists(logger *lg, BAT *b, char *name)
+log_bat_persists(logger *lg, BAT *b, const char *name)
 {
 	char *ha, *ta;
 	int len;
@@ -1995,7 +1995,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat_transient(logger *lg, char *name)
+log_bat_transient(logger *lg, const char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 	logformat l;
@@ -2041,7 +2041,7 @@ log_bat_transient(logger *lg, char *name)
 }
 
 int
-log_delta(logger *lg, BAT *b, char *name)
+log_delta(logger *lg, BAT *b, const char *name)
 {
 	int ok = GDK_SUCCEED;
 	logformat l;
@@ -2083,7 +2083,7 @@ log_delta(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat(logger *lg, BAT *b, char *name)
+log_bat(logger *lg, BAT *b, const char *name)
 {
 	int ok = GDK_SUCCEED;
 	logformat l;
@@ -2158,7 +2158,7 @@ log_bat(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat_clear(logger *lg, char *name)
+log_bat_clear(logger *lg, const char *name)
 {
 	logformat l;
 
@@ -2403,7 +2403,7 @@ bm_commit(logger *lg)
 }
 
 log_bid
-logger_add_bat(logger *lg, BAT *b, char *name)
+logger_add_bat(logger *lg, BAT *b, const char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 
@@ -2464,7 +2464,7 @@ logger_del_bat(logger *lg, log_bid bid)
 }
 
 log_bid
-logger_find_bat(logger *lg, char *name)
+logger_find_bat(logger *lg, const char *name)
 {
 	log_bid res = 0;
 	BUN p = BUNfndT(lg->catalog_nme, name);

@@ -368,7 +368,7 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, char *logdir, int cat_version)
+bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
@@ -379,7 +379,7 @@ bl_create(int debug, char *logdir, int cat_version)
 }
 
 static int
-bl_create_shared(int debug, char *logdir, int cat_version, char *local_logdir)
+bl_create_shared(int debug, const char *logdir, int cat_version, const char *local_logdir)
 {
 	if (bat_logger_shared)
 		return LOG_ERR;

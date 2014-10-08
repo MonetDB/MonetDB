@@ -230,7 +230,7 @@ blob_tostr(str *tostr, int *l, blob *p)
  * no brackets and no spaces in between the hexits
  */
 int
-sqlblob_tostr(str *tostr, int *l, blob *p)
+sqlblob_tostr(str *tostr, int *l, const blob *p)
 {
 	char *s;
 	size_t i;

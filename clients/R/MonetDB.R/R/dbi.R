@@ -18,17 +18,12 @@ MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
   new("MonetDBDriver")
 }
 
-# dbIsValid is missing from the DBI 0.3, so redefine
-setGeneric("dbIsValid", 
-  def = function(dbObj, ...) standardGeneric("dbIsValid"),
-  valueClass = "logical")
-
 setMethod("dbIsValid", "MonetDBDriver", def=function(dbObj, ...) {
-  return(TRUE) # driver object cannot be invalid
+  return(invisible(TRUE)) # driver object cannot be invalid
 })
 
 setMethod("dbUnloadDriver", "MonetDBDriver", def=function(drv, ...) {
-  return(TRUE) # there is nothing to really unload here...
+  return(invisible(TRUE)) # there is nothing to really unload here...
 })
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
@@ -107,7 +102,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       continue <- FALSE
       tryCatch ({
         # open socket with 5-sec timeout so we can check whether everything works
-        socket <- socket <<- .mapiConnect(host, port, 5)
+        suppressWarnings(socket <- socket <<- .mapiConnect(host, port, 5))
         # authenticate
         .mapiAuthenticate(socket, dbname, user, password, language=language)
         .mapiDisconnect(socket)
@@ -124,7 +119,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
   
   # make new socket with user-specified timeout
-  socket <- .mapiConnect(host, port, 5) 
+  socket <- .mapiConnect(host, port, timeout) 
   .mapiAuthenticate(socket, dbname, user, password, language=language)
   connenv <- new.env(parent=emptyenv())
   connenv$lock <- 0
@@ -156,7 +151,7 @@ setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
 })
 
 setMethod("dbIsValid", "MonetDBConnection", def=function(dbObj, ...) {
-  return(!is.na(tryCatch(dbGetInfo(dbObj), error=function(e){NA})))
+  return(invisible(!is.na(tryCatch({dbGetInfo(dbObj);TRUE}, error=function(e){NA}))))
 })
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
@@ -214,8 +209,9 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 })
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-  #TODO: make this work with more cases
-  tolower(name) %in% tolower(dbListTables(conn,sys_tables=T))
+  # TODO: this is evil... 
+  return(tolower(gsub("(^\"|\"$)","",as.character(name))) %in% 
+    tolower(dbListTables(conn,sys_tables=T)))
 })
 
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
@@ -225,7 +221,7 @@ setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
 setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  dbGetQuery(conn, paste0("SELECT * FROM ", name))
+  dbGetQuery(conn,paste0("SELECT * FROM ", name))
 })
 
 # This one does all the work in this class
@@ -315,7 +311,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   if (overwrite && append) {
     stop("Setting both overwrite and append to true makes no sense.")
   }
-  qname <- dbQuoteIdentifier(conn, name)
+  qname <- make.db.names(conn, name)
   if (dbExistsTable(conn, qname)) {
     if (overwrite) dbRemoveTable(conn, qname)
     if (!overwrite && !append) stop("Table ", qname, " already exists. Set overwrite=TRUE if you want 
@@ -324,7 +320,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   }
   if (!dbExistsTable(conn, qname)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
-    fdef <- paste(dbQuoteIdentifier(conn, names(value)), fts, collapse=', ')
+    fdef <- paste(make.db.names(conn, names(value)), fts, collapse=', ')
     ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
     dbSendUpdate(conn, ct)
   }
@@ -580,21 +576,21 @@ setMethod("dbClearResult", "MonetDBResult", def = function(res, ...) {
       res@env$open <- FALSE
     }
   }
-  invisible(TRUE)
+  return(invisible(TRUE))
 }, valueClass = "logical")
 
 setMethod("dbHasCompleted", "MonetDBResult", def = function(res, ...) {
   if (res@env$info$type == Q_TABLE) {
     return(res@env$delivered == res@env$info$rows)
   }
-  return(TRUE)
+  return(invisible(TRUE))
 }, valueClass = "logical")
 
 setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...) {
   if (dbObj@env$info$type == Q_TABLE) {
     return(dbObj@env$open)
   }
-  return(TRUE)
+  return(invisible(TRUE))
 })
 
 monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(9, 3, 4, 1, 1))
