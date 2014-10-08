@@ -1257,61 +1257,37 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 }
 
 
-static char* PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy, oid seqbase) {
-	//FILE *f;
-	//unsigned long i;
-       	clock_t t = clock();
-	str err;
-	assert (pbsm_idx == NULL && oids == NULL && limits == NULL);
-
-(void) *x;
-(void) *y;
-(void) n;
-(void) minx;
-(void) maxx;
-(void) miny;
-(void) maxy, 
-(void) seqbase;
-
-	
-
-	//load the index if it does not already exist
-	if((err = load()) != MAL_SUCCEED) {
-		str msg = createException(MAL, "batgeom.Filter", "%s", err);
-		GDKfree(err);
-		return msg;
-	}
-	t = clock() - t;
-	fprintf(stderr, "[PBSM] Index loading: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
-
-	return MAL_SUCCEED;
-}
-
 static char *
-PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb, BUN n, double minx, double maxx, double miny, double maxy) {
+PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb) {
 	unsigned long csize = 0, u;
 	oid *candidates;
 	unsigned char mbrcellxmin, mbrcellxmax, mbrcellymin, mbrcellymax, k,l;
 	int shift = sizeof(sht) * 8 / 2;
 	unsigned long i;
-	str msg;
 
         /* assert calling sanity */
         assert(*bres != NULL && x != NULL && y != NULL && batx != NULL && baty != NULL);
 	assert(batx->hseqbase == baty->hseqbase);
 	
-	/* read the pbsm index to memory */
+	/* load the pbsm index to memory */
 	if (pbsm_idx == NULL || oids == NULL) {
-		/* the index has not been materialized/loaded yet */
-		if ((msg = PBSMcreateindex(x, y, n, minx, maxx, miny, maxy, batx->hseqbase)) != MAL_SUCCEED)
+		clock_t t = clock();
+		str err;
+
+		if((err = load()) != MAL_SUCCEED) {
+			str msg = createException(MAL, " geomPoints:PBSMarraycontains16", " %s", err);
+			GDKfree(err);
 			return msg;
+		}
+		t = clock() - t;
+		fprintf(stderr, "[PBSM] Index loading: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 	}
 
 	/* generate a pbsm value from the geometry */
-	mbrcellxmin = (unsigned char)((mbb->xmin - minx)/(maxx - minx) * UCHAR_MAX);
-	mbrcellxmax = (unsigned char)((mbb->xmax - minx)/(maxx - minx) * UCHAR_MAX);
-	mbrcellymin = (unsigned char)((mbb->ymin - miny)/(maxy - miny) * UCHAR_MAX);
-	mbrcellymax = (unsigned char)((mbb->ymax - miny)/(maxy - miny) * UCHAR_MAX);
+	mbrcellxmin = (unsigned char)((mbb->xmin - limits->xmin)/(limits->xmax - limits->xmin) * UCHAR_MAX);
+	mbrcellxmax = (unsigned char)((mbb->xmax - limits->xmin)/(limits->xmax - limits->xmin) * UCHAR_MAX);
+	mbrcellymin = (unsigned char)((mbb->ymin - limits->ymin)/(limits->ymax - limits->ymin) * UCHAR_MAX);
+	mbrcellymax = (unsigned char)((mbb->ymax - limits->ymin)/(limits->ymax - limits->ymin) * UCHAR_MAX);
 
 	csize = 0;
 	for (k = mbrcellxmin; k <= mbrcellxmax; k++) {
@@ -1371,9 +1347,7 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 }
 
 static char *
-PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g, 
-	   double *minx, double *maxx, double *miny, double *maxy)
-{
+PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g) {
 	BAT *bres = NULL;
 	BUN n;
 	char *msg = NULL;
@@ -1396,7 +1370,7 @@ PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g,
 	if (bres == NULL)
 		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
 
-	msg = PBSMarraycontains16( &bres, x, bx, y , by, g, n, *minx, *maxx, *miny, *maxy);
+	msg = PBSMarraycontains16( &bres, x, bx, y , by, g);
 
 	if (msg != MAL_SUCCEED) {
 		return msg;
@@ -1412,7 +1386,6 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 	mbr* geomMBR;
 	str err;
 	clock_t t;
-	double xmin = 85000, xmax = 86000, ymin = 446250, ymax = 447500;
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
@@ -1445,7 +1418,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 		return msg;
 	}
 	t = clock();
-	if(((err = PBSMselect_(&candidateOIDsBAT, xBAT, yBAT, geomMBR, &xmin, &xmax, &ymin, &ymax)) != MAL_SUCCEED)
+	if(((err = PBSMselect_(&candidateOIDsBAT, xBAT, yBAT, geomMBR)) != MAL_SUCCEED)
 		|| (candidateOIDsBAT == NULL)) {
 		str msg;
 		BBPreleaseref(xBAT->batCacheid);
