@@ -48,10 +48,6 @@ static char* idxEnding = ".idx";
 static char* dataEnding = ".data";
 static char* limitsEnding =".info";
 
-//static char* idxFilename;
-//static char* dataFilename;
-//static char* limitsFilename;
-
 //it gets two BATs with x,y coordinates and returns a new BAT with the points
 static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT) {
 	BAT *outBAT = NULL;
@@ -884,7 +880,7 @@ static str wkbPointsFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** 
 		return createException(MAL,"batgeom.Filter","Problem filtering yBAT");
 	}
 
-//fprintf(stderr, "Original MBR contains %u points\n", (unsigned int)BATcount(candidateOIDsBAT));
+fprintf(stderr, "%u : %u candidates after Imprints\n", (unsigned int)xBAT->hseqbase, (unsigned int)BATcount(candidateOIDsBAT));
 //BATMBRfilter(xmin, ymin, xmax, ymax, geomWKB, (*geomWKB)->srid);
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
@@ -1280,7 +1276,7 @@ PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 			return msg;
 		}
 		t = clock() - t;
-		fprintf(stderr, "[PBSM] Index loading: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+		//fprintf(stderr, "[PBSM] Index loading: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 	}
 
 	/* generate a pbsm value from the geometry */
@@ -1297,7 +1293,8 @@ PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 			csize += pbsm_idx[mbrc - SHRT_MIN].count;
 		}
 	}
-
+fprintf(stderr, "PBSMarraycontains16: %d cells and %lu candidates\n", (mbrcellxmax-mbrcellxmin+1)*(mbrcellymax-mbrcellymin+1), csize);
+if(csize > 0) {
 	/* get candidate oid from the pbsm index */
 	if ((candidates = GDKmalloc(csize * sizeof(oid))) == NULL)
 		return createException(MAL, "batgeom.Filter", "Problem allocating space for %lu oids", csize);
@@ -1315,7 +1312,7 @@ PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 
 		}
 	}
-
+}
 	assert(BAThdense(batx) && BAThdense(baty));
 
 	if ((*bres = BATnew(TYPE_void, TYPE_oid, csize, TRANSIENT)) == NULL) {
@@ -1330,7 +1327,7 @@ PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 	/* candidates are expected to be ordered */
 	BATseqbase(*bres, oid_nil); // avoid materialization of the void head
 	*bres = BATmirror(BATorder(BATmirror(*bres)));
-	BATseqbase(*bres, 0);
+	BATseqbase(*bres, batx->hseqbase);
 
 	//BATkey(BATmirror(*bres), TRUE);
 	(*bres)->hdense = 1;
@@ -1339,10 +1336,6 @@ PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 	//(*bres)->tkey = TRUE;
 	BATderiveProps(*bres, false);
 	
-	/* clean up */
-	//GDKfree(pbsm_idx);
-	//GDKfree(oids);
-
         return MAL_SUCCEED;
 }
 
