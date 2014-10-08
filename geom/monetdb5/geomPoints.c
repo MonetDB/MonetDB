@@ -1280,11 +1280,11 @@ PBSMarraycontains16(BAT **bres, mbr *mbb) {
 	mbrcellxmax = (unsigned char)((mbb->xmax - limits->xmin)/(limits->xmax - limits->xmin) * UCHAR_MAX);
 	mbrcellymin = (unsigned char)((mbb->ymin - limits->ymin)/(limits->ymax - limits->ymin) * UCHAR_MAX);
 	mbrcellymax = (unsigned char)((mbb->ymax - limits->ymin)/(limits->ymax - limits->ymin) * UCHAR_MAX);
-fprintf(stderr, "MBR: minCell = %d - maxCell = %d\n", ((((unsigned short) mbrcellxmin) << shift)) | ((unsigned short) mbrcellymin), ((((unsigned short) mbrcellxmax) << shift)) | ((unsigned short) mbrcellymax));
+//fprintf(stderr, "MBR: minCell = %d - maxCell = %d\n", ((((unsigned short) mbrcellxmin) << shift)) | ((unsigned short) mbrcellymin), ((((unsigned short) mbrcellxmax) << shift)) | ((unsigned short) mbrcellymax));
 
 	csize = 0;
 	for (k = mbrcellxmin; k <= mbrcellxmax; k++) {
-		fprintf(stderr, "MBR: Stripe Range: [%d, %d]\n", ((((unsigned short) k) << shift)) | ((unsigned short) mbrcellymin), ((((unsigned short) k) << shift)) | ((unsigned short) mbrcellymax));
+//		fprintf(stderr, "MBR: Stripe Range: [%d, %d]\n", ((((unsigned short) k) << shift)) | ((unsigned short) mbrcellymin), ((((unsigned short) k) << shift)) | ((unsigned short) mbrcellymax));
 
 	for (l = mbrcellymin; l <= mbrcellymax; l++) {
 			sht mbrc = ((((unsigned short) k) << shift)) | ((unsigned short) l);
@@ -1356,7 +1356,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 	BAT *xBAT=NULL, *yBAT=NULL, *candidateOIDsBAT=NULL;
 	mbr* geomMBR;
 	str err;
-	clock_t t;
+//	clock_t t;
 
 	//get the descriptors of the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
@@ -1388,7 +1388,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 		GDKfree(err);
 		return msg;
 	}
-	t = clock();
+//	t = clock();
 	if(((err = PBSMselect_(&candidateOIDsBAT, geomMBR)) != MAL_SUCCEED)
 		|| (candidateOIDsBAT == NULL)) {
 		str msg;
@@ -1398,8 +1398,8 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 		GDKfree(err);
 		return msg;
 	}
-	t = clock() - t;
-	fprintf(stderr, "[PREFILTERING] PBSM: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
+	//t = clock() - t;
+	//fprintf(stderr, "[PREFILTERING] PBSM: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
 
 	BBPreleaseref(xBAT->batCacheid);
