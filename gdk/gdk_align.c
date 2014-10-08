@@ -565,6 +565,12 @@ VIEWunlink(BAT *b)
 			b->H->hash = NULL;
 		if (tpb && b->T->hash && b->T->hash == tpb->H->hash)
 			b->T->hash = NULL;
+
+		/* unlink imprints shared with parent */
+		if (hpb && b->H->imprints && b->H->imprints == hpb->H->imprints)
+			b->H->imprints = NULL;
+		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
+			b->T->imprints = NULL;
 	}
 }
 
