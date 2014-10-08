@@ -30,6 +30,12 @@
  */
 #include "monetdb_config.h"
 #include "mmath.h"
+#ifdef HAVE_FENV_H
+#include <fenv.h>
+#else
+#define feclearexcept(x)
+#define fetestexcept(x)		0
+#endif
 
 #ifdef _MSC_VER
 # include <float.h>
@@ -72,32 +78,12 @@ MNisinf(double x)
 # endif
 #endif /* HAVE_FPCLASSIFY */
 
-#define acos_unary(x, z)      *z = acos(*x)
-#define asin_unary(x, z)      *z = asin(*x)
-#define atan_unary(x, z)      *z = atan(*x)
 #define atan2_binary(x, y, z) *z = atan2(*x,*y)
-#define cos_unary(x, z)	      *z = cos(*x)
-#define sin_unary(x, z)	      *z = sin(*x)
-#define tan_unary(x, z)	      *z = tan(*x)
-#define cot_unary(x, z)	      *z = (1/tan(*x))
-
-#define cosh_unary(x, z)       *z = cosh(*x)
-#define sinh_unary(x, z)       *z = sinh(*x)
-#define tanh_unary(x, z)       *z = tanh(*x)
-
-#define radians_unary(x, z)       *z = *x * 3.14159265358979323846 /180.0
-#define degrees_unary(x, z)       *z = *x * 180.0/3.14159265358979323846
-
-#define exp_unary(x, z)	      *z = exp(*x)
-#define log_unary(x, z)	      *z = log(*x)
-#define log10_unary(x, z)     *z = log10(*x)
-
 #define pow_binary(x, y, z)   *z = pow(*x,*y)
-#define sqrt_unary(x, z)      *z = sqrt(*x)
 
-#define ceil_unary(x, z)      *z = ((-1.0<*x)&&(*x<0.0))?0.0:ceil(*x)
-#define fabs_unary(x, z)      *z = fabs(*x)
-#define floor_unary(x, z)     *z = floor(*x)
+#define cot(x)				(1 / tan(x))
+#define radians(x)			((x) * 3.14159265358979323846 / 180.0)
+#define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
 
 static str
 math_unary_ISNAN(bit *res, const dbl *a)
@@ -145,55 +131,51 @@ math_unary_FINITE(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-#define unopbaseM5(X1,X2,X3)					\
-str												\
-MATHunary##X1##X3(X3 *res , const X3 *a)		\
-{												\
-	dbl tmp1,tmp2;								\
-	str msg= MAL_SUCCEED;						\
-	if (*a == X3##_nil) {						\
-		*res =X3##_nil;							\
-	} else {									\
-		tmp1= *a;								\
-		X2##_unary( &tmp1, &tmp2);				\
-		*res = (X3) tmp2;						\
-	}											\
-   return msg;									\
+#define unopM5(NAME, FUNC)									\
+str															\
+MATHunary##NAME##dbl(dbl *res , const dbl *a)				\
+{															\
+	double tmp1,tmp2;										\
+	str msg= MAL_SUCCEED;									\
+	if (*a == dbl_nil) {									\
+		*res =dbl_nil;										\
+	} else {												\
+		tmp1= *a;											\
+		errno = 0;											\
+		feclearexcept(FE_ALL_EXCEPT);						\
+		tmp2 = FUNC(tmp1);									\
+		if (errno != 0 ||									\
+			fetestexcept(FE_INVALID | FE_DIVBYZERO |		\
+						 FE_OVERFLOW | FE_UNDERFLOW) != 0)	\
+			throw(MAL, "mmath." #FUNC, "Math exception");	\
+		*res = (dbl) tmp2;									\
+	}														\
+   return msg;												\
+}															\
+str															\
+MATHunary##NAME##flt(flt *res , const flt *a)				\
+{															\
+	double tmp1,tmp2;										\
+	str msg= MAL_SUCCEED;									\
+	if (*a == flt_nil) {									\
+		*res =flt_nil;										\
+	} else {												\
+		tmp1= *a;											\
+		errno = 0;											\
+		feclearexcept(FE_ALL_EXCEPT);						\
+		tmp2 = FUNC(tmp1);									\
+		if (errno != 0 ||									\
+			fetestexcept(FE_INVALID | FE_DIVBYZERO |		\
+						 FE_OVERFLOW | FE_UNDERFLOW) != 0)	\
+			throw(MAL, "mmath." #FUNC, "Math exception");	\
+		*res = (flt) tmp2;									\
+	}														\
+   return msg;												\
 }
 
-#define unopM5(X1,X2)							\
-str												\
-MATHunary##X1##dbl(dbl *res , const dbl *a)		\
-{												\
-	dbl tmp1,tmp2;								\
-	str msg= MAL_SUCCEED;						\
-	if (*a == dbl_nil) {						\
-		*res =dbl_nil;							\
-	} else {									\
-		tmp1= *a;								\
-		X2##_unary( &tmp1, &tmp2);				\
-		*res = (dbl) tmp2;						\
-	}											\
-   return msg;									\
-}												\
-str												\
-MATHunary##X1##flt(flt *res , const flt *a)		\
-{												\
-	dbl tmp1,tmp2;								\
-	str msg= MAL_SUCCEED;						\
-	if (*a == flt_nil) {						\
-		*res =flt_nil;							\
-	} else {									\
-		tmp1= *a;								\
-		X2##_unary( &tmp1, &tmp2);				\
-		*res = (flt) tmp2;						\
-	}											\
-   return msg;									\
-}
-
-#define binopbaseM5(X1,X2,X3)							\
+#define binopbaseM5(NAME,X2,X3)							\
 str														\
-MATHbinary##X1##X3(X3 *res, const X3 *a, const X3 *b)	\
+MATHbinary##NAME##X3(X3 *res, const X3 *a, const X3 *b)	\
 {														\
    if (*a == X3##_nil || *b == X3##_nil) {				\
 		*res = X3##_nil;								\
@@ -258,8 +240,14 @@ binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)
 
 unopM5(_CEIL,ceil)
-unopbaseM5(_FABS,fabs,dbl)
 unopM5(_FLOOR,floor)
+
+str
+MATHunary_FABSdbl(dbl *res , const dbl *a)
+{
+	*res = *a == dbl_nil ? dbl_nil : fabs(*a);
+	return MAL_SUCCEED;
+}
 
 roundM5(dbl)
 roundM5(flt)
