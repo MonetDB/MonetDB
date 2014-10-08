@@ -1658,7 +1658,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		} else {
 			assert(cur->T->heap.storage != STORE_PRIV);
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
-			assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			assert(!BATcount(ins) || !isEbat(ins));
 			BATappend(cur,ins,TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
