@@ -88,7 +88,7 @@ mmath_export str MATHunary_ISNAN(bit *res, const dbl *a);
 mmath_export str MATHunary_ISINF(int *res, const dbl *a);
 mmath_export str MATHunary_FINITE(bit *res, const dbl *a);
 mmath_export str MATHrandint(int *res);
-mmath_export str MATHrandintseed(int *res, const int *seed);
+mmath_export str MATHrandintarg(int *res, const int *dummy);
 mmath_export str MATHsrandint(void *ret, const int *seed);
 mmath_export str MATHsqlrandint(int *res, const int *seed);
 mmath_export str MATHpi(dbl *pi);

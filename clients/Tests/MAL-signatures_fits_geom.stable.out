@@ -40101,7 +40101,7 @@ comment The pow(x,y) function  returns the value of x raised to the power of y.
 command mmath.pow(x:flt,y:flt):flt 
 address MATHbinary_POWflt;
 command mmath.rand{unsafe}(v:int):int 
-address MATHrandintseed;
+address MATHrandintarg;
 comment return a random number
 
 command mmath.rand{unsafe}():int 

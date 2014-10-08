@@ -66,75 +66,84 @@ typedef struct{
 
 // Loop through the first BAT
 // keep the last error message received
-#define ManifoldLoop(Type, ...) {			\
-	Type *v = (Type*) mut->args[0].first; 		\
-	oid oo, olimit = mut->args[mut->fvar].cnt; \
-	for( oo= 0; oo < olimit; oo++){\
-		msg = (*mut->pci->fcn)(v, __VA_ARGS__); \
-		if (msg) break;				\
-		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
-				args[i] = (void*)  &mut->args[i].o;	 \
-				mut->args[i].o++;		\
-			} else if(ATOMstorage(mut->args[i].type) < TYPE_str ) { \
-				args[i] += mut->args[i].size;	\
-			} else if (ATOMvarsized(mut->args[i].type)) { \
-				mut->args[i].o++;		\
-				mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
-				args[i] = (void*)  &mut->args[i].s;	 \
-			} else { \
-				mut->args[i].o++;		\
-				mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
-				args[i] = (void*)  &mut->args[i].s;	 \
-			}				\
-		}					\
-		v++;					\
-	}						\
-}
+#define ManifoldLoop(Type, ...)											\
+	do {																\
+		Type *v = (Type*) mut->args[0].first;							\
+		oid oo, olimit = mut->args[mut->fvar].cnt;						\
+		for( oo= 0; oo < olimit; oo++){									\
+			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
+			if (msg) break;												\
+			for( i = mut->fvar; i<= mut->lvar; i++) {					\
+				if(ATOMstorage(mut->args[i].type == TYPE_void) ){		\
+					args[i] = (void*)  &mut->args[i].o;					\
+					mut->args[i].o++;									\
+				} else if(mut->args[i].size == 0) {						\
+					;													\
+				} else if(ATOMstorage(mut->args[i].type) < TYPE_str ) {	\
+					args[i] += mut->args[i].size;						\
+				} else if (ATOMvarsized(mut->args[i].type)) {			\
+					mut->args[i].o++;									\
+					mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+					args[i] = (void*)  &mut->args[i].s;					\
+				} else {												\
+					mut->args[i].o++;									\
+					mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
+					args[i] = (void*)  &mut->args[i].s;					\
+				}														\
+			}															\
+			v++;														\
+		}																\
+	} while (0)
 
 // The target BAT tail type determines the result variable
 #ifdef HAVE_HGE
-#define Manifoldbody_hge(...) \
+#define Manifoldbody_hge(...)					\
 	case TYPE_hge: ManifoldLoop(hge,__VA_ARGS__); break
 #else
 #define Manifoldbody_hge(...)
 #endif
-#define Manifoldbody(...) \
-switch(ATOMstorage(mut->args[0].b->T->type)){\
-case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;\
-case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;\
-case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;\
-case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\
-Manifoldbody_hge(__VA_ARGS__);                      \
-case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
-case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
-case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
-case TYPE_str: \
-default:\
-{   oid oo, olimit = mut->args[mut->fvar].cnt; \
-	for( oo= 0; oo < olimit; oo++){\
-		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
-		if (msg)					\
-			break;					\
-		bunfastapp(mut->args[0].b, (void*) y);	\
-		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
-				args[i] = (void*)  &mut->args[i].o;	 \
-				mut->args[i].o++;		\
-			} else if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
-				args[i] += mut->args[i].size;	\
-			} else if(ATOMvarsized(mut->args[i].type)){	\
-				mut->args[i].o++;		\
-				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
-				args[i] =  (void*) & mut->args[i].s; 	\
-			} else {				\
-				mut->args[i].o++;		\
-				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);\
-				args[i] =  (void*) & mut->args[i].s; 	\
-			}					\
-		}						\
-	}							\
-} }
+#define Manifoldbody(...)												\
+	do {																\
+		switch(ATOMstorage(mut->args[0].b->T->type)){					\
+		case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;			\
+		case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;			\
+		case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;			\
+		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
+		Manifoldbody_hge(__VA_ARGS__);									\
+		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
+		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
+		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
+		case TYPE_str:													\
+		default: {														\
+			oid oo, olimit = mut->args[mut->fvar].cnt;					\
+			for( oo= 0; oo < olimit; oo++){								\
+				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
+				if (msg)												\
+					break;												\
+				bunfastapp(mut->args[0].b, (void*) y);					\
+				for( i = mut->fvar; i<= mut->lvar; i++) {				\
+					if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+						args[i] = (void*)  &mut->args[i].o;				\
+						mut->args[i].o++;								\
+					} else if(mut->args[i].size == 0) {					\
+						;												\
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str){ \
+						args[i] += mut->args[i].size;					\
+					} else if(ATOMvarsized(mut->args[i].type)){			\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o); \
+						args[i] =  (void*) & mut->args[i].s;			\
+					} else {											\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o); \
+						args[i] =  (void*) & mut->args[i].s;			\
+					}													\
+				}														\
+			}															\
+			break;														\
+		}																\
+		}																\
+	} while (0)
 
 // single argument is preparatory step for GDK_mapreduce
 // Only the last error message is returned, the value of
@@ -208,17 +217,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe = TYPE_any;
-	for( i = pci->retc+2; i < pci->argc; i++)
-		if ( isaBatType(getArgType(mb,pci,i)) ){
-			tpe =getColumnType(getArgType(mb,pci,i));
-			break;
-		}
-	if( tpe == TYPE_any ){
-		freeMalBlk(nmb);
-		return NULL;
-	}
-	
+	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
 	setVarFixed(nmb,k);
@@ -315,6 +314,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
+			mat[i].type = getArgType(mb, pci, i);
 		}
 	}
 
