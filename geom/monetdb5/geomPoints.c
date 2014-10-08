@@ -1258,7 +1258,7 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 
 
 static char *
-PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *baty, mbr *mbb) {
+PBSMarraycontains16(BAT **bres, BAT *batx,  BAT *baty, mbr *mbb) {
 	unsigned long csize = 0, u;
 	oid *candidates;
 	unsigned char mbrcellxmin, mbrcellxmax, mbrcellymin, mbrcellymax, k,l;
@@ -1266,7 +1266,7 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 	unsigned long i;
 
         /* assert calling sanity */
-        assert(*bres != NULL && x != NULL && y != NULL && batx != NULL && baty != NULL);
+        assert(batx != NULL && baty != NULL);
 	assert(batx->hseqbase == baty->hseqbase);
 	
 	/* load the pbsm index to memory */
@@ -1348,37 +1348,22 @@ PBSMarraycontains16(BAT **bres, const dbl *x, BAT *batx, const dbl *y,  BAT *bat
 
 static char *
 PBSMselect_(BAT **ret, BAT *bx, BAT *by, mbr *g) {
-	BAT *bres = NULL;
-	BUN n;
-	char *msg = NULL;
-	dbl *x = NULL, *y = NULL;
+	str err;
 
 	assert (ret != NULL);
-        assert (bx != NULL && by != NULL);
+	assert (bx != NULL && by != NULL);
 
-	n = BATcount(bx);
 
 	if (bx->ttype != by->ttype)
 		throw(MAL, "batpbsm.contains16", "tails of input BATs must be identical");
 
-	/* get direct access to the tail arrays */
-        x = (dbl*) Tloc(bx, BUNfirst(bx));
-        y = (dbl*) Tloc(by, BUNfirst(by));
-
-	/* allocate result BAT */
-	bres = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
-	if (bres == NULL)
-		throw(MAL, "batpbsm.contains16", MAL_MALLOC_FAIL);
-
-	msg = PBSMarraycontains16( &bres, x, bx, y , by, g);
-
-	if (msg != MAL_SUCCEED) {
+	if((err = PBSMarraycontains16( ret, bx, by, g)) != NULL) {
+		str msg = createException(MAL, " geomPoints:PBSMselect_", " %s", err);
+		GDKfree(err);
 		return msg;
-	} else {
-		*ret = bres;
 	}
 
-	return msg;
+	return MAL_SUCCEED;
 }
 
 static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id) {
