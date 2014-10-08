@@ -44,9 +44,13 @@ static pbsm_info *limits = NULL;
 
 //hard coded filename
 static char* filename = "../pbsmIndex_20m";
-static char* idxFilename;
-static char* dataFilename;
-static char* limitsFilename;
+static char* idxEnding = ".idx";
+static char* dataEnding = ".data";
+static char* limitsEnding =".info";
+
+//static char* idxFilename;
+//static char* dataFilename;
+//static char* limitsFilename;
 
 //it gets two BATs with x,y coordinates and returns a new BAT with the points
 static BAT* BATMakePoint2D(BAT* xBAT, BAT* yBAT) {
@@ -895,200 +899,221 @@ static str wkbPointsFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** 
 
 
 /* PBSM */
-static str createFilenames(str module) {
-	char* idxEnding = ".idx";
-	char* dataEnding = ".data";
-	char* limitsEnding =".info";
-
-	//allocate space for the files
-	if((idxFilename = (char*) GDKmalloc(strlen(filename)+strlen(idxEnding)+1)) == NULL) {
-		return createException(MAL, module, "Problem allocating space for idxFilename");
-	}
-	if((dataFilename = (char*) GDKmalloc(strlen(filename)+strlen(dataEnding)+1)) == NULL) {
-		GDKfree(idxFilename);
-		return createException(MAL, module, "Problem allocating space for dataFilename");
-	}
-	if((limitsFilename = (char*) GDKmalloc(strlen(filename)+strlen(limitsEnding)+1)) == NULL) {
-		GDKfree(idxFilename);
-		GDKfree(dataFilename);
-		return createException(MAL, module, "Problem allocating space for limitsFilename");
-	}
-
-	strcpy(idxFilename, filename);
-	strcpy(idxFilename+strlen(filename), idxEnding);
-	strcpy(dataFilename, filename);
-	strcpy(dataFilename+strlen(filename), dataEnding);
-	strcpy(limitsFilename, filename);
-	strcpy(limitsFilename+strlen(filename), limitsEnding);
-
-	return MAL_SUCCEED;
-}
-
-static str allocateStructs(unsigned int numberOfOIDs) {
-	unsigned short i=0;
-
-	if ((pbsm_idx = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
-		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for pbsm_idx");
-
-	for (i = 0; i < USHRT_MAX; i++) {
-		pbsm_idx[i].count = 0;
-		pbsm_idx[i].offset = 0;
-	}
-
-	if ((oids = (oid*)GDKmalloc(numberOfOIDs * sizeof(oid))) == NULL) {
-		GDKfree(pbsm_idx);
-		pbsm_idx = NULL;
-		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for oids");
-	}
-
-	if ((limits = (pbsm_info*)GDKmalloc(sizeof(pbsm_info))) == NULL) {
-		GDKfree(pbsm_idx);
-		pbsm_idx = NULL;
-		GDKfree(oids);
-		oids = NULL;
-		return createException(MAL, " geomPoints.c:allocateStructs", " Problem allocating space for limits");
-	}
-
-	return MAL_SUCCEED;
-}
 
 static str store(void) {
 	FILE *f;
 	str ret = MAL_SUCCEED;
+	char *idxFilename = NULL, *dataFilename = NULL, *infoFilename = NULL;
+
+	if((infoFilename = (char*) GDKmalloc(strlen(filename)+strlen(limitsEnding)+1)) == NULL)
+		return createException(MAL, " geomPoints.c:store", " Problem allocating space for infoFilename");
+	strcpy(infoFilename, filename);
+	strcpy(infoFilename+strlen(filename), limitsEnding);
+
+	if ((f = fopen(infoFilename, "wb"))) {
+		if (fwrite(limits, sizeof(*limits), 1, f) != 1) {
+			fclose(f);
+			ret =  createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", infoFilename);
+			GDKfree(infoFilename);
+			infoFilename = NULL;
+			return ret;
+		}
+                fflush(f);
+                fclose(f);
+		GDKfree(infoFilename);
+		infoFilename = NULL;
+
+	} else {
+		ret = createException(IO, " geomPoints.c:store", " Could not open for writting (target: %s)", infoFilename);
+		
+		GDKfree(infoFilename);
+		infoFilename = NULL;
+		return ret;
+	}
+
+	if((idxFilename = (char*) GDKmalloc(strlen(filename)+strlen(idxEnding)+1)) == NULL)
+		return createException(MAL, " geomPoints.c:store", " Problem allocating space for idxFilename");
+	strcpy(idxFilename, filename);
+	strcpy(idxFilename+strlen(filename), idxEnding);
 
 	if ((f = fopen(idxFilename, "wb"))) {
 		if (fwrite(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX,f) != USHRT_MAX) {
 			fclose(f);
 			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", idxFilename);
-			goto clean;
+			GDKfree(idxFilename);
+			idxFilename = NULL;
+			return ret; 
 		}
                 fflush(f);
                 fclose(f);
+
+		GDKfree(idxFilename);
+		idxFilename = NULL;
+
 	} else {
 		ret = createException(MAL, " geomPoints.c:store", " Could not open for writting (target: %s)", idxFilename);
-		goto clean;
+
+		GDKfree(idxFilename);
+		idxFilename = NULL;
+		return ret;		
 	}
+
+	if((dataFilename = (char*) GDKmalloc(strlen(filename)+strlen(dataEnding)+1)) == NULL)
+		return createException(MAL, "geomPoints.c:store", " Problem allocating space for dataFilename");
+	strcpy(dataFilename, filename);
+	strcpy(dataFilename+strlen(filename), dataEnding);
 
 	if ((f = fopen(dataFilename, "wb"))) {
 		if (fwrite(oids, sizeof(oids[0]), limits->oidsNum, f) != limits->oidsNum) {
 			fclose(f);
 			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", dataFilename);
-			goto clean;
+			GDKfree(dataFilename);
+			dataFilename = NULL;
+			return ret; 
 		}
                 fflush(f);
                 fclose(f);
+
+		GDKfree(dataFilename);
+		dataFilename = NULL;
+
 	} else {
 		ret = createException(IO, " geomPoints.c:store", " Could not open for writting (target: %s)", dataFilename);
-		goto clean;
-	}
 
+		GDKfree(dataFilename);
+		dataFilename = NULL;
+		return ret; 
+	}
 	
-	if ((f = fopen(limitsFilename, "wb"))) {
-		if (fwrite(limits, sizeof(*limits), 1, f) != 1) {
-			fclose(f);
-			ret = createException(IO, " geomPoints.c:store", " Could not save the PBSM index to disk (target: %s)", limitsFilename);
-			goto clean;
-		}
-                fflush(f);
-                fclose(f);
-	} else {
-		ret = createException(IO, " geomPoints.c:store", " Could not open for writting (target: %s)", limitsFilename);
-		goto clean;
-	}
-
-
-	GDKfree(idxFilename);
-	idxFilename = NULL;
-	GDKfree(dataFilename);
-	dataFilename = NULL;
-	GDKfree(limitsFilename);
-	limitsFilename = NULL;
-
 	return MAL_SUCCEED;
-
-clean:
-	GDKfree(pbsm_idx);
-	pbsm_idx = NULL;
-	GDKfree(oids);
-	oids = NULL;
-	GDKfree(limits);
-	limits = NULL;
-	GDKfree(idxFilename);
-	idxFilename = NULL;
-	GDKfree(dataFilename);
-	dataFilename = NULL;
-	GDKfree(limitsFilename);
-	limitsFilename = NULL;
-
-	return ret;
 }
 
 static str load(void) {
 	FILE *f;
+	char *idxFilename = NULL, *dataFilename = NULL, *infoFilename = NULL;
 	str ret = MAL_SUCCEED;
 
-	if ((f = fopen(idxFilename, "rb"))) {
-		if (fread(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX, f) != USHRT_MAX) {
-			fclose(f);
-			ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", idxFilename);
-			goto clean;
+	if((infoFilename = (char*) GDKmalloc(strlen(filename)+strlen(limitsEnding)+1)) == NULL)
+		return createException(MAL, " geomPoints.c:load", " Problem allocating space for infoFilename");
+	strcpy(infoFilename, filename);
+	strcpy(infoFilename+strlen(filename), limitsEnding);
+	
+	if ((f = fopen(infoFilename, "rb"))) {
+		//allocate space only if the file exists
+		if ((limits = (pbsm_info*)GDKmalloc(sizeof(pbsm_info))) == NULL) {
+			GDKfree(infoFilename);
+			infoFilename = NULL;
+			return createException(MAL, " geomPoints.c:load", " Problem allocating space for info");
 		}
+	
+		if (fread(limits, sizeof(*limits), 1, f) != 1) {
+			fclose(f);
+			ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", infoFilename);
+
+			GDKfree(limits);
+			limits = NULL;
+			GDKfree(infoFilename);
+			infoFilename = NULL;
+			return ret;
+		}
+
 		fclose(f);
-		
-		if ((f = fopen(limitsFilename, "rb"))) {
-			if (fread(limits, sizeof(*limits), 1, f) != 1) {
-				fclose(f);
-				ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", limitsFilename);
-				goto clean;
-			}
+		GDKfree(infoFilename);
+		infoFilename = NULL;
+	} else {
+		ret = createException(IO, " geomPoints.c:load", " Could not open file for reading (source: %s)", infoFilename);
 
-			fclose(f);
-		} else {
-			ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", limitsFilename);
-			goto clean;
-		}
-		
-		if ((f = fopen(dataFilename, "rb"))) {
-			if (fread(oids, sizeof(oids[0]), limits->oidsNum, f) != limits->oidsNum) {
-				fclose(f);
-				ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", dataFilename);
-				goto clean;
-			}
-
-			fclose(f);
-		} else {
-			ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", dataFilename);
-			goto clean;
-		}
-		
-		//index has been loaded, files are not needed anymore
-		GDKfree(idxFilename);
-		idxFilename = NULL;
-		GDKfree(dataFilename);
-		dataFilename = NULL;
-		GDKfree(limitsFilename);
-		limitsFilename = NULL;
-		return MAL_SUCCEED;
-
+		GDKfree(infoFilename);
+		infoFilename = NULL;
+		return ret;
 	}
 	
-	ret = createException(IO, " geomPoints.c:load", " Could not read file %s.", idxFilename);
+	if((idxFilename = (char*) GDKmalloc(strlen(filename)+strlen(idxEnding)+1)) == NULL)
+		return createException(MAL, " geomPoints.c:load", " Problem allocating space for idxFilename");
+	strcpy(idxFilename, filename);
+	strcpy(idxFilename+strlen(filename), idxEnding);
 	
-clean:
-	GDKfree(pbsm_idx);
-	pbsm_idx = NULL;
-	GDKfree(oids);
-	oids = NULL;
-	GDKfree(limits);
-	limits = NULL;
-	GDKfree(idxFilename);
-	idxFilename = NULL;
-	GDKfree(dataFilename);
-	dataFilename = NULL;
-	GDKfree(limitsFilename);
-	limitsFilename = NULL;
+	if ((f = fopen(idxFilename, "rb"))) {
+		//allocate space only if file exists
+		if ((pbsm_idx = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL) {
+			GDKfree(limits);
+			limits = NULL;
+			GDKfree(idxFilename);
+			idxFilename = NULL;
+			return createException(MAL, " geomPoints.c:load", " Problem allocating space for pbsm_idx");
+		}
+		if (fread(pbsm_idx, sizeof(pbsm_idx[0]), USHRT_MAX, f) != USHRT_MAX) {
+			fclose(f);
+			GDKfree(limits);
+			limits = NULL;
+			GDKfree(pbsm_idx);
+			pbsm_idx = NULL;
+			GDKfree(idxFilename);
+			idxFilename = NULL;
+			return createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", idxFilename);
+		}
+		fclose(f);
+		GDKfree(idxFilename);
+		idxFilename = NULL;
+	} else {
+		ret = createException(IO, " geomPoints.c:load", " Could not open file for reading (source: %s)", idxFilename);
+	
+		GDKfree(limits);
+		limits = NULL;
+		GDKfree(idxFilename);
+		idxFilename = NULL;
+		return ret;
+	}
 
-	return ret;
+	
+		
+	if((dataFilename = (char*) GDKmalloc(strlen(filename)+strlen(dataEnding)+1)) == NULL)
+		return createException(MAL, "geomPoints.c:load", " Problem allocating space for dataFilename");
+	strcpy(dataFilename, filename);
+	strcpy(dataFilename+strlen(filename), dataEnding);
+
+	if ((f = fopen(dataFilename, "rb"))) {
+		//allocate space only if file existis
+		if ((oids = (oid*)GDKmalloc(limits->oidsNum * sizeof(oid))) == NULL) {
+			GDKfree(limits);
+			limits = NULL;
+			GDKfree(pbsm_idx);
+			pbsm_idx = NULL;
+			GDKfree(dataFilename);
+			dataFilename = NULL;
+			return createException(MAL, " geomPoints.c:load", " Problem allocating space for oids");
+		}
+		if (fread(oids, sizeof(oids[0]), limits->oidsNum, f) != limits->oidsNum) {
+			fclose(f);
+			ret = createException(IO, " geomPoints.c:load", " Could not read the PBSM index from disk (source: %s)", dataFilename);
+
+			GDKfree(limits);
+			limits = NULL;
+			GDKfree(pbsm_idx);
+			pbsm_idx = NULL;
+			GDKfree(oids);
+			oids = NULL;
+			GDKfree(dataFilename);
+			dataFilename = NULL;
+			return ret; 
+		}
+
+		fclose(f);
+		GDKfree(dataFilename);
+		dataFilename = NULL;
+	} else {
+		ret = createException(IO, " geomPoints.c:load", " Could not open file for reading (source: %s)", dataFilename);
+	
+		GDKfree(limits);
+		limits = NULL;
+		GDKfree(pbsm_idx);
+		pbsm_idx = NULL;
+		GDKfree(dataFilename);
+		dataFilename = NULL;
+		return ret;
+	}
+
+	return MAL_SUCCEED;
 }
  
 static char *
@@ -1166,15 +1191,27 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 	unsigned long *tmpCount;
 	unsigned long i;
 	int shift = sizeof(sht) * 8 / 2;
-
+	
+	if ((pbsm_idx = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
+		return createException(MAL, " geomPoints.c:PBSMcomputeindex2", " Problem allocating space for pbsm_idx");
 	if ((tmpCount = (unsigned long*)GDKmalloc(USHRT_MAX * sizeof(unsigned long))) == NULL) {
 		GDKfree(pbsm_idx);
-		GDKfree(oids);
-		throw(MAL, "pbsm.createindex", MAL_MALLOC_FAIL);
+		pbsm_idx = NULL;
+		return createException(MAL, " geomPoints.c:PBSMcomputeindex2"," Problem allocating space for tmpCount");
 	}
 
 	for (i = 0; i < USHRT_MAX; i++) {
+		pbsm_idx[i].count = 0;
+		pbsm_idx[i].offset = 0;
 		tmpCount[i] = 0;
+	}
+
+	if ((limits = (pbsm_info*)GDKmalloc(sizeof(pbsm_info))) == NULL) {
+		GDKfree(pbsm_idx);
+		pbsm_idx = NULL;
+		GDKfree(tmpCount);
+		tmpCount = NULL;
+		return createException(MAL, " geomPoints.c:PBSMcomputeindex2", " Problem allocating space for limits");
 	}
 
 	limits->xmin = minx;
@@ -1182,7 +1219,18 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 	limits->ymin = miny;
 	limits->ymax = maxy;
 	limits->oidsNum = n;
+	
+	if ((oids = (oid*)GDKmalloc(n * sizeof(oid))) == NULL) {
+		GDKfree(pbsm_idx);
+		pbsm_idx = NULL;
+		GDKfree(limits);
+		limits = NULL;
+		GDKfree(tmpCount);
+		tmpCount = NULL;
+		return createException(MAL, " geomPoints.c:PBSMcomputeindex2"," Problem allocating space for oids");
+	}
 
+	
 	// count pbsm values per cell
 	for (i = 0; i < n; i++) {
 		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
@@ -1207,7 +1255,8 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 		tmpCount[cell - SHRT_MIN]++;
 	}
 
-	GDKfree(tmpCount);	
+	GDKfree(tmpCount);
+	tmpCount = NULL;
 
 	return MAL_SUCCEED;
 }
@@ -1222,30 +1271,14 @@ static char* PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, do
 
 (void) *x;
 (void) *y;
+(void) n;
 (void) minx;
 (void) maxx;
 (void) miny;
 (void) maxy, 
 (void) seqbase;
 
-	//create the filenames
-	if((err = createFilenames("batgeom.pbsmIndex")) != MAL_SUCCEED) {
-		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
-		GDKfree(err);
-		return msg;
-	}
-
-	//allocate memory for the necessary structures
-	if((err = allocateStructs(n)) != MAL_SUCCEED) {
-		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
-		GDKfree(err);
-		
-		GDKfree(idxFilename);
-		GDKfree(dataFilename);
-		GDKfree(limitsFilename);
-
-		return msg;
-	}
+	
 
 	//load the index if it does not already exist
 	if((err = load()) != MAL_SUCCEED) {
@@ -1256,33 +1289,6 @@ static char* PBSMcreateindex (const dbl *x, const dbl *y, BUN n, double minx, do
 	t = clock() - t;
 	fprintf(stderr, "[PBSM] Index loading: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
-	//the index does not exits. Create it.
-/*	if(!found) {
-
-fprintf(stderr, "Creating index\n");
-	
-		// version 1
-		if ( false && PBSMcomputeindex1(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
-			throw(MAL, "pbsm.createindex", "Failed to compute index (1).");
-		// version 2
-		if ( true && PBSMcomputeindex2(x, y, n, minx, maxx, miny, maxy, seqbase) != MAL_SUCCEED)
-			throw(MAL, "pbsm.createindex", "Failed to compute index (2).");
-
-		t = clock() - t;
-		fprintf(stderr, "[PBSM] Index population: %d clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
-
-		//Store the indices to files for future use
-		if((err = store("batgeom.Filter", n)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.Filter", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-fprintf(stderr, "createIndex CREATE: (%f,%f) - (%f, %f) \t %u \n", limits->xmin, limits->ymin, limits->xmax, limits->ymax, limits->oidsNum);
-
-	} else
-fprintf(stderr, "createIndex LOAD: (%f,%f) - (%f, %f) \t %u \n", limits->xmin, limits->ymin, limits->xmax, limits->ymax, limits->oidsNum);
-*/
-	
 	return MAL_SUCCEED;
 }
 
@@ -1493,25 +1499,6 @@ str pbsmIndex_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, double* xmin, doub
 	}
 
 	n = BATcount(xBAT);
-
-	//create the filenames
-	if((err = createFilenames("batgeom.pbsmIndex")) != MAL_SUCCEED) {
-		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
-		GDKfree(err);
-		return msg;
-	}
-
-	//allocate memory for the necessary structures
-	if((err = allocateStructs(n)) != MAL_SUCCEED) {
-		str msg = createException(MAL, "batgeom.pbsmIndex", "%s", err);
-		GDKfree(err);
-		
-		GDKfree(idxFilename);
-		GDKfree(dataFilename);
-		GDKfree(limitsFilename);
-
-		return msg;
-	}
 
 	x = (double*) Tloc(xBAT, BUNfirst(xBAT));
         y = (double*) Tloc(yBAT, BUNfirst(yBAT));
