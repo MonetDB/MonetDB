@@ -50,7 +50,7 @@ Ready.
 # 20:09:14 >  
 
 Resultset with 1 columns
-TABLE_TYPE	
+TABLE_CAT	
 mTests_sql_jdbc_tests	
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	

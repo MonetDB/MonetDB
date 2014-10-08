@@ -4183,6 +4183,8 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			tpe = &rtype;
 		}
 		restype = tpe;
+		if (restype->type->localtype == TYPE_void) /* NULL */
+			restype = sql_bind_localtype("str");
 
 		if (!result || !(result = rel_check_type(sql, restype, result, type_equal))) 
 			return NULL;
@@ -4191,9 +4193,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		if (!res) 
 			return NULL;
 	} else {
-		sql_exp *a = exp_atom(sql->sa, atom_general(sql->sa, restype, NULL));
-
-		res = a;
+		if (restype->type->localtype == TYPE_void) /* NULL */
+			restype = sql_bind_localtype("str");
+		res = exp_atom(sql->sa, atom_general(sql->sa, restype, NULL));
 	}
 
 	for (n = conds->h, m = results->h; n && m; n = n->next, m = m->next) {
