@@ -1763,11 +1763,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->wtime > oldest->stime) {
+			while (b && b->wtime >= oldest->stime) {
 				p = b;
 				b = b->next;
 			}
-			if (b && b->wtime <= oldest->stime && p) {
+			if (b && b->wtime < oldest->stime && p) {
 				p->next = NULL;
 				destroy_dbat(tr, b);
 			}
@@ -1788,11 +1788,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
-				while (b && b->wtime > oldest->stime) {
+				while (b && b->wtime >= oldest->stime) {
 					p = b;
 					b = b->next;
 				}
-				if (b && b->wtime <= oldest->stime && p) {
+				if (b && b->wtime < oldest->stime && p) {
 					p->next = NULL;
 					destroy_bat(tr, b);
 				}
@@ -1838,11 +1838,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
-				while (b && b->wtime > oldest->stime) {
+				while (b && b->wtime >= oldest->stime) {
 					p = b;
 					b = b->next;
 				}
-				if (b && b->wtime <= oldest->stime && p) {
+				if (b && b->wtime < oldest->stime && p) {
 					p->next = NULL;
 					destroy_bat(tr, b);
 				}
