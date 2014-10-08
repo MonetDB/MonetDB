@@ -1432,7 +1432,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 }
 
 static void
-setFormatter(char *s)
+setFormatter(const char *s)
 {
 	if (separator)
 		free(separator);
@@ -1451,10 +1451,20 @@ setFormatter(char *s)
 		separator = strdup(",");
 	} else if (strncmp(s, "csv=", 4) == 0) {
 		formatter = CSVformatter;
-		separator = strdup(s + 4);
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
 	} else if (strncmp(s, "csv+", 4) == 0) {
 		formatter = CSVformatter;
-		separator = strdup(s + 4);
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
 		csvheader = 1;
 	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
