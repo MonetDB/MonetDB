@@ -1694,9 +1694,9 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		goto fail;
 	if ((right = BATdescriptor(rid)) == NULL)
 		goto fail;
-	if (slid && (candleft = BATdescriptor(slid)) == NULL)
+	if (slid != bat_nil && (candleft = BATdescriptor(slid)) == NULL)
 		goto fail;
-	if (srid && (candright = BATdescriptor(srid)) == NULL)
+	if (srid != bat_nil && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
 	result1 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
 	result2 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
