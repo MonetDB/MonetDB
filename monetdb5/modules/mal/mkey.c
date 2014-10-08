@@ -144,7 +144,7 @@ voidbathash(BAT **res, BAT *b )
 		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
 		int sz = Tsize(b), tpe = b->ttype;
 
-		switch (ATOMstorage(tpe)) {
+		switch (tpe) {
 		case TYPE_bte:
 			for(; v < e; v+=sz)
 				*r++ = *(bte*)v;
@@ -274,7 +274,7 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 	BAT* br = NULL;
 	BATiter bi = bat_iterator(b);
 	wrd *dst = NULL;
-	int tpe = ATOMstorage(b->ttype);
+	int tpe = b->ttype;
 	int lbit = *rotate;
 	int rbit = (sizeof(wrd)*8) - *rotate;
 	wrd mask = (((wrd)1) << lbit) - 1;
@@ -496,7 +496,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	BATiter bi = bat_iterator(b);
 	wrd *src = (wrd *) Tloc(bn, BUNfirst(bn));
 	wrd *dst = NULL;
-	int tpe = ATOMstorage(b->ttype);
+	int tpe = b->ttype;
 	int lbit = *rotate;
 	int rbit = (sizeof(wrd)*8) - *rotate;
 	wrd mask = (((wrd)1) << lbit) - 1;
@@ -674,6 +674,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	ret= getArgReference_wrd(stk,p,0);
 	val= getArgReference(stk,p,1);
+	assert (tpe >= TYPE_str);
 	if (ATOMextern(tpe))
 		val = *(ptr*)val;
 	else if (tpe == TYPE_str)
