@@ -141,7 +141,7 @@ MATHunary##NAME##dbl(dbl *res , const dbl *a)				\
 		*res =dbl_nil;										\
 	} else {												\
 		tmp1= *a;											\
-		errno = 0;											\
+		set_errno(0);											\
 		feclearexcept(FE_ALL_EXCEPT);						\
 		tmp2 = FUNC(tmp1);									\
 		if (errno != 0 ||									\
@@ -161,7 +161,7 @@ MATHunary##NAME##flt(flt *res , const flt *a)				\
 		*res =flt_nil;										\
 	} else {												\
 		tmp1= *a;											\
-		errno = 0;											\
+		set_errno(0);											\
 		feclearexcept(FE_ALL_EXCEPT);						\
 		tmp2 = FUNC(tmp1);									\
 		if (errno != 0 ||									\

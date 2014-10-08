@@ -352,8 +352,8 @@ BATattach(int tt, const char *heapfile, int role)
 	path = GDKfilepath(bn->T->heap.farmid, BATDIR, bn->T->heap.filename, "new");
 	GDKcreatedir(path);
 	if (rename(heapfile, path) < 0) {
-		GDKfree(path);
 		GDKsyserror("BATattach: cannot rename heapfile\n");
+		GDKfree(path);
 		HEAPfree(&bn->T->heap);
 		GDKfree(bs);
 		return NULL;

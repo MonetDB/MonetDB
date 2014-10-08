@@ -479,6 +479,7 @@ int ptrToStr(str *dst, int *len, const ptr *src);
 const ptr ptr_nil;
 struct dirent *readdir(DIR *dir);
 void rewinddir(DIR *dir);
+void set_errno(int);
 int shtFromStr(const char *src, int *len, sht **dst);
 int shtToStr(str *dst, int *len, const sht *src);
 const sht sht_nil;

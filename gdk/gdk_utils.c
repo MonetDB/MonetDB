@@ -1056,7 +1056,7 @@ GDKinit(opt *set, int setlen)
 		MT_lock_init(&GDKbbpLock[i].trim, "GDKtrimLock");
 		GDKbbpLock[i].free = 0;
 	}
-	errno = 0;
+	set_errno(0);
 	if (!GDKenvironment(dbpath))
 		return 0;
 
@@ -1564,7 +1564,7 @@ GDKsyserror(const char *format, ...)
 	}
 	GDKaddbuf(message);
 
-	errno = 0;
+	set_errno(0);
 	return err;
 }
 
