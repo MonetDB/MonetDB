@@ -259,6 +259,7 @@ static str wkbPointsGeomContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xB
 	}
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+fprintf(stderr, "wkbPointsGeomContains_geom_bat: %u: %u results\n", (unsigned int)outBAT->hseqbase, (unsigned int)BATcount(outBAT));
 
 //	fprintf(stderr, "Contains1: IN %u - OUT %u\n", (unsigned int)BATcount(xBAT), (unsigned int)BATcount(outBAT));
 
@@ -695,6 +696,7 @@ static str wkbPointsGeomDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xB
 		ret = createException(MAL, "batgeom.Distance", "Problem evalauting the contains");
 		goto clean;
 	}
+fprintf(stderr, "wkbPointsGeomDistance_geom_bat: %u: %u results\n", (unsigned int)outBAT->hseqbase, (unsigned int)BATcount(outBAT));
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	goto clean;
@@ -849,6 +851,7 @@ static str wkbPointsFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** 
 		BBPreleaseref(yBAT->batCacheid);
 		return createException(MAL, "batgeom.Filter", "BATs must be aligned");
 	}
+fprintf(stderr, "Imprints xBAT:(%u, %u), yBAT:(%u, %u)\n", (unsigned int)xBAT->hseqbase, (unsigned int)BATcount(xBAT), (unsigned int)yBAT->hseqbase, (unsigned int)BATcount(yBAT));
 
 	//create the MBR of the geom
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
@@ -880,7 +883,7 @@ static str wkbPointsFilterWithImprints_geom_bat(bat* candidateOIDsBAT_id, wkb** 
 		return createException(MAL,"batgeom.Filter","Problem filtering yBAT");
 	}
 
-fprintf(stderr, "%u : %u candidates after Imprints\n", (unsigned int)xBAT->hseqbase, (unsigned int)BATcount(candidateOIDsBAT));
+fprintf(stderr, "%u : %u candidates after Imprints\n", (unsigned int)candidateOIDsBAT->hseqbase, (unsigned int)BATcount(candidateOIDsBAT));
 //BATMBRfilter(xmin, ymin, xmax, ymax, geomWKB, (*geomWKB)->srid);
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
@@ -1254,7 +1257,7 @@ PBSMcomputeindex2(const dbl *x, const dbl *y, BUN n, double minx, double maxx, d
 
 
 static char *
-PBSMarraycontains16(BAT **bres, mbr *mbb) {
+PBSMarraycontains16(BAT **bres, mbr *mbb, oid seqbase) {
 	unsigned long csize = 0, u;
 	oid *candidates;
 	unsigned char mbrcellxmin, mbrcellxmax, mbrcellymin, mbrcellymax, k,l;
@@ -1292,7 +1295,7 @@ PBSMarraycontains16(BAT **bres, mbr *mbb) {
 			csize += pbsm_idx[mbrc - SHRT_MIN].count;
 		}
 	}
-fprintf(stderr, "PBSMarraycontains16: %d cells and %lu candidates\n", (mbrcellxmax-mbrcellxmin+1)*(mbrcellymax-mbrcellymin+1), csize);
+fprintf(stderr, "PBSMarraycontains16: %u: %d cells and %lu candidates\n", (unsigned int)seqbase, (mbrcellxmax-mbrcellxmin+1)*(mbrcellymax-mbrcellymin+1), csize);
 if(csize > 0) {
 	/* get candidate oid from the pbsm index */
 	if ((candidates = GDKmalloc(csize * sizeof(oid))) == NULL)
@@ -1325,7 +1328,7 @@ if(csize > 0) {
 	/* candidates are expected to be ordered */
 	BATseqbase(*bres, oid_nil); // avoid materialization of the void head
 	*bres = BATmirror(BATorder(BATmirror(*bres)));
-	BATseqbase(*bres, 0);
+	BATseqbase(*bres, seqbase);
 
 	//BATkey(BATmirror(*bres), TRUE);
 	(*bres)->hdense = 1;
@@ -1338,12 +1341,12 @@ if(csize > 0) {
 }
 
 static char *
-PBSMselect_(BAT **ret, mbr *g) {
+PBSMselect_(BAT **ret, mbr *g, oid seqbase) {
 	str err;
 
 	assert (ret != NULL);
 
-	if((err = PBSMarraycontains16( ret, g)) != NULL) {
+	if((err = PBSMarraycontains16( ret, g, seqbase)) != NULL) {
 		str msg = createException(MAL, " geomPoints:PBSMselect_", " %s", err);
 		GDKfree(err);
 		return msg;
@@ -1378,6 +1381,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 		BBPreleaseref(yBAT->batCacheid);
 		return createException(MAL, "batgeom.Filter", "BATs must be aligned");
 	}
+fprintf(stderr, "PBSM xBAT:(%u, %u), yBAT:(%u, %u)\n", (unsigned int)xBAT->hseqbase, (unsigned int)BATcount(xBAT), (unsigned int)yBAT->hseqbase, (unsigned int)BATcount(yBAT));
 
 	//create the MBR of the geom
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
@@ -1389,7 +1393,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 		return msg;
 	}
 //	t = clock();
-	if(((err = PBSMselect_(&candidateOIDsBAT, geomMBR)) != MAL_SUCCEED)
+	if(((err = PBSMselect_(&candidateOIDsBAT, geomMBR, xBAT->hseqbase)) != MAL_SUCCEED)
 		|| (candidateOIDsBAT == NULL)) {
 		str msg;
 		BBPreleaseref(xBAT->batCacheid);
@@ -1401,6 +1405,7 @@ static str wkbPointsFilterWithPBSM_geom_bat(bat* candidateOIDsBAT_id, wkb** geom
 	//t = clock() - t;
 	//fprintf(stderr, "[PREFILTERING] PBSM: %u clicks - %f seconds\n", (unsigned int)t, ((float)t)/CLOCKS_PER_SEC);
 
+fprintf(stderr, "%u : %u candidates after PBSM\n", (unsigned int)candidateOIDsBAT->hseqbase, (unsigned int)BATcount(candidateOIDsBAT));
 
 	BBPreleaseref(xBAT->batCacheid);
 	BBPreleaseref(yBAT->batCacheid);
@@ -1474,6 +1479,229 @@ if(false) PBSMcomputeindex1(x, y, n, *xmin, *xmax, *ymin, *ymax, xBAT->hseqbase)
 }
 
 
+
+/* Imprints + {BSM */
+static str computeGrid(pbsm_ptr **grid, oid **oidsPerCell, const dbl *x, const dbl *y, BUN n, double minx, double maxx, double miny, double maxy) {
+	unsigned long *tmpCount;
+	unsigned long i;
+	int shift = sizeof(sht) * 8 / 2;
+	pbsm_ptr *grid_local = NULL;
+	oid *oidsPerCell_local = NULL;
+
+	
+	if ((grid_local = (pbsm_ptr*)GDKmalloc(USHRT_MAX * sizeof(pbsm_ptr))) == NULL)
+		return createException(MAL, " geomPoints:PBSMcomputeindex2", " Problem allocating space for grid");
+	if ((tmpCount = (unsigned long*)GDKmalloc(USHRT_MAX * sizeof(unsigned long))) == NULL) {
+		GDKfree(grid_local);
+		return createException(MAL, " geomPoints:PBSMcomputeindex2"," Problem allocating space for tmpCount");
+	}
+
+	for (i = 0; i < USHRT_MAX; i++) {
+		grid_local[i].count = 0;
+		grid_local[i].offset = 0;
+		tmpCount[i] = 0;
+	}
+
+	if ((oidsPerCell_local = (oid*)GDKmalloc(n * sizeof(oid))) == NULL) {
+		GDKfree(grid_local);
+		GDKfree(tmpCount);
+		return createException(MAL, " geomPoints:PBSMcomputeindex2"," Problem allocating space for oids");
+	}
+
+	
+	// count pbsm values per cell
+	for (i = 0; i < n; i++) {
+		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
+                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		sht cell = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
+		grid_local[cell - SHRT_MIN].count++;	
+	}
+
+	// compute the offset values before filling in the oid array
+	grid_local[0].offset = 0;
+	for (i = 1; i < USHRT_MAX; i++) {
+		grid_local[i].offset = grid_local[i-1].offset + grid_local[i-1].count;
+	}
+
+	// fill in the oid array
+	for (i = 0; i < n; i++) {
+		unsigned char cellx = ((x[i] - minx)/(maxx - minx))*UCHAR_MAX;
+                unsigned char celly = ((y[i] - miny)/(maxy - miny))*UCHAR_MAX;
+		sht cell = ((((unsigned short) cellx) << shift)) | ((unsigned short) celly);
+		unsigned long position = grid_local[cell - SHRT_MIN].offset + tmpCount[cell - SHRT_MIN];
+		oidsPerCell_local[position] = i;
+		tmpCount[cell - SHRT_MIN]++;
+	}
+
+	GDKfree(tmpCount);
+
+	*grid = grid_local;
+	*oidsPerCell = oidsPerCell_local;
+
+	return MAL_SUCCEED;
+}
+
+/*I should run this with default optimizer because for simplicity at the moment it handles everything itself*/
+static str wkbPointsFilterWithImprintsAndPBSM_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid) {
+	bat imprintsCandidatesBAT_id;
+	BAT *xBAT = NULL, *yBAT = NULL, *outBAT = NULL;
+	BAT *xFilteredBAT=NULL, *yFilteredBAT = NULL, *imprintsCandidatesBAT = NULL;
+	double *xVal = NULL, *yVal = NULL;
+	double xmin, xmax, ymin, ymax;
+	BUN i=0;
+	str err;
+	pbsm_ptr *grid = NULL;
+	oid *oidsPerCell = NULL;
+	double xStep, yStep;
+	double x, y;
+	bit* containsVal;
+	int shift = sizeof(sht) * 8 / 2;
+
+fprintf(stderr, "In Imprints+PBSM\n");
+
+	//get the first results using Imprints
+	if((err=wkbPointsFilterWithImprints_geom_bat(&imprintsCandidatesBAT_id, geomWKB, xBAT_id, yBAT_id)) != MAL_SUCCEED) {
+		str msg = createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", " %s", err);
+		return msg;
+	}
+
+	//get the descriptors of the BATs
+	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL) {
+		return createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", " Error getting xBAT descriptor");
+	}
+	if ((yBAT = BATdescriptor(*yBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		return createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", " Error getting yBAT descriptor");
+	}
+	if ((imprintsCandidatesBAT = BATdescriptor(imprintsCandidatesBAT_id)) == NULL) {
+		BBPreleaseref(xBAT->batCacheid);
+		return createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", " Error getting yBAT descriptor");
+	}
+
+	//check if the BATs have dense heads and are aligned
+	if (!BAThdense(xBAT) || !BAThdense(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", "BATs must have dense heads");
+	}
+	if(xBAT->hseqbase != yBAT->hseqbase || BATcount(xBAT) != BATcount(yBAT)) {
+		BBPreleaseref(xBAT->batCacheid);
+		BBPreleaseref(yBAT->batCacheid);
+		return createException(MAL, " geomPoints:wkbPointsFilterWithImprintsAndPBSM", "BATs must be aligned");
+	}
+
+	//create the outBAT
+	if ((outBAT = BATnew(TYPE_void, TYPE_bit, BATcount(xBAT), TRANSIENT)) == NULL) {
+		return createException(MAL, " geomPoints:pbsmIndex_bat", " Problem creating output BAT");
+	}
+
+	containsVal = (bit*)Tloc(outBAT, BUNfirst(outBAT));
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, xBAT->hseqbase);
+	BATsetcount(outBAT, 0);
+
+
+	//get the x, y coordinates returned by imprints
+	if(!(xFilteredBAT = BATproject(imprintsCandidatesBAT, xBAT)))
+		return createException(MAL, " geomPoints:pbsmIndex_bat", " Problem projecting xBAT");
+	if(!(yFilteredBAT = BATproject(imprintsCandidatesBAT, yBAT)))
+		return createException(MAL, " geomPoints:pbsmIndex_bat", " Problem projecting yBAT");
+
+	//find the min and max positions of the filtered BATs
+	//(Is there a faster way?)
+	xVal = (double*)Tloc(xFilteredBAT, BUNfirst(xFilteredBAT));
+	yVal = (double*)Tloc(yFilteredBAT, BUNfirst(yFilteredBAT));
+	xmin = xmax = xVal[0];
+	ymin = ymax = yVal[0];
+	for(i=1; i<BATcount(xFilteredBAT); i++) {
+		xmin = (xmin<xVal[i]?xmin:xVal[i]);
+		ymin = (ymin<yVal[i]?ymin:yVal[i]);
+		xmax = (xmax>xVal[i]?xmax:xVal[i]);
+		ymax = (ymax>yVal[i]?ymax:yVal[i]);
+	}
+fprintf(stderr, "wkbPointsFilterWithImprintsAndPBSM_geom_bat: %u : (%f, %f) - (%f, %f)\n", (unsigned int)xBAT->hseqbase, xmin, ymin, xmax, ymax);
+	
+	//create a grid using the filtered x, y	
+	if((err=computeGrid(&grid, &oidsPerCell, xVal, yVal, BATcount(xFilteredBAT), xmin, xmax, ymin, ymax)) != MAL_SUCCEED) {
+		str msg = createException(MAL, " geompoints:wkbpointsfilterwithimprintsandpbsm", " Problem creting the grid");
+		GDKfree(err);
+		return msg;
+	}
+	
+	xStep = (xmax - xmin)/UCHAR_MAX;
+	yStep = (ymax - ymin)/UCHAR_MAX;
+fprintf(stderr, "wkbPointsFilterWithImprintsAndPBSM_geom_bat: %u : xStep = %f, yStep = %f\n", (unsigned int)xBAT->hseqbase, xStep, yStep);
+	
+	//check each cell to find whether it is completely inside or outside the geometry
+	for(x=xmin; x<xmax; x+=xStep) {
+		double cellXmin = x;
+		double cellXmax = x+xStep;
+		if(cellXmax > xmax)
+			cellXmax = xmax;
+
+		for(y=ymin; y<ymax; y+=yStep) {	
+			sht cellId = 0;
+			bit intersects = 0, contains = 0;
+
+			//create a polygon out of the cell
+			wkb *cellPolygon = NULL;
+			double cellYmin = y;
+			double cellYmax = y+yStep;
+			if(cellYmax > ymax)
+				cellYmax = ymax;
+		
+			cellId = ((((unsigned short) cellXmin) << shift)) | ((unsigned short) cellYmin);
+fprintf(stderr, "(%f, %f) - (%f, %f) cellId = %d\n", cellXmin, cellYmin, cellXmax, cellYmax , (cellId-SHRT_MIN));
+			if((err = wkbEnvelopeFromCoordinates(&cellPolygon, &cellXmin, &cellYmin, &cellXmax, &cellYmax, srid)) != MAL_SUCCEED) 
+				return createException(MAL, " geompoints:wkbpointsfilterwithimprintsandpbsm"," Problem creating polygon");
+			
+			//check if the cell intersects with the polygon
+			if((err =  wkbIntersects(&intersects, geomWKB, &cellPolygon)) != MAL_SUCCEED)
+				return createException(MAL, " geompoints:wkbpointsfilterwithimprintsandpbsm", " Problem evaluating intesects");
+			if(intersects) {
+				//they intersect so this cell has interesting points
+				//check whether all points are inside the polygon
+				if((err = wkbContains(&contains, geomWKB, &cellPolygon)) != MAL_SUCCEED)
+					return createException(MAL, " geompoints:wkbpointsfilterwithimprintsandpbsm"," Problem evaluating contains");
+				if(contains){
+					//set all oids in this cell to 1
+					for(i=grid[cellId - SHRT_MIN].offset; i<=grid[cellId - SHRT_MIN].count; i++) {
+						BUN oid = oidsPerCell[i];
+						containsVal[oid] = 1;
+					}
+					fprintf(stderr, "%u oids inside the polygon\n", (unsigned int)grid[cellId - SHRT_MIN].count);
+				} else {
+					//the oids in this cell should be checked in more detail
+					for(i=grid[cellId - SHRT_MIN].offset; i<=grid[cellId - SHRT_MIN].count; i++) {
+						BUN oid = oidsPerCell[i];
+						containsVal[oid] = 1;
+					}
+					fprintf(stderr, "%u oids checked in detail\n", (unsigned int)grid[cellId - SHRT_MIN].count);
+				}
+			} else {
+				//the points in this cell are outside the geometry
+				//get all the oids in this cell and set their value in the outputBAT to 0;
+				for(i=grid[cellId - SHRT_MIN].offset; i<=grid[cellId - SHRT_MIN].count; i++) {
+					BUN oid = oidsPerCell[i];
+					containsVal[oid] = 0;
+				}
+				fprintf(stderr, "%u oids outside the polygon\n", (unsigned int)grid[cellId - SHRT_MIN].count);
+			}
+		}
+	}
+
+	BBPreleaseref(xBAT->batCacheid);
+	BBPreleaseref(yBAT->batCacheid);
+	BBPreleaseref(xFilteredBAT->batCacheid);
+	BBPreleaseref(yFilteredBAT->batCacheid);
+	BBPreleaseref(imprintsCandidatesBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+
+}
+
+
 /*Wrappers that choose the version of the spatial function and the filter that should be used*/
 
 str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat* yBAT_id, int* srid, int* filterVersion, int* spatialVersion) {
@@ -1483,6 +1711,8 @@ str wkbPointsContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* xBAT_id, bat*
 		return wkbPointsGeomContains_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);	
 	case 2:
 		return wkbPointsWindingContains_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);
+	case 3:
+		return wkbPointsFilterWithImprintsAndPBSM_geom_bat(outBAT_id, geomWKB, xBAT_id, yBAT_id, srid);
 	default:
 		return createException(MAL, "batgeom.Contains", "Unknown Contains version");
 	}
@@ -1510,3 +1740,5 @@ str wkbPointsFilter_geom_bat(bat* candidatesBAT_id, wkb** geomWKB, bat* xBAT_id,
 		return createException(MAL, "batgeom.Filter", "Unknown Filter version");
 	}
 }
+
+

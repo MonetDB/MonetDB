@@ -2079,11 +2079,11 @@ str wkbContains(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	*out = bit_nil;
 
 	if(res == 4)
-		throw(MAL, "geom.Contains", "Geometries of different SRID");
+		return createException(MAL, "geom.Contains", "Geometries of different SRID");
 	if(res == 3)
-		throw(MAL, "geom.Contains", "wkb2geos failed");
+		return createException(MAL, "geom.Contains", "wkb2geos failed");
 	if(res == 2)
-		throw(MAL, "geom.Contains", "GEOSContains failed");
+		return createException(MAL, "geom.Contains", "GEOSContains failed");
 	*out = res;
 
 	return MAL_SUCCEED;
@@ -2139,11 +2139,11 @@ str wkbIntersects(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	*out = bit_nil;
 
 	if(res == 4)
-		throw(MAL, "geom.Intersects", "Geometries of different SRID");
+		return createException(MAL, "geom.Intersects", "Geometries of different SRID");
 	if(res == 3)
-		throw(MAL, "geom.Intersects", "wkb2geos failed");
+		return createException(MAL, "geom.Intersects", "wkb2geos failed");
 	if(res == 2)
-		throw(MAL, "geom.Intersects", "GEOSIntersects failed");
+		return createException(MAL, "geom.Intersects", "GEOSIntersects failed");
 	*out = res;
 
 	return MAL_SUCCEED;

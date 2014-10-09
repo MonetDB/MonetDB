@@ -2855,6 +2855,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 		} else if (*o < r->hseqbase ||				\
 		   	*o >= r->hseqbase + BATcount(r)) {		\
 			GDKerror("BATproject: does not match always\n"); \
+fprintf(stderr, "Looking for %u , minimum oid=%u and in total %u\n", (unsigned int)*o, (unsigned int)r->hseqbase, (unsigned int)BATcount(r));\
 			return GDK_FAIL;				\
 		} else {						\
 			v = rt[*o - r->hseqbase];			\
