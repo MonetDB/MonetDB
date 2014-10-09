@@ -2302,10 +2302,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;
 
-	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0 ||
-	   (rs2 && rel_convert_types(sql, &ls, &rs2, 1, type_equal) < 0)) 
-		return NULL;
 	if (!rs2) {
+		sql_exp *ors = NULL;
+
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
 	
@@ -2318,8 +2317,24 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 
 			type = (int)swap_compare((comp_type)type);
 		}
+		if (!exp_subtype(ls) && !exp_subtype(rs)) 
+			return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
+		ors = rs;
+		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL) { 
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+
+			rs = ors;
+			/* handle NULL left-columns */
+			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)
+				return NULL;
+		}
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
+		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL ||
+	   	    (rs2 && (rs2 = rel_check_type(sql, exp_subtype(ls), rs2, type_equal)) == NULL)) 
+			return NULL;
 		e = exp_compare2(sql->sa, ls, rs, rs2, type);
 	}
 	if (anti)
