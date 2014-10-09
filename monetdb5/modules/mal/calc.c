@@ -24,11 +24,7 @@
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define calc_export extern __declspec(dllimport)
-#else
 #define calc_export extern __declspec(dllexport)
-#endif
 #else
 #define calc_export extern
 #endif

@@ -83,7 +83,7 @@ socket_server_connect(SOCKET *sfd, int port)
 	stream_printf(DCout, "Bind socket \n");
 #endif
 
-	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == SOCKET_ERROR)
 		return GDKstrdup("Can not bind to socket");
 	return NULL;
 }
@@ -97,7 +97,7 @@ socket_server_listen(SOCKET sockfd, SOCKET *newsfd)
 #else
 	socklen_t clilen = sizeof(cli_addr);
 #endif
-	if( listen(sockfd, 5))
+	if( listen(sockfd, 5) == SOCKET_ERROR)
 		return GDKstrdup("Listen on socket failed");
 	*newsfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 	if (*newsfd == INVALID_SOCKET)
@@ -126,7 +126,7 @@ socket_client_connect(SOCKET *sfd, char * host, int port)
 	stream_printf(DCout, "start the client socket connection on port %d\n", port);
 #endif
 
-	if ((*sfd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
+	if ((*sfd = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		return GDKstrdup("Can not create the socket");
 	}
 
@@ -139,7 +139,7 @@ socket_client_connect(SOCKET *sfd, char * host, int port)
 	stream_printf(DCout, "connect client to host %s on port %d\n", host, port);
 #endif
 
-	if (connect(*sfd, (struct sockaddr *) &their_addr, sizeof(struct sockaddr)) < 0) {
+	if (connect(*sfd, (struct sockaddr *) &their_addr, sizeof(struct sockaddr)) == SOCKET_ERROR) {
 		return GDKstrdup("Can not connect to host");
 	}
 	return NULL;

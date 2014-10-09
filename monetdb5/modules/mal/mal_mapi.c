@@ -477,12 +477,21 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			if (usockfile)
 				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": creation of stream socket failed: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": creation of stream socket failed: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
-			char *err = strerror(errno);
+#ifdef _MSC_VER
+			const char *err = wsaerror(WSAGetLastError());
+#else
+			const char *err = strerror(errno);
+#endif
 			GDKfree(psock);
 			if (usockfile)
 				GDKfree(usockfile);
@@ -521,8 +530,14 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				if (usockfile)
 					GDKfree(usockfile);
 				throw(IO, "mal_mapi.listen",
-						OPERATION_FAILED ": bind to stream socket port %d "
-						"failed: %s", port, strerror(errno));
+					  OPERATION_FAILED ": bind to stream socket port %d "
+					  "failed: %s", port,
+#ifdef _MSC_VER
+					  wsaerror(WSAGetLastError())
+#else
+					  strerror(errno)
+#endif
+					);
 			} else {
 				break;
 			}
@@ -534,8 +549,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			if (usockfile)
 				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": failed getting socket name: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": failed getting socket name: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 		listen(sock, maxusers);
 	}
@@ -546,8 +566,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			GDKfree(psock);
 			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": creation of UNIX socket failed: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 
 		/* prevent silent truncation, sun_path is typically around 108
@@ -575,8 +600,15 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			unlink(usockfile);
 			GDKfree(psock);
 			e = createException(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
-					usockfile, strerror(errno));
+								OPERATION_FAILED
+								": binding to UNIX socket file %s failed: %s",
+								usockfile,
+#ifdef _MSC_VER
+								wsaerror(WSAGetLastError())
+#else
+								strerror(errno)
+#endif
+				);
 			GDKfree(usockfile);
 			return e;
 		}

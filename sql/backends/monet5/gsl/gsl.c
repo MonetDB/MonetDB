@@ -33,11 +33,7 @@
 #include <gsl/gsl_cdf.h>
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define gsl_export extern __declspec(dllimport)
-#else
 #define gsl_export extern __declspec(dllexport)
-#endif
 #else
 #define gsl_export extern
 #endif

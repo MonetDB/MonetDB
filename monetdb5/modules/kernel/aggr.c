@@ -22,11 +22,7 @@
 #include "mal_exception.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define aggr_export extern __declspec(dllimport)
-#else
 #define aggr_export extern __declspec(dllexport)
-#endif
 #else
 #define aggr_export extern
 #endif

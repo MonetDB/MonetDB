@@ -45,11 +45,7 @@
 #endif
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define batstr_export extern __declspec(dllimport)
-#else
 #define batstr_export extern __declspec(dllexport)
-#endif
 #else
 #define batstr_export extern
 #endif

@@ -43,7 +43,7 @@ Ready.
 % mal # name
 % clob # type
 % 405 # length
-function user.s2_1{autoCommit=true}(A0:int,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A6:date,A7:int):void;
+function user.s2_1{autoCommit=true}(A0:sht,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A6:date,A7:int):void;
     X_10 := sql.mvc();
     X_14:bat[:oid,:date]  := sql.bind(X_10,"sys","lineitem","l_shipdate",0);
     X_11:bat[:oid,:oid]  := sql.tid(X_10,"sys","lineitem");
