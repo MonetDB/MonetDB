@@ -124,7 +124,7 @@ FILE *_mero_ctlout = NULL;
 /* stream to the stderr for the control runner */
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
-int _mero_broadcastsock = INVALID_SOCKET;
+int _mero_broadcastsock = -1;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
@@ -918,9 +918,9 @@ main(int argc, char *argv[])
 		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 			ret = 1;
-			if (_mero_broadcastsock == INVALID_SOCKET ||
+			if (_mero_broadcastsock == -1 ||
 				setsockopt(_mero_broadcastsock,
-						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == SOCKET_ERROR)
+						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");

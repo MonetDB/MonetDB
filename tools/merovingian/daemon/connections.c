@@ -53,7 +53,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 #endif
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock == INVALID_SOCKET)
+	if (sock == -1)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
 
@@ -73,13 +73,13 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	length = (socklen_t) sizeof(server);
 
 	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-	if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
+	if (bind(sock, (SOCKPTR) &server, length) == -1) {
 		closesocket(sock);
 		return(newErr("binding to stream socket port %hu failed: %s",
 				port, strerror(errno)));
 	}
 
-	if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
+	if (getsockname(sock, (SOCKPTR) &server, &length) == -1) {
 		closesocket(sock);
 		return(newErr("failed getting socket name: %s",
 				strerror(errno)));
@@ -131,10 +131,10 @@ openConnectionUDP(int *ret, unsigned short port)
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (sock == INVALID_SOCKET)
+		if (sock == -1)
 			continue;
 
-		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != SOCKET_ERROR)
+		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 			break; /* working */
 
 		closesocket(sock);
@@ -168,7 +168,7 @@ openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 	int omask;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock == INVALID_SOCKET)
+	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
 
@@ -179,7 +179,7 @@ openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */
 	omask = umask(mode);
-	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
+	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 		umask(omask);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",
 				path, strerror(errno)));

@@ -953,7 +953,7 @@ controlRunner(void *d)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval == SOCKET_ERROR) {
+		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			continue;
@@ -965,7 +965,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
