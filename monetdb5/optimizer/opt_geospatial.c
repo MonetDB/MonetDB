@@ -96,7 +96,7 @@ static void fixSubselect(MalBlkPtr mb, InstrPtr *oldInstrPtr, int instructionNum
 	//create the new subselect command that does not use any candidates
 	subselectReturnId = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 	setReturnArgument(oldInstrPtr[instructionNum], subselectReturnId);
-	if(oldInstrPtr[instructionNum]->argc == 8) {
+	if((!idcmp(getFunctionId(oldInstrPtr[instructionNum]), "subselect") && oldInstrPtr[instructionNum]->argc == 8) || !idcmp(getFunctionId(oldInstrPtr[instructionNum]), "thetasubselect")) {
 //		fprintf(stderr, "secondArg %d\n", getArg(oldInstrPtr[instructionNum], 2));
 
 		//check if the second argument to this subselect is something coming from another subselect
@@ -168,7 +168,8 @@ int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	//iterate over the instructions
 	for(i=0; i<nextFreeSlot; i++) {	
 		//chech the module and function name
-		if(getModuleId(oldInstrPtr[i]) && !idcmp(getModuleId(oldInstrPtr[i]),"algebra") && !idcmp(getFunctionId(oldInstrPtr[i]), "subselect")) {
+		if(getModuleId(oldInstrPtr[i]) && !idcmp(getModuleId(oldInstrPtr[i]),"algebra") &&
+				(!idcmp(getFunctionId(oldInstrPtr[i]), "subselect") || !idcmp(getFunctionId(oldInstrPtr[i]), "thetasubselect"))) {
 			int filterReturnId = 0;
 			pushInstruction(mb, oldInstrPtr[i]);
 
