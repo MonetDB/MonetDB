@@ -4422,11 +4422,15 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * Inspection of the actual storage footprint is a recurring question of users.
+ * Inspection of the actual storage footprint and compression used is a recurring question of users.
  * This is modelled as a generic SQL table producing function.
  * create function storage()
  * returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted bit, compress bit)
  * external name sql.storage;
+ *
+ * create function sys."compression"()
+ * returns table ("schema" string, "table" string, "column" string, "type" string,  "count" bigint, technique string, blocks bigint, cover bigint, factor  double  )
+ *                                         );
  */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -4694,6 +4698,152 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	BBPkeepref(*rcompress = compress->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+sql_compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *sch, *tab, *col, *type, *cnt, *tech, *blks, *cover, *factor;
+	mvc *m = NULL;
+	str msg;
+	sql_trans *tr;
+	node *nsch, *ntab, *ncol;
+	int i;
+	int *rsch = (int *) getArgReference(stk, pci, 0);
+	int *rtab = (int *) getArgReference(stk, pci, 1);
+	int *rcol = (int *) getArgReference(stk, pci, 2);
+	int *rtype = (int *) getArgReference(stk, pci, 3);
+	int *rcnt = (int *) getArgReference(stk, pci, 4);
+	int *rtech = (int *) getArgReference(stk, pci, 5);
+	int *rblks = (int *) getArgReference(stk, pci, 6);
+	int *rcover = (int *) getArgReference(stk, pci, 7);
+	int *rfactor = (int *) getArgReference(stk, pci, 8);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	tr = m->session->tr;
+	sch = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(sch, 0);
+	tab = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(tab, 0);
+	col = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(col, 0);
+	type = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(type, 0);
+	cnt = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	BATseqbase(cnt, 0);
+	tech = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(tech, 0);
+	blks = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	BATseqbase(blks, 0);
+	cover = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	BATseqbase(cover, 0);
+	factor = BATnew(TYPE_void, TYPE_flt, 0, TRANSIENT);
+	BATseqbase(factor, 0);
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || cnt == NULL || tech == NULL || blks == NULL || cover == NULL || factor == NULL ) {
+		if (sch)
+			BBPreleaseref(sch->batCacheid);
+		if (tab)
+			BBPreleaseref(tab->batCacheid);
+		if (col)
+			BBPreleaseref(col->batCacheid);
+		if (cnt)
+			BBPreleaseref(cnt->batCacheid);
+		if (type)
+			BBPreleaseref(type->batCacheid);
+		if (tech)
+			BBPreleaseref(tech->batCacheid);
+		if (blks)
+			BBPreleaseref(blks->batCacheid);
+		if (cover)
+			BBPreleaseref(cover->batCacheid);
+		if (factor)
+			BBPreleaseref(factor->batCacheid);
+		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
+	}
+	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
+		sql_base *b = nsch->data;
+		sql_schema *s = (sql_schema *) nsch->data;
+		if (isalpha((int) b->name[0]))
+
+			if (s->tables.set)
+				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
+					sql_base *bt = ntab->data;
+					sql_table *t = (sql_table *) bt;
+					if (isTable(t))
+						if (t->columns.set)
+							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+								sql_base *bc = ncol->data;
+								sql_column *c = (sql_column *) ncol->data;
+								BAT *bn = store_funcs.bind_col(tr, c, RDONLY);
+								lng sz;
+								MosaicHdr hdr = (MosaicHdr) bn->T->heap.base;
+
+								if ( !bn->T->heap.compressed) {
+									BBPunfix(bn->batCacheid);
+									continue;
+								}
+								for( i = 0; i < MOSAIC_METHODS; i++){
+									sch = BUNappend(sch, b->name, FALSE);
+									tab = BUNappend(tab, bt->name, FALSE);
+									col = BUNappend(col, bc->name, FALSE);
+									type = BUNappend(type, c->type.type->sqlname, FALSE);
+									sz = BATcount(bn);
+									cnt = BUNappend(cnt, &sz, FALSE);
+									tech = BUNappend(tech,MOSfiltername[i],FALSE);
+									blks = BUNappend(blks, &hdr->blks[i],FALSE);
+									cover = BUNappend(cover, &hdr->elms[i],FALSE);
+									factor = BUNappend(factor, &hdr->factor,FALSE);
+								}
+								BBPunfix(bn->batCacheid);
+							}
+
+					if (isTable(t))
+						if (t->idxs.set)
+							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
+								sql_base *bc = ncol->data;
+								sql_idx *c = (sql_idx *) ncol->data;
+								if (c->type != no_idx) {
+									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
+									lng sz;
+									MosaicHdr hdr = (MosaicHdr) bn->T->heap.base;
+
+									if ( !bn->T->heap.compressed) {
+										BBPunfix(bn->batCacheid);
+										continue;
+									}
+									for( i = 0; i < MOSAIC_METHODS; i++){
+										sch = BUNappend(sch, b->name, FALSE);
+										tab = BUNappend(tab, bt->name, FALSE);
+										col = BUNappend(col, bc->name, FALSE);
+										type = BUNappend(type, "oid", FALSE);
+										sz = BATcount(bn);
+										cnt = BUNappend(cnt, &sz, FALSE);
+										tech = BUNappend(tech,MOSfiltername[i],FALSE);
+										blks = BUNappend(blks, &hdr->blks[i],FALSE);
+										cover = BUNappend(cover, &hdr->elms[i],FALSE);
+										factor = BUNappend(factor, &hdr->factor,FALSE);
+									}
+									BBPunfix(bn->batCacheid);
+								}
+							}
+
+				}
+	}
+
+	BBPkeepref(*rsch = sch->batCacheid);
+	BBPkeepref(*rtab = tab->batCacheid);
+	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rtype = type->batCacheid);
+	BBPkeepref(*rcnt = cnt->batCacheid);
+	BBPkeepref(*rtech = tech->batCacheid);
+	BBPkeepref(*rblks = blks->batCacheid);
+	BBPkeepref(*rcover = cover->batCacheid);
+	BBPkeepref(*rfactor = factor->batCacheid);
 	return MAL_SUCCEED;
 }
 

@@ -477,6 +477,19 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
+pattern compression()(
+	schema:bat[:oid,:str],
+	table:bat[:oid,:str],
+	column:bat[:oid,:str],
+	type:bat[:oid,:str],
+	count:bat[:oid,:lng],
+	technique:bat[:oid,:str],
+	blocks:bat[:oid,:lng],
+	cover:bat[:oid,:lng],
+	factor:bat[:oid,:dbl])
+address sql_compression
+comment "return a table with compression information ";
+
 command calc.identity(:any_2) :oid 
 address SQLidentity
 comment "Returns a unique row identitfier.";
