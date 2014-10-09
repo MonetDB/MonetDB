@@ -69,10 +69,20 @@ monetdb.server.start <-
 
 
 monetdb.server.stop <-
-  function( correct.pid ){
+  function( correct.pid, wait=T ){
     
     if ( .Platform$OS.type == "unix" ) {
-      system(paste0("kill ",correct.pid))
+      system(paste0("kill ",correct.pid))  
+      waittime <- 2
+      if (!wait) return(TRUE)
+      Sys.sleep(1)
+      repeat {
+        psout <- system(paste0("ps ax | grep \"^", correct.pid, ".*mserver5\""), ignore.stdout=T) 
+        if (psout != 0) break
+        message("Waiting ",waittime,"s for server shutdown (ESC or CTRL+C to abort)")
+        Sys.sleep(waittime)
+        waittime <- waittime * 2
+      }
     } 
     
     if ( .Platform$OS.type == "windows" ) {
