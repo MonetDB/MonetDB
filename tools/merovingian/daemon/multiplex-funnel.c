@@ -80,7 +80,7 @@ MFconnectionManager(void *d)
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
 		if (i == 0)
 			continue;
-		if (i < 0 && errno != EINTR) {
+		if (i == SOCKET_ERROR && errno != EINTR) {
 			Mfprintf(stderr, "failed to select on mfpipe: %s\n",
 					strerror(errno));
 			break;

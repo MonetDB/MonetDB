@@ -476,7 +476,6 @@ int ptrToStr(str *dst, int *len, const ptr *src);
 const ptr ptr_nil;
 struct dirent *readdir(DIR *dir);
 void rewinddir(DIR *dir);
-void set_errno(int);
 int shtFromStr(const char *src, int *len, sht **dst);
 int shtToStr(str *dst, int *len, const sht *src);
 const sht sht_nil;
@@ -488,12 +487,12 @@ int strToStr(str *dst, int *len, const char *src);
 const char str_nil[2];
 int void_inplace(BAT *b, oid id, const void *val, bit force);
 BUN void_replace_bat(BAT *b, BAT *u, bit force);
-int *win_errno(void);
 int win_mkdir(const char *, const int mode);
 int win_rename(const char *, const char *);
 int win_rmdir(const char *);
 int win_stat(const char *, struct stat *);
 int win_unlink(const char *);
+int winerror(int);
 const wrd wrd_nil;
 
 # mapi
@@ -594,6 +593,7 @@ MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 MapiMsg mapi_trace(Mapi mid, int flag);
 char *mapi_unquote(char *msg);
 MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples);
+const char *wsaerror(int);
 
 # monetdb5
 str AGGRavg12_dbl(bat *retval, const bat *bid, const bat *eid);

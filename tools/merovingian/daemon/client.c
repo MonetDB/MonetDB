@@ -418,7 +418,7 @@ acceptConnections(int sock, int usock)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval < 0) {
+		if (retval == SOCKET_ERROR) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -428,7 +428,7 @@ acceptConnections(int sock, int usock)
 			continue;
 		}
 		if (FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *) 0)) < 0) {
+			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -444,7 +444,7 @@ acceptConnections(int sock, int usock)
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
-			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) < 0) {
+			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {

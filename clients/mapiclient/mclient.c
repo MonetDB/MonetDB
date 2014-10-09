@@ -68,10 +68,6 @@
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
-#else
-#ifdef NATIVE_WIN32
-#include <Windows.h>
-#endif
 #endif
 #endif
 
@@ -247,8 +243,8 @@ gettime(void)
 		tb.time -= tbbase.time;
 		return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
 	}
-#endif
-#endif
+#endif	/* HAVE_FTIME */
+#endif	/* HAVE_GETTIMEOFDAY */
 }
 
 static void

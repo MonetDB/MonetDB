@@ -67,7 +67,7 @@ char* control_send(
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
-		if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
+		if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
@@ -75,7 +75,7 @@ char* control_send(
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
-		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			close(sock);
 			return(strdup(sbuf));
@@ -87,7 +87,7 @@ char* control_send(
 		char *p;
 
 		/* TCP socket connect */
-		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
@@ -103,7 +103,7 @@ char* control_send(
 		server.sin_family = hp->h_addrtype;
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
-		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) < 0) {
+		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			close(sock);
 			return(strdup(sbuf));
@@ -162,7 +162,7 @@ char* control_send(
 						p, ver == 2 ? ":control" : "");
 				len = send(sock, sbuf, len, 0);
 				free(p);
-				if (len < 0) {
+				if (len == SOCKET_ERROR) {
 					close(sock);
 					return(strdup("cannot send challenge response to server"));
 				}
@@ -331,7 +331,7 @@ char* control_send(
 		mnstr_flush(fdout);
 	} else {
 		len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
-		if (send(sock, sbuf, len, 0) < 0) {
+		if (send(sock, sbuf, len, 0) == SOCKET_ERROR) {
 			close(sock);
 			return(strdup("failed to send control command to server"));
 		}

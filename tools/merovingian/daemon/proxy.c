@@ -144,13 +144,13 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		char buf[1];
 		int *c_d;
 
-		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET)
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
-		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}
 
@@ -185,7 +185,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 		/* block until the server acknowledges that it has psock
 		 * connected with itself */
-		if (recv(ssock, buf, 1, 0) < 0) {
+		if (recv(ssock, buf, 1, 0) == SOCKET_ERROR) {
 			close(ssock);
 			return(newErr("could not receive initial byte: %s", strerror(errno)));
 		}
@@ -216,7 +216,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
 
-		if (connect(ssock, serv, servsize) < 0) {
+		if (connect(ssock, serv, servsize) == SOCKET_ERROR) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}

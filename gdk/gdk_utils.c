@@ -1053,7 +1053,7 @@ GDKinit(opt *set, int setlen)
 		MT_lock_init(&GDKbbpLock[i].trim, "GDKtrimLock");
 		GDKbbpLock[i].free = 0;
 	}
-	set_errno(0);
+	errno = 0;
 	if (!GDKenvironment(dbpath))
 		return 0;
 
@@ -1514,11 +1514,7 @@ GDKsyserror(const char *format, ...)
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
 
-#ifdef NATIVE_WIN32
-	DWORD err = GetLastError();
-#else
 	int err = errno;
-#endif
 	va_list ap;
 
 	if (strncmp(format, GDKERROR, len) == 0) {
@@ -1561,7 +1557,7 @@ GDKsyserror(const char *format, ...)
 	}
 	GDKaddbuf(message);
 
-	set_errno(0);
+	errno = 0;
 	return err;
 }
 
