@@ -60,6 +60,7 @@ bat.append(c,255:sht);
 bat.append(c,255:sht);
 bat.append(c,255:sht);
 
+io.print(c);
 xc:= mosaic.compress(c,"prefix");
 #mosaic.dump(xc);
 zc:= mosaic.decompress(xc);

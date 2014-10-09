@@ -40,6 +40,7 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
+	task->stop = task->elm;
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break ;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit)); break ;
@@ -75,11 +76,9 @@ MOSskip_literal(Client cntxt, MOStask task)
 // append a series of values into the non-compressed block
 
 #define LITERALcompress(TYPE)\
-{	*(TYPE*) task->dst = *(TYPE*) task->src;\
-	task->src += sizeof(TYPE);\
+{	*(TYPE*) task->dst = ((TYPE*) task->src)[task->start];\
 	task->dst += sizeof(TYPE);\
 	MOSincCnt(blk,1);\
-	task->elm--;\
 }
 
 // rather expensive simple value non-compressed store
@@ -106,11 +105,9 @@ MOScompress_literal(Client cntxt, MOStask task)
 	case TYPE_hge: LITERALcompress(hge); break;
 #endif
 	case TYPE_int:
-	{	*(int*) task->dst = *(int*) task->src;
-		task->src += sizeof(int);
+	{	*(int*) task->dst = ((int*) task->src)[task->start];
 		task->dst += sizeof(int);
 		MOSincCnt(blk,1);
-		task->elm--;
 	}
 	break;
 	case TYPE_str:

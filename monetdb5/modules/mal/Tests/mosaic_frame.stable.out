@@ -1,20 +1,20 @@
-stdout of test 'mosaic_dictionary` in directory 'monetdb5/modules/mal` itself:
+stdout of test 'mosaic_frame` in directory 'monetdb5/modules/mal` itself:
 
 
-# 00:21:55 >  
-# 00:21:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34101" "--set" "mapi_usock=/var/tmp/mtest-14508/.s.monetdb.34101" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict.mal"
-# 00:21:55 >  
+# 07:42:13 >  
+# 07:42:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30639" "--set" "mapi_usock=/var/tmp/mtest-1108/.s.monetdb.30639" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_frame.mal"
+# 07:42:13 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_monetdb5_modules_mal', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 15.591 GiB available main-memory.
+# Found 15.590 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34101/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14508/.s.monetdb.34101
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30639/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1108/.s.monetdb.30639
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.main():void;
@@ -27,7 +27,7 @@ function user.main():void;
     b := bat.append(b,b);
     base := algebra.copy(b);
     io.print(base);
-    x := mosaic.compress(b,"dictionary");
+    x := mosaic.compress(b,"frame");
 #mosaic.dump(x); 
     z := mosaic.decompress(x);
     io.print(z);
@@ -39,7 +39,7 @@ function user.main():void;
     bat.append(d,"2014-08-15":date);
     d := bat.append(d,d);
     io.print(d);
-    xd := mosaic.compress(d,"dictionary");
+    xd := mosaic.compress(d,"frame");
 #mosaic.dump(xd); 
     zd := mosaic.decompress(xd);
     io.print(zd);
@@ -58,15 +58,6 @@ end main;
 [ 7@0,	2014-08-14 12:01:00.000  ]
 [ 8@0,	2014-08-14 12:02:00.000  ]
 [ 9@0,	2014-08-14 12:00:00.000  ]
-#header block 27342896 version 20140808
-#index top 1
-#[0] 10 160
-#blk 27343056 type 24 todo 0
-#wins 1 0 0 0 0 0 
-#elms 10 0 0 0 0 0 
-#time 0 0 0 0 0 0 
-#perc 100 0 0 0 0 0 
-#decode block 27342968 tag 0 
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type
@@ -95,7 +86,6 @@ end main;
 [ 7@0,	2014-08-14  ]
 [ 8@0,	2014-08-14  ]
 [ 9@0,	2014-08-15  ]
-# clk 3	sizes 40	200	500%	      0.20x	none	1	10 10	
 #--------------------------#
 # h	t  # name
 # void	date  # type
@@ -111,7 +101,7 @@ end main;
 [ 8@0,	2014-08-14  ]
 [ 9@0,	2014-08-15  ]
 
-# 00:21:55 >  
-# 00:21:55 >  "Done."
-# 00:21:55 >  
+# 07:42:13 >  
+# 07:42:13 >  "Done."
+# 07:42:13 >  
 

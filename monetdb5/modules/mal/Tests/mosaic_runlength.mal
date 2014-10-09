@@ -212,6 +212,7 @@ bat.append(s,"goodbye");
 bat.append(s,"goodbye");
 bat.append(s,"goodbye");
 
+io.print(s);
 cs:= mosaic.compress(s);
 cc:= mosaic.decompress(s);
 io.print(cc);

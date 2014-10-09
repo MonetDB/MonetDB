@@ -67,10 +67,9 @@ lib_mal = {
 		mosaic_literal.c mosaic_literal.h \
 		mosaic_runlength.c mosaic_runlength.h \
 		mosaic_dictionary.c mosaic_dictionary.h \
-		mosaic_zone.c mosaic_zone.h \
 		mosaic_delta.c mosaic_delta.h \
 		mosaic_linear.c mosaic_linear.h \
-		mosaic_variance.c mosaic_variance.h \
+		mosaic_frame.c mosaic_frame.h \
 		mosaic_prefix.c mosaic_prefix.h \
 		calc.c batcalc.c
 }

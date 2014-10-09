@@ -40,7 +40,7 @@ function user.main():void;
     bat.append(b,9);
     base := algebra.copy(b);
     io.print(base);
-    x := mosaic.compress(b);
+    x := mosaic.compress(b,"runlength dictionary delta linear frame");
     mosaic.dump(x);
     c := bat.new(:oid,:oid);
     bat.append(c,0@0);

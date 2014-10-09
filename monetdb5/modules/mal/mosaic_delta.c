@@ -33,6 +33,7 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
+	task->stop = task->elm;
 	switch(task->type){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
@@ -80,15 +81,14 @@ MOSskip_delta(Client cntxt, MOStask task)
 
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
-{	TYPE *w = (TYPE*)task->src, val= *w, delta = 0;\
-	for(w++,i =1; i<task->elm; i++,w++){\
-		delta = *w -val;\
+{	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
+	for(v++,i =1; i<task->stop; i++,v++){\
+		delta = *v -val;\
 		if ( EXPR)\
 			break;\
-		val = *w;\
+		val = *v;\
 	}\
-	if ( i > MOSlimit() ) i = MOSlimit();\
-	factor = ((float) i * sizeof(TYPE))/  wordaligned(sizeof(int) + MosaicBlkSize + i-1,TYPE);\
+	factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,TYPE);\
 }
 
 // estimate the compression level 
@@ -117,15 +117,14 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		}
 	break;
 	case TYPE_int:
-		{	int *w = (int*)task->src, val= *w, delta;
-			for(w++,i =1; i<task->elm; i++,w++){
-				delta = *w -val;
+		{	int *v = ((int*)task->src) + task->start, val= *v, delta=0;
+			for(v++,i =1; i<task->stop; i++,v++){
+				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
-				val = *w;
+				val = *v;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
-			factor = ((float) i * sizeof(int))/ wordaligned(sizeof(int) + MosaicBlkSize + i-1,int);
+			factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,int);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
@@ -137,19 +136,18 @@ MOSestimate_delta(Client cntxt, MOStask task)
 }
 
 #define DELTAcompress(TYPE,EXPR)\
-{	TYPE *w = (TYPE*)task->src, val= *w, delta;\
-	BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;\
+{	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta =0;\
+	BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit():task->stop;\
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	*(TYPE*)task->dst = val;\
 	task->dst += sizeof(TYPE);\
-	for(w++,i =1; i<limit; i++,w++){\
-		delta = *w -val;\
+	for(v++,i =1; i<limit; i++,v++){\
+		delta = *v -val;\
 		if ( EXPR )\
 			break;\
 		*(bte*)task->dst++ = (bte) delta;\
-		val = *w;\
+		val = *v;\
 	}\
-	task->src += i * sizeof(TYPE);\
 	MOSincCnt(blk,i);\
 }
 
@@ -173,19 +171,18 @@ MOScompress_delta(Client cntxt, MOStask task)
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta >127)); break;
 #endif
 	case TYPE_lng:
-		{	lng *w = (lng*)task->src, val= *w, delta;
-			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
+		{	lng *v = ((lng*)task->src) + task->start, val= *v, delta;
+			BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit():task->stop;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
 			*(lng*)task->dst = val;
 			task->dst += sizeof(lng);
-			for(w++,i =1; i<limit; i++,w++){
-				delta = *w -val;
+			for(v++, i =1; i<limit; i++, v++){
+				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
 				*(bte*)task->dst++ = (bte) delta;
-				val = *w;
+				val = *v;
 			}
-			task->src += i * sizeof(lng);
 			MOSincCnt(blk,i);
 		}
 		break;

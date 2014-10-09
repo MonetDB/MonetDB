@@ -53,8 +53,8 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	int i, j;
 
 	(void) cntxt;
-    task->blks[MOSgetTag(task->blk)]++;
-    task->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
+    hdr->blks[MOSgetTag(task->blk)]++;
+    hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
 	if( hdr->top < MOSAICINDEX-1 ){
 		if( hdr->top == 0){
 			hdr->oidbase[hdr->top] = 0;
@@ -92,6 +92,11 @@ void
 MOSinitHeader(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
+	int i;
+	for(i=0; i < MOSAIC_METHODS; i++){
+		hdr->elms[i] = hdr->blks[i] = 0;
+	}
+	hdr->factor = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
 }
@@ -108,5 +113,5 @@ MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + hdr->offset[startblk]);
 	// set the oid range covered
 	task->start = hdr->oidbase[startblk];
-	task->stop = hdr->oidbase[stopblk-1];
+	task->elm = task->stop = hdr->oidbase[stopblk-1];
 }

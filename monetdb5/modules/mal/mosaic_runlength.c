@@ -74,6 +74,7 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
+	task->stop = task->elm;
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bit),bit)); break;
@@ -108,11 +109,11 @@ MOSskip_runlength(Client cntxt, MOStask task)
 }
 
 #define Estimate(TYPE)\
-{	TYPE val = *(TYPE*) task->src;\
-	for(i =1; i < task->elm; i++)\
-	if ( ((TYPE*)task->src)[i] != val)\
+{	TYPE *v = ((TYPE*) task->src) + task->start, val = *v;\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for(v++,i = 1; i < limit; i++,v++)\
+	if ( *v != val)\
 		break;\
-	if ( i > MOSlimit() ) i = MOSlimit();\
 	factor = ( (flt)i * sizeof(TYPE))/ wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE);\
 }
 
@@ -136,11 +137,11 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	case TYPE_hge: Estimate(hge); break;
 #endif
 	case TYPE_int:
-		{	int val = *(int*)task->src;
-			for(i =1; i<task->elm; i++)
-			if ( ((int*)task->src)[i] != val)
+		{	int *v = ((int*)task->src)+ task->start, val = *v;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			for(v++,i =1; i<limit; i++, v++)
+			if ( *v != val)
 				break;
-			if ( i > MOSlimit() ) i = MOSlimit();
 			factor = ( (flt)i * sizeof(int))/ wordaligned( MosaicBlkSize + sizeof(int),int);
 		}
 		break;
@@ -161,16 +162,15 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 
 // insert a series of values into the compressor block using rle.
 #define RLEcompress(TYPE)\
-{	TYPE val = *(TYPE*) task->src;\
+{	TYPE *v = ((TYPE*) task->src)+task->start, val = *v;\
 	TYPE *dst = (TYPE*) task->dst;\
-	BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;\
+	BUN limit = task->stop - task->start > MOSlimit() ? MOSlimit(): task->stop - task->start;\
 	*dst = val;\
-	for(i =1; i<limit; i++)\
-	if ( ((TYPE*)task->src)[i] != val)\
+	for(v++, i =1; i<limit; i++,v++)\
+	if ( *v != val)\
 		break;\
-	MOSincCnt(blk,i);\
+	MOSincCnt(blk, i);\
 	task->dst +=  sizeof(TYPE);\
-	task->src += i * sizeof(TYPE);\
 }
 
 void
@@ -195,16 +195,15 @@ MOScompress_runlength(Client cntxt, MOStask task)
 	case TYPE_hge: RLEcompress(hge); break;
 #endif
 	case TYPE_int:
-		{	int val = *(int*) task->src;
+		{	int *v = ((int*) task->src)+task->start, val = *v;
 			int *dst = (int*) task->dst;
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			BUN limit = task->stop - task->start > MOSlimit() ? MOSlimit(): task->stop - task->start;
 			*dst = val;
-			for(i =1; i<limit; i++)
-			if ( ((int*)task->src)[i] != val)
+			for(v++,i = 1; i<limit; i++, v++)
+			if ( *v != val)
 				break;
 			MOSincCnt(blk,i);
 			task->dst +=  sizeof(int);
-			task->src += i * sizeof(int);
 		}
 		break;
 	case  TYPE_str:
@@ -223,7 +222,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define RLEdecompress(TYPE)\
-{	TYPE val = *(TYPE*) task->dst;\
+{	TYPE val = *(TYPE*) compressed;\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val;\

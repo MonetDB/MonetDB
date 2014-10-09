@@ -39,16 +39,15 @@
 #define MIN_INPUT_COUNT 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	9
+#define MOSAIC_METHODS	8
 #define MOSAIC_NONE     0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
 #define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
-#define MOSAIC_VARIANCE	5		// adaptive dictionary over deltas
+#define MOSAIC_FRAME	5		// delta dictionary for frame of reference value
 #define MOSAIC_PREFIX	6		// prefix/postfix bitwise compression
-#define MOSAIC_ZONE		7		// adaptive zone map over non-compressed data
-#define MOSAIC_EOL		8		// marker for the last block
+#define MOSAIC_EOL		7		// marker for the last block
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
@@ -60,15 +59,22 @@
 #define MOSAICINDEX 4  //> 2 elements
 typedef struct MOSAICHEADER{
 	int version;
+	// collect compression statistics for the particular task
+	lng blks[MOSAIC_METHODS];	
+	lng elms[MOSAIC_METHODS];	
+	flt factor;
 	int top;
 	oid oidbase[MOSAICINDEX];
 	BUN offset[MOSAICINDEX];
-	bte mask, bits;
+	bte mask, bits, framebits;
 	int dictsize;
+	int framesize;
 #ifdef HAVE_HGE
 	hge dict[256];
+	hge frame[256];
 #else
 	lng dict[256];
+	lng frame[256];
 #endif
 } * MosaicHdr;
 
@@ -119,9 +125,6 @@ typedef struct MOSTASK{
 
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 
-	// collect compression statistics for the particular task
-	lng blks[MOSAIC_METHODS];	
-	lng elms[MOSAIC_METHODS];	
 } *MOStask;
 
 /* Run through a column to produce a compressed version */
@@ -183,6 +186,7 @@ if ( task->cl && task->n){\
 #define mosaic_export extern
 #endif
 
+mosaic_export char *MOSfiltername[];
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOScompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties,int inplace,int flg);

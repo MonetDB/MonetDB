@@ -79,22 +79,23 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	task->start += MOSgetCnt(task->blk);
+	task->stop = task->elm;
 	switch(size){
 	case 1:
-		{ bte *dst = (bte*)  (((char*) task->blk) + MosaicBlkSize);
-		  bte mask = *dst++;
-		  bte val = *dst++;
+		{	bte *dst = (bte*)  (((char*) task->blk) + MosaicBlkSize);
+			bte mask = *dst++;
+			bte val = *dst++;
 			bits = val & (~mask);
 			// be aware that we use longs as bit vectors
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
-			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
+			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,bte)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
 		break;
 	case 2:
-		{ sht *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
-		  sht mask = *dst++;
-		  sht val = *dst++;
+		{	sht *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
+			sht mask = *dst++;
+			sht val = *dst++;
 			bits = val & (~mask);
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
@@ -102,9 +103,9 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 4:
-		{ int *dst = (int*)  (((char*) task->blk) + MosaicBlkSize);
-		  int mask = *dst++;
-		  int val = *dst++;
+		{	int *dst = (int*)  (((char*) task->blk) + MosaicBlkSize);
+			int mask = *dst++;
+			int val = *dst++;
 			bits = val & (~mask);
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
@@ -112,9 +113,9 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 8:
-		{ lng *dst = (lng*)  (((char*) task->blk) + MosaicBlkSize);
-		  lng mask = *dst++;
-		  lng val = *dst++;
+		{	lng *dst = (lng*)  (((char*) task->blk) + MosaicBlkSize);
+			lng mask = *dst++;
+			lng val = *dst++;
 			bits = val & (~mask);
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
@@ -147,7 +148,7 @@ MOSskip_prefix(Client cntxt, MOStask task)
 flt
 MOSestimate_prefix(Client cntxt, MOStask task)
 {	BUN i = 0;
-	flt factor = 0.0;
+	flt factor = -1.0;
 	int bits, size;
 	lng store;
 	(void) cntxt;
@@ -158,18 +159,20 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	if( task->elm >= 2)
 	switch(size){
 	case 1:
-		{	bte *v = (bte*) task->src, *w= v+1, val= *v,val2= *w, mask;
+		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->elm;i++, w++)
+			for(i = 0;i < task->stop - task->start;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
+			if ( i == task->stop - task->start)
+				break;
 			Prefix(bits, mask, val, val2, 8);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v, i = 0; i < task->elm; w++, i++){
+			for(w=v, i = 0; i < task->stop -task->start; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -181,18 +184,20 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 2:
-		{	sht *v = (sht*) task->src, *w= v+1, val= *v,val2= *w, mask;
+		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->elm;i++, w++)
+			for(i = 0;i < task->stop - task->start;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
+			if ( i == task->stop - task->start)
+				break;
 			Prefix(bits, mask, val, val2, 16);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v,i = 0; i < task->elm; w++, i++){
+			for(w=v,i = 0; i < task->stop -  task->start; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -204,18 +209,20 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 4:
-		{	int *v = (int*) task->src, *w= v+1, val= *v,val2= *w, mask;
+		{	int *v = ((int*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->elm;i++, w++)
+			for(i = 0;i < task->stop - task->start;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
+			if ( i == task->stop - task->start)
+				break;
 			Prefix(bits, mask, val, val2, 32);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v,i = 0; i < task->elm; w++, i++){
+			for(w=v,i = 0; i < task->stop - task->start; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -227,19 +234,21 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 8:
-		{	lng *v = (lng*) task->src, *w= v+1, val= *v,val2= *w, mask;
+		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->elm;i++, w++)
+			for(i = 0;i < task->stop - task->start;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
+			if ( i == task->stop - task->start)
+				break;
 			Prefix(bits, mask, val, val2, 64);
 			if( bits == 0)
 				break;
 			val = *v & mask;
 			if( bits)
-			for(w=v, i = 0; i < task->elm; w++, i++){
+			for(w=v, i = 0; i < task->stop - task->start; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
@@ -272,7 +281,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
-	BUN i ;
+	BUN i, j ;
 	int size;
 	MosaicBlk blk = task->blk;
 
@@ -285,13 +294,13 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	if( task->elm >=2 )
 	switch(size){
 	case 1:
-		{	bte *v = (bte*) task->src, *w= v+1, val = *v, val2 = *w, mask,m;
+		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			bte *dst = (bte*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
 			unsigned long *base;
 			int bits, rbits; 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
+			for(i = task->start;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -308,26 +317,24 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			
 			val = *v & mask;	//reference value
 			if( i < limit)
-			for(w = v, i = 0; i < limit; w++, i++){
+			for(j=0, w = v, i = task->start; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = (unsigned long)( *w & (~mask)); // residu
-				compress(base,i,rbits,m);
+				compress(base,j,rbits,m);
 			}
-			MOSincCnt(blk,i);
-			task->src += i;
-			task->dst += (i * rbits)/8 + (i %8) != 0;
+			MOSincCnt(blk,j);
 		}
 		break;
 	case 2:
-		{	sht *v = (sht*) task->src, *w= v+1, val = *v, val2 = *w, mask,m;
+		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			sht *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			BUN limit = task->stop - task->start >= MOSlimit()?  task->start + MOSlimit(): task->stop;
 			unsigned long *base;
 			int bits, rbits;
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
+			for(i = task->start;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -344,26 +351,24 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			
 			val = *v & mask;	//reference value
 			if( i < limit)
-			for(w = v, i = 0; i < limit; w++, i++){
+			for(j=0, w = v, i = task->start; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = *w & (~mask); // residu
-				compress(base,i,rbits,m);
+				compress(base,j,rbits,m);
 			}
-			MOSincCnt(blk,i);
-			task->src += i * 2;
-			task->dst += (i * rbits)/8 + (i %8) != 0;
+			MOSincCnt(blk,j);
 		}
 		break;
 	case 4:
-		{	unsigned int *v = (unsigned int*) task->src, *w= v+1, val = *v, val2 = *w, mask,m;
-			unsigned int *dst = (unsigned int*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+		{	int *v = ((int*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
+			int *dst = (int*)  (((char*) blk) + MosaicBlkSize);
+			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
 			unsigned long *base;
-			int bits, rbits,lshift,rshift, cell;
+			int bits, rbits;
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
+			for(i = task->start;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -381,38 +386,24 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			val = *v & mask;	//reference value
 			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			if( i < limit)
-			for(w = v, i = 0; i < limit; w++, i++){
+			for(j=0, w = v, i =task->start; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				m = *w & (~mask); // residu
-				//mnstr_printf(cntxt->fdout,"compress %d residu %d %o\n",*w,m,m);
-				cell = (i * rbits)/64;
-				lshift= 63 -((i * rbits) % 64) ;
-				if ( lshift >= rbits){
-					base[cell]= base[cell] | (((long)m) << (lshift-rbits));
-					//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d cell %o\n",cell, lshift, rbits, base[cell]);
-				}else{ 
-					rshift= 63 -  ((i+1) * rbits) % 64;
-					base[cell]= base[cell] | (((long)m) >> (rbits-lshift));
-					base[cell+1]= 0 | (((long)m)  << rshift);
-					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,
-						//base[cell],base[cell+1], (m >> (rbits-lshift)),  (m <<rshift));
-				}
+				m =(unsigned long) (*w & (~mask)); // residu
+				compress(base,j,rbits,m);
 			}
-			MOSincCnt(blk,i);
-			task->src += i * 4;
-			task->dst += (i * rbits)/8 + (i %8) != 0;
+			MOSincCnt(blk,j);
 		}
 		break;
 	case 8:
-		{	lng *v = (lng*) task->src, *w= v+1, val = *v, val2 = *w, mask, m;
+		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask, m;
 			lng *dst = (lng*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
 			unsigned long *base;
 			int bits, rbits; 
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
+			for(i = task->start;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -430,15 +421,13 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			val = *v & mask;	//reference value
 			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			if( i < limit)
-			for(w = v, i = 0; i < limit; w++, i++){
+			for(j=0, w = v, i = task->start; i < limit; w++, i++,j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = *w & (~mask); // residu
-				compress(base,i,rbits,m);
+				compress(base,j,rbits,m);
 			}
-			MOSincCnt(blk,i);
-			task->src += i * 8 ;
-			task->dst += (i * rbits)/8 + (i %8) != 0;
+			MOSincCnt(blk,j);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
@@ -475,6 +464,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	case 1:
 		{	bte *dst =  (bte*)  (((char*) blk) + MosaicBlkSize);
 			bte mask = *dst++, val  =  *dst++, v;
+			bte *w = ((bte*) task->src) + task->start;
 			bte m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
 			unsigned long *base;
@@ -487,14 +477,14 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
-				((bte*)task->src)[i] = v;
+				*w++ = v;
 			}
-			task->src += i;
 		}
 		break;
 	case 2:
 		{	sht *dst =  (sht*)  (((char*) blk) + MosaicBlkSize);
 			sht mask = *dst++, val  =  *dst++, v;
+			sht *w = ((sht*) task->src) + task->start;
 			sht m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
 			unsigned long *base;
@@ -507,14 +497,14 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
-				((sht*)task->src)[i] = v;
+				*w++ = v;
 			}
-			task->src += i * 2;
 		}
 		break;
 	case 4:
 		{	unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
 			unsigned int mask = *dst++, val  =  *dst++, v;
+			unsigned int *w = ((unsigned int*) task->src) + task->start;
 			unsigned int m1,m2;
 			BUN lim= MOSgetCnt(blk);
 			unsigned long *base,m;
@@ -529,24 +519,24 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 				cell = (i * rbits)/64;
 				lshift= 63 -((i * rbits) % 64) ;
 				if ( lshift >= rbits){
-					m1 = (base[cell]>> (lshift-rbits)) & ((long)m);
+					m1 = (base[cell]>> (lshift-rbits)) & ((unsigned long)m);
 					//mnstr_printf(cntxt->fdout,"[%d]cell %o lshift %d m %d\n", cell,  base[cell],lshift,m1);
 					v = val  | m1;
 				  }else{ 
 					rshift= 63 -  ((i+1) * rbits) % 64;
-					m1 =(base[cell] & ( ((long)m) >> (rbits-lshift)));
+					m1 =(base[cell] & ( ((unsigned long)m) >> (rbits-lshift)));
 					m2 = base[cell+1] >>rshift;
 					v= val | (m1 <<(rbits-lshift)) | m2;
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,base[cell],base[cell+1], m1,  m2);
 				  }
-				((int*)task->src)[i] = v;
+				*w++ = v;
 			}
-			task->src += i * 4;
 		}
 		break;
 	case 8:
 		{	lng *dst =  (lng*)  (((char*) blk) + MosaicBlkSize);
 			lng mask = *dst++, val  =  *dst++, v;
+			lng *w = ((lng*) task->src) + task->start;
 			lng m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
 			unsigned long *base;
@@ -559,9 +549,8 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
-				((lng*)task->src)[i] = v;
+				*w++ = v;
 			}
-			task->src += i * 8;
 		}
 	}
 }
@@ -687,6 +676,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_prefix for debugging
+	// Refine to avoid inspecting blocks outside query range TODO
 	{	unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
 		unsigned int mask = *dst++;
 		int  val  =  (int) *dst++,v;

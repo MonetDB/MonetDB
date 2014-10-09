@@ -123,10 +123,10 @@ MOSskip_linear(Client cntxt, MOStask task)
 }
 
 #define Estimate(TYPE)\
-{	TYPE val = *(TYPE*) task->src;\
-	TYPE step = *(TYPE*) (task->src + sizeof(TYPE)) - val;\
-	for(i =1; i < task->elm; i++)\
-	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
+{	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
+	TYPE step = *v - val;\
+	for( i=1; i < task->stop - task->start; i++, val = *v, v++)\
+	if (  *v - val != step)\
 		break;\
 	if( i >= MOSlimit()) i = MOSlimit();\
 	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
@@ -161,10 +161,10 @@ MOSestimate_linear(Client cntxt, MOStask task)
 		}
 	break;
 	case TYPE_int:
-		{	int val = *(int*)task->src;
-			int step = *(int*) (task->src + sizeof(int)) - val;
-			for(i =1; i<task->elm; i++)
-			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))
+		{	int *v = ((int*)task->src)+ task->start, val= *v++;
+			int step = *v - val;
+			for(i=1; i<task->stop - task->start; i++, val = *v++)
+			if ( *v -val != step)
 				break;
 			if( i >= MOSlimit()) i = MOSlimit();
 			factor =  ( (flt)i * sizeof(int))/wordaligned( MosaicBlkSize + 2 * sizeof(int),int);
@@ -178,23 +178,22 @@ MOSestimate_linear(Client cntxt, MOStask task)
 
 // insert a series of values into the compressor block using linear.
 #define LINEARcompress(TYPE)\
-{	TYPE val = *(TYPE*) task->src;\
-	TYPE step = *(TYPE*) (task->src + sizeof(TYPE)) - val;\
-	BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;\
-	for(i =1; i<limit; i++)\
-	if ( ((TYPE*)task->src)[i] != (TYPE)(val + (int)i * step))\
-		break;\
-	MOSincCnt(blk,i);\
+{	TYPE *v = ((TYPE*) task->src) + task->start, val = *v++;\
+	TYPE step = *v - val;\
+	BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit():task->stop;\
 	*(TYPE*) linear_base(blk) = val;\
 	*(TYPE*) linear_step(task,blk) = step;\
+	for(i=1; i<limit; i++, val = *v++)\
+	if (  *v - val != step)\
+		break;\
+	MOSincCnt(blk, i);\
 	task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);\
-	task->src += i * sizeof(TYPE);\
 }
 
 void
 MOScompress_linear(Client cntxt, MOStask task)
 {
-	BUN i ;
+	BUN i;
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
@@ -213,17 +212,16 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_hge: LINEARcompress(hge); break;
 #endif
 	case TYPE_int:
-		{	int val = *(int*) task->src;\
-			int step = *(int*) (task->src + sizeof(int)) - val;\
-			BUN limit = task->elm > MOSlimit()? MOSlimit():task->elm;
-			for(i =1; i<limit; i++)\
-			if ( ((int*)task->src)[i] != (int)(val + (int)i * step))\
-				break;\
-			MOSincCnt(blk,i);\
-			*(int*) linear_base(blk) = val;\
-			*(int*) linear_step(task,blk) = step;\
+		{	int *v = ((int*) task->src) + task->start, val = *v++;\
+			int step = *v - val;\
+			BUN limit = task->stop - task->start >= task->start + MOSlimit()? MOSlimit():task->stop;
+			*(int*) linear_base(blk) = val;
+			*(int*) linear_step(task,blk) = step;
+			for(i=1; i<limit; i++, val = *v++)
+			if ( *v-val != step)
+				break;
+			MOSincCnt(blk,i);
 			task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
-			task->src += i * sizeof(int);\
 		}
 		break;
 	case  TYPE_str:
