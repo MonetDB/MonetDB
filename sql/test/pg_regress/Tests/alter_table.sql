@@ -340,7 +340,7 @@ drop table atacc1;
 create table atacc1 (test int);
 create table atacc2 (test2 int);
 create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
-alter table only atacc2 add constraint foo check (test2>0);
+alter table /* only */ atacc2 add constraint foo check (test2>0);
 -- fail and then succeed on atacc2
 insert into atacc2 (test2) values (-3);
 insert into atacc2 (test2) values (3);
@@ -532,12 +532,10 @@ insert into child (a, b) values (NULL, 'foo');
 alter table parent alter a drop not null;
 insert into parent values (NULL);
 insert into child (a, b) values (NULL, 'foo');
---alter table only parent alter a set not null;
-alter table parent alter a set not null;
+alter table /* only */ parent alter a set not null;
 alter table child alter a set not null;
 delete from parent;
---alter table only parent alter a set not null;
-alter table parent alter a set not null;
+alter table /* only */ parent alter a set not null;
 insert into parent values (NULL);
 alter table child alter a set not null;
 insert into child (a, b) values (NULL, 'foo');
@@ -766,12 +764,16 @@ create table dropColumnAnother (a int, b int, e int, c int, d int); -- inherits 
 
 -- these two should fail
 alter table dropColumnchild drop column a;
-alter table only dropColumnChild drop column b;
+alter table /* only */ dropColumnChild drop column b;
 
 -- these three should work
-alter table only dropColumn drop column e;
+alter table /* only */ dropColumn drop column e;
 alter table dropColumnChild drop column c;
 alter table dropColumn drop column a;
+
+drop table dropColumnAnother;
+drop table dropColumnChild;
+drop table dropColumn;
 
 create table renameColumn (a int);
 create table renameColumnChild (a int, b int); -- inherits (renameColumn)
@@ -779,8 +781,8 @@ create table renameColumnAnother (a int, b int, c int); -- inherits (renameColum
 
 -- these three should fail
 alter table renameColumnChild rename column a to d;
-alter table only renameColumnChild rename column a to d;
-alter table only renameColumn rename column a to d;
+alter table /* only */ renameColumnChild rename column a to d;
+alter table /* only */ renameColumn rename column a to d;
 
 -- these should work
 alter table renameColumn rename column a to d;
@@ -790,8 +792,11 @@ alter table renameColumnChild rename column b to a;
 alter table renameColumn add column w int;
 
 -- this should fail
-alter table only renameColumn add column x int;
+alter table /* only */ renameColumn add column x int;
 
+drop table renameColumn cascade;
+drop table renameColumnChild cascade;
+drop table renameColumnAnother cascade;
 
 -- Test corner cases in dropping of inherited columns
 
@@ -827,7 +832,7 @@ create table c1 (f1 int, f2 int); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
-alter table only p1 drop column f1;
+alter table /* only */ p1 drop column f1;
 -- c1.f1 is NOT dropped, but must now be considered non-inherited
 alter table c1 drop column f1;
 
@@ -835,11 +840,11 @@ drop table c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 (f1 int not null); -- inherits(p1)
+create table c1 (f1 int not null, f2 int); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
-alter table only p1 drop column f1;
+alter table /* only */ p1 drop column f1;
 -- c1.f1 is still there, but no longer inherited
 alter table c1 drop column f1;
 
@@ -848,8 +853,8 @@ drop table p1 cascade;
 
 create table p1(id int, name text);
 create table p2(id2 int, name text, height int);
-create table c1(age int); -- inherits(p1,p2)
-create table gc1(); -- inherits (c1)
+create table c1(age int, id int, name text); -- inherits(p1,p2)
+create table gc1(age int, id int, name text); -- inherits (c1)
 
 select relname, attname, attinhcount, attislocal
 from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
@@ -857,7 +862,7 @@ where relname in ('p1','p2','c1','gc1') and attnum > 0 and not attisdropped
 order by relname, attnum;
 
 -- should work
-alter table only p1 drop column name;
+alter table /* only */ p1 drop column name;
 -- should work. Now c1.name is local and inhcount is 0.
 alter table p2 drop column name;
 -- should be rejected since its inherited
@@ -883,7 +888,7 @@ drop table p1 cascade;
 --
 create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
 
-insert into altstartwith values (1);
+insert into altstartwith (col) values (1);
 
 select oid, * from altstartwith;
 
@@ -898,7 +903,7 @@ drop table altstartwith;
 create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
 
 -- Inherits parents oid column
-create table altinhoid (); -- inherits (altwithoid) without oids
+create table altinhoid (col integer); -- inherits (altwithoid) without oids
 
 insert into altinhoid values (1);
 
@@ -914,6 +919,7 @@ select * from altwithoid;
 select * from altinhoid;
 
 drop table altwithoid;
+drop table altinhoid;
 
 -- test renumbering of child-table columns in inherited operations
 
@@ -939,14 +945,16 @@ drop table p1 cascade;
 
 create domain mytype as text;
 create temp table foo (f1 text, f2 mytype, f3 text);
+create temp table foo (f1 text, f2 text, f3 text);
 
 insert into foo values('aa','bb','cc');
 select * from foo;
 
 drop domain mytype cascade;
+alter table foo drop column f2;
 
 select * from foo;
-insert into foo values('qq','rr');
+insert into foo (f1, f3) values('qq','rr');
 select * from foo;
 update foo set f3 = 'zz';
 select * from foo;
@@ -956,12 +964,16 @@ select f3,max(f1) from foo group by f3;
 alter table foo alter f1 TYPE integer; -- fails
 alter table foo alter f1 TYPE varchar(10);
 
+drop table foo;
+
 --create table anothertab (atcol1 serial8, atcol2 boolean,
 --	constraint anothertab_chk check (atcol1 <= 3));
 create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
 
 insert into anothertab (atcol1, atcol2) values (default, true);
 insert into anothertab (atcol1, atcol2) values (default, false);
+insert into anothertab (atcol2) values (true);
+insert into anothertab (atcol2) values (false);
 select * from anothertab;
 
 alter table anothertab alter column atcol1 type boolean; -- fails
@@ -971,6 +983,7 @@ select * from anothertab;
 
 insert into anothertab (atcol1, atcol2) values (45, null); -- fails
 insert into anothertab (atcol1, atcol2) values (default, null);
+insert into anothertab (atcol2) values (null);
 
 select * from anothertab;
 

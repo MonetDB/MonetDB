@@ -71,7 +71,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-26 09:36:04.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-10-10 13:51:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #-- the wolf bug - schema mods caused inconsistent row descriptors 
 #CREATE TABLE tmp (
@@ -117,7 +117,7 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-09-26 09:36:04.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-10-10 13:51:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #--
 #-- rename - check on both non-temp and temp tables
@@ -687,19 +687,26 @@ Ready.
 #drop table p2 cascade;
 #drop table p1 cascade;
 #create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
+#insert into altstartwith (col) values (1);
+[ 1	]
 #select oid, * from altstartwith;
 % sys.altstartwith,	sys.altstartwith,	sys.altstartwith # table_name
 % oid,	oid,	col # name
 % oid,	oid,	int # type
 % 3,	3,	1 # length
+[ 1@0,	1@0,	1	]
 #alter table altstartwith drop column oid;
 #select * from altstartwith;
 % sys.altstartwith # table_name
 % col # name
 % int # type
 % 1 # length
+[ 1	]
 #drop table altstartwith;
 #create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
+#create table altinhoid (col integer); -- inherits (altwithoid) without oids
+#insert into altinhoid values (1);
+[ 1	]
 #select oid > 0, * from altwithoid;
 % sys.L1,	sys.altwithoid,	sys.altwithoid # table_name
 % L1,	oid,	col # name
@@ -715,6 +722,12 @@ Ready.
 % oid,	col # name
 % oid,	int # type
 % 3,	1 # length
+#select * from altinhoid;
+% sys.altinhoid # table_name
+% col # name
+% int # type
+% 1 # length
+[ 1	]
 #drop table altwithoid;
 #create table p1 (f1 int);
 #create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
@@ -738,38 +751,90 @@ Ready.
 [ 1,	3,	"ABC"	]
 #drop table c1 cascade;
 #drop table p1 cascade;
+#create temp table foo (f1 text, f2 text, f3 text);
+#insert into foo values('aa','bb','cc');
+[ 1	]
+#select * from foo;
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
+% f1,	f2,	f3 # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#select * from foo;
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
+% f1,	f2,	f3 # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#insert into foo (f1, f3) values('qq','rr');
+[ 1	]
+#select * from foo;
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
+% f1,	f2,	f3 # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#update foo set f3 = 'zz';
+[ 0	]
+#select * from foo;
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
+% f1,	f2,	f3 # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#select f3,max(f1) from foo group by f3;
+% tmp.foo,	tmp.L1 # table_name
+% f3,	L1 # name
+% clob,	clob # type
+% 0,	0 # length
+#drop table foo;
 #create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
+#insert into anothertab (atcol2) values (true);
+[ 1	]
+#insert into anothertab (atcol2) values (false);
+[ 1	]
 #select * from anothertab;
 % sys.anothertab,	sys.anothertab # table_name
 % atcol1,	atcol2 # name
 % bigint,	boolean # type
 % 1,	5 # length
+[ 1,	true	]
+[ 2,	false	]
 #select * from anothertab;
 % sys.anothertab,	sys.anothertab # table_name
 % atcol1,	atcol2 # name
 % bigint,	boolean # type
 % 1,	5 # length
+[ 1,	true	]
+[ 2,	false	]
 #insert into anothertab (atcol1, atcol2) values (45, null); -- fails
+[ 1	]
+#insert into anothertab (atcol2) values (null);
 [ 1	]
 #select * from anothertab;
 % sys.anothertab,	sys.anothertab # table_name
 % atcol1,	atcol2 # name
 % bigint,	boolean # type
 % 2,	5 # length
+[ 1,	true	]
+[ 2,	false	]
 [ 45,	NULL	]
+[ 3,	NULL	]
 #select * from anothertab;
 % sys.anothertab,	sys.anothertab # table_name
 % atcol1,	atcol2 # name
 % bigint,	boolean # type
 % 2,	5 # length
+[ 1,	true	]
+[ 2,	false	]
 [ 45,	NULL	]
+[ 3,	NULL	]
 #alter table anothertab alter column atcol1 drop default;
 #select * from anothertab;
 % sys.anothertab,	sys.anothertab # table_name
 % atcol1,	atcol2 # name
 % bigint,	boolean # type
 % 2,	5 # length
+[ 1,	true	]
+[ 2,	false	]
 [ 45,	NULL	]
+[ 3,	NULL	]
 #drop table anothertab;
 #create table another (f1 int, f2 text);
 #insert into another values(1, 'one');
