@@ -11,6 +11,7 @@ if (length(args) > 0)
 	dbport <- args[[1]]
 
 options(monetdb.insert.splitsize=10)
+
 tname <- "monetdbtest"
 
 
