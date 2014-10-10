@@ -539,7 +539,7 @@ wkbCOMP(wkb *l, wkb *r)
 	if (len != r->len)
 		return len - r->len;
 
-	if (len == ~(int) 0)
+	if (len == ~0)
 		return (0);
 
 	return memcmp(l->data, r->data, len);
@@ -550,7 +550,7 @@ wkbNULL(void)
 {
 	static wkb nullval;
 
-	nullval.len = ~(int) 0;
+	nullval.len = ~0;
 	return (&nullval);
 }
 
