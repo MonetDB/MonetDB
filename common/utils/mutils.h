@@ -45,6 +45,7 @@ struct dirent {
 	int d_namelen;
 };
 
+mutils_export int winerror(int);
 mutils_export DIR *opendir(const char *dirname);
 mutils_export struct dirent *readdir(DIR *dir);
 mutils_export void rewinddir(DIR *dir);

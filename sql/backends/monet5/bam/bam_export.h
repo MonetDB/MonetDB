@@ -32,22 +32,20 @@
 #include "sql_mvc.h"
 
 
-/* Note: Unlike in the other BAM source files, we use bam_exp instead of
- * bam_export here, since bam_export is a used function name in this file */
 #ifdef WIN32
 #ifndef LIBBAM
-#define bam_exp extern __declspec(dllimport)
+#define bam_export extern __declspec(dllimport)
 #else
-#define bam_exp extern __declspec(dllexport)
+#define bam_export extern __declspec(dllexport)
 #endif
 #else
-#define bam_exp extern
+#define bam_export extern
 #endif
 
 
-bam_exp str sam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+bam_export str sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr pci);
-bam_exp str bam_export(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+bam_export str bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr pci);
 
 

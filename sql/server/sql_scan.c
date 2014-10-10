@@ -987,11 +987,11 @@ valid_ident(char *s, char *dst)
 	
 	if (*s == '%')
 		return 0;
-	/* do unescaping in the loop */
+
 	while (*s && (*s != '"' || escaped)) {
-		if (*s == '"' && s[1] == '"') {
+		if (*s == '\\' && s[1] == '"') {
 			escaped = !escaped;
-			if (!escaped) 
+			if (escaped) 
 				dst[p++] = *s;
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
@@ -1000,8 +1000,6 @@ valid_ident(char *s, char *dst)
 			escaped = 0;
 			dst[p++] = *s;
 		}
-		//if (*s == '\\') 
-			//dst[p++] = *s;
 		s++;
 		if (p >= 1024)
 			return 0;

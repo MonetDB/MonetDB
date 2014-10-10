@@ -73,9 +73,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* STORE */
 	sql_table *map_tbl;
 	sql_subtype tpe;
-	str *location = (str *) getArgReference(stk, pci, 1);
-	str *name = (str *) getArgReference(stk, pci, 2);
-	str *schema = (str *) getArgReference(stk, pci, 3);
+	str *location = getArgReference_str(stk, pci, 1);
+	str *name = getArgReference_str(stk, pci, 2);
+	str *schema = getArgReference_str(stk, pci, 3);
 	char buff[24];
 	mvc *m = NULL;
 	int id = 0;

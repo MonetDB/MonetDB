@@ -64,161 +64,35 @@
 #include <mal_exception.h>
 #include "algebra.h"
 
-static void
-CLUSTER_key_bte( BAT *map, BAT *b)
-{
-	bte *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (bte*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_bte(b->T->hash,bt);
-		*o++= h;
-	}
+#define CLUSTERKEY(TYPE)						\
+static void										\
+CLUSTER_key_##TYPE( BAT *map, BAT *b)			\
+{												\
+	TYPE *bt, *be;								\
+	oid *o;										\
+												\
+	assert(BUNfirst(map) == 0);					\
+	assert(BUNfirst(b) == 0);					\
+	o = (oid*)Tloc(map, 0);						\
+	bt = (TYPE*)Tloc(b, 0);						\
+	be = bt + BATcount(b);						\
+	for ( ; bt < be; bt++){						\
+		BUN h = hash_##TYPE(b->T->hash,bt);		\
+		*o++= h;								\
+	}											\
 }
 
-static void
-CLUSTER_key_sht( BAT *map, BAT *b)
-{
-	sht *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (sht*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_sht(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
-static void
-CLUSTER_key_oid( BAT *map, BAT *b)
-{
-	oid *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (oid*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_oid(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
-static void
-CLUSTER_key_wrd( BAT *map, BAT *b)
-{
-	wrd *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (wrd*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_wrd(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
-static void
-CLUSTER_key_int( BAT *map, BAT *b)
-{
-	int *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (int*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_int(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
-static void
-CLUSTER_key_lng( BAT *map, BAT *b)
-{
-	lng *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (lng*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_lng(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
+CLUSTERKEY(bte)
+CLUSTERKEY(sht)
+CLUSTERKEY(int)
+CLUSTERKEY(wrd)
+CLUSTERKEY(lng)
 #ifdef HAVE_HGE
-static void
-CLUSTER_key_hge( BAT *map, BAT *b)
-{
-	hge *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (hge*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_hge(b->T->hash,bt);
-		*o++= h;
-	}
-}
+CLUSTERKEY(hge)
 #endif
-
-static void
-CLUSTER_key_flt( BAT *map, BAT *b)
-{
-	flt *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (flt*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_flt(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
-static void
-CLUSTER_key_dbl( BAT *map, BAT *b)
-{
-	dbl *bt, *be;
-	oid *o;
-
-	assert(BUNfirst(map) == 0);
-	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, 0);
-	bt = (dbl*)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-		BUN h = hash_dbl(b->T->hash,bt);
-		*o++= h;
-	}
-}
-
+CLUSTERKEY(oid)
+CLUSTERKEY(flt)
+CLUSTERKEY(dbl)
 
 static void
 CLUSTER_key_str( BAT *map, BAT *b)
@@ -265,12 +139,12 @@ CLUSTER_key_str( BAT *map, BAT *b)
 		break;
 	}
 }
-static str  
+static str
 CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 {
 	oid *ct, *ce, o = 0;
 	BATiter bi= bat_iterator(b);
-	
+
 	ct = (oid *)Tloc(cmap, 0);
 	ce = ct + BATcount(cmap);
 	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
@@ -284,7 +158,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 	}
 	BATsetcount(nb, BATcount(b));
 	BATderiveProps(nb, 0);
-	if (!(nb->batDirty&2)) 
+	if (!(nb->batDirty&2))
 		BATsetaccess(nb, BAT_READ);
 	return MAL_SUCCEED;
 }
@@ -292,7 +166,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
  * The hash key and the oid are materialized to prepare for reclustering.
  */
 str
-CLUSTER_key( bat *M, bat *B){
+CLUSTER_key( bat *M, const bat *B){
 	BAT *map, *b;
 
 	if ((b = BATdescriptor(*B)) == NULL)
@@ -326,7 +200,7 @@ CLUSTER_key( bat *M, bat *B){
 		case TYPE_str: CLUSTER_key_str(map,b); break;
 		default:
 			throw(MAL, "cluster.key", MAL_MALLOC_FAIL);
-		
+
 	}
 	BATsave(map);	/* dump dirty pages from memory */
 	BBPunfix(*B);
@@ -347,8 +221,8 @@ typedef struct{
 		BUN base,limit,nxt;
 } Basket;
 
-str  
-CLUSTER_map(bat *RB, bat *B)
+str
+CLUSTER_map(bat *RB, const bat *B)
 {
 	BUN rng,bsize, bnr=0, h, N= 2; /* number of buckets */
 	BAT *b, *map;
@@ -378,7 +252,7 @@ CLUSTER_map(bat *RB, bat *B)
 	map->H->nonil = b->H->nonil;
 	map->T->nonil = TRUE;
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
-	rng++; 
+	rng++;
 	/*
 	 * The key challenge is to determine the number of clusters.
 	 * A large number of clusters benefits subsequent performance,
@@ -397,7 +271,7 @@ CLUSTER_map(bat *RB, bat *B)
 	bsize= (rng+N-1) / N;
 #ifdef _CLUSTER_DEBUG
 	N=2; /* for debugging only */
-	mnstr_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
+	mnstr_printf(GDKout,"bucket pages %d size %d max %d  N %d\n",
 		(int)MT_npages(), (int)bsize, (int)rng, (int)N);
 #endif
 	basket = (Basket*) GDKzalloc((N+1) * sizeof(Basket));
@@ -459,7 +333,7 @@ CLUSTER_map(bat *RB, bat *B)
  * We change the BAT in place using a temporary copy
  * to guide the move.
  */
-str 
+str
 CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
 	BAT *nb;
@@ -498,12 +372,12 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	return MAL_SUCCEED;
 }
 
-str  
+str
 CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res =(int *) getArgReference(stk, pci, 0);
-	bat *CMAP =(int *) getArgReference(stk, pci, 1);
-	bat *B =(int *) getArgReference(stk, pci, 2);
+	bat *res =getArgReference_bat(stk, pci, 0);
+	const bat *CMAP =getArgReference_bat(stk, pci, 1);
+	const bat *B =getArgReference_bat(stk, pci, 2);
 	BAT *cmap = NULL, *b = NULL;
 	str msg= MAL_SUCCEED;
 
@@ -522,17 +396,19 @@ CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str  
+str
 CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *map,*b;
-	int *res, hid, mid, *bid,i;
+	bat *res, hid, mid;
+	const bat *bid;
+	int i;
 	str msg= MAL_SUCCEED;
 	(void) cntxt;
 	(void) mb;
 
-	res =(int *) getArgReference(stk, pci, 0);
-	bid = (int*) getArgReference(stk,pci,pci->retc);
+	res =getArgReference_bat(stk, pci, 0);
+	bid = getArgReference_bat(stk,pci,pci->retc);
 	msg = CLUSTER_key(&hid,bid);
 	if (msg)
 		return msg;
@@ -544,7 +420,7 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
 
 	for ( i=pci->retc; i<pci->argc; i++){
-		bid = (int*) getArgReference(stk,pci,i);
+		bid = getArgReference_bat(stk,pci,i);
 		b = BATdescriptor(*bid);
 		if ( b== NULL)
 			throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
@@ -559,1854 +435,294 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "cluster.h"
 #include <mal_exception.h>
 
-str
-CLS_create_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	bte *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (bte*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (bte*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
+#define CLUSTERCREATE(TYPE)												\
+str																		\
+CLS_create_##TYPE(bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset) \
+{																		\
+	BAT *psum, *cmap, *b;												\
+	int i, mask = 0, off = *offset;										\
+	int bits = *Bits;													\
+	TYPE *bt, *be;														\
+	wrd *cnt, *pos, sum, *m;											\
+																		\
+	if (off < 0)														\
+		off = 0;														\
+	if (bits >= (int)sizeof(int)*8 || bits < 0)							\
+		throw(MAL, "cluster.new", TOO_MANY_BITS);						\
+																		\
+	if ((bits) != 0)													\
+		bits--;															\
+	mask = (1<<bits) - 1;												\
+	if ((b = BATdescriptor(*B)) == NULL)								\
+		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);					\
+																		\
+	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) { \
+		BBPunfix(*B);													\
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);						\
+	}																	\
+	BATsetcount(psum, mask+1);											\
+	BATseqbase(psum,0);													\
+	psum->tsorted= TRUE;												\
+	psum->trevsorted= FALSE;											\
+	psum->tdense= FALSE;												\
+	cnt = (wrd*)Tloc(psum, BUNfirst(psum));								\
+	for (i=0 ; i <= mask; i++)											\
+		cnt[i] = 0;														\
+																		\
+	bt = (TYPE*)Tloc(b, BUNfirst(b));									\
+	be = bt + BATcount(b);												\
+	/* First make a histogram */										\
+	for ( ; bt < be; bt++) {											\
+		int h = (((int)(*bt)) >> off) & mask;							\
+		cnt[h]++;														\
+	}																	\
+																		\
+	/* convert histogram into prefix sum */								\
+	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1));						\
+	if( pos == NULL){													\
+		BBPunfix(*B);													\
+		BBPunfix(psum->batCacheid);										\
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);						\
+	}																	\
+	for (sum = 0, i=0 ; i <= mask; i++) {								\
+		wrd psum = sum;													\
+																		\
+		sum += cnt[i];													\
+		pos[i] = cnt[i] = psum;											\
+	}																	\
+																		\
+	/* time to create the cluster map */								\
+	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {	\
+		BBPunfix(*B);													\
+		BBPunfix(psum->batCacheid);										\
+		GDKfree(pos);													\
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);						\
+	}																	\
+	BATsetcount(cmap, BATcount(b));										\
+	BATseqbase(cmap, b->H->seq);										\
+	cmap->tsorted= FALSE;												\
+	cmap->trevsorted= FALSE;											\
+	cmap->tdense= FALSE;												\
+	m = (wrd*)Tloc(cmap, BUNfirst(cmap));								\
+																		\
+	bt = (TYPE*)Tloc(b, BUNfirst(b));									\
+	be = bt + BATcount(b);												\
+	for ( ; bt < be; ) {												\
+		int h = (((int)(*bt++)) >> off) & mask;							\
+		*m++ = pos[h]++;												\
+	}																	\
+																		\
+	GDKfree(pos);														\
+	BBPunfix(*B);														\
+	BBPkeepref(*rpsum = psum->batCacheid);								\
+	BBPkeepref(*rcmap = cmap->batCacheid);								\
+	BATsetaccess(psum, BAT_READ);										\
+	BATsetaccess(cmap, BAT_READ);										\
+	return MAL_SUCCEED;													\
 }
 
-str
-CLS_create_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	sht *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (sht*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (sht*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	int *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (int*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (int*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	wrd *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (wrd*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (wrd*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	lng *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (lng*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (lng*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
+CLUSTERCREATE(bte)
+CLUSTERCREATE(sht)
+CLUSTERCREATE(int)
+CLUSTERCREATE(wrd)
+CLUSTERCREATE(lng)
 #ifdef HAVE_HGE
-str
-CLS_create_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	hge *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
+CLUSTERCREATE(hge)
+#endif
+CLUSTERCREATE(flt)
+CLUSTERCREATE(dbl)
 
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (hge*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (hge*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	psum = BATsetaccess(psum, BAT_READ);
-	cmap = BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
+#define CLUSTERCREATE2(TYPE)											\
+str																		\
+CLS_create2_##TYPE(bat *rpsum, bat *rcmap, bat *B, int *Bits, int *offset, bit *order) \
+{																		\
+	BAT *psum, *cmap, *b;												\
+	int i, mask = 0, off = *offset;										\
+	int bits = *Bits;													\
+	TYPE *bt, *be, *bs;													\
+	wrd *cnt, sum;														\
+																		\
+	if (off < 0)														\
+		off = 0;														\
+	if (bits >= (int)sizeof(int)*8 || bits < 0)							\
+		throw(MAL, "cluster.new", TOO_MANY_BITS);						\
+																		\
+	if (bits != 0)														\
+		bits--;															\
+	mask = (1<<bits) - 1;												\
+	if ((b = BATdescriptor(*B)) == NULL)								\
+		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);					\
+																		\
+	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) { \
+		BBPunfix(*B);													\
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);						\
+	}																	\
+	BATsetcount(psum, mask+1);											\
+	BATseqbase(psum,0);													\
+	psum->tsorted= TRUE;												\
+	psum->trevsorted= FALSE;											\
+	psum->tdense= FALSE;												\
+	cnt = (wrd*)Tloc(psum, BUNfirst(psum));								\
+	for (i=0 ; i <= mask; i++)											\
+		cnt[i] = 0;														\
+																		\
+	bs = bt = (TYPE*)Tloc(b, BUNfirst(b));								\
+	be = bt + BATcount(b);												\
+																		\
+	/* Make a histogram and fill the cluster map */						\
+	if (b->tsorted) {													\
+		bte *mb, *m, h;													\
+																		\
+		/* time to create the cluster map */							\
+		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) { \
+			BBPunfix(*B);												\
+			BBPunfix(psum->batCacheid);									\
+			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);					\
+		}																\
+		BATseqbase(cmap, b->H->seq);									\
+		cmap->tdense = FALSE;											\
+		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));						\
+																		\
+		if (!*order) {													\
+			cmap->tsorted = FALSE;										\
+			cmap->trevsorted = FALSE;									\
+			for ( ; bt < be; bt++) {									\
+				int h = (((int)(*bt)) >> off) & mask;					\
+			   	*m++ = h;												\
+				cnt[h]++;												\
+			}															\
+		} else { /* try an optimized distribution, 1/Nth in each part */ \
+			oid *o, base;												\
+			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;		\
+			TYPE prev = *bt - 1;										\
+			h = -1;														\
+																		\
+			cmap->hdense= FALSE;										\
+			base = b->hseqbase;											\
+			o = (oid*)Hloc(cmap, BUNfirst(cmap));						\
+			for ( ; bt < be; bt++, sz++) {								\
+				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {	\
+					h++;												\
+					assert(base + bt - bs >= 0);						\
+					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);	\
+					*o++ = (oid) (base + bt - bs);						\
+			   		*m++ = h;											\
+				}														\
+				cnt[h]++;												\
+				prev = *bt;												\
+			}															\
+		}																\
+		assert(m - mb >= 0);											\
+		assert((lng) (m - mb) <= (lng) BUN_MAX);						\
+		BATsetcount(cmap, (BUN) (m - mb));								\
+	} else {															\
+		bte *m;															\
+																		\
+		/* time to create the cluster map */							\
+		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) { \
+			BBPunfix(*B);												\
+			BBPunfix(psum->batCacheid);									\
+			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);					\
+		}																\
+		BATsetcount(cmap, BATcount(b));									\
+		BATseqbase(cmap, b->H->seq);									\
+		cmap->tsorted = FALSE;											\
+		cmap->trevsorted = FALSE;										\
+		cmap->tdense = FALSE;											\
+		m = (bte*)Tloc(cmap, BUNfirst(cmap));							\
+																		\
+		for ( ; bt < be; bt++) {										\
+			int h = (((int)(*bt)) >> off) & mask;						\
+			cnt[h]++;													\
+			*m++ = h;													\
+		}																\
+	}																	\
+																		\
+	/* convert histogram into prefix sum */								\
+	for (sum = 0, i=0 ; i <= mask; i++) {								\
+		wrd psum = sum;													\
+																		\
+		sum += cnt[i];													\
+		cnt[i] = psum;													\
+	}																	\
+																		\
+	BBPunfix(*B);														\
+	BBPkeepref(*rpsum = psum->batCacheid);								\
+	BBPkeepref(*rcmap = cmap->batCacheid);								\
+	BATsetaccess(psum, BAT_READ);										\
+	BATsetaccess(cmap, BAT_READ);										\
+	return MAL_SUCCEED;													\
 }
+
+CLUSTERCREATE2(bte)
+CLUSTERCREATE2(sht)
+CLUSTERCREATE2(int)
+CLUSTERCREATE2(wrd)
+CLUSTERCREATE2(lng)
+#ifdef HAVE_HGE
+CLUSTERCREATE2(hge)
+#endif
+CLUSTERCREATE2(flt)
+CLUSTERCREATE2(dbl)
+
+#define CLSMAP(TYPE)							\
+static str										\
+CLS_map_##TYPE(BAT *rb, BAT *cmap, BAT *b)		\
+{												\
+	wrd *m;										\
+	TYPE *r, *bt, *be;							\
+												\
+	r = (TYPE*)Tloc(rb, BUNfirst(rb));			\
+	m = (wrd*)Tloc(cmap, BUNfirst(cmap));		\
+	bt = (TYPE*)Tloc(b, BUNfirst(b));			\
+	be = bt + BATcount(b);						\
+	for ( ; bt < be; )							\
+		r[*m++] = *bt++;						\
+	BBPunfix(cmap->batCacheid);					\
+	BBPunfix(b->batCacheid);					\
+	BBPkeepref(rb->batCacheid);					\
+	BATsetaccess(rb, BAT_READ);					\
+	return MAL_SUCCEED;							\
+}
+
+CLSMAP(bte)
+CLSMAP(sht)
+CLSMAP(int)
+CLSMAP(lng)
+#ifdef HAVE_HGE
+CLSMAP(hge)
+#endif
+
+#define CLSMAP2(TYPE)									\
+static str												\
+CLS_map2_##TYPE(BAT *rb, wrd *psum, BAT *cmap, BAT *b)	\
+{														\
+	TYPE *m;											\
+	TYPE *r, *bt, *be;									\
+														\
+	r = (TYPE*)Tloc(rb, BUNfirst(rb));					\
+	m = (TYPE*)Tloc(cmap, BUNfirst(cmap));				\
+	bt = (TYPE*)Tloc(b, BUNfirst(b));					\
+	be = bt + BATcount(b);								\
+	for ( ; bt < be; )									\
+		r[psum[*m++]++] = *bt++;						\
+	GDKfree(psum);										\
+	BBPunfix(cmap->batCacheid);							\
+	BBPunfix(b->batCacheid);							\
+	BBPkeepref(rb->batCacheid);							\
+	BATsetaccess(rb, BAT_READ);							\
+	return MAL_SUCCEED;									\
+}
+
+CLSMAP2(bte)
+CLSMAP2(sht)
+CLSMAP2(int)
+CLSMAP2(lng)
+#ifdef HAVE_HGE
+CLSMAP2(hge)
 #endif
 
 str
-CLS_create_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	dbl *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (dbl*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (dbl*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-str
-CLS_create_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	flt *bt, *be; 
-	wrd *cnt, *pos, sum, *m;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bt = (flt*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	/* First make a histogram */
-	for ( ; bt < be; bt++) {
-		int h = (((int)(*bt)) >> off) & mask;
-		cnt[h]++;
-	}
-
-	/* convert histogram into prefix sum */
-	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
-	if( pos == NULL){
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
-	}
-	
-	/* time to create the cluster map */
-	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		BBPunfix(psum->batCacheid);
-		GDKfree(pos);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(cmap, BATcount(b));
-	BATseqbase(cmap, b->H->seq);
-	cmap->tsorted= FALSE;
-	cmap->trevsorted= FALSE;
-	cmap->tdense= FALSE;
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-
-	bt = (flt*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) {
-		int h = (((int)(*bt++)) >> off) & mask;
-		*m++ = pos[h]++;
-	}
-
-	GDKfree(pos);
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_bte( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	bte *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (bte*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			bte prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_sht( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	sht *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (sht*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			sht prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_int( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	int *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (int*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			int prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_wrd( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	wrd *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (wrd*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			wrd prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_lng( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	lng *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (lng*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			lng prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-#ifdef HAVE_HGE
-str
-CLS_create2_hge( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	hge *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (hge*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			hge prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	psum = BATsetaccess(psum, BAT_READ);
-	cmap = BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-#endif
-
-str
-CLS_create2_flt( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	flt *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (flt*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			flt prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-str
-CLS_create2_dbl( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
-{
-	BAT *psum, *cmap, *b;
-	int i, mask = 0, off = *offset;
-	unsigned int bits = *Bits;
-	dbl *bt, *be, *bs; 
-	wrd *cnt, sum;
-
-	if (off < 0)
-		off = 0;
-	if (bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", TOO_MANY_BITS);
-
-	if ((bits) != 0)
-		bits--;
-	mask = (1<<bits) - 1;
-	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
-
-	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1, TRANSIENT)) == NULL) {
-		BBPunfix(*B);
-		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-	}
-	BATsetcount(psum, mask+1);
-	BATseqbase(psum,0);
-	psum->tsorted= TRUE;
-	psum->trevsorted= FALSE;
-	psum->tdense= FALSE;
-	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
-	for (i=0 ; i <= mask; i++)
-		cnt[i] = 0;
-
-	bs = bt = (dbl*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-
-	/* Make a histogram and fill the cluster map */
-	if (b->tsorted) {
-		bte *mb, *m, h;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(cmap, b->H->seq);
-		cmap->tdense = FALSE;
-		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		if (!*order) {
-			cmap->tsorted = FALSE;
-			cmap->trevsorted = FALSE;
-			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
-			}
-		} else { /* try an optimized distribution, 1/Nth in each part */
-			oid *o, base;
-			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
-			dbl prev = *bt - 1;
-			h = -1;
-
-			cmap->hdense= FALSE;
-			base = b->hseqbase;
-			o = (oid*)Hloc(cmap, BUNfirst(cmap));
-			for ( ; bt < be; bt++, sz++) {
-				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
-					h++;
-					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
-					*o++ = (oid) (base + bt - bs);
-			   		*m++ = h;
-				}
-				cnt[h]++;
-				prev = *bt;
-			}
-		}
-		assert(m - mb >= 0);
-		assert((lng) (m - mb) <= (lng) BUN_MAX);
-		BATsetcount(cmap, (BUN) (m - mb));
-	} else {
-		bte *m;
-
-		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_void, TYPE_bte, BATcount(b), TRANSIENT)) == NULL) {
-			BBPunfix(*B);
-			BBPunfix(psum->batCacheid);
-			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
-		}
-		BATsetcount(cmap, BATcount(b));
-		BATseqbase(cmap, b->H->seq);
-		cmap->tsorted = FALSE;
-		cmap->trevsorted = FALSE;
-		cmap->tdense = FALSE;
-		m = (bte*)Tloc(cmap, BUNfirst(cmap));
-
-		for ( ; bt < be; bt++) {
-			int h = (((int)(*bt)) >> off) & mask;
-			cnt[h]++;
-			*m++ = h;
-		}
-	}
-
-	/* convert histogram into prefix sum */
-	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
-
-		sum += cnt[i];
-		cnt[i] = psum;
-	}
-	
-	BBPunfix(*B);
-	BBPkeepref(*rpsum = psum->batCacheid);
-	BBPkeepref(*rcmap = cmap->batCacheid);
-	BATsetaccess(psum, BAT_READ);
-	BATsetaccess(cmap, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map_bte(BAT *rb, BAT *cmap, BAT *b)
-{
-	wrd *m;
-	bte *r, *bt, *be;
-
-	r = (bte*)Tloc(rb, BUNfirst(rb));
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-	bt = (bte*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[*m++] = *bt++;
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map_sht(BAT *rb, BAT *cmap, BAT *b)
-{
-	wrd *m;
-	sht *r, *bt, *be;
-
-	r = (sht*)Tloc(rb, BUNfirst(rb));
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-	bt = (sht*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[*m++] = *bt++;
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map_int(BAT *rb, BAT *cmap, BAT *b)
-{
-	wrd *m;
-	int *r, *bt, *be;
-
-	r = (int*)Tloc(rb, BUNfirst(rb));
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-	bt = (int*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[*m++] = *bt++;
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map_lng(BAT *rb, BAT *cmap, BAT *b)
-{
-	wrd *m;
-	lng *r, *bt, *be;
-
-	r = (lng*)Tloc(rb, BUNfirst(rb));
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-	bt = (lng*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[*m++] = *bt++;
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-#ifdef HAVE_HGE
-static str  
-CLS_map_hge(BAT *rb, BAT *cmap, BAT *b)
-{
-	wrd *m;
-	hge *r, *bt, *be;
-
-	r = (hge*)Tloc(rb, BUNfirst(rb));
-	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
-	bt = (hge*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[*m++] = *bt++;
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	rb = BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-#endif
-
-
-static str  
-CLS_map2_bte (BAT *rb, wrd *psum, BAT *cmap, BAT *b)
-{
-	bte *m;
-	bte *r, *bt, *be;
-
-	r = (bte*)Tloc(rb, BUNfirst(rb));
-	m = (bte*)Tloc(cmap, BUNfirst(cmap));
-	bt = (bte*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[psum[*m++]++] = *bt++;
-	GDKfree(psum);
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map2_sht(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
-{
-	bte *m;
-	sht *r, *bt, *be;
-
-	r = (sht*)Tloc(rb, BUNfirst(rb));
-	m = (bte*)Tloc(cmap, BUNfirst(cmap));
-	bt = (sht*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[psum[*m++]++] = *bt++;
-	GDKfree(psum);
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map2_int(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
-{
-	bte *m;
-	int *r, *bt, *be;
-
-	r = (int*)Tloc(rb, BUNfirst(rb));
-	m = (bte*)Tloc(cmap, BUNfirst(cmap));
-	bt = (int*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[psum[*m++]++] = *bt++;
-	GDKfree(psum);
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-static str  
-CLS_map2_lng(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
-{
-	bte *m;
-	lng *r, *bt, *be;
-
-	r = (lng*)Tloc(rb, BUNfirst(rb));
-	m = (bte*)Tloc(cmap, BUNfirst(cmap));
-	bt = (lng*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[psum[*m++]++] = *bt++;
-	GDKfree(psum);
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-
-#ifdef HAVE_HGE
-static str  
-CLS_map2_hge(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
-{
-	bte *m;
-	hge *r, *bt, *be;
-
-	r = (hge*)Tloc(rb, BUNfirst(rb));
-	m = (bte*)Tloc(cmap, BUNfirst(cmap));
-	bt = (hge*)Tloc(b, BUNfirst(b));
-	be = bt + BATcount(b);
-	for ( ; bt < be; ) 
-		r[psum[*m++]++] = *bt++;
-	GDKfree(psum);
-	BBPunfix(cmap->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(rb->batCacheid);
-	rb = BATsetaccess(rb, BAT_READ);
-	return MAL_SUCCEED;
-}
-#endif
-
-
-str  
 CLS_map(bat *RB, bat *CMAP, bat *B)
 {
 	BATiter bi;
@@ -2416,7 +732,7 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 
 	if ((cmap = BATdescriptor(*CMAP)) == NULL ||
 	    (b = BATdescriptor(*B)) == NULL) {
-		if (cmap) 
+		if (cmap)
 			BBPunfix(*CMAP);
 		throw(MAL, "cluster.map", INTERNAL_BAT_ACCESS);
 	}
@@ -2431,7 +747,7 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 		BBPunfix(*CMAP);
 		BBPunfix(*B);
 		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
-	} 
+	}
 	BATsetcount(rb, BATcount(b));
 	BATseqbase(rb, b->H->seq);
 	rb->tsorted= FALSE;
@@ -2491,26 +807,26 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	return MAL_SUCCEED;
 }
 
-str  
+str
 CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 {
 	BATiter bi;
 	BAT *rb, *psum = NULL, *cmap = NULL, *b = NULL;
 	BUN i = 0, bf, mf;
-	bte *m; 
+	bte *m;
 	wrd *psumcp;
 
 	if ((psum = BATdescriptor(*PSUM)) == NULL ||
 	    (cmap = BATdescriptor(*CMAP)) == NULL ||
 	    (b = BATdescriptor(*B)) == NULL) {
-		if (psum) 
+		if (psum)
 			BBPunfix(*PSUM);
-		if (cmap) 
+		if (cmap)
 			BBPunfix(*CMAP);
 		throw(MAL, "cluster.map", INTERNAL_BAT_ACCESS);
 	}
 	if (cmap->tsorted) {
-		/* input to cluster was sorted, ie nothing to do here 
+		/* input to cluster was sorted, ie nothing to do here
 		   than to return the input */
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
@@ -2518,7 +834,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		return MAL_SUCCEED;
 	}
 	/* work around non aligned bats */
-	if (BATcount(cmap) && 
+	if (BATcount(cmap) &&
 	    cmap->H->seq != b->H->seq && b->H->type != TYPE_void) {
 		BAT *ob = b;
 		BAT *v = VIEWcombine(cmap);
@@ -2543,7 +859,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		BBPunfix(*CMAP);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
-	} 
+	}
 	BATsetcount(rb, BATcount(b));
 	BATseqbase(rb, b->H->seq);
 	rb->tsorted= FALSE;
@@ -2608,12 +924,12 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
 }
-str  
+str
 CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	bat *bid = (bat *) getArgReference(stk, pci, pci->retc);
-	bat *psum = (bat *) getArgReference(stk, pci, pci->retc+1);
+	const bat *bid = getArgReference_bat(stk, pci, pci->retc);
+	const bat *psum = getArgReference_bat(stk, pci, pci->retc+1);
 	BAT *b, *pb;
 	wrd *cnt, *end;
 	BUN l = 0, h = l;
@@ -2634,7 +950,7 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	end = cnt + BATcount(pb);
 
 	for( i = 0; i<pci->retc && cnt < end; i++, cnt++) {
-		bat *res = (bat*) getArgReference(stk, pci, i);
+		bat *res = getArgReference_bat(stk, pci, i);
 		BAT *v;
 
 		assert((lng) *cnt <= (lng) BUN_MAX);
@@ -2647,10 +963,9 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 			h = BATcount(b)+1;
 		v = BATslice(b, l, h);
-		BBPkeepref(*res = v->batCacheid); 
-	} 
+		BBPkeepref(*res = v->batCacheid);
+	}
 	BBPunfix(*bid);
 	BBPunfix(*psum);
 	return MAL_SUCCEED;
 }
-	

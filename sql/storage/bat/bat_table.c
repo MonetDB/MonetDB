@@ -114,9 +114,9 @@ full_column(sql_trans *tr, sql_column *c)
 	return delta_full_bat(c, c->data, isTemp(c));
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
+static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
 static oid
-column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
+column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
 	BAT *b = NULL, *s = NULL, *r = NULL;
@@ -274,7 +274,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	b = full_column(tr, key);
 	if (!kvl)
 		kvl = ATOMnilptr(b->ttype);
-	if (!kvh)
+	if (!kvh && key_value_low != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	hi = (kvl == kvh);
 	r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);

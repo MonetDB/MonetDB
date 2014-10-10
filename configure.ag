@@ -1885,11 +1885,11 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.*|yes-yes-clang-5.*)
-			# clang 5.* (at least on Mac OSX Mavericks) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*)
+			# clang 5.*/6.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
-			# option; on Mac OSX Mavericks, "Apple LLVM version
-			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
+			# option; on Mac OS X Yosamite, "Apple LLVM 
+			# version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
 			# complains about "error: argument unused during
 			# compilation: '-pthread'".
 			# However, disabling -pthread completely might be
@@ -2635,6 +2635,7 @@ AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
+	fenv.h \
 	getopt.h \
 	iconv.h \
 	ieeefp.h \
@@ -3397,11 +3398,8 @@ typedef lng ptrdiff_t;
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
 #elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)

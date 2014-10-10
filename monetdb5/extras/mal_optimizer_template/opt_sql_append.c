@@ -281,8 +281,8 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			throw(MAL, "optimizer.sql_append", ILLARG_CONSTANTS);
 		}
 		if( stk != 0){
-			modnme= *(str*)getArgReference(stk,p,1);
-			fcnnme= *(str*)getArgReference(stk,p,2);
+			modnme= *getArgReference_str(stk,p,1);
+			fcnnme= *getArgReference_str(stk,p,2);
 		} else {
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);

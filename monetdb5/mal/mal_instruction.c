@@ -1334,7 +1334,7 @@ convertConstant(int type, ValPtr vr)
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
-		vr->val.bval = 0;
+		vr->val.bval = bat_nil;
 		return MAL_SUCCEED;
 	}
 	switch (ATOMstorage(type)) {
@@ -1388,7 +1388,7 @@ convertConstant(int type, ValPtr vr)
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
-		vr->val.bval = 0;
+		vr->val.bval = bat_nil;
 		return MAL_SUCCEED;
 	case TYPE_ptr:
 		/* all coercions should be avoided to protect against memory probing */
@@ -1524,7 +1524,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 
 	if (isaBatType(type) && cst->vtype == TYPE_void) {
 		cst->vtype = TYPE_bat;
-		cst->val.bval = 0;
+		cst->val.bval = bat_nil;
 	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
 		ValRecord vr = *cst;
 		int otype = cst->vtype;

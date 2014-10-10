@@ -645,10 +645,6 @@ mdlopen(const char *library, int mode)
 	return dlopen(NULL, mode);
 }
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #else /* WIN32 native */
 
 #ifndef BUFSIZ
@@ -737,6 +733,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
 		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
+			errno = winerror(GetLastError());
 			GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
 			return NULL;
@@ -745,6 +742,7 @@ MT_mmap(const char *path, int mode, size_t len)
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
+		errno = winerror(GetLastError());
 		GDKsyserror("MT_mmap: CreateFileMapping(" PTRFMT ", &sa, %lu, %lu, %lu, NULL) failed\n",
 			    PTRFMTCAST h1, mode3,
 			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
@@ -755,6 +753,8 @@ MT_mmap(const char *path, int mode, size_t len)
 	CloseHandle(h1);
 
 	ret = MapViewOfFileEx(h2, mode4, (DWORD) 0, (DWORD) 0, len, NULL);
+	if (ret == NULL)
+		errno = winerror(GetLastError());
 	CloseHandle(h2);
 
 	return ret;
@@ -763,12 +763,17 @@ MT_mmap(const char *path, int mode, size_t len)
 int
 MT_munmap(void *p, size_t dummy)
 {
-	int ret = 0;
+	int ret;
 
 	(void) dummy;
 	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
-	return -(UnmapViewOfFile(p) == 0);
+	ret = UnmapViewOfFile(p);
+	if (ret == 0) {
+		errno = winerror(GetLastError());
+		return -1;
+	}
+	return 0;
 }
 
 void *
@@ -808,12 +813,17 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 int
 MT_msync(void *p, size_t len, int mode)
 {
-	int ret = 0;
+	int ret;
 
 	(void) mode;
-	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
+	/*       Windows' FlushViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
-	return -(FlushViewOfFile(p, len) == 0);
+	ret = FlushViewOfFile(p, len);
+	if (ret == 0) {
+		errno = winerror(GetLastError());
+		return -1;
+	}
+	return 0;
 }
 
 #ifndef _HEAPOK			/* MinGW */
@@ -1051,133 +1061,6 @@ win_mkdir(const char *pathname, const int mode)
 	if (p != buf)
 		free(p);
 	return ret;
-}
-
-#if _WIN32_WINNT >= 0x500
-/* NTFS does support symbolic links */
-int
-win_link(const char *oldpath, const char *newpath)
-{
-	return CreateHardLink(newpath, oldpath, NULL) ? -1 : 0;
-}
-#endif
-
-typedef struct {
-	int w;			/* windows version of error */
-	const char *s;		/* text of windows version */
-	int e;			/* errno version of error */
-} win_errmap_t;
-
-#ifndef EBADRQC
-#define EBADRQC 56
-#endif
-#ifndef ENODATA
-#define ENODATA 61
-#endif
-#ifndef ENONET
-#define ENONET 64
-#endif
-#ifndef ENOTUNIQ
-#define ENOTUNIQ 76
-#endif
-#ifndef ECOMM
-#define ECOMM 70
-#endif
-#ifndef ENOLINK
-#define ENOLINK 67
-#endif
-win_errmap_t win_errmap[] = {
-	{ERROR_INVALID_FUNCTION, "ERROR_INVALID_FUNCTION", EBADRQC},
-	{ERROR_FILE_NOT_FOUND, "ERROR_FILE_NOT_FOUND", ENOENT},
-	{ERROR_PATH_NOT_FOUND, "ERROR_PATH_NOT_FOUND", ENOENT},
-	{ERROR_TOO_MANY_OPEN_FILES, "ERROR_TOO_MANY_OPEN_FILES", EMFILE},
-	{ERROR_ACCESS_DENIED, "ERROR_ACCESS_DENIED", EACCES},
-	{ERROR_INVALID_HANDLE, "ERROR_INVALID_HANDLE", EBADF},
-	{ERROR_NOT_ENOUGH_MEMORY, "ERROR_NOT_ENOUGH_MEMORY", ENOMEM},
-	{ERROR_INVALID_DATA, "ERROR_INVALID_DATA", EINVAL},
-	{ERROR_OUTOFMEMORY, "ERROR_OUTOFMEMORY", ENOMEM},
-	{ERROR_INVALID_DRIVE, "ERROR_INVALID_DRIVE", ENODEV},
-	{ERROR_NOT_SAME_DEVICE, "ERROR_NOT_SAME_DEVICE", EXDEV},
-	{ERROR_NO_MORE_FILES, "ERROR_NO_MORE_FILES", ENFILE},
-	{ERROR_WRITE_PROTECT, "ERROR_WRITE_PROTECT", EROFS},
-	{ERROR_BAD_UNIT, "ERROR_BAD_UNIT", ENODEV},
-	{ERROR_SHARING_VIOLATION, "ERROR_SHARING_VIOLATION", EACCES},
-	{ERROR_LOCK_VIOLATION, "ERROR_LOCK_VIOLATION", EACCES},
-	{ERROR_SHARING_BUFFER_EXCEEDED, "ERROR_SHARING_BUFFER_EXCEEDED", ENOLCK},
-	{ERROR_HANDLE_EOF, "ERROR_HANDLE_EOF", ENODATA},
-	{ERROR_HANDLE_DISK_FULL, "ERROR_HANDLE_DISK_FULL", ENOSPC},
-	{ERROR_NOT_SUPPORTED, "ERROR_NOT_SUPPORTED", ENOSYS},
-	{ERROR_REM_NOT_LIST, "ERROR_REM_NOT_LIST", ENONET},
-	{ERROR_DUP_NAME, "ERROR_DUP_NAME", ENOTUNIQ},
-	{ERROR_BAD_NETPATH, "ERROR_BAD_NETPATH", ENXIO},
-	{ERROR_FILE_EXISTS, "ERROR_FILE_EXISTS", EEXIST},
-	{ERROR_CANNOT_MAKE, "ERROR_CANNOT_MAKE", EPERM},
-	{ERROR_INVALID_PARAMETER, "ERROR_INVALID_PARAMETER", EINVAL},
-	{ERROR_NO_PROC_SLOTS, "ERROR_NO_PROC_SLOTS", EAGAIN},
-	{ERROR_BROKEN_PIPE, "ERROR_BROKEN_PIPE", EPIPE},
-	{ERROR_OPEN_FAILED, "ERROR_OPEN_FAILED", EIO},
-	{ERROR_NO_MORE_SEARCH_HANDLES, "ERROR_NO_MORE_SEARCH_HANDLES", ENFILE},
-	{ERROR_CALL_NOT_IMPLEMENTED, "ERROR_CALL_NOT_IMPLEMENTED", ENOSYS},
-	{ERROR_INVALID_NAME, "ERROR_INVALID_NAME", ENOENT},
-	{ERROR_WAIT_NO_CHILDREN, "ERROR_WAIT_NO_CHILDREN", ECHILD},
-	{ERROR_CHILD_NOT_COMPLETE, "ERROR_CHILD_NOT_COMPLETE", EBUSY},
-	{ERROR_DIR_NOT_EMPTY, "ERROR_DIR_NOT_EMPTY", ENOTEMPTY},
-	{ERROR_SIGNAL_REFUSED, "ERROR_SIGNAL_REFUSED", EIO},
-	{ERROR_BAD_PATHNAME, "ERROR_BAD_PATHNAME", EINVAL},
-	{ERROR_SIGNAL_PENDING, "ERROR_SIGNAL_PENDING", EBUSY},
-	{ERROR_MAX_THRDS_REACHED, "ERROR_MAX_THRDS_REACHED", EAGAIN},
-	{ERROR_BUSY, "ERROR_BUSY", EBUSY},
-	{ERROR_ALREADY_EXISTS, "ERROR_ALREADY_EXISTS", EEXIST},
-	{ERROR_NO_SIGNAL_SENT, "ERROR_NO_SIGNAL_SENT", EIO},
-	{ERROR_FILENAME_EXCED_RANGE, "ERROR_FILENAME_EXCED_RANGE", EINVAL},
-	{ERROR_META_EXPANSION_TOO_LONG, "ERROR_META_EXPANSION_TOO_LONG", EINVAL},
-	{ERROR_INVALID_SIGNAL_NUMBER, "ERROR_INVALID_SIGNAL_NUMBER", EINVAL},
-	{ERROR_THREAD_1_INACTIVE, "ERROR_THREAD_1_INACTIVE", EINVAL},
-	{ERROR_BAD_PIPE, "ERROR_BAD_PIPE", EINVAL},
-	{ERROR_PIPE_BUSY, "ERROR_PIPE_BUSY", EBUSY},
-	{ERROR_NO_DATA, "ERROR_NO_DATA", EPIPE},
-	{ERROR_PIPE_NOT_CONNECTED, "ERROR_PIPE_NOT_CONNECTED", ECOMM},
-	{ERROR_MORE_DATA, "ERROR_MORE_DATA", EAGAIN},
-	{ERROR_DIRECTORY, "ERROR_DIRECTORY", EISDIR},
-	{ERROR_PIPE_CONNECTED, "ERROR_PIPE_CONNECTED", EBUSY},
-	{ERROR_PIPE_LISTENING, "ERROR_PIPE_LISTENING", ECOMM},
-	{ERROR_NO_TOKEN, "ERROR_NO_TOKEN", EINVAL},
-	{ERROR_PROCESS_ABORTED, "ERROR_PROCESS_ABORTED", EFAULT},
-	{ERROR_BAD_DEVICE, "ERROR_BAD_DEVICE", ENODEV},
-	{ERROR_BAD_USERNAME, "ERROR_BAD_USERNAME", EINVAL},
-	{ERROR_NOT_CONNECTED, "ERROR_NOT_CONNECTED", ENOLINK},
-	{ERROR_OPEN_FILES, "ERROR_OPEN_FILES", EAGAIN},
-	{ERROR_ACTIVE_CONNECTIONS, "ERROR_ACTIVE_CONNECTIONS", EAGAIN},
-	{ERROR_DEVICE_IN_USE, "ERROR_DEVICE_IN_USE", EAGAIN},
-	{ERROR_INVALID_AT_INTERRUPT_TIME, "ERROR_INVALID_AT_INTERRUPT_TIME", EINTR},
-	{ERROR_IO_DEVICE, "ERROR_IO_DEVICE", EIO},
-	{ERROR_INVALID_ADDRESS, "ERROR_INVALID_ADDRESS", EFAULT},
-};
-
-#define GDK_WIN_ERRNO_TLS 13
-
-int *
-win_errno(void)
-{
-	/* get address of thread-local Posix errno; refresh its value
-	 * from WIN32 error code */
-	int i, err = GetLastError() & 0xff;
-	int *result = TlsGetValue(GDK_WIN_ERRNO_TLS);
-
-	if (result == NULL) {
-		result = (int *) malloc(sizeof(int));
-		*result = 0;
-		TlsSetValue(GDK_WIN_ERRNO_TLS, result);
-	}
-	*result = ENOSYS;	/* fallback error */
-	for (i = 0; win_errmap[i].w != 0; ++i) {
-		if (err == win_errmap[i].w) {
-			*result = win_errmap[i].e;
-			break;
-		}
-	}
-	SetLastError(err);
-	return result;
 }
 #endif
 

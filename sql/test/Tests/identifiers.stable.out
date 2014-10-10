@@ -55,6 +55,19 @@ Ready.
 % tinyint # type
 % 1 # length
 [ 1	]
+#CREATE TABLE "B\"la\"" (id int); -- should fail
+#SELECT 1 AS "B\"la\""; -- should fail
+% .L # table_name
+% B\"la\" # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT 1 AS "\"Bla\""; -- should fail
+% .L # table_name
+% \"Bla\" # name
+% tinyint # type
+% 1 # length
+[ 1	]
 
 # 11:50:07 >  
 # 11:50:07 >  Done.

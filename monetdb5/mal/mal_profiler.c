@@ -1248,7 +1248,7 @@ lng
 getDiskSpace(void)
 {
 	BAT *b;
-	int i;
+	bat i;
 	lng size = 0;
 
 	for (i = 1; i < getBBPsize(); i++)

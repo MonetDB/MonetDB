@@ -237,7 +237,7 @@ MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MANUALcompletion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *text= (str*) getArgReference(stk,pci,1);
+	str *text= getArgReference_str(stk,pci,1);
 	(void) mb;		/* fool compiler */
 	dumpHelpTable(cntxt->fdout, cntxt->nspace, *text,1);
 	return MAL_SUCCEED;
@@ -248,7 +248,7 @@ MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
-	str *text= (str*) getArgReference(stk,pci,1);
+	str *text= getArgReference_str(stk,pci,1);
 	(void) mb;		/* fool compiler */
 
 	msg= getHelp(cntxt->nspace,*text,1);
@@ -269,7 +269,7 @@ MANUALsearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
-	str *pat= (str*) getArgReference(stk,pci,1);
+	str *pat= getArgReference_str(stk,pci,1);
 	(void) mb;		/* fool compiler */
 
 	msg= getHelpMatch(*pat);

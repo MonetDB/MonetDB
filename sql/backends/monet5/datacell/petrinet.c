@@ -126,7 +126,7 @@ str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
 	Symbol s = 0;
-	str nme = *(str *) getArgReference(stk, pci, 1);
+	str nme = *getArgReference_str(stk, pci, 1);
 	char buf[BUFSIZ], *modnme, *fcnnme;
 
 	BSKTelements(nme, buf, &modnme, &fcnnme);
@@ -148,8 +148,8 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
 	Symbol s = 0;
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	str nme = *(str *) getArgReference(stk, pci, 1);
+	int *ret = getArgReference_int(stk, pci, 0);
+	str nme = *getArgReference_str(stk, pci, 1);
 	int i;
 	str msg= MAL_SUCCEED;
 	char buf[BUFSIZ], *modnme, *fcnnme;
@@ -179,7 +179,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "petrinet.register", "Duplicate definition of transition");
 	pnet[pnettop].name = GDKstrdup(nme);
 	if (pci->argc == 3)
-		pnet[pnettop].def = GDKstrdup(*(str *) getArgReference(stk, pci, 2));
+		pnet[pnettop].def = GDKstrdup(*getArgReference_str(stk, pci, 2));
 	else
 		pnet[pnettop].def = GDKstrdup("see procedure definition");
 
@@ -199,7 +199,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str qry= *(str*) getArgReference(stk,pci,1);
+	str qry= *getArgReference_str(stk,pci,1);
 	int i;
 	char buf[BUFSIZ];
 
@@ -225,7 +225,7 @@ PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str
 PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str qry= *(str*) getArgReference(stk,pci,1);
+	str qry= *getArgReference_str(stk,pci,1);
 	int i;
 	char buf[BUFSIZ];
 
@@ -251,7 +251,7 @@ PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 static str
 PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str nme = *(str *) getArgReference(stk, pci, 1);
+	str nme = *getArgReference_str(stk, pci, 1);
 	Module scope;
 	Symbol s = NULL;
 	int ret;
@@ -276,12 +276,12 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (strcmp(nme, pnet[i].name) == 0) {} else
 			pnet[j++] = pnet[i];
 	pnettop = j;
-	PNresumeScheduler(&ret);
+	PNresumeScheduler(NULL);
 	return MAL_SUCCEED;
 }
 #endif
 
-str PNstopScheduler(int *ret)
+str PNstopScheduler(void *ret)
 {
 	int i = 0, j = pnettop;
 	pnettop = 0;    /* don't look at it anymore */
@@ -302,7 +302,7 @@ str PNstopScheduler(int *ret)
 	return MAL_SUCCEED;
 }
 
-str PNresumeScheduler(int *ret)
+str PNresumeScheduler(void *ret)
 {
 	int i;
 
@@ -315,7 +315,7 @@ str PNresumeScheduler(int *ret)
 	return MAL_SUCCEED;
 }
 
-str PNpauseScheduler(int *ret)
+str PNpauseScheduler(void *ret)
 {
 	int i;
 
@@ -328,7 +328,7 @@ str PNpauseScheduler(int *ret)
 	return MAL_SUCCEED;
 }
 
-str PNdump(int *ret)
+str PNdump(void *ret)
 {
 	int i, k;
 	mnstr_printf(PNout, "#scheduler status %s\n", statusname[status]);
@@ -358,7 +358,7 @@ str PNdump(int *ret)
  * The code currently relies on a physical adjacent ordering of all member
  * in the group.
  */
-str PNsource(int *ret, str *fcn, str *tbl)
+str PNsource(void *ret, str *fcn, str *tbl)
 {
 	int i, k, z;
 
@@ -383,7 +383,7 @@ str PNsource(int *ret, str *fcn, str *tbl)
 	return MAL_SUCCEED;
 }
 
-str PNtarget(int *ret, str *fcn, str *tbl)
+str PNtarget(void *ret, str *fcn, str *tbl)
 {
 	int i, k, z;
 
@@ -662,7 +662,7 @@ static str PNstart(int *ret)
 
 /* inspection  routines */
 str
-PNtable(int *nameId, int *statusId, int *seenId, int *cyclesId, int *eventsId, int *timeId, int * errorId, int *defId)
+PNtable(bat *nameId, bat *statusId, bat *seenId, bat *cyclesId, bat *eventsId, bat *timeId, bat * errorId, bat *defId)
 {
 	BAT *name = NULL, *def = NULL, *status = NULL, *seen = NULL, *cycles = NULL, *events = NULL, *time = NULL, *error = NULL;
 	int i;

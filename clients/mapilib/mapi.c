@@ -1099,6 +1099,119 @@ mapi_error_str(Mapi mid)
 	return mid->errorstr;
 }
 
+#ifdef _MSC_VER
+static struct {
+	int e;
+	const char *m;
+} wsaerrlist[] = {
+	{ WSA_INVALID_HANDLE, "Specified event object handle is invalid" },
+	{ WSA_NOT_ENOUGH_MEMORY, "Insufficient memory available" },
+	{ WSA_INVALID_PARAMETER, "One or more parameters are invalid" },
+	{ WSA_OPERATION_ABORTED, "Overlapped operation aborted" },
+	{ WSA_IO_INCOMPLETE, "Overlapped I/O event object not in signaled state" },
+	{ WSA_IO_PENDING, "Overlapped operations will complete later" },
+	{ WSAEINTR, "Interrupted function call" },
+	{ WSAEBADF, "File handle is not valid" },
+	{ WSAEACCES, "Permission denied" },
+	{ WSAEFAULT, "Bad address" },
+	{ WSAEINVAL, "Invalid argument" },
+	{ WSAEMFILE, "Too many open files" },
+	{ WSAEWOULDBLOCK, "Resource temporarily unavailable" },
+	{ WSAEINPROGRESS, "Operation now in progress" },
+	{ WSAEALREADY, "Operation already in progress" },
+	{ WSAENOTSOCK, "Socket operation on nonsocket" },
+	{ WSAEDESTADDRREQ, "Destination address required" },
+	{ WSAEMSGSIZE, "Message too long" },
+	{ WSAEPROTOTYPE, "Protocol wrong type for socket" },
+	{ WSAENOPROTOOPT, "Bad protocol option" },
+	{ WSAEPROTONOSUPPORT, "Protocol not supported" },
+	{ WSAESOCKTNOSUPPORT, "Socket type not supported" },
+	{ WSAEOPNOTSUPP, "Operation not supported" },
+	{ WSAEPFNOSUPPORT, "Protocol family not supported" },
+	{ WSAEAFNOSUPPORT, "Address family not supported by protocol family" },
+	{ WSAEADDRINUSE, "Address already in use" },
+	{ WSAEADDRNOTAVAIL, "Cannot assign requested address" },
+	{ WSAENETDOWN, "Network is down" },
+	{ WSAENETUNREACH, "Network is unreachable" },
+	{ WSAENETRESET, "Network dropped connection on reset" },
+	{ WSAECONNABORTED, "Software caused connection abort" },
+	{ WSAECONNRESET, "Connection reset by peer" },
+	{ WSAENOBUFS, "No buffer space available" },
+	{ WSAEISCONN, "Socket is already connected" },
+	{ WSAENOTCONN, "Socket is not connected" },
+	{ WSAESHUTDOWN, "Cannot send after socket shutdown" },
+	{ WSAETOOMANYREFS, "Too many references" },
+	{ WSAETIMEDOUT, "Connection timed out" },
+	{ WSAECONNREFUSED, "Connection refused" },
+	{ WSAELOOP, "Cannot translate name" },
+	{ WSAENAMETOOLONG, "Name too long" },
+	{ WSAEHOSTDOWN, "Host is down" },
+	{ WSAEHOSTUNREACH, "No route to host" },
+	{ WSAENOTEMPTY, "Directory not empty" },
+	{ WSAEPROCLIM, "Too many processes" },
+	{ WSAEUSERS, "User quota exceeded" },
+	{ WSAEDQUOT, "Disk quota exceeded" },
+	{ WSAESTALE, "Stale file handle reference" },
+	{ WSAEREMOTE, "Item is remote" },
+	{ WSASYSNOTREADY, "Network subsystem is unavailable" },
+	{ WSAVERNOTSUPPORTED, "Winsock.dll version out of range" },
+	{ WSANOTINITIALISED, "Successful WSAStartup not yet performed" },
+	{ WSAEDISCON, "Graceful shutdown in progress" },
+	{ WSAENOMORE, "No more results" },
+	{ WSAECANCELLED, "Call has been canceled" },
+	{ WSAEINVALIDPROCTABLE, "Procedure call table is invalid" },
+	{ WSAEINVALIDPROVIDER, "Service provider is invalid" },
+	{ WSAEPROVIDERFAILEDINIT, "Service provider failed to initialize" },
+	{ WSASYSCALLFAILURE, "System call failure" },
+	{ WSASERVICE_NOT_FOUND, "Service not found" },
+	{ WSATYPE_NOT_FOUND, "Class type not found" },
+	{ WSA_E_NO_MORE, "No more results" },
+	{ WSA_E_CANCELLED, "Call was canceled" },
+	{ WSAEREFUSED, "Database query was refused" },
+	{ WSAHOST_NOT_FOUND, "Host not found" },
+	{ WSATRY_AGAIN, "Nonauthoritative host not found" },
+	{ WSANO_RECOVERY, "This is a nonrecoverable error" },
+	{ WSANO_DATA, "Valid name, no data record of requested type" },
+	{ WSA_QOS_RECEIVERS, "QOS receivers" },
+	{ WSA_QOS_SENDERS, "QOS senders" },
+	{ WSA_QOS_NO_SENDERS, "No QOS senders" },
+	{ WSA_QOS_NO_RECEIVERS, "QOS no receivers" },
+	{ WSA_QOS_REQUEST_CONFIRMED, "QOS request confirmed" },
+	{ WSA_QOS_ADMISSION_FAILURE, "QOS admission error" },
+	{ WSA_QOS_POLICY_FAILURE, "QOS policy failure" },
+	{ WSA_QOS_BAD_STYLE, "QOS bad style" },
+	{ WSA_QOS_BAD_OBJECT, "QOS bad object" },
+	{ WSA_QOS_TRAFFIC_CTRL_ERROR, "QOS traffic control error" },
+	{ WSA_QOS_GENERIC_ERROR, "QOS generic error" },
+	{ WSA_QOS_ESERVICETYPE, "QOS service type error" },
+	{ WSA_QOS_EFLOWSPEC, "QOS flowspec error" },
+	{ WSA_QOS_EPROVSPECBUF, "Invalid QOS provider buffer" },
+	{ WSA_QOS_EFILTERSTYLE, "Invalid QOS filter style" },
+	{ WSA_QOS_EFILTERTYPE, "Invalid QOS filter type" },
+	{ WSA_QOS_EFILTERCOUNT, "Incorrect QOS filter count" },
+	{ WSA_QOS_EOBJLENGTH, "Invalid QOS object length" },
+	{ WSA_QOS_EFLOWCOUNT, "Incorrect QOS flow count" },
+	{ WSA_QOS_EUNKOWNPSOBJ, "Unrecognized QOS object" },
+	{ WSA_QOS_EPOLICYOBJ, "Invalid QOS policy object" },
+	{ WSA_QOS_EFLOWDESC, "Invalid QOS flow descriptor" },
+	{ WSA_QOS_EPSFLOWSPEC, "Invalid QOS provider-specific flowspec" },
+	{ WSA_QOS_EPSFILTERSPEC, "Invalid QOS provider-specific filterspec" },
+	{ WSA_QOS_ESDMODEOBJ, "Invalid QOS shape discard mode object" },
+	{ WSA_QOS_ESHAPERATEOBJ, "Invalid QOS shaping rate object" },
+	{ WSA_QOS_RESERVED_PETYPE, "Reserved policy QOS element type" },
+};
+const char *
+wsaerror(int err)
+{
+	int i;
+
+	for (i = 0; i < sizeof(wsaerrlist) / sizeof(wsaerrlist[0]); i++)
+		if (wsaerrlist[i].e == err)
+			return wsaerrlist[i].m;
+	return "Unknown error";
+}
+#endif
+
 static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
@@ -2269,7 +2382,13 @@ connect_to_server(Mapi mid)
 
 		if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 			snprintf(errbuf, sizeof(errbuf),
-				 "opening socket failed: %s", strerror(errno));
+				 "opening socket failed: %s",
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		memset(&userver, 0, sizeof(struct sockaddr_un));
@@ -2277,11 +2396,16 @@ connect_to_server(Mapi mid)
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
 		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
-		if (connect(s, serv, sizeof(struct sockaddr_un)) < 0) {
+		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
-				 strerror(errno));
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
@@ -2299,7 +2423,13 @@ connect_to_server(Mapi mid)
 
 		if (sendmsg(s, &msg, 0) < 0) {
 			closesocket(s);
-			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s", strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 	} else
@@ -2327,14 +2457,20 @@ connect_to_server(Mapi mid)
 			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
-			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != -1)
+			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
 			snprintf(errbuf, sizeof(errbuf), "could not connect to %s:%s: %s",
-					mid->hostname, port, strerror(errno));
+				 mid->hostname, port,
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #else
@@ -2346,7 +2482,13 @@ connect_to_server(Mapi mid)
 			mid->hostname = strdup("localhost");
 
 		if ((hp = gethostbyname(mid->hostname)) == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s", errno ? strerror(errno) : hstrerror(h_errno));
+			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 errno ? strerror(errno) : hstrerror(h_errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		memset(&server, 0, sizeof(server));
@@ -2356,14 +2498,25 @@ connect_to_server(Mapi mid)
 		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s", strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
-		if (connect(s, serv, sizeof(server)) < 0) {
+		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
-				 strerror(errno));
+#ifdef _MSC_VER
+				 wsaerror(WSAGetLastError())
+#else
+				 strerror(errno)
+#endif
+				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #endif

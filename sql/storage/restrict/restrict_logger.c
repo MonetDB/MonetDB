@@ -23,7 +23,7 @@
 logger *restrict_logger = NULL;
 
 static int 
-bl_create(int debug, char *logdir, int catalog_version)
+bl_create(int debug, const char *logdir, int catalog_version)
 {
 	if (restrict_logger)
 		return LOG_ERR;

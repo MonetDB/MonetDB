@@ -99,7 +99,7 @@ typedef int log_bid;
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 
-gdk_export logger *logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
@@ -108,11 +108,11 @@ gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */
-gdk_export int log_bat(logger *lg, BAT *b, char *n);
-gdk_export int log_bat_clear(logger *lg, char *n);
-gdk_export int log_bat_persists(logger *lg, BAT *b, char *n);
-gdk_export int log_bat_transient(logger *lg, char *n);
-gdk_export int log_delta(logger *lg, BAT *b, char *n);
+gdk_export int log_bat(logger *lg, BAT *b, const char *n);
+gdk_export int log_bat_clear(logger *lg, const char *n);
+gdk_export int log_bat_persists(logger *lg, BAT *b, const char *n);
+gdk_export int log_bat_transient(logger *lg, const char *n);
+gdk_export int log_delta(logger *lg, BAT *b, const char *n);
 
 gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
 gdk_export int log_tend(logger *lg);
@@ -120,8 +120,8 @@ gdk_export int log_abort(logger *lg);
 
 gdk_export int log_sequence(logger *lg, int seq, lng id);
 
-gdk_export log_bid logger_add_bat(logger *lg, BAT *b, char *name);
+gdk_export log_bid logger_add_bat(logger *lg, BAT *b, const char *name);
 gdk_export void logger_del_bat(logger *lg, log_bid bid);
-gdk_export log_bid logger_find_bat(logger *lg, char *name);
+gdk_export log_bid logger_find_bat(logger *lg, const char *name);
 
 #endif /*_LOGGER_H_*/

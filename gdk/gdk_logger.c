@@ -70,7 +70,7 @@
 #include "gdk_logger.h"
 #include <string.h>
 
-static BUN BUNfndT(BAT *b, ptr v)
+static BUN BUNfndT(BAT *b, const void *v)
 {
 	return BUNfnd(BATmirror(b), v);
 }
@@ -202,7 +202,7 @@ log_read_string(logger *l)
 }
 
 static int
-log_write_string(logger *l, char *n)
+log_write_string(logger *l, const char *n)
 {
 	size_t len = strlen(n) + 1;	/* log including EOS */
 
@@ -1089,7 +1089,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	int id = LOG_SID;
 	logger *lg;
@@ -1469,7 +1469,7 @@ logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr pr
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 
@@ -1654,7 +1654,7 @@ logger_sequence(logger *lg, int seq, lng *id)
  * should simply introduce a versioning scheme.
  */
 int
-log_bat_persists(logger *lg, BAT *b, char *name)
+log_bat_persists(logger *lg, BAT *b, const char *name)
 {
 	char *ha, *ta;
 	int len;
@@ -1736,7 +1736,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat_transient(logger *lg, char *name)
+log_bat_transient(logger *lg, const char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 	logformat l;
@@ -1782,7 +1782,7 @@ log_bat_transient(logger *lg, char *name)
 }
 
 int
-log_delta(logger *lg, BAT *b, char *name)
+log_delta(logger *lg, BAT *b, const char *name)
 {
 	int ok = GDK_SUCCEED;
 	logformat l;
@@ -1824,7 +1824,7 @@ log_delta(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat(logger *lg, BAT *b, char *name)
+log_bat(logger *lg, BAT *b, const char *name)
 {
 	int ok = GDK_SUCCEED;
 	logformat l;
@@ -1899,7 +1899,7 @@ log_bat(logger *lg, BAT *b, char *name)
 }
 
 int
-log_bat_clear(logger *lg, char *name)
+log_bat_clear(logger *lg, const char *name)
 {
 	logformat l;
 
@@ -2144,7 +2144,7 @@ bm_commit(logger *lg)
 }
 
 log_bid
-logger_add_bat(logger *lg, BAT *b, char *name)
+logger_add_bat(logger *lg, BAT *b, const char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 
@@ -2205,7 +2205,7 @@ logger_del_bat(logger *lg, log_bid bid)
 }
 
 log_bid
-logger_find_bat(logger *lg, char *name)
+logger_find_bat(logger *lg, const char *name)
 {
 	log_bid res = 0;
 	BUN p = BUNfndT(lg->catalog_nme, name);

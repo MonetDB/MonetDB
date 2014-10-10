@@ -1087,9 +1087,9 @@ opt_column:
  ;
 
 create_statement:	
-   role_def 
+   create role_def 	{ $$ = $2; }
  | create table_def 	{ $$ = $2; }
- | view_def
+ | create view_def 	{ $$ = $2; }
  | type_def
  | func_def
  | index_def
@@ -1305,18 +1305,18 @@ CREATE [ UNIQUE ] INDEX index_name
 */
 
 role_def:
-    create ROLE ident opt_grantor
+    ROLE ident opt_grantor
 	{ dlist *l = L();
-	  append_string(l, $3);
-	  append_int(l, $4);
+	  append_string(l, $2);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  create USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident
 	{ dlist *l = L();
-	  append_string(l, $3);
-	  append_string(l, $7);
-	  append_string(l, $9);
-	  append_string(l, $11);
-	  append_int(l, $5);
+	  append_string(l, $2);
+	  append_string(l, $6);
+	  append_string(l, $8);
+	  append_string(l, $10);
+	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
@@ -1751,12 +1751,12 @@ like_table:
  ;
 
 view_def:
-    create VIEW qname opt_column_list AS query_expression opt_with_check_option
+    VIEW qname opt_column_list AS query_expression opt_with_check_option
 	{  dlist *l = L();
+	  append_list(l, $2);
 	  append_list(l, $3);
-	  append_list(l, $4);
-	  append_symbol(l, $6);
-	  append_int(l, $7);
+	  append_symbol(l, $5);
+	  append_int(l, $6);
 	  append_int(l, TRUE);	/* persistent view */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
@@ -4198,7 +4198,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = $1;
+		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
@@ -4209,9 +4209,9 @@ literal:
 		  if (digits <= MAX_DEC_DIGITS) {
 		  	double val = strtod($1,NULL);
 #ifdef HAVE_HGE
-		  	hge value = decimal_from_str(s);
+		  	hge value = decimal_from_str(s, NULL);
 #else
-		  	lng value = decimal_from_str(s);
+		  	lng value = decimal_from_str(s, NULL);
 #endif
 
 		  	if (*s == '+' || *s == '-')

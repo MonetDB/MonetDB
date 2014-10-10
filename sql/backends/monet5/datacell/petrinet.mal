@@ -50,7 +50,7 @@ pattern analyse(mod:str, fcn:str)
 address PNanalyseWrapper
 comment "Check the input/output relationship";
 
-command queries():bat[:str,:bat]
+command queries() (:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:timestamp],:bat[:oid,:int],:bat[:oid,:int],:bat[:oid,:lng],:bat[:oid,:str],:bat[:oid,:str])
 address PNtable
 comment "Inspect the datacell queries";
 

@@ -100,7 +100,7 @@ str SRVsetServers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	if( getArgType(mb,pci,1) == TYPE_int) {
-		srvbaseline = *(int*) getArgReference(stk,pci,1);
+		srvbaseline = *getArgReference_int(stk,pci,1);
 		if ( srvbaseline <= 0) {
 			srvbaseline = 0 ;
 			throw(MAL,"scheduler.setServers","Illegal number of servers");
@@ -109,7 +109,7 @@ str SRVsetServers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( getArgType(mb,pci,1) == TYPE_str) {
 		if ( srvpattern)
 			GDKfree(srvpattern);
-		srvpattern = GDKstrdup(*(str*) getArgReference(stk,pci,1));
+		srvpattern = GDKstrdup(*getArgReference_str(stk,pci,1));
 	}
 	return MAL_SUCCEED;
 }
@@ -243,7 +243,7 @@ SRVPOOLconnect(str *c, str *uri)
 
 /* switch local/remote execution */
 str
-SRVPOOLlocal(int *ret, int *flag)
+SRVPOOLlocal(void *ret, bit *flag)
 {
 	(void) ret;
 	localExecution= *flag != 0;
@@ -426,8 +426,8 @@ str SRVPOOLregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fname, uri;
 
 	(void) mb;
-	uri = *(str*)getArgReference(stk,pci,1);
-	fname = *(str*)getArgReference(stk,pci,2);
+	uri = *getArgReference_str(stk,pci,1);
+	fname = *getArgReference_str(stk,pci,2);
 
 	return SRVPOOLregisterInternal(cntxt, uri, fname);
 }
@@ -440,7 +440,7 @@ str SRVPOOLregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int*) getArgReference(stk,pci,0), pc=0;
+	int *res = getArgReference_int(stk,pci,0), pc=0;
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
@@ -468,7 +468,7 @@ str
 SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, fnd =0;
-	str plan = *(str*) getArgReference(stk,pci,pci->retc);
+	str plan = *getArgReference_str(stk,pci,pci->retc);
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
@@ -490,7 +490,7 @@ SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 			if ( SRVPOOLfind(cntxt, j,plan) ){
-				*(str*) getArgReference(stk,pci,i++) = GDKstrdup(servers[j].conn);
+				*getArgReference_str(stk,pci,i++) = GDKstrdup(servers[j].conn);
 #ifdef DEBUG_RUN_SRVPOOL
 				mnstr_printf(cntxt->fdout,"#found %s on server %d\n",plan,j);
 #endif

@@ -77,7 +77,7 @@ hash_del(sql_hash *h, int key, void *value)
 }
 
 unsigned int
-hash_key(char *k)
+hash_key(const char *k)
 {
 	unsigned int h = 0;
 

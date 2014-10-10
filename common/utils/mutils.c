@@ -62,6 +62,75 @@ typedef int int32_t;
 
 #include <stdio.h>
 
+/* translate Windows error code (GetLastError()) to Unix-style error */
+int
+winerror(int e)
+{
+	switch (e) {
+	case ERROR_BAD_ENVIRONMENT:
+		return E2BIG;
+	case ERROR_ACCESS_DENIED:
+	case ERROR_CANNOT_MAKE:
+	case ERROR_CURRENT_DIRECTORY:
+	case ERROR_DRIVE_LOCKED:
+	case ERROR_FAIL_I24:
+	case ERROR_LOCK_FAILED:
+	case ERROR_LOCK_VIOLATION:
+	case ERROR_NETWORK_ACCESS_DENIED:
+	case ERROR_NOT_LOCKED:
+	case ERROR_SEEK_ON_DEVICE:
+		return EACCES;
+	case ERROR_MAX_THRDS_REACHED:
+	case ERROR_NESTING_NOT_ALLOWED:
+	case ERROR_NO_PROC_SLOTS:
+		return EAGAIN;
+	case ERROR_DIRECT_ACCESS_HANDLE:
+	case ERROR_INVALID_TARGET_HANDLE:
+		return EBADF;
+	case ERROR_CHILD_NOT_COMPLETE:
+	case ERROR_WAIT_NO_CHILDREN:
+		return ECHILD;
+	case ERROR_ALREADY_EXISTS:
+	case ERROR_FILE_EXISTS:
+		return EEXIST;
+	case ERROR_INVALID_ACCESS:
+	case ERROR_INVALID_DATA:
+	case ERROR_INVALID_FUNCTION:
+	case ERROR_INVALID_HANDLE:
+	case ERROR_INVALID_PARAMETER:
+	case ERROR_NEGATIVE_SEEK:
+		return EINVAL;
+	case ERROR_TOO_MANY_OPEN_FILES:
+		return EMFILE;
+	case ERROR_BAD_NET_NAME:
+	case ERROR_BAD_NETPATH:
+	case ERROR_BAD_PATHNAME:
+	case ERROR_FILE_NOT_FOUND:
+	case ERROR_FILENAME_EXCED_RANGE:
+	case ERROR_INVALID_DRIVE:
+	case ERROR_NO_MORE_FILES:
+	case ERROR_PATH_NOT_FOUND:
+		return ENOENT;
+	case ERROR_BAD_FORMAT:
+		return ENOEXEC;
+	case ERROR_ARENA_TRASHED:
+	case ERROR_INVALID_BLOCK:
+	case ERROR_NOT_ENOUGH_MEMORY:
+	case ERROR_NOT_ENOUGH_QUOTA:
+		return ENOMEM;
+	case ERROR_DISK_FULL:
+		return ENOSPC;
+	case ERROR_DIR_NOT_EMPTY:
+		return ENOTEMPTY;
+	case ERROR_BROKEN_PIPE:
+		return EPIPE;
+	case ERROR_NOT_SAME_DEVICE:
+		return EXDEV;
+	default:
+		return EINVAL;
+	}
+}
+
 DIR *
 opendir(const char *dirname)
 {
@@ -71,13 +140,13 @@ opendir(const char *dirname)
 	DWORD e;
 
 	if (dirname == NULL) {
-		SetLastError(ERROR_INVALID_ADDRESS);
+		errno = EFAULT;
 		return NULL;
 	}
 
 	result = (DIR *) malloc(sizeof(DIR));
 	if (result == NULL) {
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		errno = ENOMEM;
 		return NULL;
 	}
 	result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
@@ -88,7 +157,7 @@ opendir(const char *dirname)
 		if (result->dir_name)
 			free(result->dir_name);
 		free(result);
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		errno = ENOMEM;
 		return NULL;
 	}
 
@@ -102,23 +171,23 @@ opendir(const char *dirname)
 		free(result->find_file_data);
 		free(result->dir_name);
 		free(result);
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		errno = ENOMEM;
 		return NULL;
 	}
 	sprintf(mask, "%s\\*", result->dir_name);
 
 	result->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
-	if (result->find_file_handle == INVALID_HANDLE_VALUE)
-		e = GetLastError();
-	free(mask);
-
 	if (result->find_file_handle == INVALID_HANDLE_VALUE) {
+		e = GetLastError();
+		free(mask);
 		free(result->dir_name);
 		free(result->find_file_data);
 		free(result);
 		SetLastError(e);
+		errno = winerror(e);
 		return NULL;
 	}
+	free(mask);
 	result->just_opened = TRUE;
 
 	return result;
@@ -152,7 +221,7 @@ readdir(DIR *dir)
 	static struct dirent result;
 
 	if (dir == NULL) {
-		SetLastError(ERROR_INVALID_ADDRESS);
+		errno = EFAULT;
 		return NULL;
 	}
 
@@ -174,7 +243,7 @@ rewinddir(DIR *dir)
 	char *mask;
 
 	if (dir == NULL) {
-		SetLastError(ERROR_INVALID_ADDRESS);
+		errno = EFAULT;
 		return;
 	}
 
@@ -183,7 +252,7 @@ rewinddir(DIR *dir)
 
 	mask = malloc(strlen(dir->dir_name) + 3);
 	if (mask == NULL) {
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+		errno = ENOMEM;
 		dir->find_file_handle = INVALID_HANDLE_VALUE;
 		return;
 	}
@@ -199,7 +268,7 @@ int
 closedir(DIR *dir)
 {
 	if (dir == NULL) {
-		SetLastError(ERROR_INVALID_ADDRESS);
+		errno = EFAULT;
 		return -1;
 	}
 
@@ -301,7 +370,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
 	} else {
 		close(fd);
-		SetLastError(ERROR_INVALID_DATA);
+		errno = EINVAL;
 		return -2;
 	}
 	if (ret != 0) {

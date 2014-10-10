@@ -30,11 +30,11 @@
 #define sabaoth_export extern
 #endif
 
-sabaoth_export str SABprelude(int *ret);
-sabaoth_export str SABepilogue(int *ret);
-sabaoth_export str SABmarchScenario(int *ret, str *lang);
-sabaoth_export str SABretreatScenario(int *ret, str *lang);
-sabaoth_export str SABmarchConnection(int *ret, str *host, int *port) ;
+sabaoth_export str SABprelude(void *ret);
+sabaoth_export str SABepilogue(void *ret);
+sabaoth_export str SABmarchScenario(void *ret, str *lang);
+sabaoth_export str SABretreatScenario(void *ret, str *lang);
+sabaoth_export str SABmarchConnection(void *ret, str *host, int *port) ;
 sabaoth_export str SABgetLocalConnectionURI(str *ret);
 sabaoth_export str SABgetLocalConnectionHost(str *ret);
 sabaoth_export str SABgetLocalConnectionPort(int *ret);

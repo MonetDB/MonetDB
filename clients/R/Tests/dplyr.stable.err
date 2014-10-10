@@ -33,6 +33,10 @@ stderr of test 'dplyr` in directory 'clients/R` itself:
 
 Attaching package: ‘dplyr’
 
+The following object is masked from ‘package:MonetDB.R’:
+
+    src_monetdb
+
 The following objects are masked from ‘package:stats’:
 
     filter, lag
@@ -66,12 +70,12 @@ Creating table: SeriesPost
 Creating table: Teams
 Creating table: TeamsFranchises
 Creating table: TeamsHalf
-Joining by: "hofID"
-Joining by: "hofID"
-Joining by: "hofID"
-Joining by: "hofID"
+Joining by: "playerID"
+Joining by: "playerID"
+Joining by: "playerID"
+Joining by: "playerID"
 
-# 14:31:32 >  
-# 14:31:32 >  "Done."
-# 14:31:32 >  
+# 15:33:59 >  
+# 15:33:59 >  "Done."
+# 15:33:59 >  
 

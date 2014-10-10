@@ -181,7 +181,7 @@ mnstr_socket_wastreamwrap(Stream *S, int *socket, str *name)
 }
 
 str
-mnstr_write_stringwrap(int *ret, Stream *S, str *data)
+mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 {
 	stream *s = *(stream **)S;
 	(void)ret;
@@ -193,7 +193,7 @@ mnstr_write_stringwrap(int *ret, Stream *S, str *data)
 }
 
 str
-mnstr_writeIntwrap(int *ret, Stream *S, int *data)
+mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 {
 	stream *s = *(stream **)S;
 	(void)ret;
@@ -241,7 +241,7 @@ mnstr_read_stringwrap(str *res, Stream *S)
 }
 
 str
-mnstr_flush_streamwrap(int *ret, Stream *S)
+mnstr_flush_streamwrap(void *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
 	(void)ret;
@@ -253,7 +253,7 @@ mnstr_flush_streamwrap(int *ret, Stream *S)
 }
 
 str
-mnstr_close_streamwrap(int *ret, Stream *S)
+mnstr_close_streamwrap(void *ret, Stream *S)
 {
 	(void)ret;
 
@@ -281,7 +281,7 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 }
 
 str
-bstream_destroy_wrapwrap(int *ret, Bstream *BS)
+bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 {
 	(void)ret;
 

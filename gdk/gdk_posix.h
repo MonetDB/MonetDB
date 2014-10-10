@@ -243,14 +243,7 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define rmdir		win_rmdir
 #define rename		win_rename
 #define unlink		win_unlink
-#if _WIN32_WINNT >= 0x500
-#define link		win_link
-#endif
 
-#endif
-
-#define _errno		win_errno
-
-gdk_export int *win_errno(void);
+#endif	/* NATIVE_WIN32 */
 
 #endif /* GDK_POSIX_H */

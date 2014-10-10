@@ -24,11 +24,7 @@
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define calc_export extern __declspec(dllimport)
-#else
 #define calc_export extern __declspec(dllexport)
-#endif
 #else
 #define calc_export extern
 #endif
@@ -635,12 +631,15 @@ CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	switch (ATOMstorage(getArgType(mb, pci, 1))) {
+	switch (getArgType(mb, pci, 1)) {
 	case TYPE_int:
-		OIDbase((oid) * (int *) getArgReference(stk, pci, 1));
+		OIDbase((oid) * getArgReference_int(stk, pci, 1));
+		break;
+	case TYPE_oid:
+		OIDbase(*getArgReference_oid(stk, pci, 1));
 		break;
 	case TYPE_lng:
-		OIDbase((oid) * (lng *) getArgReference(stk, pci, 1));
+		OIDbase((oid) * getArgReference_lng(stk, pci, 1));
 		break;
 	default:
 		return mythrow(MAL, "calc.setoid", ILLEGAL_ARGUMENT);
@@ -655,7 +654,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ptr p;
 	ptr retval = getArgReference(stk, pci, 0);
-	bit b = *(bit *) getArgReference(stk, pci, 1);
+	bit b = *getArgReference_bit(stk, pci, 1);
 	int t1 = getArgType(mb, pci, 2);
 	int t2 = getArgType(mb, pci, 3);
 
@@ -774,7 +773,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			  const char *func)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = * (bat *) getArgReference(stk, pci, 1);
+	bat bid = * getArgReference_bat(stk, pci, 1);
 	BAT *b;
 	BAT *s = NULL;
 	int nil_if_empty = 1;
@@ -785,9 +784,9 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (pci->argc >= 3) {
 		if (getArgType(mb, pci, 2) == TYPE_bit) {
 			assert(pci->argc == 3);
-			nil_if_empty = * (bit *) getArgReference(stk, pci, 2);
+			nil_if_empty = * getArgReference_bit(stk, pci, 2);
 		} else {
-			bat sid = * (bat *) getArgReference(stk, pci, 2);
+			bat sid = * getArgReference_bat(stk, pci, 2);
 			if ((s = BATdescriptor(sid)) == NULL) {
 				BBPreleaseref(b->batCacheid);
 				throw(MAL, func, RUNTIME_OBJECT_MISSING);
@@ -795,7 +794,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (pci->argc >= 4) {
 				assert(pci->argc == 4);
 				assert(getArgType(mb, pci, 3) == TYPE_bit);
-				nil_if_empty = * (bit *) getArgReference(stk, pci, 3);
+				nil_if_empty = * getArgReference_bit(stk, pci, 3);
 			}
 		}
 	}

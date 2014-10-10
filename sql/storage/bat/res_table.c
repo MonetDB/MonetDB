@@ -60,7 +60,7 @@ res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *ne
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale, int mtype, void *val)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *val)
 {
 	res_col *c = t->cols + t->cur_col;
 
