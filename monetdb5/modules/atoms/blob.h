@@ -27,7 +27,7 @@
 
 typedef struct blob {
 	size_t nitems;
-	/*unsigned */ char data[1];
+	/*unsigned */ char data[];
 } blob;
 
 #define sqlblob blob

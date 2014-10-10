@@ -263,7 +263,7 @@ typedef struct MALSTK {
 	int pcup;		/* saved pc upon a recursive all */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALBLK *blk;	/* associated definition */
-	ValRecord stk[1];
+	ValRecord stk[];
 } MalStack, *MalStkPtr;
 
 #endif /*  _MAL_H*/

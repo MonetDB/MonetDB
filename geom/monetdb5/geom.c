@@ -354,8 +354,8 @@ wkb_size(size_t len)
 {
 	if (len == ~(size_t) 0)
 		len = 0;
-	assert(sizeof(wkb) - 1 + len <= VAR_MAX);
-	return (var_t) (sizeof(wkb) - 1 + len);
+	assert(sizeof(wkb) + len <= VAR_MAX);
+	return (var_t) (sizeof(wkb) + len);
 }
 
 /* TOSTR: print atom in a string. */
