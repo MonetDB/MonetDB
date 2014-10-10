@@ -254,10 +254,6 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 	// use a size overshoot. Also be aware of possible dictionary headers
 	//if (inplace)
 	bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
-	if( !inplace)
-		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
-	else
-		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
 
 	if (bsrc == NULL) {
 		BBPreleaseref(bcompress->batCacheid);
@@ -300,6 +296,11 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 		}
 	} else {
 		// initialize local compressed copy
+		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
+		if( bsrc == NULL){
+			BBPreleaseref(bcompress->batCacheid);
+			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
+		}
 		task->src = Tloc(bcompress, BUNfirst(bcompress));
 		task->elm = BATcount(bcompress);
 		task->stop = BATcount(bsrc);
@@ -461,10 +462,12 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, str properties, int inplac
 	// TODO
 
 	if( inplace){
+		bcompress->batDirty = 1;
 		bcompress->T->heap.dirty = 1;
 		bcompress->T->heap.free = (size_t) (task->dst - Tloc(bcompress,BUNfirst(bcompress)) );
 		bcompress->T->heap.compressed= 1;
 		MCexitMaintenance(cntxt);
+		BATsave(bcompress);
 		BBPkeepref(*ret = bcompress->batCacheid);
 		BBPreleaseref(bsrc->batCacheid);
 	} else {
