@@ -84,30 +84,13 @@ typedef struct Column_t {
  */
 
 typedef struct Table_t {
-	char *sep;					/* default separator */
-	str ttopbrk, tbotbrk;		/* table brackets */
-	str rlbrk, rrbrk;			/* row brackets */
-	str properties;				/* of header to display */
-	str title, footer;			/* alternatives */
 	BUN offset;
 	BUN nr;						/* allocated space for table loads */
-	size_t pageLimit;
-	size_t firstrow, lastrow;	/* last window to print */
 	BUN nr_attrs;				/* attributes found sofar */
-	size_t max_attrs;
 	Column *format;				/* remove later */
-	stream *fd;
-	BAT *pivot;
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
 	BAT *complaints;			/* lines that did not match the required input */
-	unsigned int rowwidth;		/* sum of columns used for mallocs */
-	bstream *input;				/* where to get the data from */
-	stream *output;				/* where to leave immediate output */
-	lng bytes;					/* required bytes to load (round up to end of record) */
-	MT_Id tid;					/* Thread id for parallel loads only */
-	int partid;					/* partition number */
-	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
 tablet_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
