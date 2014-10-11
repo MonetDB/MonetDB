@@ -587,13 +587,23 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			BAT *b = store_funcs.bind_col(sql->session->tr, nc, 0);
 			sql_delta *d;
 			char *msg;
-			if (c->t->access == TABLE_WRITABLE) 
+
+
+			assert(b);
+			if ( BATcount(b) <10000){
+				BBPreleaseref(b->batCacheid);
+				continue;
+			}
+			if (c->t->access == TABLE_WRITABLE)  {
+				BBPreleaseref(b->batCacheid);
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+			}
 
 			if( c->storage_type)
 				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type,1,0);
 			else
 				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid,1);
+			BBPreleaseref(b->batCacheid);
 			if (msg)
 				return msg;
 			allocate_delta(sql->session->tr, nc);
@@ -4718,7 +4728,8 @@ sql_compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BBPunfix(bn->batCacheid);
 									continue;
 								}
-								for( i = 0; i < MOSAIC_METHODS; i++){
+								for( i = 0; i < MOSAIC_METHODS; i++)
+								if( hdr->blks[i]){
 									sch = BUNappend(sch, b->name, FALSE);
 									tab = BUNappend(tab, bt->name, FALSE);
 									col = BUNappend(col, bc->name, FALSE);
