@@ -3614,7 +3614,7 @@ bstream_destroy(bstream *s)
 typedef struct {
 	stream *s;
 	size_t len, pos;
-	char buf[1];		/* NOTE: buf extends beyond array for wbs->len bytes */
+	char buf[];		/* NOTE: buf extends beyond array for wbs->len bytes */
 } wbs_stream;
 
 static int
@@ -3716,7 +3716,7 @@ wbstream(stream *s, size_t buflen)
 	ns = create_stream(s->name);
 	if (ns == NULL)
 		return NULL;
-	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen - 1);
+	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen);
 	if (wbs == NULL) {
 		destroy(ns);
 		return NULL;
