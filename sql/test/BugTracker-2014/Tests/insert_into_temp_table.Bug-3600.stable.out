@@ -61,59 +61,45 @@ Ready.
 #insert into foo values('aa1','bb1','cc1');
 [ 1	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "aa1",	"bb1",	"cc1"	]
+% 0,	0,	0 # length
 #insert into foo values('aa2','bb2','cc2');
 [ 1	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "aa1",	"bb1",	"cc1"	]
-[ "aa2",	"bb2",	"cc2"	]
+% 0,	0,	0 # length
 #insert into foo values('aa3','bb3','cc3');
 [ 1	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "aa1",	"bb1",	"cc1"	]
-[ "aa2",	"bb2",	"cc2"	]
-[ "aa3",	"bb3",	"cc3"	]
+% 0,	0,	0 # length
 #update foo set f1 = 'abc';
-[ 3	]
+[ 0	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "abc",	"bb1",	"cc1"	]
-[ "abc",	"bb2",	"cc2"	]
-[ "abc",	"bb3",	"cc3"	]
+% 0,	0,	0 # length
 #delete from foo where f2 = 'bb2';
-[ 1	]
+[ 0	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "abc",	"bb1",	"cc1"	]
-[ "abc",	"bb3",	"cc3"	]
+% 0,	0,	0 # length
 #insert into foo values('aa4','bb4','cc4');
 [ 1	]
 #select * from foo;
-% sys.foo,	sys.foo,	sys.foo # table_name
+% tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 3,	3,	3 # length
-[ "abc",	"bb1",	"cc1"	]
-[ "abc",	"bb3",	"cc3"	]
-[ "aa4",	"bb4",	"cc4"	]
+% 0,	0,	0 # length
 #drop table foo;
 
 # 16:40:50 >  
