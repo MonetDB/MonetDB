@@ -81,8 +81,8 @@ project (
 | | | | | table(sys.partsupp) [ partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
 | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
 | | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
-| | ) [ sys.sql_mul(L3, decimal(11,10) "1") as L4.L4 ]
-| ) [ L2 > sys.scale_down(L4.L4, hugeint "100") ]
+| | ) [ sys.sql_mul(L3, decimal(4,3) "10") as L4.L4 ]
+| ) [ L2 > decimal(39,2)[L4.L4] ]
 ) [ partsupp.ps_partkey NOT NULL, L1 as L1.value ] [ L1.value ]
 
 # 22:46:31 >  

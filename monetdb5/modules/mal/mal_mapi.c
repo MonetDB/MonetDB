@@ -238,8 +238,14 @@ SERVERlistenThread(SOCKET *Sock)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval < 0) {
-			if (MT_geterrno() != EINTR) {
+		if (retval == SOCKET_ERROR) {
+			if (
+#ifdef _MSC_VER
+				WSAGetLastError() != WSAEINTR
+#else
+				errno != EINTR
+#endif
+				) {
 				msg = "select failed";
 				goto error;
 			}
@@ -247,7 +253,13 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR || !ATOMIC_GET(serveractive, atomicLock, "SERVERlistenThread")) {
+				if (
+#ifdef _MSC_VER
+					WSAGetLastError() != WSAEINTR
+#else
+					errno != EINTR
+#endif
+					|| !ATOMIC_GET(serveractive, atomicLock, "SERVERlistenThread")) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -263,7 +275,13 @@ SERVERlistenThread(SOCKET *Sock)
 			struct cmsghdr *cmsg;
 
 			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR) {
+				if (
+#ifdef _MSC_VER
+					WSAGetLastError() != WSAEINTR
+#else
+					errno != EINTR
+#endif
+					) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -459,12 +477,21 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			if (usockfile)
 				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": creation of stream socket failed: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": creation of stream socket failed: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 
-		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) ) {
-			char *err = strerror(errno);
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
+#ifdef _MSC_VER
+			const char *err = wsaerror(WSAGetLastError());
+#else
+			const char *err = strerror(errno);
+#endif
 			GDKfree(psock);
 			if (usockfile)
 				GDKfree(usockfile);
@@ -483,16 +510,17 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		do {
 			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			if (bind(sock, (SOCKPTR) &server, length) < 0) {
+			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
 				if (
-#ifdef EADDRINUSE
-						errno == EADDRINUSE &&
+#ifdef _MSC_VER
+					WSAGetLastError() == WSAEADDRINUSE &&
 #else
-#ifdef WSAEADDRINUSE
-						errno == WSAEADDRINUSE &&
+#ifdef EADDRINUSE
+					errno == EADDRINUSE &&
+#else
 #endif
 #endif
-						autosense && port <= 65535)
+					autosense && port <= 65535)
 				{
 					port++;
 					continue;
@@ -502,21 +530,32 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				if (usockfile)
 					GDKfree(usockfile);
 				throw(IO, "mal_mapi.listen",
-						OPERATION_FAILED ": bind to stream socket port %d "
-						"failed: %s", port, strerror(errno));
+					  OPERATION_FAILED ": bind to stream socket port %d "
+					  "failed: %s", port,
+#ifdef _MSC_VER
+					  wsaerror(WSAGetLastError())
+#else
+					  strerror(errno)
+#endif
+					);
 			} else {
 				break;
 			}
 		} while (1);
 
-		if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
 			if (usockfile)
 				GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": failed getting socket name: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": failed getting socket name: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 		listen(sock, maxusers);
 	}
@@ -527,8 +566,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			GDKfree(psock);
 			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": creation of UNIX socket failed: %s",
-					strerror(errno));
+				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
+#ifdef _MSC_VER
+				  wsaerror(WSAGetLastError())
+#else
+				  strerror(errno)
+#endif
+				);
 		}
 
 		/* prevent silent truncation, sun_path is typically around 108
@@ -550,14 +594,21 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
-		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
+		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			closesocket(usock);
 			unlink(usockfile);
 			GDKfree(psock);
 			e = createException(IO, "mal_mapi.listen",
-					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
-					usockfile, strerror(errno));
+								OPERATION_FAILED
+								": binding to UNIX socket file %s failed: %s",
+								usockfile,
+#ifdef _MSC_VER
+								wsaerror(WSAGetLastError())
+#else
+								strerror(errno)
+#endif
+				);
 			GDKfree(usockfile);
 			return e;
 		}

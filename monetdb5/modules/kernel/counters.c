@@ -53,11 +53,7 @@
 #include "errno.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define counters_export extern __declspec(dllimport)
-#else
 #define counters_export extern __declspec(dllexport)
-#endif
 #else
 #define counters_export extern
 #endif

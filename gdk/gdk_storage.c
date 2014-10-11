@@ -282,6 +282,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	IODEBUG t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
+		errno = EFAULT;
 		return -1;
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);

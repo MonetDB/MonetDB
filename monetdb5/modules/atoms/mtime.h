@@ -220,6 +220,8 @@ mtime_export str MTIMEdate_add_msec_interval_lng_wrap(date *ret, const date *t, 
 mtime_export str MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *msec);
 mtime_export str MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *t, const int *months);
 mtime_export str MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *t, const int *months);
+mtime_export str MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *months);
+mtime_export str MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *months);
 mtime_export str MTIMEtime_sub_msec_interval_wrap(daytime *ret, const daytime *t, const lng *msec);
 mtime_export str MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *msec);
 mtime_export str MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year);

@@ -443,6 +443,7 @@ typedef struct sql_column {
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
+	size_t dcount;
 
 	struct sql_table *t;
 	void *data;

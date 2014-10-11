@@ -918,8 +918,9 @@ main(int argc, char *argv[])
 		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 			ret = 1;
-			if ((setsockopt(_mero_broadcastsock,
-							SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
+			if (_mero_broadcastsock == -1 ||
+				setsockopt(_mero_broadcastsock,
+						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");

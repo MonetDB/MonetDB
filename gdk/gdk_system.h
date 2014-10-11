@@ -74,9 +74,6 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict,
 /* debug and errno integers */
 gdk_export int GDKdebug;
 
-#define MT_geterrno()	errno
-#define MT_seterrno(x)	errno=x
-
 /* lock performance tracing */
 /* #define MT_LOCK_TRACE 1 */
 #ifdef MT_LOCK_TRACE

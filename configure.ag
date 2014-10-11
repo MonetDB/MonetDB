@@ -2635,6 +2635,7 @@ AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
+	fenv.h \
 	getopt.h \
 	iconv.h \
 	ieeefp.h \
@@ -3397,11 +3398,8 @@ typedef lng ptrdiff_t;
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
 #elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)

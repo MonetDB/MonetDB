@@ -29,96 +29,124 @@
  */
 #include "monetdb_config.h"
 #include "batmmath.h"
+#ifdef HAVE_FENV_H
+#include <fenv.h>
+#else
+#define feclearexcept(x)
+#define fetestexcept(x)		0
+#endif
 
-#define voidresultBAT(X1,X2)\
-	bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);\
-	if (bn == NULL) {\
-		BBPreleaseref(b->batCacheid);\
-		throw(MAL, X2, MAL_MALLOC_FAIL);\
-	}\
-	BATseqbase(bn, b->hseqbase);\
-	bn->hsorted = b->hsorted;\
-	bn->hrevsorted = b->hrevsorted;\
-	bn->tsorted = b->tsorted;\
-	bn->trevsorted = b->trevsorted;\
-	bn->H->nonil = 1;\
-	bn->T->nonil = b->T->nonil;
-
-
-#define scienceFcnImpl(X1,X2,X3)							\
-str CMDscience_bat_##X2##_##X1(bat *ret, const bat *bid)	\
-{															\
-	BAT *b,*bn;												\
-	X2 *o, *p, *q;											\
-	if ((b = BATdescriptor(*bid)) == NULL) {				\
-		throw(MAL, #X2, RUNTIME_OBJECT_MISSING);			\
-	}														\
-	voidresultBAT(TYPE_##X2,"batcalc." #X1);				\
-	o = (X2*) Tloc(bn, BUNfirst(bn));						\
-	p = (X2*) Tloc(b, BUNfirst(b));							\
-	q = (X2*) Tloc(b, BUNlast(b));							\
-															\
-	if (b->T->nonil){										\
-		for(;p<q; o++, p++)									\
-			*o = X1##X3(*p);								\
-	} else													\
-		for(;p<q; o++, p++){								\
-			*o = *p == X2##_nil? X2##_nil: X1##X3(*p);		\
+#define voidresultBAT(X1,X2)								\
+	do {													\
+		bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);	\
+		if (bn == NULL) {									\
+			BBPreleaseref(b->batCacheid);					\
+			throw(MAL, X2, MAL_MALLOC_FAIL);				\
 		}													\
-	BATsetcount(bn, BATcount(b));							\
-	bn->tsorted = 0;										\
-	bn->trevsorted = 0;										\
-	BATkey(BATmirror(bn),0);								\
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	if (b->htype != bn->htype) {							\
-		BAT *r = VIEWcreate(b,bn);							\
-															\
-		BBPreleaseref(bn->batCacheid);						\
-		bn = r;												\
-	}														\
-	BBPkeepref(*ret = bn->batCacheid);						\
-	BBPreleaseref(b->batCacheid);							\
-	return MAL_SUCCEED;										\
+		BATseqbase(bn, b->hseqbase);						\
+		bn->hsorted = b->hsorted;							\
+		bn->hrevsorted = b->hrevsorted;						\
+		bn->tsorted = b->tsorted;							\
+		bn->trevsorted = b->trevsorted;						\
+		bn->H->nonil = 1;									\
+		bn->T->nonil = b->T->nonil;							\
+	} while (0)
+
+
+#define scienceFcnImpl(FUNC,TYPE,SUFF)								\
+str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
+{																	\
+	BAT *b, *bn;													\
+	TYPE *o, *p, *q;												\
+	if ((b = BATdescriptor(*bid)) == NULL) {						\
+		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
+	}																\
+	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
+	o = (TYPE *) Tloc(bn, BUNfirst(bn));							\
+	p = (TYPE *) Tloc(b, BUNfirst(b));								\
+	q = (TYPE *) Tloc(b, BUNlast(b));								\
+																	\
+	errno = 0;														\
+	feclearexcept(FE_ALL_EXCEPT);									\
+	if (b->T->nonil) {												\
+		for (; p < q; o++, p++)										\
+			*o = FUNC##SUFF(*p);									\
+	} else {														\
+		for (; p < q; o++, p++)										\
+			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p);	\
+	}																\
+	if (errno != 0 ||												\
+		fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
+					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {			\
+		BBPreleaseref(bn->batCacheid);								\
+		throw(MAL, "batmmath." #FUNC, "Math exception");			\
+	}																\
+	BATsetcount(bn, BATcount(b));									\
+	bn->tsorted = 0;												\
+	bn->trevsorted = 0;												\
+	bn->T->nil = b->T->nil;											\
+	bn->T->nonil = b->T->nonil;										\
+	BATkey(BATmirror(bn), 0);										\
+	if (!(bn->batDirty&2))											\
+		bn = BATsetaccess(bn, BAT_READ);							\
+	if (b->htype != bn->htype) {									\
+		BAT *r = VIEWcreate(b,bn);									\
+																	\
+		BBPreleaseref(bn->batCacheid);								\
+		bn = r;														\
+	}																\
+	BBPkeepref(*ret = bn->batCacheid);								\
+	BBPreleaseref(b->batCacheid);									\
+	return MAL_SUCCEED;												\
 }
 
-#define scienceBinaryImpl(X1,X2,X3)								\
-str CMDscience_bat_cst_##X1##_##X2(bat *ret, const bat *bid, const X2 *d)	\
-{																\
-	BAT *b,*bn;													\
-	X2 *o, *p, *q;												\
-																\
-	if ((b = BATdescriptor(*bid)) == NULL) {					\
-		throw(MAL, #X2, RUNTIME_OBJECT_MISSING);				\
-	}															\
-	voidresultBAT(TYPE_##X2,"batcalc." #X1)						\
-	o = (X2*) Tloc(bn, BUNfirst(bn));							\
-	p = (X2*) Tloc(b, BUNfirst(b));								\
-	q = (X2*) Tloc(b, BUNlast(b));								\
-																\
-	if (b->T->nonil){											\
-		for(;p<q; o++, p++)										\
-			*o = X1##X3(*p,*d);									\
-	} else														\
-		for(;p<q; o++, p++){									\
-			*o = *p == X2##_nil? X2##_nil: X1##X3(*p,*d);		\
-		}														\
-																\
-	BATsetcount(bn, BATcount(b));								\
-	bn->tsorted = 0;											\
-	bn->trevsorted = 0;											\
-	BATkey(BATmirror(bn),0);									\
-																\
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);		\
-																\
-	if (b->htype != bn->htype) {								\
-		BAT *r = VIEWcreate(b,bn);								\
-																\
-		BBPreleaseref(bn->batCacheid);							\
-		bn = r;													\
-	}															\
-	BBPkeepref(*ret = bn->batCacheid);							\
-	BBPreleaseref(b->batCacheid);								\
-	return MAL_SUCCEED;											\
+#define scienceBinaryImpl(FUNC,TYPE,SUFF)								\
+str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
+									   const TYPE *d)					\
+{																		\
+	BAT *b, *bn;														\
+	TYPE *o, *p, *q;													\
+																		\
+	if ((b = BATdescriptor(*bid)) == NULL) {							\
+		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+	}																	\
+	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
+	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
+	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	q = (TYPE *) Tloc(b, BUNlast(b));									\
+																		\
+	errno = 0;															\
+	feclearexcept(FE_ALL_EXCEPT);										\
+	if (b->T->nonil) {													\
+		for (; p < q; o++, p++)											\
+			*o = FUNC##SUFF(*p, *d);									\
+	} else {															\
+		for (; p < q; o++, p++)											\
+			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
+	}																	\
+	if (errno != 0 ||													\
+		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
+					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
+		BBPreleaseref(bn->batCacheid);									\
+		throw(MAL, "batmmath." #FUNC, "Math exception");				\
+	}																	\
+	BATsetcount(bn, BATcount(b));										\
+	bn->tsorted = 0;													\
+	bn->trevsorted = 0;													\
+	bn->T->nil = b->T->nil;												\
+	bn->T->nonil = b->T->nonil;											\
+	BATkey(BATmirror(bn),0);											\
+	if (!(bn->batDirty&2))												\
+		bn = BATsetaccess(bn, BAT_READ);								\
+	if (b->htype != bn->htype) {										\
+		BAT *r = VIEWcreate(b,bn);										\
+																		\
+		BBPreleaseref(bn->batCacheid);									\
+		bn = r;															\
+	}																	\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	BBPreleaseref(b->batCacheid);										\
+	return MAL_SUCCEED;													\
 }
 
 #define scienceImpl(Operator)					\

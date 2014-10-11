@@ -4180,7 +4180,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = $1;
+		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);

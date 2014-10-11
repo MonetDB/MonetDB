@@ -44,11 +44,7 @@
 #include "xml.h"
 
 #ifdef WIN32
-#ifndef LIBATOMS
-#define batxml_export extern __declspec(dllimport)
-#else
 #define batxml_export extern __declspec(dllexport)
-#endif
 #else
 #define batxml_export extern
 #endif

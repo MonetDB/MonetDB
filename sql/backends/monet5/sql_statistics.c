@@ -40,7 +40,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	char *query, *dquery;
-	char *maxval, *minval;
+	char *maxval = NULL, *minval = NULL;
 	str sch = 0, tbl = 0, col = 0;
 	int sorted;
 	lng nils = 0;
@@ -58,13 +58,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	dquery = (char *) GDKzalloc(8192);
 	query = (char *) GDKzalloc(8192);
-	maxval = (char *) GDKzalloc(8192);
-	minval = (char *) GDKzalloc(8192);
-	if (!(dquery && query && maxval && minval)) {
+	if (!(dquery && query)) {
 		GDKfree(dquery);
 		GDKfree(query);
-		GDKfree(maxval);
-		GDKfree(minval);
 		throw(SQL, "analyze", MAL_MALLOC_FAIL);
 	}
 
@@ -101,6 +97,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BAT *bn = store_funcs.bind_col(tr, c, RDONLY), *br;
 						BAT *bsample;
 						lng sz = BATcount(bn);
+						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr; \
+						int len = 0;
+						void *val=0;
 
 						if (col && strcmp(bc->name, col))
 							continue;
@@ -133,55 +132,20 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sorted = BATtordered(bn);
 
 						// Gather the min/max value for builtin types
-#define minmax(TYPE,FMT,CAST) \
-{\
-	TYPE *val=0;\
-	val= BATmax(bn,0);\
-	if ( ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
-		snprintf(maxval,8192,"nil");\
-	else snprintf(maxval,8192,FMT,CAST *val);\
-	GDKfree(val);\
-	val= BATmin(bn,0);\
-	if ( ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
-		snprintf(minval,8192,"nil");\
-	else snprintf(minval,8192,FMT,CAST *val);\
-	GDKfree(val);\
-	break;\
-}
 						width = bn->T->width;
-						switch (bn->ttype) {
-						case TYPE_sht:
-							minmax(sht, "%d",);
-						case TYPE_int:
-							minmax(int, "%d",);
-						case TYPE_lng:
-							minmax(lng, LLFMT,);
-#ifdef HAVE_HGE
-						case TYPE_hge:
-							minmax(hge, "%.40g", (dbl));
-#endif
-						case TYPE_flt:
-							minmax(flt, "%f",);
-						case TYPE_dbl:
-							minmax(dbl, "%f",);
-						case TYPE_str:
-						{
-							BUN p, q;
-							double sum = 0;
-							BATiter bi = bat_iterator(bn);
-							BATloop(bn, p, q) {
-								str s = BUNtail(bi, p);
-								if (s != NULL && strcmp(s, str_nil))
-									sum += (int) strlen(s);
-							}
-							if (sz)
-								width = (int) (sum / sz);
-						}
-							/* fall through */
 
-						default:
-							snprintf(maxval, 8192, "nil");
-							snprintf(minval, 8192, "nil");
+						if (tostr) { 
+							val = BATmax(bn,0); len = 0;
+							tostr(&maxval, &len,val); 
+							GDKfree(val);
+							val = BATmin(bn,0); len = 0;
+							tostr(&minval, &len,val); 
+							GDKfree(val);
+						} else {
+							maxval = (char *) GDKzalloc(4);
+							minval = (char *) GDKzalloc(4);
+							snprintf(maxval, 4, "nil");
+							snprintf(minval, 4, "nil");
 						}
 						snprintf(query, 8192, "insert into sys.statistics values('%s','%s','%s','%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s);", b->name, bt->name, bc->name, c->type.type->sqlname, width,
 							 (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false");

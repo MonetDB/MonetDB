@@ -1381,6 +1381,7 @@ empty_col(sql_column *c)
 	assert(c->data && c->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid)
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
@@ -1394,6 +1395,7 @@ empty_idx(sql_idx *i)
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid) 
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
@@ -1658,7 +1660,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		} else {
 			assert(cur->T->heap.storage != STORE_PRIV);
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
-			assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			assert(!BATcount(ins) || !isEbat(ins));
 			BATappend(cur,ins,TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
@@ -1763,11 +1766,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->wtime > oldest->stime) {
+			while (b && b->wtime >= oldest->stime) {
 				p = b;
 				b = b->next;
 			}
-			if (b && b->wtime <= oldest->stime && p) {
+			if (b && b->wtime < oldest->stime && p) {
 				p->next = NULL;
 				destroy_dbat(tr, b);
 			}
@@ -1788,11 +1791,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
-				while (b && b->wtime > oldest->stime) {
+				while (b && b->wtime >= oldest->stime) {
 					p = b;
 					b = b->next;
 				}
-				if (b && b->wtime <= oldest->stime && p) {
+				if (b && b->wtime < oldest->stime && p) {
 					p->next = NULL;
 					destroy_bat(tr, b);
 				}
@@ -1838,11 +1841,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
-				while (b && b->wtime > oldest->stime) {
+				while (b && b->wtime >= oldest->stime) {
 					p = b;
 					b = b->next;
 				}
-				if (b && b->wtime <= oldest->stime && p) {
+				if (b && b->wtime < oldest->stime && p) {
 					p->next = NULL;
 					destroy_bat(tr, b);
 				}

@@ -526,6 +526,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
 	c->sorted = sql_trans_is_sorted(tr, c);
+	c->dcount = 0;
 	if (bs_debug)
 		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
@@ -1205,6 +1206,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	if (c->storage_type)
 		col->storage_type = sa_strdup(sa, c->storage_type);
 	col->sorted = c->sorted;
+	col->dcount = c->dcount;
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -1848,8 +1850,10 @@ key_dup_(sql_trans *tr, int flag, sql_key *k, sql_table *t, int copy)
 			}
 	}
 	list_append(t->s->keys, nk);
-	if (!copy && flag == TR_NEW && tr->parent == gtrans) 
+	if (!copy && flag == TR_NEW && tr->parent == gtrans) {
 		k->base.flag = TR_OLD;
+		nk->base.flag = TR_OLD;
+	}
 	return nk;
 }
 
@@ -1921,8 +1925,11 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	    (i->base.allocated && flag == TR_OLD && tr->parent != gtrans))
 		if (isTable(ni->t)) 
 			store_funcs.dup_idx(tr, i, ni);
-	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
+
+	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) {
 		i->base.flag = TR_OLD;
+		ni->base.flag = TR_OLD;
+	}
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
@@ -2009,8 +2016,10 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 		list_append(nt->columns, kc_dup(tr, flag, okc, t));
 	}
 	list_append(t->s->triggers, nt);
-	if (flag == TR_NEW && tr->parent == gtrans) 
+	if (flag == TR_NEW && tr->parent == gtrans) {
 		i->base.flag = TR_OLD;
+		nt->base.flag = TR_OLD;
+	}
 	return nt;
 }
 
@@ -2039,8 +2048,10 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	    (oc->base.allocated && flag == TR_OLD && tr->parent != gtrans))
 		if (isTable(c->t)) 
 			store_funcs.dup_col(tr, oc, c);
-	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
+	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) {
 		oc->base.flag = TR_OLD;
+		c->base.flag = TR_OLD;
+	}
 	return c;
 }
 
@@ -2187,8 +2198,10 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		}
 		ot->triggers.nelm = NULL;
 	}
-	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) 
+	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) {
 		ot->base.flag = TR_OLD;
+		t->base.flag = TR_OLD;
+	}
 	return t;
 }
 
@@ -2332,8 +2345,10 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		}
 		os->seqs.nelm = NULL;
 	}
-	if (flag == TR_NEW && tr->parent == gtrans) 
+	if (flag == TR_NEW && tr->parent == gtrans) {
 		os->base.flag = TR_OLD;
+		s->base.flag = TR_OLD;
+	}
 	return s;
 }
 
@@ -4405,6 +4420,64 @@ sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+size_t
+sql_trans_dist_count( sql_trans *tr, sql_column *col )
+{
+	if (col->dcount)
+		return col->dcount;
+
+	if (col && isTable(col->t)) {
+		/* get from statistics */
+		sql_schema *sys = find_sql_schema(tr, "sys");
+		sql_table *stats = find_sql_table(sys, "statistics");
+		if (stats) {
+			sql_column *stats_schema = find_sql_column(stats, "schema");
+			sql_column *stats_table = find_sql_column(stats, "table");
+			sql_column *stats_column = find_sql_column(stats, "column");
+			oid rid = table_funcs.column_find_row(tr, stats_column, col->base.name, NULL,
+							stats_table, col->t->base.name, NULL,
+							stats_schema, col->t->s->base.name, NULL, NULL);
+			if (rid != oid_nil) {
+				sql_column *stats_unique = find_sql_column(stats, "unique");
+				void *v = table_funcs.column_find_value(tr, stats_unique, rid);
+
+				col->dcount = *(size_t*)v; 
+				_DELETE(v);
+			}
+		}
+		return col->dcount;
+	}
+	return 0;
+}
+
+int
+sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
+{
+	if (col && isTable(col->t)) {
+		/* get from statistics */
+		sql_schema *sys = find_sql_schema(tr, "sys");
+		sql_table *stats = find_sql_table(sys, "statistics");
+		if (stats) {
+			sql_column *stats_schema = find_sql_column(stats, "schema");
+			sql_column *stats_table = find_sql_column(stats, "table");
+			sql_column *stats_column = find_sql_column(stats, "column");
+			oid rid = table_funcs.column_find_row(tr, stats_column, col->base.name, NULL,
+							stats_table, col->t->base.name, NULL,
+							stats_schema, col->t->s->base.name, NULL, NULL);
+			if (rid != oid_nil) {
+				sql_column *stats_min = find_sql_column(stats, "minval");
+				sql_column *stats_max = find_sql_column(stats, "maxval");
+
+				*min = table_funcs.column_find_value(tr, stats_min, rid);
+				*max = table_funcs.column_find_value(tr, stats_max, rid);
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+
 sql_key *
 sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt)
 {
@@ -4504,6 +4577,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "objects"); 
+
 	assert(c);
 	kc->c = c;
 	list_append(k->columns, kc);

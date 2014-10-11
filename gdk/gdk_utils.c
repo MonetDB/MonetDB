@@ -1517,11 +1517,7 @@ GDKsyserror(const char *format, ...)
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
 
-#ifdef NATIVE_WIN32
-	DWORD err = GetLastError();
-#else
 	int err = errno;
-#endif
 	va_list ap;
 
 	if (strncmp(format, GDKERROR, len) == 0) {

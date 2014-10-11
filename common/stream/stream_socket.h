@@ -30,6 +30,9 @@
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR (-1)
+#endif
 
 stream_export stream *socket_rstream(SOCKET socket, const char *name);
 stream_export stream *socket_wstream(SOCKET socket, const char *name);

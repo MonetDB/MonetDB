@@ -271,6 +271,38 @@ Ready.
 [ 1 ]
 [ 1 ]
 [ NULL	]
+#SELECT sqrt(cast('64' as double)) AS eight;
+% .L # table_name
+% eight # name
+% double # type
+% 24 # length
+[ 8	]
+#SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
+#   FROM FLOAT8_TBL f
+#   WHERE f.f1 > '0.0';
+% .L,	sys.f,	sys.L # table_name
+% three,	f1,	sqrt_f1 # name
+% char,	double,	double # type
+% 0,	24,	24 # length
+[ "",	1004,	31	]
+[ "",	1,	1	]
+[ "",	1,	1	]
+#SELECT power(cast('144' as double), cast('0.5' as double));
+% .L # table_name
+% power_single_value # name
+% double # type
+% 24 # length
+[ 12	]
+#SELECT '' AS three, f.f1, exp(log(f.f1)) AS exp_ln_f1
+#   FROM FLOAT8_TBL f
+#   WHERE f.f1 > '0.0';
+% .L,	sys.f,	sys.L # table_name
+% three,	f1,	exp_ln_f1 # name
+% char,	double,	double # type
+% 0,	24,	24 # length
+[ "",	1004,	1004	]
+[ "",	1,	1	]
+[ "",	1,	1	]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
 % .L,	sys.float8_tbl # table_name
 % five,	f1 # name
@@ -286,28 +318,6 @@ Ready.
 #   SET f1 = FLOAT8_TBL.f1 * '-1'
 #   WHERE FLOAT8_TBL.f1 > '0.0';
 [ 3	]
-#SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
-% .L,	sys.L # table_name
-% bad,	bit_xor_f1 # name
-% char,	decimal # type
-% 0,	40 # length
-[ "",	632	]
-[ "",	-404	]
-[ "",	-602	]
-[ "",	632	]
-[ "",	632	]
-[ "",	NULL	]
-#SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
-% .L,	sys.L # table_name
-% bad,	exp_f1 # name
-% char,	double # type
-% 0,	24 # length
-[ "",	1	]
-[ "",	0	]
-[ "",	7	]
-[ "",	0 ]
-[ "",	1	]
-[ "",	NULL	]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
 % .L,	sys.float8_tbl # table_name
 % five,	f1 # name

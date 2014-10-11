@@ -490,12 +490,12 @@ int strToStr(str *dst, int *len, const char *src);
 const char str_nil[2];
 int void_inplace(BAT *b, oid id, const void *val, bit force);
 BUN void_replace_bat(BAT *b, BAT *u, bit force);
-int *win_errno(void);
 int win_mkdir(const char *, const int mode);
 int win_rename(const char *, const char *);
 int win_rmdir(const char *);
 int win_stat(const char *, struct stat *);
 int win_unlink(const char *);
+int winerror(int);
 const wrd wrd_nil;
 
 # mapi
@@ -596,6 +596,7 @@ MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 MapiMsg mapi_trace(Mapi mid, int flag);
 char *mapi_unquote(char *msg);
 MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples);
+const char *wsaerror(int);
 
 # monetdb5
 str AGGRavg12_dbl(bat *retval, const bat *bid, const bat *eid);
@@ -2552,13 +2553,13 @@ str maxRef;
 str max_no_nilRef;
 int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
+str mdbGrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str mdbRef;
 int mdbSession(void);
 void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
 int mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag);
-str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-str mdbTrapClient(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
+str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int memoryclaims;
 lng memorypool;
 str mergecandRef;
