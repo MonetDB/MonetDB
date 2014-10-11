@@ -51,7 +51,7 @@ static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
  */
 
 /* currently we only find simple column expressions */
-static void *
+void *
 name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt ) 
 {
 	sql_exp *alias = NULL;
@@ -772,8 +772,14 @@ order_joins(mvc *sql, list *rels, list *exps)
 	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(sql, rels, exps);
 
-	if (list_length(rels) > 2 && mvc_debug_on(sql, 256))
-		return rel_planner(sql, rels, sdje);
+	if (list_length(rels) > 2 && mvc_debug_on(sql, 256)) {
+		for(djn = sdje->h; djn; djn = djn->next ) {
+			sql_exp *e = djn->data;
+			list_remove_data(exps, e);
+		}
+		top =  rel_planner(sql, rels, sdje, exps);
+		return top;
+	}
 
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
