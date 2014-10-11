@@ -1381,6 +1381,7 @@ empty_col(sql_column *c)
 	assert(c->data && c->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid)
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
@@ -1394,6 +1395,7 @@ empty_idx(sql_idx *i)
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid) 
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
