@@ -2386,6 +2386,21 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *v, const
 }
 
 str
+MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = (int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
+str
 MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const int *months)
 {
 	daytime t;
@@ -2396,6 +2411,22 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
+
+str
+MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = -(int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
 
 str
 MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *mseconds)
