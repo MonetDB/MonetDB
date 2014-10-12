@@ -96,7 +96,7 @@
  * kernel whether the zero-terminated byte sequence it is processing
  * has UTF-8 or Latin-1 semantics. This module is the only place where
  * explicit string functionality is located. We {\bf do} have to adapt
- * the behavior of the MIL length(), search(), substring() and the
+ * the behavior of the length(), search(), substring() and the
  * like commands to the fact that one (Unicode) character is now
  * stored in a variable number of bytes (possibly > 1).
  *
@@ -2438,9 +2438,6 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 	return MAL_SUCCEED;
 }
 
-/*
- * A few old MIL procs implementations
- */
 str
 STRascii(int *ret, str *s){
 	int offset=0;

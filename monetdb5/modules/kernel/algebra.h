@@ -125,7 +125,6 @@ algebra_export str ALGcount_no_nil(wrd *result, const bat *bid);
 algebra_export str ALGtmark(bat *result, const bat *bid, const oid *base);
 algebra_export str ALGtmark_default(bat *result, const bat *bid);
 algebra_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
-algebra_export str ALGmarkHead(bat *result, const bat *bid, const oid *base);
 algebra_export str ALGmarkHead_default(bat *result, const bat *bid);
 algebra_export str ALGhmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
 algebra_export str ALGmark_grp_1(bat *result, const bat *bid, const bat *gid);

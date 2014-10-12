@@ -44,7 +44,6 @@ function user.main():void;
     b := bat.insert(b,nil:oid,"nacht");
     b := bat.insert(b,nil:oid,"licht");
     b := bat.insert(b,nil:oid,"duisternis");
-    b := algebra.markH(b);
     rb2 := remote.put(conn1,b);
     lb2:bat[:oid,:str]  := remote.get(conn1,rb2);
     io.print(lb2);

@@ -42,7 +42,6 @@ function user.s1_0{autoCommit=true}():void;
     bat.insert(_17,_56);
     bat.insert(_17,_57);
     io.print(_17);
-    _17 := algebra.markH(_17);
 
 #COUNT/SUM
     _19 := aggr.sum(_17);

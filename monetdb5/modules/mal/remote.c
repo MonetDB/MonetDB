@@ -704,7 +704,6 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				GDKfree(tail);
 				throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 			}
-			assert(b->htype == TYPE_void);
 		}
 
 		/* bypass Mapi from this point to efficiently write all data to

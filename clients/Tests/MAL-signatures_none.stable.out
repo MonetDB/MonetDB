@@ -2441,15 +2441,15 @@ command algebra.markH(b:bat[:any_1,:any_2]):bat[:oid,:any_2]
 address ALGmarkHead_default;
 comment Produces a BAT with fresh OIDs in the head starting at 0@0.
 
-command algebra.markT(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
 comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
-command algebra.markT(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
 address ALGtmark_default;
 comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
 
-command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
 address ALGtmark;
 comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
@@ -31449,10 +31449,6 @@ command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address BKCdelete_bat;
-comment Delete from the first BAT all BUNs with a corresponding head          in the second.
-
 command bat.delete(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address BKCdelete_all;
 comment Delete all BUNs in a BAT.
@@ -31733,7 +31729,11 @@ command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT;
 comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
-command bat.setHash(b:bat[:oid,:any_2],prop:bit):bit 
+command bat.setImprints(b:bat[:oid,:any_2]):bit 
+address BKCsetImprints;
+comment Create n imprints structure on the column
+
+command bat.setHash(b:bat[:oid,:any_2]):bit 
 address BKCsetHash;
 comment Create a hash structure on the column
 
@@ -40243,9 +40243,17 @@ comment Subtract seconds from a time
 
 command mtime.timestamp(t:timestamp):timestamp 
 address MTIMEtimestamp2timestamp;
+command mtime.timestamp_add_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_add_month_interval_lng_wrap;
+comment Add months to a timestamp
+
 command mtime.timestamp_add_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_add_month_interval_wrap;
 comment Add months to a timestamp
+
+command mtime.timestamp_sub_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_sub_month_interval_lng_wrap;
+comment Subtract months from a timestamp
 
 command mtime.timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_sub_month_interval_wrap;

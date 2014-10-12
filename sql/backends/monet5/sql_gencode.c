@@ -970,7 +970,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_mark:{
-			if (dump_2(sql, mb, s, algebraRef, markTRef) < 0)
+			if (dump_2(sql, mb, s, algebraRef, markRef) < 0)
 				return -1;
 		}
 			break;
