@@ -115,7 +115,8 @@ bat5_export str BKCmadvise(bit *res, const bat *bid, const int *hbns, const int 
 bat5_export str BKCmadvise2(bit *res, const bat *bid, const int *mode);
 bat5_export str BKCaccbuild(bat *ret, const bat *bid, const char * const *acc, const ptr *param);
 bat5_export str BKCaccbuild_std(bat *ret, const bat *bid, const int *acc);
-bat5_export str BKCsetHash(bit *ret, const bat *bid, const bit *prop);
+bat5_export str BKCsetHash(bit *ret, const bat *bid);
+bat5_export str BKCsetImprints(bit *ret, const bat *bid);
 bat5_export str BKCsetSequenceBase(bat *r, const bat *bid, const oid *o);
 bat5_export str BKCsetSequenceBaseNil(bat *r, const bat *bid, const oid *o);
 bat5_export str BKCgetSequenceBase(oid *r, const bat *bid);
