@@ -31542,10 +31542,6 @@ command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address BKCdelete_bat;
-comment Delete from the first BAT all BUNs with a corresponding head          in the second.
-
 command bat.delete(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address BKCdelete_all;
 comment Delete all BUNs in a BAT.
@@ -31826,7 +31822,11 @@ command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT;
 comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
-command bat.setHash(b:bat[:oid,:any_2],prop:bit):bit 
+command bat.setImprints(b:bat[:oid,:any_2]):bit 
+address BKCsetImprints;
+comment Create n imprints structure on the column
+
+command bat.setHash(b:bat[:oid,:any_2]):bit 
 address BKCsetHash;
 comment Create a hash structure on the column
 
