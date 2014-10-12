@@ -26,7 +26,7 @@
  * The Monet interface supports two timer commands: @emph{ alarm} and @emph{ sleep}.
  * Their argument is the number of seconds to wait before the timer goes off.
  * The @emph{ sleep} command blocks till the alarm goes off.
- * The @emph{ alarm} command continues directly, executes off a MIL
+ * The @emph{ alarm} command continues directly, executes off a 
  * string when it goes off.
  * The parameterless routines @emph{ time} and @emph{ ctime} provide access to
  * the cpu clock.They return an integer and string, respectively.
@@ -55,7 +55,7 @@ alarm_export str ALARMtime(int *res);
 #define MAXtimer                200
 
 typedef struct {
-	str action;		/* MIL action (as a string) */
+	str action;		/* action (as a string) */
 	MT_Sema sema;		/* barrier */
 	time_t alarm_time;	/* time when the alarm goes off */
 } monet_timer_t;

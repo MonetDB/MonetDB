@@ -108,7 +108,7 @@ We assume a bat[lng,lng] with 1M elements in increasing order.
 tst901a contains a fast implementation assuming aligned bats
 in both V5 and V4.3
 
-tst901b uses the MAL/MIL generic loop to achieve the same result
+tst901b uses the /MIL generic loop to achieve the same result
 For V5 a C-version was also constructed, which assumed a
 code generation technique based on translation of each individual
 MAL statement to the relevant C-statements. No inter-statement
@@ -1231,3 +1231,18 @@ tst400e		0.613/0.470/0.012
 
 tst901a		0.655/0.409/0.038
 tst901b		1.417/1.100/0.038
+======================== 12 oct 2014 ===================
+Vienna Fedora 20 
+Default release
+The compilation mode for is --enable-optimize --disable-debug
+compilation took ?
+command: time mserver5 TST </dev/null >/dev/null
+base		0.111/0.095/0.014
+tst400a		0.261/0.190/0.021
+tst400bHuge	0.262/0.197/0.027
+tst400cHuge	0.262/0.209/0.030
+tst400d		0.661/0.601/0.027
+tst400e		0.861/0.814/0.016
+
+tst901a		0.812/0.750/0.032
+tst901b		2.112/2.051/0.038
