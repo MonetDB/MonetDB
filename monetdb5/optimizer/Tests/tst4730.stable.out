@@ -35,7 +35,7 @@ barrier always := true;
     V16 := mtime.date_sub_sec_interval(A3,A4);
     a := mtime.date(nil);
     V17 := algebra.uselect(V13,a,V16);
-    V20 := algebra.markT(V17,0@0);
+    V20 := algebra.mark(V17,0@0);
     V21 := bat.reverse(V20);
     V26 := algebra.kdifference(V22,V12);
     V27 := algebra.join(V21,V26);
@@ -116,7 +116,7 @@ barrier always := true;                 #  9 always:bit := _26:bit {J72}
     V16 := mtime.date_sub_sec_interval(A3,A4);# 12 V16:date := MTIMEdate_sub_sec_interval_wrap(A3:date, A4:int) 
     a := mtime.date(nil);               # 13 a:date := MTIMEnil2date(_31:void) 
     V17 := algebra.uselect(V13{rows=1},a,V16);# 14 V17:bat[:oid,:void] := ALGuselect(V13:bat[:oid,:date], a:date, V16:date) {G}
-    V20 := algebra.markT(V17,0@0);      # 15 V20:bat[:oid,:oid] := ALGtmark(V17:bat[:oid,:void], _34:oid) {G}
+    V20 := algebra.mark(V17,0@0);      # 15 V20:bat[:oid,:oid] := ALGtmark(V17:bat[:oid,:void], _34:oid) {G}
     V21 := bat.reverse(V20);            # 16 V21:bat[:oid,:oid] := BKCreverse(V20:bat[:oid,:oid]) {G}
     V26{rows=1} := algebra.kdifference(V22{rows=1000:lng},V12{rows=1000});# 17 V26:bat[:oid,:bit] := ALGkdiff(V22:bat[:oid,:bit], V12:bat[:oid,:oid]) {G}
     V27 := algebra.join(V21,V26{rows=1});# 18 V27:bat[:oid,:bit] := ALGjoin(V21:bat[:oid,:oid], V26:bat[:oid,:bit]) {G}

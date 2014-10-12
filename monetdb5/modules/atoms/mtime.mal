@@ -43,7 +43,7 @@
 # and the lexicographical string ordering of this representation respects the
 # actual date ordering.
 #
-# Other print formats can be achieved by writing a customized MIL procedure
+# Other print formats can be achieved by writing a customized procedure
 # that extracts year, month and day from a date as integers and formats those
 # in a string.
 atom date :int;
@@ -613,7 +613,6 @@ comment "extract minutes from rule.";
 #
 # Arithmetic overflow returns the nil atom (no error messages). For all commands in
 # this modules it holds that if one of the parameters is nil, the result is also nil
-# (nil has the don't know semantics in MIL).
 command addyears(value:date, years:int) :date
 address MTIMEdate_addyears
 comment "returns the date after a number

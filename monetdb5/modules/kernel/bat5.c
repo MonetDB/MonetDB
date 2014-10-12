@@ -1961,18 +1961,32 @@ BKCaccbuild_std(bat *ret, const bat *bid, const int *acc)
 	throw(MAL, "Accelerator", PROGRAM_NYI);
 }
 
-
 str
-BKCsetHash(bit *ret, const bat *bid, const bit *prop)
+BKCsetHash(bit *ret, const bat *bid)
 {
-	BAT *b;
+	BAT *b, *bn;
 
 	(void) ret;
-	(void) prop;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
 	}
-	BAThash(BATmirror(b), 0);
+	bn = BAThash(BATmirror(b), 0);
+	*ret = b == bn;
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCsetImprints(bit *ret, const bat *bid)
+{
+	BAT *b, *bn;
+
+	(void) ret;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATimprints(b);
+	*ret = b == bn;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

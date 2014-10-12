@@ -262,7 +262,7 @@ isAView(InstrPtr p)
 {
 	if ( ( getModuleId(p) == batRef && 
 		  ( getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) ||
-		 ( getModuleId(p) == algebraRef && getFunctionId(p) == markTRef ))
+		 ( getModuleId(p) == algebraRef && getFunctionId(p) == markRef ))
 		 return 1;
 	return 0;
 }

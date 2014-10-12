@@ -10,7 +10,6 @@ patreg = re.compile(r'\bpattern\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}
 
 treg = re.compile(r':(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
-cmtre = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
 
@@ -76,14 +75,6 @@ def process(f):
             malpats.append((malf, func, f))
             res = patreg.search(data, res.end(0))
     elif f.endswith('.h') or f.endswith('.c'):
-        # remove C comments
-        res = cmtre.search(data)
-        while res is not None:
-            data = data[:res.start(0)] + ' ' + data[res.end(0):]
-            res = cmtre.search(data, res.start(0))
-        # remove \ <newline> combo's
-        data = data.replace('\\\n', '')
-
         data = exportutils.preprocess(data)
 
         res = expre.search(data)
