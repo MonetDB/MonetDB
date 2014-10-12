@@ -522,23 +522,22 @@ int
 command_add(confkeyval *ckv, int argc, char *argv[])
 {
 	char *dbname;
-	char *conn;
+	char *connection;
 	char *ttl;
 	(void)ckv;
 
-	// we need at 3 values: add <dbnam> <conn>, ttl is optional
+	// we need at 3 values: add <dbnam> <connection>, ttl is optional
 	if (argc < 3) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
 	dbname = argv[1];
-	conn = argv[2];
+	connection = argv[2];
 	if (argc > 3) {
 		ttl = argv[3];
 	} else {
 		// default t o 600 seconds... as a string, we will convert it to int later
-		//
 		ttl = "600";
 	}
 
@@ -546,8 +545,8 @@ command_add(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "incorrect dbname monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
 		return(1);
 	}
-	if (conn == NULL) {
-		fprintf(stderr, "incorrect conn monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
+	if (connection == NULL) {
+		fprintf(stderr, "incorrect connection monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
 		return(1);
 	}
 	if (ttl == NULL) {
@@ -555,12 +554,15 @@ command_add(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 
-	if (addRemoteDB(dbname, conn, atoi(ttl)) == 1) {
+	if (addRemoteDB(dbname, connection, atoi(ttl)) == 1) {
 		if (strcmp(dbname, "*") == 0) {
-			Mfprintf(_mero_discout, "registered neighbour %s\n", conn);
+			fprintf(stdout, "registered neighbour %s\n", connection);
 		} else {
-			Mfprintf(_mero_discout, "new database %s%s (ttl=%ss)\n", conn, dbname, ttl);
+			fprintf(stdout, "new database %s %s (ttl=%ss)\n", connection, dbname, ttl);
 		}
+	} else {
+		fprintf(stdout, "unable to add database %s %s\n", connection, dbname);
+		return(1);
 	}
 
 	return(0);
