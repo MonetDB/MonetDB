@@ -265,24 +265,24 @@ do {									\
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		\
 	CAND;								\
 	for (i = 0, dcnt = 0, icnt = 0;					\
-	     (dcnt < imprints->dictcnt) && (i + off < w + pr_off) && (p < q); \
+	     dcnt < imprints->dictcnt && i + off < w + pr_off && p < q; \
 	     dcnt++) {							\
 		limit = ((BUN) d[dcnt].cnt) << rpp;			\
-		while ((i+limit+off) <= (o+pr_off)) {			\
+		while (i + limit + off <= o + pr_off) {			\
 			i += limit;					\
-			icnt += d[dcnt].repeat?1:d[dcnt].cnt;		\
+			icnt += d[dcnt].repeat ? 1 : d[dcnt].cnt;	\
 			dcnt++;						\
 			limit = ((BUN) d[dcnt].cnt) << rpp;		\
 		}							\
 		if (!d[dcnt].repeat) {					\
 			limit = (BUN) 1 << rpp;				\
 			l = icnt + d[dcnt].cnt;				\
-			while ((i+limit+off) <= (o+pr_off)) {		\
+			while (i + limit + off <= o + pr_off) {		\
 				icnt++;					\
 				i += limit;				\
 			}						\
 			for (;						\
-			     icnt < l && (i+off < w+pr_off);		\
+			     icnt < l && i + off < w + pr_off;		\
 			     icnt++) {					\
 				impscheck(CAND,TEST,ADD);		\
 				i += limit;				\
@@ -297,10 +297,10 @@ do {									\
 } while (0)
 
 #define quickins(dst, cnt, o, bn)			\
-	do{						\
+	do {						\
 		assert((cnt) < BATcapacity(bn));	\
 		dst[cnt] = (o);				\
-	} while(0)
+	} while (0)
 
 /* construct the mask */
 #define impsmask(CAND,TEST,B)						\
@@ -312,13 +312,13 @@ do {									\
 			  imprints->bins, tl);				\
 	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
 			  imprints->bins, th);				\
-	/* note: (1<<n)-1 gives a sequence o n one bits */		\
+	/* note: (1<<n)-1 gives a sequence of n one bits */		\
 	/* to set bits hbin..lbin inclusive, we would do: */		\
 	/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */	\
 	/* except ((1 << (hbin + 1)) - 1) is not defined if */		\
 	/* hbin == sizeof(uint##B##_t)*8 - 1 */				\
 	/* the following does work, however */				\
-	mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1);	\
+	mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1); \
 	innermask = mask;						\
 	if (!b->T->nonil || vl != minval)				\
 		innermask = IMPSunsetBit(B, innermask, lbin);		\
@@ -352,25 +352,25 @@ do {									\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #TEST);					\
 	switch (imprints->bits) {					\
-		case 8:  impsmask(CAND,TEST,8); break;			\
-		case 16: impsmask(CAND,TEST,16); break;			\
-		case 32: impsmask(CAND,TEST,32); break;			\
-		case 64: impsmask(CAND,TEST,64); break;			\
-		default: assert(0); break;				\
+	case 8:  impsmask(CAND,TEST,8); break;				\
+	case 16: impsmask(CAND,TEST,16); break;				\
+	case 32: impsmask(CAND,TEST,32); break;				\
+	case 64: impsmask(CAND,TEST,64); break;				\
+	default: assert(0); break;					\
 	}								\
 } while (0)
 
 /* scan select without imprints */
 
 /* core scan select loop with & without candidates */
-#define scanloop(CAND,TEST)						\
+#define scanloop(NAME,CAND,TEST)					\
 do {									\
 	ALGODEBUG fprintf(stderr,					\
 			  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): " \
-			  "scanselect %s\n", BATgetId(b), BATcount(b),	\
+			  "%s %s\n", BATgetId(b), BATcount(b),		\
 			  s ? BATgetId(s) : "NULL",			\
 			  s && BATtdense(s) ? "(dense)" : "",		\
-			  anti, #TEST);					\
+			  anti, #NAME, #TEST);				\
 	if (BATcapacity(bn) < maximum) {				\
 		while (p < q) {						\
 			CAND;						\
@@ -431,13 +431,13 @@ do {									\
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(CAND, TEST)			\
-	do {					\
-		if (use_imprints) {		\
-			bitswitch(CAND, TEST);	\
-		} else {			\
-			scanloop(CAND, TEST);	\
-		}				\
+#define choose(NAME, CAND, TEST)			\
+	do {						\
+		if (use_imprints) {			\
+			bitswitch(CAND, TEST);		\
+		} else {				\
+			scanloop(NAME, CAND, TEST);	\
+		}					\
 	} while (0)
 
 /* definition of type-specific core scan select function */
@@ -476,19 +476,19 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	END;								\
 	if (equi) {							\
 		assert(!use_imprints);					\
-		scanloop(CAND, v == vl);				\
+		scanloop(NAME, CAND, v == vl);				\
 	} else if (anti) {						\
 		if (b->T->nonil) {					\
-			choose(CAND,(v <= vl || v >= vh));		\
+			choose(NAME,CAND,(v <= vl || v >= vh));		\
 		} else {						\
-			choose(CAND,(v <= vl || v >= vh) && v != nil);	\
+			choose(NAME,CAND,(v <= vl || v >= vh) && v != nil); \
 		}							\
 	} else if (b->T->nonil && vl == minval) {			\
-		choose(CAND,v <= vh);					\
+		choose(NAME,CAND,v <= vh);				\
 	} else if (vh == maxval) {					\
-		choose(CAND,v >= vl);					\
+		choose(NAME,CAND,v >= vl);				\
 	} else {							\
-		choose(CAND,v >= vl && v <= vh);			\
+		choose(NAME,CAND,v >= vl && v <= vh);			\
 	}								\
 	return cnt;							\
 }
@@ -512,7 +512,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	if (equi) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect equi\n", BATgetId(b), BATcount(b),
+				  "candscan equi\n", BATgetId(b), BATcount(b),
 				  BATgetId(s), BATtdense(s) ? "(dense)" : "",
 				  anti);
 		while (p < q) {
@@ -528,7 +528,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	} else if (anti) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect anti\n", BATgetId(b), BATcount(b),
+				  "candscan anti\n", BATgetId(b), BATcount(b),
 				  BATgetId(s), BATtdense(s) ? "(dense)" : "",
 				  anti);
 		while (p < q) {
@@ -550,7 +550,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	} else {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect range\n", BATgetId(b), BATcount(b),
+				  "candscan range\n", BATgetId(b), BATcount(b),
 				  BATgetId(s), BATtdense(s) ? "(dense)" : "",
 				  anti);
 		while (p < q) {
@@ -594,7 +594,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	if (equi) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect equi\n", BATgetId(b), BATcount(b),
+				  "fullscan equi\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		while (p < q) {
@@ -610,7 +610,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	} else if (anti) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect anti\n", BATgetId(b), BATcount(b),
+				  "fullscan anti\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		while (p < q) {
@@ -632,7 +632,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	} else {
 		ALGODEBUG fprintf(stderr,
 				  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
-				  "scanselect range\n", BATgetId(b), BATcount(b),
+				  "fullscan range\n", BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		while (p < q) {
