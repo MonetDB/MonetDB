@@ -38,6 +38,7 @@ typedef struct _remotedb {
 	struct _remotedb* next;
 }* remotedb;
 
+int addRemoteDB(const char *dbname, const char *conn, const int ttl);
 sabdb *getRemoteDB(char *database);
 
 extern remotedb _mero_remotedbs;

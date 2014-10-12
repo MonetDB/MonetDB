@@ -28,5 +28,6 @@ int command_create(int argc, char *argv[]);
 int command_get(confkeyval *ckv, int argc, char *argv[]);
 int command_set(confkeyval *ckv, int argc, char *argv[]);
 int command_stop(confkeyval *ckv, int argc, char *argv[]);
+int command_add(confkeyval *ckv, int argc, char *argv[]);
 
 #endif

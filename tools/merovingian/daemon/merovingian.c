@@ -522,6 +522,8 @@ main(int argc, char *argv[])
 			exit(command_get(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "set") == 0) {
 			exit(command_set(ckv, argc - 1, &argv[1]));
+		} else if (strcmp(argv[1], "add") == 0) {
+			exit(command_add(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
 			if (argc > 3 && strcmp(argv[2], "-n") == 0)
 					merodontfork = 1;
