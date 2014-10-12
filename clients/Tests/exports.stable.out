@@ -2525,7 +2525,7 @@ void mal_unquote(char *msg);
 str manifoldRef;
 str mapiRef;
 str markHRef;
-str markTRef;
+str markRef;
 str mark_grpRef;
 str matRef;
 str maxRef;

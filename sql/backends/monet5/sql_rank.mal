@@ -50,7 +50,7 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:b
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
-	x := algebra.markT(b,1:oid);
+	x := algebra.mark(b,1:oid);
 	mg := batcalc.int(x);
 
 	# restore the order based on grp 
@@ -61,7 +61,7 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
-	x := algebra.markT(b,1:oid);
+	x := algebra.mark(b,1:oid);
 	return mark_grp:= batcalc.int(x);
 end batcalc.mark_grp;
 

@@ -14,207 +14,57 @@ stdout of test 'cross` in directory 'monetdb5/tests/gdkTests` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    a := bat.new(:oid,:oid);
-    ar := bat.reverse(a);
-    io.print(ar);
     b := bat.new(:oid,:oid);
+    (bl,br) := algebra.crossproduct(b,b);
+    io.print(bl,br);
+    bat.append(b,1@0);
+    bat.append(b,2@0);
     io.print(b);
-    ar := bat.reverse(a);
-    c := algebra.crossproduct(ar,ar);
-    io.print(c);
-    bb := algebra.crossproduct(b,b);
-    io.print(bb);
-    ab := algebra.crossproduct(ar,b);
-    io.print(ab);
-    ba := algebra.crossproduct(b,ar);
-    io.print(ba);
-    bat.append(a,1@0);
-    ar := bat.reverse(a);
-    io.print(ar);
-    bat.append(a,2@0);
-    ar := bat.reverse(a);
-    c := algebra.crossproduct(ar,ar);
-    io.print(c);
-    bb := algebra.crossproduct(b,b);
-    io.print(bb);
-    ab := algebra.crossproduct(ar,b);
-    io.print(ab);
-    ba := algebra.crossproduct(b,ar);
-    io.print(ba);
+    (bl,br) := algebra.crossproduct(b,b);
+    io.print(bl,br);
     bat.append(b,11@0);
     io.print(b);
-    ar := bat.reverse(a);
-    c := algebra.crossproduct(ar,ar);
-    io.print(c);
-    bb := algebra.crossproduct(b,b);
-    io.print(bb);
-    ab := algebra.crossproduct(ar,b);
-    io.print(ab);
-    ba := algebra.crossproduct(b,ar);
-    io.print(ba);
-    ar := bat.reverse(a);
-    c := algebra.crossproduct(ar,ar);
-    io.print(c);
-    bb := algebra.crossproduct(b,b);
-    io.print(bb);
-    ab := algebra.crossproduct(ar,b);
-    io.print(ab);
-    ba := algebra.crossproduct(b,ar);
-    io.print(ba);
-    bat.append(b,22@0);
-    io.print(b);
-    ar := bat.reverse(a);
-    c := algebra.crossproduct(ar,ar);
-    io.print(c);
-    bb := algebra.crossproduct(b,b);
-    io.print(bb);
-    ab := algebra.crossproduct(ar,b);
-    io.print(ab);
-    ba := algebra.crossproduct(b,ar);
-    io.print(ba);
+    (bl,br) := algebra.crossproduct(b,b);
+    io.print(bl,br);
 end main;
-#-----------------#
-# t	h	  # name
-# int	void	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# oid	oid	  # type
-#-----------------#
-#-----------------#
-# t	h	  # name
-# int	void	  # type
-#-----------------#
-[ 1@0,	  0@0	  ]
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# oid	oid	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  11@0	  ]
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  11@0	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1@0,	  11@0	  ]
-[ 2@0,	  11@0	  ]
-#-----------------#
+#--------------------------#
+# h	t	t  # name
+# void	void	void  # type
+#--------------------------#
+#--------------------------#
 # h	t	  # name
 # void	oid	  # type
-#-----------------#
-[ 0@0,	  0@0	  ]
+#--------------------------#
 [ 0@0,	  1@0	  ]
-#-----------------#
+[ 1@0,	2@0  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	0@0  ]
+[ 1@0,	0@0,	1@0  ]
+[ 2@0,	1@0,	0@0  ]
+[ 3@0,	1@0,	1@0  ]
+#--------------------------#
 # h	t	  # name
-# int	oid	  # type
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  11@0	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1@0,	  11@0	  ]
+# void	oid  # type
+#--------------------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	2@0  ]
 [ 2@0,	  11@0	  ]
-#-----------------#
-# t	h	  # name
-# oid	void	  # type
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  11@0	  ]
-[ 1@0,	  22@0	  ]
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
-#-----------------#
-[ 1@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ 0@0,	  11@0	  ]
-[ 0@0,	  22@0	  ]
-[ 1@0,	  11@0	  ]
-[ 1@0,	  22@0	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1@0,	  11@0	  ]
-[ 1@0,	  22@0	  ]
-[ 2@0,	  11@0	  ]
-[ 2@0,	  22@0	  ]
-#-----------------#
-# h	t	  # name
-# oid	oid	  # type
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
-[ 1@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	0@0  ]
+[ 1@0,	0@0,	1@0  ]
+[ 2@0,	0@0,	2@0  ]
+[ 3@0,	1@0,	0@0  ]
+[ 4@0,	1@0,	1@0  ]
+[ 5@0,	1@0,	2@0  ]
+[ 6@0,	2@0,	0@0  ]
+[ 7@0,	2@0,	1@0  ]
+[ 8@0,	2@0,	2@0  ]
 
 # 09:01:02 >  
 # 09:01:02 >  Done.

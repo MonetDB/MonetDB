@@ -16,7 +16,7 @@ factory sql_cache.s0_0():void;
     Z39 := bat.reverse(Z37);
     Z41 := algebra.kdifference(Z33,Z39);
     Z43 := calc.oid(0@0);
-    Z46 := algebra.markT(Z41,Z43);
+    Z46 := algebra.mark(Z41,Z43);
     Z48 := bat.reverse(Z46);
     Z50 := algebra.join(Z48,Z33);
     mapi.reconnect("test1","127.0.0.1",40000,"monetdb","monetdb","mal");

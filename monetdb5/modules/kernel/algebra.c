@@ -1735,7 +1735,7 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.markT", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATmark(b, *base);
 	if (bn != NULL) {
@@ -1746,7 +1746,7 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.markT", GDK_EXCEPTION);
+	throw(MAL, "algebra.mark", GDK_EXCEPTION);
 }
 
 str
@@ -1774,13 +1774,13 @@ ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
 	return ALGtmark(result, bid, &base);
 }
 
-str
+static str
 ALGmarkHead(bat *result, const bat *bid, const oid *base)
 {
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.markH", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.markHead", RUNTIME_OBJECT_MISSING);
 	}
 	/* M5's markH is semantically identical with M4/GDK's tmark */
 	/* (Don't ask me why; wasn't my decision. Stefan.) */
@@ -1793,7 +1793,7 @@ ALGmarkHead(bat *result, const bat *bid, const oid *base)
 		return MAL_SUCCEED;
 	}
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.markH", GDK_EXCEPTION);
+	throw(MAL, "algebra.markHead", GDK_EXCEPTION);
 }
 
 str

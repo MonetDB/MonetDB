@@ -424,11 +424,6 @@ command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li
 address ALGrangejoin2;
 
 # Note that joins over void columns are handled as if they are oids.
-command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
-	:bat[:any_1,:any_4]
-address ALGcross
-comment "Returns the cross product";
-
 command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
 	:bat[:any_1,:any_4]
 address ALGantijoin
@@ -492,8 +487,7 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 address ALGouterjoinestimate;
 
 # @- Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 		just the same as join(). All other options do merge algorithms.
@@ -501,8 +495,7 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 	right on head), or by using/creating binary search trees on the
 		join columns. ";
 
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int,estimate:lng) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
 address ALGthetajoinEstimate;
 # @- Band Join (approximate match)
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
@@ -589,39 +582,21 @@ comment "Calculate first N values of B with candidate list S";
 # @+ OID Introducing Commands
 # For relational processing, some operators are necessary to produce newly
 # initiated OID columns, for representing n-ary (intermediary) relations.
-command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command markT( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
 address ALGtmarkp
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 	The base is uniquely defined by the part_nr (ie we set the highest
 	bits based on the part_nr/nr_parts) ";
-
-
-command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2]
-address ALGmarkHead_default
-comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2]
-address ALGmarkHead
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in
-		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:oid,:any_2]
-address ALGhmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-	the head that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
 
 command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
 address ALGmark_grp_1

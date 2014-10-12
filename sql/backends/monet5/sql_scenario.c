@@ -1859,8 +1859,6 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 				q = newStmt(mb, profilerRef, "getTrace");
 				q = pushStr(mb, q, s);
 				n = getDestVar(q);
-				q = newStmt(mb, algebraRef, "markH");
-				q = pushArgument(mb, q, n);
 				rs[i] = getDestVar(q);
 				colname[i] = s;
 				/* FIXME: type for name should come from
