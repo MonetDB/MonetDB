@@ -40625,9 +40625,17 @@ comment Subtract seconds from a time
 
 command mtime.timestamp(t:timestamp):timestamp 
 address MTIMEtimestamp2timestamp;
+command mtime.timestamp_add_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_add_month_interval_lng_wrap;
+comment Add months to a timestamp
+
 command mtime.timestamp_add_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_add_month_interval_wrap;
 comment Add months to a timestamp
+
+command mtime.timestamp_sub_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_sub_month_interval_lng_wrap;
+comment Subtract months from a timestamp
 
 command mtime.timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_sub_month_interval_wrap;

@@ -1702,6 +1702,7 @@ str MTIMEtimestamp_GT(bit *retval, const timestamp *val1, const timestamp *val2)
 str MTIMEtimestamp_LE(bit *retval, const timestamp *val1, const timestamp *val2);
 str MTIMEtimestamp_LT(bit *retval, const timestamp *val1, const timestamp *val2);
 str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msecs);
+str MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *months);
 str MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *t, const int *months);
 str MTIMEtimestamp_bulk(bat *ret, bat *bid);
 str MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzone *z);
@@ -1727,6 +1728,7 @@ str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
 str MTIMEtimestamp_month(int *ret, const timestamp *t);
 str MTIMEtimestamp_seconds(int *ret, const timestamp *t);
 str MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t);
+str MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *months);
 str MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *t, const int *months);
 str MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *msec);
 str MTIMEtimestamp_timestamp(timestamp *d, const timestamp *s);
