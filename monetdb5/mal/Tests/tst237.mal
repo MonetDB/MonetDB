@@ -18,7 +18,7 @@ io.print(bbl);
 
 c:= bat.new(:oid,:oid);
 bat.append(c,1@0);
-o:= algebra.fetch(c,0);
+o:= algebra.fetch(c,0@0);
 io.print(o);
 bat.append(c,2@0);
 bat.append(c,3@0);
