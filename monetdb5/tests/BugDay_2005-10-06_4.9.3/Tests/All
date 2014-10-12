@@ -6,8 +6,6 @@ find_nil_in_void.SF-921814
 tail_role_printing.SF-922417
 accents_in_strings.SF-926709
 monettime_needs_alarm.SF-934899
-BATpropcheck_after_outerjoin.SF-936469
-leftfetchjoin_void_oid.990857
 error.998332
 large_string.SF-1120061
 operator_-_vs_sign_-.SF-1120397

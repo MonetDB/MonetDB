@@ -2,7 +2,7 @@
 	ca_a := bat.append(a,3);
 	da_a := bat.append(a,2);
 	ea_a := bat.append(a,1);
-	ra:= bat.reverse(a);
+	ra:= nil:bat;
 	LT:= -1;
 	fa_a := calc.lng(nil);
 	ga_a := algebra.thetajoin(a,ra,LT,fa_a);
