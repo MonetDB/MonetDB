@@ -129,6 +129,7 @@ freeConfFile(confkeyval *list) {
  */
 int
 defaultProperty(char *property) {
+	// TODO: find a better way to do this
 	if (property != NULL && strcmp(property, "type") == 0) {
 		return 1;
 	} else if (property != NULL && strcmp(property, "shared") == 0) {
@@ -140,6 +141,8 @@ defaultProperty(char *property) {
 	} else if (property != NULL && strcmp(property, "nclients") == 0) {
 		return 1;
 	} else if (property != NULL && strcmp(property, "mfunnel") == 0) {
+		return 1;
+	} else if (property != NULL && strcmp(property, "embedr") == 0) {
 		return 1;
 	}
 	return 0;
