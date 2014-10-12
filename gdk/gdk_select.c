@@ -226,24 +226,26 @@ do {							\
 	e = (BUN) (i+limit-pr_off+off);			\
 	if (im[icnt] & mask) {				\
 		if ((im[icnt] & ~innermask) == 0) {	\
-			while (o < e && p < q) {	\
+			while (p < q && o < e) {	\
 				v = src[o-off];		\
 				ADD;			\
 				cnt++;			\
 				p++;			\
-				CAND;			\
+				if (p < q)		\
+					CAND;		\
 			}				\
 		} else {				\
-			while (o < e && p < q) {	\
+			while (p < q && o < e) {	\
 				v = src[o-off];		\
 				ADD;			\
 				cnt += (TEST);		\
 				p++;			\
-				CAND;			\
+				if (p < q)		\
+					CAND;		\
 			}				\
 		}					\
 	} else {					\
-		while (o < e && p <= q) {		\
+		while (p <= q && o < e) {		\
 			p++;				\
 			CAND;				\
 		}					\
