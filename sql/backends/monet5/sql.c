@@ -505,6 +505,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
+	int i;
+ 	MOStask task= (MOStask) GDKzalloc(sizeof(*task));
+    if( task == NULL)
+        throw(MAL, "sql.alter", MAL_MALLOC_FAIL);
 
 	if (!s)
 		return sql_message("3F000!ALTER TABLE: no such schema '%s'", sname);
@@ -559,6 +563,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 			mvc_drop_column(sql, nt, nc, c->drop_action);
 		}
+
 	/* check for changes on current cols */
 	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
 
@@ -598,9 +603,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				BBPreleaseref(b->batCacheid);
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			}
+			if( c->storage_type && !strstr(c->storage_type,"mosaic"))
+				for( i = 0; i< MOSAIC_METHODS; i++)
+					task->filter[i]= strstr(c->storage_type,MOSfiltername[i]) != 0;
+			else
+				for( i = 0; i< MOSAIC_METHODS; i++)
+					task->filter[i]= 1;
 
 			if( c->storage_type)
-				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, c->storage_type,1,0);
+				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, task, 1, 0);
 			else
 				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid,1);
 			BBPreleaseref(b->batCacheid);

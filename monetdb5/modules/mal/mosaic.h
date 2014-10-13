@@ -88,6 +88,9 @@ typedef int *MosaicBlk;
 #define MOSgetCnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
 #define MOSincCnt(Blk,I) *(Blk)= *(Blk)+I
 
+/* limit the number of elements to consider in a block
+ * It should always be smaller then: ~(0377<<MOSshift)
+*/
 #define MOSlimit() (int) ~(0377<<MOSshift)
 
 /* Memory word alignement is type and platform dependent.
@@ -102,6 +105,8 @@ typedef int *MosaicBlk;
 
 typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
+	int filter[MOSAIC_METHODS];// algorithmic mix
+
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
 	oid start;		// oid of first element in current blk
@@ -110,7 +115,7 @@ typedef struct MOSTASK{
 	char *dst;		// write pointer into current compressed blocks
 
 	BAT *b;			// source column
-	BUN	elm;		// elements left to compress
+	BUN	elm;		// (sample) elements left to compress
 	char *src;		// read pointer into source
 	BAT *index;		// collection of unique elements
 	BAT *freq;		// frequency of these elements
@@ -188,8 +193,7 @@ if ( task->cl && task->n){\
 
 mosaic_export char *MOSfiltername[];
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOScompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, str properties,int inplace,int flg);
+mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task,int inplace,int flg);
 mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid,int inplace);
@@ -199,6 +203,7 @@ mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSmosaic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
 
 #endif /* _MOSLIST_H */

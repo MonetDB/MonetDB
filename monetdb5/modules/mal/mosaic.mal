@@ -8,14 +8,6 @@ pattern compress(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address MOScompress
 comment "Apply dynamic compression producing a temporary";
 
-pattern compressStorage(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address MOScompressStorage
-comment "Apply dynamic compression change storage";
-
-pattern compressStorage(b:bat[:oid,:any_1],prop:str) :bat[:oid,:any_1]
-address MOScompressStorage
-comment "Apply dynamic compression change storage";
-
 pattern decompress(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
