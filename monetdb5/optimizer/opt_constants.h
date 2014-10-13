@@ -25,6 +25,6 @@
 
 opt_export int OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGconstants  if ( optDebug & (1 <<DEBUG_OPT_CONSTANTS) )
+#define OPTDEBUGconstants  if ( optDebug & ((lng) 1 <<DEBUG_OPT_CONSTANTS) )
 
 #endif

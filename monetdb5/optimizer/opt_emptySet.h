@@ -24,6 +24,6 @@
 
 opt_export int OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGemptySet  if ( optDebug & (1 <<DEBUG_OPT_EMPTYSET) )
+#define OPTDEBUGemptySet  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYSET) )
 
 #endif

@@ -27,6 +27,6 @@ opt_export str OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export int OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGoctopus  if ( optDebug & (1 <<DEBUG_OPT_OCTOPUS) )
+#define OPTDEBUGoctopus  if ( optDebug & ((lng) 1 <<DEBUG_OPT_OCTOPUS) )
 
 #endif

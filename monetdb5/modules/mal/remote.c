@@ -85,6 +85,11 @@ static unsigned char localtype = 0;
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
+#define newColumn(Var,Type,Tag)							\
+	Var = BATnew(TYPE_void, Type, 0, TRANSIENT);		\
+	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);	\
+	BATseqbase(Var,0);
+
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
