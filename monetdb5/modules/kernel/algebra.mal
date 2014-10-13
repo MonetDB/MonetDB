@@ -14,11 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
-
-# @
+# 
 # We split between selections that return one value, and selections
 # that return a BAT.
-# @+ Value Selections
 module algebra;
 
 command exist(b:bat[:oid,:any_1], val:any_1):bit
@@ -31,17 +29,10 @@ comment "Returns the tail value 't' for which some [h,t] BUN
 	exists in b.  If no such BUN exists, an error occurs." ;
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
-address ALGfetchoid;
-command fetch(b:bat[:any_2,:any_1], x:lng) :any_1
-address ALGfetch;
-command fetch(b:bat[:any_2,:any_1], x:int) :any_1
-address ALGfetchint
+address ALGfetchoid
 comment "Returns the tail value of the BUN at x-th position
 	with 0 <= x < b.count";
 
-# @+ BAT Selections
-# A simple sampling operation is also provided.
-# @- Range selection
 # The range selections are targeted at the tail of the BAT.
 command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address ALGsubselect1
@@ -163,21 +154,21 @@ address ALGuselect1
 comment "Value select, but returning only the
 	head values. SEE ALSO:select(bat,val)";
 
-# @- Pattern matching
+# Pattern matching
 command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
-# @- Sampling
+# Sampling
 command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
 address ALGsample
 comment "Returns the oids of a random selection of size 'num' from the input BAT.";
 
-# @+ BAT copying
+# BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGcopy
 comment "Returns physical copy of a BAT.";
-# @- Sorted copy
+# Sorted copy
 command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
