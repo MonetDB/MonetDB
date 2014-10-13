@@ -78,8 +78,10 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	if (errno != 0 ||												\
 		fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
 					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {			\
+		int e = errno;												\
 		BBPreleaseref(bn->batCacheid);								\
-		throw(MAL, "batmmath." #FUNC, "Math exception");			\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s",			\
+			  strerror(e));											\
 	}																\
 	BATsetcount(bn, BATcount(b));									\
 	bn->tsorted = 0;												\
@@ -127,8 +129,10 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	if (errno != 0 ||													\
 		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
 					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
+		int e = errno;													\
 		BBPreleaseref(bn->batCacheid);									\
-		throw(MAL, "batmmath." #FUNC, "Math exception");				\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s",				\
+			  strerror(e));												\
 	}																	\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
