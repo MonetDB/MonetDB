@@ -2791,10 +2791,6 @@ command algebra.bandjoin(outer:bat[:oid,:any_2],inner:bat[:oid,:any_2],minus:any
 address ALGbandjoin2;
 comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
 
-command algebra.crossproduct(left:bat[:any_1,:any_2],right:bat[:any_3,:any_4]):bat[:any_1,:any_4] 
-address ALGcross;
-comment Returns the cross product
-
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
@@ -2936,18 +2932,6 @@ comment "grouped mark": Produces a new BAT with per group a locally unique dense
 command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:oid]):bat[:any_1,:oid] 
 address ALGmark_grp_1;
 comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequence of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The tail of g gives for each group the base value for the new OID sequence.
-
-command algebra.markH(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:oid,:any_2] 
-address ALGhmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in 	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
-
-command algebra.markH(b:bat[:any_1,:any_2],base:oid):bat[:oid,:any_2] 
-address ALGmarkHead;
-comment Produces a new BAT with fresh unique dense sequense of OIDs in 		the head that starts at base (i.e. [base,..base+b.count()-1] ).
-
-command algebra.markH(b:bat[:any_1,:any_2]):bat[:oid,:any_2] 
-address ALGmarkHead_default;
-comment Produces a BAT with fresh OIDs in the head starting at 0@0.
 
 command algebra.markT(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
