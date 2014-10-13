@@ -990,7 +990,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	(void) stk;
 
-	optDebug |= 1 << DEBUG_OPT_OCTOPUS;
+	optDebug |= (lng) 1 << DEBUG_OPT_OCTOPUS;
 	OPTDEBUGoctopus{ 
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		chkProgram(cntxt->fdout, cntxt->nspace,mb);  

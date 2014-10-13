@@ -26,6 +26,6 @@
 
 opt_export int OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGinline  if ( optDebug & (1 <<DEBUG_OPT_INLINE) )
+#define OPTDEBUGinline  if ( optDebug & ((lng) 1 <<DEBUG_OPT_INLINE) )
 
 #endif

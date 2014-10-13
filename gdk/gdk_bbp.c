@@ -2666,7 +2666,7 @@ typedef struct {
 #endif
 } bbptrim_t;
 
-static int lastused[BBPMAXTRIM]; /* bat lastused stamp; sort on this field */
+static unsigned lastused[BBPMAXTRIM]; /* bat lastused stamp; sort on this field */
 static bbptrim_t bbptrim[BBPMAXTRIM];
 static int bbptrimfirst = BBPMAXTRIM, bbptrimlast = 0, bbpunloadtail, bbpunload, bbptrimmax = BBPMAXTRIM, bbpscanstart = 1;
 
@@ -2691,7 +2691,7 @@ BBPtrim_scan(bat bbppos, bat bbplim)
 					 * higher for small bats
 					 */
 					BUN cnt = BATcount(b);
-					int swap_first = (cnt >= BBPSMALLBAT);
+					unsigned swap_first = (cnt >= BBPSMALLBAT);
 
 					/* however, when we are
 					 * looking to decrease the
@@ -2704,7 +2704,7 @@ BBPtrim_scan(bat bbppos, bat bbplim)
 					/* subtract 2-billion to make
 					 * sure the swap_first class
 					 * bats are unloaded first */
-					lastused[bbptrimlast] = BBPLASTUSED(BBP_lastused(bbppos)) | (swap_first << 31);
+					lastused[bbptrimlast] = (unsigned) BBPLASTUSED(BBP_lastused(bbppos)) | (swap_first << 31);
 					bbptrim[bbptrimlast].bid = bbppos;
 					bbptrim[bbptrimlast].cnt = cnt;
 					if (++bbptrimlast == bbptrimmax)
@@ -2717,10 +2717,11 @@ BBPtrim_scan(bat bbppos, bat bbplim)
 
 	if (bbptrimlast > 0) {
 		int i;
+		/* sort lastused array as (signed) int */
 		GDKqsort(lastused, bbptrim, NULL, bbptrimlast,
 			 sizeof(lastused[0]), sizeof(bbptrim[0]), TYPE_int);
 		for (i = bbptrimfirst = 0; i < bbptrimlast; i++) {
-			MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: %11d%c %9d=%s\t(#" BUNFMT ")\n", BBPLASTUSED(lastused[i]), (lastused[i] & (1 << 31)) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
+			MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: %11d%c %9d=%s\t(#" BUNFMT ")\n", (int) BBPLASTUSED(lastused[i]), lastused[i] & ((unsigned) 1 << 31) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
 
 			bbptrim[i].next = i + 1;
 		}
@@ -2749,7 +2750,7 @@ BBPtrim_select(size_t target, int dirty)
 
 	while (next != BBPMAXTRIM) {
 		int cur = next;	/* cur is the entry in the old bbptrimlist we are processing */
-		int untouched = BBPLASTUSED(BBP_lastused(bbptrim[cur].bid)) <= BBPLASTUSED(lastused[cur]);
+		int untouched = BBPLASTUSED(BBP_lastused(bbptrim[cur].bid)) <= (int) BBPLASTUSED(lastused[cur]);
 		BAT *b = BBP_cache(bbptrim[cur].bid);
 
 		next = bbptrim[cur].next;	/* do now, because we overwrite bbptrim[cur].next below */
@@ -2771,8 +2772,8 @@ BBPtrim_select(size_t target, int dirty)
 				  VIEWhparent(b),
 				  VIEWtparent(b),
 				  BBP_lastused(b->batCacheid),
-				  BBPLASTUSED(lastused[cur]),
-				  lastused[cur]);
+				  (int) BBPLASTUSED(lastused[cur]),
+				  (int) lastused[cur]);
 		}
 		/* recheck if conditions encountered by trimscan in
 		 * the past still hold */
@@ -2958,8 +2959,8 @@ BBPtrim(size_t target)
 				continue;
 			}
 			MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: %8d%c %7d %s\n",
-					   BBPLASTUSED(lastused[i]),
-					   lastused[i] & (1 << 31) ? '*' : ' ',
+					   (int) BBPLASTUSED(lastused[i]),
+					   lastused[i] & ((unsigned) 1 << 31) ? '*' : ' ',
 					   (int) bbptrim[i].bid,
 					   BBPname(bbptrim[i].bid));
 

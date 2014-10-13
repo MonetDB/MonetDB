@@ -23,6 +23,6 @@
 
 opt_export int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGgarbageCollector  if ( optDebug & (1 <<DEBUG_OPT_GARBAGE) )
+#define OPTDEBUGgarbageCollector  if ( optDebug & ((lng) 1 <<DEBUG_OPT_GARBAGE) )
 
 #endif
