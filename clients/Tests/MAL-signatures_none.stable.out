@@ -2310,14 +2310,10 @@ pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oi
 address ALGfirstn;
 comment Calculate first N values of B
 
-command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
-address ALGfetchint;
-comment Returns the tail value of the BUN at x-th position	with 0 <= x < b.count
-
-command algebra.fetch(b:bat[:any_2,:any_1],x:lng):any_1 
-address ALGfetch;
 command algebra.fetch(b:bat[:any_2,:any_1],x:oid):any_1 
 address ALGfetchoid;
+comment Returns the tail value of the BUN at x-th position	with 0 <= x < b.count
+
 command algebra.find(b:bat[:any_1,:any_2],h:any_1):any_2 
 address ALGfind;
 comment Returns the tail value 't' for which some [h,t] BUN	exists in b.  If no such BUN exists, an error occurs.
@@ -31401,6 +31397,10 @@ command batmtime.seconds(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 command batmtime.year(d:bat[:oid,:date]):bat[:oid,:int] 
 address MTIMEdate_extract_year_bulk;
+command batmkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address MKEYbathash;
+comment calculate a hash value
+
 command bat.append(i:bat[:any_1,:any_2],u:any_2,force:bit):bat[:any_1,:any_2] 
 address BKCappend_val_force_wrap;
 comment append the value u to i
@@ -39733,31 +39733,45 @@ pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address MKEYbathash;
+pattern mkey.hash(v:str):wrd 
+address MKEYhash;
 comment calculate a hash value
 
-command mkey.hash(v:str):wrd 
-address MKEYhash_str;
-command mkey.hash(v:lng):wrd 
-address MKEYhash_lng;
-command mkey.hash(v:dbl):wrd 
-address MKEYhash_dbl;
-command mkey.hash(v:wrd):wrd 
-address MKEYhash_wrd;
-command mkey.hash(v:flt):wrd 
-address MKEYhash_flt;
-command mkey.hash(v:int):wrd 
-address MKEYhash_int;
-command mkey.hash(v:sht):wrd 
-address MKEYhash_sht;
-command mkey.hash(v:bte):wrd 
-address MKEYhash_bte;
-command mkey.hash(v:bit):wrd 
-address MKEYhash_bte;
+pattern mkey.hash(v:lng):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:dbl):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:wrd):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:flt):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:int):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:sht):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:bte):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:bit):wrd 
+address MKEYhash;
+comment calculate a hash value
+
 pattern mkey.hash(v:any):wrd 
 address MKEYhash;
-comment compute a hash int number from any value
+comment calculate a hash value
 
 command mkey.rotate(v:wrd,nbits:int):wrd 
 address MKEYrotate;
