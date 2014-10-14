@@ -148,7 +148,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 			}\
 	hdr->bits = 1;\
 	hdr->mask =1;\
-	for( i=1 ; i < (BUN) hdr->dictsize-1; i *=2){\
+	for( i=2 ; i < (BUN) hdr->dictsize; i *=2){\
 		hdr->bits++;\
 		hdr->mask = (hdr->mask <<1) | 1;\
 	}\
@@ -168,7 +168,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	hdr->dictsize = 0;
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: makeDict(sht); break;
-	case TYPE_int: makeDict(int); break;
+	case TYPE_lng: makeDict(lng); break;
 	case TYPE_oid: makeDict(oid); break;
 	case TYPE_wrd: makeDict(wrd); break;
 	case TYPE_flt: makeDict(flt); break;
@@ -176,9 +176,9 @@ MOScreatedictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: makeDict(hge); break;
 #endif
-	case TYPE_lng:
-		{	lng *val = ((lng*)task->src) + task->start;
-			lng *dict = (lng*)hdr->dict,v;
+	case TYPE_int:
+		{	int *val = ((int*)task->src) + task->start;
+			int *dict = (int*)hdr->dict,v;
 
 			for(i =task->start; i< task->stop; i++, val++){
 				for(j= 0; j< hdr->dictsize; j++)
@@ -209,7 +209,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 					}
 			hdr->bits = 1;
 			hdr->mask =1;
-			for( i=1 ; i < (BUN) hdr->dictsize-1; i *=2){
+			for( i=2 ; i < (BUN) hdr->dictsize; i *=2){
 				hdr->bits++;
 				hdr->mask = (hdr->mask <<1) | 1;
 			}

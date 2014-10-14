@@ -32,6 +32,10 @@ pattern analyse(b:int)
 address MOSanalyse
 comment "Apply default heap compression on a specific column";
 
+pattern optimize(bid:int, ply:int)
+address MOSmosaic
+comment "Perform a search thru the compression space";
+
 pattern dump(b:bat[:oid,:any])
 address MOSdump
 comment "Dump the compressed structure";

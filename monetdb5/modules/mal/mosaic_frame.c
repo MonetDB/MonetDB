@@ -146,7 +146,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 			}\
 	hdr->framebits = 1;\
 	hdr->mask =1;\
-	for( i=1 ; i < (BUN) hdr->framesize-1; i *=2){\
+	for( i=2 ; i < (BUN) hdr->framesize; i *=2){\
 		hdr->framebits++;\
 		hdr->mask = (hdr->mask <<1) | 1;\
 	}\
@@ -198,6 +198,7 @@ MOScreateframe(Client cntxt, MOStask task)
 				} else
 					cnt[j]++;
 			}
+			//assert(hdr->framesize);
 			// sort it
 			for(i=0; i< (BUN) hdr->framesize; i++)
 				for(j=i+1; j< hdr->framesize; j++)
@@ -208,7 +209,7 @@ MOScreateframe(Client cntxt, MOStask task)
 					}
 			hdr->framebits = 1;
 			hdr->mask =1;
-			for( i=1 ; i < (BUN) hdr->framesize-1; i *=2){
+			for( i=2 ; i < (BUN) hdr->framesize; i *=2){
 				hdr->framebits++;
 				hdr->mask = (hdr->mask <<1) | 1;
 			}
