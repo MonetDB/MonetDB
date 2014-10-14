@@ -23,36 +23,41 @@ comment "left-rotate an int by nbits";
 
 pattern hash(v:any):wrd
 address MKEYhash
-comment "compute a hash int number from any value";
+comment "calculate a hash value";
 
-command hash(v:bit):wrd
-address MKEYhash_bte;
-command hash(v:bte):wrd
-address MKEYhash_bte;
-command hash(v:sht):wrd
-address MKEYhash_sht;
-command hash(v:int):wrd
-address MKEYhash_int;
-command hash(v:flt):wrd
-address MKEYhash_flt;
-command hash(v:wrd):wrd
-address MKEYhash_wrd;
-command hash(v:dbl):wrd
-address MKEYhash_dbl;
-command hash(v:lng):wrd
-address MKEYhash_lng;
-command hash(v:str):wrd
-address MKEYhash_str;
-
-command hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd]
-address MKEYbathash
+pattern hash(v:bit):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:bte):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:sht):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:int):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:flt):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:wrd):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:dbl):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:lng):wrd
+address MKEYhash
+comment "calculate a hash value";
+pattern hash(v:str):wrd
+address MKEYhash
 comment "calculate a hash value";
 
 pattern bulk_rotate_xor_hash(h:wrd, nbits:int, v:any) :wrd
 address MKEYrotate_xor_hash
 comment "post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-command bulk_rotate_xor_hash(h:wrd, nbits:int,b:bat[:oid,:any_1])
+command bulk_rotate_xor_hash(h:wrd, nbits:int, b:bat[:oid,:any_1])
 	:bat[:oid,:wrd]
 address MKEYconstbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
@@ -64,9 +69,14 @@ address MKEYbulkconst_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-command bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int,b:bat[:oid,:any_1])
+command bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1])
 	:bat[:oid,:wrd]
 address MKEYbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
+module batmkey;
+
+command hash(b:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address MKEYbathash
+comment "calculate a hash value";
