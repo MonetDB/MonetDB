@@ -26,6 +26,23 @@ SELECT * FROM complete where x>=2.0 AND x <=3.0;
 -- overlap partition queries
 SELECT * FROM complete where x>=1.0 AND x <=2.0;
 
+-- save the result
+CREATE TABLE answ( LIKE complete);
+EXPLAIN INSERT INTO answ
+SELECT * FROM complete where x>=1.0 AND x <=2.0;
+INSERT INTO answ
+SELECT * FROM complete where x>=1.0 AND x <=2.0;
+
+EXPLAIN INSERT INTO answ
+SELECT * FROM complete
+WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;
+INSERT INTO answ
+SELECT * FROM complete
+WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;
+
+EXPLAIN INSERT INTO answ
+SELECT * FROM complete where geom.contains(x,y);
+
 DROP TABLE complete;
 DROP TABLE part1;
 DROP TABLE part2;
