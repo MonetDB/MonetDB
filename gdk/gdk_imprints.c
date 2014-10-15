@@ -651,7 +651,11 @@ BATimprints(BAT *b)
 			    ((hdata[0] & 0xFF00) >> 8) == 1 && /* version 1 */
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
-			    st.st_size >= (off_t) (imprints->imprints->size = imprints->imprints->free = 64 * b->T->width +
+			    st.st_size >= (off_t) (imprints->imprints->size =
+						   imprints->imprints->free =
+						   64 * b->T->width +
+						   64 * 2 * SIZEOF_OID +
+						   64 * SIZEOF_BUN +
 						   pages * ((bte) hdata[0] / 8) +
 						   hdata[2] * sizeof(cchdc_t) +
 						   sizeof(uint64_t) /* padding for alignment */
