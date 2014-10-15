@@ -35,6 +35,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#ifndef SOCKET_ERROR
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR   -1
+#endif
+
 // R headers
 #include <R.h>
 #include <Rdefines.h>

@@ -25,6 +25,6 @@
 
 opt_export int OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGrecycle  if ( optDebug & (1 <<DEBUG_OPT_RECYCLE) )
+#define OPTDEBUGrecycle  if ( optDebug & ((lng) 1 <<DEBUG_OPT_RECYCLE) )
 
 #endif

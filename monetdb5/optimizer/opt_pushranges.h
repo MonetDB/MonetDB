@@ -24,6 +24,6 @@
 
 opt_export int OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGpushranges  if ( optDebug & (1 <<DEBUG_OPT_PUSHRANGES) )
+#define OPTDEBUGpushranges  if ( optDebug & ((lng) 1 <<DEBUG_OPT_PUSHRANGES) )
 
 #endif

@@ -169,7 +169,11 @@ childhandler(int sig, siginfo_t *si, void *unused)
 
 	/* wait for the child to get properly terminated, hopefully filling
 	 * in the siginfo struct on FreeBSD */
-	wait(NULL);
+	if (waitpid(-1, NULL, WNOHANG) <= 0) {
+		/* if no child has exited, we may have already waited for it
+		 * in e.g. ctl_handle_client() */
+		return;
+	}
 
 	if (si->si_code != CLD_EXITED &&
 			si->si_code != CLD_KILLED &&
