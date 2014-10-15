@@ -40,9 +40,6 @@ INSERT INTO answ
 SELECT * FROM complete
 WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;
 
-EXPLAIN INSERT INTO answ
-SELECT * FROM complete where geom.contains(x,y);
-
 DROP TABLE complete;
 DROP TABLE part1;
 DROP TABLE part2;

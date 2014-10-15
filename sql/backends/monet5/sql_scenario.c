@@ -1109,6 +1109,22 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
+static str
+sql_update_feb2015(Client c)
+{
+	size_t bufsize = 8192*2, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t int) returns timestamp external name timestamp.epoch;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t timestamp) returns int external name timestamp.epoch;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t bigint) returns timestamp external name calc.timestamp;\n");
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
 
 str
 SQLinitClient(Client c)
@@ -1276,6 +1292,14 @@ SQLinitClient(Client c)
 		sql_find_subtype(&tp, "clob", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
 			if ((err = sql_update_oct2014(c)) !=NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* add missing features needed beyond Oct 2014 */
+		sql_find_subtype(&tp, "timestamp", 0, 0);
+		if ( !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){
+			if ((err = sql_update_feb2015(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
