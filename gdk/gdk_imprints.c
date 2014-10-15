@@ -412,6 +412,7 @@ do {									\
 	uint##B##_t *im = (uint##B##_t *) imps;				\
 	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
 	TYPE *bins = (TYPE *) inbins;					\
+	TYPE nil = TYPE##_nil;							\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
 	for (i = 0; i < b->batCount; i++) {				\
@@ -455,8 +456,19 @@ do {									\
 		if (!cnt_bins[bin]++) {						\
 			min_bins[bin] = max_bins[bin] = i;		\
 		} else { 									\
-			if (col[i] < col[min_bins[bin]]) min_bins[bin] = i;	\
-			if (col[i] > col[max_bins[bin]]) max_bins[bin] = i;	\
+			/* nil value can not be min */			\
+			if ((bin == 0) && (col[i] != nil)) {					\
+				/* in case the first value was nil and min_bin[0]	\
+				 * has been initialized with it */					\
+				if (col[min_bins[0]] == nil) {						\
+					min_bins[0] = i;								\
+				} else if (col[i] < col[min_bins[0]]) {				\
+					min_bins[0] = i;								\
+				}													\
+			} else	{												\
+				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i;	\
+			}														\
+			if (col[i] > col[max_bins[bin]]) max_bins[bin] = i;		\
 		}														\
 	}								\
 	/* one last left */						\
