@@ -405,7 +405,7 @@ static void ctl_handle_client(
 						 * create. See bug http://bugs.monetdb.org/3603. */
 						sigemptyset(&blocksig);
 						sigaddset(&blocksig, SIGCHLD);
-						sigprocmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
+						pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 						if ((child = fork()) == 0) {
 							FILE *secretf;
 							size_t len;
@@ -417,7 +417,7 @@ static void ctl_handle_client(
 
 							sigemptyset(&blocksig);
 							sigaddset(&blocksig, SIGCHLD);
-							sigprocmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
+							pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
@@ -470,16 +470,13 @@ static void ctl_handle_client(
 						} else if (child > 0) {
 							/* wait for the child to finish */
 							waitpid(child, NULL, 0);
-							sigemptyset(&blocksig);
-							sigaddset(&blocksig, SIGCHLD);
-							sigprocmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 						} else {
-							sigemptyset(&blocksig);
-							sigaddset(&blocksig, SIGCHLD);
-							sigprocmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 							Mfprintf(_mero_ctlout, "%s: forking failed\n",
 									 origin);
 						}
+						sigemptyset(&blocksig);
+						sigaddset(&blocksig, SIGCHLD);
+						pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 					}
 
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
