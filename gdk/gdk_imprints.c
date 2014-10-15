@@ -949,16 +949,37 @@ IMPSprint(BAT *b)
 	cchdc_t *d;
 	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
+	oid *min_bins, *max_bins;
+	BUN *cnt_bins;
 	bte j;
+	int i;
 
 	if (!BATimprints(b))
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;
+	min_bins = (oid *) imprints->stats;
+	max_bins = min_bins + 64;
+	cnt_bins = (BUN *)(max_bins + 64);
 
 	fprintf(stderr,
 		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
 		imprints->bits, imprints->impcnt, imprints->dictcnt);
+	fprintf(stderr,"MIN = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " OIDFMT " ] ", min_bins[i]);
+	}
+	fprintf(stderr,"\n");
+	fprintf(stderr,"MAX = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " OIDFMT " ] ", max_bins[i]);
+	}
+	fprintf(stderr,"\n");
+	fprintf(stderr,"COUNT = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " BUNFMT " ] ", cnt_bins[i]);
+	}
+	fprintf(stderr,"\n");
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
