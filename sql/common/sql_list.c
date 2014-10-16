@@ -24,7 +24,7 @@
 static node *
 node_create(sql_allocator *sa, void *data)
 {
-	node *n = (sa)?SA_NEW(sa, node):NEW(node);
+	node *n = (sa)?SA_NEW(sa, node):MNEW(node);
 
 	n->next = NULL;
 	n->data = data;
@@ -34,7 +34,7 @@ node_create(sql_allocator *sa, void *data)
 list *
 list_create(fdestroy destroy)
 {
-	list *l = NEW(list);
+	list *l = MNEW(list);
 
 	l->sa = NULL;
 	l->destroy = destroy;

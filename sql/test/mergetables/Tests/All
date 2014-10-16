@@ -1,0 +1,7 @@
+mergeinit
+mergeload
+mergequery
+forex
+#mergedrop corrupts the database
+#crash0 crashes the server
+

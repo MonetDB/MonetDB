@@ -122,7 +122,7 @@ function user.main():void;
     bat.append(t1,3);
     io.print("<in>");
     v1 := algebra.select(t1,2,nil:int,false,false);
-    v2a := algebra.markT(v1,0@0);
+    v2a := algebra.mark(v1,0@0);
     vr := bat.reverse(v2a);
     vj := algebra.join(vr,t1);
     io.print(vj);

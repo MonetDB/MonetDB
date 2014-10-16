@@ -144,7 +144,7 @@ mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
-mal_export int findVariable(MalBlkPtr mb, str name);
+mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findTmpVariable(MalBlkPtr mb, int type);
 mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
 mal_export malType getType(MalBlkPtr mb, str nme);

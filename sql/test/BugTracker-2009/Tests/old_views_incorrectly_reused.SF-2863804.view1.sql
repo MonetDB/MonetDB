@@ -22,6 +22,6 @@ CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result_1 AS
 CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result AS 
 	SELECT ALL a1, 1-prod(1-prob) AS prob FROM find_TERM_from_DOC_attribute_1_RESULT_result_1 GROUP BY a1;
 
-SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC LIMIT 50 OFFSET 0;
+SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC, value LIMIT 50 OFFSET 0;
 
 ROLLBACK;

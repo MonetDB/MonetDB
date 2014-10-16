@@ -1,0 +1,66 @@
+stdout of test 'prepare_statements_crash_server.Bug-2599` in directory 'sql/test/BugTracker-2010` itself:
+
+
+# 15:33:49 >  
+# 15:33:49 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35649 --set xrpc_port=42384 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 15:33:49 >  
+
+# MonetDB server v5.20.2, based on kernel v1.38.2
+# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35649/
+# MonetDB/SQL module v2.38.3 loaded
+# MonetDB/GIS module v0.18.1 loaded
+
+Ready.
+
+
+# 15:41:23 >  
+# 15:41:23 >  mclient -lsql -ftest -i -e --host=rig --port=38276 
+# 15:41:23 >  
+
+#prepare select * from t_2599 where a>1+?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+#prepare select * from t_2599 where a>2*?+1;
+#prepare select * from t_2599 where a>2*?+1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+#prepare select * from t_2599 where a>?+1;
+#prepare select * from t_2599 where a>?+1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+#prepare select * from t_2599 where a>1+?*2;
+#prepare select * from t_2599 where a>1+?*2;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
+#drop table t_2599;
+
+# 12:42:06 >  
+# 12:42:06 >  "Done."
+# 12:42:06 >  
+

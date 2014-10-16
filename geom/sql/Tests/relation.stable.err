@@ -38,7 +38,7 @@ MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO geoms values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 MAPI  = monetdb@madrid:30163
-QUERY = SELECT a.g, b.g, Relate(a.g,b.g,'Touches') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+QUERY = SELECT a.g, b.g, Relate(a.g,b.g,'Touches') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL order by a.g, b.g;
 ERROR = !GDKerror:!ERROR: IllegalArgumentException: IllegalArgumentException: Should be length 9, is [Touches] instead
         !
 

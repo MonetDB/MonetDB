@@ -64,6 +64,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upavg[8];
 	char upmax[8];
 	confkeyval *ckv, *kv;
+	SABdbState state;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -179,12 +180,13 @@ forkMserver(char *database, sabdb** stats, int force)
 		default:
 			/* this also includes SABdbStarting, which we shouldn't ever
 			 * see due to the global starting lock */
+			state = (*stats)->state;
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&fork_lock);
 			return(newErr("unknown or impossible state: %d",
-						(int)(*stats)->state));
+						(int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -278,11 +280,16 @@ forkMserver(char *database, sabdb** stats, int force)
 		char nclients[24];
 		char pipeline[512];
 		char *readonly = NULL;
+		char *embeddedr = NULL;
 		char *argv[24];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
 
-		msab_getDBfarm(&sabdbfarm);
+		er = msab_getDBfarm(&sabdbfarm);
+		if (er != NULL) {
+			Mfprintf(stderr, "unexpected error: %s\n", er);
+			exit(1);
+		}
 
 		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
@@ -316,6 +323,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(ckv, "readonly");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			readonly = "--readonly";
+
+		kv = findConfKey(ckv, "embedr");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+			embeddedr = "embedded_r=true";
 
 		freeConfFile(ckv);
 		free(ckv); /* can make ckv static and reuse it all the time */
@@ -381,6 +392,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
 		}
+		if (embeddedr != NULL) {
+			argv[c++] = "--set"; argv[c++] = embeddedr;
+		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;
 		}
@@ -404,139 +418,141 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* if the exec returns, it is because of a failure */
 		Mfprintf(stderr, "executing failed: %s\n", strerror(errno));
 		exit(1);
-	} else if (pid > 0) {
+	} else {
 		/* don't need this, child did */
 		freeConfFile(ckv);
 		free(ckv);
 
-		/* make sure no entries are shot while adding and that we
-		 * deliver a consistent state */
-		pthread_mutex_lock(&_mero_topdp_lock);
-
-		/* parent: fine, let's add the pipes for this child */
-		dp = _mero_topdp;
-		while (dp->next != NULL)
-			dp = dp->next;
-		dp = dp->next = malloc(sizeof(struct _dpair));
-		dp->out = pfdo[0];
-		close(pfdo[1]);
-		dp->err = pfde[0];
-		close(pfde[1]);
-		dp->next = NULL;
-		dp->type = MERODB;
-		dp->pid = pid;
-		dp->dbname = strdup(database);
-
-		pthread_mutex_unlock(&_mero_topdp_lock);
-
-		/* wait for the child to finish starting, at some point we
-		 * decided that we should wait indefinitely here because if the
-		 * mserver needs time to start up, we shouldn't interrupt it,
-		 * and if it hangs, we're just doomed, with the drawback that we
-		 * completely kill the functionality of monetdbd too */
-		do {
-			/* give the database a break */
-			sleep_ms(500);
-
-			/* in the meanwhile, if the server has stopped, it will
-			 * have been removed from the dpair list, so check if
-			 * it's still there. */
+		if (pid > 0) {
+			/* make sure no entries are shot while adding and that we
+			 * deliver a consistent state */
 			pthread_mutex_lock(&_mero_topdp_lock);
+
+			/* parent: fine, let's add the pipes for this child */
 			dp = _mero_topdp;
-			while (dp != NULL && dp->pid != pid)
+			while (dp->next != NULL)
 				dp = dp->next;
+			dp = dp->next = malloc(sizeof(struct _dpair));
+			dp->out = pfdo[0];
+			close(pfdo[1]);
+			dp->err = pfde[0];
+			close(pfde[1]);
+			dp->next = NULL;
+			dp->type = MERODB;
+			dp->pid = pid;
+			dp->dbname = strdup(database);
+
 			pthread_mutex_unlock(&_mero_topdp_lock);
 
-			/* stats cannot be NULL, as we don't allow starting non
-			 * existing databases, note that we need to run this loop at
-			 * least once not to leak */
-			msab_freeStatus(stats);
-			er = msab_getStatus(stats, database);
-			if (er != NULL) {
-				/* since the client mserver lives its own life anyway,
-				 * it's not really a problem we exit here */
-				err e = newErr("%s", er);
-				free(er);
-				pthread_mutex_unlock(&fork_lock);
-				return(e);
-			}
+			/* wait for the child to finish starting, at some point we
+			 * decided that we should wait indefinitely here because if the
+			 * mserver needs time to start up, we shouldn't interrupt it,
+			 * and if it hangs, we're just doomed, with the drawback that we
+			 * completely kill the functionality of monetdbd too */
+			do {
+				/* give the database a break */
+				sleep_ms(500);
 
-			/* server doesn't run, no need to wait any longer */
-			if (dp == NULL)
-				break;
-		} while ((*stats)->state != SABdbRunning);
+				/* in the meanwhile, if the server has stopped, it will
+				 * have been removed from the dpair list, so check if
+				 * it's still there. */
+				pthread_mutex_lock(&_mero_topdp_lock);
+				dp = _mero_topdp;
+				while (dp != NULL && dp->pid != pid)
+					dp = dp->next;
+				pthread_mutex_unlock(&_mero_topdp_lock);
 
-		/* check if the SQL scenario was loaded */
-		if (dp != NULL && (*stats)->state == SABdbRunning &&
+				/* stats cannot be NULL, as we don't allow starting non
+				 * existing databases, note that we need to run this loop at
+				 * least once not to leak */
+				msab_freeStatus(stats);
+				er = msab_getStatus(stats, database);
+				if (er != NULL) {
+					/* since the client mserver lives its own life anyway,
+					 * it's not really a problem we exit here */
+					err e = newErr("%s", er);
+					free(er);
+					pthread_mutex_unlock(&fork_lock);
+					return(e);
+				}
+
+				/* server doesn't run, no need to wait any longer */
+				if (dp == NULL)
+					break;
+			} while ((*stats)->state != SABdbRunning);
+
+			/* check if the SQL scenario was loaded */
+			if (dp != NULL && (*stats)->state == SABdbRunning &&
 				(*stats)->conns != NULL &&
 				(*stats)->conns->val != NULL &&
 				(*stats)->scens != NULL &&
 				(*stats)->scens->val != NULL)
-		{
-			sablist *scen = (*stats)->scens;
-			do {
-				if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
-					break;
-			} while ((scen = scen->next) != NULL);
-			if (scen == NULL) {
-				/* we don't know what it's doing, but we don't like it
-				 * any case, so kill it */
+				{
+					sablist *scen = (*stats)->scens;
+					do {
+						if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
+							break;
+					} while ((scen = scen->next) != NULL);
+					if (scen == NULL) {
+						/* we don't know what it's doing, but we don't like it
+						 * any case, so kill it */
+						terminateProcess(dp);
+						msab_freeStatus(stats);
+						pthread_mutex_unlock(&fork_lock);
+						return(newErr("database '%s' did not initialise the sql "
+									  "scenario", database));
+					}
+				} else if (dp != NULL) {
 				terminateProcess(dp);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&fork_lock);
-				return(newErr("database '%s' did not initialise the sql "
-							"scenario", database));
+				return(newErr(
+						   "database '%s' started up, but failed to open up "
+						   "a communication channel", database));
 			}
-		} else if (dp != NULL) {
-			terminateProcess(dp);
-			msab_freeStatus(stats);
+
 			pthread_mutex_unlock(&fork_lock);
-			return(newErr(
-						"database '%s' started up, but failed to open up "
-						"a communication channel", database));
-		}
 
-		pthread_mutex_unlock(&fork_lock);
+			/* try to be clear on why starting the database failed */
+			if (dp == NULL) {
+				state = (*stats)->state;
 
-		/* try to be clear on why starting the database failed */
-		if (dp == NULL) {
-			int state = (*stats)->state;
+				/* starting failed */
+				msab_freeStatus(stats);
 
-			/* starting failed */
-			msab_freeStatus(stats);
-
-			switch (state) {
+				switch ((int)state) {
 				case SABdbRunning:
 					/* right, it's not there, but it's running */
 					return(newErr(
-								"database '%s' has inconsistent state "
-								"(sabaoth administration reports running, "
-								"but process seems gone), "
-								"review monetdbd's "
-								"logfile for any peculiarities", database));
+							   "database '%s' has inconsistent state "
+							   "(sabaoth administration reports running, "
+							   "but process seems gone), "
+							   "review monetdbd's "
+							   "logfile for any peculiarities", database));
 				case SABdbCrashed:
 					return(newErr(
-								"database '%s' has crashed after starting, "
-								"manual intervention needed, "
-								"check monetdbd's logfile for details",
-								database));
+							   "database '%s' has crashed after starting, "
+							   "manual intervention needed, "
+							   "check monetdbd's logfile for details",
+							   database));
 				case SABdbInactive:
 					return(newErr(
-								"database '%s' appears to shut "
-								"itself down after starting, "
-								"check monetdbd's logfile for possible "
-								"hints", database));
+							   "database '%s' appears to shut "
+							   "itself down after starting, "
+							   "check monetdbd's logfile for possible "
+							   "hints", database));
 				default:
-					return(newErr("unknown state: %d", (int)(*stats)->state));
+					return(newErr("unknown state: %d", (int)state));
+				}
 			}
-		}
 
-		if ((*stats)->locked == 1) {
-			Mfprintf(stdout, "database '%s' has been put into maintenance "
-					"mode during startup\n", database);
-		}
+			if ((*stats)->locked == 1) {
+				Mfprintf(stdout, "database '%s' has been put into maintenance "
+						 "mode during startup\n", database);
+			}
 
-		return(NO_ERR);
+			return(NO_ERR);
+		}
 	}
 	/* forking failed somehow, cleanup the pipes */
 	close(pfdo[0]);

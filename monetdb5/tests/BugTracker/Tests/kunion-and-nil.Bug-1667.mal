@@ -1,12 +1,12 @@
-    a  := bat.new(nil:oid,nil:oid);
-    bat.append(a, nil:oid, true);
-    bat.append(a, 1@0, true);
-		a := algebra.tunique(a);
-		b := algebra.tunion(a, a);
-
-		io.print(b);
-		(infoattr, infoval) := bat.info(b);
-		infoattr := algebra.select(infoattr, "tkey");
-		infoattrreverse := bat.reverse(infoattr);
-		info := algebra.join(infoattrreverse, infoval);
-		io.print(info);
+a  := bat.new(nil:oid,nil:oid);
+bat.append(a, nil:oid, true);
+bat.append(a, 1@0, true);
+x := algebra.subunique(a);
+a := algebra.leftfetchjoin(x,a);
+b := algebra.tunion(a, a);
+io.print(b);
+(infoattr, infoval) := bat.info(b);
+infoattr := algebra.select(infoattr, "tkey");
+infoattrreverse := bat.reverse(infoattr);
+info := algebra.join(infoattrreverse, infoval);
+io.print(info);

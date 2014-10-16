@@ -305,6 +305,14 @@ pattern dropDeclaredTables{unsafe}( nr:int ) :void
 address mvc_drop_declared_tables_wrap
 comment "drop top n declared tables"; 
 
+pattern drop_func_upgrade_oct2014(id:int) :int
+address UPGdrop_func
+comment "Drop the function identified by id, needed for the Oct2014 upgrade";
+
+pattern create_func_upgrade_oct2014(f:str) :int
+address UPGcreate_func
+comment "Create the function described by f, needed for the Oct2014 upgrade";
+
 pattern exportHead{unsafe}(s:streams, res_id:int) :void
 address mvc_export_head_wrap
 comment "Export a result (in order) to stream s"; 
@@ -692,10 +700,10 @@ comment "cast to bte and check for overflow";
 command calc.bte( v:void, digits:int, scale:int ) :bte 
 address nil_2dec_bte
 comment "cast to dec(bte) and check for overflow";
-command batcalc.bte( v:bat[:oid,:void], digits:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:oid,:oid], digits:int ) :bat[:oid,:bte] 
 address batnil_2num_bte
 comment "cast to bte and check for overflow";
-command batcalc.bte( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:bte] 
 address batnil_2dec_bte
 comment "cast to dec(bte) and check for overflow";
 
@@ -718,10 +726,10 @@ comment "cast to sht and check for overflow";
 command calc.sht( v:void, digits:int, scale:int ) :sht 
 address nil_2dec_sht
 comment "cast to dec(sht) and check for overflow";
-command batcalc.sht( v:bat[:oid,:void], digits:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:oid,:oid], digits:int ) :bat[:oid,:sht] 
 address batnil_2num_sht
 comment "cast to sht and check for overflow";
-command batcalc.sht( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:sht] 
 address batnil_2dec_sht
 comment "cast to dec(sht) and check for overflow";
 
@@ -744,10 +752,10 @@ comment "cast to int and check for overflow";
 command calc.int( v:void, digits:int, scale:int ) :int 
 address nil_2dec_int
 comment "cast to dec(int) and check for overflow";
-command batcalc.int( v:bat[:oid,:void], digits:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:oid,:oid], digits:int ) :bat[:oid,:int] 
 address batnil_2num_int
 comment "cast to int and check for overflow";
-command batcalc.int( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:int] 
 address batnil_2dec_int
 comment "cast to dec(int) and check for overflow";
 
@@ -770,10 +778,10 @@ comment "cast to lng and check for overflow";
 command calc.lng( v:void, digits:int, scale:int ) :lng 
 address nil_2dec_lng
 comment "cast to dec(lng) and check for overflow";
-command batcalc.lng( v:bat[:oid,:void], digits:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:oid,:oid], digits:int ) :bat[:oid,:lng] 
 address batnil_2num_lng
 comment "cast to lng and check for overflow";
-command batcalc.lng( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:lng] 
 address batnil_2dec_lng
 comment "cast to dec(lng) and check for overflow";
 
@@ -797,10 +805,10 @@ command calc.timestamp( v:void, digits:int ) :timestamp
 address nil_2time_timestamp
 comment "cast to timestamp and check for overflow";
 
-command batcalc.timestamp( v:bat[:oid,:void] ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:oid,:oid] ) :bat[:oid,:timestamp] 
 address batnil_2_timestamp
 comment "Cast to timestamp";
-command batcalc.timestamp( v:bat[:oid,:void], digits:int ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:oid,:oid], digits:int ) :bat[:oid,:timestamp] 
 address batnil_2time_timestamp
 comment "cast to timestamp and check for overflow";
 
@@ -831,10 +839,10 @@ command calc.daytime( v:void, digits:int ) :daytime
 address nil_2time_daytime
 comment "cast to daytime and check for overflow";
 
-command batcalc.daytime( v:bat[:oid,:void] ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:oid,:oid] ) :bat[:oid,:daytime] 
 address batnil_2_daytime
 comment "Cast to daytime";
-command batcalc.daytime( v:bat[:oid,:void], digits:int ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:oid,:oid], digits:int ) :bat[:oid,:daytime] 
 address batnil_2time_daytime
 comment "cast to daytime and check for overflow";
 
@@ -869,7 +877,7 @@ comment "Get the clients current timestamp";
 command calc.date( v:void ) :date 
 address nil_2_date
 comment "cast to date";
-command batcalc.date( v:bat[:oid,:void] ) :bat[:oid,:date] 
+command batcalc.date( v:bat[:oid,:oid] ) :bat[:oid,:date] 
 address batnil_2_date
 comment "cast to date";
 
@@ -954,7 +962,7 @@ pattern calc.second_interval( v:lng, ek:int, sk:int ) :lng
 address second_interval
 comment "cast lng to a second_interval and check for overflow";
 
-command calc.rowid(v:any_1, schema:str, table:str) :oid
+pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 

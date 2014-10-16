@@ -18,33 +18,11 @@
  */
 
 /*
- * @' The contents of this file are subject to the MonetDB Public License
- * @' Version 1.1 (the "License"); you may not use this file except in
- * @' compliance with the License. You may obtain a copy of the License at
- * @' http://www.monetdb.org/Legal/MonetDBLicense
- * @'
- * @' Software distributed under the License is distributed on an "AS IS"
- * @' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * @' License for the specific language governing rights and limitations
- * @' under the License.
- * @'
- * @' The Original Code is the MonetDB Database System.
- * @'
- * @' The Initial Developer of the Original Code is CWI.
- * @' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * @' Copyright August 2008-2014 MonetDB B.V.
- * @' All Rights Reserved.
+ * Authors: M. Ivanova, M. Kersten, N. Nes
  *
- * @a M. Ivanova, M. Kersten, N. Nes
- * @f fits
- * @- This module contains primitives for accessing data in FITS file format.
- *
- * @-
+ * This module contains primitives for accessing data in FITS file format.
  */
-/*
- * @-
- *
- */
+
 #include "monetdb_config.h"
 #include <glob.h>
 
@@ -199,7 +177,7 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
 str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str tname = *(str*) getArgReference(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 1);
 	mvc *m = NULL;
 	sql_trans *tr;
 	sql_schema *sch;
@@ -570,7 +548,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str dir = *(str*)getArgReference(stk, pci, 1);
+	str dir = *getArgReference_str(stk, pci, 1);
 	DIR *dp;
 	struct dirent *ep;
 	fitsfile *fptr;
@@ -605,8 +583,8 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str dir = *(str*)getArgReference(stk, pci, 1);
-	str pat = *(str*)getArgReference(stk, pci, 2);
+	str dir = *getArgReference_str(stk, pci, 1);
+	str pat = *getArgReference_str(stk, pci, 2);
 	fitsfile *fptr;
 	char *s;
 	int status = 0;
@@ -671,7 +649,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *fits_tp, *fits_fl, *fits_tbl, *fits_col, *tbl = NULL;
 	sql_column *col;
 	str msg = MAL_SUCCEED;
-	str fname = *(str*)getArgReference(stk, pci, 1);
+	str fname = *getArgReference_str(stk, pci, 1);
 	fitsfile *fptr;  /* pointer to the FITS file */
 	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0, bitpixnumber = 0;
 	oid fid, tid, cid, rid = oid_nil;
@@ -843,7 +821,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *col;
 	sql_subtype tpe;
 	fitsfile *fptr;
-	str tname = *(str*)getArgReference(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 1);
 	str fname;
 	str msg = MAL_SUCCEED;
 	oid rid = oid_nil, frid = oid_nil;

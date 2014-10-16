@@ -197,10 +197,11 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			FILE *pf;
 			char *pfile = getConfVal(ckv, "pidfile");
 
-			if (pfile != NULL && (pf = fopen(pfile, "r")) != NULL &&
-					fgets(buf, sizeof(buf), pf) != NULL)
-			{
-				meropid = atoi(buf);
+			if (pfile != NULL && (pf = fopen(pfile, "r")) != NULL) {
+				if (fgets(buf, sizeof(buf), pf) != NULL) {
+					meropid = atoi(buf);
+				}
+				fclose(pf);
 			}
 		} else {
 			if (ret >= 0) {
@@ -410,6 +411,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		if (dohash == 1) {
 			p = mcrypt_BackendSum(p, strlen(p));
 			snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);
+			free(p);
 			p = h;
 		}
 	}
@@ -433,20 +435,18 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 
-	if ((pfile = fopen(property, "r")) != NULL &&
-			fgets(buf, sizeof(buf), pfile) != NULL)
-	{
-		meropid = atoi(buf);
-		if (meropid != 0) {
-			if (kill(meropid, SIGHUP) == -1) {
-				fprintf(stderr, "sending SIGHUP to monetdbd[%d] failed: %s\n",
-						(int)meropid, strerror(errno));
-				return(1);
-			}
+	if ((pfile = fopen(property, "r")) != NULL) {
+		if (fgets(buf, sizeof(buf), pfile) != NULL &&
+			(meropid = atoi(buf)) != 0 &&
+			kill(meropid, SIGHUP) == -1)
+		{
+			fprintf(stderr, "sending SIGHUP to monetdbd[%d] failed: %s\n",
+					(int)meropid, strerror(errno));
+			fclose(pfile);
+			return(1);
 		}
-	}
-	if (pfile != NULL)
 		fclose(pfile);
+	}
 
 	return(0);
 }
@@ -492,6 +492,7 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	if (fgets(buf, sizeof(buf), pfile) == NULL) {
 		fprintf(stderr, "unable to read from %s: %s\n",
 				pidfilename, strerror(errno));
+		fclose(pfile);
 		return(1);
 	}
 	fclose(pfile);

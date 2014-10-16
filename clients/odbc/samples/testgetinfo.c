@@ -22,6 +22,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sql.h>
 #include <sqlext.h>
 
@@ -110,7 +111,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);

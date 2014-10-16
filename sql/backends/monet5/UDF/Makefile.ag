@@ -44,16 +44,37 @@ headers_mal = {
 	SOURCES = udf.mal
 }
 
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = udf_hge.mal
+}
+
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 80_udf.sql
 }
 
+headers_sql_hge = {
+	COND = HAVE_HGE
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 80_udf_hge.sql
+}
+
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 80_udf.mal
+}
+
+headers_autoload_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 80_udf_hge.mal
 }
 
 EXTRA_DIST_DIR = Tests

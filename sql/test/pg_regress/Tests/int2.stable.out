@@ -49,6 +49,8 @@ Ready.
 % five,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
+[ "",	0	]
+[ "",	1234	]
 [ "",	-1234 ]
 [ "",	32767 ]
 [ "",	-32767 ]
@@ -57,6 +59,7 @@ Ready.
 % four,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
+[ "",	1234	]
 [ "",	-1234 ]
 [ "",	32767 ]
 [ "",	-32767 ]
@@ -65,6 +68,7 @@ Ready.
 % four,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
+[ "",	1234	]
 [ "",	-1234 ]
 [ "",	32767 ]
 [ "",	-32767 ]
@@ -73,11 +77,13 @@ Ready.
 % one,	f1 # name
 % char,	smallint # type
 % 0,	1 # length
+[ "",	0	]
 #SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as integer);
 % .L,	sys.i # table_name
 % one,	f1 # name
 % char,	smallint # type
 % 0,	1 # length
+[ "",	0	]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as smallint);
 % .L,	sys.i # table_name
 % two,	f1 # name
@@ -97,6 +103,7 @@ Ready.
 % three,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
+[ "",	0	]
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as integer);
@@ -104,6 +111,7 @@ Ready.
 % three,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
+[ "",	0	]
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as smallint);
@@ -111,24 +119,30 @@ Ready.
 % two,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
+[ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as integer);
 % .L,	sys.i # table_name
 % two,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
+[ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as smallint);
 % .L,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
+[ "",	0	]
+[ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as integer);
 % .L,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
+[ "",	0	]
+[ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
 % .L,	sys.i # table_name
@@ -141,12 +155,16 @@ Ready.
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
+[ "",	0	]
+[ "",	1234	]
 [ "",	-1234 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
 % .L,	sys.i,	sys.L # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
+[ "",	0,	0	]
+[ "",	1234,	2468	]
 [ "",	-1234,	-2468	]
 [ "",	32767,	65534	]
 [ "",	-32767,	-65534	]
@@ -156,12 +174,16 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	5,	5 # length
+[ "",	0,	0	]
+[ "",	1234,	2468	]
 [ "",	-1234,	-2468 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
 % .L,	sys.i,	sys.L # table_name
 % five,	f1,	x # name
-% char,	smallint,	bigint # type
+% char,	smallint,	hugeint # type
 % 0,	6,	6 # length
+[ "",	0,	0	]
+[ "",	1234,	2468	]
 [ "",	-1234,	-2468 ]
 [ "",	32767,	65534 ]
 [ "",	-32767,	-65534 ]
@@ -170,6 +192,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
+[ "",	0,	2	]
+[ "",	1234,	1236	]
 [ "",	-1234,	-1232	]
 [ "",	32767,	32769	]
 [ "",	-32767,	-32765	]
@@ -179,6 +203,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
+[ "",	0,	2	]
+[ "",	1234,	1236	]
 [ "",	-1234,	-1232 ]
 [ "",	-32767,	-32765 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i;
@@ -186,6 +212,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
+[ "",	0,	2	]
+[ "",	1234,	1236	]
 [ "",	-1234,	-1232 ]
 [ "",	32767,	32769 ]
 [ "",	-32767,	-32765 ]
@@ -194,6 +222,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
+[ "",	0,	-2	]
+[ "",	1234,	1232	]
 [ "",	-1234,	-1236	]
 [ "",	32767,	32765	]
 [ "",	-32767,	-32769	]
@@ -203,6 +233,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	5,	5 # length
+[ "",	0,	-2	]
+[ "",	1234,	1232	]
 [ "",	-1234,	-1236 ]
 [ "",	32767,	32765 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i;
@@ -210,6 +242,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
+[ "",	0,	-2	]
+[ "",	1234,	1232	]
 [ "",	-1234,	-1236 ]
 [ "",	32767,	32765 ]
 [ "",	-32767,	-32769 ]
@@ -218,6 +252,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	smallint # type
 % 0,	6,	6 # length
+[ "",	0,	0	]
+[ "",	1234,	617	]
 [ "",	-1234,	-617 ]
 [ "",	32767,	16383 ]
 [ "",	-32767,	-16383 ]
@@ -226,6 +262,8 @@ Ready.
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
+[ "",	0,	0	]
+[ "",	1234,	617	]
 [ "",	-1234,	-617 ]
 [ "",	32767,	16383 ]
 [ "",	-32767,	-16383 ]

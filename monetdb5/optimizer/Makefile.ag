@@ -42,6 +42,7 @@ lib_optimizer = {
 		opt_evaluate.c opt_evaluate.h \
 		opt_factorize.c opt_factorize.h \
 		opt_garbageCollector.c opt_garbageCollector.h \
+		opt_generator.c opt_generator.h \
 		opt_groups.c opt_groups.h \
 		opt_querylog.c opt_querylog.h \
 		opt_inline.c opt_inline.h \

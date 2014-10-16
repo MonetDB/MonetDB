@@ -404,7 +404,7 @@ diff_result_test() {
 		> "${tstrpath}".stdout.diff
 	if [[ $? != 0 ]] ; then
 		# purely estethic
-		sed -i \
+		sed -i~ \
 			-e "/^--- /s:${tstspath}\.stable\.out:${tstn}.stable.out:" \
 			-e "/^+++ /s:${tstrpath}\.stdout:${tstn}.test.out:" \
 			"${tstrpath}".stdout.diff
@@ -415,7 +415,7 @@ diff_result_test() {
 		> "${tstrpath}".stderr.diff
 	if [[ $? != 0 ]] ; then
 		# purely estethic
-		sed -i \
+		sed -i~ \
 			-e "/^--- /s:${tstspath}\.stable\.err:${tstn}.stable.err:" \
 			-e "/^+++ /s:${tstrpath}\.stderr:${tstn}.test.err:" \
 			"${tstrpath}".stderr.diff

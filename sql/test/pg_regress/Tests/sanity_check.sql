@@ -1,4 +1,4 @@
-VACUUM;
+/* VACUUM; */
 
 --
 -- sanity check, if we don't have indices the test will take years to

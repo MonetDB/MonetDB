@@ -34,28 +34,6 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-static lng scales[20] = {
-	LL_CONSTANT(1),
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
-};
-
 #define CONCAT_2(a, b)		a##b
 #define CONCAT_3(a, b, c)	a##b##c
 
@@ -66,6 +44,8 @@ static lng scales[20] = {
 #define FUN(a, b)		CONCAT_3(a, _, b)
 
 #define STRING(a)		#a
+
+#define BIG lng			/* a larger type */
 
 #define TYPE bte
 #include "sql_round_impl.h"
@@ -86,3 +66,11 @@ static lng scales[20] = {
 #define TYPE lng
 #include "sql_round_impl.h"
 #undef TYPE
+
+#ifdef HAVE_HGE
+#undef BIG
+#define BIG hge
+#define TYPE hge
+#include "sql_round_impl.h"
+#undef TYPE
+#endif

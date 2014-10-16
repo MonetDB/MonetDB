@@ -46,9 +46,9 @@
  *
  * Note that BATfirstn can be called in cascading fashion to calculate
  * the first n values of a table of multiple columns:
- *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc);
- *      BATfirstn(&s2, &g2, b2, s1, g1, n, asc);
- *      BATfirstn(&s3, NULL, b3, s2, g2, n, asc);
+ *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc, distinct);
+ *      BATfirstn(&s2, &g2, b2, s1, g1, n, asc, distinct);
+ *      BATfirstn(&s3, NULL, b3, s2, g2, n, asc, distinct);
  * If the input BATs b1, b2, b3 are large enough, s3 will contain the
  * OIDs of the smallest (largest) n elements in the table consisting
  * of the columns b1, b2, b3 when ordered in ascending order with b1
@@ -179,6 +179,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique(flt, LT);
 			break;
@@ -203,6 +208,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique(flt, GT);
 			break;
@@ -325,6 +335,11 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique_with_groups(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique_with_groups(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique_with_groups(flt, LT);
 			break;
@@ -352,6 +367,11 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_unique_with_groups(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_unique_with_groups(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_unique_with_groups(flt, GT);
 			break;
@@ -435,7 +455,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	} while (0)
 
 static gdk_return
-BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
+BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int distinct)
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
@@ -446,14 +466,12 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	int c;
 	int (*cmp)(const void *, const void *);
 	BUN ncnt;
-	int distinct = 0;
 	struct group {
 		BUN bun;
 		BUN cnt;
 	} *groups;
 
 	assert(topn);
-	assert(gids);
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -491,6 +509,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_grouped1(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped1(flt, LT);
 			break;
@@ -522,6 +545,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 		case TYPE_lng:
 			shuffle_grouped1(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped1(flt, GT);
 			break;
@@ -584,6 +612,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	case TYPE_lng:
 		shuffle_grouped2(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		shuffle_grouped2(hge);
+		break;
+#endif
 	case TYPE_flt:
 		shuffle_grouped2(flt);
 		break;
@@ -617,15 +650,18 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 		bn->T->nil = 0;
 		bn->T->nonil = 1;
 	}
-	BATsetcount(gn, ncnt);
-	BATseqbase(gn, 0);
-	gn->tkey = ncnt == top;
-	gn->tsorted = ncnt <= 1;
-	gn->trevsorted = ncnt <= 1;
-	gn->T->nil = 0;
-	gn->T->nonil = 1;
+	if (gids) {
+		BATsetcount(gn, ncnt);
+		BATseqbase(gn, 0);
+		gn->tkey = ncnt == top;
+		gn->tsorted = ncnt <= 1;
+		gn->trevsorted = ncnt <= 1;
+		gn->T->nil = 0;
+		gn->T->nonil = 1;
+		*gids = gn;
+	} else
+		BBPreclaim(gn);
 	*topn = bn;
-	*gids = gn;
 	return GDK_SUCCEED;
 }
 
@@ -676,12 +712,9 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 #define shuffle_grouped_with_groups2(TYPE)				\
 	do {								\
 		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
-		TYPE lastval = v[groups[top - 1].bun];			\
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;	\
 		     i < end;						\
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
-			if (asc ? v[i] > lastval : v[i] < lastval)	\
-				continue;				\
 			for (j = 0; j < top; j++) {			\
 				if (gv[ci] == groups[j].grp &&		\
 				    v[i] == v[groups[j].bun]) {		\
@@ -695,7 +728,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc)
 	} while (0)
 
 static gdk_return
-BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
+BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
@@ -706,7 +739,6 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	int c;
 	int (*cmp)(const void *, const void *);
 	BUN ncnt;
-	int distinct = 0;
 	struct group {
 		BUN bun;
 		BUN cnt;
@@ -714,20 +746,20 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	} *groups;
 
 	assert(topn);
-	assert(gids);
 
 	if (BATtdense(g)) {
 		/* trivial: g determines ordering, return initial
 		 * slice of s */
 		bn = BATslice(s, 0, n);
-		gn = BATslice(g, 0, n);
-		if (bn == NULL || gn == NULL) {
+		gn = gids ? BATslice(g, 0, n) : NULL;
+		if (bn == NULL || (gids != NULL && gn == NULL)) {
 			BBPreclaim(bn);
 			BBPreclaim(gn);
 			return GDK_FAIL;
 		}
 		*topn = bn;
-		*gids = gn;
+		if (gids)
+			*gids = gn;
 		return GDK_SUCCEED;
 	}
 
@@ -768,6 +800,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		case TYPE_lng:
 			shuffle_grouped_with_groups1(lng, LT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped_with_groups1(hge, LT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped_with_groups1(flt, LT);
 			break;
@@ -799,6 +836,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		case TYPE_lng:
 			shuffle_grouped_with_groups1(lng, GT);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped_with_groups1(hge, GT);
+			break;
+#endif
 		case TYPE_flt:
 			shuffle_grouped_with_groups1(flt, GT);
 			break;
@@ -862,6 +904,11 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	case TYPE_lng:
 		shuffle_grouped_with_groups2(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		shuffle_grouped_with_groups2(hge);
+		break;
+#endif
 	case TYPE_flt:
 		shuffle_grouped_with_groups2(flt);
 		break;
@@ -896,20 +943,23 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		bn->T->nil = 0;
 		bn->T->nonil = 1;
 	}
-	BATsetcount(gn, ncnt);
-	BATseqbase(gn, 0);
-	gn->tkey = ncnt == top;
-	gn->tsorted = ncnt <= 1;
-	gn->trevsorted = ncnt <= 1;
-	gn->T->nil = 0;
-	gn->T->nonil = 1;
+	if (gids) {
+		BATsetcount(gn, ncnt);
+		BATseqbase(gn, 0);
+		gn->tkey = ncnt == top;
+		gn->tsorted = ncnt <= 1;
+		gn->trevsorted = ncnt <= 1;
+		gn->T->nil = 0;
+		gn->T->nonil = 1;
+		*gids = gn;
+	} else
+		BBPreclaim(gn);
 	*topn = bn;
-	*gids = gn;
 	return GDK_SUCCEED;
 }
 
 gdk_return
-BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
+BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
 {
 	assert(topn != NULL);
 	if (b == NULL) {
@@ -947,15 +997,15 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	}
 
 	if (g == NULL) {
-		if (gids == NULL) {
+		if (gids == NULL && !distinct) {
 			*topn = BATfirstn_unique(b, s, n, asc);
 			return *topn ? GDK_SUCCEED : GDK_FAIL;
 		}
-		return BATfirstn_grouped(topn, gids, b, s, n, asc);
+		return BATfirstn_grouped(topn, gids, b, s, n, asc, distinct);
 	}
-	if (gids == NULL) {
+	if (gids == NULL && !distinct) {
 		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc);
 		return *topn ? GDK_SUCCEED : GDK_FAIL;
 	}
-	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc);
+	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc, distinct);
 }

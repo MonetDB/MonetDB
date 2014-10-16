@@ -5,18 +5,18 @@
 --
 
 CREATE VIEW street AS
-   SELECT r.string, r.thepath, c.cname AS cname 
+   SELECT r.name, r.thepath, c.cname AS cname
     FROM road r, real_city c
-   WHERE c.outline ## r.thepath;
+   WHERE c.outline = r.thepath;
 
 CREATE VIEW iexit AS
-   SELECT ih.string, ih.thepath, 
+   SELECT ih.name, ih.thepath,
 	interpt_pp(ih.thepath, r.thepath) AS exit
    FROM ihighway ih, ramp r
-   WHERE ih.thepath ## r.thepath;
+   WHERE ih.thepath = r.thepath;
 
 CREATE VIEW toyemp AS
-   SELECT string, age, location, 12*salary AS annualsal
+   SELECT name, age, location, 12*salary AS annualsal
    FROM emp;
 
 -- Test comments
@@ -29,7 +29,7 @@ CREATE VIEW toyemp AS
 --
 
 CREATE TABLE viewtest_tbl (a int, b int);
-COPY viewtest_tbl FROM stdin;
+COPY INTO viewtest_tbl FROM stdin;
 5	10
 10	15
 15	20
@@ -59,7 +59,7 @@ CREATE OR REPLACE VIEW viewtest AS
 
 -- should fail
 CREATE OR REPLACE VIEW viewtest AS
-	SELECT a, b::numeric FROM viewtest_tbl;
+	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 
 DROP VIEW viewtest;
 DROP TABLE viewtest_tbl;

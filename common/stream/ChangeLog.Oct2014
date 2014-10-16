@@ -1,0 +1,10 @@
+# ChangeLog file for stream
+# This file is updated with Maddlog
+
+* Fri Mar 28 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Changed mnstr_settimeout function so that the specified timeout is now
+  in milliseconds (used to be seconds), and that it also needs an extra
+  argument specifying a callback function (no arguments, int result)
+  that should return TRUE if the timeout should cause the function to
+  abort or continue what it was doing.
+

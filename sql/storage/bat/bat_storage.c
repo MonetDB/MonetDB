@@ -52,7 +52,7 @@ delta_bind_del(sql_dbat *bat, int access)
 	(void) access; /* satisfy compiler */
 #endif
 	assert(access == RDONLY || access == RD_INS);
-	assert(access!=RD_UPD);
+	assert(access != RD_UPD_ID && access != RD_UPD_VAL);
 
 	b = temp_descriptor(bat->dbid);
 	assert(b);
@@ -78,10 +78,17 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
 #endif
-	assert(access == RD_UPD);
-	if (bat->ubid)
+	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
+	if (bat->ubid) {
+		BAT *t;
 		b = temp_descriptor(bat->ubid);
-	else
+		if (access == RD_UPD_ID)
+			t = BATmirror(BATmark(b, 0));
+		else
+			t = BATmirror(BATmark(BATmirror(b), 0));
+		bat_destroy(b);
+		b = t;
+	} else
 		b = temp_descriptor(e_ubat(type));
 	assert(b);
 	return b;
@@ -90,7 +97,7 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access)
 {
-	BAT *u = NULL, *d, *r;
+	BAT *u = NULL;
 
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -101,20 +108,14 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 		c->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
-	r = u = delta_bind_ubat(c->data, access, c->type.type->localtype);
-	d = delta_bind_del(c->t->data, RD_INS);
-	if (BATcount(d) && BATcount(u)) {
-		r = BATkdiff(u, BATmirror(d));
-		BBPunfix(u->batCacheid);
-	}
-	BBPunfix(d->batCacheid);
-	return r;
+	u = delta_bind_ubat(c->data, access, c->type.type->localtype);
+	return u;
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
-	BAT *u = NULL, *d, *r;
+	BAT *u = NULL;
 
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -125,14 +126,8 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	r = u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
-	d = delta_bind_del(i->t->data, RD_INS);
-	if (BATcount(d)) {
-		r = BATkdiff(u, BATmirror(d));
-		BBPunfix(u->batCacheid);
-	}
-	BBPunfix(d->batCacheid);
-	return r;
+	u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
+	return u;
 }
 
 static BAT *
@@ -176,7 +171,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-	if (access == RD_UPD)
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
 	if (tr)
 		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
@@ -190,7 +185,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		i->data = timestamp_delta(oi->data, tr->stime);
 	}
-	if (access == RD_UPD)
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
 	if (tr)
 		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
@@ -1255,8 +1250,11 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 static int
 destroy_dbat(sql_trans *tr, sql_dbat *bat)
 {
-	sql_dbat *n = bat->next;
-
+	sql_dbat *n;
+       
+	if (!bat)
+		return LOG_OK;
+	n = bat->next;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -1384,8 +1382,13 @@ empty_col(sql_column *c)
 	sql_delta *bat = c->data;
 
 	assert(c->data && c->base.allocated && bat->bid == 0);
-	bat->bid = e_bat(type);
+	bat->bid = bat->ibid;
+	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
+	if (bat->bid == bat->ibid)
+		bat->bid = copyBat(bat->ibid, type, 0);
 }
+
 static void 
 empty_idx(sql_idx *i)
 {
@@ -1393,7 +1396,11 @@ empty_idx(sql_idx *i)
 	sql_delta *bat = i->data;
 
 	assert(i->data && i->base.allocated && bat->bid == 0);
-	bat->bid = e_bat(type);
+	bat->bid = bat->ibid;
+	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
+	if (bat->bid == bat->ibid) 
+		bat->bid = copyBat(bat->ibid, type, 0);
 }
 
 static BUN
@@ -1656,7 +1663,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		} else {
 			assert(cur->T->heap.storage != STORE_PRIV);
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
-			assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			assert(!BATcount(ins) || !isEbat(ins));
 			BATappend(cur,ins,TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
@@ -1745,29 +1753,28 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				for (n = tt->idxs.set->h; n; n = n->next) 
 					(void)store_funcs.clear_idx(tr->parent, n->data);
 		} else {
-			for (n = tt->columns.set->h; n; n = n->next) 
+			for (n = ft->columns.set->h; n; n = n->next) 
 				empty_col(n->data);
-			if (tt->idxs.set) 
-				for (n = tt->idxs.set->h; n; n = n->next) 
+			if (ft->idxs.set) 
+				for (n = ft->idxs.set->h; n; n = n->next) 
 					empty_idx(n->data);
 		}
 	}
 
 	if (ft->base.allocated) {
 		if (store_nr_active > 1) { /* move delta */
-			sql_dbat *b = ft->data, *p = NULL;
+			sql_dbat *b = ft->data;
 
 			ft->data = NULL;
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->wtime > oldest->stime) {
-				p = b;
+			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			}
-			if (b && b->wtime > oldest->stime && p) {
-				p->next = NULL;
-				destroy_dbat(tr, b);
+			if (b && b->wtime < oldest->stime) {
+				/* anything older can go */
+				destroy_dbat(tr, b->next);
+				b->next = NULL;
 			}
 		} else {
 			assert(tt->base.allocated);
@@ -1778,38 +1785,37 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
 
-		if (!cc->base.wtime || !cc->base.allocated) {
-			cc->data = NULL;
-			cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
-			continue;
-		}
+		if (cc->base.wtime && cc->base.allocated) {
+			assert(oc->base.wtime < cc->base.wtime);
+			if (store_nr_active > 1) { /* move delta */
+				sql_delta *b = cc->data;
 
-		assert(oc->base.wtime < cc->base.wtime);
-		if (store_nr_active > 1) { /* move delta */
-			sql_delta *b = cc->data, *p = NULL;
-
-			cc->data = NULL;
-			b->next = oc->data;
-			oc->data = b;
-			while (b && b->wtime > oldest->stime) {
-				p = b;
-				b = b->next;
+				cc->data = NULL;
+				b->next = oc->data;
+				oc->data = b;
+				while (b && b->wtime >= oldest->stime) 
+					b = b->next;
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
+				}
+			} else {
+				assert(oc->base.allocated);
+				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 			}
-			if (b && b->wtime > oldest->stime && p) {
-				p->next = NULL;
-				destroy_bat(tr, b);
-			}
-		} else {
-			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
 
 		oc->null = cc->null;
 		oc->unique = cc->unique;
-		if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
 			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
-		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+		if (!cc->storage_type)
+			oc->storage_type = NULL;
+		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
 			oc->def = sa_strdup(tr->sa, cc->def);
+		if (!cc->def)
+			oc->def = NULL;
 
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
@@ -1831,18 +1837,17 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				continue;
 			}
 			if (store_nr_active > 1) { /* move delta */
-				sql_delta *b = ci->data, *p = NULL;
+				sql_delta *b = ci->data;
 
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
-				while (b && b->wtime > oldest->stime) {
-					p = b;
+				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				}
-				if (b && b->wtime > oldest->stime && p) {
-					p->next = NULL;
-					destroy_bat(tr, b);
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
 				}
 			} else {
 				assert(oi->base.allocated);

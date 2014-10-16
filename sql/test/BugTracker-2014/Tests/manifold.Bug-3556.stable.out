@@ -1,0 +1,157 @@
+stdout of test 'manifold.Bug-3556` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:13:38 >  
+# 14:13:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38920" "--set" "mapi_usock=/var/tmp/mtest-29507/.s.monetdb.38920" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:13:38 >  
+
+# MonetDB 5 server v11.19.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38920/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29507/.s.monetdb.38920
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 14:13:38 >  
+# 14:13:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29507" "--port=38920"
+# 14:13:38 >  
+
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, id as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 176 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
+    X_4 := sql.mvc();
+    X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions");
+    X_8:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0);
+    (X_11,r1_11) := sql.bind(X_4,"sys","functions","name",2);
+    X_14:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",1);
+    X_16 := sql.delta(X_8,X_11,r1_11,X_14);
+    X_17 := algebra.leftfetchjoin(X_5,X_16);
+    X_18:bat[:oid,:str]  := mal.manifold("str","replace",X_17,A0,A1);
+    X_21:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0);
+    (X_23,r1_25) := sql.bind(X_4,"sys","functions","id",2);
+    X_25:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",1);
+    X_26 := sql.delta(X_21,X_23,r1_25,X_25);
+    X_27 := algebra.leftfetchjoin(X_5,X_26);
+    X_28 := sql.resultSet(2,1,X_18);
+    sql.rsColumn(X_28,"sys.L1","L1","varchar",0,0,X_18);
+    sql.rsColumn(X_28,"sys.x","id","int",32,0,X_27);
+    X_37 := io.stdout();
+    sql.exportResult(X_37,X_28);
+end s2_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n  from sys.functions\n) as x;","sequential_pipe")
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, id + 1 as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 180 # length
+function user.s3_1{autoCommit=true}(A0:str,A1:str,A2:lng):void;
+    X_5 := sql.mvc();
+    X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions");
+    X_9:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0);
+    (X_12,r1_12) := sql.bind(X_5,"sys","functions","name",2);
+    X_15:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",1);
+    X_17 := sql.delta(X_9,X_12,r1_12,X_15);
+    X_18 := algebra.leftfetchjoin(X_6,X_17);
+    X_19:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",0);
+    (X_21,r1_21) := sql.bind(X_5,"sys","functions","id",2);
+    X_23:bat[:oid,:int]  := sql.bind(X_5,"sys","functions","id",1);
+    X_24 := sql.delta(X_19,X_21,r1_21,X_23);
+    X_25 := algebra.leftfetchjoin(X_6,X_24);
+    X_26 := algebra.project(X_25,A0);
+    X_27 := algebra.project(X_25,A1);
+    X_28:bat[:oid,:str]  := mal.manifold("str","replace",X_18,X_26,X_27);
+    X_31 := batcalc.lng(X_25);
+    X_32:bat[:oid,:lng]  := batcalc.+(X_31,A2);
+    X_33 := sql.resultSet(2,1,X_28);
+    sql.rsColumn(X_33,"sys.L1","L1","varchar",0,0,X_28);
+    sql.rsColumn(X_33,"sys.x","id","bigint",64,0,X_32);
+    X_43 := io.stdout();
+    sql.exportResult(X_43,X_33);
+end s3_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n  from sys.functions\n) as x;","sequential_pipe")
+#explain select replace(a1,a2,a3), id
+#from (
+#  select name as a1, 'a' as a2, 'A' as a3, abs(id) as id 
+#  from sys.functions
+#) as x;
+% .explain # table_name
+% mal # name
+% clob # type
+% 181 # length
+function user.s4_1{autoCommit=true}(A0:str,A1:str):void;
+    X_4 := sql.mvc();
+    X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions");
+    X_8:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0);
+    (X_11,r1_11) := sql.bind(X_4,"sys","functions","name",2);
+    X_14:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",1);
+    X_16 := sql.delta(X_8,X_11,r1_11,X_14);
+    X_17 := algebra.leftfetchjoin(X_5,X_16);
+    X_18:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",0);
+    (X_20,r1_20) := sql.bind(X_4,"sys","functions","id",2);
+    X_22:bat[:oid,:int]  := sql.bind(X_4,"sys","functions","id",1);
+    X_23 := sql.delta(X_18,X_20,r1_20,X_22);
+    X_24 := algebra.leftfetchjoin(X_5,X_23);
+    X_25 := algebra.project(X_24,A0);
+    X_26 := algebra.project(X_24,A1);
+    X_27:bat[:oid,:str]  := mal.manifold("str","replace",X_17,X_25,X_26);
+    X_30:bat[:oid,:int]  := batcalc.abs(X_24);
+    X_31 := sql.resultSet(2,1,X_27);
+    sql.rsColumn(X_31,"sys.L1","L1","varchar",0,0,X_27);
+    sql.rsColumn(X_31,"sys.x","id","int",32,0,X_30);
+    X_41 := io.stdout();
+    sql.exportResult(X_41,X_31);
+end s4_1;
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n  from sys.functions\n) as x;","sequential_pipe")
+
+# 14:13:39 >  
+# 14:13:39 >  "Done."
+# 14:13:39 >  
+

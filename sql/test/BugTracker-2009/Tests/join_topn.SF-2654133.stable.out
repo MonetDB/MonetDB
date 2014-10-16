@@ -28,7 +28,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select * from tables, x limit 10;
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.x,	.x # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	n,	s # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar # type
 % 4,	9,	4,	0,	1,	5,	1,	5,	1,	1,	5 # length

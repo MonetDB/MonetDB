@@ -82,7 +82,7 @@ function user.main():void;
     io.print(b);
     i := bbp.getLRefCount(b);
     io.printf("refcount =%d[1]\n",i);
-#handle an alias, which isn;t used! 
+#handle an alias, which isn't used! 
     b2 := b;
     i := bbp.getLRefCount(b);
     io.printf("after assignment refcount =%d[2]\n",i);

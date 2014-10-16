@@ -24,7 +24,7 @@ stdout of test 'qep02` in directory 'monetdb5/optimizer` itself:
 #
     b := true;
 barrier b;
-    e := algebra.join(a,c);
+    (e,f) := algebra.join(a,c);
         a := algebra.select(T1,1@0,3@0);
             T1 := bat.new(:oid,:oid);
         c := algebra.select(T3,0@0,5@0);
@@ -37,7 +37,7 @@ function user.main():void;
 barrier b;
     a := algebra.select(T1,1@0,3@0);
     c := algebra.select(T3,0@0,5@0);
-    e := algebra.join(a,c);
+    (e,f) := algebra.join(a,c);
 exit b;
 end main;
 

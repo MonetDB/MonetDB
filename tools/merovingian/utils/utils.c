@@ -45,6 +45,7 @@
 #  include <time.h>
 # endif
 #endif
+#include <openssl/rand.h>		/* RAND_bytes */
 
 /**
  * Parses the given file stream matching the keys from list.  If a match
@@ -314,12 +315,32 @@ void
 generateSalt(char *buf, unsigned int len)
 {
 	unsigned int c;
-	unsigned int size = (unsigned int)rand();
-	unsigned int fill = len * 0.75;
-	unsigned int min = len * 0.42;
+	unsigned int size;
+	unsigned int fill;
+	unsigned int min;
+
+	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0) {
+#ifndef STATIC_CODE_ANALYSIS
+		size = (unsigned int)rand();
+#else
+		size = 0;
+#endif
+	}
+	fill = len * 0.75;
+	min = len * 0.42;
 	size = (size % (fill - min)) + min;
-	for (c = 0; c < size; c++)
-		buf[c] = seedChars[rand() % 62];
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+		for (c = 0; c < size; c++)
+			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
+	} else {
+		for (c = 0; c < size; c++) {
+#ifndef STATIC_CODE_ANALYSIS
+			buf[c] = seedChars[rand() % 62];
+#else
+			buf[c] = seedChars[0];
+#endif
+		}
+	}
 	for ( ; c < len; c++)
 		buf[c] = '\0';
 }

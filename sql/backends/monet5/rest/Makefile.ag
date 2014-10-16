@@ -29,7 +29,8 @@ INCLUDES = .. \
 	../../../../sql/storage \
 	../../../../sql/common \
 	../../../../sql/backends/monet5 \
-	../../../../gdk
+	../../../../gdk \
+	$(liburiparser_CFLAGS)
 
 lib__jsonstore = {
 	MODULE
@@ -42,7 +43,7 @@ lib__jsonstore = {
 	     ../../../../sql/storage/libstore \
 	     #../../../../sql/backends/monet5/lib_sql \
 	     ../../../../gdk/libbat \
-	     $(uriparser_LIBS) \
+	     $(liburiparser_LIBS) \
 	     $(openssl_LIBS)
 }
 

@@ -91,7 +91,7 @@ str SABAOTHgetDBname(str *ret) {
  * exist, it is created.  Multiple invocations of this function for the
  * same language are ignored.
  */
-str SABAOTHmarchScenario(int *ret, str *lang) {
+str SABAOTHmarchScenario(void *ret, str *lang) {
 	str err = msab_marchScenario(*lang);
 	if (err != NULL)
 		excFromMem(MAL, "sabaoth.marchscenario", err);
@@ -104,7 +104,7 @@ str SABAOTHmarchScenario(int *ret, str *lang) {
  * file is empty (before or) after removing the language, the file is
  * removed.
  */
-str SABAOTHretreatScenario(int *ret, str *lang) {
+str SABAOTHretreatScenario(void *ret, str *lang) {
 	str err = msab_retreatScenario(*lang);
 	if (err != NULL)
 		excFromMem(MAL, "sabaoth.retreatscenario", err);
@@ -119,7 +119,7 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
  * to <= 0, this function treats the host argument as UNIX domain
  * socket, in which case host must start with a '/'.
  */
-str SABAOTHmarchConnection(int *ret, str *host, int *port) {
+str SABAOTHmarchConnection(void *ret, str *host, int *port) {
 	str err = msab_marchConnection(*host, *port);
 	if (err != NULL)
 		excFromMem(MAL, "sabaoth.marchconnection", err);

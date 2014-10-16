@@ -187,6 +187,36 @@ control_authorise(
 	return 1;
 }
 
+#define send_client(P)							\
+	do {										\
+		if (fout != NULL) {						\
+			mnstr_printf(fout, P "%s", buf2);	\
+			mnstr_flush(fout);					\
+		} else {								\
+			send(msgsock, buf2, len, 0);		\
+		}										\
+	} while (0)
+
+#define send_list()									\
+	do {											\
+		len = snprintf(buf2, sizeof(buf2), "OK\n"); \
+		if (fout == NULL) {							\
+			send(msgsock, buf2, strlen(buf2), 0);	\
+			send(msgsock, pbuf, strlen(pbuf), 0);	\
+		} else {									\
+			char *p, *q = pbuf;						\
+			mnstr_printf(fout, "=OK\n");			\
+			while ((p = strchr(q, '\n')) != NULL) { \
+				*p++ = '\0';						\
+				mnstr_printf(fout, "=%s\n", q);		\
+				q = p;								\
+			}										\
+			if (*q != '\0')							\
+				mnstr_printf(fout, "=%s\n", q);		\
+			mnstr_flush(fout);						\
+		}											\
+	} while (0)
+
 static void ctl_handle_client(
 		const char *origin,
 		int msgsock,
@@ -254,13 +284,6 @@ static void ctl_handle_client(
 		} else {
 			*p++ = '\0';
 			if (strcmp(p, "ping") == 0) {
-#define send_client(P) \
-				if (fout != NULL) { \
-					mnstr_printf(fout, P "%s", buf2); \
-					mnstr_flush(fout); \
-				} else { \
-					send(msgsock, buf2, len, 0); \
-				}
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 			} else if (strcmp(p, "start") == 0) {
@@ -376,6 +399,13 @@ static void ctl_handle_client(
 				} else {
 					if (*p != '\0') {
 						pid_t child;
+						sigset_t blocksig;
+						/* temporarily block SIGCHLD signals until
+						 * we've waited for the child we're about to
+						 * create. See bug http://bugs.monetdb.org/3603. */
+						sigemptyset(&blocksig);
+						sigaddset(&blocksig, SIGCHLD);
+						pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 						if ((child = fork()) == 0) {
 							FILE *secretf;
 							size_t len;
@@ -385,7 +415,15 @@ static void ctl_handle_client(
 							int setlen = 0;
 							char *sadbfarm;
 
-							msab_getDBfarm(&sadbfarm);
+							sigemptyset(&blocksig);
+							sigaddset(&blocksig, SIGCHLD);
+							pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
+
+							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
+								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
+										 origin, err);
+								exit(0);
+							}
 							snprintf(buf2, sizeof(buf2), "%s/%s", sadbfarm, q);
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
@@ -418,21 +456,27 @@ static void ctl_handle_client(
 							}
 							GDKinit(set, setlen);
 							vaultkey = buf2;
-							AUTHunlockVault(&vaultkey);
-							err = AUTHinitTables(&p);
-							if (err != NULL) {
+							if ((err = AUTHunlockVault(&vaultkey)) != NULL ||
+								(err = AUTHinitTables(&p)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: could not setup "
 										"database '%s': %s\n", origin, q, err);
+								GDKfree(err);
 							} else {
 								/* don't start locked */
 								unlink(".maintenance");
 							}
 
 							exit(0); /* return to the parent */
-						} else {
+						} else if (child > 0) {
 							/* wait for the child to finish */
 							waitpid(child, NULL, 0);
+						} else {
+							Mfprintf(_mero_ctlout, "%s: forking failed\n",
+									 origin);
 						}
+						sigemptyset(&blocksig);
+						sigaddset(&blocksig, SIGCHLD);
+						pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 					}
 
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
@@ -656,6 +700,7 @@ static void ctl_handle_client(
 						Mfprintf(_mero_ctlerr, "%s: set: cannot perform "
 								"client share request: discovery service "
 								"is globally disabled\n", origin);
+						msab_freeStatus(&stats);
 						continue;
 					}
 
@@ -704,23 +749,6 @@ static void ctl_handle_client(
 
 	/* comands below this point are multi line and hence you can't
 	 * combine them, so they disconnect the client afterwards */
-#define send_list() \
-	len = snprintf(buf2, sizeof(buf2), "OK\n"); \
-	if (fout == NULL) { \
-		send(msgsock, buf2, strlen(buf2), 0); \
-		send(msgsock, pbuf, strlen(pbuf), 0); \
-	} else { \
-		char *p, *q = pbuf; \
-		mnstr_printf(fout, "=OK\n"); \
-		while ((p = strchr(q, '\n')) != NULL) { \
-			*p++ = '\0'; \
-			mnstr_printf(fout, "=%s\n", q); \
-			q = p; \
-		} \
-		if (*q != '\0') \
-			mnstr_printf(fout, "=%s\n", q); \
-		mnstr_flush(fout); \
-	}
 
 			} else if (strcmp(p, "version") == 0) {
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
@@ -942,7 +970,7 @@ controlRunner(void *d)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval < 0) {
+		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			continue;
@@ -954,7 +982,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {

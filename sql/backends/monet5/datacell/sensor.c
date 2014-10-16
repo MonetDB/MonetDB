@@ -563,7 +563,7 @@ produceStream(Sensor se)
 			}
 
 			/* we only generate integer based events for now */
-			for (i = (timestamp ? 1 : 0) + (autoincrement ? 1 : 0); i < columns; i++) {
+			for (i = (timestamp != 0) + (autoincrement != 0); i < columns; i++) {
 				if (i)
 					snprintf(tuple + tlen, maxtuple - tlen, "%s%d", separator[protocol], rand());
 				else

@@ -118,10 +118,6 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	if (b2->halign == 0) {
 		b2->halign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
-	} else {
-		/* propagate GDK_AGGR information */
-		BATpropagate(b1, b2, GDK_AGGR_SIZE);
-		BATpropagate(b1, b2, GDK_AGGR_CARD);
 	}
 	if (BAThvoid(b2)) {
 		/* b2 is either dense or has a void(nil) head */
@@ -570,6 +566,12 @@ VIEWunlink(BAT *b)
 			b->H->hash = NULL;
 		if (tpb && b->T->hash && b->T->hash == tpb->H->hash)
 			b->T->hash = NULL;
+
+		/* unlink imprints shared with parent */
+		if (hpb && b->H->imprints && b->H->imprints == hpb->H->imprints)
+			b->H->imprints = NULL;
+		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
+			b->T->imprints = NULL;
 	}
 }
 

@@ -54,14 +54,14 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetEnvAttr " PTRFMT " %s 0x%lx\n",
 		PTRFMTCAST EnvironmentHandle, translateEnvAttribute(Attribute),
-		(unsigned long) (size_t) ValuePtr);
+		(unsigned long) (uintptr_t) ValuePtr);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */
 
 	/* global attribute */
 	if (Attribute == SQL_ATTR_CONNECTION_POOLING && env == NULL) {
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_CP_OFF:
 		case SQL_CP_ONE_PER_DRIVER:
 		case SQL_CP_ONE_PER_HENV:

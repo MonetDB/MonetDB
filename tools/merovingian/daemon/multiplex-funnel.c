@@ -80,7 +80,7 @@ MFconnectionManager(void *d)
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
 		if (i == 0)
 			continue;
-		if (i < 0 && errno != EINTR) {
+		if (i == -1 && errno != EINTR) {
 			Mfprintf(stderr, "failed to select on mfpipe: %s\n",
 					strerror(errno));
 			break;
@@ -246,6 +246,7 @@ multiplexNotifyAddedDB(const char *database)
 		free(p);
 	}
 	/* p is freed by MFconnectionManager */
+	/* coverity[leaked_storage] */
 }
 
 void
@@ -264,6 +265,7 @@ multiplexNotifyRemovedDB(const char *database)
 		free(p);
 	}
 	/* p is freed by MFconnectionManager */
+	/* coverity[leaked_storage] */
 }
 
 /* ultra ugly, we peek inside Sabaoth's internals to update the uplog
@@ -468,6 +470,7 @@ multiplexDestroy(char *mp)
 {
 	multiplexlist *ml, *mlp;
 	multiplex *m = NULL;
+	char *msg;
 
 	/* lock and remove */
 	pthread_mutex_lock(&mpl_lock);
@@ -494,8 +497,11 @@ multiplexDestroy(char *mp)
 
 	/* deregister from sabaoth, same hack alert as at Init */
 	_sabaoth_internal_dbname = m->name;
-	msab_registerStop();
-	msab_wildRetreat();
+	if ((msg = msab_registerStop()) != NULL ||
+		(msg = msab_wildRetreat()) != NULL) {
+		Mfprintf(stderr, "mfunnel: %s\n", msg);
+		free(msg);
+	}
 	_sabaoth_internal_dbname = NULL;
 
 	/* signal the thread to stop and cleanup */

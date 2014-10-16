@@ -165,6 +165,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_20010CE6E76146F89F63A74CC08152A7"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_210ACB4F1EA444B4B72F5B60E9953FEE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -286,6 +292,12 @@
         "Entry"
         {
         "MsmKey" = "8:_3E8157716C224F90AF77F34DA22F29F2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_40582CCB92F24F6BA7002DDCF329D0B1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -735,12 +747,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C0E29F8AC9F24979BE47B588DB609178"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_C2680DB1FF1445FF812EF932F12A7345"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -927,6 +933,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_F58F05F076D74EB3BE305C1F69EBA887"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_F671CE9CE9A64006AFFFAFBCBDA8EDCE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -934,6 +946,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F827A21B394243CA9A2DA27D42DA0C93"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F8836AF14D4545419923AF09AE7A8AF9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1048,7 +1066,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_03431EDC85094776AD217020CB3E26D4"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64-vs10\\lib\\zdll.lib"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\lib\\zdll.lib"
             "TargetName" = "8:zdll.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1148,10 +1166,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_08FE3FD8B70B485EA4405D5FA91E1F1D"
             {
-            "SourcePath" = "8:lib\\monetdb5\\calc.mal"
-            "TargetName" = "8:calc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_calc.mal"
+            "TargetName" = "8:01_calc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1188,7 +1206,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0D84516ED4054FEA84A5E2C60F42AFE3"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs10\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1288,7 +1306,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_13440C2EDE6842BF8D9F24F554EEB87F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.8.win64-vs10\\lib\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.8.win64\\lib\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1448,7 +1466,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1AF238588D2D4EA5A416D48291406811"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64-vs10\\lib\\iconv.lib"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\lib\\iconv.lib"
             "TargetName" = "8:iconv.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1510,6 +1528,26 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\sample.mal"
             "TargetName" = "8:sample.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_20010CE6E76146F89F63A74CC08152A7"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\lib_generator.dll"
+            "TargetName" = "8:lib_generator.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1588,10 +1626,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2772CB6509D248C38E00C9DAC069AAA2"
             {
-            "SourcePath" = "8:lib\\monetdb5\\batcalc.mal"
-            "TargetName" = "8:batcalc.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\01_batcalc.mal"
+            "TargetName" = "8:01_batcalc.mal"
             "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1688,7 +1726,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2C7B5DF9CBE642149692C67FC052ECA4"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64-vs10\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1728,7 +1766,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2CC8B012C0CB4DFC8F2223F62310125F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.8.win64-vs10\\lib\\libxml2.lib"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.8.win64\\lib\\libxml2.lib"
             "TargetName" = "8:libxml2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1748,7 +1786,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E0FEE7726DA47369758C263666F3DB1"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\lib\\libeay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64\\lib\\libeay32.lib"
             "TargetName" = "8:libeay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1946,6 +1984,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_40582CCB92F24F6BA7002DDCF329D0B1"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\90_generator.sql"
+            "TargetName" = "8:90_generator.sql"
+            "Tag" = "8:"
+            "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_40B3CCBB396946BD83B94632ACE1A8D4"
             {
             "SourcePath" = "8:lib\\monetdb5\\createdb\\11_times.sql"
@@ -2008,7 +2066,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_45C820B6483D494EBFE6F9A28A30760C"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2088,7 +2146,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_52DCEC5806254D3F9246489B9C5DFC27"
             {
-            "SourcePath" = "8:C:\\Libraries\\pcre-8.13.win64-vs10\\bin\\pcre.dll"
+            "SourcePath" = "8:C:\\Libraries\\pcre-8.13.win64\\bin\\pcre.dll"
             "TargetName" = "8:pcre.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2248,7 +2306,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_667BD650736E43C9A8B6899179FA0CAA"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.18.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.20.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -2368,7 +2426,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_732094CE07974147A084EDD6A5F43C6F"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\lib\\ssleay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64\\lib\\ssleay32.lib"
             "TargetName" = "8:ssleay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2668,7 +2726,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88661B3BC7724CF992AC6079E040DE3A"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64-vs10\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3068,7 +3126,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A3D31DA50E0F4AE1873E390D5B7F1F33"
             {
-            "SourcePath" = "8:C:\\Libraries\\pcre-8.13.win64-vs10\\lib\\pcre.lib"
+            "SourcePath" = "8:C:\\Libraries\\pcre-8.13.win64\\lib\\pcre.lib"
             "TargetName" = "8:pcre.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3188,7 +3246,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9DB6CF8297A4BEEAF7A6D4958A4B0D6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.18.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.20.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -3406,26 +3464,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C0E29F8AC9F24979BE47B588DB609178"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\array.mal"
-            "TargetName" = "8:array.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C2680DB1FF1445FF812EF932F12A7345"
             {
             "SourcePath" = "8:lib\\monetdb5\\sql_aggr_sht.mal"
@@ -3548,7 +3586,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CA3CFDD1291E474EAE85329E4C5E5D45"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs10\\lib\\libbz2.lib"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64\\lib\\libbz2.lib"
             "TargetName" = "8:libbz2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3928,7 +3966,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E80B0549492B4D76B7EB93941A6BF89D"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64-vs10\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1g.win64\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -4046,6 +4084,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F58F05F076D74EB3BE305C1F69EBA887"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\generator.mal"
+            "TargetName" = "8:generator.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F671CE9CE9A64006AFFFAFBCBDA8EDCE"
             {
             "SourcePath" = "8:lib\\monetdb5\\createdb\\23_skyserver.sql"
@@ -4072,6 +4130,26 @@
             "TargetName" = "8:libmapi.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F8836AF14D4545419923AF09AE7A8AF9"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\90_generator.mal"
+            "TargetName" = "8:90_generator.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4272,7 +4350,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_6C21CE578F0941D09FDD9951A229FF37"
                                     {
-                                    "Name" = "8:MonetDB-SQL-11.18.0"
+                                    "Name" = "8:MonetDB-SQL-11.20.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -4322,7 +4400,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.18.0"
+        "ProductVersion" = "8:11.20.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"

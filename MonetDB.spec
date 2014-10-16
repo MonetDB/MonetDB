@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.18.0
+%define version 11.20.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -18,26 +18,68 @@
 
 %define release %{buildno}%{?dist}%{?oidsuf}
 
+# On RedHat Enterprise Linux and derivatives, if the Extra Packages
+# for Enterprise Linux (EPEL) repository is available, you can define
+# the _with_epel macro.  When using mock to build the RPMs, this can
+# be done using the --with=epel option to mock.
+# If the EPEL repository is availabe, or if building for Fedora, all
+# optional sub packages can be built.  We indicate that here by
+# setting the macro fedpkgs to 1.  If the EPEL repository is not
+# available and we are not building for Fedora, we set fedpkgs to 0.
+%if %{?rhel:1}%{!?rhel:0}
+# RedHat Enterprise Linux (or CentOS or Scientific Linux)
+%if %{?_with_epel:1}%{!?_with_epel:0}
+# EPEL is enabled through the command line
+%define fedpkgs 1
+%else
+# EPEL is not enabled
+%define fedpkgs 0
+%endif
+%else
+# Not RHEL (so presumably Fedora)
+%define fedpkgs 1
+%endif
+
 # On Fedora, the geos library is available, and so we can require it
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
-# Packages for Enterprise Linux (EPEL).  If the _with_epel macro is
-# set, we assume that EPEL is available, and so we enable building the
-# geom modules.  The _with_epel macro can be set when using mock by
-# passing it the flag --with epel.
-%if %{?rhel:1}%{!?rhel:0}
-%if %{?_with_epel:1}%{!?_with_epel:0}
-# RedHat Enterprise Linux and derivatives with EPEL enabled
-%define with_geos 1
-%endif
-%else
-# Fedora
+# Packages for Enterprise Linux (EPEL).  In other words, we can check
+# the fedpkgs macro (see above).
+%if %{fedpkgs}
 %define with_geos 1
 %endif
 
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?rhel:0}%{!?rhel:1}
+# If the _without_samtools macro is set, the MonetDB-bam-MonetDB5 RPM
+# will be created.  The macro can be set when using mock by passing it
+# the flag --without=samtools.
+# Note that the samtools-devel RPM is not available on RedHat
+# Enterprise Linux and derivatives, even with EPEL availabe.
+# (Actually, at the moment of writing, samtools-devel is available in
+# EPEL for RHEL 6, but not for RHEL 7.  We don't make the distinction
+# here and just not build the MonetDB-bam-MonetDB5 RPM.)
+%if %{?_without_samtools:0}%{!?_without_samtools:1}
 %define with_samtools 1
+%endif
+%endif
+
+%if %{fedpkgs}
+# If the _without_rintegration macro is not set, the MonetDB-R RPM
+# will be created.  The macro can be set when using mock by passing it
+# the flag --without=rintegration.
+%if %{?_without_rintegration:0}%{!?_without_rintegration:1}
+%define with_rintegration 1
+%endif
+%endif
+
+%if %{fedpkgs}
+# If the _with_fits macro is set, the MonetDB-cfitsio RPM will be
+# created.  The macro can be set when using mock by passing it the
+# flag --with=fits.
+%if %{?_with_fits:1}%{!?_with_fits:0}
+%define with_fits 1
+%endif
 %endif
 
 Name: %{name}
@@ -53,13 +95,17 @@ Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP3/%{name}-%{version}.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-# BuildRequires: cfitsio-devel
-BuildRequires: flex
+%if %{?with_fits:1}%{!?with_fits:0}
+BuildRequires: cfitsio-devel
+%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
+BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
+# BuildRequires: libmicrohttpd-devel
+# BuildRequires: libsphinxclient-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
@@ -81,9 +127,13 @@ BuildRequires: rubygems
 BuildRequires: rubygems-devel
 %endif
 BuildRequires: unixODBC-devel
+# BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
 %if %{?with_samtools:1}%{!?with_samtools:0}
 BuildRequires: samtools-devel
+%endif
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+BuildRequires: R-core-devel
 %endif
 
 # need to define python_sitelib on RHEL 5 and older
@@ -456,7 +506,7 @@ numerical analysis (gsl).
 %{_libdir}/monetdb5/gsl.mal
 %{_libdir}/monetdb5/lib_gsl.so
 
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?with_samtools:1}%{!?with_samtools:0}
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
@@ -477,6 +527,54 @@ version of Sequence Alignment/Map) data.
 %{_libdir}/monetdb5/createdb/*_bam.sql
 %{_libdir}/monetdb5/bam.mal
 %{_libdir}/monetdb5/lib_bam.so
+%endif
+
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%package R
+Summary: Integration of MonetDB and R, allowing use of R from within SQL
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description R
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to use the R language from within
+SQL queries.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files R
+%defattr(-,root,root)
+%{_libdir}/monetdb5/rapi.*
+%{_libdir}/monetdb5/autoload/*_rapi.mal
+%{_libdir}/monetdb5/lib_rapi.so
+%endif
+
+%if %{?with_fits:1}%{!?with_fits:0}
+%package cfitsio
+Summary: MonetDB: Add on module that provides support for FITS files
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description cfitsio
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains a module for accessing data in the FITS file
+format.
+
+%files cfitsio
+%defattr(-,root,root)
+%{_libdir}/monetdb5/fits.mal
+%{_libdir}/monetdb5/autoload/*_fits.mal
+%{_libdir}/monetdb5/lib_fits.so
 %endif
 
 %package -n MonetDB5-server
@@ -524,25 +622,43 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
+%if %{?with_fits:1}%{!?with_fits:0}
+%exclude %{_libdir}/monetdb5/fits.mal
+%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%exclude %{_libdir}/monetdb5/rapi.mal
+%endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
+%if %{?with_fits:1}%{!?with_fits:0}
+%exclude %{_libdir}/monetdb5/autoload/*_fits.mal
+%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
+%endif
 # %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
 %exclude %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/autoload/*.mal
+%if %{?with_fits:1}%{!?with_fits:0}
+%exclude %{_libdir}/monetdb5/lib_fits.so
+%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%exclude %{_libdir}/monetdb5/lib_rapi.so
+%endif
+%if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
 %exclude %{_libdir}/monetdb5/lib_bam.so
@@ -632,7 +748,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_libdir}/monetdb5/autoload/*_sql.mal
+%{_libdir}/monetdb5/autoload/*_sql*.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
@@ -640,7 +756,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
-%if %{?_with_samtools:1}%{!?_with_samtools:0}
+%if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
@@ -770,19 +886,22 @@ developer, but if you do want to test, this is the package you need.
 	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
-	--enable-fits=no \
+	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
+	--enable-jsonstore=no \
 	--enable-merocontrol=no \
+	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rdf=no \
+	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \

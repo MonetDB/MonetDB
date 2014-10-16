@@ -1,0 +1,68 @@
+stdout of test '01` in directory 'sql/benchmarks/tpch/LOCKED` itself:
+
+
+# 16:02:02 >  
+# 16:02:02 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34442 --set xrpc_port=47029 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:02:02 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
+# MonetDB/SQL module v2.25.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:47:55 >  
+# 11:47:55 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 01.sql
+# 11:47:55 >  
+
+# 15:21:28 >  
+# 15:21:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:28 >  
+
+#select
+#	l_returnflag,
+#	l_linestatus,
+#	sum(l_quantity) as sum_qty,
+#	sum(l_extendedprice) as sum_base_price,
+#	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+#	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+#	avg(l_quantity) as avg_qty,
+#	avg(l_extendedprice) as avg_price,
+#	avg(l_discount) as avg_disc,
+#	count(*) as count_order
+#from
+#	lineitem
+#where
+#	l_shipdate <= date '1998-12-01' - interval '90' day (3)
+#group by
+#	l_returnflag,
+#	l_linestatus
+#order by
+#	l_returnflag,
+#	l_linestatus;
+% sys.lineitem,	sys.lineitem,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
+% varchar,	varchar,	hugeint,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
+% 1,	1,	6,	17,	35,	41,	24,	24,	24,	5 # length
+[ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
+[ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
+[ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
+[ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.59716817,	35874.00653,	0.04982753993,	14902	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:17:12 >  
+# 09:17:12 >  Done.
+# 09:17:12 >  
+

@@ -30,19 +30,12 @@ typedef struct {
 } cchdc_t;
 
 /* hard bounds */
-#define IMPS_MAX_CNT 16777215
-#define IMPS_PAGE 64
+#define IMPS_MAX_CNT	((1 << 24) - 1)		/* 24 one bits */
+#define IMPS_PAGE	64
 
 /* auxiliary macros */
-#define IMPScnt(X)           ((X) & 16777215) /* 24 bits for cnt   */
-#define IMPSsetcnt(X,Y)      ((X) = (Y))      /* no overflow check */
-#define IMPScnt_inc(X)       ((X)++)          /* no overflow check */
-#define IMPSrepeat(X)        (((X) & 16777216)?1:0)
-#define IMPSsetrepeat(X)     ((X) |= 16777216)
-#define IMPSunsetrepeat(X)   ((X) &= (~16777216))
-#define IMPSsetBit(B,X,Y)      ((((uint##B##_t)1)<<(Y))|(X))
-#define IMPSunsetBit(B,X,Y)    ((~(((uint##B##_t)1)<<(Y)))&(X))
-#define IMPSisSet(B,X,Y)       (((((uint##B##_t)1)<<Y)&X)?1:0)
-#define IMPSmod2(X,Y)        ((X)&((Y)-1))
+#define IMPSsetBit(B, X, Y)	((X) | ((uint##B##_t) 1 << (Y)))
+#define IMPSunsetBit(B, X, Y)	((X) & ~((uint##B##_t) 1 << (Y)))
+#define IMPSisSet(B, X, Y)	(((X) & ((uint##B##_t) 1 << (Y))) != 0)
 
 #endif /* GDK_IMPS_H */

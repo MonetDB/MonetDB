@@ -331,6 +331,20 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 	return pushArgument(mb, q, _t);
 }
 
+#ifdef HAVE_HGE
+InstrPtr
+pushHge(MalBlkPtr mb, InstrPtr q, hge val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_hge;
+	cst.val.hval= val;
+	_t = defConstant(mb,TYPE_hge,&cst);
+	return pushArgument(mb, q, _t);
+}
+#endif
+
 InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 {
@@ -419,7 +433,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		_t = defConstant(mb,tpe,&cst);
 	} else {
 		cst.vtype = TYPE_bat;
-		cst.val.bval = 0;
+		cst.val.bval = bat_nil;
 		_t = defConstant(mb,TYPE_bat,&cst);
 		mb->var[_t]->type = tpe;
 	}

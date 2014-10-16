@@ -1,16 +1,14 @@
 Package: MonetDB.R
-Version: 0.9.5
+Version: 0.9.6
 Title: Connect MonetDB to R
 Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
 	person("Thomas Lumley", role = "ctb"),
 	person("Anthony Damico", role = "ctb"))
-Depends: DBI (>= 0.2-7), digest (>= 0.6.4), methods
-Description: Allows to pull data from MonetDB into R
+Author: Hannes Muehleisen [aut, cre], Thomas Lumley [ctb], Anthony Damico [ctb]
+Maintainer: Hannes Muehleisen <hannes@cwi.nl>
+Depends: DBI (>= 0.3.1), digest (>= 0.6.4), methods, R (>= 3.1.1)
+Enhances: dplyr (>= 0.3.0)
+Description: Allows to pull data from MonetDB into R. Includes a DBI implementation and a dplyr backend.
 License: MPL (== 1.1)
 URL: http://monetr.r-forge.r-project.org
-Maintainer: Hannes Muehleisen <hannes@cwi.nl>
-SystemRequirements: MonetDB installation, available at
-        http://www.monetdb.org
-Author: Hannes Muehleisen [aut, cre],
-  Thomas Lumley [ctb],
-  Anthony Damico [ctb]
+SystemRequirements: MonetDB, available from http://www.monetdb.org

@@ -590,6 +590,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_compare_consecutive_values_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_compare_consecutive_values_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_compare_consecutive_values_tpe(flt);
 			break;
@@ -663,6 +668,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_subscan_old_groups_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_subscan_old_groups_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_subscan_old_groups_tpe(flt);
 			break;
@@ -748,6 +758,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_use_existing_hash_table_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_use_existing_hash_table_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_use_existing_hash_table_tpe(flt);
 			break;
@@ -770,7 +785,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * we left-shift one of them by half the hash-mask width
 		 * to better spread bits and use the entire hash-mask,
 		 * and thus reduce collisions */
-		while (mask>>=1)
+		while (mask >>= 1)
 			bits++;
 		bits /= 2;
 
@@ -826,6 +841,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_lng:
 			GRP_create_partial_hash_table_tpe(lng);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			GRP_create_partial_hash_table_tpe(hge);
+			break;
+#endif
 		case TYPE_flt:
 			GRP_create_partial_hash_table_tpe(flt);
 			break;
@@ -857,9 +877,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
 		BATseqbase(hn, 0);
-		hn->tkey = 0;
-		hn->tsorted = 0;
-		hn->trevsorted = 0;
+		if (BATcount(hn) <= 1) {
+			hn->tkey = 1;
+			hn->tsorted = 1;
+			hn->trevsorted = 1;
+		} else {
+			hn->tkey = 0;
+			hn->tsorted = 0;
+			hn->trevsorted = 0;
+		}
 		hn->T->nonil = 1;
 		hn->T->nil = 0;
 		*histo = hn;

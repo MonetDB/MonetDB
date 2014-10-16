@@ -35,6 +35,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#ifndef SOCKET_ERROR
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR   -1
+#endif
+
 // R headers
 #include <R.h>
 #include <Rdefines.h>
@@ -132,25 +137,25 @@ SEXP mapiConnect(SEXP host, SEXP port, SEXP timeout) {
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (sock == -1)
+		if (sock == INVALID_SOCKET)
 			continue;
 
 		if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *) &sto,
-				sizeof(sto)) < 0) {
+				sizeof(sto)) == SOCKET_ERROR) {
 			error("setsockopt failed");
 		}
 		if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char *) &sto,
-				sizeof(sto)) < 0) {
+				sizeof(sto)) == SOCKET_ERROR) {
 			error("setsockopt failed\n");
 		}
 		// lets have a 1M buffer on this socket, ok?
 		int recvbuf_size = ALLOCSIZE;
 
 		if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
-				(const char *) &recvbuf_size, sizeof(recvbuf_size))) {
+				(const char *) &recvbuf_size, sizeof(recvbuf_size)) == SOCKET_ERROR) {
 			error("setsockopt failed");
 		}
-		if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
+		if (connect(sock, rp->ai_addr, rp->ai_addrlen) != SOCKET_ERROR) {
 			if (DEBUG) {
 				printf("II: Connected to %s:%s\n", hostval, portvalstr);
 			}
@@ -183,7 +188,13 @@ size_t sockRead(int fd, void *buf, size_t size) {
 	ssize_t retval = -1;
 	do {
 		retval = recv(fd, buf, size, MSG_WAITALL);
-	} while (retval == -1 && errno == EINTR);
+	} while (retval == SOCKET_ERROR &&
+#ifdef _MSC_VER
+		 WSAGetLastError() == WSAEINTR
+#else
+		 errno == EINTR
+#endif
+		);
 	if (retval == -1) {
 #ifdef __WIN32__
 		errno = WSAGetLastError();
@@ -198,7 +209,13 @@ size_t sockWrite(int fd, const void *buf, size_t size) {
 	ssize_t retval = -1;
 	do {
 		retval = send(fd, buf, size, 0);
-	} while (retval == -1 && errno == EINTR);
+	} while (retval == SOCKET_ERROR &&
+#ifdef _MSC_VER
+		 WSAGetLastError() == WSAEINTR
+#else
+		 errno == EINTR
+#endif
+		);
 	if (retval == -1) {
 #ifdef __WIN32__
 		errno = WSAGetLastError();

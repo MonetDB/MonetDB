@@ -60,7 +60,7 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
+dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
@@ -70,7 +70,7 @@ dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
 }
 
 str
-bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
+bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -153,25 +153,25 @@ round_body_nonil(TYPE v, int d, int s, int r)
 		res = 0;
 	} else if (r > 0 && r < s) {
 		int dff = s - r;
-		lng rnd = scales[dff] >> 1;
-		lng lres;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
 		if (v > 0)
-			lres = (((v + rnd) / scales[dff]) * scales[dff]);
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
-			lres = (((v - rnd) / scales[dff]) * scales[dff]);
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG)
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
 	} else if (r <= 0 && -r + s > 0) {
 		int dff = -r + s;
-		lng rnd = scales[dff] >> 1;
-		lng lres;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
 		if (v > 0)
-			lres = (((v + rnd) / scales[dff]) * scales[dff]);
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
-			lres = (((v - rnd) / scales[dff]) * scales[dff]);
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG)
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
@@ -193,7 +193,7 @@ round_body(TYPE v, int d, int s, int r)
 }
 
 str
-round_wrap(TYPE *res, TYPE *v, int *d, int *s, bte *r)
+round_wrap(TYPE *res, const TYPE *v, const int *d, const int *s, const bte *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r && d && s);
@@ -203,7 +203,7 @@ round_wrap(TYPE *res, TYPE *v, int *d, int *s, bte *r)
 }
 
 str
-bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
+bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -276,7 +276,7 @@ bat_round_wrap(bat *_res, bat *_v, int *d, int *s, bte *r)
 }
 
 str
-nil_2dec(TYPE *res, void *val, int *d, int *sc)
+nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 {
 	(void) val;
 	(void) d;
@@ -287,44 +287,55 @@ nil_2dec(TYPE *res, void *val, int *d, int *sc)
 }
 
 str
-str_2dec(TYPE *res, str *val, int *d, int *sc)
+str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 {
 	char *s = strip_extra_zeros(*val);
-	char *dot = strchr(s, '.');
-	int digits = _strlen(s) - 1;
-	int scale = digits - (int) (dot - s);
-	lng value = 0;
+	char *dot = strchr(s, '.'), *end = NULL;
+	int digits = _strlen(s);
+	int scale = digits - (int) (dot - s) - 1;
+	BIG value = 0;
 
 	if (!dot) {
 		if (GDK_STRNIL(*val)) {
 			*res = NIL(TYPE);
 			return MAL_SUCCEED;
 		} else {
-			throw(SQL, STRING(TYPE), "\"%s\" is no decimal value (doesn't contain a '.')", *val);
+			scale = 0;
 		}
+	} else { /* we have a dot in the string */
+		digits--;
 	}
+	if (digits < 0)
+		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
-	value = decimal_from_str(s);
+	value = decimal_from_str(s, &end);
 	if (*s == '+' || *s == '-')
 		digits--;
 	if (scale < *sc) {
 		/* the current scale is too small, increase it by adding 0's */
-		int d = *sc - scale;	/* CANNOT be 0! */
+		int dff = *sc - scale;	/* CANNOT be 0! */
 
-		value *= scales[d];
-		scale += d;
-		digits += d;
+		value *= scales[dff];
+		scale += dff;
+		digits += dff;
 	} else if (scale > *sc) {
 		/* the current scale is too big, decrease it by correctly rounding */
-		int d = scale - *sc;	/* CANNOT be 0 */
-		lng rnd = scales[d] >> 1;
+		/* we should round properly, and check for overflow (res >= 10^digits+scale) */
+		int dff = scale - *sc;	/* CANNOT be 0 */
+		BIG rnd = scales[dff] >> 1;
 
-		value += rnd;
-		value /= scales[d];
-		scale -= d;
-		digits -= d;
+		if (value > 0)
+			value += rnd;
+		else
+			value -= rnd;
+		value /= scales[dff];
+		scale -= dff;
+		digits -= dff;
+		if (value >= scales[*d] || value <= -scales[*d]) {
+			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+		}
 	}
-	if (digits > *d) {
+	if (value <= -scales[*d] || value >= scales[*d]  || *end) {
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	}
 	*res = (TYPE) value;
@@ -332,21 +343,21 @@ str_2dec(TYPE *res, str *val, int *d, int *sc)
 }
 
 str
-nil_2num(TYPE *res, void *v, int *len)
+nil_2num(TYPE *res, const void *v, const int *len)
 {
 	int zero = 0;
 	return nil_2dec(res, v, len, &zero);
 }
 
 str
-str_2num(TYPE *res, str *v, int *len)
+str_2num(TYPE *res, const str *v, const int *len)
 {
 	int zero = 0;
 	return str_2dec(res, v, len, &zero);
 }
 
 str
-batnil_2dec(int *res, int *bid, int *d, int *sc)
+batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -374,7 +385,7 @@ batnil_2dec(int *res, int *bid, int *d, int *sc)
 }
 
 str
-batstr_2dec(int *res, int *bid, int *d, int *sc)
+batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -405,14 +416,14 @@ batstr_2dec(int *res, int *bid, int *d, int *sc)
 }
 
 str
-batnil_2num(int *res, int *bid, int *len)
+batnil_2num(bat *res, const bat *bid, const int *len)
 {
 	int zero = 0;
 	return batnil_2dec(res, bid, len, &zero);
 }
 
 str
-batstr_2num(int *res, int *bid, int *len)
+batstr_2num(bat *res, const bat *bid, const int *len)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -443,9 +454,9 @@ batstr_2num(int *res, int *bid, int *len)
 }
 
 str
-dec2second_interval(lng *res, int *sc, TYPE *dec, int *ek, int *sk)
+dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, const int *sk)
 {
-	lng value = *dec;
+	BIG value = *dec;
 
 	(void) ek;
 	(void) sk;
@@ -459,6 +470,9 @@ dec2second_interval(lng *res, int *sc, TYPE *dec, int *ek, int *sk)
 		value += rnd;
 		value /= scales[d];
 	}
+#if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
+	assert((hge) GDK_lng_min < value && value <= (hge) GDK_lng_max);
+#endif
 	*res = value;
 	return MAL_SUCCEED;
 }

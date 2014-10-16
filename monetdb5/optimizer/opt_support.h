@@ -58,6 +58,7 @@
 #define DEBUG_OPT_EVALUATE			17
 #define DEBUG_OPT_FACTORIZE			18
 #define DEBUG_OPT_GARBAGE			19
+#define DEBUG_OPT_GENERATOR			56
 #define DEBUG_OPT_INLINE			20
 #define DEBUG_OPT_JOINPATH			21
 #define DEBUG_OPT_MACRO				23
@@ -127,9 +128,10 @@ opt_export int isSlice(InstrPtr q);
 opt_export int isOrderby(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
 opt_export int isSubSelect(InstrPtr q);
+opt_export int isSubJoin(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
-opt_export str OPTsetDebugStr(int *ret, str *nme);
+opt_export str OPTsetDebugStr(void *ret, str *nme);
 /*
  * @-
  * The optimizerCheck is defensive. In some cases, e.g. coercion,

@@ -56,7 +56,7 @@ peeringServerThread(void *d)
 	 *   situation):
 	 * > proxy
 	 * < proxy myhost:myport
-	 *   for full connectable networks, were masquerading is not
+	 *   for full connectable networks, where masquerading is not
 	 *   necessary on any side and all hosts from the one network
 	 *   directly connect any of the hosts from the other network:
 	 * > direct
@@ -149,6 +149,8 @@ peeringServerThread(void *d)
 	close(discreader[0]);
 	close(discreader[1]);
 	close(s);
+	if (masquerade)
+		free(masquerade);
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

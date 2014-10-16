@@ -86,7 +86,8 @@ static struct {
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
 	/*  21 */  { "footprint", 0},
-	/*  21 */  { 0, 0}
+	/*  22 */  { "numa", 0},
+	/*  23 */  { 0, 0}
 };
 
 int
@@ -98,10 +99,10 @@ getProfileCounter(int idx){
  * The counters can be set individually.
  */
 str
-activateCounter(str name)
+activateCounter(const char *name)
 {
 	int i;
-	char *s;
+	const char *s;
 
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
@@ -141,6 +142,9 @@ activateCounter(str name)
 	case 'm':
 		profileCounter[PROFmemory].status = 1;
 		break;
+	case 'n':
+		profileCounter[PROFnuma].status = 1;
+		break;
 	case 'p':
 		profileCounter[PROFprocess].status = 1;
 		break;
@@ -179,7 +183,7 @@ activateCounter(str name)
 }
 
 str
-deactivateCounter(str name)
+deactivateCounter(const char *name)
 {
 	int i;
 	for (i = 0; profileCounter[i].name; i++)
@@ -237,16 +241,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	if (stk == NULL) return;
 	if (pci == NULL) return;
-	if (profileCounter[PROFdot].status == 1 && start && pci == NULL){
-		if (mb->dotfile == 0){
-			MT_lock_set(&mal_profileLock, "profilerEvent");
-			showFlowGraph(mb,stk,"stethoscope");
-			MT_lock_unset(&mal_profileLock, "profilerEvent");
-		}
-	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
-	if ( !start && pci && pci->token == ENDsymbol)
+	if ( !start && pci->token == ENDsymbol)
 		profilerHeartbeatEvent("ping", 0);
 	if (myname == 0)
 		myname = putName("profiler", 8);
@@ -311,6 +308,9 @@ offlineProfilerHeader(void)
 	}
 	if (profileCounter[PROFfootprint].status) {
 		logadd("footprint,\t");
+	}
+	if (profileCounter[PROFnuma].status) {
+		logadd("numa,\t");
 	}
 	if (profileCounter[PROFreads].status)
 		logadd("blk reads,\t");
@@ -454,6 +454,14 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 	if (profileCounter[PROFfootprint].status) {
 		logadd(LLFMT",\t", stk->tmpspace);
 	}
+	if (profileCounter[PROFnuma].status) {
+		int i;
+		logadd("\"");
+		for( i= pci->retc ; i < pci->argc; i++)
+		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
+			logadd("@%d", mb->var[getArg(pci,i)]->worker);
+		logadd("\",\t");
+	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
@@ -520,7 +528,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 
 
 str
-setLogFile(stream *fd, Module mod, str fname)
+setLogFile(stream *fd, Module mod, const char *fname)
 {
 	(void)mod;      /* still unused */
 	MT_lock_set(&mal_profileLock, "setLogFile");
@@ -543,7 +551,7 @@ setLogFile(stream *fd, Module mod, str fname)
 }
 
 str
-setLogStream(Module cntxt, str host, int port)
+setLogStream(Module cntxt, const char *host, int port)
 {
 	(void)cntxt;        /* still unused */
 	MT_lock_set(&mal_profileLock, "setLogStream");
@@ -582,7 +590,7 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	if (eventstream && eventstream != GDKout && eventstream != GDKerr) {
+	if (eventstream && eventstream != mal_clients[0].fdout && eventstream != GDKout && eventstream != GDKerr) {
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
@@ -592,7 +600,7 @@ closeProfilerStream(void)
 }
 
 str
-setStartPoint(Module cntxt, str mod, str fcn)
+setStartPoint(Module cntxt, const char *mod, const char *fcn)
 {
 	(void)cntxt;
 	(void)mod;
@@ -609,7 +617,7 @@ setStartPoint(Module cntxt, str mod, str fcn)
 }
 
 str
-setEndPoint(Module cntxt, str mod, str fcn)
+setEndPoint(Module cntxt, const char *mod, const char *fcn)
 {
 	(void)cntxt;
 	(void)mod;
@@ -700,8 +708,8 @@ getProfilerStream(void)
  * instructions space from a given context. This has been
  * abstracted away.
  */
-int
-instrFilter(InstrPtr pci, str mod, str fcn)
+static int
+instrFilter(InstrPtr pci, const char *mod, const char *fcn)
 {
 	if (pci && getFunctionId(pci) && fcn && mod &&
 			(*fcn == '*' || fcn == getFunctionId(pci)) &&
@@ -719,7 +727,7 @@ static str modFilter[32], fcnFilter[32];
 static int topFilter;
 
 void
-setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
+setFilterOnBlock(MalBlkPtr mb, const char *mod, const char *fcn)
 {
 	int cnt, k, i;
 	InstrPtr p;
@@ -739,12 +747,12 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 }
 
 void
-setFilter(Module cntxt, str mod, str fcn)
+setFilter(Module cntxt, const char *mod, const char *fcn)
 {
 	int j;
 	Module s = cntxt;
 	Symbol t;
-	str matchall = "*";
+	const char *matchall = "*";
 
 	(void)cntxt;
 	if (mod == NULL)
@@ -778,7 +786,7 @@ setFilter(Module cntxt, str mod, str fcn)
  * each separate top level routine.
  */
 void
-clrFilter(Module cntxt, str mod, str fcn)
+clrFilter(Module cntxt, const char *mod, const char *fcn)
 {
 	int j, k;
 	Module s = cntxt;
@@ -896,7 +904,7 @@ TRACEtable(BAT **r)
 }
 
 static BAT *
-TRACEcreate(str hnme, str tnme, int tt)
+TRACEcreate(const char *hnme, const char *tnme, int tt)
 {
 	BAT *b;
 	char buf[128];
@@ -1021,7 +1029,7 @@ clearTrace(void)
 }
 
 BAT *
-getTrace(str nme)
+getTrace(const char *nme)
 {
 	if (TRACE_init == 0)
 		return NULL;
@@ -1055,7 +1063,7 @@ getTrace(str nme)
 }
 
 int
-getTraceType(str nme)
+getTraceType(const char *nme)
 {
 	if (initTrace())
 		return TYPE_any;
@@ -1240,7 +1248,7 @@ lng
 getDiskSpace(void)
 {
 	BAT *b;
-	int i;
+	bat i;
 	lng size = 0;
 
 	for (i = 1; i < getBBPsize(); i++)
@@ -1361,7 +1369,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
-void profilerHeartbeatEvent(str msg, lng ticks)
+void profilerHeartbeatEvent(const char *msg, lng ticks)
 {
 	char logbuffer[LOGLEN], *logbase;
 	char cpuload[BUFSIZ];
@@ -1447,6 +1455,12 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 #endif
 	if (profileCounter[PROFmemory].status && delayswitch < 0)
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+	if (profileCounter[PROFfootprint].status)
+		logadd("0,\t");
+	if (profileCounter[PROFnuma].status){
+		logadd("\"");
+		logadd("\",\t");
+	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
@@ -1454,8 +1468,6 @@ void profilerHeartbeatEvent(str msg, lng ticks)
 		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
-	if (profileCounter[PROFfootprint].status)
-		logadd("0,\t");
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);

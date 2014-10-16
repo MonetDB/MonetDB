@@ -495,6 +495,16 @@ INSERT INTO num_data VALUES (8, '8496986223.640637243531655061679885707175911504
 INSERT INTO num_data VALUES (9, '054863480.34685027005508022756223282084742813020271603840941647350440860843570182437301045468670059279379903480024743452620396345637401505220786389930600883087012615993343976556472498552535317826554614696684732913955544753638726438705858481670766245958647367500212800073774509075408148134050353551558174813940258910304990570172170811882520915334358633');
 COMMIT TRANSACTION;
 
+-- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');"
+call vacuum('sys', 'num_exp_add');
+call vacuum('sys', 'num_exp_sub');
+call vacuum('sys', 'num_exp_div');
+call vacuum('sys', 'num_exp_mul');
+call vacuum('sys', 'num_exp_sqrt');
+call vacuum('sys', 'num_exp_ln');
+call vacuum('sys', 'num_exp_log10');
+call vacuum('sys', 'num_exp_power_10_ln');
+
 -- ******************************
 -- * Create indices for faster checks
 -- ******************************
@@ -507,15 +517,6 @@ CREATE UNIQUE INDEX num_exp_sqrt_idx ON num_exp_sqrt (id);
 CREATE UNIQUE INDEX num_exp_ln_idx ON num_exp_ln (id);
 CREATE UNIQUE INDEX num_exp_log10_idx ON num_exp_log10 (id);
 CREATE UNIQUE INDEX num_exp_power_10_ln_idx ON num_exp_power_10_ln (id);
-
-VACUUM ANALYZE num_exp_add;
-VACUUM ANALYZE num_exp_sub;
-VACUUM ANALYZE num_exp_div;
-VACUUM ANALYZE num_exp_mul;
-VACUUM ANALYZE num_exp_sqrt;
-VACUUM ANALYZE num_exp_ln;
-VACUUM ANALYZE num_exp_log10;
-VACUUM ANALYZE num_exp_power_10_ln;
 
 -- ******************************
 -- * Now check the behaviour of the NUMERIC type

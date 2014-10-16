@@ -1,0 +1,138 @@
+stdout of test '11-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:27 >  
+# 22:53:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:27 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:28 >  
+# 22:53:28 >  "/usr/bin/python2" "11-explain.SQL.py" "11-explain"
+# 22:53:28 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	ps_partkey,
+#	sum(ps_supplycost * ps_availqty) as value
+#from
+#	partsupp,
+#	supplier,
+#	nation
+#where
+#	ps_suppkey = s_suppkey
+#	and s_nationkey = n_nationkey
+#	and n_name = 'GERMANY'
+#group by
+#	ps_partkey 
+#having
+#	sum(ps_supplycost * ps_availqty) >
+#	(
+#		select
+#			sum(ps_supplycost * ps_availqty) * 0.0100000000
+#			-- The above constant needs to be adjusted according
+#			-- to the scale factor (SF): constant = 0.0001 / SF.
+#		from
+#			partsupp,
+#			supplier,
+#			nation
+#		where
+#			ps_suppkey = s_suppkey
+#			and s_nationkey = n_nationkey
+% .explain # table_name
+% mal # name
+% clob # type
+% 714 # length
+function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
+    X_5 := sql.mvc();
+    X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","supplier");
+    X_9:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",0);
+    (X_12,r1_12) := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",2);
+    X_15:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",1);
+    X_17 := sql.delta(X_9,X_12,r1_12,X_15);
+    X_18 := algebra.leftfetchjoin(X_6,X_17);
+    X_19:bat[:oid,:oid]  := sql.tid(X_5,"sys","nation");
+    X_21:bat[:oid,:str]  := sql.bind(X_5,"sys","nation","n_name",0);
+    (X_23,r1_23) := sql.bind(X_5,"sys","nation","n_name",2);
+    X_25:bat[:oid,:str]  := sql.bind(X_5,"sys","nation","n_name",1);
+    X_26 := sql.delta(X_21,X_23,r1_23,X_25);
+    X_27 := algebra.leftfetchjoin(X_19,X_26);
+    X_28 := algebra.subselect(X_27,A0,A0,true,true,false);
+    X_30 := algebra.leftfetchjoin(X_28,X_19);
+    (X_31,r1_32) := algebra.subjoin(X_18,X_30,nil:BAT,nil:BAT,true,nil:lng);
+    X_35 := algebra.leftfetchjoin(X_31,X_6);
+    X_36:bat[:oid,:oid]  := sql.tid(X_5,"sys","partsupp");
+    X_38:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","partsupp","partsupp_ps_suppkey_fkey",0);
+    (X_41,r1_42) := sql.bind_idxbat(X_5,"sys","partsupp","partsupp_ps_suppkey_fkey",2);
+    X_43:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","partsupp","partsupp_ps_suppkey_fkey",1);
+    X_44 := sql.delta(X_38,X_41,r1_42,X_43);
+    X_45 := algebra.leftfetchjoin(X_36,X_44);
+    (X_46,r1_47) := algebra.subjoin(X_35,X_45,nil:BAT,nil:BAT,true,nil:lng);
+    X_49:bat[:oid,:int]  := sql.bind(X_5,"sys","partsupp","ps_partkey",0);
+    (X_52,r1_53) := sql.bind(X_5,"sys","partsupp","ps_partkey",2);
+    X_55:bat[:oid,:int]  := sql.bind(X_5,"sys","partsupp","ps_partkey",1);
+    X_57 := sql.delta(X_49,X_52,r1_53,X_55);
+    X_58:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_47,X_36,X_57);
+    (X_59,r1_61,r2_61) := group.subgroupdone(X_58);
+    X_62 := algebra.leftfetchjoin(r1_61,X_58);
+    X_64:bat[:oid,:lng]  := sql.bind(X_5,"sys","partsupp","ps_supplycost",0);
+    (X_66,r1_68) := sql.bind(X_5,"sys","partsupp","ps_supplycost",2);
+    X_68:bat[:oid,:lng]  := sql.bind(X_5,"sys","partsupp","ps_supplycost",1);
+    X_70 := sql.delta(X_64,X_66,r1_68,X_68);
+    X_71 := algebra.leftfetchjoin(X_36,X_70);
+    X_72 := algebra.leftfetchjoin(r1_47,X_71);
+    X_73:bat[:oid,:hge]  := batcalc.hge(2,X_72,39,2);
+    X_75:bat[:oid,:int]  := sql.bind(X_5,"sys","partsupp","ps_availqty",0);
+    (X_78,r1_82) := sql.bind(X_5,"sys","partsupp","ps_availqty",2);
+    X_80:bat[:oid,:int]  := sql.bind(X_5,"sys","partsupp","ps_availqty",1);
+    X_81 := sql.delta(X_75,X_78,r1_82,X_80);
+    X_82 := algebra.leftfetchjoin(X_36,X_81);
+    X_83 := algebra.leftfetchjoin(r1_47,X_82);
+    X_84:bat[:oid,:hge]  := batcalc.*(X_73,X_83);
+    X_85:bat[:oid,:hge]  := aggr.subsum(X_84,X_59,r1_61,true,true);
+    X_63 := bat.mirror(X_62);
+    X_87 := algebra.subselect(X_27,A2,A2,true,true,false);
+    X_89 := algebra.leftfetchjoin(X_87,X_19);
+    (X_90,r1_117) := algebra.subjoin(X_18,X_89,nil:BAT,nil:BAT,true,nil:lng);
+    X_94 := algebra.leftfetchjoin(X_90,X_6);
+    (X_95,r1_132) := algebra.subjoin(X_94,X_45,nil:BAT,nil:BAT,true,nil:lng);
+    X_100 := algebra.leftfetchjoin(r1_132,X_71);
+    X_101:bat[:oid,:hge]  := batcalc.hge(2,X_100,39,2);
+    X_103 := algebra.leftfetchjoin(r1_132,X_82);
+    X_104:bat[:oid,:hge]  := batcalc.*(X_101,X_103);
+    X_105:hge  := aggr.sum(X_104);
+    X_106 := calc.*(X_105,A1);
+    X_107 := sql.single(X_106);
+    X_108:bat[:oid,:hge]  := batcalc.hge(5,X_107,39,2);
+    (X_110,r1_166) := algebra.subthetajoin(X_85,X_108,nil:BAT,nil:BAT,1,true,nil:lng);
+    X_115 := algebra.tinter(X_63,X_110);
+    X_116 := algebra.leftfetchjoin(X_115,X_85);
+    (X_117,r1_173,r2_173) := algebra.subsort(X_116,true,false);
+    X_121:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_173,X_115,X_62);
+    X_122 := algebra.leftfetchjoin(r1_173,X_116);
+    X_123 := sql.resultSet(2,1,X_121);
+    sql.rsColumn(X_123,"sys.partsupp","ps_partkey","int",32,0,X_121);
+    sql.rsColumn(X_123,"sys.L1","value","decimal",39,2,X_122);
+    X_137 := io.stdout();
+    sql.exportResult(X_137,X_123);
+end s2_1;
+# querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe")
+
+# 22:53:28 >  
+# 22:53:28 >  "Done."
+# 22:53:28 >  
+

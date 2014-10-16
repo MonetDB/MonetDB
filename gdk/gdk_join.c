@@ -241,8 +241,10 @@ binsearch_##TYPE(const oid *rcand, oid offset, const TYPE *rvals,	\
 BINSEARCHFUNC(bte)
 BINSEARCHFUNC(sht)
 BINSEARCHFUNC(int)
-BINSEARCHFUNC(oid)
 BINSEARCHFUNC(lng)
+#ifdef HAVE_HGE
+BINSEARCHFUNC(hge)
+#endif
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
 
@@ -271,17 +273,25 @@ binsearch(const oid *rcand, oid offset,
 #if SIZEOF_WRD == SIZEOF_INT
 	case TYPE_wrd:
 #endif
+#if SIZEOF_OID == SIZEOF_INT
+	case TYPE_oid:
+#endif
 		return binsearch_int(rcand, offset, (const int *) rvals,
 				     lo, hi, (const int *) v, ordering, last);
-	case TYPE_oid:
-		return binsearch_oid(rcand, offset, (const oid *) rvals,
-				     lo, hi, (const oid *) v, ordering, last);
 	case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
 	case TYPE_wrd:
 #endif
+#if SIZEOF_OID == SIZEOF_LNG
+	case TYPE_oid:
+#endif
 		return binsearch_lng(rcand, offset, (const lng *) rvals,
 				     lo, hi, (const lng *) v, ordering, last);
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return binsearch_hge(rcand, offset, (const hge *) rvals,
+				     lo, hi, (const hge *) v, ordering, last);
+#endif
 	case TYPE_flt:
 		return binsearch_flt(rcand, offset, (const flt *) rvals,
 				     lo, hi, (const flt *) v, ordering, last);
@@ -348,6 +358,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	const char *v, *prev = NULL;
 	BUN nl, nr;
+	BUN total;		/* number of rows in l we scan */
 	int insert_nil;
 	/* equal_order is set if we can scan both BATs in the same
 	 * order, so when both are sorted or both are reverse sorted
@@ -392,6 +403,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	total = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
 	lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, BUNfirst(l));
 	rvals = r->ttype == TYPE_void ? NULL : (const char *) Tloc(r, BUNfirst(r));
 	if (l->tvarsized && l->ttype) {
@@ -1048,8 +1060,15 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * we need to add nl * nr values in the results */
 		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
 			/* make some extra space by extrapolating how
-			 * much more we need */
-			BUN newcap = BATcount(r1) + nl * nr * (lcand ? (BUN) (lcandend + 1 - lcand) : lend + 1 - lstart);
+			 * much more we need (fraction of l we've seen
+			 * so far is used as the fraction of the
+			 * expected result size we've produced so
+			 * far) */
+			BUN newcap = (BUN) ((double) total / (total - (lcand ? (BUN) (lcandend - lcand) : (lend - lstart))) * (BATcount(r1) + nl * nr) * 1.1);
+			if (newcap < nl * nr + BATcount(r1))
+				newcap = nl * nr + BATcount(r1) + 1024;
+			/* make sure heap.free is set properly before
+			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
 			r1 = BATextend(r1, newcap);
@@ -1426,6 +1445,13 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
+		int t = r->htype;
+		if (t != ATOMstorage(t) &&
+		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
+		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
+		    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
+			t = ATOMstorage(t);
+
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -1449,21 +1475,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				int t = r->htype;
-				if (t != ATOMstorage(t) &&
-				    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-				    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
-				    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-					t = ATOMstorage(t);
-
 				switch (t) {
 				case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-				case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-				case TYPE_wrd:
-#endif
 					if (!nil_matches && *(const int*)v == int_nil) {
 						lskipped = BATcount(r1) > 0;
 						continue;
@@ -1479,12 +1492,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					}
 					break;
 				case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-				case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-				case TYPE_wrd:
-#endif
 					if (!nil_matches && *(const lng*)v == lng_nil) {
 						lskipped = BATcount(r1) > 0;
 						continue;
@@ -1499,6 +1506,23 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 							break;
 					}
 					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					if (!nil_matches && *(const hge*)v == hge_nil) {
+						lskipped = BATcount(r1) > 0;
+						continue;
+					}
+					HASHloop_hge(ri, r->H->hash, rb, v) {
+						rb0 = rb - BUNfirst(r); /* zero-based */
+						if (rb0 < rstart || rb0 >= rend)
+							continue;
+						ro = (oid) (rb + rbun2oid);
+						HASHLOOPBODY();
+						if (semi)
+							break;
+					}
+					break;
+#endif
 				default:
 					if (!nil_matches && cmp(v, nil) == 0) {
 						lskipped = BATcount(r1) > 0;
@@ -1907,6 +1931,15 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
 			return GDK_SUCCEED;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (*(const hge *)c1 == hge_nil ||
+		    *(const hge *)c2 == hge_nil ||
+		    -*(const hge *)c1 > *(const hge *)c2 ||
+		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
+			return GDK_SUCCEED;
+		break;
+#endif
 	case TYPE_flt:
 		if (*(const flt *)c1 == flt_nil ||
 		    *(const flt *)c2 == flt_nil ||
@@ -2023,6 +2056,24 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					continue;
 				break;
 			}
+#ifdef HAVE_HGE
+			case TYPE_lng: {
+				hge v1 = (hge) *(const lng *) vr, v2;
+
+				if (v1 == lng_nil)
+					continue;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!li || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hi || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
 #ifdef HAVE___INT128
 			case TYPE_lng: {
 				__int128 v1 = (__int128) *(const lng *) vr, v2;
@@ -2065,6 +2116,35 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  lmatch2:
 				break;
 			  nolmatch:
+				continue;
+			}
+#endif
+#endif
+#ifdef HAVE_HAVE
+			case TYPE_hge: {
+				hge v1, v2;
+				int abort_on_error = 1;
+
+				if (*(const hge *)vr == hge_nil)
+					continue;
+				SUB_WITH_CHECK(hge, *(const hge *)vr,
+					       hge, *(const hge *)c1,
+					       hge, v1,
+					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(0));
+				if (*(const hge *)vl <= v1 &&
+				    (!li || *(const hge *)vl != v1))
+					continue;
+			  hmatch1:
+				ADD_WITH_CHECK(hge, *(const hge *)vr,
+					       hge, *(const hge *)c2,
+					       hge, v2,
+					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(0));
+				if (*(const hge *)vl >= v2 &&
+				    (!hi || *(const hge *)vl != v2))
+					continue;
+			  hmatch2:
+				break;
+			  nohmatch:
 				continue;
 			}
 #endif
@@ -2356,9 +2436,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (*(const int*)vrl == int_nil ||
 				    *(const int*)vrh == int_nil ||
 				    *(const int*)vl < *(const int*)vrl ||
@@ -2368,9 +2445,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				if (*(const lng*)vrl == lng_nil ||
 				    *(const lng*)vrh == lng_nil ||
 				    *(const lng*)vl < *(const lng*)vrl ||
@@ -2379,15 +2453,17 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				    (!hi && *(const lng*)vl == *(const lng*)vrh))
 					continue;
 				break;
-			case TYPE_oid:
-				if (*(const oid*)vrl == oid_nil ||
-				    *(const oid*)vrh == oid_nil ||
-				    *(const oid*)vl < *(const oid*)vrl ||
-				    *(const oid*)vl > *(const oid*)vrh ||
-				    (!li && *(const oid*)vl == *(const oid*)vrl) ||
-				    (!hi && *(const oid*)vl == *(const oid*)vrh))
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (*(const hge*)vrl == hge_nil ||
+				    *(const hge*)vrh == hge_nil ||
+				    *(const hge*)vl < *(const hge*)vrl ||
+				    *(const hge*)vl > *(const hge*)vrh ||
+				    (!li && *(const hge*)vl == *(const hge*)vrl) ||
+				    (!hi && *(const hge*)vl == *(const hge*)vrh))
 					continue;
 				break;
+#endif
 			case TYPE_flt:
 				if (*(const flt*)vrl == flt_nil ||
 				    *(const flt*)vrh == flt_nil ||
@@ -2407,6 +2483,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				break;
 			default:
+				assert(t != TYPE_oid);
+				assert(t != TYPE_wrd);
 				if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
 					continue;
 				c = cmp(vl, vrl);
@@ -2784,17 +2862,22 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
+				nilcheck = 0;				\
 			}						\
 			if (sortcheck && lo &&				\
 			    (bn->trevsorted | bn->tsorted | bn->tkey)) { \
 				if (v > prev) {				\
 					bn->trevsorted = 0;		\
-					if (!bn->tsorted)		\
+					if (!bn->tsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else if (v < prev) {			\
 					bn->tsorted = 0;		\
-					if (!bn->trevsorted)		\
+					if (!bn->trevsorted) {		\
 						bn->tkey = 0; /* can't be sure */ \
+						sortcheck = 0;		\
+					}				\
 				} else {				\
 					bn->tkey = 0; /* definitely */	\
 				}					\
@@ -2807,6 +2890,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 	return GDK_SUCCEED;						\
 }
 
+
 /* project type switch */
 project_loop(bte)
 project_loop(sht)
@@ -2814,6 +2898,9 @@ project_loop(int)
 project_loop(flt)
 project_loop(dbl)
 project_loop(lng)
+#ifdef HAVE_HGE
+project_loop(hge)
+#endif
 
 static int
 project_void(BAT *bn, BAT *l, BAT *r)
@@ -2985,7 +3072,7 @@ BATproject(BAT *l, BAT *r)
 	}
 	assert(l->ttype == TYPE_oid);
 
-	if (ATOMstorage(tpe) == TYPE_str &&
+	if (ATOMstorage(tpe) == TYPE_str && l->T->nonil &&
 	    (rcount == 0 || lcount > (rcount >> 3))) {
 		/* insert strings as ints, we need to copy the string
 		 * heap whole sale */
@@ -3035,6 +3122,11 @@ BATproject(BAT *l, BAT *r)
 	case TYPE_lng:
 		res = project_lng(bn, l, r, nilcheck, sortcheck);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		res = project_hge(bn, l, r, nilcheck, sortcheck);
+		break;
+#endif
 	case TYPE_oid:
 		if (r->ttype == TYPE_void) {
 			res = project_void(bn, l, r);
@@ -3086,9 +3178,15 @@ BATproject(BAT *l, BAT *r)
 	}
 	/* some properties follow from certain combinations of input
 	 * properties */
-	bn->tkey |= l->tkey && r->tkey;
-	bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-	bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	if (BATcount(bn) <= 1) {
+		bn->tkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+	} else {
+		bn->tkey |= l->tkey && r->tkey;
+		bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+		bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
 	BATseqbase(bn, l->hseqbase);

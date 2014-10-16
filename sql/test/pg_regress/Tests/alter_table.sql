@@ -11,7 +11,7 @@ CREATE TABLE tmp (initial integer);
 
 ALTER TABLE tmp ADD COLUMN a integer default 3;
 
-ALTER TABLE tmp ADD COLUMN b name;
+ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 
 ALTER TABLE tmp ADD COLUMN c text;
 
@@ -23,42 +23,42 @@ ALTER TABLE tmp ADD COLUMN f smallint;
 
 ALTER TABLE tmp ADD COLUMN g string;
 
-ALTER TABLE tmp ADD COLUMN h abstime;
+ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 
 ALTER TABLE tmp ADD COLUMN i char;
 
-ALTER TABLE tmp ADD COLUMN j abstime[];
+ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 
 ALTER TABLE tmp ADD COLUMN k integer;
 
-ALTER TABLE tmp ADD COLUMN l tid;
+ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
 
-ALTER TABLE tmp ADD COLUMN m xid;
+ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
 
-ALTER TABLE tmp ADD COLUMN n oidvector;
+ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
 
 --ALTER TABLE tmp ADD COLUMN o lock;
-ALTER TABLE tmp ADD COLUMN p smgr;
+ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 
 ALTER TABLE tmp ADD COLUMN q string;
 
-ALTER TABLE tmp ADD COLUMN r lseg;
+ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 
 ALTER TABLE tmp ADD COLUMN s string;
 
 ALTER TABLE tmp ADD COLUMN t string;
 
-ALTER TABLE tmp ADD COLUMN u tinterval;
+ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 
 ALTER TABLE tmp ADD COLUMN v timestamp;
 
-ALTER TABLE tmp ADD COLUMN w interval;
+ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 
-ALTER TABLE tmp ADD COLUMN x double[];
+ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN y float[];
+ALTER TABLE tmp ADD COLUMN y string; -- float[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN z smallint[];
+ALTER TABLE tmp ADD COLUMN z string; -- smallint[] replaced by string
 
 INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	v, w, x, y, z)
@@ -67,7 +67,7 @@ INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	314159, '(1,1)', '512',
 	'1 2 3 4 5 6 7 8', 'magnetic disk', '(1.1,1.1)', '(4.1,4.1,3.1,3.1)',
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
-	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
+	now, '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 
 SELECT * FROM tmp;
 
@@ -80,7 +80,7 @@ CREATE TABLE tmp (
 
 ALTER TABLE tmp ADD COLUMN a integer;
 
-ALTER TABLE tmp ADD COLUMN b name;
+ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 
 ALTER TABLE tmp ADD COLUMN c text;
 
@@ -92,42 +92,43 @@ ALTER TABLE tmp ADD COLUMN f smallint;
 
 ALTER TABLE tmp ADD COLUMN g string;
 
-ALTER TABLE tmp ADD COLUMN h abstime;
+ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 
 ALTER TABLE tmp ADD COLUMN i char;
 
-ALTER TABLE tmp ADD COLUMN j abstime[];
+ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 
 ALTER TABLE tmp ADD COLUMN k integer;
 
-ALTER TABLE tmp ADD COLUMN l tid;
+ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
 
-ALTER TABLE tmp ADD COLUMN m xid;
+ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
 
-ALTER TABLE tmp ADD COLUMN n oidvector;
+ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
 
 --ALTER TABLE tmp ADD COLUMN o lock;
-ALTER TABLE tmp ADD COLUMN p smgr;
+ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 
 ALTER TABLE tmp ADD COLUMN q string;
 
-ALTER TABLE tmp ADD COLUMN r lseg;
+ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 
 ALTER TABLE tmp ADD COLUMN s string;
 
 ALTER TABLE tmp ADD COLUMN t string;
 
-ALTER TABLE tmp ADD COLUMN u tinterval;
+ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 
 ALTER TABLE tmp ADD COLUMN v timestamp;
 
-ALTER TABLE tmp ADD COLUMN w interval;
+ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 
-ALTER TABLE tmp ADD COLUMN x double[];
+ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN y float[];
+ALTER TABLE tmp ADD COLUMN y string; -- float[] replaced by string
 
-ALTER TABLE tmp ADD COLUMN z smallint[];
+ALTER TABLE tmp ADD COLUMN z string; -- smallint[] replaced by string
+
 
 INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	v, w, x, y, z)
@@ -136,7 +137,7 @@ INSERT INTO tmp (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, q, r, s, t, u,
 	314159, '(1,1)', '512',
 	'1 2 3 4 5 6 7 8', 'magnetic disk', '(1.1,1.1)', '(4.1,4.1,3.1,3.1)',
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
-	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
+	now, '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 
 SELECT * FROM tmp;
 
@@ -162,6 +163,7 @@ SELECT * FROM tmp_new2;
 
 DROP TABLE tmp_new;
 DROP TABLE tmp_new2;
+DROP TABLE tmp;
 
 
 -- ALTER TABLE ... RENAME on non-table relations
@@ -234,7 +236,7 @@ DROP TABLE tmp2;
 -- Note: these tables are TEMP to avoid name conflicts when this test
 -- is run in parallel with foreign_key.sql.
 
-CREATE TEMP TABLE PKTABLE (ptest1 int PRIMARY KEY);
+CREATE /* TEMP */ TABLE PKTABLE (ptest1 int PRIMARY KEY);
 CREATE TEMP TABLE FKTABLE (ftest1 inet);
 -- This next should fail, because inet=int does not exist
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1) references pktable;
@@ -244,26 +246,26 @@ ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1) references pktable(ptest1);
 -- This should succeed, even though they are different types
 -- because varchar=int does exist
 DROP TABLE FKTABLE;
-CREATE TEMP TABLE FKTABLE (ftest1 varchar);
+CREATE /* TEMP */ TABLE FKTABLE (ftest1 varchar(10));
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1) references pktable;
 -- As should this
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1) references pktable(ptest1);
 DROP TABLE pktable cascade;
 DROP TABLE fktable;
 
-CREATE TEMP TABLE PKTABLE (ptest1 int, ptest2 inet,
+CREATE /* TEMP */ TABLE PKTABLE (ptest1 int, ptest2 inet,
                            PRIMARY KEY(ptest1, ptest2));
 -- This should fail, because we just chose really odd types
-CREATE TEMP TABLE FKTABLE (ftest1 cidr, ftest2 timestamp);
+CREATE /* TEMP */ TABLE FKTABLE (ftest1 inet, ftest2 timestamp);
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1, ftest2) references pktable;
 DROP TABLE FKTABLE;
 -- Again, so should this...
-CREATE TEMP TABLE FKTABLE (ftest1 cidr, ftest2 timestamp);
+CREATE /* TEMP*/  TABLE FKTABLE (ftest1 inet, ftest2 timestamp);
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1, ftest2)
      references pktable(ptest1, ptest2);
 DROP TABLE FKTABLE;
 -- This fails because we mixed up the column ordering
-CREATE TEMP TABLE FKTABLE (ftest1 int, ftest2 inet);
+CREATE /* TEMP */ TABLE FKTABLE (ftest1 int, ftest2 inet);
 ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1, ftest2)
      references pktable(ptest2, ptest1);
 -- As does this...
@@ -271,6 +273,9 @@ ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest2, ftest1)
      references pktable(ptest1, ptest2);
 
 -- temp tables should go away by themselves, need not drop them.
+-- MonetDB: disabled the TEMP in CERATE TEMP (see bug 3565) so we do need to drop them in our version
+DROP TABLE FKTABLE;
+DROP TABLE PKTABLE cascade;
 
 -- test check constraint adding
 
@@ -318,7 +323,7 @@ drop table atacc1;
 -- inheritance related tests
 create table atacc1 (test int);
 create table atacc2 (test2 int);
-create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
+create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
 alter table atacc2 add constraint foo check (test2>0);
 -- fail and then succeed on atacc2
 insert into atacc2 (test2) values (-3);
@@ -334,8 +339,8 @@ drop table atacc1;
 
 create table atacc1 (test int);
 create table atacc2 (test2 int);
-create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
-alter table only atacc2 add constraint foo check (test2>0);
+create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
+alter table /* only */ atacc2 add constraint foo check (test2>0);
 -- fail and then succeed on atacc2
 insert into atacc2 (test2) values (-3);
 insert into atacc2 (test2) values (3);
@@ -390,6 +395,7 @@ insert into atacc1 (test,test2) values (4,4);
 insert into atacc1 (test,test2) values (4,5);
 insert into atacc1 (test,test2) values (5,4);
 insert into atacc1 (test,test2) values (5,5);
+alter table atacc1 drop constraint atacc_test1;
 drop table atacc1;
 
 -- lets do some naming tests
@@ -419,6 +425,7 @@ alter table atacc1 add constraint atacc_oid1 primary key(oid);
 alter table atacc1 drop constraint atacc_test1 restrict;
 -- try adding a primary key on oid (should succeed)
 alter table atacc1 add constraint atacc_oid1 primary key(oid);
+alter table atacc1 add constraint atacc_test1 primary key (test);
 drop table atacc1;
 
 -- let's do one where the primary key constraint fails when added
@@ -429,6 +436,8 @@ insert into atacc1 (test) values (2);
 -- add a primary key (fails)
 alter table atacc1 add constraint atacc_test1 primary key (test);
 insert into atacc1 (test) values (3);
+delete from atacc1 where test = 2;
+alter table atacc1 add constraint atacc_test1 primary key (test);
 drop table atacc1;
 
 -- let's do another one where the primary key constraint fails when added
@@ -490,8 +499,10 @@ alter table atacc1 add constraint "atacc1_pkey" primary key (test);
 alter table atacc1 alter column test drop not null;
 alter table atacc1 drop constraint "atacc1_pkey";
 alter table atacc1 alter column test drop not null;
+alter table atacc1 alter test set null;
 insert into atacc1 values (null);
 alter table atacc1 alter test set not null;
+select * from atacc1;
 delete from atacc1;
 alter table atacc1 alter test set not null;
 
@@ -513,7 +524,7 @@ drop table atacc1;
 
 -- test inheritance
 create table parent (a int);
-create table child (b varchar(255)); -- inherits (parent)
+create table child (a int, b varchar(255)); -- inherits (parent)
 
 alter table parent alter a set not null;
 insert into parent values (NULL);
@@ -521,10 +532,10 @@ insert into child (a, b) values (NULL, 'foo');
 alter table parent alter a drop not null;
 insert into parent values (NULL);
 insert into child (a, b) values (NULL, 'foo');
-alter table only parent alter a set not null;
+alter table /* only */ parent alter a set not null;
 alter table child alter a set not null;
 delete from parent;
-alter table only parent alter a set not null;
+alter table /* only */ parent alter a set not null;
 insert into parent values (NULL);
 alter table child alter a set not null;
 insert into child (a, b) values (NULL, 'foo');
@@ -540,10 +551,16 @@ create table def_test (
 	c2	text default 'initial_default'
 );
 insert into def_test default values;
+select * from def_test;
+
 alter table def_test alter column c1 drop default;
 insert into def_test default values;
+select * from def_test;
+
 alter table def_test alter column c2 drop default;
 insert into def_test default values;
+select * from def_test;
+
 alter table def_test alter column c1 set default 10;
 alter table def_test alter column c2 set default 'new_default';
 insert into def_test default values;
@@ -647,8 +664,11 @@ drop view myview;
 -- test some commands to make sure they fail on the dropped column
 analyze atacc1(a);
 analyze atacc1("........pg.dropped.1........");
+
 vacuum analyze atacc1(a);
 vacuum analyze atacc1("........pg.dropped.1........");
+call vacuum('sys', 'atacc1');
+call analyze('sys', 'atacc1');
 
 
 alter table atacc1 alter a set storage plain;
@@ -682,7 +702,7 @@ create index "testing_idx" on atacc1("........pg.dropped.1........");
 
 -- test create as and select into
 insert into atacc1 values (21, 22, 23);
-create table test1 as select * from atacc1;
+create table test1 as select * from atacc1 WITH DATA;
 select * from test1;
 drop table test1;
 select * into test2 from atacc1;
@@ -701,7 +721,7 @@ drop table atacc1;
 create table parent (a int, b int, c int);
 insert into parent values (1, 2, 3);
 alter table parent drop a;
-create table child (d varchar(255)); -- inherits (parent)
+create table child (b int, c int, d varchar(255)); -- inherits (parent)
 insert into child values (12, 13, 'testing');
 
 select * from parent;
@@ -739,26 +759,30 @@ drop table test;
 -- test inheritance
 
 create table dropColumn (a int, b int, e int);
-create table dropColumnChild (c int); -- inherits (dropColumn)
-create table dropColumnAnother (d int); -- inherits (dropColumnChild)
+create table dropColumnChild (a int, b int, e int, c int); -- inherits (dropColumn)
+create table dropColumnAnother (a int, b int, e int, c int, d int); -- inherits (dropColumnChild)
 
 -- these two should fail
 alter table dropColumnchild drop column a;
-alter table only dropColumnChild drop column b;
+alter table /* only */ dropColumnChild drop column b;
 
 -- these three should work
-alter table only dropColumn drop column e;
+alter table /* only */ dropColumn drop column e;
 alter table dropColumnChild drop column c;
 alter table dropColumn drop column a;
 
+drop table dropColumnAnother;
+drop table dropColumnChild;
+drop table dropColumn;
+
 create table renameColumn (a int);
-create table renameColumnChild (b int); -- inherits (renameColumn)
-create table renameColumnAnother (c int); -- inherits (renameColumnChild)
+create table renameColumnChild (a int, b int); -- inherits (renameColumn)
+create table renameColumnAnother (a int, b int, c int); -- inherits (renameColumnChild)
 
 -- these three should fail
 alter table renameColumnChild rename column a to d;
-alter table only renameColumnChild rename column a to d;
-alter table only renameColumn rename column a to d;
+alter table /* only */ renameColumnChild rename column a to d;
+alter table /* only */ renameColumn rename column a to d;
 
 -- these should work
 alter table renameColumn rename column a to d;
@@ -768,13 +792,16 @@ alter table renameColumnChild rename column b to a;
 alter table renameColumn add column w int;
 
 -- this should fail
-alter table only renameColumn add column x int;
+alter table /* only */ renameColumn add column x int;
 
+drop table renameColumn cascade;
+drop table renameColumnChild cascade;
+drop table renameColumnAnother cascade;
 
 -- Test corner cases in dropping of inherited columns
 
 create table p1 (f1 int, f2 int);
-create table c1 (f1 int not null); -- inherits(p1)
+create table c1 (f2 int, f1 int not null); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -785,10 +812,11 @@ select f1 from c1;
 alter table c1 drop column f1;
 select f1 from c1;
 
+drop table c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 (); -- inherits(p1)
+create table c1 (f1 int, f2 int); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
@@ -796,34 +824,37 @@ alter table p1 drop column f1;
 -- c1.f1 is dropped now, since there is no local definition for it
 select f1 from c1;
 
+drop table c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 (); -- inherits(p1)
+create table c1 (f1 int, f2 int); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
-alter table only p1 drop column f1;
+alter table /* only */ p1 drop column f1;
 -- c1.f1 is NOT dropped, but must now be considered non-inherited
 alter table c1 drop column f1;
 
+drop table c1;
 drop table p1 cascade;
 
 create table p1 (f1 int, f2 int);
-create table c1 (f1 int not null); -- inherits(p1)
+create table c1 (f1 int not null, f2 int); -- inherits(p1)
 
 -- should be rejected since c1.f1 is inherited
 alter table c1 drop column f1;
-alter table only p1 drop column f1;
+alter table /* only */ p1 drop column f1;
 -- c1.f1 is still there, but no longer inherited
 alter table c1 drop column f1;
 
+drop table c1;
 drop table p1 cascade;
 
 create table p1(id int, name text);
 create table p2(id2 int, name text, height int);
-create table c1(age int); -- inherits(p1,p2)
-create table gc1(); -- inherits (c1)
+create table c1(age int, id int, name text); -- inherits(p1,p2)
+create table gc1(age int, id int, name text); -- inherits (c1)
 
 select relname, attname, attinhcount, attislocal
 from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
@@ -831,7 +862,7 @@ where relname in ('p1','p2','c1','gc1') and attnum > 0 and not attisdropped
 order by relname, attnum;
 
 -- should work
-alter table only p1 drop column name;
+alter table /* only */ p1 drop column name;
 -- should work. Now c1.name is local and inhcount is 0.
 alter table p2 drop column name;
 -- should be rejected since its inherited
@@ -848,27 +879,31 @@ from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
 where relname in ('p1','p2','c1','gc1') and attnum > 0 and not attisdropped
 order by relname, attnum;
 
-drop table p1, p2 cascade;
+drop table c1;
+drop table p2 cascade;
+drop table p1 cascade;
 
 --
 -- Test the ALTER TABLE WITHOUT OIDS command
 --
-create table altstartwith (col integer) with oids;
+create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
 
-insert into altstartwith values (1);
+insert into altstartwith (col) values (1);
 
-select oid > 0, * from altstartwith;
+select oid, * from altstartwith;
 
-alter table altstartwith set without oids;
+--alter table altstartwith set without oids;
+alter table altstartwith drop column oid;
 
-select oid > 0, * from altstartwith; -- fails
+select oid, * from altstartwith; -- fails
 select * from altstartwith;
+drop table altstartwith;
 
 -- Run inheritance tests
-create table altwithoid (col integer) with oids;
+create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
 
 -- Inherits parents oid column
-create table altinhoid (); -- inherits (altwithoid) without oids
+create table altinhoid (col integer); -- inherits (altwithoid) without oids
 
 insert into altinhoid values (1);
 
@@ -883,10 +918,13 @@ select oid > 0, * from altinhoid; -- fails
 select * from altwithoid;
 select * from altinhoid;
 
+drop table altwithoid;
+drop table altinhoid;
+
 -- test renumbering of child-table columns in inherited operations
 
 create table p1 (f1 int);
-create table c1 (f2 text, f3 int); -- inherits (p1)
+create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
 
 alter table p1 add column a1 int check (a1 > 0);
 alter table p1 add column f2 text;
@@ -899,6 +937,7 @@ select * from p1;
 update p1 set a1 = a1 + 1, f2 = upper(f2);
 select * from p1;
 
+drop table c1 cascade;
 drop table p1 cascade;
 
 -- test that operations with a dropped column do not try to reference
@@ -906,14 +945,16 @@ drop table p1 cascade;
 
 create domain mytype as text;
 create temp table foo (f1 text, f2 mytype, f3 text);
+create temp table foo (f1 text, f2 text, f3 text);
 
 insert into foo values('aa','bb','cc');
 select * from foo;
 
 drop domain mytype cascade;
+alter table foo drop column f2;
 
 select * from foo;
-insert into foo values('qq','rr');
+insert into foo (f1, f3) values('qq','rr');
 select * from foo;
 update foo set f3 = 'zz';
 select * from foo;
@@ -923,11 +964,16 @@ select f3,max(f1) from foo group by f3;
 alter table foo alter f1 TYPE integer; -- fails
 alter table foo alter f1 TYPE varchar(10);
 
-create table anothertab (atcol1 serial8, atcol2 boolean,
-	constraint anothertab_chk check (atcol1 <= 3));
+drop table foo;
+
+--create table anothertab (atcol1 serial8, atcol2 boolean,
+--	constraint anothertab_chk check (atcol1 <= 3));
+create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
 
 insert into anothertab (atcol1, atcol2) values (default, true);
 insert into anothertab (atcol1, atcol2) values (default, false);
+insert into anothertab (atcol2) values (true);
+insert into anothertab (atcol2) values (false);
 select * from anothertab;
 
 alter table anothertab alter column atcol1 type boolean; -- fails
@@ -937,6 +983,7 @@ select * from anothertab;
 
 insert into anothertab (atcol1, atcol2) values (45, null); -- fails
 insert into anothertab (atcol1, atcol2) values (default, null);
+insert into anothertab (atcol2) values (null);
 
 select * from anothertab;
 

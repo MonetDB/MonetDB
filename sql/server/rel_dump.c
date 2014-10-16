@@ -26,6 +26,7 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_semantic.h"
+#include "rel_psm.h"
 
 static void
 print_indent(mvc *sql, stream *fout, int depth)
@@ -80,6 +81,28 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	if (!e)
 		return;
 	switch(e->type) {
+	case e_psm: {
+		if (e->flag & PSM_SET) {
+			/* todo */
+		} else if (e->flag & PSM_VAR) {
+			/* todo */
+		} else if (e->flag & PSM_RETURN) {
+			mnstr_printf(fout, "return ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+		} else if (e->flag & PSM_WHILE) {
+			mnstr_printf(fout, "while ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+			exps_print(sql, fout, e->r, depth, alias, 0);
+		} else if (e->flag & PSM_IF) {
+			mnstr_printf(fout, "if ");
+			exp_print(sql, fout, e->l, depth, 0, 0);
+			exps_print(sql, fout, e->r, depth, alias, 0);
+			if (e->f)
+				exps_print(sql, fout, e->f, depth, alias, 0);
+		} else if (e->flag & PSM_REL) {
+		}
+	 	break;
+	}
 	case e_convert: {
 		char *to_type = sql_subtype_string(&e->tpe);
 		mnstr_printf(fout, "%s[", to_type);
@@ -162,7 +185,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		} else if (get_cmp(e) == cmp_filter) {
 			sql_subfunc *f = e->f;
 
-			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			exps_print(sql, fout, e->l, depth, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
@@ -177,6 +200,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 				mnstr_printf(fout, " ! ");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, 0, 0);
+			if (e->flag & CMP_SYMMETRIC)
+				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))
@@ -338,7 +363,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 		if (rel->r)
 			rel_print_(sql, fout, rel->r, depth+1, refs);
-		if (rel->exps) 
+		if (rel->exps && rel->flag == DDL_PSM) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
 	case op_join: 
@@ -747,6 +772,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		old = *e;
 		*e = 0;
 		
+		tname = sa_strdup(sql->sa, tname);
+		cname = sa_strdup(sql->sa, cname);
 		if (lrel) { 
 			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
 			if (!exp && rrel)
@@ -759,16 +786,37 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	/* atom */
 	case '(': 
 		if (b == (r+*pos)) { /* or */
+			int filter = 0;
 			list *lexps,*rexps;
+			char *fname = NULL;
 		       
 			lexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			skipWS(r, pos);
 			if (strncmp(r+*pos, "or",  strlen("or")) == 0) 
 				(*pos)+= (int) strlen("or");
+			else if (strncmp(r+*pos, "filter",  strlen("filter")) == 0) 
+				filter = 1;
 			else
 				return sql_error(sql, -1, "type: missing 'or'\n");
 			skipWS(r, pos);
+			if (filter) {
+				fname = r+*pos;
+
+				skipIdent(r,pos);
+				e = r+*pos;
+				*e = 0;
+				(*pos)++;
+				skipWS(r,pos);
+			}
+
 			rexps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
+			if (filter) {
+				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT);
+				if (!func)
+					return sql_error(sql, -1, "filter: missing function '%s'\n", fname);
+					
+				return exp_filter(sql->sa, lexps, rexps, func, 0/* anti*/);
+			}
 			return exp_or(sql->sa, lexps, rexps);
 		}
 		/* fall through */
@@ -988,32 +1036,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	}
 	if (f >= 0) {
 		skipWS(r,pos);
-		if (f == cmp_in || f == cmp_notin || f == cmp_filter) {
-			char *fname = NULL;
+		if (f == cmp_in || f == cmp_notin) {
 	        	list *exps;
 		       
-			if (f == cmp_filter) {
-				// this produces a clang compile error (e unused)
-				//fname = r+*pos, e;
-				fname = r+*pos;
-
-
-				skipIdent(r,pos);
-				e = r+*pos;
-				*e = 0;
-				(*pos)++;
-				skipWS(r,pos);
-			}
 			exps = read_exps(sql, lrel, rrel, r, pos, '(', 0);
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
-			else {
-				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT);
-				if (!func)
-					return sql_error(sql, -1, "filter: missing function '%s'\n", fname);
-					
-				return exp_filter(sql->sa, exp, exps, func, 0/* anti*/);
-			}
 		} else {
 			sql_exp *e;
 

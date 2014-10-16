@@ -117,10 +117,10 @@ end main;
 #    1	730063	3	799	1	4	    _1 := user.bind("schema","table","column",0);
 #    2	729919	1	43	4	1	    _6 := algebra.select(<tmp_20>,100,120);
 #    3	729971	1	17	4	1	    _10 := algebra.select(<tmp_20>,700,710);
-#    4	729983	1	11	1	1	    _13 := algebra.markT(<tmp_23>,0@0);
+#    4	729983	1	11	1	1	    _13 := algebra.mark(<tmp_23>,0@0);
 #    5	729988	1	5	1	1	    _14 := bat.reverse(<tmp_24>);
 #    6	730097	1	34	4	2	    _15 := algebra.select(<tmp_20>,400,700);
-#    7	730121	1	24	2	1	    _17 := algebra.markT(<tmp_25>,0@0);
+#    7	730121	1	24	2	1	    _17 := algebra.mark(<tmp_25>,0@0);
 #    8	730136	1	15	1	1	    _18 := bat.reverse(<tmp_26>);
 
 # 15:54:58 >  

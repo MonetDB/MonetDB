@@ -40,8 +40,7 @@ SELECT cast('Infinity' as double) + 100.0;
 SELECT cast('Infinity' as double) / cast('Infinity' as double);
 SELECT cast('nan' as double) / cast('nan' as double);
 
-SELECT '' AS five, FLOAT8_TBL.*;
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
 
 SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
 
@@ -97,24 +96,26 @@ select floor(f1) as floor_f1 from float8_tbl f;
 select sign(f1) as sign_f1 from float8_tbl f;
 
 -- square root 
-SELECT sqrt(double '64') AS eight;
-
-SELECT |/ double '64' AS eight;
+SELECT sqrt(cast('64' as double)) AS eight;
+SELECT |/ cast('64' as double) AS eight;
 
 SELECT '' AS three, f.f1, |/f.f1 AS sqrt_f1
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
+SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
+   FROM FLOAT8_TBL f
+   WHERE f.f1 > '0.0';
 
 -- power
-SELECT power(double '144', double '0.5');
+SELECT power(cast('144' as double), cast('0.5' as double));
 
--- take exp of ln(f.f1) 
-SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
+-- take exp of ln(f.f1)   (in MonetDB ln() is implemented as log())
+SELECT '' AS three, f.f1, exp(log(f.f1)) AS exp_ln_f1
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
 -- cube root 
-SELECT ||/ double '27' AS three;
+SELECT ||/ cast('27' as double) AS three;
 
 SELECT '' AS five, f.f1, ||/f.f1 AS cbrt_f1 FROM FLOAT8_TBL f;
 
@@ -129,9 +130,9 @@ SELECT '' AS bad, f.f1 * '1e200' from FLOAT8_TBL f;
 
 SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
 
-SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
+SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
 
-SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
+SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
 
 SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
 

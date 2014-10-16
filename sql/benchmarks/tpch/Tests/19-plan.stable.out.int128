@@ -1,0 +1,71 @@
+stdout of test '19-plan` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:46:33 >  
+# 22:46:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31690" "--set" "mapi_usock=/var/tmp/mtest-6004/.s.monetdb.31690" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:46:33 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31690/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6004/.s.monetdb.31690
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:46:33 >  
+# 22:46:33 >  "/usr/bin/python2" "19-plan.SQL.py" "19-plan"
+# 22:46:33 >  
+
+#plan select
+#	sum(l_extendedprice* (1 - l_discount)) as revenue
+#from
+#	lineitem,
+#	part
+#where
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#12'
+#		and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+#		and l_quantity >= 1 and l_quantity <= 1 + 10
+#		and p_size between 1 and 5
+#		and l_shipmode in ('AIR', 'AIR REG')
+#		and l_shipinstruct = 'DELIVER IN PERSON'
+#	)
+#	or
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#23'
+#		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+#		and l_quantity >= 10 and l_quantity <= 10 + 10
+% .plan # table_name
+% rel # name
+% clob # type
+% 1298 # length
+project (
+| group by (
+| | select (
+| | | join (
+| | | | select (
+| | | | | table(sys.lineitem) [ lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipinstruct NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey ] COUNT 
+| | | | ) [ lineitem.l_shipinstruct NOT NULL = varchar(25)[char(17) "DELIVER IN PERSON"], lineitem.l_shipmode NOT NULL in (varchar(10)[char(3) "AIR"], varchar(10)[char(7) "AIR REG"]) ],
+| | | | select (
+| | | | | table(sys.part) [ part.p_brand NOT NULL, part.p_size NOT NULL, part.p_container NOT NULL, part.%TID% NOT NULL ] COUNT 
+| | | | ) [ sys.sql_min(int[tinyint "1"], sys.sql_min(int[tinyint "1"], int[tinyint "1"])) <= part.p_size NOT NULL <= sys.sql_max(int[tinyint "5"], sys.sql_max(int[tinyint "10"], int[tinyint "15"])), part.p_brand NOT NULL in (varchar(10)[char(8) "Brand#12"], varchar(10)[char(8) "Brand#23"], varchar(10)[char(8) "Brand#34"]), part.p_container NOT NULL in (varchar(10)[char(7) "SM CASE"], varchar(10)[char(6) "SM BOX"], varchar(10)[char(7) "SM PACK"], varchar(10)[char(6) "SM PKG"], varchar(10)[char(7) "MED BAG"], varchar(10)[char(7) "MED BOX"], varchar(10)[char(7) "MED PKG"], varchar(10)[char(8) "MED PACK"], varchar(10)[char(7) "LG CASE"], varchar(10)[char(6) "LG BOX"], varchar(10)[char(7) "LG PACK"], varchar(10)[char(6) "LG PKG"]) ]
+| | | ) [ lineitem.%lineitem_l_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey ]
+| | ) [ (part.p_brand NOT NULL = varchar(10)[char(8) "Brand#12"], part.p_container NOT NULL in (varchar(10)[char(7) "SM CASE"], varchar(10)[char(6) "SM BOX"], varchar(10)[char(7) "SM PACK"], varchar(10)[char(6) "SM PKG"]), lineitem.l_quantity NOT NULL >= int[tinyint "1"], lineitem.l_quantity NOT NULL <= int[sys.sql_add(smallint[tinyint "1"], smallint[tinyint "10"])], int[tinyint "1"] <= part.p_size NOT NULL <= int[tinyint "5"]) or ((part.p_brand NOT NULL = varchar(10)[char(8) "Brand#23"], part.p_container NOT NULL in (varchar(10)[char(7) "MED BAG"], varchar(10)[char(7) "MED BOX"], varchar(10)[char(7) "MED PKG"], varchar(10)[char(8) "MED PACK"]), lineitem.l_quantity NOT NULL >= int[tinyint "10"], lineitem.l_quantity NOT NULL <= int[sys.sql_add(smallint[tinyint "10"], smallint[tinyint "10"])], int[tinyint "1"] <= part.p_size NOT NULL <= int[tinyint "10"]) or (part.p_brand NOT NULL = varchar(10)[char(8) "Brand#34"], part.p_container NOT NULL in (varchar(10)[char(7) "LG CASE"], varchar(10)[char(6) "LG BOX"], varchar(10)[char(7) "LG PACK"], varchar(10)[char(6) "LG PKG"]), lineitem.l_quantity NOT NULL >= int[tinyint "20"], lineitem.l_quantity NOT NULL <= int[sys.sql_add(smallint[tinyint "20"], smallint[tinyint "10"])], int[tinyint "1"] <= part.p_size NOT NULL <= int[tinyint "15"])) ]
+| ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
+) [ L1 as L1.revenue ]
+
+# 22:46:33 >  
+# 22:46:33 >  "Done."
+# 22:46:33 >  
+

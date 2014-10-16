@@ -37,7 +37,7 @@ backend_reset(backend *b)
 backend *
 backend_create(mvc *m, Client c)
 {
-	backend *b = NEW(backend);
+	backend *b = MNEW(backend);
 
 	b->console = isAdministrator(c);
 	b->mvc = m;

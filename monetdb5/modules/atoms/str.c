@@ -96,7 +96,7 @@
  * kernel whether the zero-terminated byte sequence it is processing
  * has UTF-8 or Latin-1 semantics. This module is the only place where
  * explicit string functionality is located. We {\bf do} have to adapt
- * the behavior of the MIL length(), search(), substring() and the
+ * the behavior of the length(), search(), substring() and the
  * like commands to the fact that one (Unicode) character is now
  * stored in a variable number of bytes (possibly > 1).
  *
@@ -1105,9 +1105,10 @@ struct UTF8_lower_upper {
 
 static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat;
 
-bat *
-strPrelude(void)
+str
+strPrelude(void *ret)
 {
+	(void) ret;
 	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
@@ -1133,8 +1134,9 @@ strPrelude(void)
 }
 
 str
-strEpilogue(void)
+strEpilogue(void *ret)
 {
+	(void) ret;
 	if (UTF8_upperBat)
 		BBPunfix(UTF8_upperBat->batCacheid);
 	if (UTF8_lowerBat)
@@ -1862,12 +1864,12 @@ STRUpper(str *res, str *arg1)
 }
 
 str
-STRstrSearch(int *res, str *arg1, str *arg2)
+STRstrSearch(int *res, str *haystack, str *needle)
 {
 /* 64bit: should return wrd */
 	char *p;
-	const char *s = *arg1;
-	const char *s2 = *arg2;
+	const char *s = *haystack;
+	const char *s2 = *needle;
 
 	if (strNil(s) || strNil(s2)) {
 		*res = int_nil;
@@ -2291,16 +2293,22 @@ STRLpad2(str *res, str *arg1, int *len, str *arg2)
 		const char *s2 = *arg2, *s2_tmp = *arg2;
 		char *r = NULL;
 		const unsigned char *u = NULL;
-		int i = 0, c = 0, sz = 0,
-			s2_cnt = UTF8_strlen(s2),
-			nr_repeat = pad_cnt / s2_cnt,
-			nr_residual = pad_cnt % s2_cnt;
-		size_t s_len = strlen(s),
-			s2_len = strlen(s2),
-			repeat_len = s2_len * nr_repeat,
-			residual_len = 0,
-			res_len = s_len + repeat_len;
+		int i, c, sz, s2_cnt, nr_repeat, nr_residual;
+		size_t s_len, s2_len, repeat_len, residual_len, res_len;
 
+		i = 0;
+		c = 0;
+		sz = 0;
+		s2_cnt = UTF8_strlen(s2);
+		if (s2_cnt == 0)
+			throw(MAL, "str.lpad", ILLEGAL_ARGUMENT ": pad string is empty");
+		nr_repeat = pad_cnt / s2_cnt;
+		nr_residual = pad_cnt % s2_cnt;
+		s_len = strlen(s);
+		s2_len = strlen(s2);
+		repeat_len = s2_len * nr_repeat;
+		residual_len = 0;
+		res_len = s_len + repeat_len;
 		u = (const unsigned char *) s2_tmp;
 		for (i = 0; i < nr_residual; i++) {
 			UTF8_GETCHAR_SZ(c, sz, u);
@@ -2350,16 +2358,22 @@ STRRpad2(str *res, str *arg1, int *len, str *arg2)
 		const char *s2 = *arg2, *s2_tmp = *arg2;
 		char *r = NULL;
 		const unsigned char *u = NULL;
-		int i = 0, c = 0, sz = 0,
-			s2_cnt = UTF8_strlen(s2),
-			nr_repeat = pad_cnt / s2_cnt,
-			nr_residual = pad_cnt % s2_cnt;
-		size_t s_len = strlen(s),
-			s2_len = strlen(s2),
-			repeat_len = s2_len * nr_repeat,
-			residual_len = 0,
+		int i, c, sz, s2_cnt, nr_repeat, nr_residual;
+		size_t s_len, s2_len, repeat_len, residual_len, res_len;
 
-			res_len = s_len + repeat_len;
+		i = 0;
+		c = 0;
+		sz = 0;
+		s2_cnt = UTF8_strlen(s2);
+		if (s2_cnt == 0)
+			throw(MAL, "str.rpad", ILLEGAL_ARGUMENT ": pad string is empty");
+		nr_repeat = pad_cnt / s2_cnt;
+		nr_residual = pad_cnt % s2_cnt;
+		s_len = strlen(s);
+		s2_len = strlen(s2);
+		repeat_len = s2_len * nr_repeat;
+		residual_len = 0;
+		res_len = s_len + repeat_len;
 
 		u = (const unsigned char *)s2_tmp;
 		for (i = 0; i < nr_residual; i++) {
@@ -2409,7 +2423,7 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 		throw(MAL, "str.substitute", "Allocation failed");
 	end = buf + l;
 	fnd = buf;
-	strcpy(buf, s);
+	strcpy(buf, s ? s : "");
 	if (lsrc == 0)
 		return MAL_SUCCEED;
 	do {
@@ -2424,9 +2438,6 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 	return MAL_SUCCEED;
 }
 
-/*
- * A few old MIL procs implementations
- */
 str
 STRascii(int *ret, str *s){
 	int offset=0;
@@ -2460,22 +2471,24 @@ STRsuffix(str *ret, str *s, int *l){
 	int start = (int) (strlen(*s)- *l);
 	return STRSubString(ret,s,&start,l);
 }
+
 str
-STRlocate(int *ret, str *s1, str *s2){
-	int p;
-	STRstrSearch(&p, s2, s1);
-	*ret=  p>=0? p+1:0;
+STRlocate2(int *ret, str *needle, str *haystack, int *start)
+{
+	int off = *start <= 0 ? 1 : *start;
+	char *s = UTF8_strtail(*haystack, off - 1);
+	int res;
+
+	STRstrSearch(&res, &s, needle);
+	*ret =  res >= 0 ? res + off : 0;
 	return MAL_SUCCEED;
 }
+
 str
-STRlocate2(int *ret, str *s1, str *s2, int *start){
-	int p;
-	str dummy;
-	STRTail(&dummy, s1, start);
-	STRstrSearch(&p, s2, &dummy);
-	if( dummy) GDKfree(dummy);
-	*ret=  p>=0? p+1:0;
-	return MAL_SUCCEED;
+STRlocate(int *ret, str *needle, str *haystack)
+{
+	int p = 1;
+	return STRlocate2(ret, needle, haystack, &p);
 }
 
 str

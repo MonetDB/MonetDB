@@ -44,11 +44,7 @@
 #include "xml.h"
 
 #ifdef WIN32
-#ifndef LIBATOMS
-#define batxml_export extern __declspec(dllimport)
-#else
 #define batxml_export extern __declspec(dllexport)
-#endif
 #else
 #define batxml_export extern
 #endif
@@ -73,8 +69,8 @@ batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 batxml_export str BATXMLagg(bat *ret, const bat *bid, const bat *grp);
 batxml_export str BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *e);
 batxml_export str BATXMLgroup(xml *ret, const bat *bid);
-batxml_export str AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils);
-batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils);
+batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
 
 #define prepareResult(X,Y,tpe,Z,free)				\
@@ -933,7 +929,7 @@ BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid)
 str
 BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *ret = (bat *) getArgReference(stk, pci, 0);
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	BAT *bn;
 	BATiter *bi;
 	BUN *p, *q;
@@ -962,7 +958,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* collect the admin for the xml elements */
 	for (i = pci->retc; i < pci->argc; i++) {
-		if ((bi[i].b = BATdescriptor(*(bat *) getArgReference(stk, pci, i))) == NULL)
+		if ((bi[i].b = BATdescriptor(*getArgReference_bat(stk, pci, i))) == NULL)
 			break;
 		p[i] = BUNfirst(bi[i].b);
 		q[i] = BUNlast(bi[i].b);
@@ -1662,7 +1658,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 str
-AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
+AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
@@ -1709,7 +1705,7 @@ AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_ni
 }
 
 str
-AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
+AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
 	return AGGRsubxmlcand(retval, bid, gid, eid, NULL, skip_nils);
 }

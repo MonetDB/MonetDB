@@ -248,13 +248,15 @@ static disc_message_tap _mero_disc_msg_taps = NULL;
 void
 registerMessageTap(int fd)
 {
-	disc_message_tap h = _mero_disc_msg_taps;
+	disc_message_tap h;
 	/* make sure we never block in the main loop below because we can't
 	 * write to the pipe */
 	fcntl(fd, F_SETFD, O_NONBLOCK);
 	pthread_mutex_lock(&_mero_remotedb_lock);
+	h = _mero_disc_msg_taps;
 	if (h == NULL) {
 		h = malloc(sizeof(struct _disc_message_tap));
+		_mero_disc_msg_taps = h;
 	} else {
 		for (; h->next != NULL; h = h->next)
 			;
@@ -268,9 +270,9 @@ registerMessageTap(int fd)
 void
 unregisterMessageTap(int fd)
 {
-	disc_message_tap h = _mero_disc_msg_taps;
-	disc_message_tap lasth;
+	disc_message_tap h, lasth;
 	pthread_mutex_lock(&_mero_remotedb_lock);
+	h = _mero_disc_msg_taps;
 	for (lasth = NULL; h != NULL; lasth = h, h = h->next) {
 		if (h->fd == fd) {
 			if (lasth == NULL) {
@@ -449,6 +451,7 @@ discoveryRunner(void *d)
 			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
+			/* coverity[dont_call] */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
 			sleep_ms(c);
 			/* force an announcement round by dropping the deadline */
@@ -509,6 +512,7 @@ discoveryRunner(void *d)
 		Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
 				"discovery services disabled\n", e);
 		free(e);
+		free(ckv);
 		return;
 	}
 

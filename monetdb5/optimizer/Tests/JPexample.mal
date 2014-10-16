@@ -2,10 +2,10 @@
     a:= bat.new(:oid,:oid);
     b:= bat.new(:oid,:oid);
     c:= bat.new(:oid,:str);
-    j1:= algebra.join(a,b);
-    j2:= algebra.join(j1,c);
-    j3:= algebra.join(b,b);
-    j4:= algebra.join(b,j3);
+    j1:= algebra.leftfetchjoin(a,b);
+    j2:= algebra.leftfetchjoin(j1,c);
+    j3:= algebra.leftfetchjoin(b,b);
+    j4:= algebra.leftfetchjoin(b,j3);
 
 optimizer.joinPath();
 mdb.List();

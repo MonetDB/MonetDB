@@ -49,6 +49,7 @@ isNewSource(InstrPtr p) {
 	if( mp == batcalcRef) return 1;
 	if( mp == strRef) return 1;
 	if( mp == batstrRef) return 1;
+	if( mp == batalgebraRef) return 1;
 	if( mp == putName("array",5)) return 1;
 	if( mp == putName("url",3)) return 1;
 	if( mp == putName("daytime",7)) return 1;
@@ -139,7 +140,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			continue;
 		}
 		/*
-		 * Limit strength reduction to the type modules and the batcalc, batstr, batcolor
+		 * Limit strength reduction to the type modules and the batcalc, batstr, batalgebra, batcolor
 		 * and sql.bind.
 		 */
 		if(getModuleId(p) && !isNewSource(p) ) {

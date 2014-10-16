@@ -18,8 +18,28 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+delete from _columns where table_id not in (select id from _tables);
+insert into _columns values( (select max(id)+1 from _columns), 'system', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='schemas'), NULL, true, 4, NULL);
+insert into _columns values( (select max(id)+1 from _columns), 'varres', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 7, NULL);
+insert into _columns values( (select max(id)+1 from _columns), 'vararg', 'boolean', 1, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 8, NULL);
+insert into _columns values( (select max(id)+1 from _columns), 'inout', 'tinyint', 8, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='args'), NULL, true, 6, NULL);
+insert into _columns values( (select max(id)+1 from _columns), 'language', 'int', 32, 0, (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions'), NULL, true, 9, NULL);
+delete from _columns where table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions') and name='sql';
+update _columns set number='9' where name = 'schema_id' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions');
+update _columns set number='7' where name = 'number' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='args');
+update _columns set number='4' where name = 'language' and table_id in (select _tables.id from _tables join schemas on _tables.schema_id=schemas.id where schemas.name='sys' and _tables.name='functions');
 delete from _columns where table_id in (select id from _tables where name like '#%');
 delete from _tables where name like '#%';
+create table upgradeOct2014 as (select * from functions where type = 5 and language <> 0) with data;
+create table upgradeOct2014_changes (c bigint);
+create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;
+insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;
+drop function drop_func_upgrade_oct2014;
+create function create_func_upgrade_oct2014( f string ) returns int external name sql.create_func_upgrade_oct2014;
+insert into upgradeOct2014_changes select create_func_upgrade_oct2014(func) from upgradeOct2014;
+drop function create_func_upgrade_oct2014;
+drop table upgradeOct2014_changes;
+drop table upgradeOct2014;
 drop function sys.bbp;
 create function sys.bbp() returns table (id int, name string, htype string, ttype string, count BIGINT, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;
 create schema json;
@@ -106,8 +126,47 @@ create function sys.hashsize(b boolean, i bigint) returns bigint begin if  b = t
 create view sys.tablestoragemodel as select "schema","table",max(count) as "count",    sum(columnsize) as columnsize,    sum(heapsize) as heapsize,    sum(hashes) as hashes,    sum(imprints) as imprints,    sum(case when sorted = false then 8 * count else 0 end) as auxillary from sys.storagemodel() group by "schema","table";
 create view sys.storagemodel as select * from sys.storagemodel();
 update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+create function sys.generate_series(first tinyint, last tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
+returns table (value tinyint)
+external name generator.series;
+
+create function sys.generate_series(first int, last int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first int, last int, stepsize int)
+returns table (value int)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first bigint, last bigint, stepsize bigint)
+returns table (value bigint)
+external name generator.series;
+
+create function sys.generate_series(first real, last real, stepsize real)
+returns table (value real)
+external name generator.series;
+
+create function sys.generate_series(first double, last double, stepsize double)
+returns table (value double)
+external name generator.series;
+
+create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
+returns table (value decimal(10,2))
+external name generator.series;
+
+create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
+returns table (value timestamp)
+external name generator.series;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('hashsize', 'imprintsize', 'isauuid', 'md5', 'uuid') and f.type = 1 and f.schema_id = s.id and s.name = 'sys');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'db_users', 'env', 'generate_series', 'storage', 'storagemodel', 'var') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 set schema "testschema";
 
 #Interpreting bte as bit.

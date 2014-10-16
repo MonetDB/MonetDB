@@ -68,17 +68,17 @@ typedef struct RECEPTOR {
 #define adapters_export extern
 #endif
 
-adapters_export str RCreceptorStart(int *ret, str *tbl, str *host, int *port);
-adapters_export str RCreceptorPause(int *ret, str *nme);
-adapters_export str RCreceptorResume(int *ret, str *nme);
-adapters_export str RCreceptorStop(int *ret, str *nme);
+adapters_export str RCreceptorStart(void *ret, str *tbl, str *host, int *port);
+adapters_export str RCreceptorPause(void *ret, str *nme);
+adapters_export str RCreceptorResume(void *ret, str *nme);
+adapters_export str RCreceptorStop(void *ret, str *nme);
 adapters_export Receptor RCfind(str nme);
-adapters_export str RCpause(int *ret);
-adapters_export str RCresume(int *ret);
-adapters_export str RCstop(int *ret);
-adapters_export str RCscenario(int *ret, str *nme, str *fnme, int *seq);
-adapters_export str RCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
-adapters_export str RCdump(void) ;
-adapters_export str RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *mode, int *statusId, int *seenId, int *cyclesId, int *receivedId, int *pendingId);
+adapters_export str RCpause(void *ret);
+adapters_export str RCresume(void *ret);
+adapters_export str RCstop(void *ret);
+adapters_export str RCscenario(void *ret, str *nme, str *fnme, int *seq);
+adapters_export str RCgenerator(void *ret, str *nme, str *modnme, str *fcnnme);
+adapters_export str RCdump(void *ret) ;
+adapters_export str RCtable(bat *nameId, bat *hostId, bat *portId, bat *protocolId, bat *mode, bat *statusId, bat *seenId, bat *cyclesId, bat *receivedId, bat *pendingId);
 #endif
 

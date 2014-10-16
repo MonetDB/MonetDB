@@ -80,7 +80,7 @@ stderr of test 'setoptimizer` in directory 'sql/test` itself:
 # 12:49:31 >  mclient -lsql -i --host=eir --port=36907 
 # 12:49:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-21357/.s.monetdb.31516
 QUERY = set optimizer='myfamous_pipe';
 ERROR = !optimizer 'myfamous_pipe' unknown
 

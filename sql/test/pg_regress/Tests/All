@@ -27,12 +27,12 @@ float8
 numeric
 strings
 numerology
-point
-lseg
-box
-path
-polygon
-circle
+HAVE_GEOM?point
+HAVE_GEOM?lseg
+HAVE_GEOM?box
+HAVE_GEOM?path
+HAVE_GEOM?polygon
+HAVE_GEOM?circle
 date
 time
 timetz
@@ -41,10 +41,10 @@ timestamptz
 interval
 # abstime NOT supported ABSTIME, deprecated in Postgresql
 reltime
-tinterval
+# tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
 inet
 comments
-geometry
+HAVE_GEOM?geometry
 horology
 oidjoins
 type_sanity

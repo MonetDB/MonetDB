@@ -77,7 +77,7 @@ EMfind(str nme)
  * The baskets should already be defined. 
  */
 static str
-EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int protocol, int delay)
+EMemitterStartInternal(void *ret, str *tbl, str *host, int *port, int mode, int protocol, int delay)
 {
 	Emitter em;
 	int idx, i, j, len;
@@ -126,7 +126,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 			throw(MAL, "receptor.new", "Could not access descriptor");
 		}
 
-		em->table.format[j].c = BATcopy(b, b->htype, b->ttype, FALSE);
+		em->table.format[j].c = BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT);
 		em->table.format[j].ci = bat_iterator(em->table.format[j].c);
 		em->table.format[j].name = baskets[idx].cols[i];
 		em->table.format[j].sep = ",";
@@ -157,11 +157,11 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 }
 
 str
-EMemitterStart(int *ret, str *tbl, str *host, int *port){
+EMemitterStart(void *ret, str *tbl, str *host, int *port){
 	return EMemitterStartInternal(ret,tbl,host,port, BSKTACTIVE, UDP, PAUSEDEFAULT);
 }
 
-str EMemitterPause(int *ret, str *nme)
+str EMemitterPause(void *ret, str *nme)
 {
 	Emitter em;
 
@@ -178,7 +178,7 @@ str EMemitterPause(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-str EMemitterResume(int *ret, str *nme)
+str EMemitterResume(void *ret, str *nme)
 {
 	Emitter em;
 
@@ -194,7 +194,7 @@ str EMemitterResume(int *ret, str *nme)
 }
 
 str
-EMpause(int *ret)
+EMpause(void *ret)
 {
 	Emitter em;
 	str msg= MAL_SUCCEED;
@@ -205,7 +205,7 @@ EMpause(int *ret)
 }
 
 str
-EMresume(int *ret)
+EMresume(void *ret)
 {
 	Emitter em;
 	str msg= MAL_SUCCEED;
@@ -215,7 +215,7 @@ EMresume(int *ret)
 	return msg;
 }
 
-str EMemitterStop(int *ret, str *nme)
+str EMemitterStop(void *ret, str *nme)
 {
 	Emitter em, rb;
 
@@ -240,7 +240,7 @@ str EMemitterStop(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-str EMstop(int *ret)
+str EMstop(void *ret)
 {
 	Emitter r, o;
 	for (r = emAnchor; r; r = o) {
@@ -327,7 +327,7 @@ bodyRestart:
 			if (em->table.format[k].c)
 				BBPunfix(em->table.format[k].c->batCacheid);
 			b = baskets[em->bskt].primary[k];
-			em->table.format[k].c = BATcopy(b, b->htype, b->ttype, TRUE);
+			em->table.format[k].c = BATcopy(b, b->htype, b->ttype, TRUE,TRANSIENT);
 			em->table.format[k].ci = bat_iterator(b);
 			BATclear(b, FALSE);
 		}
@@ -434,16 +434,17 @@ dumpEmitter(Emitter em)
 }
 
 str
-EMdump(void)
+EMdump(void *ret)
 {
 	Emitter rc = emAnchor;
+	(void) ret;
 	for (; rc; rc = rc->nxt)
 		dumpEmitter(rc);
 	return MAL_SUCCEED;
 }
 /* provide a tabular view for inspection */
 str
-EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int *statusId, int *seenId, int *cyclesId, int *sentId, int *pendingId)
+EMtable(bat *nameId, bat *hostId, bat *portId, bat *protocolId, bat *modeId, bat *statusId, bat *seenId, bat *cyclesId, bat *sentId, bat *pendingId)
 {
 	BAT *name = NULL, *seen = NULL, *pending = NULL, *sent = NULL, *cycles = NULL;
 	BAT *protocol = NULL, *mode = NULL, *status = NULL, *port = NULL, *host = NULL;

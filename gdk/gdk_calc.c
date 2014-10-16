@@ -36,14 +36,38 @@
  * the candidates, all other values are NIL (so that the output is
  * still aligned). */
 
-/* format strings for the six basic types we deal with */
+/* format strings for the seven/eight basic types we deal with */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
 #define FMTint	"%d"
 #define FMTlng	LLFMT
+#ifdef HAVE_HGE
+#define FMThge	"%.40g"
+#endif
 #define FMTflt	"%.9g"
 #define FMTdbl	"%.17g"
 #define FMToid	OIDFMT
+
+/* casts; only required for type hge, since there is no genuine format
+ * string for it (i.e., for __int128) (yet?) */
+#define CSTbte
+#define CSTsht
+#define CSTint
+#define CSTlng
+#ifdef HAVE_HGE
+#define CSThge  (dbl)
+#endif
+#define CSTflt
+#define CSTdbl
+#define CSToid
+
+/* The base type is the storage type if the comparison function and
+ * nil values are the same as those of the storage type; otherwise it
+ * is the type itself. */
+#define BASETYPE(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) ? \
+			 ATOMstorage(t) : (t))
 
 /* Most of the internal routines return a count of the number of NIL
  * values they produced.  They indicate an error by returning a value
@@ -158,8 +182,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					GDKerror("%s: shift operand too large in " \
 						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
 						 func,			\
-						 ((const TYPE1 *) lft)[i], \
-						 ((const TYPE2 *) rgt)[j]); \
+						 CST##TYPE1 ((const TYPE1 *) lft)[i], \
+						 CST##TYPE2 ((const TYPE2 *) rgt)[j]); \
 					goto checkfail;			\
 				}					\
 				((TYPE3 *)dst)[k] = TYPE3##_nil;	\
@@ -195,7 +219,7 @@ BATcalcnot(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		if (b->T->type == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
@@ -212,6 +236,11 @@ BATcalcnot(BAT *b, BAT *s)
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, lng, NOT);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		UNARY_2TYPE_FUNC(hge, hge, NOT);
+		break;
+#endif
 	default:
 		BBPunfix(bn->batCacheid);
 		GDKerror("BATcalcnot: type %s not supported.\n",
@@ -245,19 +274,14 @@ int
 VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (ATOMstorage(v->vtype)) {
+	switch (BASETYPE(v->vtype)) {
 	case TYPE_bte:
-		if (v->vtype == TYPE_bit) {
-			if (v->val.btval == bit_nil)
-				ret->val.btval = bit_nil;
-			else
-				ret->val.btval = !v->val.btval;
-		} else {
-			if (v->val.btval == bte_nil)
-				ret->val.btval = bte_nil;
-			else
-				ret->val.btval = ~v->val.btval;
-		}
+		if (v->val.btval == bit_nil)
+			ret->val.btval = bit_nil;
+		else if (v->vtype == TYPE_bit)
+			ret->val.btval = !v->val.btval;
+		else
+			ret->val.btval = ~v->val.btval;
 		break;
 	case TYPE_sht:
 		if (v->val.shval == sht_nil)
@@ -277,6 +301,14 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.lval = ~v->val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (v->val.hval == hge_nil)
+			ret->val.hval = hge_nil;
+		else
+			ret->val.hval = ~v->val.hval;
+		break;
+#endif
 	default:
 		GDKerror("VARcalcnot: bad input type %s.\n",
 			 ATOMname(v->vtype));
@@ -307,7 +339,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
 		break;
@@ -320,6 +352,11 @@ BATcalcnegate(BAT *b, BAT *s)
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, lng, NEGATE);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		UNARY_2TYPE_FUNC(hge, hge, NEGATE);
+		break;
+#endif
 	case TYPE_flt:
 		UNARY_2TYPE_FUNC(flt, flt, NEGATE);
 		break;
@@ -359,7 +396,7 @@ int
 VARcalcnegate(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (ATOMstorage(v->vtype)) {
+	switch (BASETYPE(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -384,6 +421,14 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.lval = -v->val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (v->val.hval == hge_nil)
+			ret->val.hval = hge_nil;
+		else
+			ret->val.hval = -v->val.hval;
+		break;
+#endif
 	case TYPE_flt:
 		if (v->val.fval == flt_nil)
 			ret->val.fval = flt_nil;
@@ -424,7 +469,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, (bte) abs);
 		break;
@@ -437,6 +482,11 @@ BATcalcabsolute(BAT *b, BAT *s)
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, lng, llabs);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		UNARY_2TYPE_FUNC(hge, hge, ABSOLUTE);
+		break;
+#endif
 	case TYPE_flt:
 		UNARY_2TYPE_FUNC(flt, flt, fabsf);
 		break;
@@ -478,7 +528,7 @@ int
 VARcalcabsolute(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (ATOMstorage(v->vtype)) {
+	switch (BASETYPE(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -503,6 +553,14 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.lval = llabs(v->val.lval);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (v->val.hval == hge_nil)
+			ret->val.hval = hge_nil;
+		else
+			ret->val.hval = ABSOLUTE(v->val.hval);
+		break;
+#endif
 	case TYPE_flt:
 		if (v->val.fval == flt_nil)
 			ret->val.fval = flt_nil;
@@ -545,7 +603,7 @@ BATcalciszero(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
 		break;
@@ -558,6 +616,11 @@ BATcalciszero(BAT *b, BAT *s)
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, bit, ISZERO);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		UNARY_2TYPE_FUNC(hge, bit, ISZERO);
+		break;
+#endif
 	case TYPE_flt:
 		UNARY_2TYPE_FUNC(flt, bit, ISZERO);
 		break;
@@ -596,7 +659,7 @@ int
 VARcalciszero(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
+	switch (BASETYPE(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bit_nil;
@@ -621,6 +684,14 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = ISZERO(v->val.lval);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (v->val.hval == hge_nil)
+			ret->val.btval = bit_nil;
+		else
+			ret->val.btval = ISZERO(v->val.hval);
+		break;
+#endif
 	case TYPE_flt:
 		if (v->val.fval == flt_nil)
 			ret->val.btval = bit_nil;
@@ -664,7 +735,7 @@ BATcalcsign(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
 		break;
@@ -677,6 +748,11 @@ BATcalcsign(BAT *b, BAT *s)
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, bte, SIGN);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		UNARY_2TYPE_FUNC(hge, bte, SIGN);
+		break;
+#endif
 	case TYPE_flt:
 		UNARY_2TYPE_FUNC(flt, bte, SIGN);
 		break;
@@ -697,7 +773,7 @@ BATcalcsign(BAT *b, BAT *s)
 	 * first, positive comes after) and NILs stay in the same
 	 * position */
 	bn->T->sorted = b->T->sorted || cnt <= 1 || nils == cnt;
-	bn->T->revsorted = bn->T->revsorted || cnt <= 1 || nils == cnt;
+	bn->T->revsorted = b->T->revsorted || cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -718,7 +794,7 @@ int
 VARcalcsign(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bte;
-	switch (ATOMstorage(v->vtype)) {
+	switch (BASETYPE(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -743,6 +819,14 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = SIGN(v->val.lval);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (v->val.hval == hge_nil)
+			ret->val.btval = bte_nil;
+		else
+			ret->val.btval = SIGN(v->val.hval);
+		break;
+#endif
 	case TYPE_flt:
 		if (v->val.fval == flt_nil)
 			ret->val.btval = bte_nil;
@@ -782,9 +866,6 @@ BATcalcisnil(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *cand = NULL, *candend = NULL;
 	bit *dst;
-	int t;
-	const void *nil;
-	int (*atomcmp)(const void *, const void *);
 	BUN nils = 0;
 
 	BATcheck(b, "BATcalcisnil");
@@ -816,14 +897,7 @@ BATcalcisnil(BAT *b, BAT *s)
 
 	CANDLOOP(dst, i, bit_nil, 0, start);
 
-	t = b->T->type;
-	nil = ATOMnilptr(t);
-	atomcmp = BATatoms[t].atomCmp;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
-		t = ATOMstorage(t);
-	switch (t) {
+	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
 		ISNIL_TYPE(bte);
 		break;
@@ -836,6 +910,11 @@ BATcalcisnil(BAT *b, BAT *s)
 	case TYPE_lng:
 		ISNIL_TYPE(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ISNIL_TYPE(hge);
+		break;
+#endif
 	case TYPE_flt:
 		ISNIL_TYPE(flt);
 		break;
@@ -845,6 +924,8 @@ BATcalcisnil(BAT *b, BAT *s)
 	default:
 	{
 		BATiter bi = bat_iterator(b);
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(b->T->type);
+		const void *nil = ATOMnilptr(b->T->type);
 
 		for (i = start; i < end; i++) {
 			CHECKCAND(dst, i, b->H->seq, bit_nil);
@@ -894,7 +975,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	do {							\
 		GDKerror("22003!overflow in calculation "	\
 			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
-			 lft[i], rgt[j]);			\
+			 CST##TYPE1 lft[i], CST##TYPE2 rgt[j]);			\
 		return BUN_NONE;				\
 	} while (0)
 
@@ -959,6 +1040,9 @@ ADD_3TYPE_enlarge(bte, bte, sht)
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(bte, bte, int)
 ADD_3TYPE_enlarge(bte, bte, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, bte, hge)
+#endif
 ADD_3TYPE_enlarge(bte, bte, flt)
 ADD_3TYPE_enlarge(bte, bte, dbl)
 #endif
@@ -966,19 +1050,35 @@ ADD_3TYPE(bte, sht, sht)
 ADD_3TYPE_enlarge(bte, sht, int)
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(bte, sht, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, sht, hge)
+#endif
 ADD_3TYPE_enlarge(bte, sht, flt)
 ADD_3TYPE_enlarge(bte, sht, dbl)
 #endif
 ADD_3TYPE(bte, int, int)
 ADD_3TYPE_enlarge(bte, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, int, hge)
+#endif
 ADD_3TYPE_enlarge(bte, int, flt)
 ADD_3TYPE_enlarge(bte, int, dbl)
 #endif
 ADD_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(bte, lng, flt)
 ADD_3TYPE_enlarge(bte, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(bte, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(bte, hge, flt)
+ADD_3TYPE_enlarge(bte, hge, dbl)
+#endif
 #endif
 ADD_3TYPE(bte, flt, flt)
 ADD_3TYPE_enlarge(bte, flt, dbl)
@@ -987,6 +1087,9 @@ ADD_3TYPE(sht, bte, sht)
 ADD_3TYPE_enlarge(sht, bte, int)
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(sht, bte, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, bte, hge)
+#endif
 ADD_3TYPE_enlarge(sht, bte, flt)
 ADD_3TYPE_enlarge(sht, bte, dbl)
 #endif
@@ -994,19 +1097,35 @@ ADD_3TYPE(sht, sht, sht)
 ADD_3TYPE_enlarge(sht, sht, int)
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(sht, sht, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, sht, hge)
+#endif
 ADD_3TYPE_enlarge(sht, sht, flt)
 ADD_3TYPE_enlarge(sht, sht, dbl)
 #endif
 ADD_3TYPE(sht, int, int)
 ADD_3TYPE_enlarge(sht, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, int, hge)
+#endif
 ADD_3TYPE_enlarge(sht, int, flt)
 ADD_3TYPE_enlarge(sht, int, dbl)
 #endif
 ADD_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(sht, lng, flt)
 ADD_3TYPE_enlarge(sht, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(sht, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, hge, flt)
+ADD_3TYPE_enlarge(sht, hge, dbl)
+#endif
 #endif
 ADD_3TYPE(sht, flt, flt)
 ADD_3TYPE_enlarge(sht, flt, dbl)
@@ -1014,52 +1133,120 @@ ADD_3TYPE(sht, dbl, dbl)
 ADD_3TYPE(int, bte, int)
 ADD_3TYPE_enlarge(int, bte, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, bte, hge)
+#endif
 ADD_3TYPE_enlarge(int, bte, flt)
 ADD_3TYPE_enlarge(int, bte, dbl)
 #endif
 ADD_3TYPE(int, sht, int)
 ADD_3TYPE_enlarge(int, sht, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, sht, hge)
+#endif
 ADD_3TYPE_enlarge(int, sht, flt)
 ADD_3TYPE_enlarge(int, sht, dbl)
 #endif
 ADD_3TYPE(int, int, int)
 ADD_3TYPE_enlarge(int, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, int, hge)
+#endif
 ADD_3TYPE_enlarge(int, int, flt)
 ADD_3TYPE_enlarge(int, int, dbl)
 #endif
 ADD_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(int, lng, flt)
 ADD_3TYPE_enlarge(int, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(int, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(int, hge, flt)
+ADD_3TYPE_enlarge(int, hge, dbl)
+#endif
 #endif
 ADD_3TYPE(int, flt, flt)
 ADD_3TYPE_enlarge(int, flt, dbl)
 ADD_3TYPE(int, dbl, dbl)
 ADD_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, bte, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(lng, bte, flt)
 ADD_3TYPE_enlarge(lng, bte, dbl)
 #endif
 ADD_3TYPE(lng, sht, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, sht, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(lng, sht, flt)
 ADD_3TYPE_enlarge(lng, sht, dbl)
 #endif
 ADD_3TYPE(lng, int, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, int, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(lng, int, flt)
 ADD_3TYPE_enlarge(lng, int, dbl)
 #endif
 ADD_3TYPE(lng, lng, lng)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 ADD_3TYPE_enlarge(lng, lng, flt)
 ADD_3TYPE_enlarge(lng, lng, dbl)
 #endif
+#ifdef HAVE_HGE
+ADD_3TYPE(lng, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, hge, flt)
+ADD_3TYPE_enlarge(lng, hge, dbl)
+#endif
+#endif
 ADD_3TYPE(lng, flt, flt)
 ADD_3TYPE_enlarge(lng, flt, dbl)
 ADD_3TYPE(lng, dbl, dbl)
+#ifdef HAVE_HGE
+ADD_3TYPE(hge, bte, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, bte, flt)
+ADD_3TYPE_enlarge(hge, bte, dbl)
+#endif
+ADD_3TYPE(hge, sht, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, sht, flt)
+ADD_3TYPE_enlarge(hge, sht, dbl)
+#endif
+ADD_3TYPE(hge, int, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, int, flt)
+ADD_3TYPE_enlarge(hge, int, dbl)
+#endif
+ADD_3TYPE(hge, lng, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, lng, flt)
+ADD_3TYPE_enlarge(hge, lng, dbl)
+#endif
+ADD_3TYPE(hge, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, hge, flt)
+ADD_3TYPE_enlarge(hge, hge, dbl)
+#endif
+ADD_3TYPE(hge, flt, flt)
+ADD_3TYPE_enlarge(hge, flt, dbl)
+ADD_3TYPE(hge, dbl, dbl)
+#endif
 ADD_3TYPE(flt, bte, flt)
 ADD_3TYPE_enlarge(flt, bte, dbl)
 ADD_3TYPE(flt, sht, flt)
@@ -1068,6 +1255,10 @@ ADD_3TYPE(flt, int, flt)
 ADD_3TYPE_enlarge(flt, int, dbl)
 ADD_3TYPE(flt, lng, flt)
 ADD_3TYPE_enlarge(flt, lng, dbl)
+#ifdef HAVE_HGE
+ADD_3TYPE(flt, hge, flt)
+ADD_3TYPE_enlarge(flt, hge, dbl)
+#endif
 ADD_3TYPE(flt, flt, flt)
 ADD_3TYPE_enlarge(flt, flt, dbl)
 ADD_3TYPE(flt, dbl, dbl)
@@ -1075,6 +1266,9 @@ ADD_3TYPE(dbl, bte, dbl)
 ADD_3TYPE(dbl, sht, dbl)
 ADD_3TYPE(dbl, int, dbl)
 ADD_3TYPE(dbl, lng, dbl)
+#ifdef HAVE_HGE
+ADD_3TYPE(dbl, hge, dbl)
+#endif
 ADD_3TYPE(dbl, flt, dbl)
 ADD_3TYPE(dbl, dbl, dbl)
 
@@ -1088,11 +1282,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	tp = BASETYPE(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = add_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1115,6 +1312,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1131,7 +1335,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = add_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1149,6 +1353,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1165,7 +1376,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = add_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1178,6 +1389,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1194,13 +1412,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_bte_lng_flt(lft, incr1, rgt, incr2,
@@ -1217,8 +1442,34 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1235,7 +1486,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1251,9 +1502,9 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = add_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1271,6 +1522,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1287,7 +1545,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = add_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1305,6 +1563,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1321,7 +1586,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = add_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1334,6 +1599,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1350,13 +1622,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_sht_lng_flt(lft, incr1, rgt, incr2,
@@ -1373,8 +1652,34 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1391,7 +1696,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1407,9 +1712,9 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = add_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1422,6 +1727,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1438,7 +1750,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = add_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1451,6 +1763,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1467,7 +1786,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = add_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1480,6 +1799,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = add_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1496,13 +1822,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_int_lng_flt(lft, incr1, rgt, incr2,
@@ -1519,8 +1852,34 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1537,7 +1896,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1553,15 +1912,22 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_lng_bte_flt(lft, incr1, rgt, incr2,
@@ -1579,13 +1945,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_lng_sht_flt(lft, incr1, rgt, incr2,
@@ -1603,13 +1976,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_lng_int_flt(lft, incr1, rgt, incr2,
@@ -1627,13 +2007,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = add_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_lng_lng_flt(lft, incr1, rgt, incr2,
@@ -1650,8 +2037,34 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1668,7 +2081,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1683,10 +2096,167 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1703,7 +2273,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1720,7 +2290,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1737,7 +2307,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1753,8 +2323,27 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = add_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1771,7 +2360,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1787,9 +2376,9 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1801,7 +2390,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1813,7 +2402,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1825,7 +2414,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1836,8 +2425,22 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -1849,7 +2452,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = add_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2266,6 +2869,9 @@ SUB_3TYPE_enlarge(bte, bte, sht)
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(bte, bte, int)
 SUB_3TYPE_enlarge(bte, bte, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, bte, hge)
+#endif
 SUB_3TYPE_enlarge(bte, bte, flt)
 SUB_3TYPE_enlarge(bte, bte, dbl)
 #endif
@@ -2273,19 +2879,35 @@ SUB_3TYPE(bte, sht, sht)
 SUB_3TYPE_enlarge(bte, sht, int)
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(bte, sht, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, sht, hge)
+#endif
 SUB_3TYPE_enlarge(bte, sht, flt)
 SUB_3TYPE_enlarge(bte, sht, dbl)
 #endif
 SUB_3TYPE(bte, int, int)
 SUB_3TYPE_enlarge(bte, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, int, hge)
+#endif
 SUB_3TYPE_enlarge(bte, int, flt)
 SUB_3TYPE_enlarge(bte, int, dbl)
 #endif
 SUB_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(bte, lng, flt)
 SUB_3TYPE_enlarge(bte, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(bte, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(bte, hge, flt)
+SUB_3TYPE_enlarge(bte, hge, dbl)
+#endif
 #endif
 SUB_3TYPE(bte, flt, flt)
 SUB_3TYPE_enlarge(bte, flt, dbl)
@@ -2294,6 +2916,9 @@ SUB_3TYPE(sht, bte, sht)
 SUB_3TYPE_enlarge(sht, bte, int)
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(sht, bte, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, bte, hge)
+#endif
 SUB_3TYPE_enlarge(sht, bte, flt)
 SUB_3TYPE_enlarge(sht, bte, dbl)
 #endif
@@ -2301,19 +2926,35 @@ SUB_3TYPE(sht, sht, sht)
 SUB_3TYPE_enlarge(sht, sht, int)
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(sht, sht, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, sht, hge)
+#endif
 SUB_3TYPE_enlarge(sht, sht, flt)
 SUB_3TYPE_enlarge(sht, sht, dbl)
 #endif
 SUB_3TYPE(sht, int, int)
 SUB_3TYPE_enlarge(sht, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, int, hge)
+#endif
 SUB_3TYPE_enlarge(sht, int, flt)
 SUB_3TYPE_enlarge(sht, int, dbl)
 #endif
 SUB_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(sht, lng, flt)
 SUB_3TYPE_enlarge(sht, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(sht, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, hge, flt)
+SUB_3TYPE_enlarge(sht, hge, dbl)
+#endif
 #endif
 SUB_3TYPE(sht, flt, flt)
 SUB_3TYPE_enlarge(sht, flt, dbl)
@@ -2321,52 +2962,120 @@ SUB_3TYPE(sht, dbl, dbl)
 SUB_3TYPE(int, bte, int)
 SUB_3TYPE_enlarge(int, bte, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, bte, hge)
+#endif
 SUB_3TYPE_enlarge(int, bte, flt)
 SUB_3TYPE_enlarge(int, bte, dbl)
 #endif
 SUB_3TYPE(int, sht, int)
 SUB_3TYPE_enlarge(int, sht, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, sht, hge)
+#endif
 SUB_3TYPE_enlarge(int, sht, flt)
 SUB_3TYPE_enlarge(int, sht, dbl)
 #endif
 SUB_3TYPE(int, int, int)
 SUB_3TYPE_enlarge(int, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, int, hge)
+#endif
 SUB_3TYPE_enlarge(int, int, flt)
 SUB_3TYPE_enlarge(int, int, dbl)
 #endif
 SUB_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(int, lng, flt)
 SUB_3TYPE_enlarge(int, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(int, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(int, hge, flt)
+SUB_3TYPE_enlarge(int, hge, dbl)
+#endif
 #endif
 SUB_3TYPE(int, flt, flt)
 SUB_3TYPE_enlarge(int, flt, dbl)
 SUB_3TYPE(int, dbl, dbl)
 SUB_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, bte, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(lng, bte, flt)
 SUB_3TYPE_enlarge(lng, bte, dbl)
 #endif
 SUB_3TYPE(lng, sht, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, sht, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(lng, sht, flt)
 SUB_3TYPE_enlarge(lng, sht, dbl)
 #endif
 SUB_3TYPE(lng, int, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, int, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(lng, int, flt)
 SUB_3TYPE_enlarge(lng, int, dbl)
 #endif
 SUB_3TYPE(lng, lng, lng)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, lng, hge)
+#endif
 #ifdef FULL_IMPLEMENTATION
 SUB_3TYPE_enlarge(lng, lng, flt)
 SUB_3TYPE_enlarge(lng, lng, dbl)
 #endif
+#ifdef HAVE_HGE
+SUB_3TYPE(lng, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, hge, flt)
+SUB_3TYPE_enlarge(lng, hge, dbl)
+#endif
+#endif
 SUB_3TYPE(lng, flt, flt)
 SUB_3TYPE_enlarge(lng, flt, dbl)
 SUB_3TYPE(lng, dbl, dbl)
+#ifdef HAVE_HGE
+SUB_3TYPE(hge, bte, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, bte, flt)
+SUB_3TYPE_enlarge(hge, bte, dbl)
+#endif
+SUB_3TYPE(hge, sht, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, sht, flt)
+SUB_3TYPE_enlarge(hge, sht, dbl)
+#endif
+SUB_3TYPE(hge, int, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, int, flt)
+SUB_3TYPE_enlarge(hge, int, dbl)
+#endif
+SUB_3TYPE(hge, lng, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, lng, flt)
+SUB_3TYPE_enlarge(hge, lng, dbl)
+#endif
+SUB_3TYPE(hge, hge, hge)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, hge, flt)
+SUB_3TYPE_enlarge(hge, hge, dbl)
+#endif
+SUB_3TYPE(hge, flt, flt)
+SUB_3TYPE_enlarge(hge, flt, dbl)
+SUB_3TYPE(hge, dbl, dbl)
+#endif
 SUB_3TYPE(flt, bte, flt)
 SUB_3TYPE_enlarge(flt, bte, dbl)
 SUB_3TYPE(flt, sht, flt)
@@ -2375,6 +3084,10 @@ SUB_3TYPE(flt, int, flt)
 SUB_3TYPE_enlarge(flt, int, dbl)
 SUB_3TYPE(flt, lng, flt)
 SUB_3TYPE_enlarge(flt, lng, dbl)
+#ifdef HAVE_HGE
+SUB_3TYPE(flt, hge, flt)
+SUB_3TYPE_enlarge(flt, hge, dbl)
+#endif
 SUB_3TYPE(flt, flt, flt)
 SUB_3TYPE_enlarge(flt, flt, dbl)
 SUB_3TYPE(flt, dbl, dbl)
@@ -2382,6 +3095,9 @@ SUB_3TYPE(dbl, bte, dbl)
 SUB_3TYPE(dbl, sht, dbl)
 SUB_3TYPE(dbl, int, dbl)
 SUB_3TYPE(dbl, lng, dbl)
+#ifdef HAVE_HGE
+SUB_3TYPE(dbl, hge, dbl)
+#endif
 SUB_3TYPE(dbl, flt, dbl)
 SUB_3TYPE(dbl, dbl, dbl)
 
@@ -2395,11 +3111,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	tp = BASETYPE(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = sub_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2422,6 +3141,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2438,7 +3164,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = sub_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2456,6 +3182,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2472,7 +3205,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = sub_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2485,6 +3218,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2501,13 +3241,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_bte_lng_flt(lft, incr1, rgt, incr2,
@@ -2524,8 +3271,34 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2542,7 +3315,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2558,9 +3331,9 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = sub_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2578,6 +3351,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2594,7 +3374,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = sub_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2612,6 +3392,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2628,7 +3415,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = sub_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2641,6 +3428,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2657,13 +3451,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_sht_lng_flt(lft, incr1, rgt, incr2,
@@ -2680,8 +3481,34 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2698,7 +3525,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2714,9 +3541,9 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = sub_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2729,6 +3556,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2745,7 +3579,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = sub_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2758,6 +3592,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2774,7 +3615,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = sub_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2787,6 +3628,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = sub_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2803,13 +3651,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_int_lng_flt(lft, incr1, rgt, incr2,
@@ -2826,8 +3681,34 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2844,7 +3725,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2860,15 +3741,22 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_lng_bte_flt(lft, incr1, rgt, incr2,
@@ -2886,13 +3774,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_lng_sht_flt(lft, incr1, rgt, incr2,
@@ -2910,13 +3805,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_lng_int_flt(lft, incr1, rgt, incr2,
@@ -2934,13 +3836,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = sub_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_lng_lng_flt(lft, incr1, rgt, incr2,
@@ -2957,8 +3866,34 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2975,7 +3910,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -2990,10 +3925,167 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3010,7 +4102,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3027,7 +4119,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3044,7 +4136,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3060,8 +4152,27 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = sub_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3078,7 +4189,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3094,9 +4205,9 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3108,7 +4219,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3120,7 +4231,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3132,7 +4243,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3143,8 +4254,22 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3156,7 +4281,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = sub_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3420,6 +4545,40 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	return nils;							\
 }
 
+#ifdef HAVE_HGE
+
+#define MUL_2TYPE_hge(TYPE1, TYPE2)					\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
+			    const TYPE2 *rgt, int incr2,		\
+			    hge *dst, BUN cnt, BUN start,		\
+			    BUN end, const oid *cand,			\
+			    const oid *candend, oid candoff,		\
+			    int abort_on_error)				\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
+									\
+	CANDLOOP(dst, k, hge_nil, 0, start);				\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, hge_nil);			\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = hge_nil;				\
+			nils++;						\
+		} else {						\
+			HGEMUL_CHECK(TYPE1, lft[i],			\
+				     TYPE2, rgt[j],			\
+				     dst[k],				\
+				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
+		}							\
+	}								\
+	CANDLOOP(dst, k, hge_nil, end, cnt);				\
+	return nils;							\
+}
+
+#else
+
 #ifdef HAVE__MUL128
 #include <intrin.h>
 #pragma intrinsic(_mul128)
@@ -3493,6 +4652,8 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 }
 #endif
 
+#endif
+
 #define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
@@ -3534,6 +4695,9 @@ MUL_3TYPE_enlarge(bte, bte, sht)
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(bte, bte, int)
 MUL_3TYPE_enlarge(bte, bte, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, bte, hge)
+#endif
 MUL_3TYPE_enlarge(bte, bte, flt)
 MUL_3TYPE_enlarge(bte, bte, dbl)
 #endif
@@ -3541,23 +4705,39 @@ MUL_4TYPE(bte, sht, sht, int)
 MUL_3TYPE_enlarge(bte, sht, int)
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(bte, sht, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, sht, hge)
+#endif
 MUL_3TYPE_enlarge(bte, sht, flt)
 MUL_3TYPE_enlarge(bte, sht, dbl)
 #endif
 MUL_4TYPE(bte, int, int, lng)
 MUL_3TYPE_enlarge(bte, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, int, hge)
+#endif
 MUL_3TYPE_enlarge(bte, int, flt)
 MUL_3TYPE_enlarge(bte, int, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(bte, lng, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(bte, lng, lng, hge)
 #else
 MUL_2TYPE_lng(bte, lng)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, lng, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(bte, lng, flt)
 MUL_3TYPE_enlarge(bte, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(bte, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(bte, hge, flt)
+MUL_3TYPE_enlarge(bte, hge, dbl)
+#endif
 #endif
 MUL_2TYPE_float(bte, flt, flt)
 MUL_3TYPE_enlarge(bte, flt, dbl)
@@ -3566,6 +4746,9 @@ MUL_4TYPE(sht, bte, sht, int)
 MUL_3TYPE_enlarge(sht, bte, int)
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(sht, bte, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, bte, hge)
+#endif
 MUL_3TYPE_enlarge(sht, bte, flt)
 MUL_3TYPE_enlarge(sht, bte, dbl)
 #endif
@@ -3573,23 +4756,39 @@ MUL_4TYPE(sht, sht, sht, int)
 MUL_3TYPE_enlarge(sht, sht, int)
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(sht, sht, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, sht, hge)
+#endif
 MUL_3TYPE_enlarge(sht, sht, flt)
 MUL_3TYPE_enlarge(sht, sht, dbl)
 #endif
 MUL_4TYPE(sht, int, int, lng)
 MUL_3TYPE_enlarge(sht, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, int, hge)
+#endif
 MUL_3TYPE_enlarge(sht, int, flt)
 MUL_3TYPE_enlarge(sht, int, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(sht, lng, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(sht, lng, lng, hge)
 #else
 MUL_2TYPE_lng(sht, lng)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, lng, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(sht, lng, flt)
 MUL_3TYPE_enlarge(sht, lng, dbl)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(sht, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(sht, hge, flt)
+MUL_3TYPE_enlarge(sht, hge, dbl)
+#endif
 #endif
 MUL_2TYPE_float(sht, flt, flt)
 MUL_3TYPE_enlarge(sht, flt, dbl)
@@ -3597,72 +4796,140 @@ MUL_2TYPE_float(sht, dbl, dbl)
 MUL_4TYPE(int, bte, int, lng)
 MUL_3TYPE_enlarge(int, bte, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, bte, hge)
+#endif
 MUL_3TYPE_enlarge(int, bte, flt)
 MUL_3TYPE_enlarge(int, bte, dbl)
 #endif
 MUL_4TYPE(int, sht, int, lng)
 MUL_3TYPE_enlarge(int, sht, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, sht, hge)
+#endif
 MUL_3TYPE_enlarge(int, sht, flt)
 MUL_3TYPE_enlarge(int, sht, dbl)
 #endif
 MUL_4TYPE(int, int, int, lng)
 MUL_3TYPE_enlarge(int, int, lng)
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, int, hge)
+#endif
 MUL_3TYPE_enlarge(int, int, flt)
 MUL_3TYPE_enlarge(int, int, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(int, lng, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(int, lng, lng, hge)
 #else
 MUL_2TYPE_lng(int, lng)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, lng, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(int, lng, flt)
 MUL_3TYPE_enlarge(int, lng, dbl)
 #endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(int, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(int, hge, flt)
+MUL_3TYPE_enlarge(int, hge, dbl)
+#endif
+#endif
 MUL_2TYPE_float(int, flt, flt)
 MUL_3TYPE_enlarge(int, flt, dbl)
 MUL_2TYPE_float(int, dbl, dbl)
-#ifdef HAVE___INT128
-MUL_4TYPE(lng, bte, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(lng, bte, lng, hge)
 #else
 MUL_2TYPE_lng(lng, bte)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, bte, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, bte, flt)
 MUL_3TYPE_enlarge(lng, bte, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(lng, sht, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(lng, sht, lng, hge)
 #else
 MUL_2TYPE_lng(lng, sht)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, sht, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, sht, flt)
 MUL_3TYPE_enlarge(lng, sht, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(lng, int, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(lng, int, lng, hge)
 #else
 MUL_2TYPE_lng(lng, int)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, int, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, int, flt)
 MUL_3TYPE_enlarge(lng, int, dbl)
 #endif
-#ifdef HAVE___INT128
-MUL_4TYPE(lng, lng, lng, __int128)
+#ifdef HAVE_HGE
+MUL_4TYPE(lng, lng, lng, hge)
 #else
 MUL_2TYPE_lng(lng, lng)
+#endif
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, lng, hge)
 #endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, lng, flt)
 MUL_3TYPE_enlarge(lng, lng, dbl)
 #endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(lng, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, hge, flt)
+MUL_3TYPE_enlarge(lng, hge, dbl)
+#endif
+#endif
 MUL_2TYPE_float(lng, flt, flt)
 MUL_3TYPE_enlarge(lng, flt, dbl)
 MUL_2TYPE_float(lng, dbl, dbl)
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(hge, bte)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, bte, flt)
+MUL_3TYPE_enlarge(hge, bte, dbl)
+#endif
+MUL_2TYPE_hge(hge, sht)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, sht, flt)
+MUL_3TYPE_enlarge(hge, sht, dbl)
+#endif
+MUL_2TYPE_hge(hge, int)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, int, flt)
+MUL_3TYPE_enlarge(hge, int, dbl)
+#endif
+MUL_2TYPE_hge(hge, lng)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, lng, flt)
+MUL_3TYPE_enlarge(hge, lng, dbl)
+#endif
+MUL_2TYPE_hge(hge, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, hge, flt)
+MUL_3TYPE_enlarge(hge, hge, dbl)
+#endif
+MUL_2TYPE_float(hge, flt, flt)
+MUL_3TYPE_enlarge(hge, flt, dbl)
+MUL_2TYPE_float(hge, dbl, dbl)
+#endif
 MUL_2TYPE_float(flt, bte, flt)
 MUL_3TYPE_enlarge(flt, bte, dbl)
 MUL_2TYPE_float(flt, sht, flt)
@@ -3671,6 +4938,10 @@ MUL_2TYPE_float(flt, int, flt)
 MUL_3TYPE_enlarge(flt, int, dbl)
 MUL_2TYPE_float(flt, lng, flt)
 MUL_3TYPE_enlarge(flt, lng, dbl)
+#ifdef HAVE_HGE
+MUL_2TYPE_float(flt, hge, flt)
+MUL_3TYPE_enlarge(flt, hge, dbl)
+#endif
 MUL_2TYPE_float(flt, flt, flt)
 MUL_3TYPE_enlarge(flt, flt, dbl)
 MUL_2TYPE_float(flt, dbl, dbl)
@@ -3678,6 +4949,9 @@ MUL_2TYPE_float(dbl, bte, dbl)
 MUL_2TYPE_float(dbl, sht, dbl)
 MUL_2TYPE_float(dbl, int, dbl)
 MUL_2TYPE_float(dbl, lng, dbl)
+#ifdef HAVE_HGE
+MUL_2TYPE_float(dbl, hge, dbl)
+#endif
 MUL_2TYPE_float(dbl, flt, dbl)
 MUL_2TYPE_float(dbl, dbl, dbl)
 
@@ -3691,11 +4965,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	tp = BASETYPE(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mul_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3718,6 +4995,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3734,7 +5018,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mul_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3752,6 +5036,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3768,7 +5059,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mul_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3781,6 +5072,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3797,13 +5095,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_bte_lng_flt(lft, incr1, rgt, incr2,
@@ -3820,8 +5125,34 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3838,7 +5169,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3854,9 +5185,9 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mul_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3874,6 +5205,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3890,7 +5228,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mul_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3908,6 +5246,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       dst, cnt, start, end,
 						       cand, candend, candoff);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3924,7 +5269,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mul_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3937,6 +5282,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3953,13 +5305,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_sht_lng_flt(lft, incr1, rgt, incr2,
@@ -3976,8 +5335,34 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -3994,7 +5379,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4010,9 +5395,9 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mul_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4025,6 +5410,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4041,7 +5433,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mul_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4054,6 +5446,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4070,7 +5469,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mul_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4083,6 +5482,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff);
 				break;
 #ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 			case TYPE_flt:
 				nils = mul_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4099,13 +5505,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_int_lng_flt(lft, incr1, rgt, incr2,
@@ -4122,8 +5535,34 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4140,7 +5579,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4156,15 +5595,22 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_lng_bte_flt(lft, incr1, rgt, incr2,
@@ -4182,13 +5628,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_lng_sht_flt(lft, incr1, rgt, incr2,
@@ -4206,13 +5659,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_lng_int_flt(lft, incr1, rgt, incr2,
@@ -4230,13 +5690,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mul_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_lng_lng_flt(lft, incr1, rgt, incr2,
@@ -4253,8 +5720,34 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4271,7 +5764,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4286,10 +5779,169 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4306,7 +5958,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4323,7 +5975,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4340,7 +5992,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4356,8 +6008,27 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mul_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4374,7 +6045,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4390,9 +6061,9 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4404,7 +6075,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4416,7 +6087,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4428,7 +6099,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4439,8 +6110,22 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4452,7 +6137,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mul_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4742,6 +6427,9 @@ DIV_3TYPE(bte, bte, bte)
 DIV_3TYPE(bte, bte, sht)
 DIV_3TYPE(bte, bte, int)
 DIV_3TYPE(bte, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, bte, hge)
+#endif
 #endif
 DIV_3TYPE(bte, bte, flt)
 DIV_3TYPE(bte, bte, dbl)
@@ -4750,6 +6438,9 @@ DIV_3TYPE(bte, sht, bte)
 DIV_3TYPE(bte, sht, sht)
 DIV_3TYPE(bte, sht, int)
 DIV_3TYPE(bte, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, sht, hge)
+#endif
 #endif
 DIV_3TYPE(bte, sht, flt)
 DIV_3TYPE(bte, sht, dbl)
@@ -4758,6 +6449,9 @@ DIV_3TYPE(bte, int, bte)
 DIV_3TYPE(bte, int, sht)
 DIV_3TYPE(bte, int, int)
 DIV_3TYPE(bte, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, int, hge)
+#endif
 #endif
 DIV_3TYPE(bte, int, flt)
 DIV_3TYPE(bte, int, dbl)
@@ -4766,9 +6460,23 @@ DIV_3TYPE(bte, lng, bte)
 DIV_3TYPE(bte, lng, sht)
 DIV_3TYPE(bte, lng, int)
 DIV_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, lng, hge)
+#endif
 #endif
 DIV_3TYPE(bte, lng, flt)
 DIV_3TYPE(bte, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, hge, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, hge, sht)
+DIV_3TYPE(bte, hge, int)
+DIV_3TYPE(bte, hge, lng)
+DIV_3TYPE(bte, hge, hge)
+#endif
+DIV_3TYPE(bte, hge, flt)
+DIV_3TYPE(bte, hge, dbl)
+#endif
 DIV_3TYPE_float(bte, flt, flt)
 DIV_3TYPE_float(bte, flt, dbl)
 DIV_3TYPE_float(bte, dbl, dbl)
@@ -4776,6 +6484,9 @@ DIV_3TYPE(sht, bte, sht)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(sht, bte, int)
 DIV_3TYPE(sht, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, bte, hge)
+#endif
 #endif
 DIV_3TYPE(sht, bte, flt)
 DIV_3TYPE(sht, bte, dbl)
@@ -4783,6 +6494,9 @@ DIV_3TYPE(sht, sht, sht)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(sht, sht, int)
 DIV_3TYPE(sht, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, sht, hge)
+#endif
 #endif
 DIV_3TYPE(sht, sht, flt)
 DIV_3TYPE(sht, sht, dbl)
@@ -4790,6 +6504,9 @@ DIV_3TYPE(sht, int, sht)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(sht, int, int)
 DIV_3TYPE(sht, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, int, hge)
+#endif
 #endif
 DIV_3TYPE(sht, int, flt)
 DIV_3TYPE(sht, int, dbl)
@@ -4797,54 +6514,136 @@ DIV_3TYPE(sht, lng, sht)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(sht, lng, int)
 DIV_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, lng, hge)
+#endif
 #endif
 DIV_3TYPE(sht, lng, flt)
 DIV_3TYPE(sht, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, hge, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, hge, int)
+DIV_3TYPE(sht, hge, lng)
+DIV_3TYPE(sht, hge, hge)
+#endif
+DIV_3TYPE(sht, hge, flt)
+DIV_3TYPE(sht, hge, dbl)
+#endif
 DIV_3TYPE_float(sht, flt, flt)
 DIV_3TYPE_float(sht, flt, dbl)
 DIV_3TYPE_float(sht, dbl, dbl)
 DIV_3TYPE(int, bte, int)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(int, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, bte, hge)
+#endif
 #endif
 DIV_3TYPE(int, bte, flt)
 DIV_3TYPE(int, bte, dbl)
 DIV_3TYPE(int, sht, int)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(int, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, sht, hge)
+#endif
 #endif
 DIV_3TYPE(int, sht, flt)
 DIV_3TYPE(int, sht, dbl)
 DIV_3TYPE(int, int, int)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(int, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, int, hge)
+#endif
 #endif
 DIV_3TYPE(int, int, flt)
 DIV_3TYPE(int, int, dbl)
 DIV_3TYPE(int, lng, int)
 #ifdef FULL_IMPLEMENTATION
 DIV_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, lng, hge)
+#endif
 #endif
 DIV_3TYPE(int, lng, flt)
 DIV_3TYPE(int, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, hge, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, hge, lng)
+DIV_3TYPE(int, hge, hge)
+#endif
+DIV_3TYPE(int, hge, flt)
+DIV_3TYPE(int, hge, dbl)
+#endif
 DIV_3TYPE_float(int, flt, flt)
 DIV_3TYPE_float(int, flt, dbl)
 DIV_3TYPE_float(int, dbl, dbl)
 DIV_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(lng, bte, hge)
+#endif
+#endif
 DIV_3TYPE(lng, bte, flt)
 DIV_3TYPE(lng, bte, dbl)
 DIV_3TYPE(lng, sht, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, sht, hge)
+#endif
+#endif
 DIV_3TYPE(lng, sht, flt)
 DIV_3TYPE(lng, sht, dbl)
 DIV_3TYPE(lng, int, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, int, hge)
+#endif
+#endif
 DIV_3TYPE(lng, int, flt)
 DIV_3TYPE(lng, int, dbl)
 DIV_3TYPE(lng, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, lng, hge)
+#endif
+#endif
 DIV_3TYPE(lng, lng, flt)
 DIV_3TYPE(lng, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, hge, lng)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(lng, hge, hge)
+#endif
+DIV_3TYPE(lng, hge, flt)
+DIV_3TYPE(lng, hge, dbl)
+#endif
 DIV_3TYPE_float(lng, flt, flt)
 DIV_3TYPE_float(lng, flt, dbl)
 DIV_3TYPE_float(lng, dbl, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(hge, bte, hge)
+DIV_3TYPE(hge, bte, flt)
+DIV_3TYPE(hge, bte, dbl)
+DIV_3TYPE(hge, sht, hge)
+DIV_3TYPE(hge, sht, flt)
+DIV_3TYPE(hge, sht, dbl)
+DIV_3TYPE(hge, int, hge)
+DIV_3TYPE(hge, int, flt)
+DIV_3TYPE(hge, int, dbl)
+DIV_3TYPE(hge, lng, hge)
+DIV_3TYPE(hge, lng, flt)
+DIV_3TYPE(hge, lng, dbl)
+DIV_3TYPE(hge, hge, hge)
+DIV_3TYPE(hge, hge, flt)
+DIV_3TYPE(hge, hge, dbl)
+DIV_3TYPE_float(hge, flt, flt)
+DIV_3TYPE_float(hge, flt, dbl)
+DIV_3TYPE_float(hge, dbl, dbl)
+#endif
 DIV_3TYPE(flt, bte, flt)
 DIV_3TYPE(flt, bte, dbl)
 DIV_3TYPE(flt, sht, flt)
@@ -4853,6 +6652,10 @@ DIV_3TYPE(flt, int, flt)
 DIV_3TYPE(flt, int, dbl)
 DIV_3TYPE(flt, lng, flt)
 DIV_3TYPE(flt, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(flt, hge, flt)
+DIV_3TYPE(flt, hge, dbl)
+#endif
 DIV_3TYPE_float(flt, flt, flt)
 DIV_3TYPE_float(flt, flt, dbl)
 DIV_3TYPE_float(flt, dbl, dbl)
@@ -4860,6 +6663,9 @@ DIV_3TYPE(dbl, bte, dbl)
 DIV_3TYPE(dbl, sht, dbl)
 DIV_3TYPE(dbl, int, dbl)
 DIV_3TYPE(dbl, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(dbl, hge, dbl)
+#endif
 DIV_3TYPE_float(dbl, flt, dbl)
 DIV_3TYPE_float(dbl, dbl, dbl)
 
@@ -4873,11 +6679,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	tp = BASETYPE(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = div_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4903,6 +6712,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_bte_bte_flt(lft, incr1, rgt, incr2,
@@ -4921,7 +6738,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = div_bte_sht_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4947,6 +6764,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_bte_sht_flt(lft, incr1, rgt, incr2,
@@ -4965,7 +6790,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = div_bte_int_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -4991,6 +6816,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_bte_int_flt(lft, incr1, rgt, incr2,
@@ -5009,7 +6842,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = div_bte_lng_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5035,6 +6868,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_bte_lng_flt(lft, incr1, rgt, incr2,
@@ -5052,8 +6893,60 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_hge_bte(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_hge_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5071,7 +6964,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5087,9 +6980,9 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = div_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5109,6 +7002,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_sht_bte_flt(lft, incr1, rgt, incr2,
@@ -5127,7 +7028,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = div_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5147,6 +7048,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_sht_sht_flt(lft, incr1, rgt, incr2,
@@ -5165,7 +7074,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = div_sht_int_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5185,6 +7094,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_sht_int_flt(lft, incr1, rgt, incr2,
@@ -5203,7 +7120,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = div_sht_lng_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5223,6 +7140,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_sht_lng_flt(lft, incr1, rgt, incr2,
@@ -5240,8 +7165,54 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_hge_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5259,7 +7230,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5275,9 +7246,9 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = div_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5291,6 +7262,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_int_bte_flt(lft, incr1, rgt, incr2,
@@ -5309,7 +7288,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = div_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5323,6 +7302,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_int_sht_flt(lft, incr1, rgt, incr2,
@@ -5341,7 +7328,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = div_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5355,6 +7342,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_int_int_flt(lft, incr1, rgt, incr2,
@@ -5373,7 +7368,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = div_int_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5387,6 +7382,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			case TYPE_flt:
 				nils = div_int_lng_flt(lft, incr1, rgt, incr2,
@@ -5404,8 +7407,48 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5423,7 +7466,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5439,15 +7482,25 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = div_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+#endif
 			case TYPE_flt:
 				nils = div_lng_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5465,13 +7518,23 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = div_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+#endif
 			case TYPE_flt:
 				nils = div_lng_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5489,13 +7552,23 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = div_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+#endif
 			case TYPE_flt:
 				nils = div_lng_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5513,13 +7586,23 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = div_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+#endif
 			case TYPE_flt:
 				nils = div_lng_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5536,8 +7619,42 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = div_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5555,7 +7672,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5570,10 +7687,168 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5591,7 +7866,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5609,7 +7884,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5627,7 +7902,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5644,8 +7919,28 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = div_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5663,7 +7958,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5679,9 +7974,9 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5693,7 +7988,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5705,7 +8000,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5717,7 +8012,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5728,8 +8023,22 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5741,7 +8050,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = div_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -5968,100 +8277,217 @@ MOD_3TYPE(bte, bte, bte)
 MOD_3TYPE(bte, bte, sht)
 MOD_3TYPE(bte, bte, int)
 MOD_3TYPE(bte, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, bte, hge)
+#endif
 #endif
 MOD_3TYPE(bte, sht, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(bte, sht, sht)
 MOD_3TYPE(bte, sht, int)
 MOD_3TYPE(bte, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, sht, hge)
+#endif
 #endif
 MOD_3TYPE(bte, int, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(bte, int, sht)
 MOD_3TYPE(bte, int, int)
 MOD_3TYPE(bte, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, int, hge)
+#endif
 #endif
 MOD_3TYPE(bte, lng, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(bte, lng, sht)
 MOD_3TYPE(bte, lng, int)
 MOD_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, hge, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, hge, sht)
+MOD_3TYPE(bte, hge, int)
+MOD_3TYPE(bte, hge, lng)
+MOD_3TYPE(bte, hge, hge)
+#endif
 #endif
 MOD_3TYPE(sht, bte, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(sht, bte, sht)
 MOD_3TYPE(sht, bte, int)
 MOD_3TYPE(sht, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, bte, hge)
+#endif
 #endif
 MOD_3TYPE(sht, sht, sht)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(sht, sht, int)
 MOD_3TYPE(sht, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, sht, hge)
+#endif
 #endif
 MOD_3TYPE(sht, int, sht)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(sht, int, int)
 MOD_3TYPE(sht, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, int, hge)
+#endif
 #endif
 MOD_3TYPE(sht, lng, sht)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(sht, lng, int)
 MOD_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, hge, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, hge, int)
+MOD_3TYPE(sht, hge, lng)
+MOD_3TYPE(sht, hge, hge)
+#endif
 #endif
 MOD_3TYPE(int, bte, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(int, bte, sht)
 MOD_3TYPE(int, bte, int)
 MOD_3TYPE(int, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, bte, hge)
+#endif
 #endif
 MOD_3TYPE(int, sht, sht)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(int, sht, int)
 MOD_3TYPE(int, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, sht, hge)
+#endif
 #endif
 MOD_3TYPE(int, int, int)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(int, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, int, hge)
+#endif
 #endif
 MOD_3TYPE(int, lng, int)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(int, hge, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, hge, lng)
+MOD_3TYPE(int, hge, hge)
+#endif
 #endif
 MOD_3TYPE(lng, bte, bte)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(lng, bte, sht)
 MOD_3TYPE(lng, bte, int)
 MOD_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, bte, hge)
+#endif
 #endif
 MOD_3TYPE(lng, sht, sht)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(lng, sht, int)
 MOD_3TYPE(lng, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, sht, hge)
+#endif
 #endif
 MOD_3TYPE(lng, int, int)
 #ifdef FULL_IMPLEMENTATION
 MOD_3TYPE(lng, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, int, hge)
+#endif
 #endif
 MOD_3TYPE(lng, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, hge, lng)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(lng, hge, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(hge, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, bte, sht)
+MOD_3TYPE(hge, bte, int)
+MOD_3TYPE(hge, bte, lng)
+MOD_3TYPE(hge, bte, hge)
+#endif
+MOD_3TYPE(hge, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, sht, int)
+MOD_3TYPE(hge, sht, lng)
+MOD_3TYPE(hge, sht, hge)
+#endif
+MOD_3TYPE(hge, int, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, int, lng)
+MOD_3TYPE(hge, int, hge)
+#endif
+MOD_3TYPE(hge, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, lng, hge)
+#endif
+MOD_3TYPE(hge, hge, hge)
+#endif
 
 FMOD_3TYPE(bte, flt, flt, fmodf)
 FMOD_3TYPE(sht, flt, flt, fmodf)
 FMOD_3TYPE(int, flt, flt, fmodf)
 FMOD_3TYPE(lng, flt, flt, fmodf)
+#ifdef HAVE_HGE
+FMOD_3TYPE(hge, flt, flt, fmodf)
+#endif
 FMOD_3TYPE(flt, bte, flt, fmodf)
 FMOD_3TYPE(flt, sht, flt, fmodf)
 FMOD_3TYPE(flt, int, flt, fmodf)
 FMOD_3TYPE(flt, lng, flt, fmodf)
+#ifdef HAVE_HGE
+FMOD_3TYPE(flt, hge, flt, fmodf)
+#endif
 FMOD_3TYPE(flt, flt, flt, fmodf)
 FMOD_3TYPE(bte, dbl, dbl, fmod)
 FMOD_3TYPE(sht, dbl, dbl, fmod)
 FMOD_3TYPE(int, dbl, dbl, fmod)
 FMOD_3TYPE(lng, dbl, dbl, fmod)
+#ifdef HAVE_HGE
+FMOD_3TYPE(hge, dbl, dbl, fmod)
+#endif
 FMOD_3TYPE(flt, dbl, dbl, fmod)
 FMOD_3TYPE(dbl, bte, dbl, fmod)
 FMOD_3TYPE(dbl, sht, dbl, fmod)
 FMOD_3TYPE(dbl, int, dbl, fmod)
 FMOD_3TYPE(dbl, lng, dbl, fmod)
+#ifdef HAVE_HGE
+FMOD_3TYPE(dbl, hge, dbl, fmod)
+#endif
 FMOD_3TYPE(dbl, flt, dbl, fmod)
 FMOD_3TYPE(dbl, dbl, dbl, fmod)
 
@@ -6075,11 +8501,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	tp = BASETYPE(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6105,13 +8534,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_sht_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6137,13 +8574,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_int_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6169,13 +8614,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_lng_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6201,13 +8654,61 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_hge_bte(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_hge_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6219,7 +8720,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6235,9 +8736,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_sht_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6263,13 +8764,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6289,13 +8798,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_int_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6315,13 +8832,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_lng_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6341,13 +8866,55 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_sht_hge_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_sht_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6359,7 +8926,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6375,9 +8942,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_int_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6403,13 +8970,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mod_int_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6429,13 +9004,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mod_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6449,13 +9032,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mod_int_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6469,13 +9060,49 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_int_hge_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_int_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6487,7 +9114,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6503,9 +9130,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_bte:
 				nils = mod_lng_bte_bte(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6531,13 +9158,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_sht:
 				nils = mod_lng_sht_sht(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6557,13 +9192,21 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_int:
 				nils = mod_lng_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6577,25 +9220,65 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
 #endif
 			default:
 				goto unsupported;
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_lng:
 				nils = mod_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
 						       cand, candend, candoff,
 						       abort_on_error);
 				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+#endif
 			default:
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mod_lng_hge_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = mod_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6607,7 +9290,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6622,10 +9305,170 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_hge_bte_bte(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_hge_bte_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_hge_bte_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_hge_bte_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_hge_sht_sht(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_hge_sht_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_hge_sht_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_hge_int_int(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_hge_int_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mod_hge_lng_lng(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = mod_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mod_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6637,7 +9480,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6649,7 +9492,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6661,7 +9504,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6672,8 +9515,22 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6685,7 +9542,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6701,9 +9558,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6715,7 +9572,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_sht:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6727,7 +9584,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6739,7 +9596,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6750,8 +9607,22 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt, start, end,
+						       cand, candend, candoff,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
 		case TYPE_flt:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6763,7 +9634,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_dbl:
-			switch (ATOMstorage(tp)) {
+			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt, start, end,
@@ -6916,7 +9787,7 @@ xor_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (ATOMstorage(tp)) {
+	switch (BASETYPE(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			if (nonil)
@@ -6948,6 +9819,14 @@ xor_typeswitchloop(const void *lft, int incr1,
 		else
 			BINARY_3TYPE_FUNC(lng, lng, lng, XOR);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, XOR);
+		else
+			BINARY_3TYPE_FUNC(hge, hge, hge, XOR);
+		break;
+#endif
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -6970,7 +9849,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcxor") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b1->T->type) != ATOMstorage(b2->T->type)) {
+	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
 		GDKerror("BATcalcxor: incompatible input types.\n");
 		return NULL;
 	}
@@ -7019,7 +9898,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcxorcst") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalcxorcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -7068,7 +9947,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstxor") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalccstxor: incompatible input types.\n");
 		return NULL;
 	}
@@ -7107,7 +9986,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (ATOMstorage(lft->vtype) != ATOMstorage(rgt->vtype)) {
+	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
 		GDKerror("VARcalccstxor: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -7137,7 +10016,7 @@ or_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (ATOMstorage(tp)) {
+	switch (BASETYPE(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
@@ -7187,6 +10066,14 @@ or_typeswitchloop(const void *lft, int incr1,
 		else
 			BINARY_3TYPE_FUNC(lng, lng, lng, OR);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, OR);
+		else
+			BINARY_3TYPE_FUNC(hge, hge, hge, OR);
+		break;
+#endif
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -7209,7 +10096,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcor") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b1->T->type) != ATOMstorage(b2->T->type)) {
+	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
 		GDKerror("BATcalcor: incompatible input types.\n");
 		return NULL;
 	}
@@ -7258,7 +10145,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcorcst") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalcorcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -7307,7 +10194,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstor") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalccstor: incompatible input types.\n");
 		return NULL;
 	}
@@ -7346,7 +10233,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (ATOMstorage(lft->vtype) != ATOMstorage(rgt->vtype)) {
+	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
 		GDKerror("VARcalccstor: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -7376,7 +10263,7 @@ and_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (ATOMstorage(tp)) {
+	switch (BASETYPE(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
@@ -7423,6 +10310,14 @@ and_typeswitchloop(const void *lft, int incr1,
 		else
 			BINARY_3TYPE_FUNC(lng, lng, lng, AND);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, AND);
+		else
+			BINARY_3TYPE_FUNC(hge, hge, hge, AND);
+		break;
+#endif
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -7445,7 +10340,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcand") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b1->T->type) != ATOMstorage(b2->T->type)) {
+	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
 		GDKerror("BATcalcand: incompatible input types.\n");
 		return NULL;
 	}
@@ -7494,7 +10389,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcandcst") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalcandcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -7542,7 +10437,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstand") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(v->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
 		GDKerror("BATcalccstand: incompatible input types.\n");
 		return NULL;
 	}
@@ -7580,7 +10475,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (ATOMstorage(lft->vtype) != ATOMstorage(rgt->vtype)) {
+	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
 		GDKerror("VARcalccstand: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -7600,6 +10495,20 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define LSH(a, b)		((a) << (b))
 
 #define SHIFT_CHECK(a, b)	((b) < 0 || (b) >= 8 * (int) sizeof(a))
+#define NO_SHIFT_CHECK(a, b)	0
+
+/* In standard C, left shift is undefined if any of the following
+ * conditions hold:
+ * - right operand is negative or larger or equal to the width of the
+ *   left operand;
+ * - left operand is negative;
+ * - left operand times two-to-the-power of the right operand is not
+ *   representable in the (promoted) type of the left operand. */
+#define LSH_CHECK(a, b, TYPE)	(SHIFT_CHECK(a, b) || (a) < 0 || (a) > (GDK_##TYPE##_max >> (b)))
+#define LSH_CHECK_bte(a, b)	LSH_CHECK(a, b, bte)
+#define LSH_CHECK_sht(a, b)	LSH_CHECK(a, b, sht)
+#define LSH_CHECK_int(a, b)	LSH_CHECK(a, b, int)
+#define LSH_CHECK_lng(a, b)	LSH_CHECK(a, b, lng)
 
 static BUN
 lsh_typeswitchloop(const void *lft, int tp1, int incr1,
@@ -7612,95 +10521,149 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_bte);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH,
+						LSH_CHECK_bte);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(bte, hge, bte, LSH,
 						SHIFT_CHECK);
 			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_sht);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH,
+						LSH_CHECK_sht);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(sht, hge, sht, LSH,
 						SHIFT_CHECK);
 			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_int);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH,
+						LSH_CHECK_int);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(int, hge, int, LSH,
 						SHIFT_CHECK);
 			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_lng);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH,
+						LSH_CHECK_lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(lng, hge, lng, LSH,
+						SHIFT_CHECK);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECK(hge, bte, hge, LSH,
+						NO_SHIFT_CHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECK(hge, sht, hge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECK(hge, int, hge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECK(hge, lng, hge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(hge, hge, hge, LSH,
 						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
+#endif
 	default:
 		goto unsupported;
 	}
@@ -7870,9 +10833,11 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (ATOMstorage(tp1)) {
+	tp1 = BASETYPE(tp1);
+	tp2 = BASETYPE(tp2);
+	switch (tp1) {
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, RSH,
 						SHIFT_CHECK);
@@ -7889,12 +10854,18 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, RSH,
 						SHIFT_CHECK);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(bte, hge, bte, RSH,
+						SHIFT_CHECK);
+			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, RSH,
 						SHIFT_CHECK);
@@ -7911,12 +10882,18 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, RSH,
 						SHIFT_CHECK);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(sht, hge, sht, RSH,
+						SHIFT_CHECK);
+			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, RSH,
 						SHIFT_CHECK);
@@ -7933,12 +10910,18 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, RSH,
 						SHIFT_CHECK);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(int, hge, int, RSH,
+						SHIFT_CHECK);
+			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, RSH,
 						SHIFT_CHECK);
@@ -7955,10 +10938,44 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, RSH,
 						SHIFT_CHECK);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(lng, hge, lng, RSH,
+						SHIFT_CHECK);
+			break;
+#endif
 		default:
 			goto unsupported;
 		}
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECK(hge, bte, hge, RSH,
+						NO_SHIFT_CHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECK(hge, sht, hge, RSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECK(hge, int, hge, RSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECK(hge, lng, hge, RSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECK(hge, hge, hge, RSH,
+						SHIFT_CHECK);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
 	default:
 		goto unsupported;
 	}
@@ -8346,10 +11363,10 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* between (any "linear" type) */
 
 #define BETWEEN(v, lo, hi, TYPE)					\
-	((v) == TYPE##_nil || ((lo) == TYPE##_nil && (hi) == TYPE##_nil) ? \
+	((v) == TYPE##_nil || (lo) == TYPE##_nil || (hi) == TYPE##_nil ? \
 	 (nils++, bit_nil) :						\
-	 (bit) (((lo) == TYPE##_nil || (v) >= (lo)) &&			\
-		((hi) == TYPE##_nil || (v) <= (hi))))
+	 (bit) (((v) >= (lo) && (v) <= (hi)) ||				\
+		(sym && (v) >= (hi) && (v) <= (lo))))
 
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
@@ -8372,7 +11389,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
 		      int tp, BUN cnt, BUN start, BUN end, const oid *cand,
-		      const oid *candend, oid seqbase,
+		      const oid *candend, oid seqbase, int sym,
 		      const char *func)
 {
 	BAT *bn;
@@ -8390,10 +11407,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 
 	CANDLOOP(dst, l, bit_nil, 0, start);
 
-	if (tp != ATOMstorage(tp) &&
-	    ATOMnilptr(ATOMstorage(tp)) == ATOMnilptr(tp) &&
-	    BATatoms[ATOMstorage(tp)].atomCmp == BATatoms[tp].atomCmp)
-		tp = ATOMstorage(tp);
+	tp = BASETYPE(tp);
 
 	switch (tp) {
 	case TYPE_bte:
@@ -8403,17 +11417,16 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		BETWEEN_LOOP_TYPE(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		BETWEEN_LOOP_TYPE(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		BETWEEN_LOOP_TYPE(lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		BETWEEN_LOOP_TYPE(hge);
+		break;
+#endif
 	case TYPE_flt:
 		BETWEEN_LOOP_TYPE(flt);
 		break;
@@ -8421,8 +11434,10 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		BETWEEN_LOOP_TYPE(dbl);
 		break;
 	default:
+		assert(tp != TYPE_oid);
+		assert(tp != TYPE_wrd);
 		if (!BATatoms[tp].linear ||
-		    (atomcmp = BATatoms[tp].atomCmp) == NULL) {
+		    (atomcmp = ATOMcompare(tp)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			GDKerror("%s: bad input type %s.\n",
 				 func, ATOMname(tp));
@@ -8434,8 +11449,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     k = start * incr3,
 			     l = start;
 		     l < end;
-		     i += incr1, j += incr2, k += incr3, l++, 
-		     soff+=wd1, loff+= wd2, hoff+= wd3 ) {
+		     i += incr1, j += incr2, k += incr3, l++,
+			     soff += wd1, loff += wd2, hoff += wd3) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
 			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
@@ -8448,8 +11463,11 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 				nils++;
 				dst[l] = bit_nil;
 			} else {
-				dst[l] = (bit) ((*atomcmp)(p1, p2) >= 0 &&
-						(*atomcmp)(p1, p3) <= 0);
+				dst[l] = (bit) (((*atomcmp)(p1, p2) >= 0 &&
+						 (*atomcmp)(p1, p3) <= 0) ||
+						(sym &&
+						 (*atomcmp)(p1, p3) >= 0 &&
+						 (*atomcmp)(p1, p2) <= 0));
 			}
 		}
 		break;
@@ -8470,7 +11488,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -8493,13 +11511,15 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 		bit res;
 
 		if (b->T->seq == oid_nil ||
-		    (lo->T->seq == oid_nil && hi->T->seq == oid_nil))
+		    lo->T->seq == oid_nil ||
+		    hi->T->seq == oid_nil)
 			res = bit_nil;
 		else
-			res = (bit) ((lo->T->seq == oid_nil ||
-				      b->T->seq >= lo->T->seq) &&
-				     (hi->T->seq == oid_nil ||
-				      b->T->seq <= hi->T->seq));
+			res = (bit) ((b->T->seq >= lo->T->seq &&
+				      b->T->seq <= hi->T->seq) ||
+				     (sym &&
+				      b->T->seq >= hi->T->seq &&
+				      b->T->seq <= lo->T->seq));
 
 		return BATconst(b, TYPE_bit, &res, TRANSIENT);
 	}
@@ -8515,13 +11535,13 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s)
 				   hi->T->width,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetween");
+				   b->H->seq, sym, "BATcalcbetween");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -8532,8 +11552,8 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
 	if (checkbats(b, NULL, "BATcalcbetweencstcst") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(lo->vtype) ||
-	    ATOMstorage(b->T->type) != ATOMstorage(hi->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(lo->vtype) ||
+	    BASETYPE(b->T->type) != BASETYPE(hi->vtype)) {
 		GDKerror("BATcalcbetweencstcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -8547,13 +11567,13 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweencstcst");
+				   b->H->seq, sym, "BATcalcbetweencstcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -8564,7 +11584,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
 	if (checkbats(b, lo, "BATcalcbetweenbatcst") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(hi->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(hi->vtype)) {
 		GDKerror("BATcalcbetweenbatcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -8580,13 +11600,13 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweenbatcst");
+				   b->H->seq, sym, "BATcalcbetweenbatcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -8597,7 +11617,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
 	if (checkbats(b, hi, "BATcalcbetweencstbat") == GDK_FAIL)
 		return NULL;
 
-	if (ATOMstorage(b->T->type) != ATOMstorage(lo->vtype)) {
+	if (BASETYPE(b->T->type) != BASETYPE(lo->vtype)) {
 		GDKerror("BATcalcbetweencstbat: incompatible input types.\n");
 		return NULL;
 	}
@@ -8613,25 +11633,34 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s)
 				   hi->T->width,
 				   b->T->type, cnt,
 				   start, end, cand, candend,
-				   b->H->seq, "BATcalcbetweencstbat");
+				   b->H->seq, sym, "BATcalcbetweencstbat");
 
 	return bn;
 }
 
 int
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
-	       const ValRecord *hi)
+	       const ValRecord *hi, int sym)
 {
 	BUN nils = 0;		/* to make reusing BETWEEN macro easier */
+	int t;
+	int (*atomcmp)(const void *, const void *);
+	const void *nil;
 
-	if (ATOMstorage(v->vtype) != ATOMstorage(lo->vtype) ||
-	    ATOMstorage(v->vtype) != ATOMstorage(hi->vtype)) {
+	t = v->vtype;
+	if (t != lo->vtype || t != hi->vtype) {
 		GDKerror("VARcalcbetween: incompatible input types.\n");
 		return GDK_FAIL;
 	}
+	if (!BATatoms[t].linear) {
+		GDKerror("VARcalcbetween: non-linear input type.\n");
+		return GDK_FAIL;
+	}
+
+	t = BASETYPE(t);
 
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
+	switch (t) {
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);
 		break;
@@ -8644,6 +11673,11 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	case TYPE_lng:
 		ret->val.btval = BETWEEN(v->val.lval, lo->val.lval, hi->val.lval, lng);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ret->val.btval = BETWEEN(v->val.hval, lo->val.hval, hi->val.hval, hge);
+		break;
+#endif
 	case TYPE_flt:
 		ret->val.btval = BETWEEN(v->val.fval, lo->val.fval, hi->val.fval, flt);
 		break;
@@ -8651,9 +11685,20 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		ret->val.btval = BETWEEN(v->val.dval, lo->val.dval, hi->val.dval, dbl);
 		break;
 	default:
-		GDKerror("VARcalcbetween: bad input type %s.\n",
-			 ATOMname(v->vtype));
-		return GDK_FAIL;
+		nil = ATOMnilptr(t);
+		atomcmp = ATOMcompare(t);
+		if (atomcmp(VALptr(v), nil) == 0 ||
+		    atomcmp(VALptr(lo), nil) == 0 ||
+		    atomcmp(VALptr(hi), nil) == 0)
+			ret->val.btval = bit_nil;
+		else
+			ret->val.btval =
+				(bit) ((atomcmp(VALptr(v), VALptr(lo)) >= 0 &&
+					atomcmp(VALptr(v), VALptr(hi)) <= 0) ||
+				       (sym &&
+					atomcmp(VALptr(v), VALptr(hi)) >= 0 &&
+					atomcmp(VALptr(v), VALptr(lo)) <= 0));
+		break;
 	}
 	(void) nils;
 	return GDK_SUCCEED;
@@ -8758,6 +11803,11 @@ BATcalcifthenelse_intern(BAT *b,
 		case 8:
 			IFTHENELSELOOP(lng);
 			break;
+#ifdef HAVE_HGE
+		case 16:
+			IFTHENELSELOOP(hge);
+			break;
+#endif
 		default:
 			for (i = 0; i < cnt; i++) {
 				if (src[i] == bit_nil) {
@@ -8942,7 +11992,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 #define CONV_OVERFLOW(TYPE1, TYPE2, value)				\
 	do {								\
 		GDKerror("22003!overflow in conversion of "		\
-			 FMT##TYPE1 " to %s.\n", (value), TYPE2);	\
+			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), TYPE2);	\
 		return BUN_NONE;					\
 	} while (0)
 
@@ -9089,6 +12139,9 @@ convertimpl_enlarge(bte, sht)
 convertimpl_enlarge(bte, int)
 convertimpl_oid_enlarge(bte)
 convertimpl_enlarge(bte, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(bte, hge)
+#endif
 convertimpl_enlarge(bte, flt)
 convertimpl_enlarge(bte, dbl)
 
@@ -9097,6 +12150,9 @@ convertimpl_copy(sht)
 convertimpl_enlarge(sht, int)
 convertimpl_oid_enlarge(sht)
 convertimpl_enlarge(sht, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(sht, hge)
+#endif
 convertimpl_enlarge(sht, flt)
 convertimpl_enlarge(sht, dbl)
 
@@ -9105,6 +12161,9 @@ convertimpl_reduce(int, sht)
 convertimpl_copy(int)
 convertimpl_oid_enlarge(int)
 convertimpl_enlarge(int, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(int, hge)
+#endif
 convertimpl_enlarge(int, flt)
 convertimpl_enlarge(int, dbl)
 
@@ -9117,14 +12176,31 @@ convertimpl_oid_enlarge(lng)
 convertimpl_oid_reduce(lng)
 #endif
 convertimpl_copy(lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(lng, hge)
+#endif
 convertimpl_enlarge(lng, flt)
 convertimpl_enlarge(lng, dbl)
+
+#ifdef HAVE_HGE
+convertimpl_reduce(hge, bte)
+convertimpl_reduce(hge, sht)
+convertimpl_reduce(hge, int)
+convertimpl_oid_reduce(hge)
+convertimpl_reduce(hge, lng)
+convertimpl_copy(hge)
+convertimpl_enlarge(hge, flt)
+convertimpl_enlarge(hge, dbl)
+#endif
 
 convertimpl_reduce_float(flt, bte)
 convertimpl_reduce_float(flt, sht)
 convertimpl_reduce_float(flt, int)
 convertimpl_oid_reduce(flt)
 convertimpl_reduce_float(flt, lng)
+#ifdef HAVE_HGE
+convertimpl_reduce_float(flt, hge)
+#endif
 convertimpl_copy(flt)
 convertimpl_enlarge(flt, dbl)
 
@@ -9133,6 +12209,9 @@ convertimpl_reduce_float(dbl, sht)
 convertimpl_reduce_float(dbl, int)
 convertimpl_oid_reduce(dbl)
 convertimpl_reduce_float(dbl, lng)
+#ifdef HAVE_HGE
+convertimpl_reduce_float(dbl, hge)
+#endif
 convertimpl_reduce_float(dbl, flt)
 convertimpl_copy(dbl)
 
@@ -9140,6 +12219,9 @@ convert2bit_impl(bte)
 convert2bit_impl(sht)
 convert2bit_impl(int)
 convert2bit_impl(lng)
+#ifdef HAVE_HGE
+convert2bit_impl(hge)
+#endif
 convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
@@ -9277,7 +12359,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			end = nils;
 		/* start using nils normally */
 		nils = 0;
-		switch (ATOMstorage(tp)) {
+		switch (BASETYPE(tp)) {
 		case TYPE_bte:
 			CANDLOOP((bte *) dst, i, bte_nil, 0, start);
 			if (tp == TYPE_bit) {
@@ -9321,6 +12403,15 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 				((lng *) dst)[i] = (lng) seq;
 			}
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			CANDLOOP((hge *) dst, i, hge_nil, 0, start);
+			for (i = start; i < end; i++, seq++) {
+				CHECKCAND((hge *) dst, i, candoff, hge_nil);
+				((hge *) dst)[i] = (hge) seq;
+			}
+			break;
+#endif
 		case TYPE_flt:
 			CANDLOOP((flt *) dst, i, flt_nil, 0, start);
 			for (i = start; i < end; i++, seq++) {
@@ -9360,7 +12451,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			break;
 		}
 	}
-	switch (ATOMstorage(tp)) {
+	switch (BASETYPE(tp)) {
 	case TYPE_bte:
 		for (; i < cnt; i++)
 			((bte *) dst)[i] = bte_nil;
@@ -9377,6 +12468,12 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		for (; i < cnt; i++)
 			((lng *) dst)[i] = lng_nil;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		for (; i < cnt; i++)
+			((hge *) dst)[i] = hge_nil;
+		break;
+#endif
 	case TYPE_flt:
 		for (; i < cnt; i++)
 			((flt *) dst)[i] = flt_nil;
@@ -9411,9 +12508,9 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 		       BUN cnt, BUN start, BUN end, const oid *cand,
 		       const oid *candend, oid candoff, int abort_on_error)
 {
-	switch (ATOMstorage(stp)) {
+	switch (BASETYPE(stp)) {
 	case TYPE_bte:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, cnt,
@@ -9448,6 +12545,12 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return convert_bte_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_bte_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+#endif
 		case TYPE_flt:
 			return convert_bte_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9460,7 +12563,7 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_sht:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, cnt,
@@ -9496,6 +12599,12 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return convert_sht_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_sht_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+#endif
 		case TYPE_flt:
 			return convert_sht_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9508,7 +12617,7 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_int:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, cnt,
@@ -9546,6 +12655,12 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return convert_int_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_int_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+#endif
 		case TYPE_flt:
 			return convert_int_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9558,7 +12673,7 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_lng:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, cnt,
@@ -9597,6 +12712,12 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return convert_lng_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_lng_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+#endif
 		case TYPE_flt:
 			return convert_lng_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9608,8 +12729,57 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 		default:
 			return BUN_NONE + 1;
 		}
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (BASETYPE(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_hge_bit(src, dst, cnt,
+						       start, end, cand,
+						       candend, candoff);
+			}
+			return convert_hge_bte(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+		case TYPE_sht:
+			return convert_hge_sht(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+		case TYPE_int:
+			return convert_hge_int(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+		case TYPE_lng:
+			return convert_hge_lng(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+		case TYPE_hge:
+			return convert_hge_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+		case TYPE_oid:
+			return convert_hge_oid(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+		case TYPE_flt:
+			return convert_hge_flt(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+		case TYPE_dbl:
+			return convert_hge_dbl(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff);
+		default:
+			return BUN_NONE + 1;
+		}
+#endif
 	case TYPE_flt:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, cnt,
@@ -9649,6 +12819,13 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff,
 					       abort_on_error);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_flt_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+#endif
 		case TYPE_flt:
 			return convert_flt_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9661,7 +12838,7 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_dbl:
-		switch (ATOMstorage(dtp)) {
+		switch (BASETYPE(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, cnt,
@@ -9701,6 +12878,13 @@ convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
 					       start, end, cand,
 					       candend, candoff,
 					       abort_on_error);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_dbl_hge(src, dst, cnt,
+					       start, end, cand,
+					       candend, candoff,
+					       abort_on_error);
+#endif
 		case TYPE_flt:
 			return convert_dbl_flt(src, dst, cnt,
 					       start, end, cand,
@@ -9726,18 +12910,13 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	assert(ATOMstorage(TYPE_wrd) == ATOMstorage(TYPE_int) ||
-	       ATOMstorage(TYPE_wrd) == ATOMstorage(TYPE_lng));
-	assert(ATOMstorage(TYPE_oid) == ATOMstorage(TYPE_int) ||
-	       ATOMstorage(TYPE_oid) == ATOMstorage(TYPE_lng));
-
 	BATcheck(b, "BATconvert");
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && ATOMstorage(b->T->type) == ATOMstorage(tp))
+	if (s == NULL && tp != TYPE_bit && BASETYPE(b->T->type) == BASETYPE(tp))
 		return BATcopy(b, b->H->type, tp, 0, TRANSIENT);
 
 	bn = BATnew(TYPE_void, tp, b->batCount, TRANSIENT);
@@ -9800,7 +12979,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 
 	if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
-		    (*BATatoms[v->vtype].atomCmp)(VALptr(v),
+		    (*ATOMcompare(v->vtype))(VALptr(v),
 						  ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
 		} else if (v->vtype == TYPE_str) {

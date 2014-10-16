@@ -107,7 +107,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		break;
 #undef desc
 	case SQL_ATTR_CURSOR_SCROLLABLE:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_NONSCROLLABLE:
 			stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
 			break;
@@ -119,10 +119,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->cursorScrollable = (SQLUINTEGER) (size_t) ValuePtr;
+		stmt->cursorScrollable = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		break;
 	case SQL_ATTR_CURSOR_TYPE:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_CURSOR_KEYSET_DRIVEN:
 		case SQL_CURSOR_DYNAMIC:
 			/* Option value changed */
@@ -150,7 +150,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
 	case SQL_ATTR_NOSCAN:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_NOSCAN_ON:
 		case SQL_NOSCAN_OFF:
 			break;
@@ -159,7 +159,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->noScan = (SQLUINTEGER) (size_t) ValuePtr;
+		stmt->noScan = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
 		return SQLSetDescField_(stmt->ApplParamDescr, 0,
@@ -186,7 +186,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					StringLength);
 	case SQL_ATTR_RETRIEVE_DATA:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_RD_ON:
 		case SQL_RD_OFF:
 			break;
@@ -195,7 +195,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->retrieveData = (SQLUINTEGER) (size_t) ValuePtr;
+		stmt->retrieveData = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
 	case SQL_ROWSET_SIZE:
@@ -223,7 +223,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					StringLength);
 	case SQL_ATTR_METADATA_ID:
-		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_TRUE:
 		case SQL_FALSE:
 			break;
@@ -232,11 +232,11 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (size_t) ValuePtr;
+		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		break;
 
 	case SQL_ATTR_CONCURRENCY:
-		switch ((SQLULEN) (size_t) ValuePtr) {
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_CONCUR_READ_ONLY:
 			/* the only value we support */
 			break;

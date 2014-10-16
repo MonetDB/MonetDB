@@ -1,9 +1,0 @@
-# reference setting tables
-	b := bat.new(:oid,nil:int);
-	aa_a := bat.append(b,1);
-	ba_a := bat.append(b,2);
-	z := bbp.getLRefCount(b);
-	io.print(z);
-	br := bat.reverse(b);
-	c := algebra.join(b,br);
-	io.print(c);

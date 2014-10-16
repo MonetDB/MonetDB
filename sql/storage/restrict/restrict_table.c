@@ -51,9 +51,9 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	return full_column_( c, d, s);
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, void *value, ...);
+static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
 static oid
-column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
+column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
 	BUN q;
@@ -174,7 +174,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	BAT *b = NULL, *s = NULL, *d = NULL;
 	sql_column *nc;
 	void *nvl, *nvh;
-	rids *rs = NEW(rids);
+	rids *rs = MNEW(rids);
 	sql_bat *bat = key->t->data;
 
 	/* special case, key_value_low and high NULL, ie return all */

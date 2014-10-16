@@ -65,13 +65,15 @@ void tstAligned(void)
 	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.btval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
+#ifdef HAVE_HGE
+	val= (ptr) & v.val.hval; if(val != base){ allAligned = -1; }
+#endif
 	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
 	if(allAligned<0)
 	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");

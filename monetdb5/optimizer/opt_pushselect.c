@@ -46,15 +46,12 @@ PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	return p;
 }
 
-
 static InstrPtr
-RemoveArgument(InstrPtr p, int pos)
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 {
-	int i;
-
+	p = pushNil(mb, p, tpe); /* push at end */
+	getArg(p, pos) = getArg(p, p->argc-1);
 	p->argc--;
-	for (i = pos; i < p->argc; i++) 
-		getArg(p, i) = getArg(p, i+1);
 	return p;
 }
 
@@ -280,7 +277,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 
-		/* rewrite batstr.like + subselect -> likesubselect */
+		/* rewrite batalgebra.like + subselect -> likesubselect */
 		if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == subselectRef) { 
 			int var = getArg(p, 1);
 			InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
@@ -317,7 +314,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int tid = 0;
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
-				p = PushArgument(mb, p, tid, 2);
+				if (getArgType(mb, p, 2) == TYPE_bat) /* empty candidate list bat_nil */
+					getArg(p,2) = tid;
+				else
+					p = PushArgument(mb, p, tid, 2);
 				/* make sure to resolve again */
 				p->token = ASSIGNsymbol; 
 				p->typechk = TYPE_UNKNOWN;
@@ -510,7 +510,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pushInstruction(mb,r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				getArg(s, 1) = getArg(q, 3); /* updates */
-				RemoveArgument(s, 2); 	/* no candidate list on updates */
+				s = ReplaceWithNil(mb, s, 2, TYPE_bat); /* no candidate list */
+				setArgType(mb, s, 2, newBatType(TYPE_oid,TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol; 
 				s->typechk = TYPE_UNKNOWN;

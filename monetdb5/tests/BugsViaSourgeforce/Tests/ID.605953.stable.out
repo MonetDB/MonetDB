@@ -39,7 +39,7 @@ function user.main():void;
     na_a := bat.insert(t,ma_a,"g");
     oa_a := calc.oid(7);
     pa_a := bat.insert(t,oa_a,"h");
-    qa_a := algebra.markT(t,nil:oid);
+    qa_a := algebra.mark(t,nil:oid);
     ra_a := io.print(t);
     t2 := bat.new(nil:oid,nil:str);
     va_a := bat.append(t2,"a");

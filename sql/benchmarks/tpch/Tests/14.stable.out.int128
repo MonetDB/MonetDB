@@ -1,0 +1,48 @@
+stdout of test '14` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 12:34:51 >  
+# 12:34:51 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:34:51 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+
+Ready.
+
+# 14:36:23 >  
+# 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:23 >  
+
+#select
+#	100.00 * sum(case
+#		when p_type like 'PROMO%'
+#			then l_extendedprice * (1 - l_discount)
+#		else 0
+#	end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+#from
+#	lineitem,
+#	part
+#where
+#	l_partkey = p_partkey
+#	and l_shipdate >= date '1995-09-01'
+#	and l_shipdate < date '1995-09-01' + interval '1' month;
+% .L2 # table_name
+% promo_revenue # name
+% decimal # type
+% 41 # length
+[ 15.48	]
+#select * from optimizer_stats() stats;
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:17:18 >  
+# 09:17:18 >  Done.
+# 09:17:18 >  
+

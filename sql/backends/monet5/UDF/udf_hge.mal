@@ -1,0 +1,31 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+# scalar MAL signatures
+module udf;
+
+command fuse(one:lng,two:lng):hge
+address UDFfuse_lng_hge
+comment "fuse two (8-byte) lng values into one (16-byte) hge value";
+
+
+# BAT MAL signatures
+module batudf;
+
+command fuse(one:bat[:oid,:lng],two:bat[:oid,:lng]):bat[:oid,:hge]
+address UDFBATfuse
+comment "fuse two (8-byte) lng values into one (16-byte) hge value";

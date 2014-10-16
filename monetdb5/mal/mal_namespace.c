@@ -92,7 +92,7 @@ void finishNamespace(void) {
  * Beware, the routine getName relies on datastructure maintenance that
  * is conflict free.
  */
-str getName(str nme, size_t len)
+str getName(const char *nme, size_t len)
 {
 	NamePtr n;
 	size_t l = len, key;
@@ -121,14 +121,14 @@ str getName(str nme, size_t len)
  * private to each Client, but this would mean expensive look ups
  * deep into the kernel to access the context.
  */
-void delName(str nme, size_t len){
+void delName(const char *nme, size_t len){
 	str n;
 	n= getName(nme,len);
 	if( nme[0]==0 || n == 0) return ;
 	/*Namespace garbage collection not available yet */
 }
 
-str putName(str nme, size_t len)
+str putName(const char *nme, size_t len)
 {
 	size_t l,k;
 	int key;

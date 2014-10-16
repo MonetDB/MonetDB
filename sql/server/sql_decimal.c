@@ -21,22 +21,40 @@
 
 #include "sql_decimal.h"
 
+#ifdef HAVE_HGE
+hge
+#else
 lng
-decimal_from_str(char *dec)
+#endif
+decimal_from_str(char *dec, char **end)
 {
+#ifdef HAVE_HGE
+	hge res = 0;
+#else
 	lng res = 0;
+#endif
 	int neg = 0;
 
+	while(isspace(*dec))
+		dec++;
 	if (*dec == '-') {
 		neg = 1;
 		dec++;
 	}
-	for (; *dec; dec++) {
+	if (*dec == '+') {
+		neg = 0;
+		dec++;
+	}
+	for (; *dec && ((*dec >= '0' && *dec <= '9') || *dec == '.'); dec++) {
 		if (*dec != '.') {
 			res *= 10;
 			res += *dec - '0';
 		}
 	}
+	while(isspace(*dec))
+		dec++;
+	if (end)
+		*end = dec;
 	if (neg)
 		return -res;
 	else
@@ -44,10 +62,14 @@ decimal_from_str(char *dec)
 }
 
 char *
+#ifdef HAVE_HGE
+decimal_to_str(hge v, sql_subtype *t) 
+#else
 decimal_to_str(lng v, sql_subtype *t) 
+#endif
 {
-	char buf[32];
-	int scale = t->scale, cur = 31, neg = (v<0)?1:0, i, done = 0;
+	char buf[64];
+	int scale = t->scale, cur = 63, neg = (v<0), i, done = 0;
 
 	if (v<0) v = -v;
 

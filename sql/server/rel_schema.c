@@ -335,7 +335,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	case SQL_NOT_NULL:
 	case SQL_NULL: {
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
@@ -403,7 +403,7 @@ column_option(
 	} 	break;
 	case SQL_NOT_NULL:
 	case SQL_NULL: {
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
@@ -693,7 +693,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dnode *n = s->data.lval->h;
 		char *cname = n->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+		int null = (s->token != SQL_NOT_NULL);
 
 		if (!c) {
 			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
@@ -1007,6 +1007,9 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_error(sql, 02, "42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		return NULL;
 	}
+	if (!name) 
+		name = auth;
+	assert(name);
 	if (mvc_bind_schema(sql, name)) {
 		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
 		return NULL;
@@ -1016,9 +1019,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret;
 
-		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, 
-			   dlist_get_schema_name(auth_name),
-			   schema_auth(auth_name), 0);
+		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;
@@ -1069,7 +1070,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s'", tname);
+		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
+			return sql_error(sql, 02, "42S02!ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;

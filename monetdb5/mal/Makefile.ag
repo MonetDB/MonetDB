@@ -21,7 +21,8 @@ INCLUDES = ../../common/options \
 		   ../../clients/mapilib \
 		   ../../gdk \
 		   #../../sql/backends/monet5/rest \
-		   $(READLINE_INCS)
+		   $(READLINE_INCS) \
+		   $(libmicrohttpd_CFLAGS)
 MTSAFE
 
 lib_mal = {

@@ -138,7 +138,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 					cnt = store_funcs.count_idx(tr, i, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
-					b = store_funcs.bind_idx(m->session->tr, i, 0);
+					b = store_funcs.bind_idx(m->session->tr, i, RDONLY);
 					if (b) {
 						str loc;
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)
@@ -158,7 +158,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 					cnt = store_funcs.count_col(tr, c, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
-					b = store_funcs.bind_col(m->session->tr, c, 0);
+					b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 					if (b) {
 						str loc;
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)

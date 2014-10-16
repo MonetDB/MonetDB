@@ -15,5 +15,7 @@
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
-create filter function "like"(val string, pat string, esc string) external name algebra.likesubselect;
-create filter function "ilike"(val string, pat string, esc string) external name algebra.ilikesubselect;
+create filter function "like"(val string, pat string, esc string) external name algebra."like";
+create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
+create filter function "like"(val string, pat string) external name algebra."like";
+create filter function "ilike"(val string, pat string) external name algebra."ilike";

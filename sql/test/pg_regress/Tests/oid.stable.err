@@ -25,42 +25,38 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 11:47:28 >  
+# 11:47:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25307" "--port=34790"
+# 11:47:28 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
-QUERY = INSERT INTO OID_TBL(f1) VALUES ('-1040');
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('-1040');   -- negative oids are not allowed in MonetDB, so this should fail
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
-QUERY = INSERT INTO OID_TBL(f1) VALUES ('   10  ');
-
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
-QUERY = INSERT INTO OID_TBL(f1) VALUES ('	  15 	  ');
-
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('99asdfasd');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    d');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('    5d');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    5');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES (' - 500');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('32958209582039852935');
 
-MAPI  = (monetdb) /var/tmp/mtest-28099/.s.monetdb.35512
+MAPI  = (monetdb) /var/tmp/mtest-25307/.s.monetdb.34790
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
+
+
 
 
 # 17:11:19 >  

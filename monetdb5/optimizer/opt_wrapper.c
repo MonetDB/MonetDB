@@ -51,6 +51,7 @@
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
+#include "opt_generator.h"
 #include "opt_groups.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
@@ -92,6 +93,7 @@ struct{
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
+	{"generator", &OPTgeneratorImplementation},
 	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
@@ -144,8 +146,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 
 		if( stk != 0){
-			modnme= *(str*)getArgReference(stk,p,1);
-			fcnnme= *(str*)getArgReference(stk,p,2);
+			modnme= *getArgReference_str(stk,p,1);
+			fcnnme= *getArgReference_str(stk,p,2);
 		} else {
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);

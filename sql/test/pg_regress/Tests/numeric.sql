@@ -2,17 +2,17 @@
 -- NUMERIC
 --
 
-CREATE TABLE num_data (id integer, val numeric(18,10));
-CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(18,10));
-CREATE TABLE num_exp_sqrt (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_ln (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_log10 (id integer, expected numeric(18,10));
-CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(18,10));
+CREATE TABLE num_data (id integer, val numeric(38,20));
+CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,20));
+CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,20));
+CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,20));
+CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,20));
+CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,20));
+CREATE TABLE num_exp_ln (id integer, expected numeric(38,20));
+CREATE TABLE num_exp_log10 (id integer, expected numeric(38,20));
+CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,20));
 
-CREATE TABLE num_result (id1 integer, id2 integer, result numeric(18,10));
+CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,20));
 
 
 -- ******************************
@@ -483,6 +483,16 @@ INSERT INTO num_data VALUES (8, '74881');
 INSERT INTO num_data VALUES (9, '-24926804.045047420');
 --COMMIT;
 
+-- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');"
+call vacuum('sys', 'num_exp_add');
+call vacuum('sys', 'num_exp_sub');
+call vacuum('sys', 'num_exp_div');
+call vacuum('sys', 'num_exp_mul');
+call vacuum('sys', 'num_exp_sqrt');
+call vacuum('sys', 'num_exp_ln');
+call vacuum('sys', 'num_exp_log10');
+call vacuum('sys', 'num_exp_power_10_ln');
+
 -- ******************************
 -- * Create indices for faster checks
 -- ******************************
@@ -495,15 +505,6 @@ CREATE UNIQUE INDEX num_exp_sqrt_idx ON num_exp_sqrt (id);
 CREATE UNIQUE INDEX num_exp_ln_idx ON num_exp_ln (id);
 CREATE UNIQUE INDEX num_exp_log10_idx ON num_exp_log10 (id);
 CREATE UNIQUE INDEX num_exp_power_10_ln_idx ON num_exp_power_10_ln (id);
-
---VACUUM ANALYZE num_exp_add;
---VACUUM ANALYZE num_exp_sub;
---VACUUM ANALYZE num_exp_div;
---VACUUM ANALYZE num_exp_mul;
---VACUUM ANALYZE num_exp_sqrt;
---VACUUM ANALYZE num_exp_ln;
---VACUUM ANALYZE num_exp_log10;
---VACUUM ANALYZE num_exp_power_10_ln;
 
 -- ******************************
 -- * Now check the behaviour of the NUMERIC type
@@ -521,12 +522,12 @@ SELECT t1.id1, t1.id2, t1.result, t2.expected
     AND t1.result <> t2.expected;
 
 DELETE FROM num_result;
-INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 10)
+INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 20)
     FROM num_data t1, num_data t2;
-SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 10) as expected
+SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 20) as expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-    AND t1.result <> round(t2.expected, 10);
+    AND t1.result <> round(t2.expected, 20);
 
 -- ******************************
 -- * Subtraction check

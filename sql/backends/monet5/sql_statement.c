@@ -122,7 +122,6 @@ st_type2string(st_type type)
 
 		ST(group);
 
-		ST(unique);
 		ST(convert);
 		ST(Nop);
 		ST(func);
@@ -325,7 +324,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_join:
 			case st_join2:
 			case st_joinN:
-			case st_unique:
 			case st_append:
 			case st_rs_column:
 
@@ -826,21 +824,6 @@ stmt_reorder(sql_allocator *sa, stmt *s, int direction, stmt *orderby_ids, stmt 
 }
 
 stmt *
-stmt_unique(sql_allocator *sa, stmt *s, stmt *g, stmt *e, stmt *c)
-{
-	stmt *ns = stmt_create(sa, st_unique);
-
-	ns->op1 = s;
-	ns->op2 = g;
-	ns->op3 = e;
-	ns->op4.stval = c;
-	ns->nrcols = s->nrcols;
-	ns->key = 1;
-	ns->aggr = s->aggr;
-	return ns;
-}
-
-stmt *
 stmt_atom(sql_allocator *sa, atom *op1)
 {
 	stmt *s = stmt_create(sa, st_atom);
@@ -851,16 +834,16 @@ stmt_atom(sql_allocator *sa, atom *op1)
 }
 
 stmt *
-stmt_genselect(sql_allocator *sa, stmt *l, stmt *rops, sql_subfunc *f, stmt *sub)
+stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub)
 {
 	stmt *s = stmt_create(sa, st_uselect);
 
-	s->op1 = l;
+	s->op1 = lops;
 	s->op2 = rops;
 	s->op3 = sub;
 	s->op4.funcval = dup_subfunc(sa, f);
 	s->flag = cmp_filter;
-	s->nrcols = (l->nrcols == 2) ? 2 : 1;
+	s->nrcols = (lops->nrcols == 2) ? 2 : 1;
 	return s;
 }
 
@@ -980,15 +963,14 @@ stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp, int swapped)
 }
 
 stmt *
-stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op, int swapped)
+stmt_genjoin(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op, int swapped)
 {
 	stmt *s = stmt_create(sa, st_joinN);
 
 	s->op1 = l;
 	s->op2 = r;
-	s->op3 = opt;
 	s->op4.funcval = op;
-	s->nrcols = (opt) ? 3 : 2;
+	s->nrcols = 2;
 	if (swapped)
 		s->flag |= SWAPPED;
 	return s;
@@ -1299,7 +1281,6 @@ tail_type(stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_append:
 	case st_alias:
 	case st_gen_group:
@@ -1465,7 +1446,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_convert:
 		return column_name(sa, st->op1);
 	case st_Nop:
@@ -1543,7 +1523,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_diff:
 	case st_union:
 	case st_aggr:
-	case st_unique:
 		return table_name(sa, st->op1);
 
 	case st_table_clear:
@@ -1603,7 +1582,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_tinter:
 	case st_diff:
 	case st_union:
-	case st_unique:
 	case st_convert:
 	case st_Nop:
 	case st_aggr:
@@ -1719,6 +1697,9 @@ const_column(sql_allocator *sa, stmt *val)
 	s->op1 = val;
 	s->op4.typeval = *ct;
 	s->nrcols = 1;
+
+	s->tname = val->tname;
+	s->cname = val->cname;
 	return s;
 }
 
@@ -1754,7 +1735,7 @@ stack_push_children(sql_stack *stk, stmt *s)
 		stack_push_list(stk, s->op4.lval);
 		break;
 	default:
-		if ((s->type == st_uselect2 || s->type == st_unique || s->type == st_group) && s->op4.stval)
+		if ((s->type == st_uselect2 || s->type == st_group) && s->op4.stval)
 			stack_push_stmt(stk, s->op4.stval, 1);
 		if (s->op2) {
 			if (s->op3)

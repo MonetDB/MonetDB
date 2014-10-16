@@ -10,7 +10,7 @@ stderr of test 'groupby_orderby_nonselected.SF-1723863` in directory 'sql/test/B
 # 23:24:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35962 
 # 23:24:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = select count(*)
         from (
         select col2, count(*) as row_count
@@ -22,8 +22,7 @@ ERROR = !syntax error, unexpected ORDER, expecting INTERSECT or EXCEPT or UNION 
         !from (
         !select col2, count(*) as row_count
         !from data_1to10
-        !group by col2
-        !order"
+        !group "
 
 # 23:24:26 >  
 # 23:24:26 >  Done.

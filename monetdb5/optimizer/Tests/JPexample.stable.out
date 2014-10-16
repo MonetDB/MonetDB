@@ -18,11 +18,11 @@ function user.main():void;
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:str);
-    j1 := algebra.join(a,b);
-    j2:bat[:oid,:str]  := algebra.joinPath(a,b,c);
-    j3 := algebra.join(b,b);
-    X_13 := algebra.join(b,b);
-    j4:bat[:oid,:oid]  := algebra.join(X_13,b);
+    j1 := algebra.leftfetchjoin(a,b);
+    j2:bat[:oid,:str]  := algebra.leftfetchjoinPath(a,b,c);
+    j3 := algebra.leftfetchjoin(b,b);
+    X_13 := algebra.leftfetchjoin(b,b);
+    j4:bat[:oid,:oid]  := algebra.leftfetchjoin(X_13,b);
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
@@ -30,11 +30,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:oid);            #  2 a:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
     b := bat.new(:oid,:oid);            #  3 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
     c := bat.new(:oid,:str);            #  4 c:bat[:oid,:str] := CMDBATnew(_3:oid, _6:str) {G}
-    j1 := algebra.join(a,b);            #  5 j1:bat[:oid,:oid] := ALGjoin(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    j2:bat[:oid,:str]  := algebra.joinPath(a,b,c);#  6 j2:bat[:oid,:str] := ALGjoinPath(a:bat[:oid,:oid], b:bat[:oid,:oid], c:bat[:oid,:str]) {G}
-    j3 := algebra.join(b,b);            #  7 j3:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    X_13 := algebra.join(b,b);          #  8 _13:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    j4:bat[:oid,:oid]  := algebra.join(X_13,b);#  9 j4:bat[:oid,:oid] := ALGjoin(_13:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    j1 := algebra.leftfetchjoin(a,b);   #  5 j1:bat[:oid,:oid] := ALGleftfetchjoin(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    j2:bat[:oid,:str]  := algebra.leftfetchjoinPath(a,b,c);#  6 j2:bat[:oid,:str] := ALGjoinPath(a:bat[:oid,:oid], b:bat[:oid,:oid], c:bat[:oid,:str]) {G}
+    j3 := algebra.leftfetchjoin(b,b);   #  7 j3:bat[:oid,:oid] := ALGleftfetchjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    X_13 := algebra.leftfetchjoin(b,b); #  8 _13:bat[:oid,:oid] := ALGleftfetchjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    j4:bat[:oid,:oid]  := algebra.leftfetchjoin(X_13,b);#  9 j4:bat[:oid,:oid] := ALGleftfetchjoin(_13:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     mdb.List();                         # 10 _12:void := MDBlistDetail() 
 end main;                               # 11  
 

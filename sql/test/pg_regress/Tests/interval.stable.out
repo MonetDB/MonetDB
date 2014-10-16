@@ -20,67 +20,49 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- INTERVAL
-#--
-SET DATESTYLE = 'ISO';
-#-- check acceptance of "time zone style"
-#SELECT INTERVAL '01:00' AS "One hour";
-% sys.L0 # table_name
+#SELECT cast('01:00' as interval second) AS "One hour";
+% .L # table_name
 % One hour # name
-% ? # type
-% ? # length
-[ "01:00:00" ]
-
-#SELECT INTERVAL '+02:00' AS "Two hours";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ 1.000	]
+#SELECT cast('+02:00' as interval second) AS "Two hours";
+% .L # table_name
 % Two hours # name
-% ? # type
-% ? # length
-[ "02:00:00" ]
-
-#SELECT INTERVAL '-08:00' AS "Eight hours";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ 2.000	]
+#SELECT cast('-08:00' as interval second) AS "Eight hours";
+% .L # table_name
 % Eight hours # name
-% ? # type
-% ? # length
-[ "-08:00:00" ]
-
-#SELECT INTERVAL '-05' AS "Five hours";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ -8.000	]
+#SELECT cast('-05' as interval second) AS "Five hours";
+% .L # table_name
 % Five hours # name
-% ? # type
-% ? # length
-[ "-05:00:00" ]
-
-#SELECT INTERVAL '-1 +02:03' AS "22 hours ago...";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ -5.000	]
+#SELECT cast('-1 +02:03' as interval second) AS "22 hours ago...";
+% .L # table_name
 % 22 hours ago... # name
-% ? # type
-% ? # length
-[ "-21:57:00" ]
-
-#SELECT INTERVAL '-1 days +02:03' AS "22 hours ago...";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ -1.000	]
+#SELECT cast('-1 days +02:03' as interval second) AS "22 hours ago...";
+% .L # table_name
 % 22 hours ago... # name
-% ? # type
-% ? # length
-[ "-21:57:00" ]
-
-#SELECT INTERVAL '10 years -11 month -12 days +13:14' AS "9 years...";
-% sys.L0 # table_name
+% sec_interval # type
+% 0 # length
+[ -1.000	]
+#SELECT cast('10 years -11 month -12 days +13:14' as interval second) AS "9 years...";
+% .L # table_name
 % 9 years... # name
-% ? # type
-% ? # length
-[ "9 years 1 mon -11 days -10:46:00" ]
-
-#CREATE TABLE INTERVAL_TBL (f1 interval);
+% sec_interval # type
+% 0 # length
+[ 10.000	]
+#CREATE TABLE INTERVAL_TBL (f1 interval second);
 #INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 1 minute');
 [ 1 ]
 #INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 5 hour');
@@ -101,183 +83,230 @@ SET DATESTYLE = 'ISO';
 [ 1 ]
 #INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months 12 hours');
 [ 1 ]
-#-- badly formatted interval
-#
-#
-#-- test interval operators
-#SELECT '' AS ten, INTERVAL_TBL.*;
-% sys.L0,	sys.L0 # table_name
+#INSERT INTO INTERVAL_TBL (f1) VALUES ('badly formatted interval');
+[ 1	]
+#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 30 eons ago');
+[ 1	]
+#SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL;
+% .L,	sys.interval_tbl # table_name
 % ten,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"00:01:00" ]
-[ "",	"05:00:00" ]
-[ "",	"10 days" ]
-[ "",	"34 years" ]
-[ "",	"3 mons" ]
-[ "",	"-00:00:14" ]
-[ "",	"1 day 02:03:04" ]
-[ "",	"6 years" ]
-[ "",	"5 mons" ]
-[ "",	"5 mons 12:00:00" ]
-
-#SELECT '' AS nine, INTERVAL_TBL.*
-#   WHERE INTERVAL_TBL.f1 <> interval '@ 10 days';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	1.000	]
+[ "",	6.000	]
+[ "",	5.000	]
+[ "",	5.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+#SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 <> cast('@ 10 days' as interval second);
+% .L,	sys.interval_tbl # table_name
 % nine,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"00:01:00" ]
-[ "",	"05:00:00" ]
-[ "",	"34 years" ]
-[ "",	"3 mons" ]
-[ "",	"-00:00:14" ]
-[ "",	"1 day 02:03:04" ]
-[ "",	"6 years" ]
-[ "",	"5 mons" ]
-[ "",	"5 mons 12:00:00" ]
-
-#SELECT '' AS three, INTERVAL_TBL.*
-#   WHERE INTERVAL_TBL.f1 <= interval '@ 5 hours';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	1.000	]
+[ "",	6.000	]
+[ "",	5.000	]
+[ "",	5.000	]
+#SELECT '' AS three, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 <= cast('@ 5 hours' as interval second);
+% .L,	sys.interval_tbl # table_name
 % three,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"00:01:00" ]
-[ "",	"05:00:00" ]
-[ "",	"-00:00:14" ]
-
-#SELECT '' AS three, INTERVAL_TBL.*
-#   WHERE INTERVAL_TBL.f1 < interval '@ 1 day';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+#SELECT '' AS three, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 < cast('@ 1 day' as interval second);
+% .L,	sys.interval_tbl # table_name
 % three,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"00:01:00" ]
-[ "",	"05:00:00" ]
-[ "",	"-00:00:14" ]
-
-#SELECT '' AS one, INTERVAL_TBL.*
-#   WHERE INTERVAL_TBL.f1 = interval '@ 34 years';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+#SELECT '' AS one, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 = cast('@ 34 years' as interval second);
+% .L,	sys.interval_tbl # table_name
 % one,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"34 years" ]
-
-#SELECT '' AS five, INTERVAL_TBL.* 
-#   WHERE INTERVAL_TBL.f1 >= interval '@ 1 month';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+#SELECT '' AS five, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 >= cast('@ 1 month' as interval second);
+% .L,	sys.interval_tbl # table_name
 % five,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"34 years" ]
-[ "",	"3 mons" ]
-[ "",	"6 years" ]
-[ "",	"5 mons" ]
-[ "",	"5 mons 12:00:00" ]
-
-#SELECT '' AS nine, INTERVAL_TBL.*
-#   WHERE INTERVAL_TBL.f1 > interval '@ 3 seconds ago';
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	1.000	]
+[ "",	6.000	]
+[ "",	5.000	]
+[ "",	5.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+#SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
+#   WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second);
+% .L,	sys.interval_tbl # table_name
 % nine,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"00:01:00" ]
-[ "",	"05:00:00" ]
-[ "",	"10 days" ]
-[ "",	"34 years" ]
-[ "",	"3 mons" ]
-[ "",	"1 day 02:03:04" ]
-[ "",	"6 years" ]
-[ "",	"5 mons" ]
-[ "",	"5 mons 12:00:00" ]
-
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	1.000	]
+[ "",	6.000	]
+[ "",	5.000	]
+[ "",	5.000	]
 #SELECT '' AS fortyfive, r1.*, r2.*
 #   FROM INTERVAL_TBL r1, INTERVAL_TBL r2
 #   WHERE r1.f1 > r2.f1
 #   ORDER BY r1.f1, r2.f1;
-% sys.L0,	sys.L0,	sys.L0 # table_name
+% .L,	sys.r1,	sys.r2 # table_name
 % fortyfive,	f1,	f1 # name
-% ?,	?,	? # type
-% ?,	?,	? # length
-[ "",	"00:01:00",	"-00:00:14" ]
-[ "",	"05:00:00",	"-00:00:14" ]
-[ "",	"05:00:00",	"00:01:00" ]
-[ "",	"1 day 02:03:04",	"-00:00:14" ]
-[ "",	"1 day 02:03:04",	"00:01:00" ]
-[ "",	"1 day 02:03:04",	"05:00:00" ]
-[ "",	"10 days",	"-00:00:14" ]
-[ "",	"10 days",	"00:01:00" ]
-[ "",	"10 days",	"05:00:00" ]
-[ "",	"10 days",	"1 day 02:03:04" ]
-[ "",	"3 mons",	"-00:00:14" ]
-[ "",	"3 mons",	"00:01:00" ]
-[ "",	"3 mons",	"05:00:00" ]
-[ "",	"3 mons",	"1 day 02:03:04" ]
-[ "",	"3 mons",	"10 days" ]
-[ "",	"5 mons",	"-00:00:14" ]
-[ "",	"5 mons",	"00:01:00" ]
-[ "",	"5 mons",	"05:00:00" ]
-[ "",	"5 mons",	"1 day 02:03:04" ]
-[ "",	"5 mons",	"10 days" ]
-[ "",	"5 mons",	"3 mons" ]
-[ "",	"5 mons 12:00:00",	"-00:00:14" ]
-[ "",	"5 mons 12:00:00",	"00:01:00" ]
-[ "",	"5 mons 12:00:00",	"05:00:00" ]
-[ "",	"5 mons 12:00:00",	"1 day 02:03:04" ]
-[ "",	"5 mons 12:00:00",	"10 days" ]
-[ "",	"5 mons 12:00:00",	"3 mons" ]
-[ "",	"5 mons 12:00:00",	"5 mons" ]
-[ "",	"6 years",	"-00:00:14" ]
-[ "",	"6 years",	"00:01:00" ]
-[ "",	"6 years",	"05:00:00" ]
-[ "",	"6 years",	"1 day 02:03:04" ]
-[ "",	"6 years",	"10 days" ]
-[ "",	"6 years",	"3 mons" ]
-[ "",	"6 years",	"5 mons" ]
-[ "",	"6 years",	"5 mons 12:00:00" ]
-[ "",	"34 years",	"-00:00:14" ]
-[ "",	"34 years",	"00:01:00" ]
-[ "",	"34 years",	"05:00:00" ]
-[ "",	"34 years",	"1 day 02:03:04" ]
-[ "",	"34 years",	"10 days" ]
-[ "",	"34 years",	"3 mons" ]
-[ "",	"34 years",	"5 mons" ]
-[ "",	"34 years",	"5 mons 12:00:00" ]
-[ "",	"34 years",	"6 years" ]
-
-SET DATESTYLE = 'postgres';
-#SELECT '' AS ten, INTERVAL_TBL.*;
-% sys.L0,	sys.L0 # table_name
+% char,	sec_interval,	sec_interval # type
+% 0,	0,	0 # length
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	1.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	0.000	]
+[ "",	5.000,	1.000	]
+[ "",	5.000,	1.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	0.000	]
+[ "",	6.000,	1.000	]
+[ "",	6.000,	5.000	]
+[ "",	6.000,	5.000	]
+#SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc;
+% .L,	sys.interval_tbl # table_name
 % ten,	f1 # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"@ 1 min" ]
-[ "",	"@ 5 hours" ]
-[ "",	"@ 10 days" ]
-[ "",	"@ 34 years" ]
-[ "",	"@ 3 mons" ]
-[ "",	"@ 14 secs ago" ]
-[ "",	"@ 1 day 2 hours 3 mins 4 secs" ]
-[ "",	"@ 6 years" ]
-[ "",	"@ 5 mons" ]
-[ "",	"@ 5 mons 12 hours" ]
-
-#-- test avg(interval), which is somewhat fragile since people have been
-#-- known to change the allowed input syntax for type interval without
-#-- updating pg_aggregate.agginitval
+% char,	sec_interval # type
+% 0,	0 # length
+[ "",	6.000	]
+[ "",	5.000	]
+[ "",	5.000	]
+[ "",	1.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
+[ "",	0.000	]
 #select avg(f1) from interval_tbl;
-% sys.L0 # table_name
-% avg # name
-% ? # type
-% ? # length
-[ "@ 4 years 1 mon 10 days 4 hours 18 mins 23 secs" ]
+% sys.L1 # table_name
+% L1 # name
+% sec_interval # type
+% 0 # length
+[ 1416.66667	]
+#select avg(cast(f1 as double)) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 1416.66667	]
+#select avg(cast(f1 as decimal)) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% decimal # type
+% 24 # length
+[ 1416.66667	]
+#select avg(cast(f1 as decimal(9,3))) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% decimal # type
+% 24 # length
+[ 1416.66667	]
+#select avg(cast(f1 as integer)) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 1416	]
+#select min(f1) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% sec_interval # type
+% 0 # length
+[ 0.000	]
+#select max(f1) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% sec_interval # type
+% 0 # length
+[ 6.000	]
+#select sum(f1) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% sec_interval # type
+% 0 # length
+[ 17000	]
+#select sum(cast(f1 as integer)) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% bigint # type
+% 5 # length
+[ 17000	]
+#select count(f1) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 12	]
+#select count(distinct f1) from interval_tbl;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 4	]
+#DROP TABLE INTERVAL_TBL;
 
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 13:45:18 >  
+# 13:45:18 >  "Done."
+# 13:45:18 >  
 

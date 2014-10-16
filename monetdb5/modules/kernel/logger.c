@@ -75,11 +75,7 @@
 #include "mal_exception.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define logger_export extern __declspec(dllimport)
-#else
 #define logger_export extern __declspec(dllexport)
-#endif
 #else
 #define logger_export extern
 #endif
@@ -100,12 +96,13 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, int *version)
 		*dirname, *version);
 }
 
-logger_export str logger_destroy_wrap( logger *L ) ;
+logger_export str logger_destroy_wrap(void *ret, logger *L ) ;
 
 str
-logger_destroy_wrap( logger *L )
+logger_destroy_wrap(void *ret, logger *L )
 {
 	logger *l = *(logger**)L;
+	(void) ret;
 	if (l) {
 		logger_destroy(l);
 		return MAL_SUCCEED;

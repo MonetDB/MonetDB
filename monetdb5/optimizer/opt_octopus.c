@@ -262,7 +262,7 @@ isAView(InstrPtr p)
 {
 	if ( ( getModuleId(p) == batRef && 
 		  ( getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) ||
-		 ( getModuleId(p) == algebraRef && getFunctionId(p) == markTRef ))
+		 ( getModuleId(p) == algebraRef && getFunctionId(p) == markRef ))
 		 return 1;
 	return 0;
 }
@@ -990,7 +990,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	(void) stk;
 
-	optDebug |= 1 << DEBUG_OPT_OCTOPUS;
+	optDebug |= (lng) 1 << DEBUG_OPT_OCTOPUS;
 	OPTDEBUGoctopus{ 
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		chkProgram(cntxt->fdout, cntxt->nspace,mb);  
@@ -1358,7 +1358,7 @@ OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str 
 OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
+	int *ret = getArgReference_int(stk,pci,0);
 
 	(void) cntxt;
 	*ret = OPTlegAdviceInternal(mb,stk,pci);

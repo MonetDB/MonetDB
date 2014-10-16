@@ -203,7 +203,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( msg != MAL_SUCCEED)
 		return msg;
-	BSKTelements(tbl = *(str *) getArgReference(stk, pci, 1), buf, &lsch, &ltbl);
+	BSKTelements(tbl = *getArgReference_str(stk, pci, 1), buf, &lsch, &ltbl);
 	BSKTtolower(lsch);
 	BSKTtolower(ltbl);
 
@@ -238,11 +238,10 @@ int BSKTmemberCount(str tbl)
  * The locks are designated towards the baskets.
  * If you can not grab the lock then we have to wait.
  */
-str BSKTlock(int *ret, str *tbl, int *delay)
+str BSKTlock(void *ret, str *tbl, int *delay)
 {
 	int bskt;
 
-	*ret = 0;
 	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
@@ -255,32 +254,31 @@ str BSKTlock(int *ret, str *tbl, int *delay)
 #endif
 	(void) delay;  /* control spinlock */
 	(void) ret;
-	*ret = 1;
 	return MAL_SUCCEED;
 }
 
 
-str BSKTlock2(int *ret, str *tbl)
+str BSKTlock2(void *ret, str *tbl)
 {
 	int delay = 0;
 	return BSKTlock(ret, tbl, &delay);
 }
 
-str BSKTunlock(int *ret, str *tbl)
+str BSKTunlock(void *ret, str *tbl)
 {
 	int bskt;
 
+	(void) ret;
 	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
-	*ret = 0;
 	MT_lock_unset(&baskets[bskt].lock, "lock basket");
 	return MAL_SUCCEED;
 }
 
 
 str
-BSKTdrop(int *ret, str *tbl)
+BSKTdrop(void *ret, str *tbl)
 {
 	int bskt;
 
@@ -300,7 +298,7 @@ BSKTdrop(int *ret, str *tbl)
 }
 
 str
-BSKTreset(int *ret)
+BSKTreset(void *ret)
 {
 	int i;
 	for (i = 1; i < bsktLimit; i++)
@@ -309,7 +307,7 @@ BSKTreset(int *ret)
 	return MAL_SUCCEED;
 }
 str
-BSKTdump(int *ret)
+BSKTdump(void *ret)
 {
 	int bskt;
 
@@ -336,7 +334,8 @@ str
 BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
-	int bskt, i, k, *ret;
+	int bskt, i, k;
+	bat *ret;
 	BAT *b, *bn = 0, *bo = 0, *bs, *v;
 	int cnt = 0;
 	timestamp start, finish;
@@ -344,7 +343,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	tbl = *(str *) getArgReference(stk, pci, pci->argc - 1);
+	tbl = *getArgReference_str(stk, pci, pci->argc - 1);
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0)
@@ -380,7 +379,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bs = BATselect(baskets[bskt].primary[k], &start, &finish);
 
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			if (BATcount(bo) == 0)
 				bn = BATnew(b->htype, b->ttype, BATTINY, TRANSIENT);
@@ -405,7 +404,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* take care of sliding windows */
 		MT_lock_set(&baskets[bskt].lock, "lock basket");
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
 
 			/* we may be too early, all BATs are aligned */
@@ -414,7 +413,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "basket.grab", "too early");
 			}
 
-			bn = BATcopy(b, b->htype, b->ttype, TRUE);
+			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			v = BATslice(bn, baskets[bskt].winstride, BATcount(bn));
 			b = BATsetaccess(b, BAT_WRITE);
 			BATclear(b, TRUE);
@@ -430,9 +429,9 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* straight copy of the basket */
 		MT_lock_set(&baskets[bskt].lock, "lock basket");
 		for (i = 0; i < baskets[bskt].colcount; i++) {
-			ret = (int *) getArgReference(stk, pci, i);
+			ret = getArgReference_bat(stk, pci, i);
 			b = baskets[bskt].primary[i];
-			bn = BATcopy(b, b->htype, b->ttype, TRUE);
+			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			cnt = (int) BATcount(b);
 			BATclear(b, TRUE);
 			*ret = bn->batCacheid;
@@ -449,12 +448,13 @@ str
 BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
-	int bskt, i, j, ret;
+	int bskt, i, j;
+	bat ret;
 	BAT *b, *bn;
 
 	(void) cntxt;
 	(void) mb;
-	tbl = *(str *) getArgReference(stk, pci, pci->retc);
+	tbl = *getArgReference_str(stk, pci, pci->retc);
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0)
@@ -465,7 +465,7 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* copy the content of the temporary BATs into the basket */
 	MT_lock_set(&baskets[bskt].lock, "lock basket");
 	for (j = 2, i = 0; i < baskets[bskt].colcount; i++, j++) {
-		ret = *(int *) getArgReference(stk, pci, j);
+		ret = *getArgReference_bat(stk, pci, j);
 		b = baskets[bskt].primary[i];
 		bn = BATdescriptor(ret);
 		BATappend(b, bn, TRUE);
@@ -523,7 +523,7 @@ BSKTupdateInstruction(MalBlkPtr mb, str tbl)
 }
 
 str
-BSKTthreshold(int *ret, str *tbl, int *sz)
+BSKTthreshold(bit *ret, str *tbl, int *sz)
 {
 	int bskt;
 	bskt = BSKTlocate(*tbl);
@@ -539,7 +539,7 @@ BSKTthreshold(int *ret, str *tbl, int *sz)
 }
 
 str
-BSKTwindow(int *ret, str *tbl, lng *sz, lng *stride)
+BSKTwindow(bit *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -563,7 +563,7 @@ BSKTwindow(int *ret, str *tbl, lng *sz, lng *stride)
 }
 
 str
-BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *stride)
+BSKTtimewindow(bit *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -585,7 +585,7 @@ BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *stride)
 }
 
 str
-BSKTbeat(int *ret, str *tbl, lng *sz)
+BSKTbeat(bit *ret, str *tbl, lng *sz)
 {
 	int bskt, tst;
 	timestamp ts, tn;
@@ -606,7 +606,7 @@ BSKTbeat(int *ret, str *tbl, lng *sz)
 
 /* provide a tabular view for inspection */
 str
-BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *eventsId)
+BSKTtable(bat *nameId, bat *thresholdId, bat * winsizeId, bat *winstrideId, bat *timesliceId, bat *timestrideId, bat *beatId, bat *seenId, bat *eventsId)
 {
 	BAT *name = NULL, *seen = NULL, *events = NULL;
 	BAT *threshold = NULL, *winsize = NULL, *winstride = NULL, *beat = NULL;
@@ -698,7 +698,7 @@ wrapup:
 }
 
 str
-BSKTtableerrors(int *nameId, int *errorId)
+BSKTtableerrors(bat *nameId, bat *errorId)
 {
 	BAT  *name, *error;
 	BATiter bi;

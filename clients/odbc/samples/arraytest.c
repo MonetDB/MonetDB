@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sql.h>
 #include <sqlext.h>
 
@@ -151,7 +152,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION,
-			    (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
+			    (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
@@ -161,7 +162,7 @@ main(int argc, char **argv)
 			 (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
-				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
+				(SQLPOINTER) (uintptr_t) SQL_AUTOCOMMIT_OFF, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
@@ -265,7 +266,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 
 	ret = SQLSetStmtAttr(stmt, SQL_ATTR_PARAM_BIND_TYPE,
-			     (SQLPOINTER) (size_t) sizeof(data[0]), 0);
+			     (SQLPOINTER) (uintptr_t) sizeof(data[0]), 0);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLSetStmtAttr");
 
 	processed = malloc(NRECORD * sizeof(*processed));
@@ -280,7 +281,7 @@ main(int argc, char **argv)
 
 #if 0				/* doesn't currently work */
 	ret = SQLSetStmtAttr(stmt, SQL_ATTR_PARAMSET_SIZE,
-			     (SQLPOINTER) (size_t) NRECORD, 0);
+			     (SQLPOINTER) (uintptr_t) NRECORD, 0);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLSetStmtAttr");
 
 	ret = SQLExecute(stmt);
@@ -297,10 +298,10 @@ main(int argc, char **argv)
 #endif
 
 	ret = SQLSetStmtAttr(stmt, SQL_ATTR_ROW_ARRAY_SIZE,
-			     (SQLPOINTER) (size_t) NRECORD2, 0);
+			     (SQLPOINTER) (uintptr_t) NRECORD2, 0);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLSetStmtAttr");
 	ret = SQLSetStmtAttr(stmt, SQL_ATTR_ROW_BIND_TYPE,
-			     (SQLPOINTER) (size_t) SQL_BIND_BY_COLUMN, 0);
+			     (SQLPOINTER) (uintptr_t) SQL_BIND_BY_COLUMN, 0);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLSetStmtAttr");
 
 	data_i = malloc(NRECORD * sizeof(*data_i));

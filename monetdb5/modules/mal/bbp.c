@@ -27,7 +27,7 @@
 #include "bbp.h"
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2) {
+pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
 	if (BBPindex(buf) <= 0)
@@ -44,14 +44,14 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	ValPtr lhs;
-	int i = -1;
+	bat i;
 	int ht,tt;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	lhs = getArgReference(stk,pci,0); 
-	name = *(str*) getArgReference(stk, pci, 1);
+	lhs = &stk->stk[pci->argv[0]];
+	name = *getArgReference_str(stk, pci, 1);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
 	i = BBPindex(name);
@@ -60,7 +60,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* make sure you load the descriptors and heaps */
 	b = (BAT *) BATdescriptor(i);
 	if (b == 0)
-		/* Simple ignore the binding if you can;t find the bat */
+		/* Simple ignore the binding if you can't find the bat */
 		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
 
 	/* check conformity of the actual type and the one requested */
@@ -98,7 +98,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-CMDbbpNames(int *ret)
+CMDbbpNames(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -136,14 +136,14 @@ CMDgetPageSize(int *ret)
 }
 
 str
-CMDbbpName(str *ret, int *bid)
+CMDbbpName(str *ret, bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
 	return MAL_SUCCEED;
 }
 
 str
-CMDbbpCount(int *ret)
+CMDbbpCount(bat *ret)
 {
 	BAT *b, *bn;
 	int i;
@@ -174,7 +174,7 @@ CMDbbpCount(int *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
-CMDbbpLocation(int *ret)
+CMDbbpLocation(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -206,7 +206,7 @@ CMDbbpLocation(int *ret)
 #define monet_modulesilent (GDKdebug&PERFMASK)
 
 str
-CMDbbpHeat(int *ret)
+CMDbbpHeat(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -239,7 +239,7 @@ CMDbbpHeat(int *ret)
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
 str
-CMDbbpDirty(int *ret)
+CMDbbpDirty(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -267,7 +267,7 @@ CMDbbpDirty(int *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
-CMDbbpStatus(int *ret)
+CMDbbpStatus(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -292,7 +292,7 @@ CMDbbpStatus(int *ret)
 }
 
 str
-CMDbbpKind(int *ret)
+CMDbbpKind(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -322,7 +322,7 @@ CMDbbpKind(int *ret)
 }
 
 str
-CMDbbpRefCount(int *ret)
+CMDbbpRefCount(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -346,7 +346,7 @@ CMDbbpRefCount(int *ret)
 }
 
 str
-CMDbbpLRefCount(int *ret)
+CMDbbpLRefCount(bat *ret)
 {
 	BAT *b;
 	int i;
@@ -370,14 +370,14 @@ CMDbbpLRefCount(int *ret)
 }
 
 str
-CMDbbpgetIndex(int *res, int *bid)
+CMDbbpgetIndex(int *res, bat *bid)
 {
 	*res= *bid;
 	return MAL_SUCCEED;
 }
 
 str
-CMDgetBATrefcnt(int *res, int *bid)
+CMDgetBATrefcnt(int *res, bat *bid)
 {
 	BAT *b;
 
@@ -390,7 +390,7 @@ CMDgetBATrefcnt(int *res, int *bid)
 }
 
 str
-CMDgetBATlrefcnt(int *res, int *bid)
+CMDgetBATlrefcnt(int *res, bat *bid)
 {
 	BAT *b;
 

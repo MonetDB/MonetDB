@@ -79,8 +79,18 @@ json_export str JSONjson2number(dbl *ret, json *arg);
 json_export str JSONjson2integer(lng *ret, json *arg);
 
 json_export str JSONfilter( json *ret, json *js, str *expr);
-json_export str JSONfilterArray(json *ret, json *j, int *index);
-json_export str JSONfilterArrayDefault(json *ret, json *j, int *index, str *other);
+json_export str JSONfilterArray_bte(json *ret, json *j, bte *index);
+json_export str JSONfilterArrayDefault_bte(json *ret, json *j, bte *index, str *other);
+json_export str JSONfilterArray_sht(json *ret, json *j, sht *index);
+json_export str JSONfilterArrayDefault_sht(json *ret, json *j, sht *index, str *other);
+json_export str JSONfilterArray_int(json *ret, json *j, int *index);
+json_export str JSONfilterArrayDefault_int(json *ret, json *j, int *index, str *other);
+json_export str JSONfilterArray_lng(json *ret, json *j, lng *index);
+json_export str JSONfilterArrayDefault_lng(json *ret, json *j, lng *index, str *other);
+#ifdef HAVE_HGE
+json_export str JSONfilterArray_hge(json *ret, json *j, hge *index);
+json_export str JSONfilterArrayDefault_hge(json *ret, json *j, hge *index, str *other);
+#endif
 
 json_export str JSONisvalid(bit *ret, json *j);
 json_export str JSONisobject(bit *ret, json *j);
@@ -89,15 +99,15 @@ json_export str JSONisarray(bit *ret, json *j);
 json_export str JSONlength(int *ret, json *j);
 json_export str JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-json_export str JSONkeyTable(int *ret, json *j);
-json_export str JSONvalueTable(int *ret, json *j);
+json_export str JSONkeyTable(bat *ret, json *j);
+json_export str JSONvalueTable(bat *ret, json *j);
 json_export str JSONkeyArray(json *ret, json *arg);
 json_export str JSONvalueArray(json *ret, json *arg);
 
-json_export str JSONtextString(str *ret, int *bid);
-json_export str JSONtextGrouped(int *ret, int *bid, int *gid, int *ext, bit *flg);
-json_export str JSONdump(int *ret, json *val);
-json_export str JSONprelude(int *ret);
+json_export str JSONtextString(str *ret, bat *bid);
+json_export str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
+json_export str JSONdump(void *ret, json *val);
+json_export str JSONprelude(void *ret);
 
 json_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 json_export str JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -1,0 +1,66 @@
+stdout of test '19` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 19:37:40 >  
+# 19:37:40 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:37:40 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
+# MonetDB/SQL module v2.27.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:48:04 >  
+# 11:48:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 19.sql
+# 11:48:04 >  
+
+# 14:36:26 >  
+# 14:36:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:26 >  
+
+#select
+#	sum(l_extendedprice* (1 - l_discount)) as revenue
+#from
+#	lineitem,
+#	part
+#where
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#12'
+#		and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+#		and l_quantity >= 1 and l_quantity <= 1 + 10
+#		and p_size between 1 and 5
+#		and l_shipmode in ('AIR', 'AIR REG')
+#		and l_shipinstruct = 'DELIVER IN PERSON'
+#	)
+#	or
+#	(
+#		p_partkey = l_partkey
+#		and p_brand = 'Brand#23'
+#		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+#		and l_quantity >= 10 and l_quantity <= 10 + 10
+% sys.L1 # table_name
+% revenue # name
+% decimal # type
+% 35 # length
+[ 22923.0280	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	1	]
+
+# 09:17:20 >  
+# 09:17:20 >  Done.
+# 09:17:20 >  
+

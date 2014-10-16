@@ -49,7 +49,7 @@
 #endif
 
 static void
-pseudo(int *ret, int *ret2, BAT *bn, BAT *b) {
+pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 	BATmode(bn,TRANSIENT);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
@@ -75,10 +75,10 @@ SYSgetmem_maxsize(lng *num)
 }
 
 str
-SYSsetmem_maxsize(int *ret, lng *num)
+SYSsetmem_maxsize(void *ret, const lng *num)
 {
 	size_t sze = 0;
-	*ret = 0;
+	(void) ret;
 	if (*num < 0)
 		throw(ILLARG, "status.mem_maxsize", "new size must not be < 0");
 #if SIZEOF_SIZE_T == SIZEOF_INT
@@ -107,8 +107,9 @@ SYSgetvm_maxsize(lng *num)
 }
 
 str
-SYSsetvm_maxsize(lng *num)
+SYSsetvm_maxsize(void *ret, const lng *num)
 {
+	(void) ret;
 	GDK_vm_maxsize = (size_t) *num;
 	return MAL_SUCCEED;
 }
@@ -133,7 +134,7 @@ static struct tms state;
 #endif
 
 str
-SYScpuStatistics(int *ret, int *ret2)
+SYScpuStatistics(bat *ret, bat *ret2)
 {
 	int i;
 	BAT *b, *bn;
@@ -206,7 +207,7 @@ SYScpuStatistics(int *ret, int *ret2)
 
 static size_t memincr;
 str
-SYSmemStatistics(int *ret, int *ret2)
+SYSmemStatistics(bat *ret, bat *ret2)
 {
 	struct Mallinfo m;
 	BAT *b, *bn;
@@ -284,7 +285,7 @@ SYSmemStatistics(int *ret, int *ret2)
 	}
 
 str
-SYSmem_usage(int *ret, int *ret2, lng *minsize)
+SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
@@ -403,7 +404,7 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 }
 
 str
-SYSvm_usage(int *ret, int *ret2, lng *minsize)
+SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
 	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
@@ -517,7 +518,7 @@ SYSvm_usage(int *ret, int *ret2, lng *minsize)
  * The BAT grows. It should be compacted.
  */
 str
-SYSioStatistics(int *ret, int *ret2)
+SYSioStatistics(bat *ret, bat *ret2)
 {
 #ifndef NATIVE_WIN32
 	struct rusage ru;
@@ -591,7 +592,7 @@ SYSioStatistics(int *ret, int *ret2)
 }
 
 str
-SYSgdkEnv(int *ret, int *ret2)
+SYSgdkEnv(bat *ret, bat *ret2)
 {
 	int pbat = 0;
 	int pdisk = 0;
@@ -643,7 +644,7 @@ SYSgdkEnv(int *ret, int *ret2)
 }
 
 str
-SYSgdkThread(int *ret, int *ret2)
+SYSgdkThread(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 	int i;

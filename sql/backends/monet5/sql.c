@@ -63,8 +63,9 @@ exp_is_point_select(sql_exp *e)
 		return 1;
 	if (e->type == e_cmp && !e->f && e->flag == (int) cmp_equal) {
 		sql_exp *r = e->r;
+		sql_exp *l = e->l;
 
-		if (r->card <= CARD_AGGR)
+		if (!is_func(l->type) && r->card <= CARD_AGGR)
 			return 1;
 	}
 	return 0;
@@ -80,14 +81,6 @@ rel_is_point_query(sql_rel *rel)
 	if (is_project(rel->op))
 		return rel_is_point_query(rel->l);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
-/*
-		node *n;
-		is_point = 1;
-		for (n=rel->exps->h; n && is_point; n = n->next) {
-			if (!exp_is_point_select(n->data))
-				is_point = 0;
-		}
-*/
 		is_point = 0;
 		/* just one point expression makes this a point query */
 		if (rel->exps->h)
@@ -241,7 +234,7 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
@@ -256,9 +249,9 @@ SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int type = *(int *) getArgReference(stk, pci, 1);
-	int chain = *(int *) getArgReference(stk, pci, 2);
-	str name = *(str *) getArgReference(stk, pci, 3);
+	int type = *getArgReference_int(stk, pci, 1);
+	int chain = *getArgReference_int(stk, pci, 2);
+	str name = *getArgReference_str(stk, pci, 3);
 	char buf[BUFSIZ];
 	int ret = 0;
 
@@ -365,7 +358,7 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str answ = *(str *) getArgReference(stk, pci, 0);
+	str answ = *getArgReference_str(stk, pci, 0);
 
 	CLTshutdown(cntxt, mb, stk, pci);
 
@@ -497,7 +490,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *b = store_funcs.bind_col(tr, c, RD_UPD);
+		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
 		cnt |= BATcount(b) > 0;
 		BBPunfix(b->batCacheid);
 	}
@@ -576,7 +569,11 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 			/* for non empty check for nulls */
 			if (c->null == 0) {
 				void *nilptr = ATOMnilptr(c->type.type->localtype);
-				if (table_funcs.column_find_row(sql->session->tr, nc, nilptr, NULL) != oid_nil)
+				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);  
+				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
+
+				table_funcs.rids_destroy(nils);
+				if (has_nils)
 					return sql_message("40002!ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
@@ -869,8 +866,8 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->mod, f->imp, f->query, f->varres, f->vararg);
-	if (nf && nf->query) {
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg);
+	if (nf && nf->query && nf->lang <= FUNC_LANG_SQL) {
 		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
@@ -892,11 +889,54 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
-	} else {
+	} else if (nf->lang == FUNC_LANG_MAL) {
 		if (!backend_resolve_function(sql, nf))
 			return sql_message("3F000!CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 	}
 	return MAL_SUCCEED;
+}
+
+str
+UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	int id = *getArgReference_int(stk, pci, 1);
+	sql_func *func;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	func = sql_trans_find_func(sql->session->tr, id);
+	if (func) 
+		mvc_drop_func(sql, func->s, func, 0);
+	return msg;
+}
+
+str
+UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str func = *getArgReference_str(stk, pci, 1);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	s = sql_parse(sql, sa_create(), func, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
+
+		msg = create_func(sql, schema, func);
+	} else {
+		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
 }
 
 static char *
@@ -972,7 +1012,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 static char *
 SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
 {
-	char *val = *(str *) getArgReference(stk, pci, arg);
+	char *val = *getArgReference_str(stk, pci, arg);
 
 	if (val && strcmp(val, str_nil) == 0)
 		val = NULL;
@@ -984,8 +1024,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int type = *(int *) getArgReference(stk, pci, 1);
-	str sname = *(str *) getArgReference(stk, pci, 2);
+	int type = *getArgReference_int(stk, pci, 1);
+	str sname = *getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
@@ -1007,7 +1047,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng *val = NULL;
 		sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 		if (getArgType(mb, pci, 4) == TYPE_lng)
-			val = getArgReference(stk, pci, 4);
+			val = getArgReference_lng(stk, pci, 4);
 		if (val == NULL || *val == lng_nil)
 			msg = sql_message("42M36!ALTER SEQUENCE: cannot (re)start with NULL");
 		else
@@ -1015,7 +1055,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_DROP_SEQ: {
-		str name = *(str *) getArgReference(stk, pci, 3);
+		str name = *getArgReference_str(stk, pci, 3);
 
 		msg = drop_seq(sql, sname, name);
 		break;
@@ -1038,7 +1078,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_DROP_SCHEMA:{
-		int action = *(int *) getArgReference(stk, pci, 4);
+		int action = *getArgReference_int(stk, pci, 4);
 		sql_schema *s = mvc_bind_schema(sql, sname);
 
 		if (!s) {
@@ -1060,28 +1100,28 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_CREATE_VIEW:
 	{
 		sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-		int temp = *(int *) getArgReference(stk, pci, 4);
+		int temp = *getArgReference_int(stk, pci, 4);
 
 		msg = create_table_or_view(sql, sname, t, temp);
 		break;
 	}
 	case DDL_DROP_TABLE:{
-		int action = *(int *) getArgReference(stk, pci, 4);
-		str name = *(str *) getArgReference(stk, pci, 3);
+		int action = *getArgReference_int(stk, pci, 4);
+		str name = *getArgReference_str(stk, pci, 3);
 
 		msg = drop_table(sql, sname, name, action);
 		break;
 	}
 	case DDL_DROP_VIEW:{
-		int action = *(int *) getArgReference(stk, pci, 4);
-		str name = *(str *) getArgReference(stk, pci, 3);
+		int action = *getArgReference_int(stk, pci, 4);
+		str name = *getArgReference_str(stk, pci, 3);
 
 		msg = drop_view(sql, sname, name, action);
 		break;
 	}
 	case DDL_DROP_CONSTRAINT:{
-		int action = *(int *) getArgReference(stk, pci, 4);
-		str name = *(str *) getArgReference(stk, pci, 3);
+		int action = *getArgReference_int(stk, pci, 4);
+		str name = *getArgReference_str(stk, pci, 3);
 
 		msg = drop_key(sql, sname, name, action);
 		break;
@@ -1092,7 +1132,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_CREATE_TYPE:{
-		char *impl = *(str *) getArgReference(stk, pci, 3);
+		char *impl = *getArgReference_str(stk, pci, 3);
 		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl))
 			msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
 		break;
@@ -1114,28 +1154,28 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_GRANT:{
-		char *tname = *(str *) getArgReference(stk, pci, 3);
-		char *grantee = *(str *) getArgReference(stk, pci, 4);
-		int privs = *(int *) getArgReference(stk, pci, 5);
+		char *tname = *getArgReference_str(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
 		char *cname = SaveArgReference(stk, pci, 6);
-		int grant = *(int *) getArgReference(stk, pci, 7);
-		int grantor = *(int *) getArgReference(stk, pci, 8);
+		int grant = *getArgReference_int(stk, pci, 7);
+		int grantor = *getArgReference_int(stk, pci, 8);
 		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_REVOKE:{
-		char *tname = *(str *) getArgReference(stk, pci, 3);
-		char *grantee = *(str *) getArgReference(stk, pci, 4);
-		int privs = *(int *) getArgReference(stk, pci, 5);
+		char *tname = *getArgReference_str(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
 		char *cname = SaveArgReference(stk, pci, 6);
-		int grant = *(int *) getArgReference(stk, pci, 7);
-		int grantor = *(int *) getArgReference(stk, pci, 8);
+		int grant = *getArgReference_int(stk, pci, 7);
+		int grantor = *getArgReference_int(stk, pci, 8);
 		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{
-		char *passwd = *(str *) getArgReference(stk, pci, 3);
-		int enc = *(int *) getArgReference(stk, pci, 4);
+		char *passwd = *getArgReference_str(stk, pci, 3);
+		int enc = *getArgReference_int(stk, pci, 4);
 		char *schema = SaveArgReference(stk, pci, 5);
 		char *fullname = SaveArgReference(stk, pci, 6);
 		msg = sql_create_user(sql, sname, passwd, enc, fullname, schema);
@@ -1147,20 +1187,20 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_ALTER_USER:{
 		char *passwd = SaveArgReference(stk, pci, 3);
-		int enc = *(int *) getArgReference(stk, pci, 4);
+		int enc = *getArgReference_int(stk, pci, 4);
 		char *schema = SaveArgReference(stk, pci, 5);
 		char *oldpasswd = SaveArgReference(stk, pci, 6);
 		msg = sql_alter_user(sql, sname, passwd, enc, schema, oldpasswd);
 		break;
 	}
 	case DDL_RENAME_USER:{
-		char *newuser = *(str *) getArgReference(stk, pci, 3);
+		char *newuser = *getArgReference_str(stk, pci, 3);
 		msg = sql_rename_user(sql, sname, newuser);
 		break;
 	}
 	case DDL_CREATE_ROLE:{
 		char *role = sname;
-		int grantor = *(int *) getArgReference(stk, pci, 4);
+		int grantor = *getArgReference_int(stk, pci, 4);
 		msg = sql_create_role(sql, role, grantor);
 		break;
 	}
@@ -1170,15 +1210,15 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_DROP_INDEX:{
-		char *iname = *(str *) getArgReference(stk, pci, 3);
+		char *iname = *getArgReference_str(stk, pci, 3);
 		msg = drop_index(sql, sname, iname);
 		break;
 	}
 	case DDL_DROP_FUNCTION:{
-		char *fname = *(str *) getArgReference(stk, pci, 3);
-		int fid = *(int *) getArgReference(stk, pci, 4);
-		int type = *(int *) getArgReference(stk, pci, 5);
-		int action = *(int *) getArgReference(stk, pci, 6);
+		char *fname = *getArgReference_str(stk, pci, 3);
+		int fid = *getArgReference_int(stk, pci, 4);
+		int type = *getArgReference_int(stk, pci, 5);
+		int action = *getArgReference_int(stk, pci, 6);
 		msg = drop_func(sql, sname, fname, fid, type, action);
 		break;
 	}
@@ -1188,21 +1228,21 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_CREATE_TRIGGER:{
-		char *tname = *(str *) getArgReference(stk, pci, 3);
-		char *triggername = *(str *) getArgReference(stk, pci, 4);
-		int time = *(int *) getArgReference(stk, pci, 5);
-		int orientation = *(int *) getArgReference(stk, pci, 6);
-		int event = *(int *) getArgReference(stk, pci, 7);
-		char *old_name = *(str *) getArgReference(stk, pci, 8);
-		char *new_name = *(str *) getArgReference(stk, pci, 9);
-		char *condition = *(str *) getArgReference(stk, pci, 10);
-		char *query = *(str *) getArgReference(stk, pci, 11);
+		char *tname = *getArgReference_str(stk, pci, 3);
+		char *triggername = *getArgReference_str(stk, pci, 4);
+		int time = *getArgReference_int(stk, pci, 5);
+		int orientation = *getArgReference_int(stk, pci, 6);
+		int event = *getArgReference_int(stk, pci, 7);
+		char *old_name = *getArgReference_str(stk, pci, 8);
+		char *new_name = *getArgReference_str(stk, pci, 9);
+		char *condition = *getArgReference_str(stk, pci, 10);
+		char *query = *getArgReference_str(stk, pci, 11);
 
 		msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
 		break;
 	}
 	case DDL_DROP_TRIGGER:{
-		char *triggername = *(str *) getArgReference(stk, pci, 3);
+		char *triggername = *getArgReference_str(stk, pci, 3);
 
 		msg = drop_trigger(sql, sname, triggername);
 		break;
@@ -1219,10 +1259,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str varname = *(str *) getArgReference(stk, pci, 2);
+	str varname = *getArgReference_str(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
 	ValRecord *src;
 	char buf[BUFSIZ];
@@ -1236,7 +1276,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if (strcmp("optimizer", varname) == 0) {
-		str newopt = *(str *) getArgReference(stk, pci, 3);
+		str newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
 				snprintf(buf, BUFSIZ, "optimizer '%s' unknown", newopt);
@@ -1277,7 +1317,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str varname = *(str *) getArgReference(stk, pci, 2);
+	str varname = *getArgReference_str(stk, pci, 2);
 	ValRecord *dst, *src;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1304,7 +1344,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	BAT *vars;
 	str msg;
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1328,8 +1368,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	int *res = (int *) getArgReference(stk, pci, 0);
-	str filename = *(str *) getArgReference(stk, pci, 1);
+	str filename = *getArgReference_str(stk, pci, 1);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1342,7 +1381,6 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (strcmp(filename, str_nil))
 		m->scanner.log = open_wastream(filename);
-	*res = 0;
 	return MAL_SUCCEED;
 }
 
@@ -1353,9 +1391,9 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
-	lng *res = (lng *) getArgReference(stk, pci, 0);
-	str *sname = (str *) getArgReference(stk, pci, 1);
-	str *seqname = (str *) getArgReference(stk, pci, 2);
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str *sname = getArgReference_str(stk, pci, 1);
+	str *seqname = getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1386,9 +1424,9 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
 	BATiter bi;
-	bat *res = (bat *) getArgReference(stk, pci, 0);
-	int *sid = (int *) getArgReference(stk, pci, 1);
-	str *seqname = (str *) getArgReference(stk, pci, 2);
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *sid = getArgReference_bat(stk, pci, 1);
+	str *seqname = getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1451,9 +1489,9 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
-	lng *res = (lng *) getArgReference(stk, pci, 0);
-	str *sname = (str *) getArgReference(stk, pci, 1);
-	str *seqname = (str *) getArgReference(stk, pci, 2);
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str *sname = getArgReference_str(stk, pci, 1);
+	str *seqname = getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1470,7 +1508,7 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_getVersion(lng *version, int *clientid)
+mvc_getVersion(lng *version, const int *clientid)
 {
 	mvc *m = NULL;
 	Client cntxt = MCgetClient(*clientid);
@@ -1493,10 +1531,10 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
-	lng *res = (lng *) getArgReference(stk, pci, 0);
-	str *sname = (str *) getArgReference(stk, pci, 1);
-	str *seqname = (str *) getArgReference(stk, pci, 2);
-	lng *start = (lng *) getArgReference(stk, pci, 3);
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str *sname = getArgReference_str(stk, pci, 1);
+	str *seqname = getArgReference_str(stk, pci, 2);
+	lng *start = getArgReference_lng(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1559,7 +1597,7 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 }
 
 BAT *
-mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
+mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
@@ -1584,13 +1622,13 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL, *bn;
-	int *bid = (int *) getArgReference(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str *sname = (str *) getArgReference(stk, pci, 2 + upd);
-	str *tname = (str *) getArgReference(stk, pci, 3 + upd);
-	str *cname = (str *) getArgReference(stk, pci, 4 + upd);
-	int *access = (int *) getArgReference(stk, pci, 5 + upd);
+	str *sname = getArgReference_str(stk, pci, 2 + upd);
+	str *tname = getArgReference_str(stk, pci, 3 + upd);
+	str *cname = getArgReference_str(stk, pci, 4 + upd);
+	int *access = getArgReference_int(stk, pci, 5 + upd);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1601,14 +1639,15 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
 			/* partitioned access */
-			int part_nr = *(int *) getArgReference(stk, pci, 6 + upd);
-			int nr_parts = *(int *) getArgReference(stk, pci, 7 + upd);
+			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
+			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
 			if (*access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				BATseqbase(bn, part_nr * psz);
 			} else {
+				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind(m, *sname, *tname, *cname, 0);
 				cnt = BATcount(c);
@@ -1616,23 +1655,38 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
 			b = bn;
+		} else if (upd) {
+			BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
+			bat *uvl = getArgReference_bat(stk, pci, 1);
+
+			BBPkeepref(*bid = b->batCacheid);
+			BBPkeepref(*uvl = uv->batCacheid);
+			return MAL_SUCCEED;
 		}
 		if (upd) {
-			int *uvl = (int *) getArgReference(stk, pci, 1);
+			bat *uvl = getArgReference_bat(stk, pci, 1);
 
 			if (BATcount(b)) {
-				BAT *id = BATmirror(BATmark(b, 0));
-				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
+				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
+				BAT *id = BATproject(b, ui); 
+				BAT *vl = BATproject(b, uv);
+				bat_destroy(ui);
+				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
+				sql_schema *s = mvc_bind_schema(m, *sname);
+				sql_table *t = mvc_bind_table(m, s, *tname);
+				sql_column *c = mvc_bind_column(m, t, *cname);
+
 				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(b->T->type);
+				*uvl = e_bat(c->type.type->localtype);
 			}
 			BBPreleaseref(b->batCacheid);
 		} else {
@@ -1651,13 +1705,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL, *bn;
-	int *bid = (int *) getArgReference(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str *sname = (str *) getArgReference(stk, pci, 2 + upd);
-	str *tname = (str *) getArgReference(stk, pci, 3 + upd);
-	str *iname = (str *) getArgReference(stk, pci, 4 + upd);
-	int *access = (int *) getArgReference(stk, pci, 5 + upd);
+	str *sname = getArgReference_str(stk, pci, 2 + upd);
+	str *tname = getArgReference_str(stk, pci, 3 + upd);
+	str *iname = getArgReference_str(stk, pci, 4 + upd);
+	int *access = getArgReference_int(stk, pci, 5 + upd);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1668,14 +1722,15 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
 			/* partitioned access */
-			int part_nr = *(int *) getArgReference(stk, pci, 6 + upd);
-			int nr_parts = *(int *) getArgReference(stk, pci, 7 + upd);
+			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
+			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
 			if (*access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				BATseqbase(bn, part_nr * psz);
 			} else {
+				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, *sname, *tname, *iname, 0);
 				cnt = BATcount(c);
@@ -1683,23 +1738,36 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPreleaseref(c->batCacheid);
 			}
 			BBPreleaseref(b->batCacheid);
 			b = bn;
+		} else if (upd) {
+			BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
+			bat *uvl = getArgReference_bat(stk, pci, 1);
+			BBPkeepref(*bid = b->batCacheid);
+			BBPkeepref(*uvl = uv->batCacheid);
+			return MAL_SUCCEED;
 		}
 		if (upd) {
-			int *uvl = (int *) getArgReference(stk, pci, 1);
+			bat *uvl = getArgReference_bat(stk, pci, 1);
 
 			if (BATcount(b)) {
-				BAT *id = BATmirror(BATmark(b, 0));
-				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
+				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
+				BAT *id = BATproject(b, ui); 
+				BAT *vl = BATproject(b, uv);
+				bat_destroy(ui);
+				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
+				sql_schema *s = mvc_bind_schema(m, *sname);
+				sql_idx *i = mvc_bind_idx(m, s, *iname);
+
 				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(b->T->type);
+				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_wrd);
 			}
 			BBPreleaseref(b->batCacheid);
 		} else {
@@ -1716,13 +1784,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str sname = *(str *) getArgReference(stk, pci, 2);
-	str tname = *(str *) getArgReference(stk, pci, 3);
-	str cname = *(str *) getArgReference(stk, pci, 4);
-	ptr ins = (ptr) getArgReference(stk, pci, 5);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	str cname = *getArgReference_str(stk, pci, 4);
+	ptr ins = getArgReference(stk, pci, 5);
 	int tpe = getArgType(mb, pci, 5);
 	sql_schema *s;
 	sql_table *t;
@@ -1762,14 +1830,14 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str sname = *(str *) getArgReference(stk, pci, 2);
-	str tname = *(str *) getArgReference(stk, pci, 3);
-	str cname = *(str *) getArgReference(stk, pci, 4);
-	bat Tids = *(bat *) getArgReference(stk, pci, 5);
-	bat Upd = *(bat *) getArgReference(stk, pci, 6);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	str cname = *getArgReference_str(stk, pci, 4);
+	bat Tids = *getArgReference_bat(stk, pci, 5);
+	bat Upd = *getArgReference_bat(stk, pci, 6);
 	BAT *tids, *upd;
 	int tpe = getArgType(mb, pci, 6);
 	sql_schema *s;
@@ -1825,9 +1893,9 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	mvc *m = NULL;
 	str msg;
-	wrd *res = (wrd *) getArgReference(stk, pci, 0);
-	str *sname = (str *) getArgReference(stk, pci, 1);
-	str *tname = (str *) getArgReference(stk, pci, 2);
+	wrd *res = getArgReference_wrd(stk, pci, 0);
+	str *sname = getArgReference_str(stk, pci, 1);
+	str *tname = getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1847,12 +1915,12 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str sname = *(str *) getArgReference(stk, pci, 2);
-	str tname = *(str *) getArgReference(stk, pci, 3);
-	ptr ins = (ptr) getArgReference(stk, pci, 4);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	ptr ins = getArgReference(stk, pci, 4);
 	int tpe = getArgType(mb, pci, 4);
 	BAT *b = NULL;
 
@@ -1894,25 +1962,25 @@ setwritable(BAT *b)
 }
 
 str
-DELTAbat2(bat *result, bat *col, bat *uid, bat *uval)
+DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval)
 {
 	return DELTAbat(result, col, uid, uval, NULL);
 }
 
 str
-DELTAsub2(bat *result, bat *col, bat *cid, bat *uid, bat *uval)
+DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
 {
 	return DELTAsub(result, col, cid, uid, uval, NULL);
 }
 
 str
-DELTAproject2(bat *result, bat *sub, bat *col, bat *uid, bat *uval)
+DELTAproject2(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
 {
 	return DELTAproject(result, sub, col, uid, uval, NULL);
 }
 
 str
-DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
+DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
@@ -1966,7 +2034,7 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 }
 
 str
-DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
+DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
@@ -2086,7 +2154,7 @@ DELTAsub(bat *result, bat *col, bat *cid, bat *uid, bat *uval, bat *ins)
 }
 
 str
-DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
+DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *s, *c, *u_id, *u_val, *u, *i = NULL, *res, *tres;
 
@@ -2174,12 +2242,12 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 str
 SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
-	str sname = *(str *) getArgReference(stk, pci, 2);
-	str tname = *(str *) getArgReference(stk, pci, 3);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
 
 	sql_schema *s;
 	sql_table *t;
@@ -2188,7 +2256,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t nr, inr = 0;
 	oid sb = 0;
 
-	*res = 0;
+	*res = bat_nil;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	tr = m->session->tr;
@@ -2210,8 +2278,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nr -= inr;
 	if (pci->argc == 6) {	/* partitioned version */
 		size_t cnt = nr;
-		int part_nr = *(int *) getArgReference(stk, pci, 4);
-		int nr_parts = *(int *) getArgReference(stk, pci, 5);
+		int part_nr = *getArgReference_int(stk, pci, 4);
+		int nr_parts = *getArgReference_int(stk, pci, 5);
 
 		nr /= nr_parts;
 		sb = (oid) (part_nr * nr);
@@ -2259,10 +2327,10 @@ mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	int *res_id = (int *) getArgReference(stk, pci, 0);
-	int *nr_cols = (int *) getArgReference(stk, pci, 1);
-	int *qtype = (int *) getArgReference(stk, pci, 2);
-	int *o = (int *) getArgReference(stk, pci, 3);
+	int *res_id = getArgReference_int(stk, pci, 0);
+	int *nr_cols = getArgReference_int(stk, pci, 1);
+	int *qtype = getArgReference_int(stk, pci, 2);
+	void *o = getArgReference(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2286,8 +2354,8 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res_table *t = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len;
-	int *res_id = (int *) getArgReference(stk, pci, 0);
-	int *nr_cols = (int *) getArgReference(stk, pci, 1);
+	int *res_id = getArgReference_int(stk, pci, 0);
+	int *nr_cols = getArgReference_int(stk, pci, 1);
 	unsigned char **T = (unsigned char **) getArgReference(stk, pci, 2);
 	unsigned char **R = (unsigned char **) getArgReference(stk, pci, 3);
 	unsigned char **S = (unsigned char **) getArgReference(stk, pci, 4);
@@ -2299,7 +2367,7 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (isaBatType(mtype)) {
-		bat *order_bid = (bat *) getArgReference(stk, pci, 6);
+		bat *order_bid = getArgReference_bat(stk, pci, 6);
 		if ((order = BATdescriptor(*order_bid)) == NULL) {
 			throw(SQL, "sql.resultSet", "Cannot access descriptor");
 		}
@@ -2337,10 +2405,10 @@ mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *order;
 	mvc *m = NULL;
 	str msg;
-	int *res_id = (int *) getArgReference(stk, pci, 0);
-	int *nr_cols = (int *) getArgReference(stk, pci, 1);
-	int *qtype = (int *) getArgReference(stk, pci, 2);
-	bat *order_bid = (bat *) getArgReference(stk, pci, 3);
+	int *res_id = getArgReference_int(stk, pci, 0);
+	int *nr_cols = getArgReference_int(stk, pci, 1);
+	int *qtype = getArgReference_int(stk, pci, 2);
+	bat *order_bid = getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2364,13 +2432,12 @@ mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	mvc *m = NULL;
 	str msg;
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	str *tn = (str *) getArgReference(stk, pci, 2);
-	str *name = (str *) getArgReference(stk, pci, 3);
-	str *type = (str *) getArgReference(stk, pci, 4);
-	int *digits = (int *) getArgReference(stk, pci, 5);
-	int *scale = (int *) getArgReference(stk, pci, 6);
-	bat *bid = (bat *) getArgReference(stk, pci, 7);
+	str *tn = getArgReference_str(stk, pci, 2);
+	str *name = getArgReference_str(stk, pci, 3);
+	str *type = getArgReference_str(stk, pci, 4);
+	int *digits = getArgReference_int(stk, pci, 5);
+	int *scale = getArgReference_int(stk, pci, 6);
+	bat *bid = getArgReference_bat(stk, pci, 7);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2380,7 +2447,6 @@ mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rsColumn", "cannot access BAT descriptor");
 	if (mvc_result_column(m, *tn, *name, *type, *digits, *scale, b))
 		res = createException(SQL, "sql.rsColumn", "mvc_result_column failed");
-	*ret = 0;
 	BBPunfix(b->batCacheid);
 	return res;
 }
@@ -2389,13 +2455,12 @@ str
 /*mvc_result_value_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, ptr p, int mtype)*/
 mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	str *tn = (str *) getArgReference(stk, pci, 2);
-	str *cn = (str *) getArgReference(stk, pci, 3);
-	str *type = (str *) getArgReference(stk, pci, 4);
-	int *digits = (int *) getArgReference(stk, pci, 5);
-	int *scale = (int *) getArgReference(stk, pci, 6);
-	ptr p = (ptr) getArgReference(stk, pci, 7);
+	str *tn = getArgReference_str(stk, pci, 2);
+	str *cn = getArgReference_str(stk, pci, 3);
+	str *type = getArgReference_str(stk, pci, 4);
+	int *digits = getArgReference_int(stk, pci, 5);
+	int *scale = getArgReference_int(stk, pci, 6);
+	ptr p = getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
 	mvc *m = NULL;
 	str msg;
@@ -2408,7 +2473,6 @@ mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 	if (mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype))
 		throw(SQL, "sql.rsColumn", "failed");
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2419,8 +2483,8 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s = NULL;
-	int *res_id = (int *) getArgReference(stk, pci, 0);
-	str *name = (str *) getArgReference(stk, pci, 1);
+	int *res_id = getArgReference_int(stk, pci, 0);
+	str *name = getArgReference_str(stk, pci, 1);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2444,13 +2508,12 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	sql_table *t = NULL;
 	sql_type *type = NULL;
 	sql_subtype tpe;
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	int *rs = (int *) getArgReference(stk, pci, 1);
-	str *tname = (str *) getArgReference(stk, pci, 2);
-	str *name = (str *) getArgReference(stk, pci, 3);
-	str *typename = (str *) getArgReference(stk, pci, 4);
-	int *digits = (int *) getArgReference(stk, pci, 5);
-	int *scale = (int *) getArgReference(stk, pci, 6);
+	int *rs = getArgReference_int(stk, pci, 1);
+	str *tname = getArgReference_str(stk, pci, 2);
+	str *name = getArgReference_str(stk, pci, 3);
+	str *typename = getArgReference_str(stk, pci, 4);
+	int *digits = getArgReference_int(stk, pci, 5);
+	int *scale = getArgReference_int(stk, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2469,7 +2532,6 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if (t == NULL)
 		throw(SQL, "sql.declared_table_column", "42S02!Table missing");
 	(void) mvc_create_column(m, t, *name, &tpe);
-	*ret = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2477,7 +2539,7 @@ str
 mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str *name = (str *) getArgReference(stk, pci, 1);
+	str *name = getArgReference_str(stk, pci, 1);
 	str msg;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -2500,7 +2562,7 @@ str
 mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	int i = *(int *) getArgReference(stk, pci, 1);
+	int i = *getArgReference_int(stk, pci, 1);
 	str msg;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -2525,19 +2587,19 @@ str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	int *res = (int *) getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
 	wrd nr;
-	str *w = (str *) getArgReference(stk, pci, 3), msg;
+	str *w = getArgReference_str(stk, pci, 3), msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	*res = 0;
 	assert(mtype == TYPE_wrd);
-	nr = *(wrd *) getArgReference(stk, pci, 2);
+	nr = *getArgReference_wrd(stk, pci, 2);
 	b = cntxt->sqlcontext;
 	if (mvc_export_affrows(b, b->out, nr, *w))
 		throw(SQL, "sql.affectedRows", "failed");
@@ -2550,7 +2612,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int *res_id = (int *) getArgReference(stk, pci, 2);
+	int *res_id = getArgReference_int(stk, pci, 2);
 	str msg;
 
 	(void) mb;		/* NOT USED */
@@ -2568,7 +2630,7 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int *res_id = (int *) getArgReference(stk, pci, 2);
+	int *res_id = getArgReference_int(stk, pci, 2);
 	str msg;
 
 	(void) mb;		/* NOT USED */
@@ -2586,15 +2648,15 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int *res_id = (int *) getArgReference(stk, pci, 2);
+	int *res_id = getArgReference_int(stk, pci, 2);
 	BUN offset = 0;
 	BUN nr = 0;
 	str msg;
 
 	(void) mb;		/* NOT USED */
 	if (pci->argc == 5) {
-		offset = *(BUN *) getArgReference(stk, pci, 3);
-		nr = *(BUN *) getArgReference(stk, pci, 4);
+		offset = (BUN) *getArgReference_int(stk, pci, 3);
+		nr = (BUN) *getArgReference_int(stk, pci, 4);
 	}
 
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2610,7 +2672,7 @@ str
 mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	str *w = (str *) getArgReference(stk, pci, 1), msg;
+	str *w = getArgReference_str(stk, pci, 1), msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2625,16 +2687,16 @@ str
 /*mvc_export_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
 mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *qtype = (int *) getArgReference(stk, pci, 1);
-	str *tn = (str *) getArgReference(stk, pci, 2);
-	str *cn = (str *) getArgReference(stk, pci, 3);
-	str *type = (str *) getArgReference(stk, pci, 4);
-	int *digits = (int *) getArgReference(stk, pci, 5);
-	int *scale = (int *) getArgReference(stk, pci, 6);
-	int *eclass = (int *) getArgReference(stk, pci, 7);
-	ptr p = (ptr) getArgReference(stk, pci, 8);
+	int *qtype = getArgReference_int(stk, pci, 1);
+	str *tn = getArgReference_str(stk, pci, 2);
+	str *cn = getArgReference_str(stk, pci, 3);
+	str *type = getArgReference_str(stk, pci, 4);
+	int *digits = getArgReference_int(stk, pci, 5);
+	int *scale = getArgReference_int(stk, pci, 6);
+	int *eclass = getArgReference_int(stk, pci, 7);
+	ptr p = getArgReference(stk, pci, 8);
 	int mtype = getArgType(mb, pci, 8);
-	str *w = (str *) getArgReference(stk, pci, 9), msg;
+	str *w = getArgReference_str(stk, pci, 9), msg;
 	backend *b = NULL;
 
 	(void) mb;		/* NOT USED */
@@ -2654,7 +2716,7 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 	int i;
 
 	for (i = 0; i < pci->retc; i++) {
-		*(int *) getArgReference(stk, pci, i) = b[i]->batCacheid;
+		*getArgReference_bat(stk, pci, i) = b[i]->batCacheid;
 		BBPkeepref(b[i]->batCacheid);
 	}
 }
@@ -2683,16 +2745,16 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
 	str filename, cs;
-	str *sname = (str *) getArgReference(stk, pci, pci->retc + 0);
-	str *tname = (str *) getArgReference(stk, pci, pci->retc + 1);
+	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
+	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
 	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
 	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
 	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
 	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
-	str *fname = (str *) getArgReference(stk, pci, pci->retc + 6), msg;
-	lng *sz = (lng *) getArgReference(stk, pci, pci->retc + 7);
-	lng *offset = (lng *) getArgReference(stk, pci, pci->retc + 8);
-	int *locked = (int *) getArgReference(stk, pci, pci->retc + 9);
+	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
 	bstream *s;
 	stream *ss;
 	str utf8 = "UTF-8";
@@ -2764,15 +2826,15 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str *sname = (str *) getArgReference(stk, pci, pci->retc + 0);
-	str *tname = (str *) getArgReference(stk, pci, pci->retc + 1);
+	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
+	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
 	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
 	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
 	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
 	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
-	lng *sz = (lng *) getArgReference(stk, pci, pci->retc + 6);
-	lng *offset = (lng *) getArgReference(stk, pci, pci->retc + 7);
-	int *locked = (int *) getArgReference(stk, pci, pci->retc + 8);
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2818,8 +2880,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	str msg;
 	BUN cnt = 0;
 	int i;
-	str sname = *(str *) getArgReference(stk, pci, 0 + pci->retc);
-	str tname = *(str *) getArgReference(stk, pci, 1 + pci->retc);
+	str sname = *getArgReference_str(stk, pci, 0 + pci->retc);
+	str tname = *getArgReference_str(stk, pci, 1 + pci->retc);
 	sql_schema *s;
 	sql_table *t;
 	node *n;
@@ -2844,10 +2906,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		sql_column *col = n->data;
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
-			throw(SQL, "sql", "failed to attach file %s", *(str *) getArgReference(stk, pci, i));
-		f = fopen(*(str *) getArgReference(stk, pci, i), "r");
+			throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
+		f = fopen(*getArgReference_str(stk, pci, i), "r");
 		if (f == NULL)
-			throw(SQL, "sql", "failed to open file %s", *(str *) getArgReference(stk, pci, i));
+			throw(SQL, "sql", "failed to open file %s", *getArgReference_str(stk, pci, i));
 		fclose(f);
 	}
 
@@ -2858,9 +2920,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* handle the various cases */
 		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, *(str *) getArgReference(stk, pci, i), TRANSIENT);
+			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), TRANSIENT);
 			if (c == NULL)
-				throw(SQL, "sql", "failed to attach file %s", *(str *) getArgReference(stk, pci, i));
+				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 		} else if (tpe == TYPE_str) {
@@ -2870,9 +2932,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);
 			/* this code should be extended to deal with larger text strings. */
-			f = fopen(*(str *) getArgReference(stk, pci, i), "r");
+			f = fopen(*getArgReference_str(stk, pci, i), "r");
 			if (f == NULL)
-				throw(SQL, "sql", "failed to re-open file %s", *(str *) getArgReference(stk, pci, i));
+				throw(SQL, "sql", "failed to re-open file %s", *getArgReference_str(stk, pci, i));
 
 			buf = GDKmalloc(bufsiz);
 			if (!buf) {
@@ -2888,19 +2950,19 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			fclose(f);
 			GDKfree(buf);
 		} else {
-			throw(SQL, "sql", "failed to attach file %s", *(str *) getArgReference(stk, pci, i));
+			throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 		}
 		if (i != (pci->retc + 2) && cnt != BATcount(c))
 			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
 		cnt = BATcount(c);
-		*(int *) getArgReference(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
+		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
 
 str
-zero_or_one(ptr ret, int *bid)
+zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
@@ -2937,6 +2999,10 @@ zero_or_one(ptr ret, int *bid)
 		*(sht *) ret = *(sht *) p;
 	} else if (_s == 8) {
 		*(lng *) ret = *(lng *) p;
+#ifdef HAVE_HGE
+	} else if (_s == 16) {
+		*(hge *) ret = *(hge *) p;
+#endif
 	} else {
 		memcpy(ret, p, _s);
 	}
@@ -2945,7 +3011,7 @@ zero_or_one(ptr ret, int *bid)
 }
 
 str
-not_unique(bit *ret, int *bid)
+not_unique(bit *ret, const bat *bid)
 {
 	BAT *b;
 
@@ -2996,7 +3062,7 @@ HASHfndTwice(BAT *b, ptr v)
 }
 
 str
-not_unique_oids(bat *ret, bat *bid)
+not_unique_oids(bat *ret, const bat *bid)
 {
 	BAT *b, *bn = NULL;
 
@@ -3083,7 +3149,7 @@ not_unique_oids(bat *ret, bat *bid)
 
 /* row case */
 str
-SQLidentity(bat *ret, bat *bid)
+SQLidentity(bat *ret, const bat *bid)
 {
 	BAT *bn, *b;
 
@@ -3097,7 +3163,7 @@ SQLidentity(bat *ret, bat *bid)
 }
 
 str
-BATSQLidentity(bat *ret, bat *bid)
+BATSQLidentity(bat *ret, const bat *bid)
 {
 	return BKCmirror(ret, bid);
 }
@@ -3105,10 +3171,10 @@ BATSQLidentity(bat *ret, bat *bid)
 str
 PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int *) getArgReference(stk, pci, 0);
-	oid *ns = (oid *) getArgReference(stk, pci, 1);
-	int *bid = (int *) getArgReference(stk, pci, 2);
-	oid *s = (oid *) getArgReference(stk, pci, 3);
+	bat *res = getArgReference_bat(stk, pci, 0);
+	oid *ns = getArgReference_oid(stk, pci, 1);
+	bat *bid = getArgReference_bat(stk, pci, 2);
+	oid *s = getArgReference_oid(stk, pci, 3);
 	BAT *b, *bn = NULL;
 
 	(void) cntxt;
@@ -3128,28 +3194,6 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 }
 
-lng scales[20] = {
-	LL_CONSTANT(1),
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
-};
-
 /*
  * The core modules of Monet provide just a limited set of
  * mathematical operators. The extensions required to support
@@ -3158,7 +3202,7 @@ lng scales[20] = {
  */
 
 str
-daytime_2time_daytime(daytime *res, daytime *v, int *digits)
+daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 
@@ -3172,14 +3216,14 @@ daytime_2time_daytime(daytime *res, daytime *v, int *digits)
 }
 
 str
-second_interval_2_daytime(daytime *res, lng *s, int *digits)
+second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	*res = (daytime) *s;
 	return daytime_2time_daytime(res, res, digits);
 }
 
 str
-nil_2time_daytime(daytime *res, void *v, int *digits)
+nil_2time_daytime(daytime *res, const void *v, const int *digits)
 {
 	(void) digits;
 	(void) v;
@@ -3188,7 +3232,7 @@ nil_2time_daytime(daytime *res, void *v, int *digits)
 }
 
 str
-str_2time_daytime(daytime *res, str *v, int *digits)
+str_2time_daytime(daytime *res, const str *v, const int *digits)
 {
 	int len = sizeof(daytime), pos;
 
@@ -3203,7 +3247,7 @@ str_2time_daytime(daytime *res, str *v, int *digits)
 }
 
 str
-timestamp_2_daytime(daytime *res, timestamp *v, int *digits)
+timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 	int msec = v->msecs;
@@ -3218,7 +3262,7 @@ timestamp_2_daytime(daytime *res, timestamp *v, int *digits)
 }
 
 str
-date_2_timestamp(timestamp *res, date *v, int *digits)
+date_2_timestamp(timestamp *res, const date *v, const int *digits)
 {
 	(void) digits;		/* no precision needed */
 	res->days = *v;
@@ -3227,7 +3271,7 @@ date_2_timestamp(timestamp *res, date *v, int *digits)
 }
 
 str
-timestamp_2time_timestamp(timestamp *res, timestamp *v, int *digits)
+timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
 
@@ -3245,7 +3289,7 @@ timestamp_2time_timestamp(timestamp *res, timestamp *v, int *digits)
 }
 
 str
-nil_2time_timestamp(timestamp *res, void *v, int *digits)
+nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 {
 	(void) digits;
 	(void) v;
@@ -3254,7 +3298,7 @@ nil_2time_timestamp(timestamp *res, void *v, int *digits)
 }
 
 str
-str_2time_timestamp(timestamp *res, str *v, int *digits)
+str_2time_timestamp(timestamp *res, const str *v, const int *digits)
 {
 	int len = sizeof(timestamp), pos;
 
@@ -3269,7 +3313,7 @@ str_2time_timestamp(timestamp *res, str *v, int *digits)
 }
 
 str
-SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta)
+SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 {
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
@@ -3292,7 +3336,7 @@ sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
 sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
 */
 str
-SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
+SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -3334,7 +3378,7 @@ SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta)
 }
 
 str
-SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
+SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 {
 	BAT *b, *bn;
 	BATiter bi;
@@ -3374,7 +3418,7 @@ SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta)
 }
 
 str
-month_interval_str(int *ret, str *s, int *d, int *sk)
+month_interval_str(int *ret, const str *s, const int *d, const int *sk)
 {
 	lng res;
 
@@ -3386,7 +3430,7 @@ month_interval_str(int *ret, str *s, int *d, int *sk)
 }
 
 str
-second_interval_str(lng *res, str *s, int *d, int *sk)
+second_interval_str(lng *res, const str *s, const int *d, const int *sk)
 {
 	if (interval_from_str(*s, *d, *sk, res) < 0)
 		throw(SQL, "calc.second_interval", "wrong format (%s)", *s);
@@ -3396,8 +3440,8 @@ second_interval_str(lng *res, str *s, int *d, int *sk)
 str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk, pci, 0);
-	int k = digits2ek(*(int *) getArgReference(stk, pci, 2));
+	int *ret = getArgReference_int(stk, pci, 0);
+	int k = digits2ek(*getArgReference_int(stk, pci, 2));
 	int r;
 
 	(void) cntxt;
@@ -3418,6 +3462,11 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		r = (int) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.month_interval", "illegal argument");
 	}
@@ -3437,12 +3486,12 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = (lng *) getArgReference(stk, pci, 0), r;
-	int k = digits2ek(*(int *) getArgReference(stk, pci, 2)), scale = 0;
+	lng *ret = getArgReference_lng(stk, pci, 0), r;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3) 
-		scale = *(int*) getArgReference(stk, pci, 3);
+		scale = *getArgReference_int(stk, pci, 3);
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
@@ -3459,6 +3508,11 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
+		break;
+#endif
 	default:
 		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
@@ -3485,7 +3539,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-second_interval_daytime(lng *res, daytime *s, int *d, int *sk)
+second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
 {
 	int k = digits2sk(*d);
 	lng r = *(int *) s;
@@ -3522,7 +3576,7 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	daytime t, *res = (daytime *) getArgReference(stk, pci, 0);
+	daytime t, *res = getArgReference_TYPE(stk, pci, 0, daytime);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3537,7 +3591,7 @@ SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	timestamp t, *res = (timestamp *) getArgReference(stk, pci, 0);
+	timestamp t, *res = getArgReference_TYPE(stk, pci, 0, timestamp);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3558,8 +3612,8 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int cnt;
 	cq *q = NULL;
 	BAT *query, *count;
-	int *rquery = (int *) getArgReference(stk, pci, 0);
-	int *rcount = (int *) getArgReference(stk, pci, 1);
+	bat *rquery = getArgReference_bat(stk, pci, 0);
+	bat *rcount = getArgReference_bat(stk, pci, 1);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3598,8 +3652,8 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int cnt;
 	BAT *rewrite, *count;
-	int *rrewrite = (int *) getArgReference(stk, pci, 0);
-	int *rcount = (int *) getArgReference(stk, pci, 1);
+	bat *rrewrite = getArgReference_bat(stk, pci, 0);
+	bat *rcount = getArgReference_bat(stk, pci, 1);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3637,9 +3691,9 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	TRACEtable(t);
 	for (i = 0; i < 12; i++) {
-		int id = t[i]->batCacheid;
+		bat id = t[i]->batCacheid;
 
-		*(int *) getArgReference(stk, pci, i) = id;
+		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
@@ -3661,9 +3715,9 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	QLOGcatalog(t);
 	for (i = 0; i < 7; i++) {
-		int id = t[i]->batCacheid;
+		bat id = t[i]->batCacheid;
 
-		*(int *) getArgReference(stk, pci, i) = id;
+		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
@@ -3679,9 +3733,9 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	QLOGcalls(t);
 	for (i = 0; i < 10; i++) {
-		int id = t[i]->batCacheid;
+		bat id = t[i]->batCacheid;
 
-		*(int *) getArgReference(stk, pci, i) = id;
+		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
@@ -3690,7 +3744,7 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk, pci, 0);
+	int *ret = getArgReference_int(stk, pci, 0);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
@@ -3710,9 +3764,9 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	sql_delta *d;
-	oid *rid = (oid *) getArgReference(stk, pci, 0);
-	str *sname = (str *) getArgReference(stk, pci, 2);
-	str *tname = (str *) getArgReference(stk, pci, 3);
+	oid *rid = getArgReference_oid(stk, pci, 0);
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3737,7 +3791,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *name)
+do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b, *g;
 	BUN p, q;
@@ -3798,7 +3852,7 @@ do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *
 }
 
 static str
-do_sql_rank(bat *rid, bat *bid, int nrank, int dense, const char *name)
+do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b;
 	BATiter bi;
@@ -3842,27 +3896,27 @@ do_sql_rank(bat *rid, bat *bid, int nrank, int dense, const char *name)
 }
 
 str
-sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
 {
 	(void) gpe;
 	return do_sql_rank_grp(rid, bid, gid, 1, 0, "sql.rank_grp");
 }
 
 str
-sql_dense_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
 {
 	(void) gpe;
 	return do_sql_rank_grp(rid, bid, gid, 2, 1, "sql.dense_rank_grp");
 }
 
 str
-sql_rank(bat *rid, bat *bid)
+sql_rank(bat *rid, const bat *bid)
 {
 	return do_sql_rank(rid, bid, 1, 0, "sql.rank");
 }
 
 str
-sql_dense_rank(bat *rid, bat *bid)
+sql_dense_rank(bat *rid, const bat *bid)
 {
 	return do_sql_rank(rid, bid, 2, 1, "sql.dense_rank");
 }
@@ -3873,7 +3927,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s, t, *ret;
 
 	(void) cntxt;
-	ret = (str *) getArgReference(stk, pci, 0);
+	ret = getArgReference_str(stk, pci, 0);
 	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_DEBUG);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
@@ -3890,8 +3944,8 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
+	str *sch = getArgReference_str(stk, pci, 1);
+	str *tbl = getArgReference_str(stk, pci, 2);
 	sql_trans *tr;
 	sql_schema *s;
 	sql_table *t;
@@ -3924,7 +3978,7 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		if (first) {
 			first = 0;
-			b = store_funcs.bind_col(tr, c, 0);
+			b = store_funcs.bind_col(tr, c, RDONLY);
 			msg = CLUSTER_key(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -3938,7 +3992,7 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.cluster", "Can not access descriptor");
 		}
 
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.cluster", "Can not access descriptor");
 		msg = CLUSTER_apply(&bid, b, map);
@@ -3970,8 +4024,8 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
+	str *sch = getArgReference_str(stk, pci, 1);
+	str *tbl = getArgReference_str(stk, pci, 2);
 	sql_trans *tr;
 	sql_schema *s;
 	sql_table *t;
@@ -4002,9 +4056,9 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		if (first) {
 			bat psum;
-			unsigned int bits = 10, off = 0;
+			int bits = 10, off = 0;
 			first = 0;
-			b = store_funcs.bind_col(tr, c, 0);
+			b = store_funcs.bind_col(tr, c, RDONLY);
 			msg = MKEYbathash(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -4016,7 +4070,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				return msg;
 		}
 
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.cluster", "Can not access descriptor");
 		msg = CLS_map(&bid, &mid, &b->batCacheid);
@@ -4048,10 +4102,10 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Shrinking and re-using space to vacuum clean the holes in the relations.
  */
 static str
-vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int *, int *, int *), const char *name)
+vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat *, const bat *, const bat *), const char *name)
 {
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
+	str *sch = getArgReference_str(stk, pci, 1);
+	str *tbl = getArgReference_str(stk, pci, 2);
 	sql_trans *tr;
 	sql_schema *s;
 	sql_table *t;
@@ -4087,13 +4141,18 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 
 	/* get the deletions BAT */
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
+	if (BATcount(del) == 0) {
+		BBPreleaseref(del->batCacheid);
+		return MAL_SUCCEED;
+	} 
+
 
 	i = 0;
 	bids[i] = 0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
 		c = o->data;
-		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL || (msg = (*func) (&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
+		b = store_funcs.bind_col(tr, c, RDONLY);
+		if (b == NULL || (msg = (*func) (&bid, &b->batCacheid, &del->batCacheid)) != NULL) {
 			for (i--; i >= 0; i--)
 				BBPdecref(bids[i], TRUE);
 			if (b)
@@ -4114,6 +4173,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (int
 			BBPdecref(bids[i], TRUE);
 		throw(SQL, name, "Too many columns to handle, use copy instead");
 	}
+	BBPreleaseref(del->batCacheid);
 
 	mvc_clear_table(m, t);
 	for (o = t->columns.set->h, i = 0; o; o = o->next, i++) {
@@ -4150,8 +4210,8 @@ SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
+	str *sch = getArgReference_str(stk, pci, 1);
+	str *tbl = getArgReference_str(stk, pci, 2);
 	sql_trans *tr;
 	sql_schema *s;
 	sql_table *t;
@@ -4185,7 +4245,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
-		b = store_funcs.bind_col(tr, c, 0);
+		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
 			throw(SQL, "sql.vacuum", "Can not access descriptor");
 		ordered |= BATtordered(b);
@@ -4196,13 +4256,15 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the deletions BAT */
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
-	/* now decide on the algorithm */
-	if (ordered) {
-		if (BATcount(del) > cnt / 20)
-			SQLshrink(cntxt, mb, stk, pci);
-	} else
-		SQLreuse(cntxt, mb, stk, pci);
-
+	if (BATcount(del) > 0) {
+		/* now decide on the algorithm */
+		if (ordered) {
+			if (BATcount(del) > cnt / 20)
+				SQLshrink(cntxt, mb, stk, pci);
+		} else {
+			SQLreuse(cntxt, mb, stk, pci);
+		}
+	}
 	BBPreleaseref(del->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -4213,8 +4275,8 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *sch = (str *) getArgReference(stk, pci, 1);
-	str *tbl = (str *) getArgReference(stk, pci, 2);
+	str *sch = getArgReference_str(stk, pci, 1);
+	str *tbl = getArgReference_str(stk, pci, 2);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -4282,18 +4344,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 	node *nsch, *ntab, *ncol;
 	int w;
-	int *rsch = (int *) getArgReference(stk, pci, 0);
-	int *rtab = (int *) getArgReference(stk, pci, 1);
-	int *rcol = (int *) getArgReference(stk, pci, 2);
-	int *rtype = (int *) getArgReference(stk, pci, 3);
-	int *rloc = (int *) getArgReference(stk, pci, 4);
-	int *rcnt = (int *) getArgReference(stk, pci, 5);
-	int *ratom = (int *) getArgReference(stk, pci, 6);
-	int *rsize = (int *) getArgReference(stk, pci, 7);
-	int *rheap = (int *) getArgReference(stk, pci, 8);
-	int *rindices = (int *) getArgReference(stk, pci, 9);
-	int *rimprints = (int *) getArgReference(stk, pci, 10);
-	int *rsort = (int *) getArgReference(stk, pci, 11);
+	bat *rsch = getArgReference_bat(stk, pci, 0);
+	bat *rtab = getArgReference_bat(stk, pci, 1);
+	bat *rcol = getArgReference_bat(stk, pci, 2);
+	bat *rtype = getArgReference_bat(stk, pci, 3);
+	bat *rloc = getArgReference_bat(stk, pci, 4);
+	bat *rcnt = getArgReference_bat(stk, pci, 5);
+	bat *ratom = getArgReference_bat(stk, pci, 6);
+	bat *rsize = getArgReference_bat(stk, pci, 7);
+	bat *rheap = getArgReference_bat(stk, pci, 8);
+	bat *rindices = getArgReference_bat(stk, pci, 9);
+	bat *rimprints = getArgReference_bat(stk, pci, 10);
+	bat *rsort = getArgReference_bat(stk, pci, 11);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4366,7 +4428,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_column *c = (sql_column *) ncol->data;
-								BAT *bn = store_funcs.bind_col(tr, c, 0);
+								BAT *bn = store_funcs.bind_col(tr, c, RDONLY);
 								lng sz;
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
@@ -4431,7 +4493,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
 								if (c->type != no_idx) {
-									BAT *bn = store_funcs.bind_idx(tr, c, 0);
+									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
@@ -4512,8 +4574,8 @@ str
 RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int pos = 0;
-	str *expr = (str *) getArgReference(stk, pci, 1);
-	bit *opt = (bit *) getArgReference(stk, pci, 2);
+	str *expr = getArgReference_str(stk, pci, 1);
+	bit *opt = getArgReference_bit(stk, pci, 2);
 	backend *b = NULL;
 	mvc *m = NULL;
 	str msg;
@@ -4590,7 +4652,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 str
-STRindex_int(int *i, str src, bit *u)
+STRindex_int(int *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4598,7 +4660,7 @@ STRindex_int(int *i, str src, bit *u)
 }
 
 str
-BATSTRindex_int(bat *res, bat *src, bit *u)
+BATSTRindex_int(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4646,7 +4708,7 @@ BATSTRindex_int(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_sht(sht *i, str src, bit *u)
+STRindex_sht(sht *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4654,7 +4716,7 @@ STRindex_sht(sht *i, str src, bit *u)
 }
 
 str
-BATSTRindex_sht(bat *res, bat *src, bit *u)
+BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4702,7 +4764,7 @@ BATSTRindex_sht(bat *res, bat *src, bit *u)
 }
 
 str
-STRindex_bte(bte *i, str src, bit *u)
+STRindex_bte(bte *i, const str *src, const bit *u)
 {
 	(void)src; (void)u;
 	*i = 0;
@@ -4710,7 +4772,7 @@ STRindex_bte(bte *i, str src, bit *u)
 }
 
 str
-BATSTRindex_bte(bat *res, bat *src, bit *u)
+BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 {
 	BAT *s, *r;
 
@@ -4758,7 +4820,7 @@ BATSTRindex_bte(bat *res, bat *src, bit *u)
 }
 
 str
-STRstrings(str *i, str src)
+STRstrings(str *i, const str *src)
 {
 	(void)src;
 	*i = 0;
@@ -4766,7 +4828,7 @@ STRstrings(str *i, str src)
 }
 
 str
-BATSTRstrings(bat *res, bat *src)
+BATSTRstrings(bat *res, const bat *src)
 {
 	BAT *s, *r;
 	Heap *h;

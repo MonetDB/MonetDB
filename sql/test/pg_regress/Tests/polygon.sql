@@ -1,7 +1,7 @@
 --
--- string
+-- POLYGON
 --
--- string logic
+-- polygon logic
 --
 -- 3	      o
 --	      |
@@ -14,7 +14,7 @@
 --	0 1 2 3 4
 --
 
-CREATE TABLE POLYGON_TBL(f1 string);
+CREATE TABLE POLYGON_TBL(f1 polygon);
 
 
 INSERT INTO POLYGON_TBL(f1) VALUES ('(2.0,0.0),(2.0,4.0),(0.0,0.0)');
@@ -26,7 +26,7 @@ INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0,0.0)');
 
 INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0,1.0),(0.0,1.0)');
 
--- bad string input strings 
+-- bad polygon input strings 
 INSERT INTO POLYGON_TBL(f1) VALUES ('0.0');
 
 INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0 0.0');
@@ -68,20 +68,20 @@ SELECT '' AS zero, p.*
 -- contained 
 SELECT '' AS one, p.* 
    FROM POLYGON_TBL p
-   WHERE p.f1 @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+   WHERE p.f1 @ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 
 -- same 
 SELECT '' AS one, p.*
    FROM POLYGON_TBL p
-   WHERE p.f1 ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+   WHERE p.f1 ~= polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 
 -- contains 
 SELECT '' AS one, p.*
    FROM POLYGON_TBL p
-   WHERE p.f1 ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
+   WHERE p.f1 ~ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 
 --
--- string logic
+-- polygon logic
 --
 -- 3	      o
 --	      |
@@ -94,26 +94,26 @@ SELECT '' AS one, p.*
 --	0 1 2 3 4
 --
 -- left of 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 
 -- left overlap 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' << polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
 
 -- right overlap 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' &> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' &> polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
 
 -- right of 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' >> string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' >> polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 
 -- contained in 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' @ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' @ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 
 -- contains 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~ string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 
 -- same 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~= string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~= polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 
 -- overlap 
-SELECT string '(2.0,0.0),(2.0,4.0),(0.0,0.0)' && string '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
+SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' && polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
 

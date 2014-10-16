@@ -41,12 +41,15 @@
 #endif
 
 language_export str CMDraise(str *ret, str *msg);
-language_export str MALassertBit(int *ret, bit *val, str *msg);
-language_export str MALassertStr(int *ret, str *val, str *msg);
-language_export str MALassertOid(int *ret, oid *val, str *msg);
-language_export str MALassertSht(int *ret, sht *val, str *msg);
-language_export str MALassertInt(int *ret, int *val, str *msg);
-language_export str MALassertLng(int *ret, lng *val, str *msg);
+language_export str MALassertBit(void *ret, bit *val, str *msg);
+language_export str MALassertStr(void *ret, str *val, str *msg);
+language_export str MALassertOid(void *ret, oid *val, str *msg);
+language_export str MALassertSht(void *ret, sht *val, str *msg);
+language_export str MALassertInt(void *ret, int *val, str *msg);
+language_export str MALassertLng(void *ret, lng *val, str *msg);
+#ifdef HAVE_HGE
+language_export str MALassertHge(void *ret, hge *val, str *msg);
+#endif
 language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -17,7 +17,7 @@ stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}
   -h | --host=<hostname>
   -? | --help
 
-The trace options (default 'ISTest'):
+The trace options (default 'ISTestn'):
   S = monitor start of instruction profiling
   a = aggregate clock ticks per instruction
   e = event counter
@@ -29,6 +29,7 @@ The trace options (default 'ISTest'):
   c = cpu statistics (utime,ctime,stime,cstime)
   m = rss memory as provided by OS (in MB)
   M = memory footprint of non-persistent objects
+  n = numa intra socket data flow
   r = block reads
   w = block writes
   b = bytes read/written

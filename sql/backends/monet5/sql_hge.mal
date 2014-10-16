@@ -1,0 +1,80 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2014 MonetDB B.V.
+# All Rights Reserved.
+
+module batsql;
+module sql;
+
+
+pattern calc.hash( v:hge ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:hge] ) :bat[:oid,:wrd] address MKEYbathash;
+
+command sql.dec_round( v:hge, r:hge ) :hge 
+address hge_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+command batsql.dec_round( v:bat[:oid,:hge], r:hge ) :bat[:oid,:hge] 
+address hge_bat_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
+command sql.round( v:hge, d:int, s:int, r:bte) :hge
+address hge_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+command batsql.round( v:bat[:oid,:hge], d:int, s:int, r:bte) :bat[:oid,:hge]
+address hge_bat_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+
+command calc.second_interval( sc:int, v:hge, ek:int, sk:int ) :lng
+address hge_dec2second_interval
+comment "cast hge decimal to a second_interval";
+
+
+command calc.hge( v:void, digits:int ) :hge 
+address nil_2num_hge
+comment "cast to hge and check for overflow";
+command calc.hge( v:void, digits:int, scale:int ) :hge 
+address nil_2dec_hge
+comment "cast to dec(hge) and check for overflow";
+command batcalc.hge( v:bat[:oid,:void], digits:int ) :bat[:oid,:hge] 
+address batnil_2num_hge
+comment "cast to hge and check for overflow";
+command batcalc.hge( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:hge] 
+address batnil_2dec_hge
+comment "cast to dec(hge) and check for overflow";
+
+command calc.hge( v:str, digits:int ) :hge 
+address str_2num_hge
+comment "cast to hge and check for overflow";
+command calc.hge( v:str, digits:int, scale:int ) :hge 
+address str_2dec_hge
+comment "cast to dec(hge) and check for overflow";
+command batcalc.hge( v:bat[:oid,:str], digits:int ) :bat[:oid,:hge] 
+address batstr_2num_hge
+comment "cast to hge and check for overflow";
+command batcalc.hge( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:hge] 
+address batstr_2dec_hge
+comment "cast to dec(hge) and check for overflow";
+
+
+pattern calc.month_interval( v:hge, ek:int, sk:int ) :int
+address month_interval
+comment "cast hge to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:hge, ek:int, sk:int ) :lng
+address second_interval
+comment "cast hge to a second_interval and check for overflow";
+
+include sql_decimal_hge;
+include sql_aggr_hge;

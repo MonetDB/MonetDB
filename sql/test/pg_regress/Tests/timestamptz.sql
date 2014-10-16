@@ -2,30 +2,36 @@
 -- TIMESTAMPTZ
 --
 -- needed so tests pass even in Australia
-SET australian_timezones = 'off';
+/* SET australian_timezones = 'off'; */
 
 CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone);
 
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('current');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
+--INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
+INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
+--INSERT INTO TIMESTAMPTZ_TBL VALUES ('current');
+INSERT INTO TIMESTAMPTZ_TBL VALUES (current_timestamp);
+--INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(current_date as timestamptz));
+--INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub(current_date, 24*60*60.0) as timestamptz));
+--INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamptz));
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow EST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow zulu');
 
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = timestamp with time zone 'today';
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = timestamp with time zone 'tomorrow';
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = timestamp with time zone 'yesterday';
-SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = timestamp with time zone 'now';
+SELECT d1 FROM TIMESTAMPTZ_TBL;
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(current_date as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
 
 DELETE FROM TIMESTAMPTZ_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
-SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 = timestamp(2) with time zone 'now';
+INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (now());
+SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
 COMMIT;
 DELETE FROM TIMESTAMPTZ_TBL;
 
@@ -54,7 +60,7 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-01-02 03:04:05');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01-08');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01-0800');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01 -08:00');
-INSERT INTO TIMESTAMPTZ_TBL VALUES ('19970210 173201 -0800');
+INSERT INTO TIMESTAMPTZ_TBL VALUES ('19970210 173201 -0800');  -- incorrect format
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-06-10 17:32:01 -07:00');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('2001-09-22T18:19:20');
 
@@ -74,10 +80,10 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997-02-10 17:32:01 PST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('Feb-10-1997 17:32:01 PST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('02-10-1997 17:32:01 PST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('19970210 173201 PST');
-set datestyle to ymd;
+/* set datestyle to ymd; */
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('97FEB10 5:32:01PM UTC');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('97/02/10 17:32:01 UTC');
-reset datestyle;
+/* reset datestyle; */
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('1997.041 17:32:01 UTC');
 
 -- Check date conversion and date arithmetic
@@ -121,41 +127,41 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES ('Jan 01 17:32:01 2001');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('Feb 16 17:32:01 -0097');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('Feb 16 17:32:01 5097 BC');
 
-SELECT '' AS "64", d1 FROM TIMESTAMPTZ_TBL; 
+SELECT '' AS "64", d1 FROM TIMESTAMPTZ_TBL;
 
 -- Demonstrate functions and operators
 SELECT '' AS "48", d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 > timestamp with time zone '1997-01-02';
+   WHERE d1 > cast('1997-01-02' as timestamptz);
 
 SELECT '' AS "15", d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 < timestamp with time zone '1997-01-02';
+   WHERE d1 < cast('1997-01-02' as timestamptz);
 
 SELECT '' AS one, d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 = timestamp with time zone '1997-01-02';
+   WHERE d1 = cast('1997-01-02' as timestamptz);
 
 SELECT '' AS "63", d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 != timestamp with time zone '1997-01-02';
+   WHERE d1 <> cast('1997-01-02' as timestamptz);
 
 SELECT '' AS "16", d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 <= timestamp with time zone '1997-01-02';
+   WHERE d1 <= cast('1997-01-02' as timestamptz);
 
 SELECT '' AS "49", d1 FROM TIMESTAMPTZ_TBL
-   WHERE d1 >= timestamp with time zone '1997-01-02';
+   WHERE d1 >= cast('1997-01-02' as timestamptz);
 
-SELECT '' AS "54", d1 - timestamp with time zone '1997-01-02' AS diff
+SELECT '' AS "54", d1 - cast('1997-01-02' as timestamptz) AS diff
    FROM TIMESTAMPTZ_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
 
-SELECT '' AS date_trunc_week, date_trunc( 'week', timestamp with time zone '2004-02-29 15:44:17.71393' ) AS week_trunc;
+SELECT '' AS date_trunc_week, date_trunc( 'week', cast('2004-02-29 15:44:17.71393' as timestamptz) ) AS week_trunc;
 
 -- Test casting within a BETWEEN qualifier
-SELECT '' AS "54", d1 - timestamp with time zone '1997-01-02' AS diff
+SELECT '' AS "54", d1 - cast('1997-01-02' as timestamptz) AS diff
   FROM TIMESTAMPTZ_TBL
-  WHERE d1 BETWEEN timestamp with time zone '1902-01-01' AND timestamp with time zone '2038-01-01';
+  WHERE d1 BETWEEN cast('1902-01-01' as timestamptz) AND cast('2038-01-01' as timestamptz);
 
 SELECT '' AS "54", d1 as timestamptz,
-   date_part( 'year', d1) AS year, date_part( 'month', d1) AS month,
-   date_part( 'day', d1) AS day, date_part( 'hour', d1) AS hour,
-   date_part( 'minute', d1) AS minute, date_part( 'second', d1) AS second
+   date_part( 'year', d1) AS "year", date_part( 'month', d1) AS "month",
+   date_part( 'day', d1) AS "day", date_part( 'hour', d1) AS "hour",
+   date_part( 'minute', d1) AS "minute", date_part( 'second', d1) AS "second"
    FROM TIMESTAMPTZ_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
 
 SELECT '' AS "54", d1 as timestamptz,
@@ -189,7 +195,7 @@ SELECT '' AS to_char_8, to_char(d1, 'YYYYTH YYYYth Jth')
    FROM TIMESTAMPTZ_TBL;
   
 SELECT '' AS to_char_9, to_char(d1, 'YYYY A.D. YYYY a.d. YYYY bc HH:MI:SS P.M. HH:MI:SS p.m. HH:MI:SS pm') 
-   FROM TIMESTAMPTZ_TBL;   
+   FROM TIMESTAMPTZ_TBL;
 
 SELECT '' AS to_char_10, to_char(d1, 'YYYY WW IYYY IYY IY I IW') 
    FROM TIMESTAMPTZ_TBL;
@@ -209,7 +215,7 @@ SELECT '' AS to_timestamp_5, to_timestamp('1,582nd VIII 21', 'Y,YYYth FMRM DD');
 SELECT '' AS to_timestamp_6, to_timestamp('15 "text between quote marks" 98 54 45', 
 										  'HH "\\text between quote marks\\"" YY MI SS');
     
-SELECT '' AS to_timestamp_7, to_timestamp('05121445482000', 'MMDDHHMISSYYYY');    
+SELECT '' AS to_timestamp_7, to_timestamp('05121445482000', 'MMDDHHMISSYYYY');
 
 SELECT '' AS to_timestamp_8, to_timestamp('2000January09Sunday', 'YYYYFMMonthDDFMDay');
 
@@ -230,4 +236,6 @@ SELECT '' AS to_timestamp_15, to_timestamp('200401', 'IYYYIW');
 SELECT '' AS to_timestamp_16, to_timestamp('200401', 'YYYYWW');
 
 
-SET DateStyle TO DEFAULT;
+/* SET DateStyle TO DEFAULT; */
+
+DROP TABLE TIMESTAMPTZ_TBL;

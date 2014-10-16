@@ -30,7 +30,7 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-opt_export str QOTgetStatistics(int *ret, str *nme);
+opt_export str QOTgetStatistics(bat *ret, str *nme);
 opt_export void QOTupdateStatistics(str nme, int prop, lng val);
 opt_export void QOTstatisticsExit(void);
 #endif /* _Q_STATISTICS_H */

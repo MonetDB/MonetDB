@@ -37,6 +37,6 @@ typedef struct QEPrecord {
 
 opt_export int OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGdumpQEP  if ( optDebug & (1 <<DEBUG_OPT_QEP) )
+#define OPTDEBUGdumpQEP  if ( optDebug & ((lng) 1 <<DEBUG_OPT_QEP) )
 
 #endif /* _OPT_QEP_ */

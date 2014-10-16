@@ -107,9 +107,9 @@ module batmmath;
 	command floor(x:bat[:oid,:flt])  :bat[:oid,:flt] 
 	address CMDscience_bat_flt_floor;
 
-	command fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	pattern fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
 	address CMDbatMODsignal;
-	command fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	pattern fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 	address CMDbatMODsignal;
 	
 	command atan2(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 

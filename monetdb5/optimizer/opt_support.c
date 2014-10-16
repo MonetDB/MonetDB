@@ -159,6 +159,7 @@ struct OPTcatalog {
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
 {"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
 {"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
+{"generator",	0,	0,	0,	DEBUG_OPT_GENERATOR},
 {"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
 {"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
@@ -194,7 +195,7 @@ lng optDebug;
  * Front-ends can set a collection of optimizers by name or their pipe alias.
  */
 str
-OPTsetDebugStr(int *ret, str *nme)
+OPTsetDebugStr(void *ret, str *nme)
 {
 	int i;
 	str name= *nme, t, s, env = 0;
@@ -286,7 +287,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 				/* all optimizers should behave like patterns */
-				/* However, we don;t have a stack now */
+				/* However, we don't have a stack now */
 				qot++;
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
@@ -840,13 +841,15 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 int isMapOp(InstrPtr p){
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
+		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef));
+		 (getModuleId(p) == mkeyRef)) &&
+		 getModuleId(p) != rapiRef;
 }
 
 int isLikeOp(InstrPtr p){
-	return	(getModuleId(p) == batstrRef &&
+	return	(getModuleId(p) == batalgebraRef &&
 		(getFunctionId(p) == likeRef || 
 		 getFunctionId(p) == not_likeRef || 
 		 getFunctionId(p) == ilikeRef ||
@@ -877,10 +880,15 @@ int isDiffOp(InstrPtr p){
 
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-                (getFunctionId(p) == joinRef ||
+                (getFunctionId(p) == crossRef ||
+                 getFunctionId(p) == subjoinRef ||
+                 getFunctionId(p) == joinRef ||
                  getFunctionId(p) == antijoinRef || /* is not mat save */
+                 getFunctionId(p) == subantijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
-                 getFunctionId(p) == bandjoinRef)
+                 getFunctionId(p) == subthetajoinRef ||
+                 getFunctionId(p) == bandjoinRef ||
+                 getFunctionId(p) == subbandjoinRef)
 		);
 }
 
@@ -908,34 +916,32 @@ int isFragmentGroup2(InstrPtr p){
 
 int isSubSelect(InstrPtr p)
 {
-	return (getModuleId(p)== algebraRef && (
-			getFunctionId(p)== subselectRef ||
-			getFunctionId(p)== thetasubselectRef ||
-			getFunctionId(p)== likesubselectRef ||
-			getFunctionId(p)== ilikesubselectRef));
+	char *func = getFunctionId(p);
+	size_t l = func?strlen(func):0;
+	
+	return (l >= 9 && getModuleId(p)== algebraRef && 
+	        strcmp(func+l-9,"subselect") == 0);
+}
+
+int isSubJoin(InstrPtr p)
+{
+	char *func = getFunctionId(p);
+	size_t l = func?strlen(func):0;
+	
+	return (l >= 7 && getModuleId(p)== algebraRef && 
+	        strcmp(func+l-7,"subjoin") == 0);
 }
 
 int isFragmentGroup(InstrPtr p){
 	return
-			(getModuleId(p)== pcreRef && (
-			getFunctionId(p)== likeselectRef ||
-			getFunctionId(p)== likeuselectRef  ||
-			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef 
-			))  ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== projectRef ||
-				getFunctionId(p)== selectRef ||
-				getFunctionId(p)== selectNotNilRef ||
-				getFunctionId(p)== uselectRef ||
-				getFunctionId(p)== antiuselectRef ||
-				getFunctionId(p)== thetauselectRef 
+				getFunctionId(p)== selectNotNilRef
 			))  ||
 			isSubSelect(p) ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== mirrorRef 
-			)
-		);
+			));
 }
 
 /*

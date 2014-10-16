@@ -1,0 +1,40 @@
+stderr of test 'large-number-operation-strange-results.Bug-2929` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 14:36:23 >  
+# 14:36:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/zhang/monet-install/bugday/debug/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=32568" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_tests_BugTracker" "--set" "mal_listing=0"
+# 14:36:23 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /export/scratch2/zhang/monet-install/bugday/debug/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /export/scratch2/zhang/monet-install/bugday/debug/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32568
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_tests_BugTracker
+# cmdline opt 	mal_listing = 0
+
+# 14:36:23 >  
+# 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=32568"
+# 14:36:23 >  
+
+MAPI  = monetdb@niels:34633
+QUERY = select          convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51                +          51.097 * 100000000000000;
+ERROR = !overflow in calculation 115099999999999999673254835333890048*10000.
+
+
+# 14:36:23 >  
+# 14:36:23 >  "Done."
+# 14:36:23 >  
+

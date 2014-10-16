@@ -73,13 +73,11 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 }
 
 sql_exp *
-exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti) 
+exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 
-	e->card = l->card;
-	if (e->card == CARD_ATOM && !exp_is_atom(l))
-		e->card = CARD_AGGR;
+	e->card = exps_card(l);
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -87,17 +85,6 @@ exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f, int anti)
 	if (anti)
 		set_anti(e);
 	return e;
-}
-
-sql_exp *
-exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f, int anti) 
-{
-	list *r = sa_list(sa);
-
-	append(r, r1);
-	if (r2)
-		append(r, r2);
-	return exp_filter(sa, l, r, f, anti);
 }
 
 sql_exp *
@@ -219,17 +206,36 @@ exp_atom_lng(sql_allocator *sa, lng i)
 {
 	sql_subtype it; 
 
+#ifdef HAVE_HGE
+	sql_find_subtype(&it, "bigint", 18, 0);
+#else
 	sql_find_subtype(&it, "bigint", 19, 0);
-	return exp_atom(sa, atom_int(sa, &it, (lng)i ));
+#endif
+	return exp_atom(sa, atom_int(sa, &it, i ));
 }
+
+#ifdef HAVE_HGE
+sql_exp *
+exp_atom_hge(sql_allocator *sa, hge i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "hugeint", 39, 0);
+	return exp_atom(sa, atom_int(sa, &it, i ));
+}
+#endif
 
 sql_exp *
 exp_atom_wrd(sql_allocator *sa, wrd w) 
 {
 	sql_subtype it; 
 
+#ifdef HAVE_HGE
+	sql_find_subtype(&it, "wrd", 18, 0);
+#else
 	sql_find_subtype(&it, "wrd", 19, 0);
-	return exp_atom(sa, atom_int(sa, &it, (lng)w ));
+#endif
+	return exp_atom(sa, atom_int(sa, &it, w ));
 }
 
 sql_exp *
@@ -751,6 +757,24 @@ exp_match_list( list *l, list *r)
 	return match;
 }
 
+static int 
+exps_equal( list *l, list *r)
+{
+	node *n, *m;
+
+	if (!l || !r)
+		return l == r;
+	if (list_length(l) != list_length(r))
+		return 0;
+	for (n = l->h, m = r->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data, *re = m->data;
+
+		if (!exp_match_exp(le,re))
+			return 0;
+	}
+	return 1;
+}
+
 int 
 exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
@@ -782,15 +806,15 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			break;
 		case e_aggr:
 			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
-			    exp_match_list(e1->l, e2->l) && 
+			    exps_equal(e1->l, e2->l) && 
 			    e1->flag == e2->flag)
 				return 1;
 			break;
 		case e_func:
 			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
-			    exp_match_list(e1->l, e2->l) &&
+			    exps_equal(e1->l, e2->l) &&
 			    /* optional order by expressions */
-			    exp_match_list(e1->r, e2->r))
+			    exps_equal(e1->r, e2->r))
 				return 1;
 			break;
 		case e_atom:
@@ -914,6 +938,19 @@ rel_has_exp(sql_rel *rel, sql_exp *e)
 {
 	if (rel_find_exp(rel, e) != NULL) 
 		return 0;
+	return -1;
+}
+
+int
+rel_has_exps(sql_rel *rel, list *exps)
+{
+	node *n;
+
+	if (!exps)
+		return -1;
+	for (n = exps->h; n; n = n->next)
+		if (rel_has_exp(rel, n->data) >= 0)
+			return 0;
 	return -1;
 }
 
@@ -1175,6 +1212,33 @@ exp_has_func( sql_exp *e )
 	return 0;
 }
 
+int
+exp_unsafe( sql_exp *e) 
+{
+	if (!e)
+		return 0;
+
+	if (e->type != e_func && e->type != e_convert)
+		return 0;
+
+	if (e->type == e_func && e->card == CARD_AGGR)
+		return 1;
+	if (e->type == e_convert && e->l)
+		return exp_unsafe(e->l);
+	if (e->type == e_func && e->l) {
+		list *args = e->l;
+		node *n;
+
+		for(n = args->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_unsafe(e))
+				return 1;			
+		}
+	}
+	return 0;
+}
+
 static int
 exp_key( sql_exp *e )
 {
@@ -1432,8 +1496,12 @@ list *
 exps_copy( sql_allocator *sa, list *exps)
 {
 	node *n;
-	list *nl = new_exp_list(sa);
+	list *nl;
 
+	if (!exps)
+		return exps;
+
+	nl = new_exp_list(sa);
 	for(n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data;
 
@@ -1456,21 +1524,21 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		ne->flag = e->flag;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_copy(sa, e->l);
 			list *r = exps_copy(sa, e->r);
-			if (l && r)
-				ne = exp_or(sa, l,r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
-			sql_exp *l = exp_copy(sa, e->l);
-			list *r = exps_copy(sa, e->r);
-
 			if (l && r) {
 				if (get_cmp(e) == cmp_filter)
 					ne = exp_filter(sa, l, r, e->f, is_anti(e));
 				else
-					ne = exp_in(sa, l, r, e->flag);
+					ne = exp_or(sa, l, r);
 			}
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			sql_exp *l = exp_copy(sa, e->l);
+			list *r = exps_copy(sa, e->r);
+
+			if (l && r) 
+				ne = exp_in(sa, l, r, e->flag);
 		} else {
 			l = exp_copy(sa, e->l);
 			r = exp_copy(sa, e->r);

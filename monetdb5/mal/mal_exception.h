@@ -40,8 +40,7 @@ enum malexception {
 	ARITH,
 	PERMD,
 	SQL,
-	RDF,
-	XQUERY
+	RDF
 };
 
 #define MAL_SUCCEED ((str) 0) /* no error */

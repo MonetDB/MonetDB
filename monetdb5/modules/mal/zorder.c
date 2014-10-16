@@ -121,7 +121,7 @@ ZORDdecode_int_oid_y(int *y, oid *z)
 }
 
 str
-ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
+ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 {
 	BAT *bx, *by,*bz;
 	int *p, *q, *r;
@@ -204,7 +204,7 @@ ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
 }
 
 str
-ZORDbatdecode_int_oid(int *xbid, int *ybid, int *zbid)
+ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 {
 	BAT *bx, *by,*bz;
 	oid *z, *q;
@@ -281,7 +281,7 @@ ZORDbatdecode_int_oid(int *xbid, int *ybid, int *zbid)
 }
 
 str
-ZORDbatdecode_int_oid_x(int *xbid, int *zbid)
+ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 {
 	BAT *bx,*bz;
 	oid *z, *q;
@@ -335,7 +335,7 @@ ZORDbatdecode_int_oid_x(int *xbid, int *zbid)
 }
 
 str
-ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
+ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 {
 	BAT *by,*bz;
 	oid *z, *q;
@@ -388,7 +388,7 @@ ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
 	return MAL_SUCCEED;
 }
 
-str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
+str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt)
 {
 	BAT *bn;
 	int i,j;

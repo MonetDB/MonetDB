@@ -57,19 +57,19 @@ SQLSetDescField_(ODBCDesc *desc,
 		addDescError(desc, "HY091", NULL, 0);
 		return SQL_ERROR;
 	case SQL_DESC_ARRAY_SIZE:
-		if ((SQLULEN) (size_t) ValuePtr == 0) {
+		if ((SQLULEN) (uintptr_t) ValuePtr == 0) {
 			/* Invalid attribute/option identifier */
 			addDescError(desc, "HY092", NULL, 0);
 			return SQL_ERROR;
 		}
 		if (isAD(desc)) {
 			/* limit size to protect against bugs */
-			if ((SQLULEN) (size_t) ValuePtr > 10000) {
+			if ((SQLULEN) (uintptr_t) ValuePtr > 10000) {
 				/* Driver does not support this function */
 				addDescError(desc, "IM001", NULL, 0);
 				return SQL_ERROR;
 			}
-			desc->sql_desc_array_size = (SQLULEN) (size_t) ValuePtr;
+			desc->sql_desc_array_size = (SQLULEN) (uintptr_t) ValuePtr;
 		}
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_STATUS_PTR:
@@ -81,7 +81,7 @@ SQLSetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_TYPE:
 		if (isAD(desc))
-			desc->sql_desc_bind_type = (SQLUINTEGER) (size_t) ValuePtr;
+			desc->sql_desc_bind_type = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		return SQL_SUCCESS;
 	case SQL_DESC_COUNT:
 		if (isIRD(desc)) {
@@ -196,7 +196,7 @@ SQLSetDescField_(ODBCDesc *desc,
 			rec->sql_desc_indicator_ptr = (SQLLEN *) ValuePtr;
 		return SQL_SUCCESS;
 	case SQL_DESC_LENGTH:
-		rec->sql_desc_length = (SQLUINTEGER) (size_t) ValuePtr;
+		rec->sql_desc_length = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		return SQL_SUCCESS;
 	case SQL_DESC_NAME:
 		if (isID(desc)) {

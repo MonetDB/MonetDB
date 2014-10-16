@@ -71,8 +71,16 @@
 #include <stdarg.h>		/* va_alist.. */
 #include <assert.h>
 
-#ifdef HAVE_NETDB_H
+#ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_NETDB_H
 # include <netinet/in_systm.h>
 # include <netinet/in.h>
 # include <netinet/ip.h>
@@ -132,6 +140,12 @@
 #define long_long_SWAP(l) \
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
+
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
 
@@ -571,7 +585,7 @@ file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	if (!feof(fp)) {
+	if (elmsize && cnt && !feof(fp)) {
 		if (ferror(fp) ||
 		    ((rc = fread(buf, elmsize, cnt, fp)) == 0 &&
 		     ferror(fp))) {
@@ -718,6 +732,22 @@ getFile(stream *s)
 	return (FILE *) s->stream_data.p;
 }
 
+#ifdef NATIVE_WIN32
+#define fileno(fd) _fileno(fd)
+#endif
+
+size_t
+getFileSize(stream *s)
+{
+       if (s->read == file_read) {
+               struct stat stb;
+
+               fstat(fileno((FILE *) s->stream_data.p), &stb);
+               return (size_t) stb.st_size;
+       }
+       return 0;               /* unknown */
+}
+
 static stream *
 open_stream(const char *filename, const char *flags)
 {
@@ -775,7 +805,7 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	if (!gzeof(fp)) {
+	if (size && !gzeof(fp)) {
 		size = gzread(fp, buf, size);
 		if (gzerror(fp, &err) != NULL && err < 0) {
 			s->errnr = MNSTR_READ_ERROR;
@@ -997,6 +1027,8 @@ stream_bzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
+	if (size == 0)
+		return 0;
 	size = BZ2_bzRead(&err, bzp->b, buf, size);
 	if (err == BZ_STREAM_END) {
 		/* end of stream, but not necessarily end of file: get
@@ -1444,20 +1476,23 @@ static ssize_t
 curl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	struct curl_data *c = (struct curl_data *) s->stream_data.p;
-	size_t size;
+	size_t size = cnt * elmsize;
 
 	if (c == NULL) {
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
 
+	if (size == 0)
+		return 0;
 	if (c->usesize - c->offset >= elmsize || !c->running) {
 		/* there is at least one element's worth of data
 		 * available, or we have reached the end: return as
 		 * much as we have, but no more than requested */
-		if (cnt * elmsize > c->usesize - c->offset)
+		if (size > c->usesize - c->offset) {
 			cnt = (c->usesize - c->offset) / elmsize;
-		size = cnt * elmsize;
+			size = cnt * elmsize;
+		}
 		memcpy(buf, c->buffer + c->offset, size);
 		c->offset += size;
 		if (c->offset == c->usesize)
@@ -1610,19 +1645,38 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #endif
 		|| (nr < 0 &&	/* syscall failed */
 		    s->timeout > 0 && /* potentially timeout */
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEWOULDBLOCK &&
+#else
 		    (errno == EAGAIN || errno == EWOULDBLOCK) && /* it was! */
+#endif
 		    s->timeout_func != NULL && /* callback function exists */
 		    !(*s->timeout_func)())     /* callback says don't stop */
-		|| (nr < 0 && errno == EINTR)) /* interrupted */
+		|| (nr < 0 &&
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEINTR
+#else
+		    errno == EINTR
+#endif
+			)) /* interrupted */
 		) {
 		errno = 0;
+#ifdef _MSC_VER
+		WSASetLastError(0);
+#endif
 		if (nr > 0)
 			res += nr;
 	}
 	if ((size_t) res >= elmsize)
 		return (ssize_t) (res / elmsize);
 	if (nr < 0) {
-		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		if (s->timeout > 0 &&
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEWOULDBLOCK
+#else
+		    (errno == EAGAIN || errno == EWOULDBLOCK)
+#endif
+			)
 			s->errnr = MNSTR_TIMEOUT;
 		else
 			s->errnr = MNSTR_WRITE_ERROR;
@@ -1639,24 +1693,62 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr || size == 0)
 		return -1;
 
-	do {
-		errno = 0;
-#ifdef NATIVE_WIN32
-		if (size > INT_MAX)
-			size = elmsize * (INT_MAX / elmsize);
+	if (size == 0)
+		return 0;
+#ifdef _MSC_VER
+	/* recv only takes an int parameter, and read does not accept
+	 * sockets */
+	if (size > INT_MAX)
+		size = elmsize * (INT_MAX / elmsize);
+#endif
+	for (;;) {
+		if (s->timeout) {
+			struct timeval tv;
+			fd_set fds;
+			int ret;
+
+			errno = 0;
+#ifdef _MSC_VER
+			WSASetLastError(0);
+#endif
+			FD_ZERO(&fds);
+			FD_SET(s->stream_data.s, &fds);
+			tv.tv_sec = s->timeout / 1000;
+			tv.tv_usec = (s->timeout % 1000) * 1000;
+			ret = select(
+#ifdef _MSC_VER
+				0, /* ignored on Windows */
+#else
+				s->stream_data.s + 1,
+#endif
+				&fds, NULL, NULL, &tv);
+			if (s->timeout_func && (*s->timeout_func)()) {
+				s->errnr = MNSTR_TIMEOUT;
+				return -1;
+			}
+			if (ret == SOCKET_ERROR) {
+				s->errnr = MNSTR_READ_ERROR;
+				return -1;
+			}
+			if (ret == 0)
+				continue;
+			assert(ret == 1);
+			assert(FD_ISSET(s->stream_data.s, &fds));
+		}
+#ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
+		if (nr == SOCKET_ERROR) {
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
 #else
 		nr = read(s->stream_data.s, buf, size);
-#endif
-	} while (nr == -1 && s->timeout > 0 &&
-		 (errno == EAGAIN || errno == EWOULDBLOCK) &&
-		 s->timeout_func && !(*s->timeout_func)());
-	if (nr < 0) {
-		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			s->errnr = MNSTR_TIMEOUT;
-		else
+		if (nr == -1) {
 			s->errnr = MNSTR_READ_ERROR;
-		return -1;
+			return -1;
+		}
+#endif
+		break;
 	}
 	if (nr == 0)
 		return 0;	/* end of file */
@@ -1673,12 +1765,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		ssize_t n;
 		n = socket_read(s, (char *) buf + nr, 1, (size_t) (size - nr));
 		if (n < 0) {
-			if (s->errnr == MNSTR_TIMEOUT) {
-				/* ignore timeout */
-				s->errnr = MNSTR_NO__ERROR;
-				continue;
-			}
-			/* some other read error is serious */
+			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
 		if (n == 0)	/* unexpected end of file */
@@ -1724,8 +1811,6 @@ socket_update_timeout(stream *s)
 	tv.tv_sec = s->timeout / 1000;
 	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
-	if (s->access == ST_READ)
-		(void) setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 	if (s->access == ST_WRITE)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
@@ -1747,10 +1832,13 @@ socket_open(SOCKET sock, const char *name)
 	s->update_timeout = socket_update_timeout;
 
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 #if defined(SO_DOMAIN)
 	{
 		socklen_t len = (socklen_t) sizeof(domain);
-		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) < 0)
+		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) == SOCKET_ERROR)
 			domain = AF_INET; /* give it a value if call fails */
 	}
 #endif
@@ -1879,6 +1967,9 @@ udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return (ssize_t) cnt;
 	addrlen = sizeof(udp->addr);
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	if ((res = sendto(udp->s, buf,
 #ifdef NATIVE_WIN32
 			  (int)	/* on Windows, the length is an int... */
@@ -1904,7 +1995,12 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr || udp == NULL)
 		return -1;
 
+	if (size == 0)
+		return 0;
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	if ((res = recvfrom(udp->s, buf,
 #ifdef NATIVE_WIN32
 			    (int)	/* on Windows, the length is an int... */
@@ -1958,11 +2054,14 @@ udp_create(const char *name)
 	s->stream_data.p = udp;
 
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	return s;
 }
 
 static int
-udp_socket(udp_stream * udp, char *hostname, int port, int write)
+udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 {
 	struct sockaddr *serv;
 	socklen_t servsize;
@@ -1984,13 +2083,13 @@ udp_socket(udp_stream * udp, char *hostname, int port, int write)
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return -1;
-	if (!write && bind(udp->s, serv, servsize) < 0)
+	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
 		return -1;
 	return 0;
 }
 
 stream *
-udp_rastream(char *hostname, int port, const char *name)
+udp_rastream(const char *hostname, int port, const char *name)
 {
 	stream *s;
 
@@ -2011,7 +2110,7 @@ udp_rastream(char *hostname, int port, const char *name)
 }
 
 stream *
-udp_wastream(char *hostname, int port, const char *name)
+udp_wastream(const char *hostname, int port, const char *name)
 {
 	stream *s;
 
@@ -2249,6 +2348,8 @@ ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	inbytesleft = ic->buflen;
 	outbuf = (char *) buf;
 	outbytesleft = elmsize * cnt;
+	if (outbytesleft == 0)
+		return 0;
 	while (outbytesleft > 0 && !ic->eof) {
 		if (ic->buflen == sizeof(ic->buffer)) {
 			/* ridiculously long multibyte sequence, return error */
@@ -2554,7 +2655,7 @@ buffer_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 	b = (buffer *) s->stream_data.p;
 	assert(b);
-	if (b && b->pos + size <= b->len) {
+	if (size && b && b->pos + size <= b->len) {
 		memcpy(buf, b->buf + b->pos, size);
 		b->pos += size;
 		return (ssize_t) (size / elmsize);
@@ -2940,7 +3041,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	 * empty read */
 	if (todo > 0 && cnt == 0)
 		s->nr = 0;
-	return (ssize_t) (cnt / elmsize);
+	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
 }
 
 static void
@@ -3146,6 +3247,33 @@ mnstr_writeLng(stream *s, lng val)
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
+#ifdef HAVE_HGE
+int
+mnstr_readHge(stream *s, hge *val)
+{
+	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
+	case 1:
+		if (s->byteorder != 1234)
+			*val = huge_int_SWAP(*val);
+		return 1;
+	case 0:
+		/* consider EOF an error */
+		s->errnr = MNSTR_READ_ERROR;
+		/* fall through */
+	default:
+		/* read failed */
+		return 0;
+	}
+}
+
+int
+mnstr_writeHge(stream *s, hge val)
+{
+	if (!s || s->errnr)
+		return 0;
+	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
+}
+#endif
 
 int
 mnstr_readBteArray(stream *s, signed char *val, size_t cnt)
@@ -3253,6 +3381,32 @@ mnstr_writeLngArray(stream *s, const lng *val, size_t cnt)
 		return 0;
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
+
+#ifdef HAVE_HGE
+int
+mnstr_readHgeArray(stream *s, hge *val, size_t cnt)
+{
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
+		s->errnr = MNSTR_READ_ERROR;
+		return 0;
+	}
+
+	if (s->byteorder != 1234) {
+		size_t i;
+		for (i = 0; i < cnt; i++, val++)
+			*val = huge_int_SWAP(*val);
+	}
+	return 1;
+}
+
+int
+mnstr_writeHgeArray(stream *s, const hge *val, size_t cnt)
+{
+	if (!s || s->errnr)
+		return 0;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
+}
+#endif
 
 int
 mnstr_printf(stream *s, const char *format, ...)
@@ -3460,7 +3614,7 @@ bstream_destroy(bstream *s)
 typedef struct {
 	stream *s;
 	size_t len, pos;
-	char buf[1];		/* NOTE: buf extends beyond array for wbs->len bytes */
+	char buf[];		/* NOTE: buf extends beyond array for wbs->len bytes */
 } wbs_stream;
 
 static int
@@ -3562,7 +3716,7 @@ wbstream(stream *s, size_t buflen)
 	ns = create_stream(s->name);
 	if (ns == NULL)
 		return NULL;
-	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen - 1);
+	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen);
 	if (wbs == NULL) {
 		destroy(ns);
 		return NULL;

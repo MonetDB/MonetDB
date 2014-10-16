@@ -885,21 +885,43 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 /* ============ Q-GRAM SELF JOIN ============== */
 
 str
-CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
+CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
 {
-	BUN n = BATcount(qgram);
+	BAT *qgram, *id, *pos, *len;
+	BUN n;
 	BUN i, j;
 	BAT *bn, *bn2;
+	oid *qbuf;
+	int *ibuf;
+	int *pbuf;
+	int *lbuf;
 
-	oid *qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
-	int *ibuf = (int *) Tloc(id, BUNfirst(id));
-	int *pbuf = (int *) Tloc(pos, BUNfirst(pos));
-	int *lbuf = (int *) Tloc(len, BUNfirst(len));
+	qgram = BATdescriptor(*qid);
+	id = BATdescriptor(*bid);
+	pos = BATdescriptor(*pid);
+	len = BATdescriptor(*lid);
+	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
+		if (qgram)
+			BBPreleaseref(qgram->batCacheid);
+		if (id)
+			BBPreleaseref(id->batCacheid);
+		if (pos)
+			BBPreleaseref(pos->batCacheid);
+		if (len)
+			BBPreleaseref(len->batCacheid);
+		throw(MAL, "txtsim.qgramselfjoin", RUNTIME_OBJECT_MISSING);
+	}
 
 	ERRORcheck((qgram->ttype != TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
 	ERRORcheck((id->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT id must be int.\n");
 	ERRORcheck((pos->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT pos must be int.\n");
 	ERRORcheck((len->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT len must be int.\n");
+
+	n = BATcount(qgram);
+	qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
+	ibuf = (int *) Tloc(id, BUNfirst(id));
+	pbuf = (int *) Tloc(pos, BUNfirst(pos));
+	lbuf = (int *) Tloc(len, BUNfirst(len));
 
 	/* ERRORcheck( (BATcount(qgram)>1 && !BATtordered(qgram)), "CMDqgramselfjoin: tail of qgram must be sorted.\n"); */
 
@@ -914,11 +936,15 @@ CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len,
 	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
 	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
-	*res = bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
-	*res2 = bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
+	bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (bn == NULL || bn2 == NULL){
 		if (bn) BBPreclaim(bn);
 		if (bn2) BBPreclaim(bn2);
+		BBPreleaseref(qgram->batCacheid);
+		BBPreleaseref(id->batCacheid);
+		BBPreleaseref(pos->batCacheid);
+		BBPreleaseref(len->batCacheid);
 		throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 	}
 
@@ -938,6 +964,14 @@ CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len,
 	bn2->hsorted = bn2->tsorted = 0;
 	bn2->hrevsorted = bn2->trevsorted = 0;
 	bn2->H->nonil = bn2->T->nonil = 0;
+
+	BBPreleaseref(qgram->batCacheid);
+	BBPreleaseref(id->batCacheid);
+	BBPreleaseref(pos->batCacheid);
+	BBPreleaseref(len->batCacheid);
+
+	BBPkeepref(*res1 = bn->batCacheid);
+	BBPkeepref(*res2 = bn2->batCacheid);
 
 	return MAL_SUCCEED;
 }
@@ -968,7 +1002,7 @@ utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
 }
 
 str
-CMDstr2qgrams(int *ret, str *val)
+CMDstr2qgrams(bat *ret, str *val)
 {
 	BAT *bn;
 	size_t i, len = strlen(*val) + 5;

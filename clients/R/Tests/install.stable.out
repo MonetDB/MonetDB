@@ -1,0 +1,13 @@
+stdout of test 'install` in directory 'clients/R` itself:
+
+
+# 14:24:00 >  
+# 14:24:00 >  "./install.sh" "install"
+# 14:24:00 >  
+
+All right, packages installed
+
+# 14:24:02 >  
+# 14:24:02 >  "Done."
+# 14:24:02 >  
+

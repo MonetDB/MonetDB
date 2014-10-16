@@ -93,13 +93,11 @@ strip_extra_zeros(char *s)
 
 	for (; *s && isspace((int) (unsigned char) *s); s++)
 		;
-	for (; *s && *s == '0'; s++)
-		;
 	res = s;
 	/* find end, and strip extra 0's */
 	for (; *s; s++) ;	
 	s--;
-	for (; *s && *s == '0'; s--)
+	for (; *s && *s == '0' && s[-1] == '0'; s--)
 		;
 	s++;
 	*s = 0;

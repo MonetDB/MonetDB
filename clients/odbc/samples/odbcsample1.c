@@ -25,6 +25,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sql.h>
 #include <sqlext.h>
 
@@ -116,7 +117,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
@@ -125,7 +126,7 @@ main(int argc, char **argv)
 	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
-	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (uintptr_t) SQL_AUTOCOMMIT_OFF, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* create a test table to be filled with values */
@@ -236,7 +237,7 @@ main(int argc, char **argv)
 	ret = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLEndTran");
 
-	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (size_t) SQL_AUTOCOMMIT_ON, 0);
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (uintptr_t) SQL_AUTOCOMMIT_ON, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* Now we are going to read back the values from the test table.

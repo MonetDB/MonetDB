@@ -17,8 +17,8 @@
     bat.append(c1,5@0);
     c := mat.new(c0,c1);
     bat.append(c,6@0);
-    j := algebra.join(b,c);
-    io.print(j);
+    (j,jj) := algebra.join(b,c);
+    io.print(j,jj);
 io.print(b);
 io.print(c);
 

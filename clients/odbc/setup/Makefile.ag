@@ -17,6 +17,8 @@
 
 DEFS = @DEFS@
 
+INCLUDES = $(ODBC_INCS)
+
 lib_MonetODBCs = {
 	MODULE
 	SOURCES = drvcfg.c drvcfg.h

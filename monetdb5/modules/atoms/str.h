@@ -34,8 +34,8 @@
 #define str_export extern
 #endif
 
-str_export bat *strPrelude(void);
-str_export str strEpilogue(void);
+str_export str strPrelude(void *ret);
+str_export str strEpilogue(void *ret);
 str_export str STRtostr(str *res, str *src);
 str_export str STRConcat(str *res, str *val1, str *val2);
 str_export str STRLength(int *res, str *arg1);

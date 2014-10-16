@@ -90,7 +90,7 @@ top N (
 | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL , customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ],
 | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL  as L10.c_custkey, customer.c_name NOT NULL as L10.c_name ] COUNT 
 | | | | | ) [ customer.c_custkey NOT NULL = L10.c_custkey NOT NULL HASHCOL  FETCH  ]
-| | | | ) [ L10.c_name NOT NULL as customer.c_name, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, L6.L6 NOT NULL ],
+| | | | ) [ L10.c_name NOT NULL as customer.c_name, customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , L6.L6 NOT NULL ],
 | | | | project (
 | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL  as L7.o_orderkey, orders.o_totalprice NOT NULL as L7.o_totalprice, orders.o_orderdate NOT NULL as L7.o_orderdate ] COUNT 
 | | | | ) [ L7.o_orderkey NOT NULL, L7.o_orderdate NOT NULL as orders.o_orderdate, L7.o_totalprice NOT NULL as orders.o_totalprice ]

@@ -12,4 +12,4 @@ exit always;
 #exit MALException;
 	return tryme:= false;
 end tryme;
-user.tryme();    # shouldn;t hang when you forget the exception
+user.tryme();    # shouldn't hang when you forget the exception

@@ -47,7 +47,7 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
+dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
@@ -57,7 +57,7 @@ dec_round_wrap(TYPE *res, TYPE *v, TYPE *r)
 }
 
 str
-bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
+bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -117,6 +117,7 @@ bat_dec_round_wrap(bat *_res, bat *_v, TYPE *r)
 	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -162,7 +163,7 @@ round_body(TYPE v, int r)
 }
 
 str
-round_wrap(TYPE *res, TYPE *v, bte *r)
+round_wrap(TYPE *res, const TYPE *v, const bte *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
@@ -172,7 +173,7 @@ round_wrap(TYPE *res, TYPE *v, bte *r)
 }
 
 str
-bat_round_wrap(bat *_res, bat *_v, bte *r)
+bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 {
 	BAT *res, *v;
 	TYPE *src, *dst;
@@ -232,6 +233,7 @@ bat_round_wrap(bat *_res, bat *_v, bte *r)
 	res->T->nil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
+	res->trevsorted = v->trevsorted;
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
@@ -244,7 +246,7 @@ bat_round_wrap(bat *_res, bat *_v, bte *r)
 }
 
 str
-trunc_wrap(TYPE *res, TYPE *v, int *r)
+trunc_wrap(TYPE *res, const TYPE *v, const int *r)
 {
 	/* shortcut nil */
 	if (*v == NIL(TYPE)) {

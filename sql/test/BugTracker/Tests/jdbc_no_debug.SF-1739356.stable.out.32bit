@@ -77,13 +77,12 @@ Operation successful
 |     X_37 := algebra.leftfetchjoin(X_32,X_36);                        |
 |     X_38 := aggr.count(X_37);                                        |
 |     X_39 := bat.append(X_26,X_38,true);                              |
-|     X_40 := algebra.selectNotNil(X_39);                              |
-|     X_41:wrd  := aggr.sum(X_40);                                     |
-|     sql.exportValue(1,".L1","L1","wrd",32,0,6,X_41,"");              |
+|     X_40:wrd  := aggr.sum(X_39);                                            |
+|     sql.exportValue(1,".L1","L1","wrd",32,0,6,X_40,"");                     |
 | end s3_1;                                                                   |
 | # querylog.define("explain select count(*) from tables;","sequential_pipe") |
 +-----------------------------------------------------------------------------+
-32 rows
+31 rows
 
 
 # 19:39:11 >  

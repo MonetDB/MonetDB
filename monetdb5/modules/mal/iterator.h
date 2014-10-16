@@ -33,13 +33,16 @@
 #define iterator_export extern
 #endif
 
-iterator_export str ITRnewChunk(lng *res, int *vid, int *bid, lng *granule);
-iterator_export str ITRnextChunk(lng *res, int *vid, int *bid, lng *granule);
+iterator_export str ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule);
+iterator_export str ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule);
 iterator_export str ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 iterator_export str ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 iterator_export str ITRnext_oid(oid *i, oid *step, oid *last);
 iterator_export str ITRnext_lng(lng *i, lng *step, lng *last);
+#ifdef HAVE_HGE
+iterator_export str ITRnext_hge(hge *i, hge *step, hge *last);
+#endif
 iterator_export str ITRnext_int(int *i, int *step, int *last);
 iterator_export str ITRnext_sht(sht *i, sht *step, sht *last);
 iterator_export str ITRnext_flt(flt *i, flt *step, flt *last);

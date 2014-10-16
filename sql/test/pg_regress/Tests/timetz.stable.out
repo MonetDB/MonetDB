@@ -51,79 +51,78 @@ Ready.
 #INSERT INTO TIMETZ_TBL VALUES ('11:59:59.99 PM PDT');
 [ 1 ]
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL;
-% sys.L0 # table_name
+% sys.L # table_name
 % Time TZ # name
-% ? # type
-% ? # length
-[ "00:01:00-07" ]
-[ "01:00:00-07" ]
-[ "02:03:00-07" ]
-[ "07:07:00-08" ]
-[ "08:08:00-04" ]
-[ "11:59:00-07" ]
-[ "12:00:00-07" ]
-[ "12:01:00-07" ]
-[ "23:59:00-07" ]
-[ "23:59:59.99-07" ]
-
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
 #SELECT f1 AS "Three" FROM TIMETZ_TBL WHERE f1 < '05:06:07-07';
-% sys.L0 # table_name
+% sys.L # table_name
 % Three # name
-% ? # type
-% ? # length
-[ "00:01:00-07" ]
-[ "01:00:00-07" ]
-[ "02:03:00-07" ]
-
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
 #SELECT f1 AS "Seven" FROM TIMETZ_TBL WHERE f1 > '05:06:07-07';
-% sys.L0 # table_name
+% sys.L # table_name
 % Seven # name
-% ? # type
-% ? # length
-[ "07:07:00-08" ]
-[ "08:08:00-04" ]
-[ "11:59:00-07" ]
-[ "12:00:00-07" ]
-[ "12:01:00-07" ]
-[ "23:59:00-07" ]
-[ "23:59:59.99-07" ]
-
+% timetz # type
+% 17 # length
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
 #SELECT f1 AS "None" FROM TIMETZ_TBL WHERE f1 < '00:00-07';
-% sys.L0 # table_name
+% sys.L # table_name
 % None # name
-% ? # type
-% ? # length
-
+% timetz # type
+% 17 # length
 #SELECT f1 AS "Ten" FROM TIMETZ_TBL WHERE f1 >= '00:00-07';
-% sys.L0 # table_name
+% sys.L # table_name
 % Ten # name
-% ? # type
-% ? # length
-[ "00:01:00-07" ]
-[ "01:00:00-07" ]
-[ "02:03:00-07" ]
-[ "07:07:00-08" ]
-[ "08:08:00-04" ]
-[ "11:59:00-07" ]
-[ "12:00:00-07" ]
-[ "12:01:00-07" ]
-[ "23:59:00-07" ]
-[ "23:59:59.99-07" ]
+% timetz # type
+% 17 # length
+[ 02:01:00.00+02:00	]
+[ 03:00:00.00+02:00	]
+[ 04:03:00.00+02:00	]
+[ 09:07:00.00+02:00	]
+[ 10:08:00.00+02:00	]
+[ 13:59:00.00+02:00	]
+[ 14:00:00.00+02:00	]
+[ 14:01:00.00+02:00	]
+[ 01:59:00.00+02:00	]
+[ 13:59:59.99+02:00	]
+#SELECT f1, f1 + time with time zone '00:01' AS "Illegal" FROM TIMETZ_TBL;
+% sys.timetz_tbl,	sys.L # table_name
+% f1,	Illegal # name
+% timetz,	time # type
+% 17,	15 # length
+[ 02:01:00.00+02:00,	00:02:00.000000	]
+[ 03:00:00.00+02:00,	01:01:00.000000	]
+[ 04:03:00.00+02:00,	02:04:00.000000	]
+[ 09:07:00.00+02:00,	07:08:00.000000	]
+[ 10:08:00.00+02:00,	08:09:00.000000	]
+[ 13:59:00.00+02:00,	12:00:00.000000	]
+[ 14:00:00.00+02:00,	12:01:00.000000	]
+[ 14:01:00.00+02:00,	12:02:00.000000	]
+[ 01:59:00.00+02:00,	nil	]
+[ 13:59:59.99+02:00,	12:00:59.990000	]
+#DROP TABLE TIMETZ_TBL;
 
-#--
-#-- TIME simple math
-#--
-#-- We now make a distinction between time and intervals,
-#-- and adding two times together makes no sense at all.
-#-- Leave in one query to show that it is rejected,
-#-- and do the rest of the testing in horology.sql
-#-- where we do mixed-type arithmetic. - thomas 2000-12-02
-#
-HINT:  No operator matches the given name and argument type(s). You may need to add explicit type casts.
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 12:44:11 >  
+# 12:44:11 >  "Done."
+# 12:44:11 >  
 

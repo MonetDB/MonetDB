@@ -1,0 +1,42 @@
+stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker` itself:
+
+
+# 14:11:48 >  
+# 14:11:48 >  Mtimeout -timeout 180  mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31879 --set xrpc_port=40474 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
+# 14:11:48 >  
+
+# MonetDB server v5.1.0, based on kernel v1.19.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:31879/
+# MonetDB/SQL module v2.19.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+#Client 1 1
+#MALexit: clients still active
+
+
+# 11:54:20 >  
+# 11:54:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_with_alias.SF-1520575.sql
+# 11:54:20 >  
+
+% sys.test_grp # table_name
+% b # name
+% int # type
+% 1 # length
+#create table a(f1 varchar(20), f2 int);
+#select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
+% sys.L,	sys.L1 # table_name
+% bug_alias,	L1 # name
+% varchar,	hugeint # type
+% 0,	1 # length
+
+# 11:54:20 >  
+# 11:54:20 >  Done.
+# 11:54:20 >  
+

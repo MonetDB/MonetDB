@@ -1213,7 +1213,7 @@ union lng_tzone {
 #include "mal_exception.h"
 
 str
-MTIMEnil2date(date *ret, const int *src)
+MTIMEnil2date(date *ret, const void *src)
 {
 	(void) src;
 	*ret = date_nil;
@@ -1245,7 +1245,7 @@ static BAT *timezone_name = NULL;
 static BAT *timezone_def = NULL;
 
 str
-MTIMEprelude(void)
+MTIMEprelude(void *ret)
 {
 	const char *msg = NULL;
 	ValRecord vr;
@@ -1258,6 +1258,7 @@ MTIMEprelude(void)
 	BAT *tzbatnme;
 	BAT *tzbatdef;
 
+	(void) ret;
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
 
@@ -1334,14 +1335,16 @@ MTIMEprelude(void)
 }
 
 str
-MTIMEepilogue(void)
+MTIMEepilogue(void *ret)
 {
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str
-MTIMEsynonyms(const bit *allow)
+MTIMEsynonyms(void *ret, const bit *allow)
 {
+	(void) ret;
 	if (*allow != bit_nil)
 		synonyms = *allow;
 	return MAL_SUCCEED;
@@ -1366,7 +1369,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 }
 
 str
-MTIMEtzone_set_local(int res, const tzone *z)
+MTIMEtzone_set_local(void *res, const tzone *z)
 {
 	(void) res;					/* fool compilers */
 	return tzone_set_local(z);
@@ -2235,6 +2238,17 @@ MTIMEtzone_create(tzone *ret, const int *minutes)
 }
 
 str
+MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
+{
+	*ret = *tzone_nil;
+	if (*minutes != lng_nil && *minutes < 24 * 60 && -*minutes < 24 * 60) {
+		set_offset(ret, (int) *minutes);
+		ret->dst = FALSE;
+	}
+	return MAL_SUCCEED;
+}
+
+str
 MTIMEtzone_isnil(bit *retval, const tzone *val)
 {
 	*retval = tz_isnil(*val);
@@ -2372,6 +2386,21 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *v, const
 }
 
 str
+MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = (int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
+str
 MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const int *months)
 {
 	daytime t;
@@ -2382,6 +2411,22 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
+
+str
+MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = -(int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
 
 str
 MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *mseconds)

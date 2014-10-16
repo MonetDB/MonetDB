@@ -121,7 +121,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	   of the factory */
 	i = psig->retc;
 	for (k = pci->retc; i < pci->argc; i++, k++) {
-		lhs = getArgReference(pl->stk,psig,k);
+		lhs = &pl->stk->stk[psig->argv[k]];
 		/* variable arguments ? */
 		if (k == psig->argc - 1)
 			k--;
@@ -209,7 +209,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		 * released to make room for the new ones.
 		 */
 		for (i = psig->retc; i < psig->argc; i++) {
-			lhs = getArgReference(pl->stk,psig,i);
+			lhs = &pl->stk->stk[psig->argv[i]];
 			if( lhs->vtype == TYPE_bat )
 				BBPdecref(lhs->val.bval, TRUE);
 		}
@@ -217,7 +217,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	/* copy the calling arguments onto the stack of the factory */
 	i = psig->retc;
 	for (i = psig->retc; i < psig->argc; i++) {
-		lhs = getArgReference(pl->stk,psig,i);
+		lhs = &pl->stk->stk[psig->argv[i]];
 		VALcopy(lhs, argv[i]);
 		if( lhs->vtype == TYPE_bat )
 			BBPincref(lhs->val.bval, TRUE);
@@ -226,7 +226,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	/* garbage collect the string arguments, these positions
 	   will simply be overwritten the next time.
 	for (i = psig->retc; i < psig->argc; i++)
-		garbageElement(lhs = getArgReference(pl->stk,psig,i));
+		garbageElement(lhs = &pl->stk->stk[psig->argv[i]]);
 	*/
 	return ret;
 }

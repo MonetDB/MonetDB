@@ -292,14 +292,14 @@ x2c(char *what)
  */
 
 int
-URLfromString(str src, int *len, str *url)
+URLfromString(str src, int *len, str *u)
 {
 	/* actually parse the message for valid url */
-	if (*url !=0)
-		GDKfree(*url);
+	if (*u !=0)
+		GDKfree(*u);
 
 	*len = (int) strlen(src);
-	*url = GDKstrdup(src);
+	*u = GDKstrdup(src);
 
 	return *len;
 }
@@ -330,7 +330,7 @@ URLtoString(str *s, int *len, str src)
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
 str
-URLgetAnchor(str *retval, str *val)
+URLgetAnchor(str *retval, url *val)
 {
 	const char *s;
 
@@ -354,7 +354,7 @@ URLgetAnchor(str *retval, str *val)
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
 str
-URLgetBasename(str *retval, str *val)
+URLgetBasename(str *retval, url *val)
 {
 	const char *s;
 	const char *b = NULL;
@@ -389,7 +389,7 @@ URLgetBasename(str *retval, str *val)
 /* COMMAND "getContent": Retrieve the file referenced
  * SIGNATURE: getContent(str) : str; */
 str
-URLgetContent(str *retval, str *Str1)
+URLgetContent(str *retval, url *Str1)
 {
 	stream *f;
 	str retbuf = NULL;
@@ -440,7 +440,7 @@ URLgetContent(str *retval, str *Str1)
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
 str
-URLgetContext(str *retval, str *val)
+URLgetContext(str *retval, url *val)
 {
 	const char *s;
 	const char *p;
@@ -465,7 +465,7 @@ URLgetContext(str *retval, str *val)
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
 str
-URLgetExtension(str *retval, str *val)
+URLgetExtension(str *retval, url *val)
 {
 	const char *s;
 	const char *e = NULL;
@@ -495,7 +495,7 @@ URLgetExtension(str *retval, str *val)
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
 str
-URLgetFile(str *retval, str *val)
+URLgetFile(str *retval, url *val)
 {
 	const char *s;
 	const char *b = NULL;
@@ -525,7 +525,7 @@ URLgetFile(str *retval, str *val)
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
 str
-URLgetHost(str *retval, str *val)
+URLgetHost(str *retval, url *val)
 {
 	const char *s;
 	const char *h = NULL;
@@ -559,7 +559,7 @@ URLgetHost(str *retval, str *val)
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
 str
-URLgetDomain(str *retval, str *val)
+URLgetDomain(str *retval, url *val)
 {
 	const char *s;
 	const char *h = NULL;
@@ -597,7 +597,7 @@ URLgetDomain(str *retval, str *val)
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
 str
-URLgetPort(str *retval, str *val)
+URLgetPort(str *retval, url *val)
 {
 	const char *s;
 	const char *p = NULL;
@@ -625,7 +625,7 @@ URLgetPort(str *retval, str *val)
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
 str
-URLgetProtocol(str *retval, str *val)
+URLgetProtocol(str *retval, url *val)
 {
 	const char *s;
 	size_t l;
@@ -645,7 +645,7 @@ URLgetProtocol(str *retval, str *val)
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
 str
-URLgetQuery(str *retval, str *val)
+URLgetQuery(str *retval, url *val)
 {
 	const char *s;
 	const char *q;
@@ -677,7 +677,7 @@ URLgetQuery(str *retval, str *val)
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
 str
-URLgetRobotURL(str *retval, str *val)
+URLgetRobotURL(str *retval, url *val)
 {
 	const char *s;
 	size_t l;
@@ -698,7 +698,7 @@ URLgetRobotURL(str *retval, str *val)
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
 str
-URLgetUser(str *retval, str *val)
+URLgetUser(str *retval, url *val)
 {
 	const char *s;
 	const char *p;
@@ -732,7 +732,7 @@ URLgetUser(str *retval, str *val)
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
 str
-URLisaURL(bit *retval, str *val)
+URLisaURL(bit *retval, url *val)
 {
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");
@@ -741,29 +741,27 @@ URLisaURL(bit *retval, str *val)
 }
 
 str
-URLnew(str *url, str *val)
+URLnew(url *u, str *val)
 {
-	(void) url; /* fool compiler */
-	*url = GDKstrdup(*val);
-
+	*u = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
 
 str
-URLnew3(str *url, str *protocol, str *server, str *file)
+URLnew3(url *u, str *protocol, str *server, str *file)
 {
 	size_t l;
 
 	l = GDK_STRLEN(*file) + GDK_STRLEN(*server) + GDK_STRLEN(*protocol) + 10;
-	*url = GDKmalloc(l);
-	if (*url == NULL)
+	*u = GDKmalloc(l);
+	if (*u == NULL)
 		throw(MAL, "url.newurl", "Allocation failed");
-	snprintf(*url, l, "%s://%s/%s", *protocol, *server, *file);
+	snprintf(*u, l, "%s://%s/%s", *protocol, *server, *file);
 	return MAL_SUCCEED;
 }
 
 str
-URLnew4(str *url, str *protocol, str *server, int *port, str *file)
+URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 {
 	str Protocol = *protocol;
 	str Server = *server;
@@ -779,15 +777,15 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 	if (GDK_STRNIL(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
-	*url = GDKmalloc(l);
-	if (*url == NULL)
+	*u = GDKmalloc(l);
+	if (*u == NULL)
 		throw(MAL, "url.newurl", "Allocation failed");
-	snprintf(*url, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
+	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
 	return MAL_SUCCEED;
 }
 
-str URLnoop(str *url, str *val)
+str URLnoop(url *u, url *val)
 {
-	*url = GDKstrdup(*val);
+	*u = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }

@@ -40,7 +40,7 @@
 
 
 str
-FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
+FUN(,TP1,_2_,TP2) (TP2 *res, const TP1 *v)
 {
 	dbl val = *v;
 
@@ -60,7 +60,7 @@ FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
 }
 
 str
-FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
+FUN(bat,TP1,_2_,TP2) (int *res, const int *bid)
 {
 	BAT *b, *bn;
 	TP1 *p, *q;
@@ -136,7 +136,7 @@ FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
  * precision.  This means we first scale the float before converting.
 */
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
+FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	TP1 r;
@@ -167,7 +167,7 @@ FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
 }
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (int *res, int *bid, int *d2, int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
 	BATiter bi;

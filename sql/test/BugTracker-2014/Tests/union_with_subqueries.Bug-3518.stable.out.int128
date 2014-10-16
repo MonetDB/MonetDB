@@ -1,0 +1,38 @@
+stdout of test 'union_with_subqueries.Bug-3518` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 18:48:46 >  
+# 18:48:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37060" "--set" "mapi_usock=/var/tmp/mtest-27766/.s.monetdb.37060" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0"
+# 18:48:46 >  
+
+# MonetDB 5 server v11.17.22
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.334 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37060/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27766/.s.monetdb.37060
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:48:46 >  
+# 18:48:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27766" "--port=37060"
+# 18:48:46 >  
+
+#SELECT sum(a), sum(a) FROM (( SELECT 1 AS A ) UNION ALL (SELECT 3 AS A)) AS query;
+% .L1,	.L2 # table_name
+% L1,	L2 # name
+% hugeint,	hugeint # type
+% 1,	1 # length
+[ 4,	4	]
+
+# 18:48:47 >  
+# 18:48:47 >  "Done."
+# 18:48:47 >  
+

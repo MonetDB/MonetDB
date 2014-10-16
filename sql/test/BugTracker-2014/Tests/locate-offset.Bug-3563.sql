@@ -1,0 +1,10 @@
+select locate('@','joeuser@mydatabase@test', 1) as string_position;
+select locate('@','joeuser@mydatabase@test', 2) as string_position;
+select locate('@','joeuser@mydatabase@test', 3) as string_position;
+select locate('@','joeuser@mydatabase@test', 4) as string_position;
+select locate('@','joeuser@mydatabase@test', 8) as string_position;
+select locate('@','joeuser@mydatabase@test', 9) as string_position;
+select locate('@','joeuser@mydatabase@test', -1) as string_position;
+select locate('@','joeuser@mydatabase@test', -2) as string_position;
+select locate('@','joeuser@mydatabase@test', -3) as string_position;
+select locate('@','joeuser@mydatabase@test', -4) as string_position;

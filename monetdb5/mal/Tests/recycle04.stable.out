@@ -50,7 +50,7 @@ function sql.qry(low:int,hgh:int):void;
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-    j := algebra.join(s1,b);
+    j := algebra.semijoin(s1,b);
     io.print(j);
 end qry;
 #recycle instruction:     m := sql.mvc();
@@ -78,7 +78,7 @@ function sql.qry(low:int,hgh:int):void;
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-    j := algebra.join(s1,b);
+    j := algebra.semijoin(s1,b);
     io.print(j);
 end qry;
 [ "start" ]
@@ -91,16 +91,16 @@ end qry;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	1  ]
-[ 1@0,	2  ]
-[ 2@0,	3  ]
-[ 3@0,	4  ]
-[ 4@0,	5  ]
-[ 5@0,	6  ]
-[ 6@0,	7  ]
-[ 7@0,	8  ]
-[ 8@0,	9  ]
-[ 9@0,	10  ]
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	8@0  ]
+[ 8@0,	9@0  ]
+[ 9@0,	10@0  ]
 [ "zoom in" ]
 #REUSED  [  0]       m := sql.mvc();
 #REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
@@ -113,11 +113,11 @@ end qry;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	1  ]
-[ 1@0,	2  ]
-[ 2@0,	3  ]
-[ 3@0,	4  ]
-[ 4@0,	5  ]
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
 [ "next step" ]
 #POOL BEFORE CLEANUP
 #RECYCLER  CATALOG admission ADM_ALL
@@ -159,8 +159,8 @@ end qry;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	2  ]
-[ 1@0,	3  ]
+[ 0@0,	2@0  ]
+[ 1@0,	3@0  ]
 [ "last" ]
 #REUSED  [  0]       m := sql.mvc();
 #REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
@@ -171,22 +171,27 @@ end qry;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	1  ]
-[ 1@0,	2  ]
-[ 2@0,	3  ]
-[ 3@0,	4  ]
-[ 4@0,	5  ]
-[ 5@0,	6  ]
-[ 6@0,	7  ]
-[ 7@0,	8  ]
-[ 8@0,	9  ]
-[ 9@0,	10  ]
-#RECYCLER  CATALOG admission ADM_ALL
-#CACHE= policy PROFIT limit= 20000 
-#RESOURCES hard stmt = 20000 hard var = 100000 hard mem=16741163008
-#recycled = 7 incache= 7 executed = 1574 memory(KB)= 944 PersBat memory=0
-#RPremoved = 0 RPactive= 7 RPmisses = 0
-#Cache search time= 0(usec)
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+[ 3@0,	4@0  ]
+[ 4@0,	5@0  ]
+[ 5@0,	6@0  ]
+[ 6@0,	7@0  ]
+[ 7@0,	8@0  ]
+[ 8@0,	9@0  ]
+[ 9@0,	10@0  ]
+#RECYCLER CATALOG cached 7 instructions, MAL recycled = 12 total MAL executed = 1743 memory= 184 total searchtime=26.25(usec) savings=7398704
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#0	4	925030	0	0	    X_0 := sql.mvc();
+#1	4	925043	0	88	    X_3 := sql.tid(X_0=1,X_2="sys",X_1="tbl");
+#2	2	925058	0	48	    X_15 := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
+#3	1	9	136	0	    X_18 := algebra.subselect(X_15=<tmp_1036>,X_3=<tmp_1027>,X_17=2,X_16=3,X_8=true,X_8=true,X_7=false);
+#4	1	10	48	0	    X_19 := algebra.semijoin(X_18=<tmp_1035>,X_15=<tmp_1036>);
+#5	1	10	136	0	    X_21 := algebra.subselect(X_15=<tmp_1036>,X_3=<tmp_1027>,X_0=1,X_20=11,X_8=true,X_8=true,X_7=false);
+#6	1	6	48	0	    X_22 := algebra.semijoin(X_21=<tmp_1041>,X_15=<tmp_1036>);
+#RECYCLE drop
+#RECYCLER CATALOG cached 7 instructions, MAL recycled = 12 total MAL executed = 1744 memory= 184 total searchtime=26.25(usec) savings=7398704
 # CL	   lru		cnt	 ticks	 rd	 wr	 Instr
 #        0	427369	4	44	0	0	    X_0 := sql.mvc();
 #        1	427380	4	57	88	0	    X_1 := sql.tid(1,"sys","tbl");

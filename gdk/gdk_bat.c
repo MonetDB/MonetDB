@@ -352,8 +352,8 @@ BATattach(int tt, const char *heapfile, int role)
 	path = GDKfilepath(bn->T->heap.farmid, BATDIR, bn->T->heap.filename, "new");
 	GDKcreatedir(path);
 	if (rename(heapfile, path) < 0) {
-		GDKfree(path);
 		GDKsyserror("BATattach: cannot rename heapfile\n");
+		GDKfree(path);
 		HEAPfree(&bn->T->heap);
 		GDKfree(bs);
 		return NULL;
@@ -379,23 +379,6 @@ BATattach(int tt, const char *heapfile, int role)
 	}
 	BBPcacheit(bs, 1);
 	return bn;
-}
-
-/*
- * The routine BATclone creates a bat with the same types as b.
- */
-BAT *
-BATclone(BAT *b, BUN cap, int role)
-{
-	BAT *c = BATnew(b->htype, b->ttype, cap, role);
-
-	if (c) {
-		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
-			BATseqbase(c, b->hseqbase);
-		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
-			BATseqbase(BATmirror(c), b->tseqbase);
-	}
-	return c;
 }
 
 /*
@@ -618,6 +601,8 @@ BATclear(BAT *b, int force)
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
+	BATseqbase(b, 0);
+	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
 	return b;
@@ -967,28 +952,36 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
 	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
-		bn->hsorted = b->hsorted || (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hrevsorted = b->hrevsorted || (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = b->hsorted;
+		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
 	} else {
-		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hsorted = bn->hrevsorted = 0; /* set based on count later */
 		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
-		bn->tsorted = b->tsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
-		bn->trevsorted = b->trevsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
 	} else {
-		bn->tsorted = bn->trevsorted = (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
+	}
+	if (BATcount(bn) <= 1) {
+		bn->hsorted = BATatoms[b->htype].linear;
+		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->hkey = 1;
+		bn->tsorted = BATatoms[b->ttype].linear;
+		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->tkey = 1;
 	}
 	if (writable != TRUE)
 		bn->batRestricted = BAT_READ;
@@ -998,8 +991,18 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	return NULL;
 }
 
+#ifdef HAVE_HGE
+#define un_move_sz16(src, dst, sz)					\
+		if (sz == 16) {						\
+			* (hge *) dst = * (hge *) src;			\
+		} else
+#else
+#define un_move_sz16(src, dst, sz)
+#endif
+
 #define un_move(src, dst, sz)						\
 	do {								\
+		un_move_sz16(src,dst,sz)				\
 		if (sz == 8) {						\
 			* (lng *) dst = * (lng *) src;			\
 		} else if (sz == 4) {					\
@@ -1804,6 +1807,11 @@ BUNfnd(BAT *b, const void *v)
 	case TYPE_lng:
 		HASHfnd_lng(r, bi, v);
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		HASHfnd_hge(r, bi, v);
+		break;
+#endif
 	case TYPE_str:
 		HASHfnd_str(r, bi, v);
 		break;
@@ -1973,6 +1981,12 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				x = &hidx.l;
 				htpe = TYPE_lng;
 				break;
+#ifdef HAVE_HGE
+			case SIZEOF_HGE:
+				/* does this occur? do we need to handle it? */
+				assert(0);
+				break;
+#endif
 			}
 		}
 	}
@@ -1992,6 +2006,12 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				y = &tidx.l;
 				ttpe = TYPE_lng;
 				break;
+#ifdef HAVE_HGE
+			case SIZEOF_HGE:
+				/* does this occur? do we need to handle it? */
+				assert(0);
+				break;
+#endif
 			}
 		}
 	}
@@ -2001,10 +2021,18 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	if (!ATOMvarsized(htpe)) {
 		hint = (ATOMsize(htpe) == sizeof(int));
 		hlng = (ATOMsize(htpe) == sizeof(lng));
+#ifdef HAVE_HGE
+		/* does this occur? do we need to handle it? */
+		assert(ATOMsize(htpe) != sizeof(hge));
+#endif
 	}
 	if (!ATOMvarsized(ttpe)) {
 		tint = (ATOMsize(ttpe) == sizeof(int));
 		tlng = (ATOMsize(ttpe) == sizeof(lng));
+#ifdef HAVE_HGE
+		/* does this occur? do we need to handle it? */
+		assert(ATOMsize(ttpe) != sizeof(hge));
+#endif
 	}
 
 	/* hashloop over head values, check tail values */
@@ -2096,6 +2124,10 @@ BATsetcount(BAT *b, BUN cnt)
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
+	if (cnt <= 1) {
+		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
+		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+	}
 	assert(b->batCapacity >= cnt);
 }
 
@@ -2754,8 +2786,7 @@ BATmode(BAT *b, int mode)
 
 /* BATassertProps checks whether properties are set correctly.  Under
  * no circumstances will it change any properties.  Note that the
- * "set" property is not checked.  Also note that the "nil" property
- * is not actually used anywhere, but it is checked. */
+ * "nil" property is not actually used anywhere, but it is checked. */
 
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
@@ -2777,6 +2808,8 @@ BATassertHeadProps(BAT *b)
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
 	assert(b->htype != TYPE_bat);
+	/* if BOUND2BTRUE is set, then so must the low order bit */
+	assert(!(b->hkey & BOUND2BTRUE) || (b->hkey & 1)); /* hkey != 2 */
 	assert(isVIEW(b) ||
 	       b->htype == TYPE_void ||
 	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));

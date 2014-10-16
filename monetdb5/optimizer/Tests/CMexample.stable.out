@@ -5,32 +5,40 @@ stdout of test 'CMexample` in directory 'monetdb5/optimizer` itself:
 # 08:55:26 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38095 --set monet_prompt= --trace --dbname=mTests_src_optimizer  CMexample.mal < /dev/null
 # 08:55:26 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.main():void;
-# Cost model example 
+# MonetDB 5 server v11.19.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31955/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20624/.s.monetdb.31955
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.q():void;
     r := bat.new(:oid,:int);
     s := bat.new(:oid,:int);
-    rs := algebra.select(s,1,1);
-    rr := bat.reverse(r);
-    j := algebra.join(rs,rr);
-    mdb.List();
-end main;
-function user.main():void;              #  0 main:void := user.main() {G}
+    r := bat.new(:oid,:int);
+    s := bat.new(:oid,:int);
+    x := bat.new(:oid,:oid);
+    rs := algebra.subselect(s,x,1,1,true,true,false);
+    j := algebra.leftfetchjoin(rs,r);
+end q;
+function user.main():void;
 # Cost model example 
-    r{rows=100} := bat.new(:oid,:int);  #  2 r:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
-    s{rows=1000} := bat.new(:oid,:int); #  3 s:bat[:oid,:int] := CMDBATnew(_4:oid, _8:int) {G}
-    rs{rows=501} := algebra.select(s{rows=1000},1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
-    rr{rows=100} := bat.reverse(r{rows=100});#  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
-    j{rows=100} := algebra.join(rs{rows=501},rr{rows=100});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
-    mdb.List();                         #  7 _14:void := MDBlistDetail() 
-end main;                               #  8  
+    mdb.List("user","q");
+end main;
+function user.q():void;                 #  0 q:void := user.q() {G}
+    r{rows=100} := bat.new(:oid,:int);  #  1 r:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    s{rows=1000} := bat.new(:oid,:int); #  2 s:bat[:oid,:int] := CMDBATnew(_3:oid, _7:int) {G}
+    r{rows=100} := bat.new(:oid,:int);  #  3 r:bat[:oid,:int] := CMDBATnew(_3:oid, _8:int) {G}
+    s{rows=1000} := bat.new(:oid,:int); #  4 s:bat[:oid,:int] := CMDBATnew(_3:oid, _9:int) {G}
+    x{rows=300} := bat.new(:oid,:oid);  #  5 x:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
+    rs{rows=151} := algebra.subselect(s{rows=1000},x{rows=300},1,1,true,true,false);#  6 rs:bat[:oid,:oid] := ALGsubselect2(s:bat[:oid,:int], x:bat[:oid,:oid], _13:int, _13:int, _14:bit, _14:bit, _15:bit) {G}
+    j{rows=100} := algebra.leftfetchjoin(rs{rows=151},r{rows=100});#  7 j:bat[:oid,:int] := ALGleftfetchjoin(rs:bat[:oid,:oid], r:bat[:oid,:int]) {G}
+end q;                                  #  8  
 
 # 08:55:26 >  
 # 08:55:26 >  Done.

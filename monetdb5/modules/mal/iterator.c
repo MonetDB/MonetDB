@@ -57,7 +57,7 @@
  * size.
  */
 str
-ITRnewChunk(lng *res, int *vid, int *bid, lng *granule)
+ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
 	BUN cnt, first;
@@ -86,7 +86,7 @@ ITRnewChunk(lng *res, int *vid, int *bid, lng *granule)
  * The granule size may differ in each call.
  */
 str
-ITRnextChunk(lng *res, int *vid, int *bid, lng *granule)
+ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
 	BUN i;
@@ -131,14 +131,14 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter bi;
 	BAT *b;
 	oid *head;
-	int *bid;
+	bat *bid;
 	ValPtr tail;
 
 	(void) cntxt;
 	(void) mb;
-	head = (oid *) getArgReference(stk, pci, 0);
-	tail = getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk, pci, 2);
+	head = getArgReference_oid(stk, pci, 0);
+	tail = &stk->stk[pci->argv[1]];
+	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
@@ -168,9 +168,9 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	head = (oid *) getArgReference(stk, pci, 0);
-	tail = getArgReference(stk,pci,1);
-	bid = (bat *) getArgReference(stk, pci, 2);
+	head = getArgReference_oid(stk, pci, 0);
+	tail = &stk->stk[pci->argv[1]];
+	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
@@ -204,6 +204,16 @@ str ITRnext_lng(lng *i, lng *step, lng *last){
 		*i = lng_nil;
 	return MAL_SUCCEED;
 }
+#ifdef HAVE_HGE
+str ITRnext_hge(hge *i, hge *step, hge *last){
+	hge v = *i;
+	v = v + *step;
+	*i = v;
+	if ( *last <= v )
+		*i = hge_nil;
+	return MAL_SUCCEED;
+}
+#endif
 str ITRnext_int(int *i, int *step, int *last){
 	int v = *i;
 	v = v + *step;

@@ -21,9 +21,9 @@
 	sa_a := bat.append(b,81);
 	ta_a := bat.save(b);
 	ua_a := bat.load("b");
-	xa_a := algebra.fetch(b,5);
+	xa_a := algebra.fetch(b,5@0);
 	ya_a := io.print(xa_a);
-	ab_a := algebra.fetch(b,8);
+	ab_a := algebra.fetch(b,8@0);
 	bb_a := io.print(ab_a);
 	cb_a := algebra.slice(b,5,8);
 	db_a := io.print(cb_a);

@@ -45,76 +45,79 @@ Ready.
 [ 1 ]
 #INSERT INTO TIME_TBL VALUES ('23:59');
 [ 1 ]
+#INSERT INTO TIME_TBL VALUES ('11:59:59.99 AM');
+[ 1	]
 #INSERT INTO TIME_TBL VALUES ('11:59:59.99 PM');
 [ 1 ]
 #SELECT f1 AS "Time" FROM TIME_TBL;
-% sys.L0 # table_name
+% sys.L # table_name
 % Time # name
-% ? # type
-% ? # length
-[ "00:00:00" ]
-[ "01:00:00" ]
-[ "02:03:00" ]
-[ "11:59:00" ]
-[ "12:00:00" ]
-[ "12:01:00" ]
-[ "23:59:00" ]
-[ "23:59:59.99" ]
-
+% time # type
+% 11 # length
+[ 00:00:00.00	]
+[ 01:00:00.00	]
+[ 02:03:00.00	]
+[ 11:59:00.00	]
+[ 12:00:00.00	]
+[ 12:01:00.00	]
+[ 23:59:00.00	]
+[ 11:59:59.99	]
+[ 11:59:59.99	]
 #SELECT f1 AS "Three" FROM TIME_TBL WHERE f1 < '05:06:07';
-% sys.L0 # table_name
+% sys.L # table_name
 % Three # name
-% ? # type
-% ? # length
-[ "00:00:00" ]
-[ "01:00:00" ]
-[ "02:03:00" ]
-
-#SELECT f1 AS "Five" FROM TIME_TBL WHERE f1 > '05:06:07';
-% sys.L0 # table_name
-% Five # name
-% ? # type
-% ? # length
-[ "11:59:00" ]
-[ "12:00:00" ]
-[ "12:01:00" ]
-[ "23:59:00" ]
-[ "23:59:59.99" ]
-
+% time # type
+% 11 # length
+[ 00:00:00.00	]
+[ 01:00:00.00	]
+[ 02:03:00.00	]
+#SELECT f1 AS "Six" FROM TIME_TBL WHERE f1 > '05:06:07';
+% sys.L # table_name
+% Six # name
+% time # type
+% 11 # length
+[ 11:59:00.00	]
+[ 12:00:00.00	]
+[ 12:01:00.00	]
+[ 23:59:00.00	]
+[ 11:59:59.99	]
+[ 11:59:59.99	]
 #SELECT f1 AS "None" FROM TIME_TBL WHERE f1 < '00:00';
-% sys.L0 # table_name
+% sys.L # table_name
 % None # name
-% ? # type
-% ? # length
+% time # type
+% 11 # length
+#SELECT f1 AS "Nine" FROM TIME_TBL WHERE f1 >= '00:00';
+% sys.L # table_name
+% Nine # name
+% time # type
+% 11 # length
+[ 00:00:00.00	]
+[ 01:00:00.00	]
+[ 02:03:00.00	]
+[ 11:59:00.00	]
+[ 12:00:00.00	]
+[ 12:01:00.00	]
+[ 23:59:00.00	]
+[ 11:59:59.99	]
+[ 11:59:59.99	]
+#SELECT f1, f1 + time '00:01' AS "Illegal" FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	Illegal # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	00:01:00.000000	]
+[ 01:00:00.00,	01:01:00.000000	]
+[ 02:03:00.00,	02:04:00.000000	]
+[ 11:59:00.00,	12:00:00.000000	]
+[ 12:00:00.00,	12:01:00.000000	]
+[ 12:01:00.00,	12:02:00.000000	]
+[ 23:59:00.00,	nil	]
+[ 11:59:59.99,	12:00:59.990000	]
+[ 11:59:59.99,	12:00:59.990000	]
+#DROP TABLE TIME_TBL;
 
-#SELECT f1 AS "Eight" FROM TIME_TBL WHERE f1 >= '00:00';
-% sys.L0 # table_name
-% Eight # name
-% ? # type
-% ? # length
-[ "00:00:00" ]
-[ "01:00:00" ]
-[ "02:03:00" ]
-[ "11:59:00" ]
-[ "12:00:00" ]
-[ "12:01:00" ]
-[ "23:59:00" ]
-[ "23:59:59.99" ]
-
-#--
-#-- TIME simple math
-#--
-#-- We now make a distinction between time and intervals,
-#-- and adding two times together makes no sense at all.
-#-- Leave in one query to show that it is rejected,
-#-- and do the rest of the testing in horology.sql
-#-- where we do mixed-type arithmetic. - thomas 2000-12-02
-#
-HINT:  Could not choose a best candidate operator. You may need to add explicit type casts.
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 12:39:42 >  
+# 12:39:42 >  "Done."
+# 12:39:42 >  
 

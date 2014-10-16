@@ -31,6 +31,9 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
+#ifndef HAVE_UUID
+#include <openssl/rand.h>		/* for RAND_bytes */
+#endif
 
 #ifdef HAVE_UUID
 #define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
@@ -53,7 +56,7 @@ typedef struct {
 #define uuid_export extern
 #endif
 
-uuid_export bat *UUIDprelude(void);
+uuid_export str UUIDprelude(void *ret);
 uuid_export int UUIDcompare(const uuid *l, const uuid *r);
 uuid_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
 uuid_export BUN UUIDhash(const void *u);
@@ -70,12 +73,13 @@ uuid_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
-bat *
-UUIDprelude(void)
+str
+UUIDprelude(void *ret)
 {
+	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), sizeof(oid), "uuid");
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 #define UUIDisnil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
@@ -178,7 +182,8 @@ UUIDgenerateUuid(uuid **retval)
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
-	{
+	if (RAND_bytes(u->u, 16) < 0) {
+		/* if it failed, use rand */
 		int i, r;
 
 		for (i = 0; i < UUID_SIZE;) {

@@ -345,16 +345,16 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		free(pkeys);
 		if (c_faction) {
 			int action = atoi(c_faction);
-			int on_update = (action >> 8) & 255;
-			int on_delete = action & 255;
+			int on_update;
+			int on_delete;
 
-			if (0 < on_delete &&
-			    on_delete < NR_ACTIONS &&
+			if (action > 0 &&
+			    (on_delete = action & 255) < NR_ACTIONS &&
 			    on_delete != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON DELETE %s",
 					     actions[on_delete]);
-			if (0 < on_update &&
-			    on_update < NR_ACTIONS &&
+			if (action > 0 &&
+			    (on_update = (action >> 8) & 255) < NR_ACTIONS &&
 			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
@@ -429,6 +429,8 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 		space = mnstr_printf(toConsole, "TINYINT");
 	} else if (strcmp(c_type, "bigint") == 0) {
 		space = mnstr_printf(toConsole, "BIGINT");
+	} else if (strcmp(c_type, "hugeint") == 0) {
+		space = mnstr_printf(toConsole, "HUGEINT");
 	} else if (strcmp(c_type, "date") == 0) {
 		space = mnstr_printf(toConsole, "DATE");
 	} else if (strcmp(c_type, "month_interval") == 0) {
@@ -1230,7 +1232,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		"SELECT f.func "
 		"FROM sys.schemas s, "
 		     "sys.functions f "
-		"WHERE f.sql = TRUE AND "
+		"WHERE f.language  < 3 AND "
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
@@ -1284,7 +1286,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	if (schema)
 		free(schema);
 	mapi_close_handle(hdl);
-	return mnstr_errnr(toConsole) ? 1 : 0;
+	return mnstr_errnr(toConsole) != 0;
 
   bailout:
 	if (schema)
@@ -1428,7 +1430,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			       "f.func AS func "
 			"FROM sys.schemas s, "
 			     "sys.functions f "
-			"WHERE f.sql = TRUE AND "
+			"WHERE f.language < 3 AND "
 			      "s.id = f.schema_id "
 			      "%s"  /* and f.id not in systemfunctions */
 			"UNION "

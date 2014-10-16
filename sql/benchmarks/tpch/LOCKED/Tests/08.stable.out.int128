@@ -1,0 +1,63 @@
+stdout of test '08` in directory 'sql/benchmarks/tpch/LOCKED` itself:
+
+
+# 12:34:38 >  
+# 12:34:38 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:34:38 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+
+Ready.
+
+# 15:21:32 >  
+# 15:21:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
+# 15:21:32 >  
+
+#select
+#	o_year,
+#	sum(case
+#		when nation = 'BRAZIL' then volume
+#		else 0
+#	end) / sum(volume) as mkt_share
+#from
+#	(
+#		select
+#			extract(year from o_orderdate) as o_year,
+#			l_extendedprice * (1 - l_discount) as volume,
+#			n2.n_name as nation
+#		from
+#			part,
+#			supplier,
+#			lineitem,
+#			orders,
+#			customer,
+#			nation n1,
+#			nation n2,
+#			region
+#		where
+#			p_partkey = l_partkey
+#			and s_suppkey = l_suppkey
+#			and l_orderkey = o_orderkey
+#			and o_custkey = c_custkey
+#			and c_nationkey = n1.n_nationkey
+#			and n1.n_regionkey = r_regionkey
+% sys.all_nations,	sys.L3 # table_name
+% o_year,	mkt_share # name
+% int,	decimal # type
+% 4,	39 # length
+[ 1995,	0.0000	]
+[ 1996,	0.0000	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	7	]
+
+# 09:17:15 >  
+# 09:17:15 >  Done.
+# 09:17:15 >  
+

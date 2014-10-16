@@ -1,0 +1,154 @@
+stdout of test 'zones` in directory 'sql/test` itself:
+
+
+# 10:41:27 >  
+# 10:41:27 >   mserver5 "--config=/export/scratch1/milena/monet/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5/lib:/export/scratch1/milena/monet/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/milena/var/dbfarm" --set "sql_logdir=/export/scratch0/milena/var/dblogs/logs/sql"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34832 --set xrpc_port=45144 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:41:27 >  
+
+# MonetDB server v5.3.0, based on kernel v1.21.0
+# Serving database 'mTests_src_test'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2007 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://aquarius.ins.cwi.nl:34832/
+# MonetDB/SQL module v2.21.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 16:01:34 >  
+# 16:01:34 >  mclient -lsql -ftest -i -e --host=volund --port=35971 
+# 16:01:34 >  
+
+#create function Alpha(theta double, decl double) returns double
+#    begin
+#    if abs(decl)+theta > 89.9 then return cast(180.0 as double);
+#    else 
+#    return(degrees(abs(atan(sin(radians(theta)) /
+#                             sqrt(abs( cos(radians(decl-theta))
+#                                      * cos(radians(decl+theta))
+#           )       )   )   )     ));
+#	end if;
+#    end;
+#create table alphatest(expected double, computed double);
+#insert into alphatest values(1.1547200925865859,Alpha(cast(1.0 as double),cast(30.0 as double)));
+[ 1	]
+#insert into alphatest values(1.4142854109042293,Alpha(cast(1.0 as double),cast(45.0 as double)));
+[ 1	]
+#insert into alphatest values(2.0003048809350625,Alpha(cast(1.0 as double),cast(60.0 as double)));
+[ 1	]
+#select abs(expected - computed) as err
+#from alphatest 
+#where abs(expected - computed)>epsilon;
+% sys.L # table_name
+% err # name
+% double # type
+% 24 # length
+#create table photoobj (
+#    objID       bigint      not null, -- object Identifier in table
+#    ra          float       not null, 
+#    "dec"       float       not null,
+#    mode        tinyint	    not null,
+#    primary key (objID)
+#    );
+#insert into photoobj
+#values( 687726014001184891,	193.754250579787,	1.4851688900683999,	0);
+[ 1	]
+#insert into photoobj
+#values( 687726014001184892,	193.755094586886,	1.4846298308572601,	0);
+[ 1	]
+#insert into photoobj
+#values( 687726014001184894,	193.75653243396599,	1.4825263586962001,	0);
+[ 1	]
+#insert into photoobj
+#values( 687726014001184895,	193.75663392621499,	1.61956881843685,	0);
+[ 1	]
+#insert into photoobj
+#values( 687726014001184896,	193.75664598583401,	1.6195802985663199,	0);
+[ 1	]
+#create table ZoneIndex (
+#    objID       bigint         not null, -- object Identifier in table
+#    zone        int         not null, -- zone number (using 10 arcminu
+#    ra          float       not null, -- sperical coordinates
+#    "dec"       float       not null,
+#    x           float       not null, -- cartesian coordinates
+#    y           float       not null,
+#    z           float       not null,
+#    mode        tinyint	    not null,       
+#    margin      int         not null, 
+#create table ZoneHeight( "value" double not null); -- zone height in degrees.
+#insert into ZoneHeight values(cast (0.1  as double));
+[ 1	]
+#insert into zoneindex
+#     select objID,
+#            cast(floor("dec"/zHeight) as int) as zone,
+#            ra, "dec",
+#              cos(radians("dec"))*cos(radians(ra)) as x,
+#              cos(radians("dec"))*sin(radians(ra)) as y,
+#              sin(radians("dec")) as z,
+#              mode, 0 as margin
+#      from photoobj;
+[ 5	]
+[ 5	]
+[ 0	]
+#create function GetNearbyObjects(
+#                       pra double, pdec double, -- in degrees
+#                       ptheta double)           -- radius in degrees
+#returns Table (objID bigint, distance double) 
+#begin
+#    declare zoneHeight float, alpha1 float,
+#            x1 float, y1 float, z1 float;
+#
+#    -- compute “alpha” expansion and cartesian coordinates.
+#    set alpha1 = Alpha(ptheta, pdec);
+#    set x1 = cos(radians(pdec))*cos(radians(pra));
+#    set y1 = cos(radians(pdec))*sin(radians(pra));
+#    set z1 = sin(radians(pdec));
+#select count(S.objID) 
+#from GetNearbyObjects(193.75, 1.48, 0.1) as S;
+% .L4 # table_name
+% L4 # name
+% wrd # type
+% 1 # length
+[ 3	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% .s,	.s,	sys.t # table_name
+% objid,	distance,	expected # name
+% bigint,	double,	double # type
+% 1,	24,	24 # length
+#create function GetNearestObject(
+#                         pra double, pdec double) -- in degrees
+#returns Table (objID bigint, distance double) 
+#begin
+#	return TABLE(select objID,distance
+#	from GetNearbyObjects(pra,pdec,0.1) G
+#	where distance = (select min(distance) 
+#	from GetNearbyObjects(pra,pdec,0.1) G1));
+#end;
+#create function fGetNearestObjIdAllEq(
+#                         pra double, pdec double, pr double)
+#returns bigint
+#begin
+#	declare ob bigint;
+#	set ob= (select G.objID
+#	from GetNearestObject(pra,pdec) G);
+#        return ob;
+#end;
+#select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
+% .L # table_name
+% fgetnearestobjidalleq_single_value # name
+% hugeint # type
+% 1 # length
+[ 0	]
+
+# 13:48:21 >  
+# 13:48:21 >  Done.
+# 13:48:21 >  
+

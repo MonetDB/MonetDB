@@ -1,9 +1,13 @@
 # Cost model example
+function q();
 	r{rows=100} := bat.new(:oid,:int);
 	s{rows=1000}:= bat.new(:oid,:int);
-	rs:= algebra.select(s,1,1);
-	rr:= bat.reverse(r);
-	j:= algebra.join(rs,rr);
-	optimizer.costModel();
-	mdb.List();
+    r{rows=100} := bat.new(:oid,:int);
+    s{rows=1000}:= bat.new(:oid,:int);
+    x{rows=300} := bat.new(:oid,:oid);
+    rs:= algebra.subselect(s,x,1,1,true,true,false);
+    j:= algebra.leftfetchjoin(rs,r);
+end q;
+    optimizer.costModel("user","q");
+    mdb.List("user","q");
 

@@ -1,7 +1,7 @@
 #TPCH query 1
 # the basis for further optimizer tests
 
-#don;t depend on SQL library
+#don't depend on SQL library
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
 	return bat.new(:any_1,:any_2);
 end bind;
@@ -25,7 +25,7 @@ barrier always := true;
     V16 := mtime.date_sub_sec_interval(A3,A4);
 	a := mtime.date(nil);
     V17 := algebra.uselect(V13,a,V16);
-    V20 := algebra.markT(V17,0@0);
+    V20 := algebra.mark(V17,0@0);
     V21 := bat.reverse(V20);
     V26 := algebra.kdifference(V22,V12);
     V27 := algebra.join(V21,V26);

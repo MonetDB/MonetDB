@@ -28,7 +28,8 @@
 enum heaptype {
 	offheap,
 	varheap,
-	hashheap
+	hashheap,
+	imprintsheap
 };
 
 /*
@@ -61,8 +62,6 @@ str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
-BAT *BATclone(BAT *b, BUN capacity, int role)
-	__attribute__((__visibility__("hidden")));
 BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BATstore *bs)
@@ -77,9 +76,11 @@ void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterializet(BAT *b)
+BAT *BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void BATpropagate(BAT *dst, BAT *src, int idx)
+BAT *BATmaterializeh(BAT *b)
+	__attribute__((__visibility__("hidden")));
+BAT *BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)
 	__attribute__((__visibility__("hidden")));
@@ -159,6 +160,14 @@ int HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
+	__attribute__((__visibility__("hidden")));
+#ifndef NDEBUG
+void IMPSprint(BAT *b)
+	__attribute__((__visibility__("hidden")));
+#endif
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
@@ -190,12 +199,8 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
+BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-#ifndef NDEBUG
-void IMPSprint(BAT *b)
-	__attribute__((__visibility__("hidden")));
-#endif
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
@@ -207,12 +212,14 @@ struct PROPrec {
 };
 
 struct Imprints {
-	bte bits;        /* how many bits in imprints */
-	Heap *bins;      /* ranges of bins */
-	Heap *imps;      /* heap of imprints */
-	BUN impcnt;      /* counter for imprints*/
-	Heap *dict;      /* cache dictionary for compressing imprints */
-	BUN dictcnt;     /* counter for cache dictionary */
+	bte bits;		/* how many bits in imprints */
+	Heap *imprints;
+	void *bins;		/* pointer into imprints heap (bins borders)  */
+	void *stats;	/* pointer into imprints heap (stats per bin) */
+	void *imps;		/* pointer into imprints heap (bit vectors)   */
+	void *dict;		/* pointer into imprints heap (dictionary)    */
+	BUN impcnt;		/* counter for imprints                       */
+	BUN dictcnt;	/* counter for cache dictionary               */
 };
 
 typedef struct {
@@ -274,6 +281,9 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
 #define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
 #define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
+#ifdef HAVE_HGE
+#define SORTloop_hge(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, hge)
+#endif
 #define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
 #define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
 #define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)

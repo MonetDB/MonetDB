@@ -1,0 +1,127 @@
+stdout of test 'dependency_loop` in directory 'sql/test/Dependencies` itself:
+
+
+# 10:37:18 >  
+# 10:37:18 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30726 --set xrpc_port=45574 --set monet_prompt= --trace  "--dbname=mTests_src_test_Dependencies" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:37:18 >  
+
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_test_Dependencies'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30726/
+# MonetDB/SQL module v2.22.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 10:37:19 >  
+# 10:37:19 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30726 
+# 10:37:19 >  
+
+# 12:01:55 >  
+# 12:01:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
+# 12:01:55 >  
+
+#CREATE TABLE Dictionary (ID INTEGER,val VARCHAR(20000),PRIMARY KEY (ID));
+#CREATE TABLE
+#bench_booktitle 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#bench_cdrom 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_pages 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#foaf_homepage 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_editor 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_number 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_creator 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#rdfs_seeAlso 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_partOf 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_references 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dcterms_issued 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_volume 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_publisher 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_note 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_chapter 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_address 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_series 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_month 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#foaf_name 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#rdf_type 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#dc_title 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_journal 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#bench_abstract 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE TABLE
+#swrc_isbn 
+#	(subject INTEGER,object INTEGER,FOREIGN KEY (subject) REFERENCES Dictionary(ID),FOREIGN KEY (object) REFERENCES Dictionary(ID));
+#CREATE VIEW Triples AS
+#( SELECT subject,'bench:booktitle' AS predicate,object FROM bench_booktitle )
+#UNION
+#( SELECT subject,'bench:cdrom' AS predicate,object FROM bench_cdrom )
+#UNION
+#( SELECT subject,'swrc:pages' AS predicate,object FROM swrc_pages )
+#UNION
+#( SELECT subject,'foaf:homepage' AS predicate,object FROM foaf_homepage )
+#UNION
+#( SELECT subject,'swrc:editor' AS predicate,object FROM swrc_editor )
+#UNION
+#( SELECT subject,'swrc:number' AS predicate,object FROM swrc_number )
+#UNION
+#( SELECT subject,'dc:creator' AS predicate,object FROM dc_creator )
+#select count(*) from dependencies where depend_type = 5;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 91	]
+
+# 10:37:19 >  
+# 10:37:19 >  Done.
+# 10:37:19 >  
+

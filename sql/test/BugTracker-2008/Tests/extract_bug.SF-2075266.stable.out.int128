@@ -1,0 +1,47 @@
+stdout of test 'extract_bug.SF-2075266` in directory 'sql/test/BugTracker-2008` itself:
+
+
+# 13:27:40 >  
+# 13:27:40 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36215 --set xrpc_port=40937 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:27:40 >  
+
+# MonetDB server v5.6.0, based on kernel v1.24.1
+# Serving database 'mTests_src_test_BugTracker-2008'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36215/
+# MonetDB/SQL module v2.24.1 loaded
+
+Ready.
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 13:27:40 >  
+# 13:27:40 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36215  -G
+# 13:27:40 >  
+
+[ 1	]
+#SELECT EXTRACT (SECOND FROM FIPS2)
+#* 1000000 - 999990 FROM A;
+% sys.L # table_name
+% sql_mul_second_fips2 # name
+% decimal # type
+% 41 # length
+[ -990.000000	]
+#select EXTRACT (SECOND FROM FIPS2) FROM A;
+% sys.L # table_name
+% second_fips2 # name
+% decimal # type
+% 11 # length
+[ 0.999	]
+
+# 14:08:04 >  
+# 14:08:04 >  Done.
+# 14:08:04 >  
+

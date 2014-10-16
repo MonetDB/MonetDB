@@ -35,87 +35,151 @@ Ready.
 #INSERT INTO vactst SELECT * FROM vactst;
 [ 1 ]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 2	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 4	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 8	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 16	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 32	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 64	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 128	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 256	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 512	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 1024	]
 #INSERT INTO vactst VALUES (0);
 [ 1 ]
 #SELECT count(*) FROM vactst;
-% sys.L0 # table_name
-% count # name
-% ? # type
-% ? # length
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 4 # length
 [ 2049 ]
-
-DELETE FROM vactst WHERE i != 0;
+#SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
+% sys.vactst,	sys.L1 # table_name
+% i,	count # name
+% int,	wrd # type
+% 1,	4 # length
+[ 0,	1	]
+[ 1,	2048	]
+#SELECT count(*) FROM vactst WHERE i <> 0;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 4 # length
+[ 2048	]
+#DELETE FROM vactst WHERE i <> 0;
+[ 2048	]
 #SELECT * FROM vactst;
-% sys.L0 # table_name
+% sys.vactst # table_name
 % i # name
-% ? # type
-% ? # length
-[ 0 ]
-
-VACUUM FULL vactst;
+% int # type
+% 1 # length
+[ 0	]
+#select * from sys."storage" where "table" = 'vactst';
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	6,	1,	3,	6,	4,	1,	4,	1,	1,	1,	5 # length
+[ "sys",	"vactst",	"i",	"int",	"07/753",	2049,	4,	8196,	0,	0,	0,	false	]
+#select * from sys."storage" where "table" = 'vactst';
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	6,	1,	3,	6,	1,	1,	1,	1,	1,	1,	5 # length
+[ "sys",	"vactst",	"i",	"int",	"07/753",	1,	4,	4,	0,	0,	0,	true	]
 #UPDATE vactst SET i = i + 1;
-#INSERT INTO vactst SELECT * FROM vactst;
 [ 1 ]
 #INSERT INTO vactst SELECT * FROM vactst;
 [ 1 ]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 2	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 4	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 8	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 16	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 32	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 64	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 128	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 256	]
 #INSERT INTO vactst SELECT * FROM vactst;
-[ 1 ]
+[ 512	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 1024	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 2048	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 4096	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 8192	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 16384	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 32768	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 65536	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 131072	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 262144	]
+#INSERT INTO vactst SELECT * FROM vactst;
+[ 524288	]
 #INSERT INTO vactst VALUES (0);
-[ 1 ]
+[ 1	]
 #SELECT count(*) FROM vactst;
-% sys.L0 # table_name
-% count # name
-% ? # type
-% ? # length
-[ 2049 ]
-
-DELETE FROM vactst WHERE i != 0;
-VACUUM FULL vactst;
-DELETE FROM vactst;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 7 # length
+[ 1048577	]
+#SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
+% sys.vactst,	sys.L1 # table_name
+% i,	count # name
+% int,	wrd # type
+% 1,	7 # length
+[ 0,	1	]
+[ 1,	1048576	]
+#SELECT count(*) FROM vactst WHERE i <> 0;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 7 # length
+[ 1048576	]
+#DELETE FROM vactst WHERE i <> 0;
+[ 1048576	]
+#select * from sys.storage where "table" = 'vactst';
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	6,	1,	3,	6,	7,	1,	7,	1,	1,	1,	5 # length
+[ "sys",	"vactst",	"i",	"int",	"07/753",	1048577,	4,	4194308,	0,	0,	0,	false	]
+#select * from sys.storage where "table" = 'vactst';
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	6,	1,	3,	6,	1,	1,	1,	1,	1,	1,	5 # length
+[ "sys",	"vactst",	"i",	"int",	"07/753",	1,	4,	4,	0,	0,	0,	true	]
+#DELETE FROM vactst;
+[ 1	]
 #SELECT * FROM vactst;
-% sys.L0 # table_name
+% sys.vactst # table_name
 % i # name
-% ? # type
-% ? # length
-
+% int # type
+% 1 # length
 #DROP TABLE vactst;
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

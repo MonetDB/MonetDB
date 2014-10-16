@@ -68,10 +68,6 @@
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
-#else
-#ifdef NATIVE_WIN32
-#include <Windows.h>
-#endif
 #endif
 #endif
 
@@ -247,8 +243,8 @@ gettime(void)
 		tb.time -= tbbase.time;
 		return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
 	}
-#endif
-#endif
+#endif	/* HAVE_FTIME */
+#endif	/* HAVE_GETTIMEOFDAY */
 }
 
 static void
@@ -597,8 +593,9 @@ XMLprdata(const char *val)
 		else if ((*val & 0xFF) < 0x20)	/* control character */
 			mnstr_printf(toConsole_raw, "&#%d;", *val & 0xFF);
 		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
-			int n, m;
-			int c = *val & 0x7F;
+			int n;
+			unsigned int m;
+			unsigned int c = *val & 0x7F;
 
 			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
 				c &= ~m;
@@ -1254,6 +1251,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			(strcmp(s, "int") == 0 ||
 			 strcmp(s, "tinyint") == 0 ||
 			 strcmp(s, "bigint") == 0 ||
+			 strcmp(s, "hugeint") == 0 ||
 			 strcmp(s, "wrd") == 0 ||
 			 strcmp(s, "oid") == 0 ||
 			 strcmp(s, "smallint") == 0 ||
@@ -1431,7 +1429,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 }
 
 static void
-setFormatter(char *s)
+setFormatter(const char *s)
 {
 	if (separator)
 		free(separator);
@@ -1450,10 +1448,20 @@ setFormatter(char *s)
 		separator = strdup(",");
 	} else if (strncmp(s, "csv=", 4) == 0) {
 		formatter = CSVformatter;
-		separator = strdup(s + 4);
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
 	} else if (strncmp(s, "csv+", 4) == 0) {
 		formatter = CSVformatter;
-		separator = strdup(s + 4);
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
 		csvheader = 1;
 	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
@@ -2198,28 +2206,28 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					     *line && !(isascii((int) *line) && isspace((int) *line));
 					     line++) {
 						switch (*line) {
-							case 't':
-								x |= MD_TABLE;
+						case 't':
+							x |= MD_TABLE;
 							break;
-							case 'v':
-								x |= MD_VIEW;
+						case 'v':
+							x |= MD_VIEW;
 							break;
-							case 's':
-								x |= MD_SEQ;
+						case 's':
+							x |= MD_SEQ;
 							break;
-							case 'f':
-								x |= MD_FUNC;
+						case 'f':
+							x |= MD_FUNC;
 							break;
-							case 'n':
-								x |= MD_SCHEMA;
+						case 'n':
+							x |= MD_SCHEMA;
 							break;
-							case 'S':
-								wantsSystem = 1;
+						case 'S':
+							wantsSystem = 1;
 							break;
-							default:
-								fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
-								length = 0;
-								line[1] = '\0';
+						default:
+							fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
+							length = 0;
+							line[1] = '\0';
 							break;
 						}
 					}
@@ -2233,35 +2241,32 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					/* lowercase the object, except for quoted parts */
 					q = line;
 					for (p = line; *p != '\0'; p++) {
-						switch (*p) {
-							case '"':
-								if (escaped) {
-									if (*(p + 1) == '"') {
-										/* SQL escape */
-										*q++ = *p++;
-									} else {
-										escaped = 0;
-									}
+						if (*p == '"') {
+							if (escaped) {
+								if (*(p + 1) == '"') {
+									/* SQL escape */
+									*q++ = *p++;
 								} else {
-									escaped = 1;
+									escaped = 0;
 								}
-								break;
-							default:
-								if (!escaped) {
-									*q++ = tolower((int) *p);
-									if (*p == '*') {
-										*p = '%';
-										hasWildcard = 1;
-									} else if (*p == '?') {
-										*p = '_';
-										hasWildcard = 1;
-									} else if (*p == '.') {
-										hasSchema = 1;
-									}
-								} else {
-									*q++ = *p;
+							} else {
+								escaped = 1;
+							}
+						} else {
+							if (!escaped) {
+								*q++ = tolower((int) *p);
+								if (*p == '*') {
+									*p = '%';
+									hasWildcard = 1;
+								} else if (*p == '?') {
+									*p = '_';
+									hasWildcard = 1;
+								} else if (*p == '.') {
+									hasSchema = 1;
 								}
-								break;
+							} else {
+								*q++ = *p;
+							}
 						}
 					}
 					*q = '\0';
@@ -2409,7 +2414,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							       ") AS \"all\" "
 							 "WHERE ntype & %u > 0 "
 							       "%s "
-							 "ORDER BY system, name",
+							 "ORDER BY system, name, sname",
 							 MD_TABLE, MD_VIEW,
 							 nameq,
 							 MD_SEQ,

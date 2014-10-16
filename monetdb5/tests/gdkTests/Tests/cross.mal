@@ -1,66 +1,17 @@
-a:=bat.new(:oid,:oid);
-ar:= bat.reverse(a);
-io.print(ar);
 b:=bat.new(:oid,:oid);
+
+(bl,br):= algebra.crossproduct(b,b);
+io.print(bl,br);
+
+bat.append(b,1@0);
+bat.append(b,2@0);
 io.print(b);
 
-ar:= bat.reverse(a);
-c:= algebra.crossproduct(ar,ar);
-io.print(c);
-bb:= algebra.crossproduct(b,b);
-io.print(bb);
-ab:= algebra.crossproduct(ar,b);
-io.print(ab);
-ba:= algebra.crossproduct(b,ar);
-io.print(ba);
-
-bat.append(a,1@0);
-ar:= bat.reverse(a);
-io.print(ar);
-bat.append(a,2@0);
-
-ar:= bat.reverse(a);
-c:= algebra.crossproduct(ar,ar);
-io.print(c);
-bb:= algebra.crossproduct(b,b);
-io.print(bb);
-ab:= algebra.crossproduct(ar,b);
-io.print(ab);
-ba:= algebra.crossproduct(b,ar);
-io.print(ba);
+(bl,br):= algebra.crossproduct(b,b);
+io.print(bl,br);
 
 bat.append(b,11@0);
 io.print(b);
 
-ar:= bat.reverse(a);
-c:= algebra.crossproduct(ar,ar);
-io.print(c);
-bb:= algebra.crossproduct(b,b);
-io.print(bb);
-ab:= algebra.crossproduct(ar,b);
-io.print(ab);
-ba:= algebra.crossproduct(b,ar);
-io.print(ba);
-
-ar:= bat.reverse(a);
-c:= algebra.crossproduct(ar,ar);
-io.print(c);
-bb:= algebra.crossproduct(b,b);
-io.print(bb);
-ab:= algebra.crossproduct(ar,b);
-io.print(ab);
-ba:= algebra.crossproduct(b,ar);
-io.print(ba);
-
-bat.append(b,22@0);
-io.print(b);
-
-ar:= bat.reverse(a);
-c:= algebra.crossproduct(ar,ar);
-io.print(c);
-bb:= algebra.crossproduct(b,b);
-io.print(bb);
-ab:= algebra.crossproduct(ar,b);
-io.print(ab);
-ba:= algebra.crossproduct(b,ar);
-io.print(ba);
+(bl,br):= algebra.crossproduct(b,b);
+io.print(bl,br);

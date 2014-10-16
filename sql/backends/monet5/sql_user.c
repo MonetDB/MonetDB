@@ -163,7 +163,7 @@ monet5_find_user(ptr mp, str user)
 str
 db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *r = (bat *) getArgReference(stk, pci, 0);
+	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b = db_users(cntxt);
 	BAT *bm = BATmirror(BATmark(BATmirror(b), 0));
 
@@ -178,8 +178,8 @@ str
 db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret = NULL;
-	str *hash = (str *) getArgReference(stk, pci, 0);
-	str *user = (str *) getArgReference(stk, pci, 1);
+	str *hash = getArgReference_str(stk, pci, 0);
+	str *user = getArgReference_str(stk, pci, 1);
 	(void) mb;
 
 	ret = AUTHgetPasswordHash(hash, &cntxt, user);
@@ -211,7 +211,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
+	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST, "SELECT u.\"name\" AS \"name\", " "ui.\"fullname\", ui.\"default_schema\" " "FROM db_users() AS u LEFT JOIN " "\"sys\".\"db_user_info\" AS ui " "ON u.\"name\" = ui.\"name\" " ";", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);

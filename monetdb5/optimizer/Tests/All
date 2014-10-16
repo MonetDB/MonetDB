@@ -10,22 +10,19 @@ tst4300
 tst4600
 tst4601
 tst4602
-tst4610
-tst4611
-tst4620
+#tst4610 needs new joinpath 
+#tst4611 ,,
+#tst4620 ,,
 tst4630
 # tst4631 -- uses group.refine
 tst4700
 tst4701
 # tst4730 -- uses group.refine
-tst4800
-tst4801
 tst4820
-tst4900
 
-qep00
-qep01
-qep02
+#qep00 deprecated optimizer
+#qep01 ,,
+#qep02 ,,
 
 cst00
 cst01
@@ -43,16 +40,10 @@ reorder00
 
 #mapreduce00   has no output, won't run this way
 
-mat00
-mat01
-#mat02
-#mat03
-#mat04
+#rangePush00 optimizer out of date
+#rangePush01
 
-rangePush00
-rangePush01
-
-emptyset00
+#emptyset00 Optimizer does not deal with subselects
 emptyset01
 
 inline00
@@ -80,14 +71,12 @@ ifthencst
 CXerror1
 #the remainder are snippets used in the reference manual
 CMexample
-CRexample
-AEexample
+#CRexample push range optimizer is out of date
 ARexample
 DCexample
 DCexample2
 ESexample
 FTexample
-GCexample
 GCexample01
 CXexample
 JPexample

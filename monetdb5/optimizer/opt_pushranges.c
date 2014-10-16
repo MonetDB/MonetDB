@@ -17,6 +17,9 @@
  * All Rights Reserved.
  */
 
+/* (c) M Kersten
+ * This optimizer is deprecated, it does not handle subselects correctly.
+ */
 #include "monetdb_config.h"
 #include "opt_pushranges.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -76,10 +79,11 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if( range[getArg(p,j)].lastrange == 0)
 				range[getArg(p,j)].lastrange= i;
 		} 
-		if( getModuleId(p)== algebraRef && 
-			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
+		if (getModuleId(p) == algebraRef &&
+			getFunctionId(p) == subselectRef &&
+			p->argc - p->retc == 6) { /* subselect without candidate only */
 			/*
-			 * The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.
+			 * The operation X:= algebra.subselect(Y,L,H,Li,Hi) is analysed.
 			 * First, we attempt to propagate the range known for Y onto the
 			 * requested range of X. This may lead to smaller range of
 			 * even the conclusion that X is necessarily empty.
@@ -141,8 +145,8 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if( isVarConstant(mb, x)  &&
 				isVarConstant(mb, y)  ){
 				z =ATOMcmp( getVarGDKType(mb,y),
-                        VALptr( &getVarConstant(mb,x)),
-                        VALptr( &getVarConstant(mb,y)));
+							VALptr( &getVarConstant(mb,x)),
+							VALptr( &getVarConstant(mb,y)));
 				x=  p->argc > 4;
 				x= x && isVarConstant(mb,getArg(p,4));
 				x= x && isVarConstant(mb,getArg(p,5));

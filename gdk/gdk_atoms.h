@@ -69,6 +69,9 @@
 #define ptrStrlen	48
 #endif
 #define lngStrlen	48
+#ifdef HAVE_HGE
+#define hgeStrlen	96
+#endif
 #define fltStrlen	48
 #define dblStrlen	96
 
@@ -79,6 +82,10 @@
  * leads to the following type descriptor table.
  */
 
+#ifdef HAVE_HGE
+gdk_export int hgeFromStr(const char *src, int *len, hge **dst);
+gdk_export int hgeToStr(str *dst, int *len, const hge *src);
+#endif
 gdk_export int lngFromStr(const char *src, int *len, lng **dst);
 gdk_export int lngToStr(str *dst, int *len, const lng *src);
 gdk_export int intFromStr(const char *src, int *len, int **dst);
@@ -127,6 +134,11 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen, const char *se
 #define GDK_flt_min (-GDK_flt_max)
 #define GDK_lng_max ((lng) LLONG_MAX)
 #define GDK_lng_min ((lng) LLONG_MIN)
+#ifdef HAVE_HGE
+#define GDK_hge_max ((((hge) 1) << 126) - 1 + \
+                     (((hge) 1) << 126))
+#define GDK_hge_min (((hge) 1) << 127)
+#endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
 #define GDK_dbl_min (-GDK_dbl_max)
 /* GDK_oid_max see below */
@@ -138,6 +150,9 @@ gdk_export const int int_nil;
 gdk_export const flt flt_nil;
 gdk_export const dbl dbl_nil;
 gdk_export const lng lng_nil;
+#ifdef HAVE_HGE
+gdk_export const hge hge_nil;
+#endif
 gdk_export const oid oid_nil;
 gdk_export const wrd wrd_nil;
 gdk_export const char str_nil[2];
@@ -163,7 +178,7 @@ gdk_export const ptr ptr_nil;
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types (
- * bte, sht, int, wrd, flt, dbl, lng, str). They respectively
+ * bte, sht, int, wrd, flt, dbl, lng, hge, str). They respectively
  * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
  * 64-bit double, a 64-bit int, and a pointer-sized location of a
  * char-buffer (ended by a zero char).
@@ -198,6 +213,7 @@ gdk_export const ptr ptr_nil;
 #define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
+#define ATOMcompare(t)		BATatoms[t].atomCmp
 #define ATOMhash(t,src)		BATatoms[t].atomHash(src)
 #define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
@@ -213,6 +229,15 @@ gdk_export const ptr ptr_nil;
  * of BATs but also BATs of ODMG odSet) can never be persistent, as
  * this would make the commit tremendously complicated.
  */
+#ifdef HAVE_HGE
+#define ATOM_CASE_16_hge						\
+		case 16:						\
+			* (hge *) d_ = * (hge *) s_;			\
+			break
+#else
+#define ATOM_CASE_16_hge
+#endif
+
 #define ATOMputVAR(type, heap, dst, src)				\
 	do {								\
 		assert(BATatoms[type].atomPut != NULL);			\
@@ -242,6 +267,7 @@ gdk_export const ptr ptr_nil;
 		case 8:							\
 			* (lng *) d_ = * (lng *) s_;			\
 			break;						\
+		ATOM_CASE_16_hge;					\
 		default:						\
 			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
 			break;						\
@@ -288,6 +314,7 @@ gdk_export const ptr ptr_nil;
 		case 8:							\
 			* (lng *) d_ = * (lng *) s_;			\
 			break;						\
+		ATOM_CASE_16_hge;					\
 		default:						\
 			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
 			break;						\

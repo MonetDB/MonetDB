@@ -1,0 +1,418 @@
+stdout of test 'mergequery` in directory 'sql/test/mergetables` itself:
+
+
+# 16:20:23 >  
+# 16:20:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30678" "--set" "mapi_usock=/var/tmp/mtest-11019/.s.monetdb.30678" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:20:23 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30678/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11019/.s.monetdb.30678
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:20:23 >  
+# 16:20:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11019" "--port=30678"
+# 16:20:23 >  
+
+#CREATE TABLE part1 ( x double, y double, z double);
+#COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ','\n';
+#0.0 0.0 0.0
+#1.0 0.0 0.0 
+#0.0 1.0 0.0 
+#1.0 1.0 0.0 
+[ 4	]
+#CREATE TABLE part2 ( x double, y double, z double);
+#COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ','\n';
+#2.0 0.0 0.0
+#3.0 0.0 0.0 
+#2.0 1.0 0.0 
+#3.0 1.0 0.0 
+[ 4	]
+#CREATE MERGE TABLE complete ( x double, y double, z double);
+#ALTER TABLE complete ADD TABLE part1;
+#ALTER TABLE complete ADD TABLE part2;
+#SELECT * FROM COMPLETE;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 1,	0,	0	]
+[ 0,	1,	0	]
+[ 1,	1,	0	]
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
+#SELECT * FROM complete where x>=0.0 AND x <=1.0;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 1,	0,	0	]
+[ 0,	1,	0	]
+[ 1,	1,	0	]
+#SELECT * FROM complete where x>=2.0 AND x <=3.0;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
+#SELECT * FROM complete where x>=1.0 AND x <=2.0;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 1,	0,	0	]
+[ 1,	1,	0	]
+[ 2,	0,	0	]
+[ 2,	1,	0	]
+#CREATE TABLE answ( LIKE complete);
+#EXPLAIN INSERT INTO answ
+#SELECT * FROM complete where x>=1.0 AND x <=2.0;
+% .explain # table_name
+% mal # name
+% clob # type
+% 110 # length
+function user.s13_1{autoCommit=true}(A0:dbl,A1:dbl):void;
+barrier X_212 := language.dataflow();
+    X_4 := sql.mvc();
+    X_5:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_8:bat[:oid,:oid]  := sql.tid(X_4,"sys","part1");
+    X_11:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part1","x",0);
+    (X_14,r1_14) := sql.bind(X_4,"sys","part1","x",2);
+    X_17:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part1","x",1);
+    X_96 := algebra.subselect(X_11,X_8,A0,A1,true,true,false);
+    X_97 := algebra.subselect(r1_14,nil:bat[:oid,:oid],A0,A1,true,true,false);
+    X_99 := algebra.subselect(X_17,X_8,A0,A1,true,true,false);
+    X_19 := sql.subdelta(X_96,X_8,X_14,X_97,X_99);
+    X_21 := sql.projectdelta(X_19,X_11,X_14,r1_14,X_17);
+    X_22 := bat.append(X_5,X_21,true);
+    X_23:bat[:oid,:oid]  := sql.tid(X_4,"sys","part2");
+    X_106:bat[:oid,:oid]  := sql.tid(X_4,"sys","part2",0,4);
+    X_108:bat[:oid,:oid]  := sql.tid(X_4,"sys","part2",1,4);
+    X_110:bat[:oid,:oid]  := sql.tid(X_4,"sys","part2",2,4);
+    X_112:bat[:oid,:oid]  := sql.tid(X_4,"sys","part2",3,4);
+    X_25:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",0);
+    X_113:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",0,0,4);
+    X_114:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",0,1,4);
+    X_115:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",0,2,4);
+    X_116:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",0,3,4);
+    (X_26,r1_30) := sql.bind(X_4,"sys","part2","x",2);
+    (X_117:bat[:oid,:oid] ,X_118:bat[:oid,:dbl] ) := sql.bind(X_4,"sys","part2","x",2,0,4);
+    (X_119:bat[:oid,:oid] ,X_120:bat[:oid,:dbl] ) := sql.bind(X_4,"sys","part2","x",2,1,4);
+    (X_121:bat[:oid,:oid] ,X_122:bat[:oid,:dbl] ) := sql.bind(X_4,"sys","part2","x",2,2,4);
+    (X_123:bat[:oid,:oid] ,X_124:bat[:oid,:dbl] ) := sql.bind(X_4,"sys","part2","x",2,3,4);
+    X_28:bat[:oid,:dbl]  := sql.bind(X_4,"sys","part2","x",1);
+    X_154 := algebra.subselect(X_113,X_106,A0,A1,true,true,false);
+    X_155 := algebra.subselect(X_114,X_108,A0,A1,true,true,false);
+    X_156 := algebra.subselect(X_115,X_110,A0,A1,true,true,false);
+    X_157 := algebra.subselect(X_116,X_112,A0,A1,true,true,false);
+    X_162 := mat.packIncrement(X_118,4);
+    X_163 := mat.packIncrement(X_162,X_120);
+    X_164 := mat.packIncrement(X_163,X_122);
+    language.pass(X_8);
+    language.pass(X_11);
+    language.pass(X_14);
+    language.pass(r1_14);
+    language.pass(X_17);
+exit X_212;
+barrier X_219 := language.dataflow();
+    r1_30 := mat.packIncrement(X_164,X_124);
+    X_101 := algebra.subselect(r1_30,nil:bat[:oid,:oid],A0,A1,true,true,false);
+    X_103 := algebra.subselect(X_28,X_112,A0,A1,true,true,false);
+    X_166 := mat.packIncrement(X_154,4);
+    X_167 := mat.packIncrement(X_166,X_155);
+    X_168 := mat.packIncrement(X_167,X_156);
+    X_100 := mat.packIncrement(X_168,X_157);
+    X_170 := mat.packIncrement(X_106,4);
+    X_171 := mat.packIncrement(X_170,X_108);
+    X_172 := mat.packIncrement(X_171,X_110);
+    X_23:bat[:oid,:oid]  := mat.packIncrement(X_172,X_112);
+    X_174 := mat.packIncrement(X_117,4);
+    X_175 := mat.packIncrement(X_174,X_119);
+    X_176 := mat.packIncrement(X_175,X_121);
+    X_26 := mat.packIncrement(X_176,X_123);
+    X_29 := sql.subdelta(X_100,X_23,X_26,X_101,X_103);
+    X_178 := mat.packIncrement(X_113,4);
+    X_179 := mat.packIncrement(X_178,X_114);
+    X_180 := mat.packIncrement(X_179,X_115);
+    X_25:bat[:oid,:dbl]  := mat.packIncrement(X_180,X_116);
+    X_31 := sql.projectdelta(X_29,X_25,X_26,r1_30,X_28);
+    X_32 := bat.append(X_22,X_31,true);
+    language.pass(X_112);
+    language.pass(X_26);
+    language.pass(r1_30);
+    language.pass(X_28);
+exit X_219;
+    X_33 := sql.append(X_4,"sys","answ","x",X_32);
+barrier X_222 := language.dataflow();
+    X_37:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_40:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part1","y",0);
+    (X_44,r1_53) := sql.bind(X_33,"sys","part1","y",2);
+    X_47:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part1","y",1);
+    X_49 := sql.projectdelta(X_19,X_40,X_44,r1_53,X_47);
+    X_50 := bat.append(X_37,X_49,true);
+    X_51:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",0);
+    X_125:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",0,0,4);
+    X_126:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",0,1,4);
+    X_127:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",0,2,4);
+    X_128:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",0,3,4);
+    (X_53,r1_64) := sql.bind(X_33,"sys","part2","y",2);
+    (X_129:bat[:oid,:oid] ,X_130:bat[:oid,:dbl] ) := sql.bind(X_33,"sys","part2","y",2,0,4);
+    (X_131:bat[:oid,:oid] ,X_132:bat[:oid,:dbl] ) := sql.bind(X_33,"sys","part2","y",2,1,4);
+    (X_133:bat[:oid,:oid] ,X_134:bat[:oid,:dbl] ) := sql.bind(X_33,"sys","part2","y",2,2,4);
+    (X_135:bat[:oid,:oid] ,X_136:bat[:oid,:dbl] ) := sql.bind(X_33,"sys","part2","y",2,3,4);
+    X_55:bat[:oid,:dbl]  := sql.bind(X_33,"sys","part2","y",1);
+    X_182 := mat.packIncrement(X_125,4);
+    X_183 := mat.packIncrement(X_182,X_126);
+    X_184 := mat.packIncrement(X_183,X_127);
+exit X_222;
+barrier X_225 := language.dataflow();
+    X_51:bat[:oid,:dbl]  := mat.packIncrement(X_184,X_128);
+    X_186 := mat.packIncrement(X_129,4);
+    X_187 := mat.packIncrement(X_186,X_131);
+    X_188 := mat.packIncrement(X_187,X_133);
+    X_53 := mat.packIncrement(X_188,X_135);
+    X_190 := mat.packIncrement(X_130,4);
+    X_192 := mat.packIncrement(X_190,X_132);
+    X_193 := mat.packIncrement(X_192,X_134);
+    r1_64 := mat.packIncrement(X_193,X_136);
+    X_56 := sql.projectdelta(X_29,X_51,X_53,r1_64,X_55);
+    X_57 := bat.append(X_50,X_56,true);
+exit X_225;
+    X_59 := sql.append(X_33,"sys","answ","y",X_57);
+barrier X_228 := language.dataflow();
+    X_60:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_61:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part1","z",0);
+    (X_64,r1_78) := sql.bind(X_59,"sys","part1","z",2);
+    X_66:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part1","z",1);
+    X_67 := sql.projectdelta(X_19,X_61,X_64,r1_78,X_66);
+    X_68 := bat.append(X_60,X_67,true);
+    X_69:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",0);
+    X_139:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",0,0,4);
+    X_141:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",0,1,4);
+    X_143:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",0,2,4);
+    X_145:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",0,3,4);
+    (X_71,r1_87) := sql.bind(X_59,"sys","part2","z",2);
+    (X_146:bat[:oid,:oid] ,X_147:bat[:oid,:dbl] ) := sql.bind(X_59,"sys","part2","z",2,0,4);
+    (X_148:bat[:oid,:oid] ,X_149:bat[:oid,:dbl] ) := sql.bind(X_59,"sys","part2","z",2,1,4);
+    (X_150:bat[:oid,:oid] ,X_151:bat[:oid,:dbl] ) := sql.bind(X_59,"sys","part2","z",2,2,4);
+    (X_152:bat[:oid,:oid] ,X_153:bat[:oid,:dbl] ) := sql.bind(X_59,"sys","part2","z",2,3,4);
+    X_74:bat[:oid,:dbl]  := sql.bind(X_59,"sys","part2","z",1);
+    X_195 := mat.packIncrement(X_139,4);
+    X_196 := mat.packIncrement(X_195,X_141);
+    X_197 := mat.packIncrement(X_196,X_143);
+exit X_228;
+barrier X_231 := language.dataflow();
+    X_69:bat[:oid,:dbl]  := mat.packIncrement(X_197,X_145);
+    X_199 := mat.packIncrement(X_146,4);
+    X_200 := mat.packIncrement(X_199,X_148);
+    X_201 := mat.packIncrement(X_200,X_150);
+    X_71 := mat.packIncrement(X_201,X_152);
+    X_203 := mat.packIncrement(X_147,4);
+    X_204 := mat.packIncrement(X_203,X_149);
+    X_205 := mat.packIncrement(X_204,X_151);
+    r1_87 := mat.packIncrement(X_205,X_153);
+    X_76 := sql.projectdelta(X_29,X_69,X_71,r1_87,X_74);
+    X_77 := bat.append(X_68,X_76,true);
+exit X_231;
+    X_78 := sql.append(X_59,"sys","answ","z",X_77);
+    X_80 := aggr.count(X_77);
+    sql.affectedRows(X_78,X_80,"");
+end s13_1;
+# querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe")
+#INSERT INTO answ
+#SELECT * FROM complete where x>=1.0 AND x <=2.0;
+[ 4	]
+#EXPLAIN INSERT INTO answ
+#SELECT * FROM complete
+#WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;
+% .explain # table_name
+% mal # name
+% clob # type
+% 132 # length
+function user.s14_1{autoCommit=true}(A0:dbl,A1:dbl,A2:dbl,A3:dbl):void;
+barrier X_226 := language.dataflow();
+    X_6 := sql.mvc();
+    X_7:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_10:bat[:oid,:oid]  := sql.tid(X_6,"sys","part1");
+    X_13:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part1","x",0);
+    (X_16,r1_16) := sql.bind(X_6,"sys","part1","x",2);
+    X_19:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part1","x",1);
+    X_21:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part1","y",0);
+    (X_23,r1_27) := sql.bind(X_6,"sys","part1","y",2);
+    X_25:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part1","y",1);
+    X_101 := algebra.subselect(X_21,X_10,A2,A3,true,true,false);
+    X_102 := algebra.subselect(r1_27,nil:bat[:oid,:oid],A2,A3,true,true,false);
+    X_104 := algebra.subselect(X_25,X_10,A2,A3,true,true,false);
+    X_26 := sql.subdelta(X_101,X_10,X_23,X_102,X_104);
+    X_105 := algebra.subselect(X_13,X_26,A0,A1,true,true,false);
+    X_106 := algebra.subselect(r1_16,nil:bat[:oid,:oid],A0,A1,true,true,false);
+    X_108 := algebra.subselect(X_19,X_26,A0,A1,true,true,false);
+    X_28 := sql.subdelta(X_105,X_26,X_16,X_106,X_108);
+    X_29 := sql.projectdelta(X_28,X_13,X_16,r1_16,X_19);
+    X_30 := bat.append(X_7,X_29,true);
+    X_32:bat[:oid,:oid]  := sql.tid(X_6,"sys","part2");
+    X_119:bat[:oid,:oid]  := sql.tid(X_6,"sys","part2",0,4);
+    X_121:bat[:oid,:oid]  := sql.tid(X_6,"sys","part2",1,4);
+    X_123:bat[:oid,:oid]  := sql.tid(X_6,"sys","part2",2,4);
+    X_125:bat[:oid,:oid]  := sql.tid(X_6,"sys","part2",3,4);
+    X_34:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",0);
+    X_126:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",0,0,4);
+    X_127:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",0,1,4);
+    X_128:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",0,2,4);
+    X_129:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",0,3,4);
+    (X_35,r1_43) := sql.bind(X_6,"sys","part2","x",2);
+    (X_130:bat[:oid,:oid] ,X_131:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","x",2,0,4);
+    (X_132:bat[:oid,:oid] ,X_133:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","x",2,1,4);
+    (X_134:bat[:oid,:oid] ,X_135:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","x",2,2,4);
+    (X_136:bat[:oid,:oid] ,X_137:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","x",2,3,4);
+    X_38:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","x",1);
+    X_40:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",0);
+    X_138:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",0,0,4);
+    X_139:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",0,1,4);
+    X_140:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",0,2,4);
+    X_141:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",0,3,4);
+    (X_42,r1_54) := sql.bind(X_6,"sys","part2","y",2);
+    (X_142:bat[:oid,:oid] ,X_143:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","y",2,0,4);
+    (X_144:bat[:oid,:oid] ,X_145:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","y",2,1,4);
+    (X_146:bat[:oid,:oid] ,X_147:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","y",2,2,4);
+    (X_148:bat[:oid,:oid] ,X_149:bat[:oid,:dbl] ) := sql.bind(X_6,"sys","part2","y",2,3,4);
+    X_45:bat[:oid,:dbl]  := sql.bind(X_6,"sys","part2","y",1);
+    X_167 := algebra.subselect(X_138,X_119,A2,A3,true,true,false);
+    X_168 := algebra.subselect(X_139,X_121,A2,A3,true,true,false);
+    X_169 := algebra.subselect(X_140,X_123,A2,A3,true,true,false);
+    X_170 := algebra.subselect(X_141,X_125,A2,A3,true,true,false);
+    X_175 := mat.packIncrement(X_143,4);
+    X_176 := mat.packIncrement(X_175,X_145);
+    X_177 := mat.packIncrement(X_176,X_147);
+    language.pass(X_10);
+    language.pass(X_26);
+    language.pass(X_13);
+    language.pass(X_16);
+    language.pass(r1_16);
+    language.pass(X_19);
+exit X_226;
+barrier X_235 := language.dataflow();
+    r1_54 := mat.packIncrement(X_177,X_149);
+    X_110 := algebra.subselect(r1_54,nil:bat[:oid,:oid],A2,A3,true,true,false);
+    X_112 := algebra.subselect(X_45,X_125,A2,A3,true,true,false);
+    X_179 := mat.packIncrement(X_167,4);
+    X_180 := mat.packIncrement(X_179,X_168);
+    X_181 := mat.packIncrement(X_180,X_169);
+    X_109 := mat.packIncrement(X_181,X_170);
+    X_183 := mat.packIncrement(X_119,4);
+    X_184 := mat.packIncrement(X_183,X_121);
+    X_185 := mat.packIncrement(X_184,X_123);
+    X_32:bat[:oid,:oid]  := mat.packIncrement(X_185,X_125);
+    X_187 := mat.packIncrement(X_142,4);
+    X_188 := mat.packIncrement(X_187,X_144);
+    X_189 := mat.packIncrement(X_188,X_146);
+    X_42 := mat.packIncrement(X_189,X_148);
+    X_47 := sql.subdelta(X_109,X_32,X_42,X_110,X_112);
+    X_191 := mat.packIncrement(X_126,4);
+    X_192 := mat.packIncrement(X_191,X_127);
+    X_193 := mat.packIncrement(X_192,X_128);
+    X_34:bat[:oid,:dbl]  := mat.packIncrement(X_193,X_129);
+    X_113 := algebra.subselect(X_34,X_47,A0,A1,true,true,false);
+    X_195 := mat.packIncrement(X_131,4);
+    X_196 := mat.packIncrement(X_195,X_133);
+    X_197 := mat.packIncrement(X_196,X_135);
+    r1_43 := mat.packIncrement(X_197,X_137);
+    X_114 := algebra.subselect(r1_43,nil:bat[:oid,:oid],A0,A1,true,true,false);
+    X_116 := algebra.subselect(X_38,X_47,A0,A1,true,true,false);
+    X_199 := mat.packIncrement(X_130,4);
+    X_200 := mat.packIncrement(X_199,X_132);
+    X_201 := mat.packIncrement(X_200,X_134);
+    X_35 := mat.packIncrement(X_201,X_136);
+    X_48 := sql.subdelta(X_113,X_47,X_35,X_114,X_116);
+    X_49 := sql.projectdelta(X_48,X_34,X_35,r1_43,X_38);
+    X_50 := bat.append(X_30,X_49,true);
+    language.pass(X_125);
+    language.pass(X_47);
+    language.pass(X_34);
+    language.pass(X_35);
+    language.pass(r1_43);
+    language.pass(X_38);
+exit X_235;
+    X_51 := sql.append(X_6,"sys","answ","x",X_50);
+barrier X_238 := language.dataflow();
+    X_53:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_56 := sql.projectdelta(X_28,X_21,X_23,r1_27,X_25);
+    X_57 := bat.append(X_53,X_56,true);
+    X_203 := mat.packIncrement(X_138,4);
+    X_205 := mat.packIncrement(X_203,X_139);
+    X_206 := mat.packIncrement(X_205,X_140);
+    X_40:bat[:oid,:dbl]  := mat.packIncrement(X_206,X_141);
+    X_59 := sql.projectdelta(X_48,X_40,X_42,r1_54,X_45);
+    X_60 := bat.append(X_57,X_59,true);
+exit X_238;
+    X_61 := sql.append(X_51,"sys","answ","y",X_60);
+barrier X_241 := language.dataflow();
+    X_64:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
+    X_65:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part1","z",0);
+    (X_69,r1_87) := sql.bind(X_61,"sys","part1","z",2);
+    X_72:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part1","z",1);
+    X_74 := sql.projectdelta(X_28,X_65,X_69,r1_87,X_72);
+    X_75 := bat.append(X_64,X_74,true);
+    X_76:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",0);
+    X_152:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",0,0,4);
+    X_154:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",0,1,4);
+    X_156:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",0,2,4);
+    X_158:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",0,3,4);
+    (X_78,r1_98) := sql.bind(X_61,"sys","part2","z",2);
+    (X_159:bat[:oid,:oid] ,X_160:bat[:oid,:dbl] ) := sql.bind(X_61,"sys","part2","z",2,0,4);
+    (X_161:bat[:oid,:oid] ,X_162:bat[:oid,:dbl] ) := sql.bind(X_61,"sys","part2","z",2,1,4);
+    (X_163:bat[:oid,:oid] ,X_164:bat[:oid,:dbl] ) := sql.bind(X_61,"sys","part2","z",2,2,4);
+    (X_165:bat[:oid,:oid] ,X_166:bat[:oid,:dbl] ) := sql.bind(X_61,"sys","part2","z",2,3,4);
+    X_80:bat[:oid,:dbl]  := sql.bind(X_61,"sys","part2","z",1);
+    X_208 := mat.packIncrement(X_152,4);
+    X_209 := mat.packIncrement(X_208,X_154);
+    X_210 := mat.packIncrement(X_209,X_156);
+exit X_241;
+barrier X_244 := language.dataflow();
+    X_76:bat[:oid,:dbl]  := mat.packIncrement(X_210,X_158);
+    X_212 := mat.packIncrement(X_159,4);
+    X_213 := mat.packIncrement(X_212,X_161);
+    X_214 := mat.packIncrement(X_213,X_163);
+    X_78 := mat.packIncrement(X_214,X_165);
+    X_216 := mat.packIncrement(X_160,4);
+    X_217 := mat.packIncrement(X_216,X_162);
+    X_218 := mat.packIncrement(X_217,X_164);
+    r1_98 := mat.packIncrement(X_218,X_166);
+    X_81 := sql.projectdelta(X_48,X_76,X_78,r1_98,X_80);
+    X_82 := bat.append(X_75,X_81,true);
+exit X_244;
+    X_83 := sql.append(X_61,"sys","answ","z",X_82);
+    X_85 := aggr.count(X_82);
+    sql.affectedRows(X_83,X_85,"");
+end s14_1;
+# querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe")
+#INSERT INTO answ
+#SELECT * FROM complete
+#WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;
+[ 6	]
+#DROP TABLE complete;
+#DROP TABLE part1;
+#DROP TABLE part2;
+
+# 16:20:24 >  
+# 16:20:24 >  "Done."
+# 16:20:24 >  
+

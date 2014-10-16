@@ -35,8 +35,6 @@
  *
  * Operands provided are:
  * @itemize
- * @item kunique
- * produces a copy of the bat, with double elimination
  * @item kunion
  * produces a bat union.
  * @item kdiff
@@ -60,9 +58,6 @@
  * The @emph{kunion(l,r)} operations result in all BUNs of
  * @emph{l}, plus all BUNs of @emph{r} that are not in @emph{l}. They
  * do not do double-elimination over the @emph{l} nor @emph{r} BUNs.
- *
- * Operations with double-elimination can be formed by performing
- * @emph{kunique(l)} on their operands.
  *
  * The @emph{kintersect(l,r)} is used also as implementation for the
  * @emph{semijoin()}.
@@ -96,93 +91,6 @@
  * Comes in two flavors: looking at one column, or at two at-a-time.
  * Implementation is either merge- or hash-based.
  */
-
-/*
- * @- Unique
- * The routine BATkunique removes duplicate head entries.
- */
-BAT *
-BATkunique(BAT *b)
-{
-	BAT *bn;
-	BAT *bn1 = NULL;
-	BAT *map;
-	BAT *b1;
-
-	BATcheck(b, "BATkunique");
-
-	if (b->hkey) {
-		bn = BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT);
-	} else {
-		b = BATmirror(b);	/* work on tail instead of head */
-		/* b is a [any_1,any_2] BAT */
-		if (!BAThdense(b)) {
-			map = BATmirror(BATmark(b, 0)); /* [dense1,any_1] */
-			b1 = BATmirror(BATmark(BATmirror(b), 0)); /* [dense1,any_2] */
-		} else {
-			map = NULL;
-			b1 = b;		/* [dense1,any_2] (any_1==dense1) */
-		}
-		bn = BATsubunique(b1, NULL);
-		if (bn == NULL)
-			goto error;
-		/* bn is a [dense2,oid1] BAT with oid1 a subset of dense1 */
-		/* we want to return a [any_1,any_2] subset of b */
-		if (map) {
-			bn1 = BATproject(bn, map);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_1] */
-			BBPunfix(map->batCacheid);
-			map = BATmirror(bn1);
-			/* map is [any_1,dense2] */
-			bn1 = BATproject(bn, b1);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_2] */
-			BBPunfix(b1->batCacheid);
-			b1 = NULL;
-			BBPunfix(bn->batCacheid);
-			bn = VIEWcreate(map, bn1);
-			if (bn == NULL)
-				goto error;
-			/* bn is [any_1,any_2] */
-			BBPunfix(bn1->batCacheid);
-			BBPunfix(map->batCacheid);
-			bn1 = map = NULL;
-		} else {
-			bn1 = BATproject(bn, b);
-			if (bn1 == NULL)
-				goto error;
-			/* bn1 is [dense2,any_2] */
-			/* bn was [dense2,any_1] since b was hdense */
-			b1 = VIEWcreate(BATmirror(bn), bn1);
-			if (b1 == NULL)
-				goto error;
-			/* b1 is [any_1,any_2] */
-			BBPunfix(bn->batCacheid);
-			bn = b1;
-			b1 = NULL;
-			BBPunfix(bn1->batCacheid);
-			bn1 = NULL;
-		}
-		bn = BATmirror(bn);
-	}
-	BATkey(bn, TRUE);
-
-	return bn;
-
-  error:
-	if (map)
-		BBPunfix(map->batCacheid);
-	if (b1 && b1 != b)
-		BBPunfix(b1->batCacheid);
-	if (bn1)
-		BBPunfix(bn1->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
-	return NULL;
-}
 
 /*
  * @+ Difference and Intersect
@@ -259,6 +167,9 @@ BATkunique(BAT *b)
 #define sht_EQ(x,y) simple_EQ(x,y,sht)
 #define int_EQ(x,y) simple_EQ(x,y,int)
 #define lng_EQ(x,y) simple_EQ(x,y,lng)
+#ifdef HAVE_HGE
+#define hge_EQ(x,y) simple_EQ(x,y,hge)
+#endif
 #define flt_EQ(x,y) simple_EQ(x,y,flt)
 #define dbl_EQ(x,y) simple_EQ(x,y,dbl)
 
@@ -387,6 +298,14 @@ BATkunique(BAT *b)
 		}						\
 	} while (0)
 
+#ifdef HAVE_HGE
+#define batcheck_hge(a1)						\
+		case TYPE_hge:						\
+			check(a1,loc,hge,simple_CMP(h,h2,hge),hge_EQ);	\
+			break
+#else
+#define batcheck_hge(a1)
+#endif
 #define batcheck(a1)							\
 static BAT*								\
 BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
@@ -503,6 +422,7 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		case TYPE_lng:						\
 			check(a1,loc,lng,simple_CMP(h,h2,lng),lng_EQ);	\
 			break;						\
+		batcheck_hge(a1);					\
 		default:						\
 			if (r->hvarsized) {				\
 				checkall(a1,var,var,((*merge)(h,h2)));	\
@@ -521,6 +441,23 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 batcheck(intersect)
 batcheck(diff)
 
+
+/*
+ * The routine BATclone creates a bat with the same types as b.
+ */
+static BAT *
+BATclone(BAT *b, BUN cap, int role)
+{
+	BAT *c = BATnew(b->htype, b->ttype, cap, role);
+
+	if (c) {
+		if (c->htype == TYPE_void && b->hseqbase != oid_nil)
+			BATseqbase(c, b->hseqbase);
+		if (c->ttype == TYPE_void && b->tseqbase != oid_nil)
+			BATseqbase(BATmirror(c), b->tseqbase);
+	}
+	return c;
+}
 
 static BAT *
 diff_intersect(BAT *l, BAT *r, int diff)
@@ -565,16 +502,20 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	    BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn, r);
 	}
-	bn->hsorted = BAThordered(l);
-	bn->hrevsorted = BAThrevordered(l);
-	bn->tsorted = BATtordered(l);
-	bn->trevsorted = BATtrevordered(l);
-	if (BATcount(bn)) {
-		BATkey(bn, BAThkey(l));
-		BATkey(BATmirror(bn), BATtkey(l));
-	} else {
+	if (BATcount(bn) <= 1) {
+		bn->hsorted = 1;
+		bn->hrevsorted = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
+	} else {
+		bn->hsorted = BAThordered(l);
+		bn->hrevsorted = BAThrevordered(l);
+		bn->tsorted = BATtordered(l);
+		bn->trevsorted = BATtrevordered(l);
+		BATkey(bn, BAThkey(l));
+		BATkey(BATmirror(bn), BATtkey(l));
 	}
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = l->T->nonil;
@@ -597,7 +538,7 @@ BATkintersect(BAT *l, BAT *r)
  * @+ Union
  * Union consists of one version: BATkunion(l,r), which unites
  * with double elimination over the head column only. The
- * implementation uses the kdiff() and kunique() code for
+ * implementation uses the kdiff() code for
  * efficient double elimination.
  */
 BAT *

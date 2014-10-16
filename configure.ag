@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.18.0], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.20.0], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -136,17 +136,17 @@ esac
 
 AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
-dft_gdk=auto
+dft_gdk=yes
 AC_ARG_ENABLE(gdk,
 	AS_HELP_STRING([--enable-gdk],
-		[enable support for GDK (default=auto)]),
+		[enable support for GDK (default=yes)]),
 	enable_gdk=$enableval,
 	enable_gdk=$dft_gdk)
 
-dft_monetdb5=auto
+dft_monetdb5=yes
 AC_ARG_ENABLE(monetdb5,
 	AS_HELP_STRING([--enable-monetdb5],
-		[enable support for MonetDB5 (default=auto)]),
+		[enable support for MonetDB5 (default=yes)]),
 	enable_monetdb5=$enableval,
 	enable_monetdb5=$dft_monetdb5)
 case "$enable_gdk-$enable_monetdb5" in
@@ -176,14 +176,14 @@ AC_ARG_ENABLE(datacell,
 dft_fits=auto
 AC_ARG_ENABLE(fits,
 	AS_HELP_STRING([--enable-fits],
-		[enable support for FITS (default=no)]),
+		[enable support for FITS (default=auto)]),
 	enable_fits=$enableval,
 	enable_fits=$dft_fits)
 
 dft_sql=yes
 AC_ARG_ENABLE(sql,
 	AS_HELP_STRING([--enable-sql],
-		[enable support for MonetDB/SQL (default=auto)]),
+		[enable support for MonetDB/SQL (default=yes)]),
 	enable_sql=$enableval,
 	enable_sql=$dft_sql)
 case "$enable_monetdb5-$enable_sql" in
@@ -219,12 +219,36 @@ AC_ARG_ENABLE(jsonstore,
 	enable_jsonstore=$enableval,
 	enable_jsonstore=$dft_jsonstore)
 
+dft_microhttpd=$enable_jsonstore
+AC_ARG_ENABLE(microhttpd,
+	AS_HELP_STRING([--enable-microhttpd],
+		[enable support for the builtin MircoHTTPD daemon (default: implied by --enable-jsonstore)]),
+	enable_microhttpd=$enableval,
+	enable_microhttpd=$dft_microhttpd)
+
+case "$enable_jsonstore-$enable_microhttpd" in
+yes-no)
+	AC_MSG_ERROR([jsonstore require microhttpd])
+	;;
+auto-no)
+	enable_jsonstore=no
+	disable_jsonstore="(jsonstore required microhttpd)"
+	;;
+esac
+
 dft_gsl=auto
 AC_ARG_ENABLE(gsl,
 	AS_HELP_STRING([--enable-gsl],
-		[enable support for GSL (default=no)]),
+		[enable support for GSL (default=auto)]),
 	enable_gsl=$enableval,
 	enable_gsl=$dft_gsl)
+
+dft_rintegration=auto
+AC_ARG_ENABLE(rintegration,
+	AS_HELP_STRING([--enable-rintegration],
+		[enable support for R integration into MonetDB (default=auto)]),
+	enable_rintegration=$enableval,
+	enable_rintegration=$dft_rintegration)
 
 dft_odbc=auto
 AC_ARG_ENABLE(odbc,
@@ -1861,11 +1885,11 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.*|yes-yes-clang-5.*)
-			# clang 5.* (at least on Mac OSX Mavericks) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*)
+			# clang 5.*/6.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
-			# option; on Mac OSX Mavericks, "Apple LLVM version
-			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
+			# option; on Mac OS X Yosamite, "Apple LLVM 
+			# version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
 			# complains about "error: argument unused during
 			# compilation: '-pthread'".
 			# However, disabling -pthread completely might be
@@ -2228,6 +2252,41 @@ AC_SUBST(SPHINXCLIENT_CFLAGS, $SPHINXCLIENT_CFLAGS)
 AC_SUBST(SPHINXCLIENT_LIBS, $SPHINXCLIENT_LIBS)
 AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
 
+have_libr=no
+if test "x$enable_rintegration" != xno; then
+	case "$enable_rintegration" in
+	yes|auto)
+		XPATH="$PATH"
+		;;
+	/*)
+		XPATH="$enable_rintegration"
+		enable_rintegration=yes
+		;;
+	*)
+		AC_MSG_ERROR([--enable-rintegration value must be yes|no|auto|absolute path of R cmd])
+		;;
+	esac
+   	AC_PATH_PROG(RCMD,R,,$XPATH)
+   	if test "x$RCMD" = x; then
+      		if test "x$enable_rintegration" = xyes; then
+			AC_MSG_ERROR([libR library required for R integration support])
+		else
+			have_libr="no"
+		 	why_have_libr="(libR library not found)"
+			enable_rintegration=no
+			disable_rintegration="(libR library not found)"
+		fi
+	elif RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags`; then
+		have_libr=yes
+		AC_DEFINE(HAVE_LIBR, 1, [Define if you have libR installed])
+		AC_SUBST(libr_CFLAGS, $libr_CFLAGS)
+		AC_SUBST(libr_LIBS, $libr_LIBS)
+		AC_SUBST(RHOME, $RHOME)
+		AC_DEFINE_UNQUOTED(RHOME, "$RHOME", [The home of R])
+	fi
+fi
+AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
+
 # ODBC, only used by ODBC driver
 if test "x$enable_odbc" != xno; then
 	have_unixodbc=auto
@@ -2363,7 +2422,7 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # samtools, only used by sql
-org_have_samtools="yes"
+org_have_samtools="auto"
 have_samtools=$org_have_samtools
 AC_ARG_WITH(samtools,
 	AS_HELP_STRING([--with-samtools=DIR],
@@ -2383,17 +2442,28 @@ if test "x$have_samtools" != xno; then
 	save_LDFLAGS="$LDFLAGS"
 	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
+
 	AC_CHECK_HEADER(samtools/bam.h,
+		[ why_have_samtools= ],
+		[ why_have_samtools="samtools/bam.h header not found" ])
+	if test -z "$why_have_samtools"; then
 		AC_CHECK_HEADER(samtools/bgzf.h,
-			AC_CHECK_LIB(bam, bam_header_read,
-				AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
-				[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([-lbam library not found]); fi
-				  have_samtools=no; why_have_samtools="(bam library not found)" ],
-				[-lm -lpthread -lz]),
-			[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bgzf.h header not found]); fi
-			  have_samtools=no; why_have_samtools="(samtools/bgzf.h header not found)" ]),
-		[ if test "x$have_samtools" != xauto; then AC_MSG_ERROR([samtools/bam.h header not found]); fi
-		  have_samtools=no; why_have_samtools="(samtools/bam.h header not found)" ])
+			[ why_have_samtools= ],
+			[ why_have_samtools="samtools/bgzf.h header not found" ])
+	fi
+	if test -z "$why_have_samtools"; then
+		AC_CHECK_LIB(bam, bam_header_read,
+			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
+			[ why_have_samtools="bam library not found" ],
+			[-lm -lpthread -lz])
+	fi
+	if test -n "$why_have_samtools"; then
+		if test "x$have_samtools" != xauto; then
+			AC_MSG_ERROR([$why_have_samtools])
+		fi
+		have_samtools=no
+		why_have_samtools="($why_have_samtools)"
+	fi
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
@@ -2521,60 +2591,26 @@ dnl MicroHTTPD library
 dnl required for MonetDB5 SQL jsonstore, optional otherwise
 org_have_libmicrohttpd=auto
 have_libmicrohttpd=$org_have_libmicrohttpd
-AC_ARG_WITH(libmicrohttpd,
-	AS_HELP_STRING([--with-libmicrohttpd=DIR],
-		[libmicrohttpd library is installed in DIR]),
-	have_libmicrohttpd="$withval")
+if test "x$enable_microhttpd" != xno; then
+	PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
+		[have_libmicrohttpd=yes],
+		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"; if test "x$enable_microhttpd" = xyes; then AC_MSG_ERROR([libmicrohttpd not found]); fi])
+fi
 
-dnl Uriparser library
-dnl required for MonetDB5 SQL jsonstore, optional otherwise
 org_have_liburiparser=auto
 have_liburiparser=$org_have_liburiparser
-AC_ARG_WITH(liburiparser,
-	AS_HELP_STRING([--with-liburiparser=DIR],
-		[liburiparser library is installed in DIR]),
-	have_liburiparser="$withval")
-
-if test "x$have_liburiparser" = xauto; then
-      PKG_CHECK_MODULES([liburiparser], [liburiparser],
-      		[have_liburiparser=yes],
-		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"])
-fi
-
-if test "x$have_libmicrohttpd" = xauto; then
-      PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
-      		[have_libmicrohttpd=yes],
-		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"])
-fi
-
 if test "x$enable_jsonstore" != xno; then
-      AC_DEFINE(HAVE_JSONSTORE, 1, [Define that you want to build the jsonstore library])
+	dnl Uriparser library
+	dnl required for MonetDB5 SQL jsonstore, optional otherwise
+	PKG_CHECK_MODULES([liburiparser], [liburiparser],
+		[have_liburiparser=yes],
+		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"; if test "x$enable_jsonstore" = xyes; then AC_MSG_ERROR([LibUriParser library not found but required for jsonstore]); fi])
 
-      case "$enable_jsonstore-$have_libmicrohttpd" in
-        yes-no)
-	    AC_MSG_ERROR([LibMicroHTTPD library not found but required for jsonstore])
-	    ;;
-        yes-yes)
-            AC_DEFINE(HAVE_MICROHTTPD, 1, [Define if you have the LibMicroHTTPD library])
-	    save_LIBS="$LIBS"
-	    LIBS="$LIBS $libmicrohttpd_LIBS"
-	    save_CFLAGS="$CFLAGS"
-	    CFLAGS="$CFLAGS $libmicrohttpd_CFLAGS"
-            ;;
-      esac
-
-      case "$enable_jsonstore-$have_liburiparser" in
-        yes-no)
-	    AC_MSG_ERROR([LibUriParser library not found but required for jsonstore])
-	    ;;
-        yes-yes)
-            AC_DEFINE(HAVE_URIPARSER, 1, [Define if you have the LibUriParser library])
-	    save_LIBS="$LIBS"
-	    LIBS="$LIBS $liburiparser_LIBS"
-	    save_CFLAGS="$CFLAGS"
-	    CFLAGS="$CFLAGS $liburiparser_CFLAGS"
-            ;;
-      esac
+	if test "$have_libmicrohttpd-$have_liburiparser" = yes-yes; then
+		AC_DEFINE(HAVE_JSONSTORE, 1, [Define that you want to build the jsonstore library])
+	elif test "x$enable_jsonstore" = xyes; then
+		AC_MSG_ERROR([cannot enable jsonstore $why_have_libmicrohttpd$why_have_liburiparser])
+	fi
 fi
 
 dnl Check for gsl library for statistical functions
@@ -2599,6 +2635,7 @@ AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
+	fenv.h \
 	getopt.h \
 	iconv.h \
 	ieeefp.h \
@@ -2660,6 +2697,8 @@ AC_CHECK_HEADERS([sys/sysctl.h], [], [],
 SOCKET_LIBS=""
 org_have_setsockopt=no
 have_setsockopt=$org_have_setsockopt
+org_have_winsock2=no
+have_winsock2=$org_have_winsock2
 
 case "$host_os" in
 	*mingw*)
@@ -2738,10 +2777,33 @@ AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
-AC_CHECK_TYPES([__int64, long long, __int128])
+AC_CHECK_TYPES([__int64, long long])
+
+dft_int128=auto
+AC_ARG_ENABLE(int128,
+	AS_HELP_STRING([--enable-int128],
+		[enable support for 128-bit integers (default=auto)]),
+	enable_int128=$enableval,
+	enable_int128=$dft_int128)
+
+case "$enable_int128" in
+yes|auto)
+	have_hge=no
+	why_have_hge='(no 128-bit integer type found)'
+	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''],
+		[if test x$enable_int128 = xyes; then AC_MSG_ERROR([128-bit integers not supported by platform]); fi])
+	;;
+no)
+	have_hge=no
+	why_have_hge='(128-bit integer support disabled)'
+	;;
+esac
+AM_CONDITIONAL(HAVE_HGE, test "x$have_hge" = xyes)
+
 AC_CHECK_TYPES([ptrdiff_t],,,[#include <stddef.h>
 #include <sys/types.h>])
-AC_CHECK_TYPES(bool)
+dnl check for uintptr_t so that we can compile with rintegration on 32 bit arch
+AC_CHECK_TYPES(uintptr_t)
 
 AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(short)
@@ -2754,6 +2816,8 @@ AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
 #include <sys/types.h>])
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
+AC_CHECK_SIZEOF(__int128)
+AC_CHECK_SIZEOF(__int128_t)
 AC_C_CHAR_UNSIGNED
 
 case $host_os in
@@ -3245,6 +3309,20 @@ void *alloca(size_t);
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>		/* va_alist.. */
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifndef HAVE_UINTPTR_T
+typedef size_t uintptr_t;
+#endif
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
+#ifndef __bool_true_false_are_defined
+#define true 1
+#define false 0
+#define __bool_true_false_are_defined 1
+#endif
 
 #include <assert.h>
 
@@ -3260,6 +3338,19 @@ typedef __int64 lng;
 #  define SIZEOF_LNG SIZEOF___INT64
 # endif
 #endif
+
+#ifdef HAVE___INT128
+typedef __int128 hge;
+# define HAVE_HGE 1
+# define SIZEOF_HGE SIZEOF___INT128
+#else
+# if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
+typedef __int128_t hge;
+#  define HAVE_HGE 1
+#  define SIZEOF_HGE SIZEOF___INT128_T
+# endif
+#endif
+
 
 #ifndef HAVE_PTRDIFF_T
 # if SIZEOF_SIZE_T == SIZEOF_INT
@@ -3307,11 +3398,8 @@ typedef lng ptrdiff_t;
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
 #elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)
@@ -3397,19 +3485,21 @@ done
 echo
 echo "* Enabled/disabled components:"
 for comp in \
-	'gdk      ' \
-	'monetdb5 ' \
-	'sql      ' \
-	'jsonstore' \
-	'geom     ' \
-	'gsl      ' \
-	'fits     ' \
-	'rdf      ' \
-	'datacell ' \
-	'odbc     ' \
-	'jdbc     ' \
-	'control  ' \
-	'testing  ' \
+	'gdk         ' \
+	'monetdb5    ' \
+	'sql         ' \
+	'geom        ' \
+	'gsl         ' \
+	'fits        ' \
+	'jsonstore   ' \
+	'microhttpd  ' \
+	'rdf         ' \
+	'rintegration' \
+	'datacell    ' \
+	'odbc        ' \
+	'jdbc        ' \
+	'control     ' \
+	'testing     ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3466,9 +3556,18 @@ for comp in \
 	echo $ECHO_N "    $comp = $ECHO_C"
 	if test "x$have" != xno ; then echo "yes"; else echo "no  $why"; fi
 done
+if test "x$have_hge" = xyes ; then
+	hge_bits='128'
+	hge_digits=' 38'
+else
+	hge_bits=' 64'
+	hge_digits=' 18'
+fi
 echo
 echo "* Important options:"
-echo "    OID size: " ${oids} bits
+echo "    OID size:              ${oids} bits"
+echo "    largest integer type: ${hge_bits} bits"
+echo "    largest decimal type: ${hge_digits} digits"
 echo
 
 dnl give some hints to the user

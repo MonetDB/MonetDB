@@ -1,6 +1,6 @@
 # TPCH Q1 non-optimized
 
-#don;t depend on SQL library
+#don't depend on SQL library
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
 	return bat.new(:any_1,:any_2);
 end bind;
@@ -15,7 +15,7 @@ function qry1();
     V10 := algebra.kdifference(V3,V9);
 	a:= mtime.date(nil);
     V14 := algebra.uselect(V10,a,a);
-    V17 := algebra.markT(V14,0@0);
+    V17 := algebra.mark(V14,0@0);
     V18 := bat.reverse(V17);
     V19:bat[:oid,:bit] := user.bind("sys","lineitem","l_returnflag",0);
     V21:bat[:oid,:oid] := user.bind_dbat("sys","lineitem",0);

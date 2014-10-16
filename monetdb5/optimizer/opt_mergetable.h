@@ -26,6 +26,6 @@
 
 opt_export int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGmergetable  if ( optDebug & (1 <<DEBUG_OPT_MERGETABLE) )
+#define OPTDEBUGmergetable  if ( optDebug & ((lng) 1 <<DEBUG_OPT_MERGETABLE) )
 
 #endif

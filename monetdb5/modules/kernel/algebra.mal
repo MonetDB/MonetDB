@@ -14,11 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
-
-# @
+# 
 # We split between selections that return one value, and selections
 # that return a BAT.
-# @+ Value Selections
 module algebra;
 
 command exist(b:bat[:oid,:any_1], val:any_1):bit
@@ -31,17 +29,10 @@ comment "Returns the tail value 't' for which some [h,t] BUN
 	exists in b.  If no such BUN exists, an error occurs." ;
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
-address ALGfetchoid;
-command fetch(b:bat[:any_2,:any_1], x:lng) :any_1
-address ALGfetch;
-command fetch(b:bat[:any_2,:any_1], x:int) :any_1
-address ALGfetchint
+address ALGfetchoid
 comment "Returns the tail value of the BUN at x-th position
 	with 0 <= x < b.count";
 
-# @+ BAT Selections
-# A simple sampling operation is also provided.
-# @- Range selection
 # The range selections are targeted at the tail of the BAT.
 command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address ALGsubselect1
@@ -94,10 +85,6 @@ comment "Select all head values of the first input BAT for which the tail value
 	relationship holds.  The output BAT is sorted on the tail value.";
 
 
-#command thetaselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:any_2]
-#address ALGthetaselect
-#comment "The theta (<=,<,=,>,>=) select()";
-#
 command select(b:bat[:oid,:any_2], low:any_2, high:any_2):bat[:oid,:any_2]
 address ALGselect
 comment "Select all BUNs that have tail values: {v| low <= v <= high}.
@@ -151,10 +138,6 @@ command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid]
 address ALGsubslice_wrd
 comment "Return the oids of the slice with the BUNs at position x till y.";
 
-command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
-address ALGtopN
-comment "Trim all but the top N tuples.";
-
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
@@ -164,10 +147,6 @@ command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
-command thetauselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:void]
-address ALGthetauselect
-comment "The theta (<=,<,=,>,>=) select() limited to head values";
-
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void]
 address ALGuselect;
 command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
@@ -175,30 +154,21 @@ address ALGuselect1
 comment "Value select, but returning only the
 	head values. SEE ALSO:select(bat,val)";
 
-command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
-address ALGantiuselect1
-comment "Value select, but returning only the
-	head values. SEE ALSO:select(bat,val)";
-
-command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
-		li:bit, hi:bit) :bat[:any_1,:void]
-address ALGantiuselectInclusive
-comment "See select() but limited to head values";
-# @- Pattern matching
+# Pattern matching
 command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
-# @- Sampling
+# Sampling
 command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
 address ALGsample
 comment "Returns the oids of a random selection of size 'num' from the input BAT.";
 
-# @+ BAT copying
+# BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGcopy
 comment "Returns physical copy of a BAT.";
-# @- Sorted copy
+# Sorted copy
 command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
@@ -310,8 +280,6 @@ comment "Returns a BAT copy with buns in reverse order";
 #
 # @noindent Operands provided are:
 # @itemize
-# @item [s,k,t]unique(bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# produces a copy of the bat, with double elimination
 # @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 # bat union.
 # @item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
@@ -329,25 +297,12 @@ comment "Returns a BAT copy with buns in reverse order";
 # The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
 # of @emph{r} that are not in @emph{l}. They do not do double-elimination
 # over the @emph{l} nor @emph{r} BUNs.
-# Operations with double-elimination can be formed by performing
-# [k,s]unique(l) on their operands.
 # The kintersect(l,r) is used also as implementation for the
 # @emph{semijoin()}.
 #
 # The t-@emph{operand} series are cast into a k-@emph{operand}
 # expression enclosing it with a BATmirror.
-# @- Head-unique elements
-command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGkunique
-comment "Select unique tuples from the input BAT.  Double elimination is
-		done only looking at the head column. The result is a BAT with
-		property hkeyed() == true.";
-
-command tunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address ALGtunique
-comment "Select unique tuples from the input BAT. Double elimination is
-		done over the BUNs tail. The result is a BAT with property
-		tkeyd()== true";
+# @- unique elements
 command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGsubunique2
 comment "Select all unique values from the tail of the first input.
@@ -460,11 +415,6 @@ command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li
 address ALGrangejoin2;
 
 # Note that joins over void columns are handled as if they are oids.
-command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
-	:bat[:any_1,:any_4]
-address ALGcross
-comment "Returns the cross product";
-
 command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
 	:bat[:any_1,:any_4]
 address ALGantijoin
@@ -528,8 +478,7 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 address ALGouterjoinestimate;
 
 # @- Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 		just the same as join(). All other options do merge algorithms.
@@ -537,8 +486,7 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 	right on head), or by using/creating binary search trees on the
 		join columns. ";
 
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int,estimate:lng) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
 address ALGthetajoinEstimate;
 # @- Band Join (approximate match)
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
@@ -577,6 +525,20 @@ command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 
+function subantijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
+	 # JOIN_NE == -3
+	(r1,r2) := subthetajoin(l,r,sl,sr,-3:int,nil_matches,estimate);
+	return (r1,r2);
+end subantijoin;
+
+command subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubbandjoin
+comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
+
+command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubrangejoin
+comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
+
 # @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
@@ -589,61 +551,43 @@ pattern project(b:bat[:any_2,:any_1],v:any_3) :bat[:any_2,:any_3]
 address ALGprojecttail
 comment "Fill the tail with a constant, e.g. [0~b]";
 
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 
 # @+ OID Introducing Commands
 # For relational processing, some operators are necessary to produce newly
 # initiated OID columns, for representing n-ary (intermediary) relations.
-command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command markT( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
 address ALGtmarkp
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 	The base is uniquely defined by the part_nr (ie we set the highest
 	bits based on the part_nr/nr_parts) ";
-
-
-command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2]
-address ALGmarkHead_default
-comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2]
-address ALGmarkHead
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in
-		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:oid,:any_2]
-address ALGhmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-	the head that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
 
 command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
 address ALGmark_grp_1
@@ -662,15 +606,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  represents the group extent, i.e., the head is the unique list of group IDs
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
-
-# @+ BAT fragmentation commands
-# Various operations for splitting BATs into useful fragments.
-#
-# @- Variable management
-# It is sometimes needed to cast a type at runtime
-command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address ALGmaterialize
-comment "Materialize the void column";
 
 command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse
@@ -695,10 +630,6 @@ command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
-# @- Histogram on Tail
-command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int]
-address ALGhistogram
-comment "Produce a BAT containing the histogram over the tail values.";
 
 # @- Default Min and Max
 # Implementations a generic Min and Max routines get declared first. The
@@ -722,31 +653,7 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-command avg (b:bat[:oid,:bte] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:sht] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:int] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:wrd] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:lng] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:flt] ) :dbl
-address ALGavg
-comment "Gives the avg of all tail values";
-
-command avg (b:bat[:oid,:dbl] ) :dbl
+command avg (b:bat[:oid,:any_2] ) :dbl
 address ALGavg
 comment "Gives the avg of all tail values";
 
@@ -754,94 +661,16 @@ comment "Gives the avg of all tail values";
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:oid,:bte]) :dbl
+command stdev(b:bat[:oid,:any_2]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:bte]) :dbl
+command stdevp(b:bat[:oid,:any_2]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:bte]) :dbl
+command variance(b:bat[:oid,:any_2]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:bte]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:sht]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:sht]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:sht]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:sht]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:int]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:int]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:int]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:int]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:wrd]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:wrd]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:wrd]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:wrd]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:lng]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:lng]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:lng]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:lng]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:flt]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:flt]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:flt]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:flt]) :dbl
-address ALGvariancep
-comment "Gives the variance of all tail values";
-
-command stdev(b:bat[:oid,:dbl]) :dbl
-address ALGstdev
-comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:dbl]) :dbl
-address ALGstdevp
-comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:dbl]) :dbl
-address ALGvariance
-comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:dbl]) :dbl
+command variancep(b:bat[:oid,:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 

@@ -870,16 +870,18 @@ GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 		if (do_ssort_lng(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (do_ssort_hge(&ms, nremaining, lo, hi, minrun) < 0)
+			goto fail;
+		break;
+#endif
 	case TYPE_flt:
 		if (do_ssort_flt(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 	case TYPE_dbl:
 		if (do_ssort_dbl(&ms, nremaining, lo, hi, minrun) < 0)
-			goto fail;
-		break;
-	case TYPE_oid:
-		if (do_ssort_oid(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 	default:

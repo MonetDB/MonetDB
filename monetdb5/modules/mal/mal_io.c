@@ -86,7 +86,7 @@ str
 IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
 {
 	int tpe = getArgType(mb, pci, indx);
-	ptr val = (ptr) getArgReference(stk, pci, indx);
+	ptr val = getArgReference(stk, pci, indx);
 	stream *fp = cntxt->fdout;
 
 	(void) mb;
@@ -104,7 +104,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (isaBatType(tpe) ) {
 		BAT *b;
 
-		if (*(int *) val == 0) {
+		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
 			mnstr_printf(fp,"nil");
@@ -112,7 +112,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(int *) val);
+		b = BATdescriptor(*(bat *) val);
 		if (b == NULL) {
 			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
 		}
@@ -325,6 +325,12 @@ IOprintf_(str *res, str format, ...)
 					goto largetypes;
 				} else if (type == TYPE_lng) {
 					goto largetypes;
+#ifdef HAVE_HGE
+				} else if (type == TYPE_hge) {
+					/* Does this happen?
+					 * If so, what do we have TODO ? */
+					return_error(type_error);
+#endif
 				} else if (type == TYPE_int) {
 					ival = *(int *) p;
 				} else {
@@ -357,6 +363,12 @@ IOprintf_(str *res, str format, ...)
 					lval = (lng) *(dbl *) p;
 				} else if (type == TYPE_lng) {
 					lval = *(lng *) p;
+#ifdef HAVE_HGE
+				} else if (type == TYPE_hge) {
+					/* Does this happen?
+					 * If so, what do we have TODO ? */
+					return_error(type_error);
+#endif
 				} else {
 					va_end(ap);
 					return_error(type_error);
@@ -477,6 +489,9 @@ tstagain:
 	case TYPE_flt: val= (ptr) & v->val.fval; break;
 	case TYPE_dbl: val= (ptr) & v->val.dval; break;
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
+#ifdef HAVE_HGE
+	case TYPE_hge: val= (ptr) & v->val.hval; break;
+#endif
 	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
 	default:
 		tpe= ATOMstorage(tpe);
@@ -489,7 +504,7 @@ tstagain:
 str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *fmt = (str*) getArgReference(stk,pci,1);
+	str *fmt = getArgReference_str(stk,pci,1);
 	str fmt2 = NULL;
 	str msg= MAL_SUCCEED;
 
@@ -522,9 +537,9 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 str
 IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *fmt = (str*) getArgReference(stk,pci,2);
+	str *fmt = getArgReference_str(stk,pci,2);
 	str fmt2 = NULL;
-	stream *f= (stream*) getArgReference(stk,pci,1);
+	stream *f= (stream *) getArgReference(stk,pci,1);
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
@@ -570,7 +585,7 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 	(void) cntxt;
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
-		val = (ptr) getArgReference(stk, pci, i);
+		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
 			for (k = 0; k < nbats; k++)
 				BBPunfix(piv[k]->batCacheid);
@@ -595,7 +610,7 @@ str
 IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	order = *(int *) getArgReference(stk, pci, 1);
+	order = *getArgReference_int(stk, pci, 1);
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, TRUE, TRUE);
 }
 
@@ -612,7 +627,7 @@ IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int order;
 
 	fp = *(stream **) getArgReference(stk, pci, 1);
-	order = *(int *) getArgReference(stk, pci, 2);
+	order = *getArgReference_int(stk, pci, 2);
 	(void) order;		/* fool compiler */
 	return IOtableAll(fp, cntxt, mb, stk, pci, 3, 1, TRUE, TRUE);
 }
@@ -636,7 +651,7 @@ str
 IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	order = *(int *) getArgReference(stk, pci, 1);
+	order = *getArgReference_int(stk, pci, 1);
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
@@ -672,7 +687,7 @@ IOdatafile(str *ret, str *fnme){
 }
 
 str
-IOexport(bit *ret, int *bid, str *fnme)
+IOexport(bit *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	stream *s;
@@ -705,7 +720,7 @@ IOexport(bit *ret, int *bid, str *fnme)
  */
 #define COMMA ','
 str
-IOimport(int *ret, int *bid, str *fnme)
+IOimport(bat *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	int (*hconvert) (const char *, int *, ptr *);

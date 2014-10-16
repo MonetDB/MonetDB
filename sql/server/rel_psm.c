@@ -677,7 +677,7 @@ rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type)
+rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -747,7 +747,6 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 		 	if (params) {
 				for (n = params->h; n; n = n->next) {
 					dnode *an = n->data.lval->h;
-		
 					sql_add_param(sql, an->data.sval, &an->next->data.typeval);
 				}
 				l = sql->params;
@@ -768,8 +767,26 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return sql_error(sql, 01,
 							"CREATE %s%s: failed to get restype", KF, F);
 			}
-
-		 	if (body) {		/* sql func */
+			if (body && lang > FUNC_LANG_SQL) {
+				char *lang_body = body->h->data.sval;
+				char *mod = 	(lang == FUNC_LANG_R)?"rapi":
+						(lang == FUNC_LANG_C)?"capi":
+						(lang == FUNC_LANG_J)?"japi":"unknown";
+				sql->params = NULL;
+				if (create) {
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
+				} else if (!sf) {
+					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
+				} else {
+					sql_func *f = sf->func;
+					f->mod = _STRDUP("rapi");
+					f->imp = _STRDUP("eval");
+					if (res && restype)
+						f->res = restype;
+					f->sql = 0; /* native */
+					f->lang = FUNC_LANG_INT;
+				}
+			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 				list *b = NULL;
 				sql_schema *old_schema = cur_schema(sql);
@@ -795,7 +812,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				if (instantiate || deps) {
 					return rel_psm_block(sql->sa, b);
 				} else if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, "user", q, q, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
@@ -805,7 +822,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return NULL;
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, fmod, fnme, q, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
@@ -813,6 +830,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP(fmod);
 					f->imp = _STRDUP(fnme);
 					f->sql = 0; /* native */
+					f->lang = FUNC_LANG_INT;
 				}
 			}
 		}
@@ -1176,8 +1194,9 @@ rel_psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->next->data.i_val;
+		int lang = l->h->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type);
+		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

@@ -1,0 +1,122 @@
+stdout of test '17-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:29 >  
+# 22:53:29 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:29 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:29 >  
+# 22:53:29 >  "/usr/bin/python2" "17-explain.SQL.py" "17-explain"
+# 22:53:29 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	sum(l_extendedprice) / 7.0 as avg_yearly
+#from
+#	lineitem,
+#	part
+#where
+#	p_partkey = l_partkey
+#	and p_brand = 'Brand#23'
+#	and p_container = 'MED BOX'
+#	and l_quantity < (
+#		select
+#			0.2 * avg(l_quantity)
+#		from
+#			lineitem
+#		where
+#			l_partkey = p_partkey
+#	);
+% .explain # table_name
+% mal # name
+% clob # type
+% 358 # length
+function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:dbl):void;
+    X_6 := sql.mvc();
+    X_7:bat[:oid,:oid]  := sql.tid(X_6,"sys","lineitem");
+    X_10:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_partkey",0);
+    (X_13,r1_13) := sql.bind(X_6,"sys","lineitem","l_partkey",2);
+    X_16:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_partkey",1);
+    X_18 := sql.projectdelta(X_7,X_10,X_13,r1_13,X_16);
+    X_19:bat[:oid,:oid]  := sql.bind_idxbat(X_6,"sys","lineitem","lineitem_l_partkey_fkey",0);
+    (X_21,r1_23) := sql.bind_idxbat(X_6,"sys","lineitem","lineitem_l_partkey_fkey",2);
+    X_23:bat[:oid,:oid]  := sql.bind_idxbat(X_6,"sys","lineitem","lineitem_l_partkey_fkey",1);
+    X_24 := sql.projectdelta(X_7,X_19,X_21,r1_23,X_23);
+    X_27:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_container",0);
+    X_32:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_brand",0);
+    X_25:bat[:oid,:oid]  := sql.tid(X_6,"sys","part");
+    X_142 := algebra.subselect(X_32,X_25,A1,A1,true,true,false);
+    (X_34,r1_40) := sql.bind(X_6,"sys","part","p_brand",2);
+    X_143 := algebra.subselect(r1_40,nil:bat[:oid,:oid],A1,A1,true,true,false);
+    X_37:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_brand",1);
+    X_145 := algebra.subselect(X_37,X_25,A1,A1,true,true,false);
+    X_38 := sql.subdelta(X_142,X_25,X_34,X_143,X_145);
+    X_146 := algebra.subselect(X_27,X_38,A2,A2,true,true,false);
+    (X_29,r1_32) := sql.bind(X_6,"sys","part","p_container",2);
+    X_147 := algebra.subselect(r1_32,nil:bat[:oid,:oid],A2,A2,true,true,false);
+    X_31:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_container",1);
+    X_149 := algebra.subselect(X_31,X_38,A2,A2,true,true,false);
+    X_41 := sql.subdelta(X_146,X_38,X_29,X_147,X_149);
+    X_42 := X_41;
+    (X_43,r1_52) := algebra.subjoin(X_24,X_42,nil:BAT,nil:BAT,true,nil:lng);
+    X_47:bat[:oid,:int]  := sql.bind(X_6,"sys","part","p_partkey",0);
+    (X_50,r1_59) := sql.bind(X_6,"sys","part","p_partkey",2);
+    X_53:bat[:oid,:int]  := sql.bind(X_6,"sys","part","p_partkey",1);
+    X_56 := sql.projectdelta(X_41,X_47,X_50,r1_59,X_53);
+    X_57 := algebra.leftfetchjoin(r1_52,X_56);
+    (X_58,r1_69) := algebra.subjoin(X_18,X_57,nil:BAT,nil:BAT,true,nil:lng);
+    X_60:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_orderkey",0);
+    (X_63,r1_74) := sql.bind(X_6,"sys","lineitem","l_orderkey",2);
+    X_66:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_orderkey",1);
+    X_67 := sql.projectdelta(X_7,X_60,X_63,r1_74,X_66);
+    X_68 := algebra.leftfetchjoin(X_43,X_67);
+    X_69:bat[:oid,:oid]  := batcalc.identity(X_68);
+    X_70 := algebra.leftfetchjoin(r1_69,X_69);
+    (X_71,r1_85,r2_85) := group.subgroupdone(X_70);
+    X_150 := algebra.leftfetchjoin(r1_85,r1_69);
+    X_74:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_quantity",0);
+    (X_76,r1_90) := sql.bind(X_6,"sys","lineitem","l_quantity",2);
+    X_78:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_quantity",1);
+    X_79 := sql.projectdelta(X_7,X_74,X_76,r1_90,X_78);
+    X_85 := algebra.leftfetchjoin(X_58,X_79);
+    X_86 := batcalc.dbl(X_85);
+    X_87:bat[:oid,:dbl]  := aggr.subavg(X_86,X_71,r1_85,true,true);
+    X_80:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_150,X_43,X_79);
+    X_89:bat[:oid,:dbl]  := batcalc.*(A3,X_87);
+    X_90 := batcalc.int(X_89);
+    X_91:bat[:oid,:bit]  := batcalc.<(X_80,X_90);
+    X_92 := algebra.subselect(X_91,true,true,true,true,false);
+    X_94:bat[:oid,:lng]  := sql.bind(X_6,"sys","lineitem","l_extendedprice",0);
+    (X_97,r1_124) := sql.bind(X_6,"sys","lineitem","l_extendedprice",2);
+    X_99:bat[:oid,:lng]  := sql.bind(X_6,"sys","lineitem","l_extendedprice",1);
+    X_100 := sql.projectdelta(X_7,X_94,X_97,r1_124,X_99);
+    X_101:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_92,X_150,X_43,X_100);
+    X_102:hge  := aggr.sum(X_101);
+    X_103 := calc.lng(2,X_102,15,2);
+    X_106 := calc.lng(2,X_103,18,5);
+    X_109 := calc.lng(1,A0,15,2);
+    X_111 := calc./(X_106,X_109);
+    sql.exportValue(1,"sys.L3","avg_yearly","decimal",18,3,8,X_111,"");
+end s2_1;
+# querylog.define("explain select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = \\'Brand#23\\'\n\tand p_container = \\'MED BOX\\'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);","sequential_pipe")
+
+# 22:53:29 >  
+# 22:53:29 >  "Done."
+# 22:53:29 >  
+

@@ -25,25 +25,12 @@ stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 14:52:52 >  
+# 14:52:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8439" "--port=31752"
+# 14:52:52 >  
 
-#--
-#-- INTERVAL
-#--
-#-- check acceptance of "time zone style"
-#-- badly formatted interval
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('badly formatted interval');
-ERROR = invalid input syntax for type interval: "badly formatted interval"
-MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
-QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 30 eons ago');
-ERROR = invalid input syntax for type interval: "@ 30 eons ago"
-#-- test interval operators
-#-- test avg(interval), which is somewhat fragile since people have been
-#-- known to change the allowed input syntax for type interval without
-#-- updating pg_aggregate.agginitval
+
+
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

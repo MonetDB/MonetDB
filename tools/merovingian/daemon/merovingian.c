@@ -295,7 +295,7 @@ terminateProcess(void *p)
 			free(dbname);
 			return;
 		default:
-			Mfprintf(stderr, "unknown state: %d", (int)stats->state);
+			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
@@ -347,7 +347,7 @@ terminateProcess(void *p)
 					free(dbname);
 					return;
 				default:
-					Mfprintf(stderr, "unknown state: %d", (int)stats->state);
+					Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
 			}
 		}
@@ -356,6 +356,7 @@ terminateProcess(void *p)
 			" (database '%s') the KILL signal\n",
 			kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
+	msab_freeStatus(&stats);
 	free(dbname);
 	return;
 }
@@ -464,6 +465,8 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "shared");
 	kv->val = strdup("yes");
 	kv = findConfKey(_mero_db_props, "readonly");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -915,8 +918,9 @@ main(int argc, char *argv[])
 		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 			ret = 1;
-			if ((setsockopt(_mero_broadcastsock,
-							SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
+			if (_mero_broadcastsock == -1 ||
+				setsockopt(_mero_broadcastsock,
+						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");

@@ -299,6 +299,7 @@ DFLOWworker(void *T)
 	str error = 0;
 	int i,last;
 	Client cntxt;
+	InstrPtr p;
 
 	thr = THRnew("DFLOWworker");
 
@@ -365,6 +366,10 @@ DFLOWworker(void *T)
 			/* release the memory claim */
 			MALadmission(-fe->argclaim, -fe->hotclaim);
 #endif
+			/* update the numa information. keep the thread-id producing the value */
+			p= getInstrPtr(flow->mb,fe->pc);
+			for( i = 0; i < p->argc; i++)
+				flow->mb->var[getArg(p,i)]->worker = thr->tid;
 
 			MT_lock_set(&flow->flowlock, "DFLOWworker");
 			fe->state = DFLOWwrapup;
@@ -730,7 +735,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	DataFlow flow = NULL;
 	str msg = MAL_SUCCEED;
 	int size;
-	int *ret;
+	bit *ret;
 	int i;
 
 #ifdef DEBUG_FLOW
@@ -741,7 +746,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");
-	ret = (int*) getArgReference(stk,getInstrPtr(mb,startpc),0);
+	ret = getArgReference_bit(stk,getInstrPtr(mb,startpc),0);
 	*ret = FALSE;
 	if (stk->cmd) {
 		*ret = TRUE;
