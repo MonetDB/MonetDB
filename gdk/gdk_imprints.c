@@ -790,7 +790,7 @@ BATimprints(BAT *b)
 				     imprints->dict,
 				     &imprints->dictcnt)) {
 			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->imprints);
+			HEAPfree(imprints->imprints, 1);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),

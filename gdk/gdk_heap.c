@@ -264,7 +264,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
 					memcpy(h->base, bak.base, bak.free);
-					HEAPfree(&bak);
+					HEAPfree(&bak, 0);
 					return 0;
 				}
 			}
@@ -286,7 +286,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 					/* copy data to heap and free
 					 * old memory */
 					memcpy(h->base, bak.base, bak.free);
-					HEAPfree(&bak);
+					HEAPfree(&bak, 0);
 					return 0;
 				}
 				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() < 0";
@@ -297,7 +297,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 					goto failed;
 				}
 				/* then free memory */
-				HEAPfree(&bak);
+				HEAPfree(&bak, 0);
 				/* and load heap back in via
 				 * memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
@@ -558,9 +558,9 @@ HEAPcopy(Heap *dst, Heap *src)
 }
 
 /* Free the memory associated with the heap H.
- * Does not destroy any files associated with the heap. */
+ * Unlinks (removes) the associated file if the remove flag is set. */
 int
-HEAPfree(Heap *h)
+HEAPfree(Heap *h, int remove)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
@@ -580,6 +580,12 @@ HEAPfree(Heap *h)
 					  "size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
 					  h->size, ret);
+			if (remove) {
+				char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+				if (path && unlink(path) < 0 && errno != ENOENT)
+					perror(path);
+				GDKfree(path);
+			}
 		}
 	}
 	h->base = NULL;
@@ -735,7 +741,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return 0;
 	}
 	if (h->base)
-		HEAPfree(h);
+		HEAPfree(h, 0);	/* we will do the unlinking */
 	if (h->copied) {
 		return 0;
 	}

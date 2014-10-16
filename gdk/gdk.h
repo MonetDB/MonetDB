@@ -1035,7 +1035,7 @@ typedef int (*GDKfcn) ();
  *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
  * @item int
  * @tab
- *  HEAPfree (Heap *h);
+ *  HEAPfree (Heap *h, int remove);
  * @item int
  * @tab
  *  HEAPextend (Heap *h, size_t size, int mayshare);

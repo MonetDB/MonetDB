@@ -289,7 +289,6 @@ void HEAP_free(Heap *heap, var_t block);
 void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(Heap *heap, size_t nbytes);
 int HEAPextend(Heap *h, size_t size, int mayshare);
-int HEAPfree(Heap *h);
 size_t HEAPmemsize(Heap *h);
 size_t HEAPvmsize(Heap *h);
 lng IMPSimprintsize(BAT *b);

@@ -183,15 +183,15 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	return bs;
       bailout:
 	if (ht)
-		HEAPfree(&bn->H->heap);
+		HEAPfree(&bn->H->heap, 1);
 	if (tt)
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 	if (bn->H->vheap) {
-		HEAPfree(bn->H->vheap);
+		HEAPfree(bn->H->vheap, 1);
 		GDKfree(bn->H->vheap);
 	}
 	if (bn->T->vheap) {
-		HEAPfree(bn->T->vheap);
+		HEAPfree(bn->T->vheap, 1);
 		GDKfree(bn->T->vheap);
 	}
 	GDKfree(bs);
@@ -265,15 +265,15 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	}
 	if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		return NULL;
 	}
 
 	if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		if (tt)
-			HEAPfree(&bn->T->heap);
+			HEAPfree(&bn->T->heap, 1);
 		GDKfree(bn->H->vheap);
 		if (bn->T->vheap)
 			GDKfree(bn->T->vheap);
@@ -281,11 +281,11 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	}
 	if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		if (tt)
-			HEAPfree(&bn->T->heap);
+			HEAPfree(&bn->T->heap, 1);
 		if (bn->H->vheap) {
-			HEAPfree(bn->H->vheap);
+			HEAPfree(bn->H->vheap, 1);
 			GDKfree(bn->H->vheap);
 		}
 		GDKfree(bn->T->vheap);
@@ -354,7 +354,7 @@ BATattach(int tt, const char *heapfile, int role)
 	if (rename(heapfile, path) < 0) {
 		GDKsyserror("BATattach: cannot rename heapfile\n");
 		GDKfree(path);
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 		GDKfree(bs);
 		return NULL;
 	}
@@ -373,7 +373,7 @@ BATattach(int tt, const char *heapfile, int role)
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
 	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 		GDKfree(bs);
 		return NULL;
 	}
@@ -560,20 +560,20 @@ BATclear(BAT *b, int force)
 			if (b->T->vheap->free > 0 &&
 			    ATOMheap(b->ttype, &th, cap) < 0) {
 				if (b->H->vheap && b->H->vheap->free > 0)
-					HEAPfree(&hh);
+					HEAPfree(&hh, 1);
 				return NULL;
 			}
 		}
 		assert(b->H->vheap == NULL || b->H->vheap->parentid == abs(b->batCacheid));
 		if (b->H->vheap && b->H->vheap->free > 0) {
 			hh.parentid = b->H->vheap->parentid;
-			HEAPfree(b->H->vheap);
+			HEAPfree(b->H->vheap, 0);
 			*b->H->vheap = hh;
 		}
 		assert(b->T->vheap == NULL || b->T->vheap->parentid == abs(b->batCacheid));
 		if (b->T->vheap && b->T->vheap->free > 0) {
 			th.parentid = b->T->vheap->parentid;
-			HEAPfree(b->T->vheap);
+			HEAPfree(b->T->vheap, 0);
 			*b->T->vheap = th;
 		}
 	} else {
@@ -632,20 +632,20 @@ BATfree(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	if (b->htype)
-		HEAPfree(&b->H->heap);
+		HEAPfree(&b->H->heap, 0);
 	else
 		assert(!b->H->heap.base);
 	if (b->ttype)
-		HEAPfree(&b->T->heap);
+		HEAPfree(&b->T->heap, 0);
 	else
 		assert(!b->T->heap.base);
 	if (b->H->vheap) {
 		assert(b->H->vheap->parentid == b->batCacheid);
-		HEAPfree(b->H->vheap);
+		HEAPfree(b->H->vheap, 0);
 	}
 	if (b->T->vheap) {
 		assert(b->T->vheap->parentid == b->batCacheid);
-		HEAPfree(b->T->vheap);
+		HEAPfree(b->T->vheap, 0);
 	}
 
 	b = BBP_cache(-b->batCacheid);
@@ -722,13 +722,13 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 }
 
 static void
-heapfree(Heap *dst, Heap *src)
+heapmove(Heap *dst, Heap *src)
 {
 	if (src->filename == NULL) {
 		src->filename = dst->filename;
 		dst->filename = NULL;
 	}
-	HEAPfree(dst);
+	HEAPfree(dst, 0);
 	*dst = *src;
 }
 
@@ -872,23 +872,23 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) < 0) ||
 			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) < 0) ||
 			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap) < 0)) {
-				HEAPfree(&thp);
-				HEAPfree(&hhp);
-				HEAPfree(&bthp);
-				HEAPfree(&bhhp);
+				HEAPfree(&thp, 1);
+				HEAPfree(&hhp, 1);
+				HEAPfree(&bthp, 1);
+				HEAPfree(&bhhp, 1);
 				BBPreclaim(bn);
 				return NULL;
 			}
 			/* succeeded; replace dummy small heaps by the
 			 * real ones */
-			heapfree(&bn->H->heap, &bhhp);
-			heapfree(&bn->T->heap, &bthp);
+			heapmove(&bn->H->heap, &bhhp);
+			heapmove(&bn->T->heap, &bthp);
 			hhp.parentid = bn->batCacheid;
 			thp.parentid = bn->batCacheid;
 			if (bn->H->vheap)
-				heapfree(bn->H->vheap, &hhp);
+				heapmove(bn->H->vheap, &hhp);
 			if (bn->T->vheap)
-				heapfree(bn->T->vheap, &thp);
+				heapmove(bn->T->vheap, &thp);
 
 			/* make sure we use the correct capacity */
 			hcap = (BUN) (bn->htype ? bn->H->heap.size >> bn->H->shift : 0);
@@ -2941,10 +2941,7 @@ BATassertHeadProps(BAT *b)
 				if (cmp == 0)
 					seennil = 1;
 			}
-			if (hp->storage == STORE_MEM)
-				HEAPfree(hp);
-			else
-				HEAPdelete(hp, nme, ext);
+			HEAPfree(hp, 1);
 			GDKfree(hp);
 			GDKfree(hs);
 			GDKfree(ext);
@@ -3197,10 +3194,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 		}
 	}
 	if (hs) {
-		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
-		else
-			HEAPdelete(hp, nme, ext);
+		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);

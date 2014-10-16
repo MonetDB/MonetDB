@@ -561,10 +561,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 			b->H->heap.free += b->H->width;
 			Hputvalue(b, Hloc(b, i), s, 0);
 		}
-		HEAPfree(&h1);
-		HEAPfree(&h2);
+		HEAPfree(&h1, 0);
+		HEAPfree(&h2, 0);
 		HEAPsave(b->H->vheap, nme, htheap);
-		HEAPfree(b->H->vheap);
+		HEAPfree(b->H->vheap, 0);
 	} else {
 		assert(b->H->type == TYPE_oid ||
 		       (b->H->type != TYPE_void && b->H->varsized));
@@ -600,10 +600,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 			for (i = 0; i < b->batCount; i++)
 				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
 		b->H->heap.free = h1.free << 1;
-		HEAPfree(&h1);
+		HEAPfree(&h1, 0);
 	}
 	HEAPsave(&b->H->heap, nme, headtail);
-	HEAPfree(&b->H->heap);
+	HEAPfree(&b->H->heap, 0);
 
 	if (ht < 0)
 		b->H->type = ht;

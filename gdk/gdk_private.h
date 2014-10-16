@@ -152,7 +152,7 @@ int HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-int HEAPfree(Heap *h)
+int HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__visibility__("hidden")));
