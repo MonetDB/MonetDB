@@ -2051,7 +2051,7 @@ ALGfetchint(ptr ret, const bat *bid, const int *pos)
 }
 
 str
-ALGexist(bit *ret, const bat *bid, ptr val)
+ALGexist(bit *ret, const bat *bid, const void *val)
 {
 	BAT *b;
 	BUN q;

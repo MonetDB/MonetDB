@@ -160,7 +160,7 @@ sql5_export str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat
 sql5_export str sql_rank(bat *rid, const bat *bid);
 sql5_export str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
 sql5_export str sql_dense_rank(bat *rid, const bat *bid);
-sql5_export str SQLidentity(bat *rid, const bat *bid);
+sql5_export str SQLidentity(oid *rid, const void *i);
 sql5_export str BATSQLidentity(bat *rid, const bat *bid);
 sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

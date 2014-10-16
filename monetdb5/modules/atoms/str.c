@@ -1453,7 +1453,9 @@ convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 	BATiter toi = bat_iterator(to);
 	BATiter fromi = bat_iterator(BATmirror(from));	/* hashes work on head columns */
 	size_t len = strlen(s);
-	unsigned char *dst, *src = (unsigned char *) s, *end = (unsigned char *) (src + len);
+	unsigned char *dst;
+	const unsigned char *src = (const unsigned char *) s;
+	const unsigned char *end = (const unsigned char *) (src + len);
 	BUN UTF8_CONV_r;
 
 	if (strNil(s)) {
@@ -1497,7 +1499,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 }
 
 str
-STRSQLLength(int *res, str *s)
+STRSQLLength(int *res, const str *s)
 {
 	str r = NULL;
 	str msg;
@@ -1515,65 +1517,58 @@ STRSQLLength(int *res, str *s)
  */
 #include "mal_exception.h"
 
-str
-STRfindUnescapedOccurrence(str b, str c, str esc){
-	str t;
-
-	t= strstr(b,c);
-	while( t){
-		/* check for escaped version */
-		if (t>b && *esc == *(t-1) ) {
-			t= strstr(t+1,c);
-		} else return t;
-	}
-	return 0;
-}
 /*
  * The SQL like function return a boolean
  */
 static int
-STRlike(str s, str pat, str esc){
-	str t,p;
+STRlike(const char *s, const char *pat, const char *esc)
+{
+	const char *t, *p;
 
-	t= s;
-	for( p= pat; *p && *t; p++){
-		if(esc && *p == *esc) {
+	t = s;
+	for (p = pat; *p && *t; p++) {
+		if (esc && *p == *esc) {
 			p++;
-			if( *p != *t) return FALSE;
+			if (*p != *t)
+				return FALSE;
 			t++;
-		} else
-		if( *p == '_') t++;
-		else
-		if( *p == '%'){
+		} else if (*p == '_')
+			t++;
+		else if (*p == '%') {
 			p++;
-			while(*p == '%') p++;
-			if( *p == 0) return TRUE; /* tail is acceptable */
-			for(; *p && *t; t++)
-				if( STRlike(t,p,esc))
+			while (*p == '%')
+				p++;
+			if (*p == 0)
+				return TRUE;	/* tail is acceptable */
+			for (; *p && *t; t++)
+				if (STRlike(t, p, esc))
 					return TRUE;
-			if( *p == 0 && *t == 0) return TRUE;
+			if (*p == 0 && *t == 0)
+				return TRUE;
 			return FALSE;
-		} else
-		if( *p == *t) t++;
-		else return FALSE;
+		} else if (*p == *t)
+			t++;
+		else
+			return FALSE;
 	}
-	if( *p == '%' && *(p+1)==0) return TRUE;
+	if (*p == '%' && *(p + 1) == 0)
+		return TRUE;
 	return *t == 0 && *p == 0;
 }
 
 str
-STRlikewrap(bit *ret, str *s, str *pat, str *esc){
+STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc){
 	*ret = STRlike(*s,*pat,*esc);
 	return MAL_SUCCEED;
 }
 str
-STRlikewrap2(bit *ret, str *s, str *pat){
+STRlikewrap2(bit *ret, const str *s, const str *pat){
 	*ret = STRlike(*s,*pat,0);
 	return MAL_SUCCEED;
 }
 
 str
-STRtostr(str *res, str *src)
+STRtostr(str *res, const str *src)
 {
 	if( *src == 0)
 		*res= GDKstrdup(str_nil);
@@ -1585,7 +1580,7 @@ STRtostr(str *res, str *src)
  * The concatenate operator requires a type in most cases.
  */
 str
-STRConcat(str *res, str *val1, str *val2)
+STRConcat(str *res, const str *val1, const str *val2)
 {
 	size_t l1, l2;
 	const char *s1 = *val1;
@@ -1608,7 +1603,7 @@ STRConcat(str *res, str *val1, str *val2)
 }
 
 str
-STRLength(int *res, str *arg1)
+STRLength(int *res, const str *arg1)
 {
 	size_t l;
 	const char *s = *arg1;
@@ -1624,7 +1619,7 @@ STRLength(int *res, str *arg1)
 }
 
 str
-STRBytes(int *res, str *arg1)
+STRBytes(int *res, const str *arg1)
 {
 	size_t l;
 
@@ -1635,7 +1630,7 @@ STRBytes(int *res, str *arg1)
 }
 
 str
-STRTail(str *res, str *arg1, int *offset)
+STRTail(str *res, const str *arg1, const int *offset)
 {
 	int off = *offset;
 	const char *s = *arg1;
@@ -1666,7 +1661,7 @@ STRTail(str *res, str *arg1, int *offset)
 }
 
 str
-STRSubString(str *res, str *arg1, int *offset, int *length)
+STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 {
 	int len, off = *offset, l = *length;
 	const char *s = *arg1;
@@ -1709,7 +1704,7 @@ STRSubString(str *res, str *arg1, int *offset, int *length)
 }
 
 str
-STRFromWChr(str *res, int *c)
+STRFromWChr(str *res, const int *c)
 {
 	str s = *res = GDKmalloc(7);
 
@@ -1721,7 +1716,7 @@ STRFromWChr(str *res, int *c)
 }
 
 str
-STRWChrAt(int *res, str *arg1, int *at)
+STRWChrAt(int *res, const str *arg1, const int *at)
 {
 /* 64bit: should have wrd arg */
 	const char *s = *arg1;
@@ -1759,7 +1754,7 @@ STRcodeset(str *res)
 }
 
 str
-STRIconv(str *res, str *o, str *fp, str *tp)
+STRIconv(str *res, const str *o, const str *fp, const str *tp)
 {
 	const char *f = *fp;
 	const char *t = *tp;
@@ -1798,7 +1793,7 @@ STRIconv(str *res, str *o, str *fp, str *tp)
 }
 
 str
-STRPrefix(bit *res, str *arg1, str *arg2)
+STRPrefix(bit *res, const str *arg1, const str *arg2)
 {
 	size_t pl, i;
 	const char *s = *arg1;
@@ -1824,7 +1819,7 @@ STRPrefix(bit *res, str *arg1, str *arg2)
 }
 
 str
-STRSuffix(bit *res, str *arg1, str *arg2)
+STRSuffix(bit *res, const str *arg1, const str *arg2)
 {
 	size_t i, sl, sul;
 	const char *s = *arg1;
@@ -1852,19 +1847,19 @@ STRSuffix(bit *res, str *arg1, str *arg2)
 }
 
 str
-STRLower(str *res, str *arg1)
+STRLower(str *res, const str *arg1)
 {
 	return convertCase(UTF8_upperBat, UTF8_lowerBat, res, *arg1, "str.lower");
 }
 
 str
-STRUpper(str *res, str *arg1)
+STRUpper(str *res, const str *arg1)
 {
 	return convertCase(UTF8_lowerBat, UTF8_upperBat, res, *arg1, "str.upper");
 }
 
 str
-STRstrSearch(int *res, str *haystack, str *needle)
+STRstrSearch(int *res, const str *haystack, const str *needle)
 {
 /* 64bit: should return wrd */
 	char *p;
@@ -1883,7 +1878,7 @@ STRstrSearch(int *res, str *haystack, str *needle)
 }
 
 str
-STRReverseStrSearch(int *res, str *arg1, str *arg2)
+STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 {
 /* 64bit: should return wrd */
 	size_t len, slen;
@@ -1911,7 +1906,7 @@ STRReverseStrSearch(int *res, str *arg1, str *arg2)
 }
 
 str
-STRStrip(str *res, str *arg1)
+STRStrip(str *res, const str *arg1)
 {
 	const char *start = *arg1;
 	const char *s;
@@ -1941,7 +1936,7 @@ STRStrip(str *res, str *arg1)
  * Result: trim
  */
 str
-STRStrip2(str *res, str *arg1, str *arg2)
+STRStrip2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1, *s2 = *arg2;
 	const unsigned char *u = NULL;
@@ -2001,7 +1996,7 @@ STRStrip2(str *res, str *arg1, str *arg2)
 }
 
 str
-STRLtrim(str *res, str *arg1)
+STRLtrim(str *res, const str *arg1)
 {
 	const char *s = *arg1;
 	if (strNil(s)) {
@@ -2022,7 +2017,7 @@ STRLtrim(str *res, str *arg1)
  * Result: trim
  */
 str
-STRLtrim2(str *res, str *arg1, str *arg2)
+STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1, *s2 = *arg2;
 	const unsigned char *u = NULL;
@@ -2067,7 +2062,7 @@ STRLtrim2(str *res, str *arg1, str *arg2)
 }
 
 str
-STRmax(str *res, str *left, str *right){
+STRmax(str *res, const str *left, const str *right){
 	if (strcmp(*left, str_nil) == 0 ||
 		strcmp(*right, str_nil) == 0 )
 		*res = GDKstrdup(str_nil);
@@ -2080,7 +2075,7 @@ STRmax(str *res, str *left, str *right){
 }
 
 str
-STRmax_no_nil(str *res, str *left, str *right){
+STRmax_no_nil(str *res, const str *left, const str *right){
 	if (strcmp(*left, str_nil) == 0)
 		*res = GDKstrdup(*right);
 	else
@@ -2095,7 +2090,7 @@ STRmax_no_nil(str *res, str *left, str *right){
 }
 
 str
-STRmin(str *res, str *left, str *right){
+STRmin(str *res, const str *left, const str *right){
 	if (strcmp(*left, str_nil) == 0 ||
 		strcmp(*right, str_nil) == 0 )
 		*res = GDKstrdup(str_nil);
@@ -2107,7 +2102,7 @@ STRmin(str *res, str *left, str *right){
 	return MAL_SUCCEED;
 }
 str
-STRmin_no_nil(str *res, str *left, str *right){
+STRmin_no_nil(str *res, const str *left, const str *right){
 	if (strcmp(*left, str_nil) == 0)
 		*res = GDKstrdup(*right);
 	else
@@ -2122,7 +2117,7 @@ STRmin_no_nil(str *res, str *left, str *right){
 }
 
 str
-STRRtrim(str *res, str *arg1)
+STRRtrim(str *res, const str *arg1)
 {
 	const char *s = *arg1;
 	size_t len = strlen(*arg1);
@@ -2149,7 +2144,7 @@ STRRtrim(str *res, str *arg1)
  * Result: trim
  */
 str
-STRRtrim2(str *res, str *arg1, str *arg2)
+STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1, *s2 = *arg2;
 	const unsigned char *u = NULL;
@@ -2201,7 +2196,7 @@ STRRtrim2(str *res, str *arg1, str *arg2)
  * Result: '   hi'
  */
 str
-STRLpad(str *res, str *arg1, int *len)
+STRLpad(str *res, const str *arg1, const int *len)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be prepended */
@@ -2240,7 +2235,7 @@ STRLpad(str *res, str *arg1, int *len)
  * Result: 'hi   '
  */
 str
-STRRpad(str *res, str *arg1, int *len)
+STRRpad(str *res, const str *arg1, const int *len)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #whitespaces to be appended */
@@ -2279,7 +2274,7 @@ STRRpad(str *res, str *arg1, int *len)
  * Result: xyxhi
  */
 str
-STRLpad2(str *res, str *arg1, int *len, str *arg2)
+STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be prepended */
@@ -2344,7 +2339,7 @@ STRLpad2(str *res, str *arg1, int *len, str *arg2)
  * Result: hixyx
  */
 str
-STRRpad2(str *res, str *arg1, int *len, str *arg2)
+STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 {
 	const char *s = *arg1;
 	int pad_cnt = *len - UTF8_strlen(s); /* #chars to be appended */
@@ -2403,7 +2398,7 @@ STRRpad2(str *res, str *arg1, int *len, str *arg2)
 }
 
 str
-STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
+STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g)
 {
 	const char *s = *arg1;
 	const char *src = *arg2;
@@ -2439,13 +2434,13 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 }
 
 str
-STRascii(int *ret, str *s){
+STRascii(int *ret, const str *s){
 	int offset=0;
 	return STRWChrAt(ret,s,&offset);
 }
 
 str
-STRsubstringTail(str *ret, str *s, int *start)
+STRsubstringTail(str *ret, const str *s, const int *start)
 {
 	int offset= *start;
 	if( offset <1) offset =1;
@@ -2454,7 +2449,7 @@ STRsubstringTail(str *ret, str *s, int *start)
 }
 
 str
-STRsubstring(str *ret, str *s, int *start, int *l)
+STRsubstring(str *ret, const str *s, const int *start, const int *l)
 {
 	int offset= *start;
 	if( offset <1) offset =1;
@@ -2462,18 +2457,18 @@ STRsubstring(str *ret, str *s, int *start, int *l)
 	return STRSubString(ret, s, &offset, l);
 }
 str
-STRprefix(str *ret, str *s, int *l){
+STRprefix(str *ret, const str *s, const int *l){
 	int start =0;
 	return STRSubString(ret,s,&start,l);
 }
 str
-STRsuffix(str *ret, str *s, int *l){
+STRsuffix(str *ret, const str *s, const int *l){
 	int start = (int) (strlen(*s)- *l);
 	return STRSubString(ret,s,&start,l);
 }
 
 str
-STRlocate2(int *ret, str *needle, str *haystack, int *start)
+STRlocate2(int *ret, const str *needle, const str *haystack, const int *start)
 {
 	int off = *start <= 0 ? 1 : *start;
 	char *s = UTF8_strtail(*haystack, off - 1);
@@ -2485,40 +2480,43 @@ STRlocate2(int *ret, str *needle, str *haystack, int *start)
 }
 
 str
-STRlocate(int *ret, str *needle, str *haystack)
+STRlocate(int *ret, const str *needle, const str *haystack)
 {
 	int p = 1;
 	return STRlocate2(ret, needle, haystack, &p);
 }
 
 str
-STRinsert(str *ret, str *s, int *start, int *l, str *s2){
+STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
+{
 	str v;
-	if(strcmp(*s2,str_nil) ==0 || strcmp(*s,str_nil)==0 )
-		*ret = GDKstrdup( (str)str_nil);
+	int strt = *start;
+	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0)
+		*ret = GDKstrdup((str) str_nil);
 	else {
-		if( *start <0) *start =1;
+		if (strt < 0)
+			strt = 1;
 		if(strlen(*s)+strlen(*s2)+1 >= INT_MAX) {
 			throw(MAL, "str.insert", "Allocation failed");
 		}
 		v= *ret = GDKmalloc((int)strlen(*s)+(int)strlen(*s2)+1 );
-		strncpy(v, *s,*start);
-		v[*start]=0;
+		strncpy(v, *s,strt);
+		v[strt]=0;
 		strcat(v,*s2);
-		if( *start + *l < (int) strlen(*s))
-			strcat(v,*s + *start + *l);
+		if( strt + *l < (int) strlen(*s))
+			strcat(v,*s + strt + *l);
 	}
 	return MAL_SUCCEED;
 }
 
 str
-STRreplace(str *ret, str *s1, str *s2, str *s3){
+STRreplace(str *ret, const str *s1, const str *s2, const str *s3){
 	bit flag= TRUE;
 	return STRSubstitute(ret,s1,s2,s3,&flag);
 }
 
 str
-STRrepeat(str *ret, str *s, int *c)
+STRrepeat(str *ret, const str *s, const int *c)
 {
 	str t;
 	int i;
@@ -2541,13 +2539,13 @@ STRrepeat(str *ret, str *s, int *c)
 	return MAL_SUCCEED;
 }
 str
-STRspace(str *ret, int *l){
+STRspace(str *ret, const int *l){
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }
 
 str
-STRstringLength(int *res, str *s)
+STRstringLength(int *res, const str *s)
 {
 	str r = NULL;
 	STRRtrim(&r, s);

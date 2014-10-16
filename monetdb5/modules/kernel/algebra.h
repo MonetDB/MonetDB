@@ -138,7 +138,7 @@ algebra_export str ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, c
 algebra_export str ALGfetch(ptr ret, const bat *bid, const lng *pos);
 algebra_export str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 algebra_export str ALGfetchint(ptr ret, const bat *bid, const int *pos);
-algebra_export str ALGexist(bit *ret, const bat *bid, ptr val);
+algebra_export str ALGexist(bit *ret, const bat *bid, const void *val);
 algebra_export str ALGfind(ptr ret, const bat *bid, ptr val);
 algebra_export str ALGindexjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGprojectNIL(bat *ret, const bat *bid);
