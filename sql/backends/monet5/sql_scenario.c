@@ -1361,8 +1361,11 @@ SQLexitClient(Client c)
  * execution
  */
 str
-SQLinitEnvironment(Client cntxt)
+SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	return SQLinitClient(cntxt);
 }
 
@@ -1412,7 +1415,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
-		msg = SQLinitEnvironment(c);
+		msg = SQLinitEnvironment(c, NULL, NULL, NULL);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
