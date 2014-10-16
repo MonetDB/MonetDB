@@ -1702,6 +1702,47 @@ BBPcurstamp(void)
 	return ATOMIC_GET(BBP_curstamp, BBP_curstampLock, "BBPcurstamp") & 0x7fffffff;
 }
 
+/* There are BBP_THREADMASK+1 (64) free lists, and ours (idx) is
+ * empty.  Here we find the longest free list, and if it is long
+ * enough (> 20 entries) we take one entry from that list.  If the
+ * longest list isn't long enough, we create a new entry by either
+ * just increasing BBPsize (up to BBPlimit) or extending the BBP
+ * (which increases BBPlimit). */
+static void
+maybeextend(int idx)
+{
+	int t, m;
+	int n, l;
+	bat i;
+
+	l = 0;			/* length of longest list */
+	m = 0;			/* index of longest list */
+	/* find longest free list */
+	for (t = 0; t <= BBP_THREADMASK; t++) {
+		n = 0;
+		for (i = BBP_free(t); i != 0; i = BBP_next(i))
+			n++;
+		if (n > l) {
+			m = t;
+			l = n;
+		}
+	}
+	if (l > 20) {
+		/* longest list is long enough, get an entry from there */
+		i = BBP_free(m);
+		BBP_free(m) = BBP_next(i);
+		BBP_next(i) = 0;
+		BBP_free(idx) = i;
+	} else {
+		/* let the longest list alone, get a fresh entry */
+		if ((bat) ATOMIC_ADD(BBPsize, 1, BBPsizeLock, "BBPinsert") >= BBPlimit) {
+			BBPextend(idx, TRUE);
+		} else {
+			BBP_free(idx) = (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPinsert") - 1;
+		}
+	}
+}
+
 bat
 BBPinsert(BATstore *bs)
 {
@@ -1738,11 +1779,7 @@ BBPinsert(BATstore *bs)
 		/* check again in case some other thread extended
 		 * while we were waiting */
 		if (BBP_free(idx) <= 0) {
-			if ((bat) ATOMIC_ADD(BBPsize, 1, BBPsizeLock, "BBPinsert") >= BBPlimit) {
-				BBPextend(idx, TRUE);
-			} else {
-				BBP_free(idx) = (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPinsert") - 1;
-			}
+			maybeextend(idx);
 		}
 		MT_lock_unset(&GDKnameLock, "BBPinsert");
 		if (lock)
@@ -1752,7 +1789,7 @@ BBPinsert(BATstore *bs)
 	}
 	i = BBP_free(idx);
 	assert(i > 0);
-	BBP_free(idx) = BBP_next(BBP_free(idx));
+	BBP_free(idx) = BBP_next(i);
 
 	if (lock) {
 		MT_lock_unset(&GDKcacheLock(idx), "BBPinsert");
