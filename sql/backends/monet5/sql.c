@@ -3141,16 +3141,10 @@ not_unique_oids(bat *ret, const bat *bid)
 
 /* row case */
 str
-SQLidentity(bat *ret, const bat *bid)
+SQLidentity(oid *ret, const void *i)
 {
-	BAT *bn, *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.identity", "Cannot access descriptor");
-	}
-	bn = VIEWhead(b);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
+	(void)i;
+	*ret = 0;
 	return MAL_SUCCEED;
 }
 
