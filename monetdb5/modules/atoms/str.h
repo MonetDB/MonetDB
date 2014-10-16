@@ -71,7 +71,6 @@ str_export str STRmax(str *res, str *left, str *right);
 str_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g);
 
 str_export str STRSQLLength(int *res, str *s);
-str_export str STRfindUnescapedOccurrence(str b, str c, str esc);
 str_export str STRsubstringTail(str *ret, str *s, int *start);
 str_export str STRsubstring(str *ret, str *s, int *start, int *l);
 str_export str STRlikewrap2(bit *ret, str *s, str *pat);

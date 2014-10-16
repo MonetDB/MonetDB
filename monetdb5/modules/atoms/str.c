@@ -1515,19 +1515,6 @@ STRSQLLength(int *res, str *s)
  */
 #include "mal_exception.h"
 
-str
-STRfindUnescapedOccurrence(str b, str c, str esc){
-	str t;
-
-	t= strstr(b,c);
-	while( t){
-		/* check for escaped version */
-		if (t>b && *esc == *(t-1) ) {
-			t= strstr(t+1,c);
-		} else return t;
-	}
-	return 0;
-}
 /*
  * The SQL like function return a boolean
  */
