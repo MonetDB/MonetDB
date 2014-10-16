@@ -1298,7 +1298,7 @@ SQLinitClient(Client c)
 		}
 		/* add missing features needed beyond Oct 2014 */
 		sql_find_subtype(&tp, "timestamp", 0, 0);
-		if ( !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){
+		if ( 0 &&  !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){
 			if ((err = sql_update_feb2015(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
