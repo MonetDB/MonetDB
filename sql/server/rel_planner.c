@@ -807,8 +807,8 @@ memo_compute_cost(list *memo)
 		memoitem *mi = n->data;
 
 		if (mi->joins) {
-			lng cnt = 0, cost = 0;
-			lng width = 1;
+			lng cnt = 0, width = 1;
+		        dbl cost = 0;
 
 			/* cost minimum of join costs */
 			for ( m = mi->joins->h; m; m = m->next ) {
@@ -817,7 +817,7 @@ memo_compute_cost(list *memo)
 				lng mincnt = MIN(mj->l->count, mj->r->count);
 				dbl nsel = mj->sel;
 				lng ocnt = MAX((lng) (mincnt*nsel), 1);
-				lng ncost = 0;
+				dbl ncost = 0;
 
 				/* mincnt*mincnt_size_width*hash_const_cost + mincnt * output_width(for now just sum of width) * memaccess const */
 				/* current consts are 1 and 1 */
