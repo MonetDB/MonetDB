@@ -317,7 +317,7 @@ BAThash(BAT *b, BUN masksize)
 
 			r = BUNfirst(b);
 			if (hp) {
-				HEAPfree(hp);
+				HEAPfree(hp, 1);
 				GDKfree(hp);
 			}
 			if (h) {
@@ -500,10 +500,7 @@ HASHremove(BAT *b)
 			hp = BBP_cache(p);
 
 		if ((!hp || b->H->hash != hp->H->hash) && b->H->hash != (Hash *) -1) {
-			if (b->H->hash->heap->storage != STORE_MEM)
-				HEAPdelete(b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
-			else
-				HEAPfree(b->H->hash->heap);
+			HEAPfree(b->H->hash->heap, 1);
 			GDKfree(b->H->hash->heap);
 			GDKfree(b->H->hash);
 		}

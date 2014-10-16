@@ -68,7 +68,7 @@ virtualize(BAT *bn)
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, BUNfirst(bn));
 		bn->tdense = 1;
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 		bn->ttype = TYPE_void;
 		bn->tvarsized = 1;
 		bn->T->width = 0;

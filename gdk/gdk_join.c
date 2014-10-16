@@ -3162,7 +3162,7 @@ BATproject(BAT *l, BAT *r)
 			bn->T->vheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			if (r->T->vheap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
-				bn->T->vheap->filename = GDKfilepath(-1, NULL, nme, "theap");
+				bn->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
 				if (bn->T->vheap->filename == NULL)
 					goto bailout;
 			}

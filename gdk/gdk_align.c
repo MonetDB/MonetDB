@@ -500,7 +500,7 @@ BATmaterializeh(BAT *b)
 	BATsetcount(b, cnt);
 
 	/* cleanup the old heaps */
-	HEAPfree(&head);
+	HEAPfree(&head, 0);
 	return b;
 }
 
@@ -756,10 +756,10 @@ VIEWreset(BAT *b)
 		BBPreclaim(v);
 	if (n != NULL)
 		BBPunfix(n->batCacheid);
-	HEAPfree(&head);
-	HEAPfree(&tail);
-	HEAPfree(&hh);
-	HEAPfree(&th);
+	HEAPfree(&head, 0);
+	HEAPfree(&tail, 0);
+	HEAPfree(&hh, 0);
+	HEAPfree(&th, 0);
 	return NULL;
 }
 
@@ -810,13 +810,13 @@ VIEWdestroy(BAT *b)
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {
-		HEAPfree(&b->H->heap);
+		HEAPfree(&b->H->heap, 0);
 	} else {
 		b->H->heap.base = NULL;
 		b->H->heap.filename = NULL;
 	}
 	if (b->ttype && !b->T->heap.parentid) {
-		HEAPfree(&b->T->heap);
+		HEAPfree(&b->T->heap, 0);
 	} else {
 		b->T->heap.base = NULL;
 		b->T->heap.filename = NULL;

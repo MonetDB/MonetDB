@@ -1043,7 +1043,7 @@ typedef int (*GDKfcn) ();
  *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
  * @item int
  * @tab
- *  HEAPfree (Heap *h);
+ *  HEAPfree (Heap *h, int remove);
  * @item int
  * @tab
  *  HEAPextend (Heap *h, size_t size, int mayshare);
@@ -1068,7 +1068,6 @@ typedef int (*GDKfcn) ();
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
@@ -1655,6 +1654,8 @@ gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
+
+#define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);

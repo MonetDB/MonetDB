@@ -856,10 +856,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
-		else
-			HEAPdelete(hp, nme, ext);
+		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);
