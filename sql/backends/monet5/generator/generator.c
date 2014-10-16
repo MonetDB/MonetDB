@@ -821,7 +821,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
 	oid o= 0, *ol, *or;
-	int tpe, incr=0;
+	int tpe, incr=0, materialized = 0;
 	InstrPtr p = NULL, q = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -850,6 +850,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"generator.join","Join over generator pairs not supported");
 		else
 			p = NULL;
+		materialized =1;
 	}
 
 	// switch roles to have a single target bat[:oid,:any] designated 
@@ -927,5 +928,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
 		BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	}
+	if ( materialized)
+		BBPreclaim(bl);
 	return msg;
 }
