@@ -152,20 +152,20 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = GDKfilepath(-1, NULL, nme, "head");
+			bn->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, "head");
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 		}
 
 		if (tt) {
-			bn->T->heap.filename = GDKfilepath(-1, NULL, nme, "tail");
+			bn->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 		}
 
 		if (ATOMneedheap(ht)) {
 			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->H->vheap->filename = GDKfilepath(-1, NULL, nme, "hheap")) == NULL)
+			    (bn->H->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "hheap")) == NULL)
 				goto bailout;
 			bn->H->vheap->parentid = bn->batCacheid;
 			bn->H->vheap->farmid = BBPselectfarm(role, bn->htype, varheap);
@@ -173,7 +173,7 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->T->vheap->filename = GDKfilepath(-1, NULL, nme, "theap")) == NULL)
+			    (bn->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
 				goto bailout;
 			bn->T->vheap->parentid = bn->batCacheid;
 			bn->T->vheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
@@ -715,7 +715,7 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 	if (src->filename && src->newstorage != STORE_MEM) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = GDKfilepath(-1, NULL, nme, ext)) == NULL)
+		if ((dst->filename = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL)
 			return -1;
 	}
 	return HEAPcopy(dst, src);

@@ -65,7 +65,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	char *path;
 
 	assert(dir == NULL || *dir != DIR_SEP);
-	assert(farmid == -1 ||
+	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
 	if (MT_path_absolute(name))
 		return NULL;
@@ -77,13 +77,13 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 		sep[0] = DIR_SEP;
 		sep[1] = 0;
 	}
-	pathlen = (farmid == -1 ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
+	pathlen = (farmid == NOFARM ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
 		(dir ? strlen(dir) : 0) + strlen(sep) + strlen(name) +
 		(ext ? strlen(ext) + 1 : 0) + 1;
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
-	if (farmid == -1) {
+	if (farmid == NOFARM) {
 		snprintf(path, pathlen, "%s%s%s%s%s",
 			 dir ? dir : "", sep, name,
 			 ext ? "." : "", ext ? ext : "");

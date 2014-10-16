@@ -519,7 +519,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", bid);
 
 		/* create new string heap */
-		b->H->heap.filename = GDKfilepath(-1, NULL, nme, headtail);
+		b->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
 		if (b->H->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
 		w = b->H->width; /* remember old width */
@@ -530,7 +530,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		b->H->heap.dirty = TRUE;
-		b->H->vheap->filename = GDKfilepath(-1, NULL, nme, htheap);
+		b->H->vheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
 		if (b->H->vheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
 		if (ATOMheap(TYPE_str, b->H->vheap, b->batCapacity))
@@ -580,7 +580,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		/* create new heap */
-		b->H->heap.filename = GDKfilepath(-1, NULL, nme, headtail);
+		b->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
 		if (b->H->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
 		b->H->width = SIZEOF_OID;
@@ -1790,7 +1790,7 @@ BBPinsert(BATstore *bs)
 		BBPgetsubdir(dirname, i);
 		nme = BBPphysicalname(name, 64, i);
 
-		BBP_physical(i) = GDKfilepath(-1, dirname, nme, NULL);
+		BBP_physical(i) = GDKfilepath(NOFARM, dirname, nme, NULL);
 
 		BATDEBUG THRprintf(GDKstdout, "#%d = new %s(%s,%s)\n", (int) i, BBPname(i), ATOMname(bs->H.type), ATOMname(bs->T.type));
 	}
@@ -3323,7 +3323,7 @@ BBPbackup(BAT *b, bit subcommit)
 		return 0;
 	}
 	/* determine location dir and physical suffix */
-	srcdir = GDKfilepath(-1, BATDIR, s, NULL);
+	srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL);
 	s = strrchr(srcdir, DIR_SEP);
 	if (!s)
 		goto fail;
