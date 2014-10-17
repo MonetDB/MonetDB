@@ -565,7 +565,7 @@ memoitem_add_attr(list *memo, mvc *sql, memoitem *mi, list *rels, list *jes, int
 					list_append(nmi->joins, mj);
 
 					if (!nmi->count)
-						nmi->count = mincnt*mj->sel;
+						nmi->count = (lng)(mincnt*mj->sel);
 					nmi->count = MIN((lng) (mincnt*mj->sel), nmi->count);
 					assert(nmi->count >= 0);
 				}
