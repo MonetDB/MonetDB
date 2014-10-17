@@ -322,7 +322,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 			break;
 		}
 		case cmp_notequal:
-			sel = (dcount-1)/dcount;
+			sel = (dcount-1.0)/dcount;
 			break;
 		case cmp_gt:
 		case cmp_gte:
@@ -330,7 +330,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_lte: {
 			void *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
-				sel = exp_getrange_sel( sql, r, e, min, max);
+				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {
 				sel = 0.5;
 				if (e->f) /* range */
@@ -472,7 +472,7 @@ memo_create(mvc *sql, list *rels )
 		mi->count = MAX( (lng) (mi->count*sel), 1);
 		assert(mi->count);
 		mi->width = rel_getwidth(sql, r);
-		mi->cost = mi->count*mi->width;
+		mi->cost = (dbl)(mi->count*mi->width);
 		mi->data = r;
 		append(mi->rels, r);
 	}
@@ -502,7 +502,7 @@ memo_add_exps(list *memo, mvc *sql, list *rels, list *jes)
 			mi = memoitem_create(memo, sql->sa, mj->l->name, mj->r->name, 2);
 			mi->width = (rel_getwidth(sql, l) + rel_getwidth(sql, r))/2;
 			mi->data = e;
-			mi->count = mj->sel * MIN(mj->l->count, mj->r->count);
+			mi->count = (lng)(mj->sel * MIN(mj->l->count, mj->r->count));
 			append(mi->rels, l);
 			append(mi->rels, r);
 			append(mi->exps, e);
