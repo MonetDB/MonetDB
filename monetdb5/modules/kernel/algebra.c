@@ -1015,12 +1015,6 @@ ALGsubunique1(bat *result, const bat *bid)
 }
 
 str
-ALGcross(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATcross, "algebra.cross");
-}
-
-str
 ALGantijoin(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATantijoin, "algebra.antijoin");
@@ -1774,53 +1768,6 @@ ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
 	return ALGtmark(result, bid, &base);
 }
 
-static str
-ALGmarkHead(bat *result, const bat *bid, const oid *base)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.markHead", RUNTIME_OBJECT_MISSING);
-	}
-	/* M5's markH is semantically identical with M4/GDK's tmark */
-	/* (Don't ask me why; wasn't my decision. Stefan.) */
-	bn = BATmirror(BATmark(BATmirror(b), *base));
-	if (bn != NULL) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.markHead", GDK_EXCEPTION);
-}
-
-str
-ALGmarkHead_default(bat *result, const bat *bid)
-{
-	oid o = 0;
-
-	return ALGmarkHead(result, bid, &o);
-}
-
-str
-ALGhmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
-{
-#if SIZEOF_OID == 4
-	int bits = 31;
-#else
-	int bits = 63;
-#endif
-	oid base = 0;
-
-	assert(*part_nr < *nr_parts);
-	base = ((oid)1)<<bits;
-	base /= *nr_parts;
-	base *= *part_nr;
-	return ALGmarkHead(result, bid, &base);
-}
-
 str
 ALGmark_grp_1(bat *result, const bat *bid, const bat *gid)
 {
@@ -2014,7 +1961,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGfetch(ptr ret, const bat *bid, const lng *pos)
 {
 	BAT *b;
@@ -2032,14 +1979,6 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 
 str
 ALGfetchoid(ptr ret, const bat *bid, const oid *pos)
-{
-	lng o = *pos;
-
-	return ALGfetch(ret, bid, &o);
-}
-
-str
-ALGfetchint(ptr ret, const bat *bid, const int *pos)
 {
 	lng o = *pos;
 
@@ -2187,20 +2126,6 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
-/* You don't have to materialize the oids.
-This is taken care upon access */
-str
-ALGidentity(bat *ret, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.identity", RUNTIME_OBJECT_MISSING);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); \
-	BBPkeepref(*ret = b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 str ALGreuse(bat *ret, const bat *bid)
 {

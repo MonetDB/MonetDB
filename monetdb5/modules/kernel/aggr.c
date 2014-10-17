@@ -560,14 +560,6 @@ AGGRcount2nils(bat *retval, const bat *bid, const bat *eid)
 						BATgroupcount, NULL, 0, "aggr.count");
 }
 
-aggr_export str AGGRsize2(bat *retval, const bat *bid, const bat *eid);
-str
-AGGRsize2(bat *retval, const bat *bid, const bat *eid)
-{
-	return AGGRgrouped2(retval, NULL, bid, eid, TYPE_wrd,
-						BATgroupsize, NULL, 1, "aggr.size");
-}
-
 aggr_export str AGGRsize2nils(bat *retval, const bat *bid, const bat *eid);
 str
 AGGRsize2nils(bat *retval, const bat *bid, const bat *eid)

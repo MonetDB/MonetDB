@@ -2847,6 +2847,10 @@ command batsql.dec_round(v:bat[:oid,:lng],r:lng):bat[:oid,:lng]
 address lng_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command batsql.dec_round(v:bat[:oid,:wrd],r:wrd):bat[:oid,:wrd] 
+address wrd_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command batsql.dec_round(v:bat[:oid,:int],r:int):bat[:oid,:int] 
 address int_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -2873,6 +2877,10 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 
 command batsql.round(v:bat[:oid,:lng],d:int,s:int,r:bte):bat[:oid,:lng] 
 address lng_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:wrd],d:int,s:int,r:bte):bat[:oid,:wrd] 
+address wrd_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command batsql.round(v:bat[:oid,:int],d:int,s:int,r:bte):bat[:oid,:int] 
@@ -37763,6 +37771,10 @@ command calc.second_interval(sc:int,v:lng,ek:int,sk:int):lng
 address lng_dec2second_interval;
 comment cast lng decimal to a second_interval
 
+command calc.second_interval(sc:int,v:wrd,ek:int,sk:int):lng 
+address wrd_dec2second_interval;
+comment cast wrd decimal to a second_interval
+
 command calc.second_interval(sc:int,v:int,ek:int,sk:int):lng 
 address int_dec2second_interval;
 comment cast int decimal to a second_interval
@@ -41477,6 +41489,10 @@ command sql.dec_round(v:lng,r:lng):lng
 address lng_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command sql.dec_round(v:wrd,r:wrd):wrd 
+address wrd_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command sql.dec_round(v:int,r:int):int 
 address int_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -41687,6 +41703,10 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 
 command sql.round(v:lng,d:int,s:int,r:bte):lng 
 address lng_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command sql.round(v:wrd,d:int,s:int,r:bte):wrd 
+address wrd_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command sql.round(v:int,d:int,s:int,r:bte):int 
