@@ -6,7 +6,7 @@ import exportutils
 comreg = re.compile(r'\bcommand\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:bat\[[^]]*\]|:[a-zA-Z_][a-zA-Z_0-9]*|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
 
 # recognize MAL "pattern" declarations
-patreg = re.compile(r'\bpattern\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:bat\[[^]]*\]|:[a-zA-Z_][a-zA-Z_0-9]*|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
+patreg = re.compile(r'\bpattern\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:bat\[[^]]*\](?:\.\.\.)?|:[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
 
 treg = re.compile(r':(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
