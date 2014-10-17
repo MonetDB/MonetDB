@@ -22,8 +22,6 @@
  */
 
 #define CAST_INTEGER_2_NUMERIC_2(T1,T2)					\
-sql5_export str T1##_2_##T2(T2 *res, const T1 *v);			\
-sql5_export str bat##T1##_2_##T2(bat *res, const bat *v);		\
 sql5_export str T1##_dec2_##T2(T2 *res, const int *s1, const T1 *v);	\
 sql5_export str bat##T1##_dec2_##T2(bat *res, const int *s1, const bat *v); \
 sql5_export str T1##_dec2dec_##T2(T2 *res, const int *S1, const T1 *v, const int *d2, const int *S2); \
@@ -48,8 +46,6 @@ CAST_INTEGER_2_NUMERIC_1(lng);
 
 
 #define CAST_FLOATINGPOINT_2_INTEGER_2(T1,T2)				\
-sql5_export str T1##_2_##T2(T2 *res, const T1 *v);			\
-sql5_export str bat##T1##_2_##T2(bat *res, const bat *v);		\
 sql5_export str T1##_num2dec_##T2(T2 *res, const T1 *v, const int *d2, const int *s2); \
 sql5_export str bat##T1##_num2dec_##T2(bat *res, const bat *v, const int *d2, const int *s2)
 
