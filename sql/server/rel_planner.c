@@ -379,7 +379,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 			sel = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			break;
 		case cmp_notequal: {
-			dbl cnt = (lcount/ldcount)*(rcount/rdcount);
+			dbl cnt = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			sel = (cnt-1)/cnt;
 		}	break;
 		case cmp_gt:
