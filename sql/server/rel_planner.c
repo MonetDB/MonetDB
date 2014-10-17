@@ -144,9 +144,9 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		if (t && isTable(t))
-			return store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
 		if (!t && rel->r) /* dict */
-			return sql_trans_dist_count(sql->session->tr, rel->r);
+			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
 	}	break;
 	case op_select:
@@ -189,7 +189,7 @@ rel_getwidth(mvc *sql, sql_rel *rel)
 }
 
 static lng
-exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, size_t count)
+exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 {
 	switch(e->type) {
 	case e_column: {
@@ -197,7 +197,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, size_t count)
 		sql_rel *bt = NULL;
 		sql_column *c = name_find_column(r, e->l, e->r, -1, &bt);
 		if (c) {
-			size_t dcount = sql_trans_dist_count(sql->session->tr, c);
+			lng dcount = (lng)sql_trans_dist_count(sql->session->tr, c);
 			if (dcount != 0 && dcount < count)
 				return dcount;
 		}
@@ -314,7 +314,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		return 1.0;
 	switch(e->type) {
 	case e_cmp: {
-		size_t dcount = exp_getdcount( sql, r, e->l, count);
+		lng dcount = exp_getdcount( sql, r, e->l, count);
 
 		switch (get_cmp(e)) {
 		case cmp_equal: {
@@ -364,7 +364,7 @@ static dbl
 rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcount, lng rcount)
 {
 	dbl sel = 1.0;
-	size_t ldcount, rdcount;
+	lng ldcount, rdcount;
 
 	if (!e)
 		return 1.0;
