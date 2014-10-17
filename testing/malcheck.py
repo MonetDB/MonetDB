@@ -3,12 +3,12 @@ import re, sys
 import exportutils
 
 # recognize MAL "command" declarations
-comreg = re.compile(r'\bcommand\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:bat\[[^]]*\]|:[a-zA-Z_][a-zA-Z_0-9]*|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
+comreg = re.compile(r'\bcommand\s+(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9.]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\]|:\s*[a-zA-Z_][a-zA-Z_0-9]*|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
 
 # recognize MAL "pattern" declarations
-patreg = re.compile(r'\bpattern\s+(?P<malf>[a-zA-Z_][a-zA-Z_0-9.]*)\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:bat\[[^]]*\](?:\.\.\.)?|:[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
+patreg = re.compile(r'\bpattern\s+(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9.]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\](?:\.\.\.)?|:\s*[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
 
-treg = re.compile(r':(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
+treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
@@ -48,7 +48,7 @@ def process(f):
         res = comreg.search(data)
         while res is not None:
             malf, args, rets, func = res.groups()
-            if malf not in ('del', 'cmp', 'fromstr', 'fix', 'heap', 'hash', 'length', 'null', 'nequal', 'put', 'storage', 'tostr', 'unfix', 'read', 'write', 'epilogue'):
+            if malf not in ('del', 'cmp', 'fromstr', 'fix', 'heap', 'hash', 'length', 'null', 'nequal', 'put', 'storage', 'tostr', 'unfix', 'read', 'write') or args.strip():
                 rtypes = []
                 atypes = []
                 if not rets:
