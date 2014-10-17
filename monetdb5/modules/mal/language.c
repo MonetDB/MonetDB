@@ -246,12 +246,3 @@ CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	throw(MAL, "mal.include", PROGRAM_NYI);
 }
-
-str
-CMDdebug(int *ret, int *flg)
-{
-	*ret = GDKdebug;
-	if (*flg)
-		GDKdebug = *flg;
-	return MAL_SUCCEED;
-}

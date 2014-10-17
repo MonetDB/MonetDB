@@ -50,12 +50,9 @@
 
 bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
-bbp_export str CMDbbpDiskReads(lng *ret);
-bbp_export str CMDbbpDiskWrites(lng *ret);
 bbp_export str CMDgetPageSize(int *ret);
 bbp_export str CMDbbpNames(bat *ret);
 bbp_export str CMDbbpName(str *ret, bat *bid);
-bbp_export str CMDbbpRNames(int *ret);
 bbp_export str CMDbbpCount(bat *ret);
 bbp_export str CMDbbpLocation(bat *ret);
 bbp_export str CMDbbpHeat(bat *ret);

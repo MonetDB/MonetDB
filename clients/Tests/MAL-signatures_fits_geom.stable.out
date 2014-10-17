@@ -2963,6 +2963,10 @@ command batcolor.value(c:bat[:oid,:color]):bat[:oid,:int]
 address CLRbatValueInt;
 comment Extracts value component from a color atom
 
+command batcolor.ycc(y:bat[:oid,:flt],cr:bat[:oid,:flt],cb:bat[:oid,:flt]):bat[:oid,:color] 
+address CLRbatycc;
+comment Converts an YCC triplets to a color atom
+
 command batstr.endsWith(s:bat[:oid,:str],suffix:str):bat[:oid,:bit] 
 address STRbatSuffixcst;
 comment Suffix check.
