@@ -5,6 +5,8 @@ emptymergequery
 alter
 types
 forex
+doubletable
+#singlekeyconstraint crashes 
 #mergedrop corrupts the database
 #mergekey crashes based on select
 #crash0 crashes the server
