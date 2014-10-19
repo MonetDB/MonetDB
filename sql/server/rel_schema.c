@@ -1054,6 +1054,27 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 	return sname;
 }
 
+static int
+rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt)
+{
+	node *n, *m;
+
+	if (cs_size(&nt->columns) != cs_size(&nnt->columns)) {
+		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
+		return -1;
+	}
+	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
+		sql_column *nc = n->data;
+		sql_column *mc = m->data;
+
+		if (subtype_cmp(&nc->type, &mc->type) != 0) {
+			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+			return -2;
+		}
+	}
+	return 0;
+}
+
 static sql_rel *
 rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 {
@@ -1120,8 +1141,12 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			char *ntname = te->data.lval->h->data.sval;
 			sql_table *nnt = mvc_bind_table(sql, s, ntname);
 
-			if (nnt)
+			/* check tables */
+			if (nnt) {
+				if (rel_check_tables(sql, nt, nnt) < 0)
+					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
+			}
 		}
 		/* table drop table */
 		if (te->token == SQL_DROP_TABLE) {
