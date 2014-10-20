@@ -47,7 +47,6 @@
 transaction_export str TRNglobal_sync(bit *ret);
 transaction_export str TRNglobal_abort(bit *ret);
 transaction_export str TRNglobal_commit(bit *ret);
-transaction_export str TRNsub_commit(bit *ret, bat *bid);
 transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

@@ -72,7 +72,6 @@ mal_mapi_export str SERVERquery(int *ret, int *mid, str *qry);
 mal_mapi_export str SERVERquery_handle(int *ret, int *mid, str *qry);
 mal_mapi_export str SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 mal_mapi_export str SERVERprepare(int *ret, int *key, str *qry);
-mal_mapi_export str SERVERexecute(int *ret, int *idx);
 mal_mapi_export str SERVERfinish(int *ret, int *idx);
 mal_mapi_export str SERVERrows_affected(lng *ret, int *idx);
 mal_mapi_export str SERVERget_row_count(lng *ret, int *idx);

@@ -54,7 +54,6 @@ profiler_export str CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr 
 profiler_export str CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -71,7 +70,6 @@ profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr 
 profiler_export str CMDcloseProfilerStream(void *res);
 profiler_export str CMDcleanup(void *ret);
 profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDclearEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetDiskReads(lng *ret);
 profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);

@@ -257,13 +257,11 @@ sql5_export str nil_2_timestamp(timestamp *res, const void *val);
 sql5_export str batnil_2_timestamp(bat *res, const bat *val);
 sql5_export str str_2_timestamp(timestamp *res, const str *val);
 sql5_export str batstr_2_timestamp(bat *res, const bat *val);
-sql5_export str SQLtimestamp_2_str(str *res, const timestamp *val);
 
 sql5_export str nil_2_daytime(daytime *res, const void *val);
 sql5_export str batnil_2_daytime(bat *res, const bat *val);
 sql5_export str str_2_daytime(daytime *res, const str *val);
 sql5_export str batstr_2_daytime(bat *res, const bat *val);
-sql5_export str SQLdaytime_2_str(str *res, const daytime *val);
 
 sql5_export str nil_2_date(date *res, const void *val);
 sql5_export str batnil_2_date(bat *res, const bat *val);
@@ -271,8 +269,6 @@ sql5_export str str_2_date(date *res, const str *val);
 sql5_export str batstr_2_date(bat *res, const bat *val);
 sql5_export str SQLdate_2_str(str *res, const date *val);
 
-sql5_export str nil_2_sqlblob(sqlblob * *res, const void *val);
-sql5_export str batnil_2_sqlblob(bat *res, const bat *val);
 sql5_export str str_2_sqlblob(sqlblob * *res, const str *val);
 sql5_export str batstr_2_sqlblob(bat *res, const bat *val);
 sql5_export str SQLsqlblob_2_str(str *res, const sqlblob * val);
@@ -301,7 +297,6 @@ sql5_export str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);
 sql5_export str SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta);
 sql5_export str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str month_interval_daytime(int *ret, const daytime *s, const int *ek, const int *sk);
 sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
 
 #include "sql_cast.h"

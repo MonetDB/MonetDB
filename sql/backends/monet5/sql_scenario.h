@@ -47,7 +47,6 @@ sql5_export str SQLstatementIntern(Client c, str *expr, str nme, int execute, bi
 sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLtrace(int *ret);
 sql5_export str SQLCacheRemove(Client c, str nme);
 
 sql5_export MT_Lock sql_contextLock;

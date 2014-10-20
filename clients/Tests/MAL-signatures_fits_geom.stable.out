@@ -31156,6 +31156,22 @@ command batcalc.wrd(v:bat[:oid,:flt],digits:int,scale:int):bat[:oid,:wrd]
 address batflt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
+command batcalc.wrd(v:bat[:oid,:str],digits:int,scale:int):bat[:oid,:wrd] 
+address batstr_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:str],digits:int):bat[:oid,:wrd] 
+address batstr_2num_wrd;
+comment cast to wrd and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int,scale:int):bat[:oid,:wrd] 
+address batnil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int):bat[:oid,:wrd] 
+address batnil_2num_wrd;
+comment cast to wrd and check for overflow
+
 pattern batcalc.wrd_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
 comment cast from str to wrd with candidates list
@@ -38275,6 +38291,22 @@ comment cast number to decimal(wrd) and check for overflow
 command calc.wrd(v:flt,digits:int,scale:int):wrd 
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int,scale:int):wrd 
+address str_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int):wrd 
+address str_2num_wrd;
+comment cast to wrd and check for overflow
+
+command calc.wrd(v:void,digits:int,scale:int):wrd 
+address nil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:void,digits:int):wrd 
+address nil_2num_wrd;
+comment cast to wrd and check for overflow
 
 command calc.wkb(v:wkb):wkb 
 address wkbFromWKB;

@@ -131,15 +131,6 @@ CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 str
-CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) cntxt;
-	(void) stk;
-	clrFilterVariable(mb,getArg(pc,1));
-	return MAL_SUCCEED;
-}
-
-str
 CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	(void) cntxt;
