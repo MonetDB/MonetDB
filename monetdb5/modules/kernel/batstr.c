@@ -52,16 +52,12 @@
 
 batstr_export str STRbatPrefix(bat *ret, const bat *l, const bat *r);
 batstr_export str STRbatPrefixcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRcstPrefixbat(bat *ret, const str *cst, const bat *r);
 batstr_export str STRbatSuffix(bat *ret, const bat *l, const bat *r);
 batstr_export str STRbatSuffixcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRcstSuffixbat(bat *ret, const str *cst, const bat *r);
 batstr_export str STRbatstrSearch(bat *ret, const bat *l, const bat *r);
 batstr_export str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRcststrSearchbat(bat *ret, const str *cst, const bat *r);
 batstr_export str STRbatRstrSearch(bat *ret, const bat *l, const bat *r);
 batstr_export str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRcstRstrSearchbat(bat *ret, const str *cst, const bat *r);
 batstr_export str STRbatTail(bat *ret, const bat *l, const bat *r);
 batstr_export str STRbatTailcst(bat *ret, const bat *l, const int *cst);
 batstr_export str STRbatWChrAt(bat *ret, const bat *l, const bat *r);
@@ -99,7 +95,6 @@ batstr_export str STRbatBytes(bat *ret, const bat *l);
 
 batstr_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length);
 batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t);
-batstr_export str STRbatreplace(bat *ret, const bat *l, const str *pat, const str *s2);
 
 
 #define prepareOperand(X,Y,Z)					\
@@ -873,34 +868,6 @@ bunins_failed:
 	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstPrefixbat(bat *ret, const str *cst, const bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	bit v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.prefix");
-	prepareResult(bn,right,TYPE_bit,"batstr.prefix");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRPrefix(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
-}
-
 str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
@@ -959,34 +926,6 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 
 bunins_failed:
 	BBPreleaseref(left->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
-}
-
-str STRcstSuffixbat(bat *ret, const str *cst, const bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	bit v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.suffix");
-	prepareResult(bn,right,TYPE_bit,"batstr.suffix");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRSuffix(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
 }
@@ -1053,34 +992,6 @@ bunins_failed:
 	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcststrSearchbat(bat *ret, const str *cst, const bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	int v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.search");
-	prepareResult(bn,right,TYPE_bit,"batstr.search");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRstrSearch(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
-}
-
 str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
@@ -1139,34 +1050,6 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 
 bunins_failed:
 	BBPreleaseref(left->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
-}
-
-str STRcstRstrSearchbat(bat *ret, const str *cst, const bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	int v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.r_search");
-	prepareResult(bn,right,TYPE_bit,"batstr.r_search");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRReverseStrSearch(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
 }

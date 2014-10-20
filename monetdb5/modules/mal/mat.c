@@ -531,11 +531,6 @@ MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MATdummy(int *ret, str *grp){
-	(void) grp; (void) ret;
-	return MAL_SUCCEED;
-}
-str
 MATinfo(bat *ret, str *grp, str *elm){
 	(void) grp; (void) elm;
 	*ret = bat_nil;

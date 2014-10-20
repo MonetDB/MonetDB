@@ -88,7 +88,6 @@ datacell_export str schema_default;
 datacell_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTdrop(void *ret, str *tbl);
 datacell_export str BSKTreset(void *ret);
-datacell_export str BSKTinventory(int *ret);
 datacell_export int BSKTmemberCount(str tbl);
 datacell_export int BSKTlocate(str tbl);
 datacell_export str BSKTdump(void *ret);

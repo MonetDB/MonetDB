@@ -763,6 +763,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* monitoring information should reflect the input arguments,
 			   which may be removed by garbage collection  */
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+			runtimeProfileFinish(cntxt, mb);
 			/* check for strong debugging after each MAL statement */
 			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {

@@ -62,21 +62,6 @@ FCTgetDeparture(bat *ret)
 }
 
 str
-FCTsetLocation(int *ret, str *loc)
-{
-	(void) ret;
-	(void) loc;
-	throw(MAL, "factories.setLocation", PROGRAM_NYI);
-}
-
-str
-FCTgetLocations(int *ret)
-{
-	(void) ret;
-	throw(MAL, "factories.getLocations", PROGRAM_NYI);
-}
-
-str
 FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str mod = *getArgReference_str(stk, pci, 1);

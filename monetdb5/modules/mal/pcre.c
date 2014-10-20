@@ -71,7 +71,6 @@ pcre_export str BATPCREilike(bat *ret, const bat *b, const str *pat, const str *
 pcre_export str BATPCREilike2(bat *ret, const bat *b, const str *pat);
 pcre_export str BATPCREnotilike(bat *ret, const bat *b, const str *pat, const str *esc);
 pcre_export str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
-pcre_export str PCREselect(bat *res, const str *pattern, const bat *bid);
 pcre_export str PCRElike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
 pcre_export str PCREilike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
 pcre_export str pcre_init(void *ret);
@@ -512,44 +511,6 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
 }
 
-static str
-pcre_select(BAT **res, const char *pattern, BAT *strs, bit insensitive)
-{
-	BATiter strsi = bat_iterator(strs);
-	const char err[BUFSIZ], *err_p = err;
-	int errpos = 0;
-	BAT *r;
-	BUN p, q;
-	pcre *re = NULL;
-	int options = PCRE_UTF8 | PCRE_MULTILINE;
-	if (insensitive)
-		options |= PCRE_CASELESS;
-
-	assert(strs->htype==TYPE_void);
-	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs), TRANSIENT);
-	else
-		r = BATnew(strs->htype, TYPE_str, BATcount(strs), TRANSIENT);
-	if (r == NULL)
-		throw(MAL, "pcre_select", MAL_MALLOC_FAIL);
-	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
-		BBPreclaim(r);
-		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
-			pattern, errpos, err_p);
-	}
-	BATloop(strs, p, q) {
-		const char *s = BUNtail(strsi, p);
-
-		if (pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strsi, p), s, FALSE);
-		}
-	}
-	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
-	my_pcre_free(re);
-	*res = r;
-	return MAL_SUCCEED;
-}
-
 #define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
 
 static str
@@ -970,27 +931,6 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 		BBPkeepref(*res);
 	}
 	BBPunfix(b->batCacheid);
-	return msg;
-}
-
-str
-PCREselect(bat *res, const str *pattern, const bat *bid)
-{
-	BAT *bn = NULL, *strs;
-	str msg;
-
-	if ((strs = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "pcre.select", RUNTIME_OBJECT_MISSING);
-	}
-
-	if ((msg = pcre_select(&bn, *pattern, strs, FALSE)) != MAL_SUCCEED) {
-		BBPunfix(strs->batCacheid);
-		return msg;
-	}
-
-	*res = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(strs->batCacheid);
 	return msg;
 }
 

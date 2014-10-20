@@ -43,7 +43,6 @@ mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 mat_export str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(bat *ret, str *grp, str *elm);
 mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -62,7 +62,6 @@ blob_export int SQLBLOBtostr(str *tostr, int *l, blob *pin);
 blob_export str BLOBtoblob(blob **retval, str *s);
 blob_export str BLOBfromblob(str *retval, blob **b);
 blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
-blob_export str BLOBeoln(char *src, char *end);
 blob_export str BLOBnitems(int *ret, blob *b);
 blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
