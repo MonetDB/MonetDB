@@ -146,7 +146,8 @@ seq_length(int * ret, str * cigar)
 	int result = 0;
 	str cigar_consumable = *cigar;
 
-	if (cigar_consumable[0] == '*' && cigar_consumable[1] == '\0') {
+	if (cigar_consumable[0] == '\0' || 
+			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
 		*ret = -1;
 		return MAL_SUCCEED;
 	}
@@ -173,44 +174,58 @@ str
 seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar) 
 {
 	str cigar_consumable = *alg_cigar;
-	int seq_pos = 0;
-	bit at_character = false;
-	int iterate_until = *ref_pos - *alg_pos;
-	str result;
-
-	if((result = GDKmalloc(2 * sizeof(char))) == NULL) {
-		throw(MAL, "seq_char", MAL_MALLOC_FAIL);
-	}
-	result[1] = '\0';
+	int seq_pos = -1;
+	int cur_ref_pos = *alg_pos - 1;
 	
-	if (cigar_consumable[0] == '*' && cigar_consumable[1] == '\0') {
-		result[0] = '\0';
-		*ret = result;
+	if (cigar_consumable[0] == '\0' || 
+			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
+		*ret = GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
-	while(cigar_consumable[0] != '\0' && seq_pos < iterate_until) {
+	while(TRUE) {
 		int cnt;
 		char op;
 		int nr_chars_read;
+		bit advance_ref_pos;
+		bit advance_seq_pos;
 
 		if (sscanf
 			(cigar_consumable, "%d%c%n", &cnt, &op,
 			 &nr_chars_read) != 2)
 			throw(MAL, "seq_char",
 				  "Error parsing CIGAR string '%s'\n", *alg_cigar);
-		if (op == 'M' || op == 'D' || op == 'N' || op == '='
-			|| op == 'X') {
+		advance_ref_pos = (op == 'M' || op == 'D' || 
+			op == 'N' || op == '=' || op == 'X');
+		advance_seq_pos = (op == 'M' || op == 'I'); // TODO: Find out which chars advance the seq pos
+		if(advance_seq_pos) {
 			seq_pos += cnt;
-			if(seq_pos > iterate_until) 
-				seq_pos = iterate_until;
-			at_character = true;
-		} else {
-			at_character = false;
+		}
+		if (advance_ref_pos) {
+			cur_ref_pos += cnt;
+			if(cur_ref_pos >= *ref_pos) {
+				if(!advance_seq_pos) {
+					seq_pos = -1;
+				} else {
+					seq_pos -= (cur_ref_pos - *ref_pos);
+				}
+				break;
+			}
 		}
 		cigar_consumable += nr_chars_read;
+		if(cigar_consumable[0] == '\0') {
+			seq_pos = -1;
+			break;
+		}
 	}
-	result[0] = at_character ? (*alg_seq)[seq_pos] : '\0';
-	*ret = result;
+	if(seq_pos < 0 || seq_pos >= (int)strlen(*alg_seq)) {
+		*ret = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	if(((*ret) = GDKmalloc(2 * sizeof(char))) == NULL) {
+		throw(MAL, "seq_char", MAL_MALLOC_FAIL);
+	}
+	(*ret)[0] = (*alg_seq)[seq_pos];
+	(*ret)[1] = '\0';
 	return MAL_SUCCEED;
 }
 
@@ -398,7 +413,9 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
-		throw(MAL, "seq_char_bat", "Misalignment in input BATs");
+		throw(MAL, "seq_char_bat", 
+			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
+			BATcount(poss), BATcount(seqs), BATcount(cigars));
 	}
 
 	/* allocate result BAT */
@@ -428,7 +445,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
-		BUNappend(result, (ptr) &r, FALSE);
+		BUNappend(result, (ptr) r, FALSE);
 		++seq;
 		++pos;
 		++cigar;
