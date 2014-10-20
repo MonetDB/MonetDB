@@ -38,6 +38,10 @@ command seq_length(cigar:str):int
 address seq_length
 comment "Calculate the real length of a DNA sequence, given its CIGAR string."
 
+command seq_char(ref_pos:int, alg_seq:str, alg_pos:int, alg_cigar:str):str
+address seq_char
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string"
+
 
 # Export signatures
 
@@ -69,3 +73,7 @@ comment "Reverse a bat of DNA Quality strings."
 command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
 address seq_length_bat
 comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
+
+command seq_char(ref_pos:int, alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
+address seq_char
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)"
