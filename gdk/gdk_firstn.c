@@ -28,7 +28,7 @@
  * argument) and then the OIDs of the first n elements are returned.
  *
  * In addition to the input BAT b, there can be a standard candidate
- * list s.  It s is specified (non-NULL), only elements in b that are
+ * list s.  If s is specified (non-NULL), only elements in b that are
  * referred to in s are considered.
  *
  * If the third input bat g is non-NULL, then s must also be non-NULL.
