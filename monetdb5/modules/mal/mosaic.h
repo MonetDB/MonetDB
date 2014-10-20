@@ -111,6 +111,7 @@ typedef struct MOSTASK{
 	MosaicBlk blk;	// current block header in scan
 	oid start;		// oid of first element in current blk
 	oid stop;		// last oid of range to be scanned
+	flt factor;
 
 	char *dst;		// write pointer into current compressed blocks
 
@@ -203,7 +204,7 @@ mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOSmosaic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
 
 #endif /* _MOSLIST_H */

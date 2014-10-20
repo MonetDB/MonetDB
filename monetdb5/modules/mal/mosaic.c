@@ -57,7 +57,6 @@ void MOSblk(MosaicBlk blk)
 	printf("Block tag %d cnt "BUNFMT"\n", MOSgetTag(blk),MOSgetCnt(blk));
 }
 
-static float xfactor;
 static void
 MOSdumpTask(Client cntxt,MOStask task)
 {
@@ -65,8 +64,8 @@ MOSdumpTask(Client cntxt,MOStask task)
 	dbl perc = task->size/100.0;
 
 	mnstr_printf(cntxt->fdout,"# ");
-	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes %10lld\t%10lld\t%3.0f%%\t%10.2fx\t", 
-		task->timer,task->size,task->xsize, task->xsize/perc, xfactor=(task->xsize ==0 ? 0:(flt)task->size/task->xsize));
+	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes %10lld\t%10lld\t%3.0f%%\t%10.3fx\t", 
+		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 	for ( i=0; i < MOSAIC_METHODS; i++)
 	if( task->hdr->blks[i])
 		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , MOSfiltername[i], task->hdr->blks[i], task->hdr->elms[i], task->hdr->elms[i]/task->hdr->blks[i]);
@@ -456,7 +455,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task, int inplace,
 		BBPkeepref(*ret = bsrc->batCacheid);
 		BBPreleaseref(bcompress->batCacheid);
 	}
-	task->hdr->factor = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
+	task->factor = task->hdr->factor = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bcompress);
 #endif
@@ -536,9 +535,6 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 	if(inplace) {
-		//copy the compressed heap to its temporary location
-		 memcpy(bsrc->T->heap.base, b->T->heap.base, b->T->heap.free);
-	
 		// claim the server for exclusive use
 		msg = MCstartMaintenance(cntxt,1,0);
 		if( msg != MAL_SUCCEED){
@@ -548,8 +544,41 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 			throw(MAL, "mosaic.decompress", "Can not claim server");
 		}
 
+		//copy the compressed heap to its temporary location
+		 memcpy(bsrc->T->heap.base, b->T->heap.base, b->T->heap.free);
 		// Now bsrc should be securely saved to avoid database loss 
-		// during the compressions step. TOBEDONE
+		// during the compressions step. TOBEDON
+	
+/*	
+{	// Make a backup copy of the heap
+		bat bid = abs(bsrc->batCacheid);
+		const char *nme, *bnme, *srcdir;
+		char filename[IDLENGTH];
+
+
+		nme = BBP_physical(bid);
+		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
+			bnme = nme;
+		else
+			bnme++; 
+		sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+		srcdir = GDKfilepath(bsrc->H->heap.farmid, BATDIR, nme, NULL);
+		*strrchr(srcdir, DIR_SEP) = 0;
+
+		if (GDKmove(bsrc->T->heap.farmid, srcdir, bnme, "theap", BAKDIR, bnme, "theap") != 0)
+			GDKfatal("mosaic.compress: cannot make backup of %s.%s\n", nme, "theap");
+
+		// create a new heap
+        bsrc->T->heap.filename = GDKfilepath(-1, NULL, nme, "tail");
+        if (bsrc->T->heap.filename == NULL)
+            GDKfatal("mosaic.compress: GDKmalloc failed\n");
+        if (HEAPalloc(&bsrc->T->heap, bsrc->batCapacity, ATOMsize(bsrc->ttype)) < 0)
+            GDKfatal("mosaic.compress: allocating new tail heap for BAT %d failed\n", bid);
+        bsrc->T->heap.dirty = TRUE;
+
+		GDKfree(srcdir);
+}
+*/
 		
 		MOSinit(task,bsrc);
 		task->src = Tloc(b, BUNfirst(b));
@@ -1320,7 +1349,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for( k = 0; k< MOSAIC_METHODS; k++)
 					task->filter[k]= 1;
 			x+= MOSanalyseInternal(cntxt, threshold, task, bid);
-			xf[j]= xfactor;
+			xf[j]= task->hdr? task->factor: 0;
 			if(xf[mx] < xf[j]) mx =j;
 		}
 		if(x >1){
@@ -1341,7 +1370,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for( k = 0; k< MOSAIC_METHODS; k++)
 						task->filter[k]= 1;
 				x+= MOSanalyseInternal(cntxt, threshold, task, i);
-			xf[j]= xfactor;
+			xf[j]= task->hdr? task->factor: 0;
 		}
 		if( x >1){
 			mnstr_printf(cntxt->fdout,"#all %d ",i);
@@ -1361,44 +1390,97 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*
  * Start searching for a proper compression scheme.
  */
+
+#define STEP MOSAIC_METHODS
+static int
+MOSsetmix(float *xf, int idx, MOStask task){
+	int i, j=0;
+	for( i = 1; i < STEP; i++)
+		task->filter[i] = 0;
+	while(idx > 0) {
+		if( idx % STEP ) { 
+			if ( xf[idx % STEP] > 1.0  || xf[idx % STEP] == 0){
+				if( idx % STEP < STEP -1) { /* ignore EOL */
+					task->filter[idx % STEP] = 1;
+					j++;
+				}
+			} else 
+				return -1;
+		}
+		idx /= STEP;
+	}
+	return j ? 0: -1;
+}
+
+static int getPattern(MOStask task)
+{	int i,p=0;
+	for( i = 0; i< MOSAIC_METHODS-1; i++)
+		p += 2 * p + task->filter[i];
+	return p;
+}
+
 str
-MOSmosaic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ply;
+	int ply = 1;
 	MOStask task;
-	int i,mx,ret;
+	int cases;
+	int i, j, ret, idx, p;
 	bat bid;
-	float xf[MOSAIC_METHODS];
+	int pattern[1024];
+	float mx, xf[1024];
 
 	(void) mb;
-	(void) cntxt;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
 		throw(MAL, "mosaic.mosaic", MAL_MALLOC_FAIL);
 
 	bid = *getArgReference_int(stk,pci,1);
-	ply = *getArgReference_int(stk,pci,2);
+	if( pci->argc > 1)
+		ply = *getArgReference_int(stk,pci,2);
 
-	for( ; ply > 0; ply--){
-		for( i = 0; i< MOSAIC_METHODS - 1; i++)
-			xf[i]=0;
+	cases = STEP;
+	for ( i=ply-1; i > 0 && cases * STEP < 1024; i--)
+		cases *= STEP;
 
-		for( i = 1; i< MOSAIC_METHODS - 1; i++){
-			task->filter[i]= 1;
+	for( i = 0; i < 1024; i++)
+		xf[i]=0;
+
+	mx = 0;
+	for( i = 1; i< cases; i++){
+		if( MOSsetmix(xf,i,task) < 0)
+			continue;
+		p= getPattern(task);
+		for( j=0; j < i; j++)
+			if (pattern[j] == p) break;
+		if( j<i ) continue;
+		pattern[j]= p;
+#define _DEBUG_MOSAIC_
 #ifdef _DEBUG_MOSAIC_
-			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t", bid, BBP_physical(bid));
+		mnstr_printf(cntxt->fdout,"# %d\t%-8s\t", bid, BBP_physical(bid));
+		for( j = 0; j < MOSAIC_METHODS -1; j++)
+			mnstr_printf(cntxt->fdout,"%d",task->filter[j]?1:0);
+		mnstr_printf(cntxt->fdout,"\t");
+#else
+		(void) cntxt;
 #endif
-			MOScompressInternal(cntxt, &ret, &bid, task, 0, TRUE);
-			xf[i] = xfactor;
-			task->filter[i]= 0;
-			if( ret != bid)
-				BBPdecref(ret, TRUE);
+		MOScompressInternal(cntxt, &ret, &bid, task, 0, TRUE);
+		xf[i] = task->factor;
+		if( ret != bid)
+			BBPdecref(ret, TRUE);
+		if( mx < task->factor){
+			mx = task->factor;
+			idx = i;
 		}
-		for(mx =0, i = 1; i< MOSAIC_METHODS - 1; i++)
-			mx = xf[mx] < xf[i] ? i: mx;
-		mnstr_printf(cntxt->fdout,"#best strategy %s %9.5f\n",MOSfiltername[mx],xf[mx]);
+		
 	}
+	mnstr_printf(cntxt->fdout,"#best strategy %d ",idx);
+	(void) MOSsetmix(xf,idx,task);
+	for( j = 0; j < MOSAIC_METHODS -1; j++)
+	if( task->filter[j])
+		mnstr_printf(cntxt->fdout,"%s ",MOSfiltername[j]);
+	mnstr_printf(cntxt->fdout,"\t%9.5f\n",mx);
 	GDKfree(task);
 	
 	return MAL_SUCCEED;
