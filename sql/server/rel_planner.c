@@ -144,11 +144,11 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		if (t && isTable(t))
-			return store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
 		if (!t && rel->r) /* dict */
-			return sql_trans_dist_count(sql->session->tr, rel->r);
+			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
-	}	break;
+	}
 	case op_select:
 	case op_project:
 		if (rel->l)
@@ -157,7 +157,6 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 static lng
@@ -185,11 +184,10 @@ rel_getwidth(mvc *sql, sql_rel *rel)
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 static lng
-exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, size_t count)
+exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 {
 	switch(e->type) {
 	case e_column: {
@@ -197,7 +195,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, size_t count)
 		sql_rel *bt = NULL;
 		sql_column *c = name_find_column(r, e->l, e->r, -1, &bt);
 		if (c) {
-			size_t dcount = sql_trans_dist_count(sql->session->tr, c);
+			lng dcount = (lng)sql_trans_dist_count(sql->session->tr, c);
 			if (dcount != 0 && dcount < count)
 				return dcount;
 		}
@@ -314,7 +312,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		return 1.0;
 	switch(e->type) {
 	case e_cmp: {
-		size_t dcount = exp_getdcount( sql, r, e->l, count);
+		lng dcount = exp_getdcount( sql, r, e->l, count);
 
 		switch (get_cmp(e)) {
 		case cmp_equal: {
@@ -322,7 +320,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 			break;
 		}
 		case cmp_notequal:
-			sel = (dcount-1)/dcount;
+			sel = (dcount-1.0)/dcount;
 			break;
 		case cmp_gt:
 		case cmp_gte:
@@ -330,7 +328,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_lte: {
 			void *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
-				sel = exp_getrange_sel( sql, r, e, min, max);
+				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {
 				sel = 0.5;
 				if (e->f) /* range */
@@ -364,7 +362,7 @@ static dbl
 rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcount, lng rcount)
 {
 	dbl sel = 1.0;
-	size_t ldcount, rdcount;
+	lng ldcount, rdcount;
 
 	if (!e)
 		return 1.0;
@@ -379,7 +377,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 			sel = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			break;
 		case cmp_notequal: {
-			dbl cnt = (lcount/ldcount)*(rcount/rdcount);
+			dbl cnt = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			sel = (cnt-1)/cnt;
 		}	break;
 		case cmp_gt:
@@ -472,7 +470,7 @@ memo_create(mvc *sql, list *rels )
 		mi->count = MAX( (lng) (mi->count*sel), 1);
 		assert(mi->count);
 		mi->width = rel_getwidth(sql, r);
-		mi->cost = mi->count*mi->width;
+		mi->cost = (dbl)(mi->count*mi->width);
 		mi->data = r;
 		append(mi->rels, r);
 	}
@@ -502,7 +500,7 @@ memo_add_exps(list *memo, mvc *sql, list *rels, list *jes)
 			mi = memoitem_create(memo, sql->sa, mj->l->name, mj->r->name, 2);
 			mi->width = (rel_getwidth(sql, l) + rel_getwidth(sql, r))/2;
 			mi->data = e;
-			mi->count = mj->sel * MIN(mj->l->count, mj->r->count);
+			mi->count = (lng)(mj->sel * MIN(mj->l->count, mj->r->count));
 			append(mi->rels, l);
 			append(mi->rels, r);
 			append(mi->exps, e);
@@ -565,7 +563,7 @@ memoitem_add_attr(list *memo, mvc *sql, memoitem *mi, list *rels, list *jes, int
 					list_append(nmi->joins, mj);
 
 					if (!nmi->count)
-						nmi->count = mincnt*mj->sel;
+						nmi->count = (lng)(mincnt*mj->sel);
 					nmi->count = MIN((lng) (mincnt*mj->sel), nmi->count);
 					assert(nmi->count >= 0);
 				}
@@ -807,8 +805,8 @@ memo_compute_cost(list *memo)
 		memoitem *mi = n->data;
 
 		if (mi->joins) {
-			lng cnt = 0, cost = 0;
-			lng width = 1;
+			lng cnt = 0, width = 1;
+		        dbl cost = 0;
 
 			/* cost minimum of join costs */
 			for ( m = mi->joins->h; m; m = m->next ) {
@@ -817,7 +815,7 @@ memo_compute_cost(list *memo)
 				lng mincnt = MIN(mj->l->count, mj->r->count);
 				dbl nsel = mj->sel;
 				lng ocnt = MAX((lng) (mincnt*nsel), 1);
-				lng ncost = 0;
+				dbl ncost = 0;
 
 				/* mincnt*mincnt_size_width*hash_const_cost + mincnt * output_width(for now just sum of width) * memaccess const */
 				/* current consts are 1 and 1 */

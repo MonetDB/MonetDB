@@ -1298,7 +1298,7 @@ SQLinitClient(Client c)
 		}
 		/* add missing features needed beyond Oct 2014 */
 		sql_find_subtype(&tp, "timestamp", 0, 0);
-		if ( !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){
+		if ( 0 &&  !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){
 			if ((err = sql_update_feb2015(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
@@ -1361,8 +1361,11 @@ SQLexitClient(Client c)
  * execution
  */
 str
-SQLinitEnvironment(Client cntxt)
+SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	return SQLinitClient(cntxt);
 }
 
@@ -1412,7 +1415,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
-		msg = SQLinitEnvironment(c);
+		msg = SQLinitEnvironment(c, NULL, NULL, NULL);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){

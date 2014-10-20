@@ -624,6 +624,24 @@ command calc.second_interval( sc:int, v:int, ek:int, sk:int ) :lng
 address int_dec2second_interval
 comment "cast int decimal to a second_interval";
 
+command sql.dec_round( v:wrd, r:wrd ) :wrd 
+address wrd_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+command batsql.dec_round( v:bat[:oid,:wrd], r:wrd ) :bat[:oid,:wrd] 
+address wrd_bat_dec_round_wrap
+comment "round off the value v to nearests multiple of r";
+
+command sql.round( v:wrd, d:int, s:int, r:bte) :wrd
+address wrd_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+command batsql.round( v:bat[:oid,:wrd], d:int, s:int, r:bte) :bat[:oid,:wrd]
+address wrd_bat_round_wrap
+comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
+
+command calc.second_interval( sc:int, v:wrd, ek:int, sk:int ) :lng
+address wrd_dec2second_interval
+comment "cast wrd decimal to a second_interval";
+
 command sql.dec_round( v:lng, r:lng ) :lng 
 address lng_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
@@ -771,6 +789,32 @@ comment "cast to int and check for overflow";
 command batcalc.int( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:int] 
 address batstr_2dec_int
 comment "cast to dec(int) and check for overflow";
+
+command calc.wrd( v:void, digits:int ) :wrd 
+address nil_2num_wrd
+comment "cast to wrd and check for overflow";
+command calc.wrd( v:void, digits:int, scale:int ) :wrd 
+address nil_2dec_wrd
+comment "cast to dec(wrd) and check for overflow";
+command batcalc.wrd( v:bat[:oid,:oid], digits:int ) :bat[:oid,:wrd] 
+address batnil_2num_wrd
+comment "cast to wrd and check for overflow";
+command batcalc.wrd( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:wrd] 
+address batnil_2dec_wrd
+comment "cast to dec(wrd) and check for overflow";
+
+command calc.wrd( v:str, digits:int ) :wrd 
+address str_2num_wrd
+comment "cast to wrd and check for overflow";
+command calc.wrd( v:str, digits:int, scale:int ) :wrd 
+address str_2dec_wrd
+comment "cast to dec(wrd) and check for overflow";
+command batcalc.wrd( v:bat[:oid,:str], digits:int ) :bat[:oid,:wrd] 
+address batstr_2num_wrd
+comment "cast to wrd and check for overflow";
+command batcalc.wrd( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:wrd] 
+address batstr_2dec_wrd
+comment "cast to dec(wrd) and check for overflow";
 
 command calc.lng( v:void, digits:int ) :lng 
 address nil_2num_lng

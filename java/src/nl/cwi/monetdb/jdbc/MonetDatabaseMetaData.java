@@ -1179,7 +1179,12 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the maximum number of connections
 	 */
 	public int getMaxConnections() {
-		return 16;
+		int max_clients = 16;
+		try {
+			String max_clients_val = getEnv("max_clients");
+			max_clients = Integer.parseInt(max_clients_val);
+		} catch (NumberFormatException nfe) { /* ignore */ }
+		return max_clients;
 	}
 
 	/**

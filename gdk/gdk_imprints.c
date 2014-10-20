@@ -412,7 +412,7 @@ do {									\
 	uint##B##_t *im = (uint##B##_t *) imps;				\
 	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
 	TYPE *bins = (TYPE *) inbins;					\
-	TYPE nil = TYPE##_nil;							\
+	TYPE nil = TYPE##_nil;						\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
 	for (i = 0; i < b->batCount; i++) {				\
@@ -453,23 +453,23 @@ do {									\
 		}							\
 		GETBIN##B(bin,col[i]);					\
 		mask = IMPSsetBit(B,mask,bin);				\
-		if (!cnt_bins[bin]++) {						\
+		if (!cnt_bins[bin]++) {					\
 			min_bins[bin] = max_bins[bin] = i;		\
-		} else { 									\
+		} else {						\
 			/* nil value can not be min */			\
-			if ((bin == 0) && (col[i] != nil)) {					\
-				/* in case the first value was nil and min_bin[0]	\
-				 * has been initialized with it */					\
-				if (col[min_bins[0]] == nil) {						\
-					min_bins[0] = i;								\
-				} else if (col[i] < col[min_bins[0]]) {				\
-					min_bins[0] = i;								\
-				}													\
-			} else	{												\
-				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i;	\
-			}														\
-			if (col[i] > col[max_bins[bin]]) max_bins[bin] = i;		\
-		}														\
+			if ((bin == 0) && (col[i] != nil)) {		\
+				/* in case the first value was nil and min_bin[0] \
+				 * has been initialized with it */	\
+				if (col[min_bins[0]] == nil) {		\
+					min_bins[0] = i;		\
+				} else if (col[i] < col[min_bins[0]]) {	\
+					min_bins[0] = i;		\
+				}					\
+			} else	{					\
+				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i; \
+			}						\
+			if (col[i] > col[max_bins[bin]]) max_bins[bin] = i; \
+		}							\
 	}								\
 	/* one last left */						\
 	if (prvmask == mask && dcnt > 0 &&				\
@@ -803,7 +803,7 @@ BATimprints(BAT *b)
 				     imprints->dict,
 				     &imprints->dictcnt)) {
 			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->imprints);
+			HEAPfree(imprints->imprints, 1);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),

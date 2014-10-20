@@ -2822,6 +2822,10 @@ command batsql.dec_round(v:bat[:oid,:lng],r:lng):bat[:oid,:lng]
 address lng_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command batsql.dec_round(v:bat[:oid,:wrd],r:wrd):bat[:oid,:wrd] 
+address wrd_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command batsql.dec_round(v:bat[:oid,:int],r:int):bat[:oid,:int] 
 address int_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -2848,6 +2852,10 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 
 command batsql.round(v:bat[:oid,:lng],d:int,s:int,r:bte):bat[:oid,:lng] 
 address lng_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batsql.round(v:bat[:oid,:wrd],d:int,s:int,r:bte):bat[:oid,:wrd] 
+address wrd_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command batsql.round(v:bat[:oid,:int],d:int,s:int,r:bte):bat[:oid,:int] 
@@ -2945,6 +2953,10 @@ comment Extracts value component from a color atom
 command batcolor.value(c:bat[:oid,:color]):bat[:oid,:int] 
 address CLRbatValueInt;
 comment Extracts value component from a color atom
+
+command batcolor.ycc(y:bat[:oid,:flt],cr:bat[:oid,:flt],cb:bat[:oid,:flt]):bat[:oid,:color] 
+address CLRbatycc;
+comment Converts an YCC triplets to a color atom
 
 command batstr.endsWith(s:bat[:oid,:str],suffix:str):bat[:oid,:bit] 
 address STRbatSuffixcst;
@@ -31135,6 +31147,22 @@ command batcalc.wrd(v:bat[:oid,:flt],digits:int,scale:int):bat[:oid,:wrd]
 address batflt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
+command batcalc.wrd(v:bat[:oid,:str],digits:int,scale:int):bat[:oid,:wrd] 
+address batstr_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:str],digits:int):bat[:oid,:wrd] 
+address batstr_2num_wrd;
+comment cast to wrd and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int,scale:int):bat[:oid,:wrd] 
+address batnil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int):bat[:oid,:wrd] 
+address batnil_2num_wrd;
+comment cast to wrd and check for overflow
+
 pattern batcalc.wrd_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
 comment cast from str to wrd with candidates list
@@ -37754,6 +37782,10 @@ command calc.second_interval(sc:int,v:lng,ek:int,sk:int):lng
 address lng_dec2second_interval;
 comment cast lng decimal to a second_interval
 
+command calc.second_interval(sc:int,v:wrd,ek:int,sk:int):lng 
+address wrd_dec2second_interval;
+comment cast wrd decimal to a second_interval
+
 command calc.second_interval(sc:int,v:int,ek:int,sk:int):lng 
 address int_dec2second_interval;
 comment cast int decimal to a second_interval
@@ -38250,6 +38282,22 @@ comment cast number to decimal(wrd) and check for overflow
 command calc.wrd(v:flt,digits:int,scale:int):wrd 
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int,scale:int):wrd 
+address str_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int):wrd 
+address str_2num_wrd;
+comment cast to wrd and check for overflow
+
+command calc.wrd(v:void,digits:int,scale:int):wrd 
+address nil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:void,digits:int):wrd 
+address nil_2num_wrd;
+comment cast to wrd and check for overflow
 
 command calc.wkb(v:wkb):wkb 
 address wkbFromWKB;
@@ -41499,6 +41547,10 @@ command sql.dec_round(v:lng,r:lng):lng
 address lng_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command sql.dec_round(v:wrd,r:wrd):wrd 
+address wrd_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command sql.dec_round(v:int,r:int):int 
 address int_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -41709,6 +41761,10 @@ comment round off the floating point v to r digits behind the dot (if r < 0, bef
 
 command sql.round(v:lng,d:int,s:int,r:bte):lng 
 address lng_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command sql.round(v:wrd,d:int,s:int,r:bte):wrd 
+address wrd_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
 command sql.round(v:int,d:int,s:int,r:bte):int 

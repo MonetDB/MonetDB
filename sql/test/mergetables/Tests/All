@@ -1,7 +1,11 @@
 mergeinit
 mergeload
 mergequery
+emptymergequery
+alter
+types
 forex
 #mergedrop corrupts the database
+#mergekey crashes based on select
 #crash0 crashes the server
 
