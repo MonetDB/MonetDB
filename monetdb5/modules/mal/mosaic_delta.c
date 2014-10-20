@@ -82,7 +82,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
-	for(v++,i =1; i<task->stop; i++,v++){\
+	for(v++,i =1; i<task->stop - task->start; i++,v++){\
 		delta = *v -val;\
 		if ( EXPR)\
 			break;\
@@ -118,7 +118,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	break;
 	case TYPE_int:
 		{	int *v = ((int*)task->src) + task->start, val= *v, delta=0;
-			for(v++,i =1; i<task->stop; i++,v++){
+			for(v++,i =1; i<task->stop - task->start; i++,v++){
 				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
@@ -137,7 +137,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 
 #define DELTAcompress(TYPE,EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta =0;\
-	BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit():task->stop;\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;\
 	task->dst = ((char*) task->blk) + MosaicBlkSize;\
 	*(TYPE*)task->dst = val;\
 	task->dst += sizeof(TYPE);\
@@ -172,7 +172,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 #endif
 	case TYPE_lng:
 		{	lng *v = ((lng*)task->src) + task->start, val= *v, delta;
-			BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit():task->stop;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;
 			task->dst = ((char*) task->blk) + MosaicBlkSize;
 			*(lng*)task->dst = val;
 			task->dst += sizeof(lng);
