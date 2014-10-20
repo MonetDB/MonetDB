@@ -124,9 +124,13 @@ def process(f):
             res = expre.search(data, pos)
 
 report_const = False
+coverage = False
 if len(sys.argv) > 1 and sys.argv[1] == '-c':
     del sys.argv[1]
     report_const = True
+elif len(sys.argv) > 1 and sys.argv[1] == '-f':
+    del sys.argv[1]
+    coverage = True
 
 if len(sys.argv) > 1:
     files = sys.argv[1:]
@@ -136,34 +140,49 @@ for f in files:
     f = f.strip()
     process(f)
 
-for rtypes, atypes, malf, func, f in malfuncs:
-    if not decls.has_key(func):
-        print '%s: missing for MAL command %s in %s' % (func, malf, f)
-    else:
-        args, funcf = decls[func]
-        if len(args) != len(rtypes) + len(atypes):
-            print '%s in %s: argument count mismatch for %s %s' % (func, funcf, malf, f)
+if coverage:
+    for rtypes, atypes, malf, func, f in malfuncs:
+        if decls.has_key(func):
+            del decls[func]
+    for malf, func, f in malpats:
+        if pdecls.has_key(func):
+            del pdecls[func]
+    print 'commands:'
+    for func in sorted(decls.keys()):
+        print func
+    print
+    print 'patterns:'
+    for func in sorted(pdecls.keys()):
+        print func
+else:
+    for rtypes, atypes, malf, func, f in malfuncs:
+        if not decls.has_key(func):
+            print '%s: missing for MAL command %s in %s' % (func, malf, f)
         else:
-            args = list(args)
-            i = 0
-            for t in rtypes:
-                i = i + 1
-                if t != args[0][0] or args[0][1]:
-                    print '%s in %s: return %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
-                del args[0]
-            i = 0
-            for t in atypes:
-                i = i + 1
-                # special dispensation for these functions: they
-                # handle str and json arguments both correctly
-                if func in ('JSONstr2json', 'JSONisvalid', 'JSONisobject', 'JSONisarray') and t in ('str', 'json'):
-                    t = args[0][0]
-                if t != args[0][0]:
-                    print '%s in %s: argument %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
-                elif report_const and not args[0][1]:
-                    print '%s in %s: argument %d not const for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
-                del args[0]
+            args, funcf = decls[func]
+            if len(args) != len(rtypes) + len(atypes):
+                print '%s in %s: argument count mismatch for %s %s' % (func, funcf, malf, f)
+            else:
+                args = list(args)
+                i = 0
+                for t in rtypes:
+                    i = i + 1
+                    if t != args[0][0] or args[0][1]:
+                        print '%s in %s: return %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                    del args[0]
+                i = 0
+                for t in atypes:
+                    i = i + 1
+                    # special dispensation for these functions: they
+                    # handle str and json arguments both correctly
+                    if func in ('JSONstr2json', 'JSONisvalid', 'JSONisobject', 'JSONisarray') and t in ('str', 'json'):
+                        t = args[0][0]
+                    if t != args[0][0]:
+                        print '%s in %s: argument %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                    elif report_const and not args[0][1]:
+                        print '%s in %s: argument %d not const for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                    del args[0]
 
-for malf, func, f in malpats:
-    if not pdecls.has_key(func):
-        print '%s: missing for MAL pattern %s in %s' % (func, malf, f)
+    for malf, func, f in malpats:
+        if not pdecls.has_key(func):
+            print '%s: missing for MAL pattern %s in %s' % (func, malf, f)
