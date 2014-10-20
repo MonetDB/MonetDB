@@ -2,11 +2,16 @@ import re, sys
 
 import exportutils
 
+# MAL function: optional module with function name
+malfre = r'(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9]*\.)?(?:[a-zA-Z_][a-zA-Z_0-9]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?'
+# MAL address declaration
+addrre = r'address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)'
+
 # recognize MAL "command" declarations
-comreg = re.compile(r'\bcommand\s+(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9.]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\]|:\s*[a-zA-Z_][a-zA-Z_0-9]*|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
+comreg = re.compile(r'\bcommand\s+' + malfre + r'\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\]|:\s*[a-zA-Z_][a-zA-Z_0-9]*|)\s+' + addrre + r'\b')
 
 # recognize MAL "pattern" declarations
-patreg = re.compile(r'\bpattern\s+(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9.]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\](?:\.\.\.)?|:\s*[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+address\s+(?P<func>[a-zA-Z_][a-zA-Z_0-9]*)\b')
+patreg = re.compile(r'\bpattern\s+' + malfre + r'\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\](?:\.\.\.)?|:\s*[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+' + addrre + r'\b')
 
 treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
