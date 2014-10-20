@@ -281,7 +281,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
-	BUN i, j ;
+	BUN i, j =0 ;
 	int size;
 	MosaicBlk blk = task->blk;
 
