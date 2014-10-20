@@ -156,6 +156,14 @@ dbCommit(conn)
 stopifnot(identical(1L, tsize(conn, tname)))
 dbRemoveTable(conn,tname)
 
+# funny characters in strings
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+sq <- dbSendQuery(conn,"create table monetdbtest (a string)")
+sq <- dbSendQuery(conn,"INSERT INTO monetdbtest VALUES ('Роман Mühleisen')")
+stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
+dbRollback(conn)
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))

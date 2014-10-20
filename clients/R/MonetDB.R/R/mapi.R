@@ -117,7 +117,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (getOption("monetdb.debug.mapi", F)) {
       dstr <- respstr
       if (nchar(dstr) > 300) {
-        dstr <- paste0(substring(dstr, 1, 200), "...", substring(dstr, nchar(dstr)-100, nchar(dstr))) 
+        dstr <- paste0(substring(dstr, 1, 200), "...", substring(dstr, nchar(dstr) -100, nchar(dstr))) 
       } 
       message("RX: '", dstr, "'")
     }
@@ -128,21 +128,22 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       stop("I can only be called with a MonetDB connection object as parameter.")
     resp <- list()
     repeat {
-      unpacked <- readBin(con,"integer",n=1,size=2,signed=FALSE,endian="little")
+      unpacked <- readBin(con, "integer", n=1, size=2, signed=FALSE, endian="little")
       
       if (length(unpacked) == 0) {
         stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
       }
-      
-      length <- bitwShiftR(unpacked,1)
-      final  <- bitwAnd(unpacked,1)
+
+      length <- bitwShiftR(unpacked, 1)
+      final  <- bitwAnd(unpacked, 1)
           
       if (length == 0) break
-      resp <- c(resp,readChar(con, length, useBytes = TRUE))    
+      # no raw handling here (see .mapiWrite), since server tells us the length in bytes already
+      resp <- c(resp, readChar(con, length, useBytes = TRUE))    
       if (final == 1) break
     }
-    if (getOption("monetdb.debug.mapi", F)) cat(paste("RX: '",substring(paste0(resp,collapse=""),1,200),"'\n",sep=""))
-    return(paste0("",resp,collapse=""))
+    if (getOption("monetdb.debug.mapi", F)) cat(paste("RX: '", substring(paste0(resp, collapse=""), 1, 200), "'\n", sep=""))
+    return(paste0("", resp, collapse=""))
   }
 }
 
@@ -161,15 +162,18 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       stop("I can only be called with a MonetDB connection object as parameter.")
     final <- FALSE
     pos <- 0
-    if (getOption("monetdb.debug.mapi", F))  message("TX: '",msg,"'\n",sep="")
-    while (!final) {    
-      req <- substring(msg,pos+1,min(MAX_PACKET_SIZE, nchar(msg))+pos)
-      bytes <- nchar(req)
+    if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg, "'\n", sep="")
+    # convert to raw byte array, otherwise multibyte characters are 'difficult'
+    msgr <- charToRaw(msg)
+    msglen <- length(msgr)
+    while (!final) {
+      reqr <- msgr[pos+1 : min(MAX_PACKET_SIZE, msglen) + pos]
+      bytes <- length(reqr)
       pos <- pos + bytes
-      final <- max(nchar(msg) - pos,0) == 0            
-      header <- as.integer(bitwOr(bitwShiftL(bytes,1),as.numeric(final)))
-      writeBin(header, con, 2,endian="little")
-      writeChar(req,con,bytes,useBytes=TRUE,eos=NULL)
+      final <- max(msglen - pos, 0) == 0            
+      header <- as.integer(bitwOr(bitwShiftL(bytes, 1), as.numeric(final)))
+      writeBin(header, con, 2, endian="little")
+      writeBin(reqr, con, endian="little")
     }
     flush(con)
   }
