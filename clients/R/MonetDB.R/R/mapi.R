@@ -167,8 +167,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     msgr <- charToRaw(msg)
     msglen <- length(msgr)
     while (!final) {
-      reqr <- msgr[pos+1 : min(MAX_PACKET_SIZE, msglen) + pos]
-      bytes <- length(reqr)
+      bytes <- min(MAX_PACKET_SIZE, msglen - pos)
+      reqr <- msgr[(pos + 1) : (pos + bytes)]
       pos <- pos + bytes
       final <- max(msglen - pos, 0) == 0            
       header <- as.integer(bitwOr(bitwShiftL(bytes, 1), as.numeric(final)))
