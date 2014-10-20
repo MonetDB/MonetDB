@@ -148,7 +148,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		if (!t && rel->r) /* dict */
 			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
-	}	break;
+	}
 	case op_select:
 	case op_project:
 		if (rel->l)
@@ -157,7 +157,6 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 static lng
@@ -185,7 +184,6 @@ rel_getwidth(mvc *sql, sql_rel *rel)
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 static lng
