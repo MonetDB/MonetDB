@@ -564,7 +564,7 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		sql_column *c = n->data;
 		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 
-		if (c->null != nc->null) {
+		if (c->null != nc->null && isTable(nt)) {
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
 			if (c->null == 0) {

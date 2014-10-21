@@ -604,7 +604,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
 		char *msg = "";
 
 		switch (s->token) {
@@ -1072,6 +1072,21 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt)
 			return -2;
 		}
 	}
+	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs)) {
+		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+		return -1;
+	}
+	if (cs_size(&nt->idxs))
+	for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
+		sql_idx *ni = n->data;
+		sql_idx *mi = m->data;
+
+		/* todo check def */
+		if (ni->type != mi->type) {
+			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+			return -2;
+		}
+	}
 	return 0;
 }
 
@@ -1120,6 +1135,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			if (t->s && !nt->s)
 				nt->s = t->s;
 
+			if (nt->type == tt_merge_table)
+				return sql_error(sql, 02, "42S02!ALTER TABLE: read only MERGE TABLES are not supported");
+
 			if (state == tr_readonly) {
 				nt = mvc_readonly(sql, nt, 1);
 			} else {
@@ -1161,6 +1179,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 				cs_del(&nt->tables, n, ntt->base.flag); 
 			}
 		}
+
+		if (!isTable(nt))
+			return res;
 
 		/* new columns need update with default values */
 		updates = table_update_array(sql, nt);
