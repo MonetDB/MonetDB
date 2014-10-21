@@ -1425,7 +1425,7 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int ply = 1;
 	MOStask task;
 	int cases;
-	int i, j, ret, idx, p;
+	int i, j, ret, idx =0, p;
 	bat bid;
 	int pattern[1024];
 	float mx, xf[1024];
