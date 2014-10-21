@@ -1,5 +1,6 @@
 0.9.6
 - Fixed non-ASCII character handling (thanks, Roman!)
+- Fully removed C-based socket code
 
 0.9.5
 - Removed package date (Thanks, Dimitar)

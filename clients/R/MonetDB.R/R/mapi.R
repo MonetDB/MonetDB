@@ -86,20 +86,11 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 
 
 .mapiConnect <- function(host, port, timeout) {
-  if (getOption("monetdb.clib", FALSE)) {
-    return(.Call("mapiConnect", host, port, timeout, PACKAGE=C_LIBRARY))
-  } else {
-    return(socketConnection(host = host, port = port, blocking = TRUE, open="r+b", timeout = timeout))
-  }
+  socketConnection(host = host, port = port, blocking = TRUE, open="r+b", timeout = timeout)
 }
 
 .mapiDisconnect <- function(socket) {
-  if (getOption("monetdb.clib", FALSE)) {
-    .Call("mapiDisconnect", socket, PACKAGE=C_LIBRARY)
-  } else {
-      # close, don't care about the errors...
-      tryCatch(close(socket), error=function(e){}, warning=function(w){})
-  }
+  tryCatch(close(socket), error=function(e){}, warning=function(w){})
 }
 
 .mapiCleanup <- function(conObj) {
@@ -110,73 +101,48 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 }
 
 .mapiRead <- function(con) {
-  if (getOption("monetdb.clib", FALSE)) {
-    if (!identical(class(con)[[1]], "externalptr"))
-      stop("I can only be called with a MonetDB connection object as parameter.")
-    respstr <- .Call("mapiRead", con, PACKAGE=C_LIBRARY)
-    if (getOption("monetdb.debug.mapi", F)) {
-      dstr <- respstr
-      if (nchar(dstr) > 300) {
-        dstr <- paste0(substring(dstr, 1, 200), "...", substring(dstr, nchar(dstr) -100, nchar(dstr))) 
-      } 
-      message("RX: '", dstr, "'")
+  if (!identical(class(con)[[1]], "sockconn"))
+    stop("I can only be called with a MonetDB connection object as parameter.")
+  resp <- list()
+  repeat {
+    unpacked <- readBin(con, "integer", n=1, size=2, signed=FALSE, endian="little")
+    
+    if (length(unpacked) == 0) {
+      stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
     }
-    return(respstr)
-  } else { 
-    # R implementation
-    if (!identical(class(con)[[1]], "sockconn"))
-      stop("I can only be called with a MonetDB connection object as parameter.")
-    resp <- list()
-    repeat {
-      unpacked <- readBin(con, "integer", n=1, size=2, signed=FALSE, endian="little")
-      
-      if (length(unpacked) == 0) {
-        stop("Empty response from MonetDB server, probably a timeout. You can increase the time to wait for responses with the 'timeout' parameter to 'dbConnect()'.")
-      }
 
-      length <- bitwShiftR(unpacked, 1)
-      final  <- bitwAnd(unpacked, 1)
-          
-      if (length == 0) break
-      # no raw handling here (see .mapiWrite), since server tells us the length in bytes already
-      resp <- c(resp, readChar(con, length, useBytes = TRUE))    
-      if (final == 1) break
-    }
-    if (getOption("monetdb.debug.mapi", F)) cat(paste("RX: '", substring(paste0(resp, collapse=""), 1, 200), "'\n", sep=""))
-    return(paste0("", resp, collapse=""))
+    length <- bitwShiftR(unpacked, 1)
+    final  <- bitwAnd(unpacked, 1)
+        
+    if (length == 0) break
+    # no raw handling here (see .mapiWrite), since server tells us the length in bytes already
+    resp <- c(resp, readChar(con, length, useBytes = TRUE))    
+    if (final == 1) break
   }
+  if (getOption("monetdb.debug.mapi", F)) cat(paste("RX: '", substring(paste0(resp, collapse=""), 1, 200), "'\n", sep=""))
+  return(paste0("", resp, collapse=""))
 }
 
 .mapiWrite <- function(con, msg) {
-  if (getOption("monetdb.clib", FALSE)) {
-    # C implementation
-    if (!identical(class(con)[[1]], "externalptr"))
-        stop("I can only be called with a MonetDB connection object as parameter.")
-
-    if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg, "'")
-    .Call("mapiWrite", con, msg, PACKAGE=C_LIBRARY)
-
-  } else { 
-    # R implementation
-    if (!identical(class(con)[[1]], "sockconn"))
-      stop("I can only be called with a MonetDB connection object as parameter.")
-    final <- FALSE
-    pos <- 0
-    if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg, "'\n", sep="")
-    # convert to raw byte array, otherwise multibyte characters are 'difficult'
-    msgr <- charToRaw(msg)
-    msglen <- length(msgr)
-    while (!final) {
-      bytes <- min(MAX_PACKET_SIZE, msglen - pos)
-      reqr <- msgr[(pos + 1) : (pos + bytes)]
-      pos <- pos + bytes
-      final <- max(msglen - pos, 0) == 0            
-      header <- as.integer(bitwOr(bitwShiftL(bytes, 1), as.numeric(final)))
-      writeBin(header, con, 2, endian="little")
-      writeBin(reqr, con, endian="little")
-    }
-    flush(con)
+  # R implementation
+  if (!identical(class(con)[[1]], "sockconn"))
+    stop("I can only be called with a MonetDB connection object as parameter.")
+  final <- FALSE
+  pos <- 0
+  if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg, "'\n", sep="")
+  # convert to raw byte array, otherwise multibyte characters are 'difficult'
+  msgr <- charToRaw(msg)
+  msglen <- length(msgr)
+  while (!final) {
+    bytes <- min(MAX_PACKET_SIZE, msglen - pos)
+    reqr <- msgr[(pos + 1) : (pos + bytes)]
+    pos <- pos + bytes
+    final <- max(msglen - pos, 0) == 0            
+    header <- as.integer(bitwOr(bitwShiftL(bytes, 1), as.numeric(final)))
+    writeBin(header, con, 2, endian="little")
+    writeBin(reqr, con, endian="little")
   }
+  flush(con)
   return(NULL)
 }
 
