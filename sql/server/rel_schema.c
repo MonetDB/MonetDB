@@ -1161,7 +1161,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 			/* check tables */
 			if (nnt) {
-				if (rel_check_tables(sql, nt, nnt) < 0)
+				if (rel_check_tables(sql, t, nnt) < 0)
 					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
 			}

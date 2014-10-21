@@ -1,5 +1,6 @@
 mergeinit
 mergeload
+mergeloadidx
 mergequery
 emptymergequery
 alter

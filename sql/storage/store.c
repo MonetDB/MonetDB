@@ -1216,24 +1216,6 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
-	
-/*
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i);
-		}
-	}
-	if (t->keys.set) {
-		for (n = t->keys.set->h; n; n = n->next) {
-			sql_key *k = n->data;
-
-			mvc_copy_key(sql, nt, k);
-		}
-	}
-*/
-	/* TODO copy triggers */
-
 	return nt;
 }
 
