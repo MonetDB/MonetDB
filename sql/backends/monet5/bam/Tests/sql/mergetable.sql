@@ -16,7 +16,8 @@ CREATE MERGE TABLE alignments (
 	"pnext"          INT           NOT NULL,
 	"tlen"           INT           NOT NULL,
 	"seq"            STRING		   NOT NULL,
-	"qual"           STRING		   NOT NULL
+	"qual"           STRING		   NOT NULL,
+	CONSTRAINT "alignments_pkey_virtual_offset" PRIMARY KEY ("virtual_offset")
 );
 
 SELECT COUNT(*) FROM alignments;
