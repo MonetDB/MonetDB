@@ -568,7 +568,7 @@ BATimprints(BAT *b)
 {
 	BAT *o = NULL;
 	Imprints *imprints;
-	lng t0 =0,t1=0;
+	lng t0 = 0, t1 = 0;
 
 	assert(BAThdense(b));	/* assert void head */
 
