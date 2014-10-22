@@ -1334,7 +1334,7 @@ sql_update_feb2015(Client c)
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t bigint) returns timestamp external name calc.timestamp;\n");
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
