@@ -229,7 +229,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			shuffle_unique(hge, LT);
+			shuffle_unique(hge, LT, GETVAL);
 			break;
 #endif
 		case TYPE_flt:
@@ -265,7 +265,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			shuffle_unique(hge, GT);
+			shuffle_unique(hge, GT, GETVAL);
 			break;
 #endif
 		case TYPE_flt:
