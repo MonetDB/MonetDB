@@ -31566,7 +31566,7 @@ command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2]
 address BKCdelete_bun;
 comment Delete one specific BUN.
 
-command bat.densebat(size:wrd):bat[:void,:void] 
+command bat.densebat(size:wrd):bat[:oid,:oid] 
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'size'.
 
