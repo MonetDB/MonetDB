@@ -286,6 +286,17 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
 
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		return bn;
+	}
+
 	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
@@ -459,6 +470,28 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		n = cnt;
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return GDK_FAIL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		if (gids) {
+			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			if (gn == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(gn, 0);
+			BATseqbase(BATmirror(gn), 0);
+			*gids = gn;
+		}
+		*topn = bn;
+		return GDK_SUCCEED;
+	}
 
 	top = 0;
 	cmp = BATatoms[b->ttype].atomCmp;
@@ -734,6 +767,28 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		n = cnt;
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return GDK_FAIL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		if (gids) {
+			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			if (gn == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(gn, 0);
+			BATseqbase(BATmirror(gn), 0);
+			*gids = gn;
+		}
+		*topn = bn;
+		return GDK_SUCCEED;
+	}
 
 	top = 0;
 	cmp = BATatoms[b->ttype].atomCmp;
