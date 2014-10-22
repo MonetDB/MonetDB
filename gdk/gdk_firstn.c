@@ -437,7 +437,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 			for (j = 0; j < top; j++) {			\
 				if (v[i] == v[groups[j].bun]) {		\
 					if (bp)				\
-						*bp++ = i;		\
+						*bp++ = i + b->hseqbase; \
 					*gp++ = j;			\
 					break;				\
 				}					\
@@ -596,7 +596,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			for (j = 0; j < top; j++) {
 				if (i == groups[j].bun) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -628,7 +628,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			for (j = 0; j < top; j++) {
 				if (cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -717,7 +717,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 				if (gv[ci] == groups[j].grp &&		\
 				    v[i] == v[groups[j].bun]) {		\
 					if (bp)				\
-						*bp++ = i;		\
+						*bp++ = i + b->hseqbase; \
 					*gp++ = j;			\
 					break;				\
 				}					\
@@ -895,7 +895,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 				if (gv[ci] == groups[j].grp &&
 				    i == groups[j].bun) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -928,7 +928,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 				if (gv[ci] == groups[j].grp &&
 				    cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
