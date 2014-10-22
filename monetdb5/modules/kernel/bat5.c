@@ -948,81 +948,6 @@ BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
 	return MAL_SUCCEED;
 }
 
-str
-BKCdelete_bat(bat *r, const bat *bid, const bat *sid)
-{
-	BAT *bn, *b, *s;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATdelHead(b, s, FALSE);
-	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "bat.delete", GDK_EXCEPTION);
-	BBPkeepref(*r = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDdestroy(bit *res, const char *input)
-{
-	int bid = BBPindex(input);
-
-	*res = FALSE;
-	if (bid) {
-		BBPfix(bid);
-		if (BBPindex(input) == bid) {
-			BAT *b = BBPquickdesc(abs(bid), 0);
-
-			BATmode(b, TRANSIENT);
-			*res = TRUE;
-		}
-		BBPunfix(bid);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-BKCdestroy_bat(bit *r, const char * const *input)
-{
-	return CMDdestroy(r, *input);
-}
-
-str
-BKCdestroyImmediate(bit *r, const bat *bid)
-{
-	BAT *b;
-	char buf[512];
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		return MAL_SUCCEED;
-	BBPlogical(b->batCacheid, buf);
-	BBPreleaseref(b->batCacheid);
-	return CMDdestroy(r, buf);
-}
-
-char *
-BKCdestroy(bit *r, bat *bid)
-{
-	BAT *b;
-
-	(void) r;
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
-	*bid = bat_nil;
-	BATmode(b, TRANSIENT);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 char *
 BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 {
@@ -1833,22 +1758,6 @@ BKCload(bat *res, const char * const *input)
 }
 
 str
-BKChot(bat *res, const char * const *input)
-{
-	(void) res;		/* fool compiler */
-	BBPhot(BBPindex(*input));
-	return MAL_SUCCEED;
-}
-
-str
-BKCcold(bat *res, const char * const *input)
-{
-	(void) res;		/* fool compiler */
-	BBPcold(BBPindex(*input));
-	return MAL_SUCCEED;
-}
-
-str
 BKCcoldBAT(void *res, const bat *bid)
 {
 	BAT *b;
@@ -1943,25 +1852,6 @@ BKCmmap2(bit *res, const bat *bid, const int *mode)
  * Accelerator Control
  */
 str
-BKCaccbuild(bat *ret, const bat *bid, const char * const *acc, const ptr *param)
-{
-	(void) bid;
-	(void) acc;
-	(void) param;
-	*ret = TRUE;
-	throw(MAL, "Accelerator", PROGRAM_NYI);
-}
-
-str
-BKCaccbuild_std(bat *ret, const bat *bid, const int *acc)
-{
-	(void) bid;
-	(void) acc;
-	*ret = TRUE;
-	throw(MAL, "Accelerator", PROGRAM_NYI);
-}
-
-str
 BKCsetHash(bit *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -1989,29 +1879,6 @@ BKCsetImprints(bit *ret, const bat *bid)
 	*ret = b == bn;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-BKCsetSequenceBase(bat *r, const bat *bid, const oid *o)
-{
-    BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL) {
-        throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
-    }
-    BATseqbase(b, *o);
-    *r = b->batCacheid;
-    BBPkeepref(b->batCacheid);
-    return MAL_SUCCEED;
-}
-
-str
-BKCsetSequenceBaseNil(bat *r, const bat *bid, const oid *o)
-{
-	oid ov = oid_nil;
-
-	(void) o;
-	return BKCsetSequenceBase(r, bid, &ov);
 }
 
 str

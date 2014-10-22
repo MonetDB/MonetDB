@@ -345,16 +345,16 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		free(pkeys);
 		if (c_faction) {
 			int action = atoi(c_faction);
-			int on_update = (action >> 8) & 255;
-			int on_delete = action & 255;
+			int on_update;
+			int on_delete;
 
-			if (0 < on_delete &&
-			    on_delete < NR_ACTIONS &&
+			if (action > 0 &&
+			    (on_delete = action & 255) < NR_ACTIONS &&
 			    on_delete != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON DELETE %s",
 					     actions[on_delete]);
-			if (0 < on_update &&
-			    on_update < NR_ACTIONS &&
+			if (action > 0 &&
+			    (on_update = (action >> 8) & 255) < NR_ACTIONS &&
 			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);

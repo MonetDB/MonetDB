@@ -27,6 +27,6 @@
 
 opt_export int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGdeadcode  if ( optDebug & (1 <<DEBUG_OPT_DEADCODE) )
+#define OPTDEBUGdeadcode  if ( optDebug & ((lng) 1 <<DEBUG_OPT_DEADCODE) )
 
 #endif

@@ -27,7 +27,7 @@ opt_export int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 opt_export str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGmacro  if ( optDebug & (1 <<DEBUG_OPT_MACRO) )
-#define OPTDEBUGorcam  if ( optDebug & (1 <<DEBUG_OPT_ORCAM) )
+#define OPTDEBUGmacro  if ( optDebug & ((lng) 1 <<DEBUG_OPT_MACRO) )
+#define OPTDEBUGorcam  if ( optDebug & ((lng) 1 <<DEBUG_OPT_ORCAM) )
 
 #endif /* _MAL_MACRO_H_ */

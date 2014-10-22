@@ -82,7 +82,6 @@ algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 algebra_export str ALGcopy(bat *result, const bat *bid);
 algebra_export str ALGsubunique2(bat *result, const bat *bid, const bat *sid);
 algebra_export str ALGsubunique1(bat *result, const bat *bid);
-algebra_export str ALGcross(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGantijoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGjoin(bat *result, const bat *lid, const bat *rid);
@@ -125,8 +124,6 @@ algebra_export str ALGcount_no_nil(wrd *result, const bat *bid);
 algebra_export str ALGtmark(bat *result, const bat *bid, const oid *base);
 algebra_export str ALGtmark_default(bat *result, const bat *bid);
 algebra_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
-algebra_export str ALGmarkHead_default(bat *result, const bat *bid);
-algebra_export str ALGhmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
 algebra_export str ALGmark_grp_1(bat *result, const bat *bid, const bat *gid);
 algebra_export str ALGmark_grp_2(bat *result, const bat *bid, const bat *gid, const oid *base);
 algebra_export str ALGlike(bat *ret, const bat *bid, const str *k);
@@ -135,10 +132,8 @@ algebra_export str ALGslice_int(bat *ret, const bat *bid, const int *start, cons
 algebra_export str ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end);
 algebra_export str ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end);
 algebra_export str ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end);
-algebra_export str ALGfetch(ptr ret, const bat *bid, const lng *pos);
 algebra_export str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
-algebra_export str ALGfetchint(ptr ret, const bat *bid, const int *pos);
-algebra_export str ALGexist(bit *ret, const bat *bid, ptr val);
+algebra_export str ALGexist(bit *ret, const bat *bid, const void *val);
 algebra_export str ALGfind(ptr ret, const bat *bid, ptr val);
 algebra_export str ALGindexjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGprojectNIL(bat *ret, const bat *bid);
@@ -147,6 +142,5 @@ algebra_export str ALGselectNotNil(bat *result, const bat *bid);
 algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-algebra_export str ALGidentity(bat *ret, const bat *bid);
 algebra_export str ALGreuse(bat *ret, const bat *bid);
 #endif

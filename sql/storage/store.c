@@ -1226,24 +1226,6 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
-	
-/*
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i);
-		}
-	}
-	if (t->keys.set) {
-		for (n = t->keys.set->h; n; n = n->next) {
-			sql_key *k = n->data;
-
-			mvc_copy_key(sql, nt, k);
-		}
-	}
-*/
-	/* TODO copy triggers */
-
 	return nt;
 }
 
@@ -4014,7 +3996,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	int nr = list_length(mt->tables.set);
 
-	/* TODO add dependency betweem mt/pt */
+	/* merge table depends on part table */
+	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	cs_add(&mt->tables, pt, TR_NEW);
 	pt->p = mt;
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
@@ -4030,7 +4013,8 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	node *n = cs_find_name(&mt->tables, pt->base.name);
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "name"), pt->base.name, NULL);
 
-	/* TODO drop dependency betweem mt/pt */
+	/* merge table depends on part table */
+	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	cs_del(&mt->tables, n, pt->base.flag);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);

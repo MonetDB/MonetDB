@@ -1529,12 +1529,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		if (!distinct_topn && match == 1 && bats == 1 && (p->argc-p->retc) == 2 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
+		if (!distinct_topn && match == 1 && bats == 1 && (p->argc-p->retc) == 4 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
 			mtop = mat_topn(mb, p, mat, mtop, m, -1, -1);
 			actions++;
 			continue;
 		}
-		if (!distinct_topn && match == 3 && bats == 3 && (p->argc-p->retc) == 4 && isTopn(p) &&
+		if (!distinct_topn && match == 3 && bats == 3 && (p->argc-p->retc) == 6 && isTopn(p) &&
 	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0) &&
 	 	   ((n=is_a_mat(getArg(p,p->retc+1), mat, mtop)) >= 0) &&
 	 	   ((o=is_a_mat(getArg(p,p->retc+2), mat, mtop)) >= 0)) {

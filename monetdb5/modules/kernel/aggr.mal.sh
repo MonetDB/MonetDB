@@ -304,7 +304,7 @@ comment "Grouped median aggregate";
 
 function median(b:bat[:oid,:any_1]) :any_1;
 	bn := submedian(b, false);
-	return algebra.fetch(bn, 0);
+	return algebra.fetch(bn, 0@0);
 end aggr.median;
 
 command submedian(b:bat[:oid,:any_1],skip_nils:bit) :bat[:oid,:any_1]
@@ -326,7 +326,7 @@ comment "Grouped quantile aggregate";
 
 function quantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl]) :any_1;
 	bn := subquantile(b, q, false);
-	return algebra.fetch(bn, 0);
+	return algebra.fetch(bn, 0@0);
 end aggr.quantile;
 
 command subquantile(b:bat[:oid,:any_1],q:bat[:oid,:dbl],skip_nils:bit) :bat[:oid,:any_1]

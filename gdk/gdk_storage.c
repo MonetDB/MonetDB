@@ -65,7 +65,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	char *path;
 
 	assert(dir == NULL || *dir != DIR_SEP);
-	assert(farmid == -1 ||
+	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
 	if (MT_path_absolute(name))
 		return NULL;
@@ -77,13 +77,13 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 		sep[0] = DIR_SEP;
 		sep[1] = 0;
 	}
-	pathlen = (farmid == -1 ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
+	pathlen = (farmid == NOFARM ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
 		(dir ? strlen(dir) : 0) + strlen(sep) + strlen(name) +
 		(ext ? strlen(ext) + 1 : 0) + 1;
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
-	if (farmid == -1) {
+	if (farmid == NOFARM) {
 		snprintf(path, pathlen, "%s%s%s%s%s",
 			 dir ? dir : "", sep, name,
 			 ext ? "." : "", ext ? ext : "");
@@ -755,7 +755,7 @@ BATload_intern(bat i, int lock)
 	}
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) < 0) {
-			HEAPfree(&b->H->heap);
+			HEAPfree(&b->H->heap, 0);
 			return NULL;
 		}
 		if (b->htype == TYPE_void) {
@@ -775,8 +775,8 @@ BATload_intern(bat i, int lock)
 				h = HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
 			}
 			if (h < 0) {
-				HEAPfree(&b->H->heap);
-				HEAPfree(&b->T->heap);
+				HEAPfree(&b->H->heap, 0);
+				HEAPfree(&b->T->heap, 0);
 				return NULL;
 			}
 		}
@@ -787,8 +787,8 @@ BATload_intern(bat i, int lock)
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype)) {
 		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
-			HEAPfree(&b->H->heap);
-			HEAPfree(&b->T->heap);
+			HEAPfree(&b->H->heap, 0);
+			HEAPfree(&b->T->heap, 0);
 			return NULL;
 		}
 		if (ATOMstorage(b->htype) == TYPE_str) {
@@ -800,9 +800,9 @@ BATload_intern(bat i, int lock)
 	if (ATOMvarsized(b->ttype)) {
 		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
 			if (b->H->vheap)
-				HEAPfree(b->H->vheap);
-			HEAPfree(&b->H->heap);
-			HEAPfree(&b->T->heap);
+				HEAPfree(b->H->vheap, 0);
+			HEAPfree(&b->H->heap, 0);
+			HEAPfree(&b->T->heap, 0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
@@ -864,7 +864,7 @@ BATdelete(BAT *b)
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
-		HEAPfree(&b->H->heap);
+		HEAPfree(&b->H->heap, 1);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
@@ -872,7 +872,7 @@ BATdelete(BAT *b)
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
-		HEAPfree(&b->T->heap);
+		HEAPfree(&b->T->heap, 1);
 	}
 	if (b->H->vheap) {
 		assert(b->H->vheap->parentid == bid);
@@ -880,7 +880,7 @@ BATdelete(BAT *b)
 			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->H->vheap);
+			HEAPfree(b->H->vheap, 1);
 		}
 	}
 	if (b->T->vheap) {
@@ -889,7 +889,7 @@ BATdelete(BAT *b)
 			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->T->vheap);
+			HEAPfree(b->T->vheap, 1);
 		}
 	}
 	b->batCopiedtodisk = FALSE;

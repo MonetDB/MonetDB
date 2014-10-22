@@ -1756,7 +1756,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			return rel;
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->tables.set))
-			return sql_error(sql, 02, "Unable to query empty Merge or Replica tables");
+			return sql_error(sql, 02, "MERGE or REPLICA TABLE should have at least one table associated");
 
 		return rel_basetable(sql, t, tname);
 	} else if (tableref->token == SQL_VALUES) {

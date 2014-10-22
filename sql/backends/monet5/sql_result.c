@@ -1772,7 +1772,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return -1;
 
 	count = m->reply_size;
-	if (count <= 0 || count >= BATcount(order)) {
+	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
 		count = BATcount(order);
 		clean = 1;
 	}

@@ -48,14 +48,14 @@ set -e
 init() {
     if [ ! -d ${DBFARM} ]; then
         mkdir ${DBFARM}
-		echo "${DBDARM} doesn't exists, creating..."
+		echo "${DBFARM} doesn't exist, creating..."
     fi
 
 	chown -R monetdb.monetdb ${DBFARM}
 	chmod 770 ${DBFARM}
 
 	if [ ! -f ${DBFARM}/.merovingian_properties ]; then
-		echo "${DBDARM} not initialized, initializing..."
+		echo "${DBFARM} not initialized, initializing..."
 		sudo -u monetdb ${DAEMON} create ${DBFARM} || exit 1
 	fi
 }

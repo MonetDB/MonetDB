@@ -564,7 +564,7 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		sql_column *c = n->data;
 		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 
-		if (c->null != nc->null) {
+		if (c->null != nc->null && isTable(nt)) {
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
 			if (c->null == 0) {
@@ -3149,16 +3149,10 @@ not_unique_oids(bat *ret, const bat *bid)
 
 /* row case */
 str
-SQLidentity(bat *ret, const bat *bid)
+SQLidentity(oid *ret, const void *i)
 {
-	BAT *bn, *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.identity", "Cannot access descriptor");
-	}
-	bn = VIEWhead(b);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
+	(void)i;
+	*ret = 0;
 	return MAL_SUCCEED;
 }
 

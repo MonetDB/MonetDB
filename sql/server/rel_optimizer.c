@@ -1366,7 +1366,6 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 	default:
 		return 1;
 	}
-	return 0;
 }
 
 static int
@@ -1406,8 +1405,6 @@ exp_needs_push_down(sql_exp *e)
 	default:
 		return 0;
 	}
-	return 0;
-
 }
 
 static int

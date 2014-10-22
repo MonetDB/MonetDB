@@ -302,10 +302,7 @@ BATsubunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
-		else
-			HEAPdelete(hp, nme, ext);
+		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);
@@ -322,10 +319,7 @@ BATsubunique(BAT *b, BAT *s)
 	if (seen)
 		GDKfree(seen);
 	if (hp) {
-		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
-		else
-			HEAPdelete(hp, nme, ext);
+		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);

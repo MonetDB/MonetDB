@@ -1250,8 +1250,11 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 static int
 destroy_dbat(sql_trans *tr, sql_dbat *bat)
 {
-	sql_dbat *n = bat->next;
-
+	sql_dbat *n;
+       
+	if (!bat)
+		return LOG_OK;
+	n = bat->next;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -1760,19 +1763,18 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 	if (ft->base.allocated) {
 		if (store_nr_active > 1) { /* move delta */
-			sql_dbat *b = ft->data, *p = NULL;
+			sql_dbat *b = ft->data;
 
 			ft->data = NULL;
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->wtime >= oldest->stime) {
-				p = b;
+			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			}
-			if (b && b->wtime < oldest->stime && p) {
-				p->next = NULL;
-				destroy_dbat(tr, b);
+			if (b && b->wtime < oldest->stime) {
+				/* anything older can go */
+				destroy_dbat(tr, b->next);
+				b->next = NULL;
 			}
 		} else {
 			assert(tt->base.allocated);
@@ -1786,18 +1788,17 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (cc->base.wtime && cc->base.allocated) {
 			assert(oc->base.wtime < cc->base.wtime);
 			if (store_nr_active > 1) { /* move delta */
-				sql_delta *b = cc->data, *p = NULL;
+				sql_delta *b = cc->data;
 
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
-				while (b && b->wtime >= oldest->stime) {
-					p = b;
+				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				}
-				if (b && b->wtime < oldest->stime && p) {
-					p->next = NULL;
-					destroy_bat(tr, b);
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
 				}
 			} else {
 				assert(oc->base.allocated);
@@ -1836,18 +1837,17 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				continue;
 			}
 			if (store_nr_active > 1) { /* move delta */
-				sql_delta *b = ci->data, *p = NULL;
+				sql_delta *b = ci->data;
 
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
-				while (b && b->wtime >= oldest->stime) {
-					p = b;
+				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				}
-				if (b && b->wtime < oldest->stime && p) {
-					p->next = NULL;
-					destroy_bat(tr, b);
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
 				}
 			} else {
 				assert(oi->base.allocated);

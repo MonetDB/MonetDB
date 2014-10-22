@@ -28,7 +28,7 @@
  * argument) and then the OIDs of the first n elements are returned.
  *
  * In addition to the input BAT b, there can be a standard candidate
- * list s.  It s is specified (non-NULL), only elements in b that are
+ * list s.  If s is specified (non-NULL), only elements in b that are
  * referred to in s are considered.
  *
  * If the third input bat g is non-NULL, then s must also be non-NULL.
@@ -44,6 +44,10 @@
  * group value counts in determining duplication), all duplicates are
  * returned.
  *
+ * If distinct is set, the result contains n complete groups of values
+ * instead of just n values (or slightly more than n if gids is set
+ * since then the "last" group is returned completely).
+ *
  * Note that BATfirstn can be called in cascading fashion to calculate
  * the first n values of a table of multiple columns:
  *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc, distinct);
@@ -55,47 +59,85 @@
  * the major key.
  */
 
-#define shuffle_unique_body(COMPARE)					\
+/* We use a binary heap for the implementation of the simplest form of
+ * first-N.  During processing, the oids list forms a heap with the
+ * root at position 0 and the children of a node at position n at
+ * positions 2*n+1 and 2*n+2.  The parent node is always
+ * smaller/larger (depending on the value of asc) than its children
+ * (recursively).  The heapify macro creates the heap from the input
+ * in-place.  We start off with a heap containing the first N elements
+ * of the input, and then go over the rest of the input, replacing the
+ * root of the heap with a new value if appropriate (if the new value
+ * is among the first-N seen so far).  The siftup macro then restores
+ * the heap property. */
+#define siftup(OPER, START, GET)					\
 	do {								\
-		for (i = cand ? *cand++ - b->hseqbase : start;		\
-		     i < end;						\
-		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
-			for (j = 0; j < n; j++) {			\
-				if (j == top) {				\
-					assert(top < n);		\
-					oids[top++] = i + b->hseqbase;	\
-					break;				\
-				}					\
-				assert(oids[j] >= b->hseqbase);		\
-				assert(oids[j] - b->hseqbase < i);	\
-				if (COMPARE) {				\
-					if (top < n)			\
-						top++;			\
-					for (k = top - 1; k > j; k--)	\
-						oids[k] = oids[k - 1];	\
-					oids[j] = i + b->hseqbase;	\
-					break;				\
-				}					\
+	    pos = (START);						\
+		childpos = (pos << 1) + 1;				\
+		while (childpos < n) {					\
+			/* find most extreme child */			\
+			if (childpos + 1 < n &&				\
+			    !(OPER(GET(oids[childpos + 1]),		\
+				   GET(oids[childpos]))))		\
+				childpos++;				\
+			/* compare parent with most extreme child */	\
+			if (OPER(GET(oids[pos]), GET(oids[childpos]))) { \
+				/* exchange parent with child and */	\
+				/* sift child further */		\
+				item = oids[pos];			\
+				oids[pos] = oids[childpos];		\
+				oids[childpos] = item;			\
+				pos = childpos;				\
+				childpos = (pos << 1) + 1;		\
+				continue;				\
+			}						\
+			break;						\
+		}							\
+	} while (0)
+
+#define heapify(OPER, GET)				\
+	do {						\
+		for (i = n / 2; i > 0; i--)		\
+			siftup(OPER, i - 1, GET);	\
+	} while (0)
+
+#define GETVAL(o)	vals[(o) - b->hseqbase]
+#define GETVALany(o)	BUNtail(bi, (o) - b->hseqbase + BUNfirst(b))
+#define LTany(a, b)	(cmp(a, b) < 0)
+#define GTany(a, b)	(cmp(a, b) > 0)
+
+#define shuffle_unique(TYPE, OPER, GET)					\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		heapify(OPER, GET);					\
+		while (cand ? cand < candend : start < end) {		\
+			i = cand ? *cand++ : start++ + b->hseqbase;	\
+			if (OPER(GET(i), GET(oids[0]))) {		\
+				oids[0] = i;				\
+				siftup(OPER, 0, GET);			\
 			}						\
 		}							\
 	} while (0)
 
-#define shuffle_unique(TYPE, OPER)					\
-	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
-		shuffle_unique_body(OPER(v[i], v[oids[j] - b->hseqbase])); \
-	} while (0)
-
+/* This version of BATfirstn returns a list of N oids (where N is the
+ * smallest among BATcount(b), BATcount(s), and n).  The oids returned
+ * refer to the N smallest/largest (depending on asc) tail values of b
+ * (taking the optional candidate list s into account).  If there are
+ * multiple equal values to take us past N, we return a subset of those.
+ */
 static BAT *
 BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 	oid *oids;
-	BUN top, i, j, k, cnt, start, end;
+	BUN i, cnt, start, end;
 	const oid *cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
+	/* variables used in heapify/siftup macros */
+	oid item;
+	BUN pos, childpos;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -156,7 +198,6 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	BATsetcount(bn, n);
 	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
-	top = 0;
 	cmp = BATatoms[b->ttype].atomCmp;
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
@@ -165,62 +206,83 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		/* note, this takes care of types oid and wrd */
 		tpe = ATOMstorage(tpe);
 	}
+	if (cand) {
+		for (i = 0; i < n; i++)
+			oids[i] = *cand++;
+	} else {
+		for (i = 0; i < n; i++)
+			oids[i] = start++ + b->hseqbase;
+	}
 	if (asc) {
 		switch (tpe) {
 		case TYPE_bte:
-			shuffle_unique(bte, LT);
+			shuffle_unique(bte, LT, GETVAL);
 			break;
 		case TYPE_sht:
-			shuffle_unique(sht, LT);
+			shuffle_unique(sht, LT, GETVAL);
 			break;
 		case TYPE_int:
-			shuffle_unique(int, LT);
+			shuffle_unique(int, LT, GETVAL);
 			break;
 		case TYPE_lng:
-			shuffle_unique(lng, LT);
+			shuffle_unique(lng, LT, GETVAL);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			shuffle_unique(hge, LT);
+			shuffle_unique(hge, LT, GETVAL);
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique(flt, LT);
+			shuffle_unique(flt, LT, GETVAL);
 			break;
 		case TYPE_dbl:
-			shuffle_unique(dbl, LT);
+			shuffle_unique(dbl, LT, GETVAL);
 			break;
 		default:
-			shuffle_unique_body(cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, oids[j] - b->hseqbase + BUNfirst(b))) < 0);
+			heapify(LTany, GETVALany);
+			while (cand ? cand < candend : start < end) {
+				i = cand ? *cand++ : start++ + b->hseqbase;
+				if (LTany(GETVALany(i), GETVALany(oids[0]))) {
+					oids[0] = i;
+					siftup(LTany, 0, GETVALany);
+				}
+			}
 			break;
 		}
 	} else {
 		switch (tpe) {
 		case TYPE_bte:
-			shuffle_unique(bte, GT);
+			shuffle_unique(bte, GT, GETVAL);
 			break;
 		case TYPE_sht:
-			shuffle_unique(sht, GT);
+			shuffle_unique(sht, GT, GETVAL);
 			break;
 		case TYPE_int:
-			shuffle_unique(int, GT);
+			shuffle_unique(int, GT, GETVAL);
 			break;
 		case TYPE_lng:
-			shuffle_unique(lng, GT);
+			shuffle_unique(lng, GT, GETVAL);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			shuffle_unique(hge, GT);
+			shuffle_unique(hge, GT, GETVAL);
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique(flt, GT);
+			shuffle_unique(flt, GT, GETVAL);
 			break;
 		case TYPE_dbl:
-			shuffle_unique(dbl, GT);
+			shuffle_unique(dbl, GT, GETVAL);
 			break;
 		default:
-			shuffle_unique_body(cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, oids[j] - b->hseqbase + BUNfirst(b))) > 0);
+			heapify(GTany, GETVALany);
+			while (cand ? cand < candend : start < end) {
+				i = cand ? *cand++ : start++ + b->hseqbase;
+				if (GTany(GETVALany(i), GETVALany(oids[0]))) {
+					oids[0] = i;
+					siftup(GTany, 0, GETVALany);
+				}
+			}
 			break;
 		}
 	}
@@ -295,6 +357,17 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		n = cnt;
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		return bn;
+	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
@@ -446,7 +519,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 			for (j = 0; j < top; j++) {			\
 				if (v[i] == v[groups[j].bun]) {		\
 					if (bp)				\
-						*bp++ = i;		\
+						*bp++ = i + b->hseqbase; \
 					*gp++ = j;			\
 					break;				\
 				}					\
@@ -479,6 +552,28 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		n = cnt;
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return GDK_FAIL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		if (gids) {
+			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			if (gn == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(gn, 0);
+			BATseqbase(BATmirror(gn), 0);
+			*gids = gn;
+		}
+		*topn = bn;
+		return GDK_SUCCEED;
+	}
 
 	top = 0;
 	cmp = BATatoms[b->ttype].atomCmp;
@@ -593,7 +688,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			for (j = 0; j < top; j++) {
 				if (i == groups[j].bun) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -630,7 +725,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			for (j = 0; j < top; j++) {
 				if (cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -719,7 +814,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 				if (gv[ci] == groups[j].grp &&		\
 				    v[i] == v[groups[j].bun]) {		\
 					if (bp)				\
-						*bp++ = i;		\
+						*bp++ = i + b->hseqbase; \
 					*gp++ = j;			\
 					break;				\
 				}					\
@@ -769,6 +864,28 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		n = cnt;
 	if (cand && n > (BUN) (candend - cand))
 		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return GDK_FAIL;
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+		if (gids) {
+			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			if (gn == NULL) {
+				BBPreclaim(bn);
+				return GDK_FAIL;
+			}
+			BATseqbase(gn, 0);
+			BATseqbase(BATmirror(gn), 0);
+			*gids = gn;
+		}
+		*topn = bn;
+		return GDK_SUCCEED;
+	}
 
 	top = 0;
 	cmp = BATatoms[b->ttype].atomCmp;
@@ -885,7 +1002,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 				if (gv[ci] == groups[j].grp &&
 				    i == groups[j].bun) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}
@@ -923,7 +1040,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 				if (gv[ci] == groups[j].grp &&
 				    cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
-						*bp++ = i;
+						*bp++ = i + b->hseqbase;
 					*gp++ = j;
 					break;
 				}

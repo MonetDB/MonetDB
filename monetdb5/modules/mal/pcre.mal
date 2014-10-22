@@ -20,10 +20,6 @@ command index(pat:pcre, s:str) :int
 address PCREindex
 comment "match a pattern, return matched position (or 0 when not found)";
 
-# command select(pat:str, strs:bat[:oid,:str]):bat[:oid,:str]
-# address PCREselect
-# comment "Select tuples based on the pattern";
-
 command match(s:str, pat:str):bit
 address PCREmatch
 comment "Perl Compatible Regular Expression pattern matching against a string";

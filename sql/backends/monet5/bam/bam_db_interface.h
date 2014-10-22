@@ -41,11 +41,11 @@
 		TO_LOG("%s\n", sql_log); \
 		GDKfree(sql_log); \
 	} \
-	msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE); \
+	msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE, NULL); \
 }
 #else
 #define RUN_SQL(cntxt, sql, descr, msg) { \
-	msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE); \
+	msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE, NULL); \
 }
 #endif
 

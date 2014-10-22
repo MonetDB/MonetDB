@@ -131,46 +131,48 @@ math_unary_FINITE(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-#define unopM5(NAME, FUNC)									\
-str															\
-MATHunary##NAME##dbl(dbl *res , const dbl *a)				\
-{															\
-	double tmp1,tmp2;										\
-	str msg= MAL_SUCCEED;									\
-	if (*a == dbl_nil) {									\
-		*res =dbl_nil;										\
-	} else {												\
-		tmp1= *a;											\
-		errno = 0;											\
-		feclearexcept(FE_ALL_EXCEPT);						\
-		tmp2 = FUNC(tmp1);									\
-		if (errno != 0 ||									\
-			fetestexcept(FE_INVALID | FE_DIVBYZERO |		\
-						 FE_OVERFLOW | FE_UNDERFLOW) != 0)	\
-			throw(MAL, "mmath." #FUNC, "Math exception");	\
-		*res = (dbl) tmp2;									\
-	}														\
-   return msg;												\
-}															\
-str															\
-MATHunary##NAME##flt(flt *res , const flt *a)				\
-{															\
-	double tmp1,tmp2;										\
-	str msg= MAL_SUCCEED;									\
-	if (*a == flt_nil) {									\
-		*res =flt_nil;										\
-	} else {												\
-		tmp1= *a;											\
-		errno = 0;											\
-		feclearexcept(FE_ALL_EXCEPT);						\
-		tmp2 = FUNC(tmp1);									\
-		if (errno != 0 ||									\
-			fetestexcept(FE_INVALID | FE_DIVBYZERO |		\
-						 FE_OVERFLOW | FE_UNDERFLOW) != 0)	\
-			throw(MAL, "mmath." #FUNC, "Math exception");	\
-		*res = (flt) tmp2;									\
-	}														\
-   return msg;												\
+#define unopM5(NAME, FUNC)										\
+str																\
+MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
+{																\
+	double tmp1,tmp2;											\
+	str msg= MAL_SUCCEED;										\
+	if (*a == dbl_nil) {										\
+		*res =dbl_nil;											\
+	} else {													\
+		tmp1= *a;												\
+		errno = 0;												\
+		feclearexcept(FE_ALL_EXCEPT);							\
+		tmp2 = FUNC(tmp1);										\
+		if (errno != 0 ||										\
+			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
+						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
+			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
+				  strerror(errno));								\
+		*res = (dbl) tmp2;										\
+	}															\
+   return msg;													\
+}																\
+str																\
+MATHunary##NAME##flt(flt *res , const flt *a)					\
+{																\
+	double tmp1,tmp2;											\
+	str msg= MAL_SUCCEED;										\
+	if (*a == flt_nil) {										\
+		*res =flt_nil;											\
+	} else {													\
+		tmp1= *a;												\
+		errno = 0;												\
+		feclearexcept(FE_ALL_EXCEPT);							\
+		tmp2 = FUNC(tmp1);										\
+		if (errno != 0 ||										\
+			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
+						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
+			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
+				  strerror(errno));								\
+		*res = (flt) tmp2;										\
+	}															\
+   return msg;													\
 }
 
 #define binopbaseM5(NAME,X2,X3)							\

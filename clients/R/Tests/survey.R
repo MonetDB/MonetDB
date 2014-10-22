@@ -10,6 +10,8 @@ dbport <- 50000
 dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
+if (length(args) > 1) 
+	dbname <- args[[2]]
 
 # install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
 
