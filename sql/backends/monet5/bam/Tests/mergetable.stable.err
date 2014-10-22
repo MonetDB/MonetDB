@@ -118,21 +118,13 @@ stderr of test 'mergetable` in directory 'sql/backends/monet5/bam` itself:
 # 08:29:32 >  "/usr/bin/python2" "mergetable.SQL.py" "mergetable"
 # 08:29:32 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-10986/.s.monetdb.37321
+MAPI  = (monetdb) /var/tmp/mtest-17563/.s.monetdb.34280
 QUERY = SELECT COUNT(*) FROM alignments;
-ERROR = !Unable to query empty Merge or Replica tables
-MAPI  = (monetdb) /var/tmp/mtest-10986/.s.monetdb.37321
-QUERY = ALTER TABLE alignments ADD TABLE alignments_1;
-ERROR = !ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-10986/.s.monetdb.37321
-QUERY = SELECT COUNT(*) FROM alignments;
-ERROR = !Unable to query empty Merge or Replica tables
-MAPI  = (monetdb) /var/tmp/mtest-10986/.s.monetdb.37321
-QUERY = ALTER TABLE alignments ADD TABLE alignments_2;
-ERROR = !ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-10986/.s.monetdb.37321
-QUERY = SELECT COUNT(*) FROM alignments;
-ERROR = !Unable to query empty Merge or Replica tables
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+
+# 18:59:22 >  
+# 18:59:22 >  "Done."
+# 18:59:22 >  
 
 # 08:29:33 >  
 # 08:29:33 >  "Done."

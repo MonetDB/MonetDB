@@ -68,7 +68,25 @@ Ready.
 #	"pnext"          INT           NOT NULL,
 #	"tlen"           INT           NOT NULL,
 #	"seq"            STRING		   NOT NULL,
-#	"qual"           STRING		   NOT NULL
+#	"qual"           STRING		   NOT NULL,
+#ALTER TABLE alignments ADD TABLE alignments_1;
+#SELECT COUNT(*) FROM alignments;
+% bam.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 71	]
+#ALTER TABLE alignments ADD TABLE alignments_2;
+#SELECT COUNT(*) FROM alignments;
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 3 # length
+[ 142	]
+
+# 18:59:22 >  
+# 18:59:22 >  "Done."
+# 18:59:22 >  
 
 # 08:29:33 >  
 # 08:29:33 >  "Done."
