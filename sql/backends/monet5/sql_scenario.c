@@ -872,17 +872,17 @@ sql_update_oct2014_2(Client c)
 	int recreate = 0;
 
 	/* get list of all foreign keys */
-	pos += snprintf(buf + pos, bufsize - pos, "SELECT fs.name, ft.name, fk.name, fk.\"action\", ps.name, pt.name FROM keys fk, tables ft, schemas fs, keys pk, tables pt, schemas ps WHERE fk.type = 2 AND (SELECT count(*) FROM objects o WHERE o.id = fk.id) > 1 AND ft.id = fk.table_id AND ft.schema_id = fs.id AND fk.rkey = pk.id AND pk.table_id = pt.id AND pt.schema_id = ps.id;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT fs.name, ft.name, fk.name, fk.\"action\", ps.name, pt.name FROM sys.keys fk, sys.tables ft, sys.schemas fs, sys.keys pk, sys.tables pt, sys.schemas ps WHERE fk.type = 2 AND (SELECT count(*) FROM sys.objects o WHERE o.id = fk.id) > 1 AND ft.id = fk.table_id AND ft.schema_id = fs.id AND fk.rkey = pk.id AND pk.table_id = pt.id AND pt.schema_id = ps.id;\n");
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, &fresult);
 
 	/* get all primary/unique keys */
 	pos = 0;
-	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, k.name, k.type FROM keys k, tables t, schemas s WHERE k.type < 2 AND (SELECT count(*) FROM objects o WHERE o.id = k.id) > 1 AND t.id = k.table_id AND t.schema_id = s.id;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, k.name, k.type FROM sys.keys k, sys.tables t, sys.schemas s WHERE k.type < 2 AND (SELECT count(*) FROM sys.objects o WHERE o.id = k.id) > 1 AND t.id = k.table_id AND t.schema_id = s.id;\n");
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, &presult);
 
 	/* get indices */
 	pos = 0;
-	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, i.name FROM idxs i, schemas s, tables t WHERE i.table_id = t.id AND t.schema_id = s.id AND t.system = FALSE AND (SELECT count(*) FROM objects o WHERE o.id = i.id) > 1;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, i.name FROM sys.idxs i, sys.schemas s, sys.tables t WHERE i.table_id = t.id AND t.schema_id = s.id AND t.system = FALSE AND (SELECT count(*) FROM sys.objects o WHERE o.id = i.id) > 1;\n");
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, &iresult);
 
 	if (fresult) {

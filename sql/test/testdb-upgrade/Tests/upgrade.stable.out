@@ -170,6 +170,12 @@ insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s
 set schema "testschema";
 
 #Interpreting bte as bit.
+Running database upgrade commands:
+ALTER table "testschema"."keytest1" ADD CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2");
+
+Running database upgrade commands:
+ALTER table "testschema"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "testschema"."keytest1" ("key1", "key2") ;
+
 
 # 15:08:13 >  
 # 15:08:13 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
