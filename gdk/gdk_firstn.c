@@ -44,6 +44,10 @@
  * group value counts in determining duplication), all duplicates are
  * returned.
  *
+ * If distinct is set, the result contains n complete groups of values
+ * instead of just n values (or slightly more than n if gids is set
+ * since then the "last" group is returned completely).
+ *
  * Note that BATfirstn can be called in cascading fashion to calculate
  * the first n values of a table of multiple columns:
  *      BATfirstn(&s1, &g1, b1, NULL, NULL, n, asc, distinct);
