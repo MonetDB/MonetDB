@@ -661,6 +661,13 @@ str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
+MDBdummy(int *ret)
+{
+	(void) ret;
+	throw(MAL, "mdb.dummy", OPERATION_FAILED);
+}
+
+str
 MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str modnme = *getArgReference_str(stk, pci, 1);

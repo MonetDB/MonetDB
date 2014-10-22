@@ -1,11 +1,5 @@
+# C library that contains our MAPI string splitting state machine
 C_LIBRARY <- "MonetDB.R"
-
-.onLoad <- function(lib, pkg) {
-  if (getOption("monetdb.clib", FALSE)) {
-    library.dynam( C_LIBRARY, pkg, lib )
-    .Call("mapiInit", PACKAGE=C_LIBRARY)
-  }
-}
 
 # Make S4 aware of S3 classes
 setOldClass(c("sockconn", "connection", "monetdb_mapi_conn"))
@@ -234,6 +228,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
             }	
             conn@connenv$exception <- list()
             env <- NULL
+            # Auto-convert? 
+            # statement <- enc2utf8(statement)
             if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
             resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, ";"), async=async))
             
@@ -539,8 +535,10 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
     col <- ct[[j]]
     if (col == .CT_NUM) 
       df[[j]] <- as.numeric(parts[[j]])
-    if (col == .CT_CHRR) 
+    if (col == .CT_CHRR) {
       df[[j]] <- parts[[j]]
+      Encoding(df[[j]]) <- "UTF-8"
+    }
     if (col == .CT_BOOL) 
       df[[j]] <- parts[[j]]=="true"
     if (col == .CT_CHR) { 
