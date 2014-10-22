@@ -866,10 +866,9 @@ static str
 sql_update_oct2014_2(Client c)
 {
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
-	size_t bufsize = 8192*2, pos = 0;
+	size_t bufsize = 8192*2, pos = 0, recreate = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	res_table *fresult = NULL, *presult = NULL, *iresult = NULL;
-	int recreate = 0;
 
 	/* get list of all foreign keys */
 	pos += snprintf(buf + pos, bufsize - pos, "SELECT fs.name, ft.name, fk.name, fk.\"action\", ps.name, pt.name FROM sys.keys fk, sys.tables ft, sys.schemas fs, sys.keys pk, sys.tables pt, sys.schemas ps WHERE fk.type = 2 AND (SELECT count(*) FROM sys.objects o WHERE o.id = fk.id) > 1 AND ft.id = fk.table_id AND ft.schema_id = fs.id AND fk.rkey = pk.id AND pk.table_id = pt.id AND pt.schema_id = ps.id;\n");
