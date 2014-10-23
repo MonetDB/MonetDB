@@ -2,7 +2,6 @@ var net    = require('net');
 var crypto = require('crypto');
 
 function MonetDBConnection(options, conncallback) {
-	console.log(options)
 	this.state = 'new';
 	this.options = options;	
 	this.read_leftover = 0;
@@ -22,7 +21,7 @@ function MonetDBConnection(options, conncallback) {
 	this.socket.on('end', function() {
 	  	thizz.state = 'disconnected';
 	});
-	this.socket.on('error',function(x) {
+	this.socket.on('error', function(x) {
 		// TODO: how should we handle this? 
 		console.log(x);
 	});
@@ -37,11 +36,13 @@ function MonetDBConnection(options, conncallback) {
 		 });
 	});
 	this.request('SELECT 42', function(x) {
-		conncallback();
+		if (conncallback != undefined)
+			conncallback();
 	});
 }
 
-MonetDBConnection.prototype.request = function(message, callback, raw) {
+MonetDBConnection.prototype.request = 
+MonetDBConnection.prototype.query = function(message, callback, raw) {
 	if (!raw) {
 		message = 's'+message+';';
 	}
@@ -93,18 +94,15 @@ MonetDBConnection.prototype.handleInput = function(data) {
 
 };
 
-
-// TODO: make blocking work here.
 MonetDBConnection.prototype.sendMessage = function(message) {
 	if (this.options.debug) 
 		console.log('TX: '+message);
 
-	var buf = new Buffer(message,'utf8');
+	var buf = new Buffer(message, 'utf8');
 	var final = 0;
 	while (final == 0) {
 		var bs = Math.min(buf.length, this.mapi_blocksize - 2)
 		var sendbuf = buf.slice(0, bs);
-
 		buf = buf.slice(bs + 1);
 		if (buf.length == 0) {
 			final = 1;
@@ -296,7 +294,7 @@ function _parseresponse(msg) {
 MonetDBConnection.prototype.close = function() {
 	var thizz = this;
 	/* kills the connection after the query has been processed (will also wait for all others) */
-	this.request('SELECT 1',function(x) {
+	this.request('SELECT 1', function(x) {
 		thizz.socket.destroy();
 	});
 }
@@ -311,13 +309,13 @@ function isObject(obj) {
 
 function getConnectArgs(options) {
 
-  if (!isObject(options.dbname)) options.dbname = 'demo';
-  if (!isObject(options.user)) options.user = 'monetdb';
+  if (!isObject(options.dbname))   options.dbname   = 'demo';
+  if (!isObject(options.user))     options.user     = 'monetdb';
   if (!isObject(options.password)) options.password = 'monetdb';
-  if (!isObject(options.host)) options.host = 'localhost';
-  if (!isObject(options.port)) options.port = 50000;
+  if (!isObject(options.host))     options.host     = 'localhost';
+  if (!isObject(options.port))     options.port     = 50000;
   if (!isObject(options.language)) options.language = 'sql';
-  if (!isObject(options.debug)) options.debug = false;
+  if (!isObject(options.debug))    options.debug    = false;
   // TODO: check options for type and whether they make sense
 
   return options;
