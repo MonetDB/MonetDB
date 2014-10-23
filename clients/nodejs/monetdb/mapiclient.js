@@ -92,13 +92,14 @@ MonetDBConnection.prototype.handleMessage = function(message) {
 	/* error message */
 	if (message.charAt(0) == '!') {
 		response.success = false;
-		response.error = message.substring(1);
+		response.message = message.substring(1,message.length-1);
 	}
 
 	/* query result */
 	if (message.charAt(0) == '&') {
 		response = _parseresponse(message);
 		response.success = true;
+		response.message = 'ok';
 	}
 
 	if (this.read_callback != undefined) {
@@ -163,14 +164,13 @@ MonetDBConnection.prototype.sendMessage = function(message) {
 	while (final == 0) {
 		var bs = Math.min(buf.length, this.mapi_blocksize - 2)
 		var sendbuf = buf.slice(0, bs);
-		buf = buf.slice(bs + 1);
+		buf = buf.slice(bs);
 		if (buf.length == 0) {
 			final = 1;
 		}
 
 		if (this.options.debug)
 			console.log('writing ' + bs + ' bytes, final=' + final);
-
 		var hdrbuf = new Buffer(2);
 		hdrbuf.writeInt16LE((bs << 1) | final, 0);
 		this.socket.write(Buffer.concat([hdrbuf, sendbuf]));
@@ -189,7 +189,7 @@ function _parsetuples(names, types, lines) {
 	var resultarr = [];
 	for (li in lines) {
 		var line = lines[li];
-		var resultline = {};
+		var resultline = [];
 		var tokenStart = 2;
 		var endQuote = 0;
 		var valPtr = '';
@@ -215,27 +215,27 @@ function _parsetuples(names, types, lines) {
 					var tokenLen = curPos - tokenStart - endQuote;
 					valPtr = line.substring(tokenStart, tokenStart + tokenLen);
 					if (tokenLen < 1 || valPtr == 'NULL') {
-						resultline[names[cCol]] = undefined;
+						resultline.push(undefined);
 
 					} else {
 						switch(types[cCol]) {
 							case 'boolean':
-								resultline[names[cCol]] = valPtr == 'true';
+								resultline.push(valPtr == 'true');
 								break;
 							case 'tinyint':
 							case 'smallint':
 							case 'int':
 							case 'wrd':
 							case 'bigint':
-								resultline[names[cCol]] = parseInt(valPtr);
+								resultline.push(parseInt(valPtr));
 								break
 							case 'real':
 							case 'double':
 							case 'decimal':
-								resultline[names[cCol]] = parseFloat(valPtr);
+								resultline.push(parseFloat(valPtr));
 								break
 							default:
-								resultline[names[cCol]] = valPtr;
+								resultline.push(valPtr);
 								break;
 						}
 					}
@@ -290,12 +290,14 @@ function _parseresponse(msg) {
 
 		resp.structure = [];
 		for (var i = 0; i < table_names.length; i++) {
-			resp.structure.push({
+			var colinfo = {
 				table : table_names[i],
 				column : column_names[i],
 				type : column_types[i],
-				typelen : parseInt(type_lengths[i])
-			});
+				typelen : parseInt(type_lengths[i]),
+				index : i
+			};
+			resp.structure.push(colinfo);
 		}
 		resp.data = _parsetuples(column_names, column_types, lines.slice(5, lines.length-1));
 	}
@@ -346,7 +348,7 @@ function getConnectArgs(options) {
 	__check_arg(options, 'user'    , 'string' , 'monetdb');
 	__check_arg(options, 'password', 'string' , 'monetdb');
 	__check_arg(options, 'host'    , 'string' , 'localhost');
-	__check_arg(options, 'port'    , 'int'    , 50000);
+	__check_arg(options, 'port'    , 'number'    , 50000);
 	__check_arg(options, 'language', 'string' , 'sql');
 	__check_arg(options, 'debug'   , 'boolean', false);
   return options;
