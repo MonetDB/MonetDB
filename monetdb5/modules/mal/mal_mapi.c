@@ -1115,19 +1115,6 @@ SERVERprepare(int *ret, int *key, str *qry){
 }
 
 str
-SERVERexecute(int *ret, int *key){
-	Mapi mid;
-	int i;
-	accessTest(*key, "execute");
-	mapi_execute(SERVERsessions[i].hdl);
-	if( mapi_error(mid) )
-		throw(MAL, "mapi.execute", "%s",
-			mapi_result_error(SERVERsessions[i].hdl));
-	*ret = *key;
-	return MAL_SUCCEED;
-}
-
-str
 SERVERfinish(int *ret, int *key){
 	Mapi mid;
 	int i;

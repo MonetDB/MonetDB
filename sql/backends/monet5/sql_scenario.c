@@ -365,6 +365,28 @@ handle_error(mvc *m, stream *out, int pstatus)
 	return go;
 }
 
+static int
+SQLautocommit(Client c, mvc *m)
+{
+	if (m->session->auto_commit && m->session->active) {
+		if (mvc_status(m) < 0) {
+			RECYCLEdrop(0);
+			mvc_rollback(m, 0, NULL);
+		} else if (mvc_commit(m, 0, NULL) < 0) {
+			return handle_error(m, c->fdout, 0);
+		}
+	}
+	return TRUE;
+}
+
+static void
+SQLtrans(mvc *m)
+{
+	m->caching = m->cache;
+	if (!m->session->active)
+		mvc_trans(m);
+}
+
 static str
 sql_update_feb2013(Client c)
 {
@@ -422,7 +444,7 @@ sql_update_feb2013(Client c)
 	assert(pos < 4096);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -570,7 +592,7 @@ update sys._tables\n\
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -596,7 +618,7 @@ sql_update_feb2013_sp3(Client c)
 	assert(pos < 4096);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -834,9 +856,197 @@ external name sql.analyze;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
+}
+
+/* Because of a difference of computing hash values for single vs bulk operators we need to drop and recreate all constraints/indices */
+static str
+sql_update_oct2014_2(Client c)
+{
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	size_t bufsize = 8192*2, pos = 0, recreate = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	res_table *fresult = NULL, *presult = NULL, *iresult = NULL;
+
+	/* get list of all foreign keys */
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT fs.name, ft.name, fk.name, fk.\"action\", ps.name, pt.name FROM sys.keys fk, sys.tables ft, sys.schemas fs, sys.keys pk, sys.tables pt, sys.schemas ps WHERE fk.type = 2 AND (SELECT count(*) FROM sys.objects o WHERE o.id = fk.id) > 1 AND ft.id = fk.table_id AND ft.schema_id = fs.id AND fk.rkey = pk.id AND pk.table_id = pt.id AND pt.schema_id = ps.id;\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &fresult);
+
+	/* get all primary/unique keys */
+	pos = 0;
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, k.name, k.type FROM sys.keys k, sys.tables t, sys.schemas s WHERE k.type < 2 AND (SELECT count(*) FROM sys.objects o WHERE o.id = k.id) > 1 AND t.id = k.table_id AND t.schema_id = s.id;\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &presult);
+
+	/* get indices */
+	pos = 0;
+	pos += snprintf(buf + pos, bufsize - pos, "SELECT s.name, t.name, i.name FROM sys.idxs i, sys.schemas s, sys.tables t WHERE i.table_id = t.id AND t.schema_id = s.id AND t.system = FALSE AND (SELECT count(*) FROM sys.objects o WHERE o.id = i.id) > 1;\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &iresult);
+
+	if (fresult) {
+		BATiter fs_name = bat_iterator(BATdescriptor(fresult->cols[0].b));
+		BATiter ft_name = bat_iterator(BATdescriptor(fresult->cols[1].b));
+		BATiter fk_name = bat_iterator(BATdescriptor(fresult->cols[2].b));
+		BATiter fk_action = bat_iterator(BATdescriptor(fresult->cols[3].b));
+		BATiter ps_name = bat_iterator(BATdescriptor(fresult->cols[4].b));
+		BATiter pt_name = bat_iterator(BATdescriptor(fresult->cols[5].b));
+		oid id = 0, cnt = BATcount(fs_name.b);
+
+		pos = 0;
+		/* get list of all foreign key objects */
+		for(id = 0; id<cnt; id++) {
+			char *fsname = (str)BUNtail(fs_name, id);
+			char *ftname = (str)BUNtail(ft_name, id);
+			char *fkname = (str)BUNtail(fk_name, id);
+			int *fkaction = (int*)BUNtail(fk_action, id);
+			int on_delete = ((*fkaction) & 0xFF);
+			int on_update = (((*fkaction)>>8) & 0xFF);
+			char *psname = (str)BUNtail(ps_name, id);
+			char *ptname = (str)BUNtail(pt_name, id);
+			sql_schema *s = mvc_bind_schema(sql, fsname);
+			sql_key *k = mvc_bind_key(sql, s, fkname);
+			sql_ukey *r = ((sql_fkey*)k)->rkey;
+			char *sep = "";
+			node *n;
+
+			/* create recreate calls */
+			pos += snprintf(buf + pos, bufsize - pos, "ALTER table \"%s\".\"%s\" ADD CONSTRAINT \"%s\" FOREIGN KEY (", fsname, ftname, fkname);
+			for (n = k->columns->h; n; n = n->next) {
+				sql_kc *kc = n->data;
+
+				pos += snprintf(buf + pos, bufsize - pos, "%s\"%s\"", sep, kc->c->base.name);
+				sep = ", ";
+			}
+			pos += snprintf(buf + pos, bufsize - pos, ") REFERENCES \"%s\".\"%s\" (", psname, ptname );
+			sep = "";
+			for (n = r->k.columns->h; n; n = n->next) {
+				sql_kc *kc = n->data;
+
+				pos += snprintf(buf + pos, bufsize - pos, "%s\"%s\"", sep, kc->c->base.name);
+				sep = ", ";
+			}
+			pos += snprintf(buf + pos, bufsize - pos, ") "); 
+			if (on_delete != 2)
+				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_delete==0?"NO ACTION":on_delete==1?"CASCADE":on_delete==3?"SET NULL":"SET DEFAULT")); 
+				
+			if (on_update != 2)
+				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_update==0?"NO ACTION":on_update==1?"CASCADE":on_update==3?"SET NULL":"SET DEFAULT")); 
+			pos += snprintf(buf + pos, bufsize - pos, ";\n"); 
+			assert(pos < bufsize);
+
+			/* drop foreign key */
+			mvc_drop_key(sql, s, k, 0 /* drop_action?? */); 
+		}
+		if (pos) {
+			SQLautocommit(c, sql);
+			SQLtrans(sql);
+			recreate = pos;
+		}
+	}
+
+	if (presult) {
+		BATiter s_name = bat_iterator(BATdescriptor(presult->cols[0].b));
+		BATiter t_name = bat_iterator(BATdescriptor(presult->cols[1].b));
+		BATiter k_name = bat_iterator(BATdescriptor(presult->cols[2].b));
+		BATiter k_type = bat_iterator(BATdescriptor(presult->cols[3].b));
+		oid id = 0, cnt = BATcount(s_name.b);
+		char *buf = GDKmalloc(bufsize);
+
+		pos = 0;
+		for(id = 0; id<cnt; id++) {
+			char *sname = (str)BUNtail(s_name, id);
+			char *tname = (str)BUNtail(t_name, id);
+			char *kname = (str)BUNtail(k_name, id);
+			int *ktype = (int*)BUNtail(k_type, id);
+			sql_schema *s = mvc_bind_schema(sql, sname);
+			sql_key *k = mvc_bind_key(sql, s, kname);
+			node *n;
+			char *sep = "";
+
+			/* create recreate calls */
+			pos += snprintf(buf + pos, bufsize - pos, "ALTER table \"%s\".\"%s\" ADD CONSTRAINT \"%s\" %s (", sname, tname, kname, *ktype == 0?"PRIMARY KEY":"UNIQUE");
+			for (n = k->columns->h; n; n = n->next) {
+				sql_kc *kc = n->data;
+
+				pos += snprintf(buf + pos, bufsize - pos, "%s\"%s\"", sep, kc->c->base.name);
+				sep = ", ";
+			}
+			pos += snprintf(buf + pos, bufsize - pos, ");\n" );
+			assert(pos < bufsize);
+
+			/* drop primary/unique key */
+			mvc_drop_key(sql, s, k, 0 /* drop_action?? */); 
+		}
+		if (pos) {
+			SQLautocommit(c, sql);
+			SQLtrans(sql);
+
+			/* recreate primary and unique keys */
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+			if (!err)
+				SQLautocommit(c, sql);
+			SQLtrans(sql);
+		}
+	}
+
+	if (iresult) {
+		BATiter s_name = bat_iterator(BATdescriptor(iresult->cols[0].b));
+		BATiter t_name = bat_iterator(BATdescriptor(iresult->cols[1].b));
+		BATiter i_name = bat_iterator(BATdescriptor(iresult->cols[2].b));
+		oid id = 0, cnt = BATcount(s_name.b);
+		char *buf = GDKmalloc(bufsize);
+
+		pos = 0;
+		for(id = 0; id<cnt; id++) {
+			char *sname = (str)BUNtail(s_name, id);
+			char *tname = (str)BUNtail(t_name, id);
+			char *iname = (str)BUNtail(i_name, id);
+			sql_schema *s = mvc_bind_schema(sql, sname);
+			sql_idx *k = mvc_bind_idx(sql, s, iname);
+			node *n;
+			char *sep = "";
+
+			if (!k || k->key)
+				continue;
+			/* create recreate calls */
+			pos += snprintf(buf + pos, bufsize - pos, "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (", iname, sname, tname);
+			for (n = k->columns->h; n; n = n->next) {
+				sql_kc *kc = n->data;
+
+				pos += snprintf(buf + pos, bufsize - pos, "%s\"%s\"", sep, kc->c->base.name);
+				sep = ", ";
+			}
+			pos += snprintf(buf + pos, bufsize - pos, ");\n" );
+			assert(pos < bufsize);
+
+			/* drop index */
+			mvc_drop_idx(sql, s, k); 
+		}
+		if (pos) {
+			SQLautocommit(c, sql);
+			SQLtrans(sql);
+
+			/* recreate indices */
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+			if (!err)
+				SQLautocommit(c, sql);
+			SQLtrans(sql);
+		}
+	}
+
+
+	/* recreate foreign keys */
+	if (recreate) {
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		if (!err)
+			SQLautocommit(c, sql);
+		SQLtrans(sql);
+	}
+	return err;
 }
 
 static str
@@ -1088,8 +1298,10 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
+	if (err == MAL_SUCCEED)
+		return sql_update_oct2014_2(c);
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -1199,7 +1411,7 @@ SQLinitClient(Client c)
 					} else {
 						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 						if (bfd && bstream_next(bfd) >= 0)
-							msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
+							msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
 						bstream_destroy(bfd);
 					}
 					if (m->sa)
@@ -1328,14 +1540,6 @@ SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return SQLinitClient(cntxt);
 }
 
-static void
-SQLtrans(mvc *m)
-{
-	m->caching = m->cache;
-	if (!m->session->active)
-		mvc_trans(m);
-}
-
 /*
  * The SQLcompile operation can be used by separate
  * front-ends to benefit from the SQL functionality.
@@ -1356,7 +1560,7 @@ BEWARE: SQLstatementIntern only commits after all statements found
 in expr are executed, when autocommit mode is enabled.
 */
 str
-SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
+SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result)
 {
 	int status = 0;
 	int err = 0;
@@ -1402,6 +1606,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
+	if (result)
+		m->reply_size = -2; /* do not cleanup, result tables */
 
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -1522,6 +1728,10 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 		c->glb = oldglb;
 	}
+	if (m->results && result) { /* return all results sets */
+		*result = m->results;
+		m->results = NULL;
+	}
 /*
  * We are done; a MAL procedure resides in the cache.
  */
@@ -1563,7 +1773,7 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3)
 		output = *getArgReference_bit(stk, pci, 2);
 
-	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output);
+	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output, NULL);
 }
 
 str
@@ -1575,7 +1785,7 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE);
+	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL);
 	if (msg == MAL_SUCCEED)
 		*ret = _STRDUP("SQLcompile");
 	return msg;
@@ -1618,7 +1828,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
+	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
 	if (m->sa)
@@ -1641,20 +1851,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * This means we can safely change the language setting for
  * the duration of these calls.
  */
-
-static int
-SQLautocommit(Client c, mvc *m)
-{
-	if (m->session->auto_commit && m->session->active) {
-		if (mvc_status(m) < 0) {
-			RECYCLEdrop(0);
-			mvc_rollback(m, 0, NULL);
-		} else if (mvc_commit(m, 0, NULL) < 0) {
-			return handle_error(m, c->fdout, 0);
-		}
-	}
-	return TRUE;
-}
 
 /* #define _SQL_READER_DEBUG */
 str
@@ -2031,6 +2227,10 @@ SQLparser(Client c)
 		}
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
+			if (v < -1) {
+				msg = createException(SQL, "SQLparser", "reply_size cannot be negative");
+				goto finalize;
+			}
 			m->reply_size = v;
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;

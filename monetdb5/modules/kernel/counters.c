@@ -3146,9 +3146,9 @@ CNTRSstop(void *ret, int *idx){
 	return MAL_SUCCEED;
 }
 
-counters_export str CNTRScounter2bat(int *kid, int *vid, int *idx);
+counters_export str CNTRScounter2bat(bat *kid, bat *vid, const int *idx);
 str
-CNTRScounter2bat(int *kid, int *vid, int *idx){
+CNTRScounter2bat(bat *kid, bat *vid, const int *idx){
 	BAT *bk=NULL, *bv= NULL;
 	if( *idx <0 || *idx>= 32)
 		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT " Counter handle out of range");

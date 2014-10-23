@@ -659,7 +659,10 @@ str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mdbDump(cntxt,mb,stk,pci);
 	return MAL_SUCCEED;
 }
-str MDBdummy(int *ret){
+
+str
+MDBdummy(int *ret)
+{
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
