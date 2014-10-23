@@ -639,7 +639,7 @@ BATimprints(BAT *b)
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
-			    ((hdata[0] & 0xFF00) >> 8) == 1 && /* version 1 */
+			    ((hdata[0] & 0xFF00) >> 8) == 2 && /* version 2 */
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
 			    st.st_size >= (off_t) (imprints->imprints->size =
@@ -802,7 +802,7 @@ BATimprints(BAT *b)
 			/* add version number */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 8;
 			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) 2 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
 #if defined(NATIVE_WIN32)
