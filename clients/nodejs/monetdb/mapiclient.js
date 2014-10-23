@@ -8,6 +8,7 @@ function MonetDBConnection(options, conncallback) {
 	this.read_final = false;
 	this.read_str = '';
 	this.read_callback = undefined;
+	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
 
 	this.queryqueue = [];
@@ -22,8 +23,8 @@ function MonetDBConnection(options, conncallback) {
 	  	thizz.state = 'disconnected';
 	});
 	this.socket.on('error', function(x) {
-		// TODO: how should we handle this? 
-		console.log(x);
+		if (conncallback != undefined)
+			conncallback({'success':false, 'message':x.toString()});
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
@@ -36,8 +37,8 @@ function MonetDBConnection(options, conncallback) {
 		 });
 	});
 	this.request('SELECT 42', function(x) {
-		if (conncallback != undefined)
-			conncallback();
+		if (this.conn_callback != undefined)
+			this.conn_callback({'success':true, 'message':'ok'});
 	});
 }
 
@@ -48,6 +49,65 @@ MonetDBConnection.prototype.query = function(message, callback, raw) {
 	}
 	this.queryqueue.push({'message' : message , 'callback' : callback})
 }
+
+
+MonetDBConnection.prototype.handleMessage = function(message) {
+	if (this.options.debug)
+		console.log('RX ['+this.state+']: '+message);
+
+	/* prompt, good */
+	if (message == '') {
+		this.state = 'ready';
+		this.nextOp();
+		return;
+	}
+
+	/* monetdbd redirect, ignore. We will get another challenge soon */
+	if (message.charAt(0) == '^') {
+		return;
+	}
+
+	if (this.state == 'connected') {
+		/* error message during authentication? */
+		if (message.charAt(0) == '!') {
+			message = 'Error: '+message.substring(1,message.length-1);
+			if (this.conn_callback != undefined)
+				this.conn_callback({'success':false, 'message':message});
+			return;
+		}
+
+		// means we get the challenge from the server
+		var authch = message.split(':');
+		var salt   = authch[0];
+		var dbname = authch[1];
+		var pwhash = __sha512(__sha512(this.options.password) + salt)
+		var response = 'LIT:' + this.options.user + ':{SHA512}' + pwhash + ':' +
+			this.options.language + ':' + this.options.dbname + ':';
+		this.sendMessage(response);
+		return;
+	}
+
+	var response = {};
+
+	/* error message */
+	if (message.charAt(0) == '!') {
+		response.success = false;
+		response.error = message.substring(1);
+	}
+
+	/* query result */
+	if (message.charAt(0) == '&') {
+		response = _parseresponse(message);
+		response.success = true;
+	}
+
+	if (this.read_callback != undefined) {
+		this.read_callback(response);
+		this.read_callback = undefined;
+	}
+	this.nextOp();	
+}
+
 
 MonetDBConnection.prototype.nextOp = function() {
 	if (this.queryqueue.length < 1) {
@@ -119,59 +179,10 @@ MonetDBConnection.prototype.sendMessage = function(message) {
 
 /* In theory, the server tells us which hashes he likes. 
    In practice, we know he always likes sha512 , so... */
-function sha512(str) {
+function __sha512(str) {
 	return crypto.createHash('sha512').update(str).digest('hex');
 }
 
-MonetDBConnection.prototype.handleMessage = function(message) {
-	if (this.options.debug)
-		console.log('RX ['+this.state+']: '+message);
-
-	/* prompt, good */
-	if (message == '') {
-		this.state = 'ready';
-		this.nextOp();
-		return;
-	}
-
-	/* monetdbd redirect, ignore. We will get another challenge soon */
-	if (message.charAt(0) == '^') {
-		return;
-	}
-
-	if (this.state == 'connected') {
-		// means we get the challenge from the server
-		var authch = message.split(':');
-		var salt   = authch[0];
-		var dbname = authch[1];
-		var pwhash = sha512(sha512(this.options.password) + salt)
-		var response = 'LIT:' + this.options.user + ':{SHA512}' + pwhash + ':' +
-			this.options.language + ':' + this.options.dbname + ':';
-		this.sendMessage(response);
-		return;
-	}
-
-	var response = {};
-
-	/* error message */
-	if (message.charAt(0) == '!') {
-		response.success = false;
-		response.error = message.substring(1);
-	}
-
-	/* query result */
-	if (message.charAt(0) == '&') {
-		response = _parseresponse(message);
-		response.success = true;
-	}
-
-	if (this.read_callback != undefined) {
-		this.read_callback(response);
-		this.read_callback = undefined;
-	}
-	this.nextOp();
-	
-}
 
 function _parsetuples(names, types, lines) {
 	var state = 'INCRAP';
@@ -185,7 +196,7 @@ function _parsetuples(names, types, lines) {
 		var cCol = 0;
 
 		/* mostly adapted from clients/R/MonetDB.R/src/mapisplit.c */
-		for (var curPos = tokenStart; curPos<line.length-1; curPos++) {
+		for (var curPos = tokenStart; curPos < line.length - 1; curPos++) {
 			var chr = line.charAt(curPos);
 			switch (state) {
 			case 'INCRAP':
@@ -278,7 +289,7 @@ function _parseresponse(msg) {
 		var type_lengths = _hdrline(lines[4]);
 
 		resp.structure = [];
-		for (var i=0;i<table_names.length;i++) {
+		for (var i = 0; i < table_names.length; i++) {
 			resp.structure.push({
 				table : table_names[i],
 				column : column_names[i],
@@ -294,30 +305,50 @@ function _parseresponse(msg) {
 MonetDBConnection.prototype.close = function() {
 	var thizz = this;
 	/* kills the connection after the query has been processed (will also wait for all others) */
-	this.request('SELECT 1', function(x) {
+	this.request('SELECT 42', function(x) {
 		thizz.socket.destroy();
 	});
 }
 
-exports.connect = function() {
+exports.connect = exports.open = function() {
   return new MonetDBConnection(getConnectArgs(arguments[0]), arguments[1]);
 }
 
-function isObject(obj) {
-	return typeof obj !== 'undefined';
+function __check_arg(options, argname, type, dflt) {
+	var argval = options[argname];
+	options[argname] = dflt;
+	
+	if (typeof argval === 'undefined') {
+		return;
+	}
+	if (typeof argval !== type) {
+		console.warn('parameter ' + argname + ' should be ' + type + ' but is ' + typeof argval);
+		return;
+	}
+
+	if (type == 'string') {
+		if (typeof argval != 'string') {
+			return;
+		}
+		argval = argval.trim();
+		if (argval == '') {
+			console.warn('parameter ' + argname + ' is empty');
+			return;
+		}
+		options[argname] = argval;
+	} else {
+		options[argname] = argval;
+	}
 }
 
 function getConnectArgs(options) {
-
-  if (!isObject(options.dbname))   options.dbname   = 'demo';
-  if (!isObject(options.user))     options.user     = 'monetdb';
-  if (!isObject(options.password)) options.password = 'monetdb';
-  if (!isObject(options.host))     options.host     = 'localhost';
-  if (!isObject(options.port))     options.port     = 50000;
-  if (!isObject(options.language)) options.language = 'sql';
-  if (!isObject(options.debug))    options.debug    = false;
-  // TODO: check options for type and whether they make sense
-
+	__check_arg(options, 'dbname'  , 'string' , 'demo');
+	__check_arg(options, 'user'    , 'string' , 'monetdb');
+	__check_arg(options, 'password', 'string' , 'monetdb');
+	__check_arg(options, 'host'    , 'string' , 'localhost');
+	__check_arg(options, 'port'    , 'int'    , 50000);
+	__check_arg(options, 'language', 'string' , 'sql');
+	__check_arg(options, 'debug'   , 'boolean', false);
   return options;
 }
 
