@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.19.0
+%define version 11.19.2
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jan2014-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -960,6 +960,169 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Oct 24 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- Rebuilt.
+- BZ#2618: Implement master slave scheme
+- BZ#2945: evaluation of SQL "between SYMMETRIC" requires MAL iterator
+  because there is no (bulk) MIN/MAX(a,b)
+- BZ#3204: monetdb create: allow setting admin password during creation
+- BZ#3390: Missing definition for pushSht in monetdb5/mal/mal_builder.h
+- BZ#3402: We should have a C implementation of mal.multiplex.
+- BZ#3422: Segmentation fault after large table insert
+- BZ#3459: incomplete implementation of JDBC driver getNumericFunctions(),
+  getStringFunctions(), getSystemFunctions(), getTimeDateFunctions(),
+  getSQLKeywords() methods in MonetDatabaseMetaData.java
+- BZ#3471: JDBC driver: incorrect output result of SQL query: SELECT 1 ;
+- BZ#3474: bulk and scalar versions of mkey.rotate_xor_hash differ
+- BZ#3484: COPY INTO on a file works fine on Linux/OSX, but not on Windows
+- BZ#3488: Slow SQL execution for correlated scalar subquery
+- BZ#3489: SQL query with ORDER BY does not order its result as requested
+- BZ#3490: SQL query kills the mserver5 (Segmentation fault)
+- BZ#3491: SQL query kills the mserver5 (Segmentation fault)
+- BZ#3493: Test monetdb5/modules/mal/Tests/pqueue.mal fails since
+  recent checkins
+- BZ#3494: Tests monetdb5/modules/mal/Tests/pqueue[23].mal lack
+  correct/expected/intended output
+- BZ#3495: Test sql/test/centipede/Tests/olap.sql lacks
+  correct/expected/intended output
+- BZ#3497: monetdb start reports crash in merovingian.log
+- BZ#3498: SQL throws TypeException if aggregations and limit statements
+  are both present
+- BZ#3502: Database was killed by signal SIGBUS
+- BZ#3504: COPY INTO does not allow OFFSET without specifying amount
+  of records
+- BZ#3505: expression with <boolean> = NOT <boolean> returns a syntax
+  error but NOT <boolean> = <boolean> not
+- BZ#3506: conversion to varchar terminates mserver
+- BZ#3508: conversion of string '0   ' to type smallint or integer fails
+- BZ#3510: timestamp + month interval generates bogus MAL?
+- BZ#3511: When having multiple selections combined with aliases not
+  all of them seem to be evalauted.
+- BZ#3512: auto-conversion of string to `sht` type no longer works
+- BZ#3513: COPY BINARY INTO fails on 6gb file; works fine on 3gb
+- BZ#3516: inserting '0' into a column of datatype numeric fails
+- BZ#3518: UNION with subqueries
+- BZ#3521: large results of function exp() are not automatically returned
+  as double
+- BZ#3522: SQL catalog table sys.columns lists columns for table ids
+  which do not exist in sys.tables
+- BZ#3523: Window function over union gives no result
+- BZ#3524: wrong error on missing aggregation column
+- BZ#3527: select distinct - order by - limit 2 results in one single
+  result
+- BZ#3528: segfault at mal_session.c:521
+- BZ#3532: several geom tests crash after manifold changes
+- BZ#3534: missing table name with invalid column in join using (and
+  problems after resolving it)
+- BZ#3536: program contains error with join using integer and smallint
+- BZ#3542: gdk/gdk_bat.c:2904: BATassertHeadProps: Assertion
+  `!b->H->revsorted || cmp >= 0' failed.
+- BZ#3543: invalid behavior and incorrect data results for SQL data
+  type: numeric(4,4)
+- BZ#3544: sys.reuse() corrupts data
+- BZ#3546: Division by zero in CASE statement that should avoid it
+- BZ#3547: Empty query when selecting a field from a view made of
+  UNION ALL
+- BZ#3551: Wrong ticks in TRACE
+- BZ#3552: incorrect data results for "WHERE int_col <> 0"
+- BZ#3554: Issue with subselect and ORDER BY
+- BZ#3555: Order of evaluation inside CASE WHEN
+- BZ#3558: numeric values (as strings) are incorrectly parsed/converted
+  and invalid strings are accepted without error
+- BZ#3560: Error "BATproject: does not match always" with
+  subselect/groupby/having
+- BZ#3562: mserver5: gdk_bat.c:2855: BATassertHeadProps: Assertion
+  `!b->H->revsorted || cmp >= 0' failed.
+- BZ#3563: incorrect results for scalar function locate(in_str,
+  search_str, occurrence)
+- BZ#3565: Wrong/confusing error message when trying to add a FK to a
+  TEMP TABLE
+- BZ#3572: Table names with escaped double quotes are rejected
+- BZ#3573: alter table alter_not_null_test alter test set NOT NULL;
+  is accepted when test contains null. This used to be restricted but
+  isn't anymore
+- BZ#3575: segmentation fault in mserver5 process
+- BZ#3576: Dropping default value definitions from a table does not work
+  as expected
+- BZ#3577: SIGSEGV in BATins_kdiff
+- BZ#3579: segmentation fault in mserver5 process
+- BZ#3581: mserver5: rel_bin.c:2504: rel2bin_groupby: Assertion `0'
+  failed.
+- BZ#3582: mserver5: sql_mem.c:48: sql_ref_dec: Assertion `r->refcnt >
+  0' failed.
+- BZ#3583: Possible buffer overflow in max(varchar)
+- BZ#3585: Incorrect query terminates connection
+- BZ#3586: mserver5: sql/storage/store.c:3610: sys_drop_func: Assertion
+  `rid_func != oid_nil' failed.
+- BZ#3592: SIGSEGV in MANIFOLDjob
+- BZ#3593: delta_append_val: Assertion `!c || ((c)->S->count) ==
+  bat->ibase' failed.
+- BZ#3594: gdk/gdk_bat.c:2855: BATassertHeadProps: Assertion
+  `!b->H->revsorted || cmp >= 0' failed.
+- BZ#3595: Race/heap corruption on thread exit
+- BZ#3596: gdk_bat.c:2861: BATassertHeadProps: Assertion `!b->H->nonil ||
+  cmp != 0' failed.
+- BZ#3597: SQL to MAL listing looses types
+- BZ#3598: SQL bulk load should ignore leading/trailing spaces also with
+  type decimal (as with integers & real/double)
+- BZ#3599: Double-free of imprints
+- BZ#3601: Trivial typo in debian/monetdb5-sql.init.d
+- BZ#3603: "monetdb create -p" hangs monetdbd
+- BZ#3604: Sys.queue ignored upon errors
+
+* Mon Sep 15 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- monetdb5: Removed algebra.materialize.
+
+* Fri Aug 29 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- monetdb5: Removed algebra.kunique and algebra.tunique.  They were subsumed by
+  algebra.subunique.
+
+* Tue Aug 26 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- monetdb5: Remove algebra.antiuselect and algebra.thetauselect.  They were subsumed
+  by algebra.subselect.
+
+* Mon Aug 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- monetdb5: Removed algebra.topN and its imlementation BATtopN.  The function was
+  not used.
+- monetdb5: Removed aggr.histogram and its implementation BAThistogram.  The
+  function was not used, and did not produce output in the "headless"
+  (i.e. dense-headed) format.  Histograms can be created as a by-product
+  of group.subgroup.
+
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- gdk: Added "multifarm" capability.  It is now possible to separate persistent
+  and transient BATs into different directories (presumably on different
+  disks).  This can be done by using the --dbextra option of mserver5
+  (see the man page).
+
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- buildtools: Jacqueline, the MonetDB/JAQL frontend, has been removed.  The frontend
+  never grew beyond being experimental, and there is no interest anymore
+  to maintain the code.
+
+* Fri Jul 25 2014 Jennie Zhang <y.zhang@cwi.nl> - 11.19.1-20141024
+- sql: Added PostgreSQL compatible string TRIM, LTRIM, RTRIM, LPAD and RPAD
+  functions
+
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- mapilib: Changed mapi_timeout argument from seconds to milliseconds.
+
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- stream: Changed mnstr_settimeout function so that the specified timeout is now
+  in milliseconds (used to be seconds), and that it also needs an extra
+  argument specifying a callback function (no arguments, int result)
+  that should return TRUE if the timeout should cause the function to
+  abort or continue what it was doing.
+
+* Fri Jul 25 2014 Fabian Groffen <fabian@monetdb.org> - 11.19.1-20141024
+- merovingian: monetdb create: add -p flag to set monetdb user password on creation,
+  and therefore allow creating the database in unlocked state
+
+* Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
+- sql: Stop support for upgrading directly from a database created with a
+  server from the Oct2012 release or older.  You can upgrade via the
+  Feb2013 or Jan2014 release.
+
 * Fri Jul 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.17.21-20140725
 - Rebuilt.
 - BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean

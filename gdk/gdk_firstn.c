@@ -70,9 +70,9 @@
  * root of the heap with a new value if appropriate (if the new value
  * is among the first-N seen so far).  The siftup macro then restores
  * the heap property. */
-#define siftup(OPER, START, SWAP)						\
+#define siftup(OPER, START, SWAP)					\
 	do {								\
-	    pos = (START);						\
+		pos = (START);						\
 		childpos = (pos << 1) + 1;				\
 		while (childpos < n) {					\
 			/* find most extreme child */			\
@@ -80,19 +80,19 @@
 			    !(OPER(childpos + 1, childpos)))		\
 				childpos++;				\
 			/* compare parent with most extreme child */	\
-			if (OPER(pos, childpos)) {		\
-				/* exchange parent with child and */	\
-				/* sift child further */		\
-				SWAP(pos, childpos);			\
-				pos = childpos;				\
-				childpos = (pos << 1) + 1;		\
-				continue;				\
+			if (!OPER(pos, childpos)) {			\
+				/* already correctly ordered */		\
+				break;					\
 			}						\
-			break;						\
+			/* exchange parent with child and sift child */	\
+			/* further */					\
+			SWAP(pos, childpos);				\
+			pos = childpos;					\
+			childpos = (pos << 1) + 1;			\
 		}							\
 	} while (0)
 
-#define heapify(OPER, SWAP)					\
+#define heapify(OPER, SWAP)				\
 	do {						\
 		for (i = n / 2; i > 0; i--)		\
 			siftup(OPER, i - 1, SWAP);	\
