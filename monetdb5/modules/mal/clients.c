@@ -586,12 +586,12 @@ str
 CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *user = NULL, *login = NULL, *stimeout = NULL, *qtimeout = NULL, *last= NULL, *active= NULL;
-	int *userId = getArgReference_int(stk,pci,0);
-	int *loginId = getArgReference_int(stk,pci,1);
-	int *stimeoutId = getArgReference_int(stk,pci,2);
-	int *lastId = getArgReference_int(stk,pci,3);
-	int *qtimeoutId = getArgReference_int(stk,pci,4);
-	int *activeId = getArgReference_int(stk,pci,5);
+	bat *userId = getArgReference_bat(stk,pci,0);
+	bat *loginId = getArgReference_bat(stk,pci,1);
+	bat *stimeoutId = getArgReference_bat(stk,pci,2);
+	bat *lastId = getArgReference_bat(stk,pci,3);
+	bat *qtimeoutId = getArgReference_bat(stk,pci,4);
+	bat *activeId = getArgReference_bat(stk,pci,5);
     Client c;
 	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;
