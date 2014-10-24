@@ -98,11 +98,11 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 		assert(v->vtype == TYPE_bte);				\
 		&v->val.btval;								\
 	})
-#define getArgReference_oid(s, pci, k)				\
-	({												\
-		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
-		assert(v->vtype == TYPE_oid);				\
-		&v->val.oval;								\
+#define getArgReference_oid(s, pci, k)							\
+	({															\
+		ValRecord *v = &(s)->stk[(pci)->argv[k]];				\
+		assert(v->vtype == TYPE_oid || v->vtype == TYPE_void);	\
+		&v->val.oval;											\
 	})
 #define getArgReference_ptr(s, pci, k)				\
 	({												\
