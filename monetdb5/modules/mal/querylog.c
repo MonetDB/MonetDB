@@ -36,6 +36,7 @@
 
 #include "monetdb_config.h"
 #include "querylog.h"
+#include "mtime.h"
 
 /* (c) M.L. Kersten
  * The query logger facility is hardwired to avoid interference 
@@ -298,7 +299,7 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *q = getArgReference_str(stk,pci,1);
 	str *pipe = getArgReference_str(stk,pci,2);
 	str  *usr = getArgReference_str(stk,pci,3);
-	lng *tick = getArgReference_lng(stk,pci,4);
+	timestamp *tick = getArgReference(stk,pci,4);
 	oid o;
 
 	(void) cntxt;
@@ -323,8 +324,8 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *tick1  = getArgReference_lng(stk,pci,1);
-	lng *tick2  = getArgReference_lng(stk,pci,2);
+	timestamp *tick1  = getArgReference(stk,pci,1);
+	timestamp *tick2  = getArgReference(stk,pci,2);
 	str *arg	= getArgReference_str(stk,pci,3);
 	wrd *tuples = getArgReference_wrd(stk,pci,4);
 	lng *xtime  = getArgReference_lng(stk,pci,5);
