@@ -21,7 +21,7 @@ monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(resp) {
 });
 
 /* now actually connect */
-var conn = monetdb.connect({dbname:dbname, port:dbport}, function(resp) {
+var conn = monetdb.connect({dbname:dbname, port:dbport, debug: false}, function(resp) {
 	assert.equal(true,resp.success);
 });
 
@@ -66,7 +66,6 @@ var longstr = rep('ABCDEFGHIJKLMNOP',10000);
 conn.query("SELECT '"+longstr+"'", function(res) {
 	assert.equal(true, res.success);
 	assert.equal(longstr,res.data[0][0]);
-
 });
 
 /* failing query */
@@ -75,4 +74,11 @@ conn.query('MEHR BIER', function(res) {
 	assert(res.message.trim().length > 0);
 });
 
-conn.close();
+/* prepared statement */
+conn.prepare('PREPARE select id from tables where name=? and type=? and readonly=?', function(resp) {
+	assert.equal(true, resp.success);
+	resp.exec('connections', 0, false, function(resp2) {
+		assert(resp2.rows > 0);
+		conn.close();
+	});
+});
