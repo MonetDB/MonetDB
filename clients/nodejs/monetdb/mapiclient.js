@@ -397,6 +397,7 @@ function _parseresponse(msg) {
 		var type_lengths = _hdrline(lines[4]);
 
 		resp.structure = [];
+		resp.col = {};
 		for (var i = 0; i < table_names.length; i++) {
 			var colinfo = {
 				table : table_names[i],
@@ -405,6 +406,7 @@ function _parseresponse(msg) {
 				typelen : parseInt(type_lengths[i]),
 				index : i
 			};
+			resp.col[colinfo.column] = colinfo.index;
 			resp.structure.push(colinfo);
 		}
 		resp.data = _parsetuples(column_names, column_types, lines.slice(5, lines.length-1));

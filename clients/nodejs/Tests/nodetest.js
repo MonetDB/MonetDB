@@ -18,7 +18,7 @@ monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
 });
 
 /* now actually connect */
-var conn = monetdb.connect({dbname:dbname, port:dbport, debug: false}, function(err) {
+var conn = monetdb.connect({dbname:dbname, port:dbport, debug: true}, function(err) {
 	assert.equal(null, err);
 });
 
