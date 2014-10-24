@@ -61,12 +61,11 @@ function rep(str,n) {
 	}
 	return ret;
 }
-var longstr = rep('ABCDEFGHIJKLMNOP',10000);
+var longstr = rep('ABCDEFGHIJKLMNOP', 10000);
 
 conn.query("SELECT '"+longstr+"'", function(res) {
 	assert.equal(true, res.success);
 	assert.equal(longstr,res.data[0][0]);
-
 });
 
 /* failing query */
@@ -75,4 +74,13 @@ conn.query('MEHR BIER', function(res) {
 	assert(res.message.trim().length > 0);
 });
 
-conn.close();
+/* prepared statement */
+conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', function(r){
+	assert.equal(true,r.success);
+	r.exec('connections', 0, false, function(r) {
+		assert.equal(true,r.success);
+		assert(r.rows > 0);
+		conn.close();
+	});
+});
+
