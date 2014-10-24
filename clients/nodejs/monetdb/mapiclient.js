@@ -11,6 +11,7 @@ function MonetDBConnection(options, conncallback) {
 	this.read_callback = undefined;
 	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
+	this.do_close = false;
 
 	this.queryqueue = [];
 	var thizz = this;
@@ -25,43 +26,96 @@ function MonetDBConnection(options, conncallback) {
 	});
 	this.socket.on('error', function(x) {
 		if (conncallback != undefined)
-			conncallback({'success':false, 'message':x.toString()});
+			conncallback(x.toString());
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
 	this.request('Xauto_commit 1', undefined, true);
 	/* get server environment into connector */
-	this.request('SELECT * FROM env()', function(x) {
+	this.request('SELECT * FROM env()', function(err, resp) {
+		if (err) {
+			if (this.conn_callback != undefined)
+				this.conn_callback(err);
+			return;
+		}
 		thizz.env = {};
-		x.data.forEach(function(l) { 
+		resp.data.forEach(function(l) { 
 			thizz.env[l.name] = l.value;
 		 });
 	});
 	this.request('SELECT 42', function(x) {
 		if (this.conn_callback != undefined)
-			this.conn_callback({'success':true, 'message':'ok'});
+			this.conn_callback(null);
 	});
 }
 
 MonetDBConnection.prototype.request = 
-MonetDBConnection.prototype.query = function(message, callback, raw) {
-	if (!raw) {
-		message = 's'+message+';';
+MonetDBConnection.prototype.query = function() {
+	var message = arguments[0];
+
+	var params = [];
+	var callback = undefined;
+	var raw = false;
+
+	for (argi in arguments) {
+		if (typeof arguments[argi] == 'function') {
+			callback = arguments[argi];
+		}
+		if (Array.isArray(arguments[argi])) {
+			params = arguments[argi];
+		}
+		if (typeof arguments[argi] == 'boolean') {
+			raw = arguments[argi];
+		}
 	}
-	this.queryqueue.push({'message' : message , 'callback' : callback})
+
+	if (Array.isArray(arguments[1])) {
+		params = arguments[1];
+		callback = arguments[2];
+		raw = arguments[3];
+
+		this.prepare(message, function(err, res) {
+			if (err) {
+				if (callback != undefined) {
+					callback(err);
+				}
+				return;
+			}
+			res.exec(params, function(err, res) {
+				if (err) {
+					if (callback != undefined) {
+						callback(err);
+					}
+					return;
+				}
+				if (callback != undefined) {
+					callback(null, res);
+				}
+			});
+		});
+	}
+	else {
+		callback = arguments[1];
+		raw = arguments[2];
+		if (!raw) {
+			message = 's' + message + ';';
+		}
+		this.queryqueue.push({'message' : message , 'callback' : callback});
+	}
 }
 
 MonetDBConnection.prototype.prepare = function(query, callback) {
 	if (query.toUpperCase().trim().substring(0,7) != 'PREPARE')
 		query = 'PREPARE ' + query;
 	var thizz = this;
-	thizz.query(query, function(resp) {
-		if (resp.success) {
-			var execfun = function() {
-				/* last parameter is the callback on result */
-				var ecallback = arguments[arguments.length-1];
-				/* first n-1 parameters are the values to bind */
-				var bindparams = Array.prototype.slice.call(arguments, 0, arguments.length-1);
+	thizz.query(query, function(error, resp) {
+		if (!error) {
+			var execfun = function(bindparams, ecallback) {
+				/* the prepare response tells us how many parameters we need to bind */
+				if (bindparams.length != resp.rows-1) {
+					ecallback('missing parameters');
+					return;
+				}
 				var quoted = bindparams.map(function(param) {
 					var type = typeof param;
 					switch(type) {
@@ -69,31 +123,36 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 						case 'number':
 							return ''+param;
 							break
-						default:
+						case 'string':
 						/* escape single quotes except if they are already escaped */
 							return "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
 							break
+						default:
+							return param;
+							break;
 					}
 				}).join(', ');
 
 				var execquery = 'EXEC ' + resp.queryid + '(' + quoted + ')';
 				thizz.query(execquery, ecallback);
 			}
-			callback({'success' : true, 'message' : 'ok', 'prepare' :  resp, 'exec' : execfun});
+
+			var releasefun = function() {
+				thizz.query('Xrelease ' + resp.queryid, undefined, true);
+			}
+
+			callback(null, {'message' : 'ok', 'prepare' :  resp, 'exec' : execfun, 'release' : releasefun});
 		}
 		else {
-			callback(resp);
+			callback(error);
 		}
 	});
 }
 
+/* we need to wait till everything is done before we close the socket */
 MonetDBConnection.prototype.disconnect = 
 MonetDBConnection.prototype.close = function() {
-	var thizz = this;
-	/* kills the connection after the query has been processed (will also wait for all others) */
-	this.request('SELECT 42', function(x) {
-		thizz.socket.destroy();
-	});
+	this.do_close = true;
 }
 
 exports.connect = exports.open = function() {
@@ -119,9 +178,9 @@ function handle_message(message) {
 	if (this.state == 'connected') {
 		/* error message during authentication? */
 		if (message.charAt(0) == '!') {
-			message = 'Error: '+message.substring(1,message.length-1);
+			message = 'Error: ' + message.substring(1, message.length - 1);
 			if (this.conn_callback != undefined)
-				this.conn_callback({'success':false, 'message':message});
+				this.conn_callback(message);
 			return;
 		}
 
@@ -137,22 +196,20 @@ function handle_message(message) {
 	}
 
 	var response = {};
+	var error = null;
 
 	/* error message */
 	if (message.charAt(0) == '!') {
-		response.success = false;
-		response.message = message.substring(1,message.length-1);
+		error = message.substring(1,message.length-1);
 	}
 
 	/* query result */
 	if (message.charAt(0) == '&') {
 		response = _parseresponse(message);
-		response.success = true;
-		response.message = 'ok';
 	}
 
 	if (this.read_callback != undefined) {
-		this.read_callback(response);
+		this.read_callback(error, response);
 		this.read_callback = undefined;
 	}
 	next_op.call(this);
@@ -161,8 +218,12 @@ function handle_message(message) {
 
 function next_op() {
 	if (this.queryqueue.length < 1) {
+		if (this.do_close) {
+			this.socket.destroy();
+		}
 		return;
 	}
+
 	var op = this.queryqueue.shift();
 	send_message.call(this, op.message);
 	this.read_callback = op.callback;
@@ -201,7 +262,6 @@ function handle_input(data) {
 		data.copy(leftover, 0, read_cnt, data.length);
 		handle_input.call(this, leftover);
 	}
-
 };
 
 function send_message(message) {
@@ -231,7 +291,6 @@ function send_message(message) {
 function __sha512(str) {
 	return crypto.createHash('sha512').update(str).digest('hex');
 }
-
 
 function _parsetuples(names, types, lines) {
 	var state = 'INCRAP';
