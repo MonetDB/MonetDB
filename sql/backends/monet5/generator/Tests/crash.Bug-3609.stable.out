@@ -1,0 +1,32 @@
+stdout of test 'crash.Bug-3609` in directory 'sql/backends/monet5/generator` itself:
+
+
+# 22:37:45 >  
+# 22:37:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33733" "--set" "mapi_usock=/var/tmp/mtest-5645/.s.monetdb.33733" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_backends_monet5_generator" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 22:37:45 >  
+
+# MonetDB 5 server v11.19.2
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_generator', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33733/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5645/.s.monetdb.33733
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:37:46 >  
+# 22:37:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5645" "--port=33733"
+# 22:37:46 >  
+
+
+# 22:37:46 >  
+# 22:37:46 >  "Done."
+# 22:37:46 >  
+
