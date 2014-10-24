@@ -1,6 +1,5 @@
 # MAPI implementation for R
 
-PROTOCOL_v8 <- 8
 PROTOCOL_v9 <- 9
 MAX_PACKET_SIZE <- 8192
 
@@ -232,14 +231,12 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       # no need to check the returned values, as there is none. If we get no error, all is well.
       return(env)
     }
-    
   }
 }
 
 .mapiParseHeader <- function(line, stupidInverseColsRows=FALSE) {
-  tableinfo <- strsplit(line, " ", fixed=TRUE, useBytes=TRUE)
-  tableinfo <- tableinfo[[1]]
-  
+  tableinfo <- strsplit(line, " ", fixed=TRUE, useBytes=TRUE)[[1]]
+    
   id    <- as.numeric(tableinfo[2])
   if (!stupidInverseColsRows) {
     rows  <- as.numeric(tableinfo[3])
@@ -338,8 +335,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
 .monetdbd.command <- function(passphrase, host="localhost", port=50000L, timeout=86400L) {
   socket <- .mapiConnect(host, port, timeout)
   .mapiAuthenticate(socket, "merovingian", "monetdb", passphrase, language="control")
-  .mapiWrite(socket, "#all status\n")
-  ret <- .mapiRead(socket)
+  ret <- .mapiRequest(socket, "#all status\n")
   .mapiDisconnect(socket)
   return (ret)
 }
