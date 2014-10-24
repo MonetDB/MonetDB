@@ -212,12 +212,28 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		/* note, this takes care of types oid and wrd */
 		tpe = ATOMstorage(tpe);
 	}
+	/* if the input happens to be almost sorted in ascending order
+	 * (likely a common use case), it is more efficient to start
+	 * off with the first n elements when doing a firstn-ascending
+	 * and to start off with the last n elements when doing a
+	 * firstn-descending so that most values that we look at after
+	 * this will be skipped. */
 	if (cand) {
-		for (i = 0; i < n; i++)
-			oids[i] = *cand++;
+		if (asc) {
+			for (i = 0; i < n; i++)
+				oids[i] = *cand++;
+		} else {
+			for (i = 0; i < n; i++)
+				oids[i] = *--candend;
+		}
 	} else {
-		for (i = 0; i < n; i++)
-			oids[i] = start++ + b->hseqbase;
+		if (asc) {
+			for (i = 0; i < n; i++)
+				oids[i] = start++ + b->hseqbase;
+		} else {
+			for (i = 0; i < n; i++)
+				oids[i] = --end + b->hseqbase;
+		}
 	}
 	if (asc) {
 		switch (tpe) {
