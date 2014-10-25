@@ -102,6 +102,7 @@ MonetDBConnection.prototype.query = function() {
 		}
 		this.queryqueue.push({'message' : message , 'callback' : callback});
 	}
+	return this;
 }
 
 MonetDBConnection.prototype.prepare = function(query, callback) {
@@ -147,12 +148,14 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 			callback(error);
 		}
 	});
+	return this;
 }
 
 /* we need to wait till everything is done before we close the socket */
 MonetDBConnection.prototype.disconnect = 
 MonetDBConnection.prototype.close = function() {
 	this.do_close = true;
+	return this;
 }
 
 exports.connect = exports.open = function() {

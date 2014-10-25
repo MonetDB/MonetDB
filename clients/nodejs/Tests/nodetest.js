@@ -18,16 +18,15 @@ monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
 });
 
 /* now actually connect */
-var conn = monetdb.connect({dbname:dbname, port:dbport, debug: true}, function(err) {
+var conn = monetdb.connect({dbname:dbname, port:dbport, debug: false}, function(err) {
 	assert.equal(null, err);
 });
 
 
-/* some querying */
-conn.query('start transaction');
-
-conn.query('create table foo(a int, b float, c clob)');
-conn.query("insert into foo values (42,4.2,'42'),(43,4.3,'43'),(44,4.4,'44'),(45,4.5,'45')");
+/* some querying, call chaining */
+conn.query('start transaction').
+	query('create table foo(a int, b float, c clob)').
+	query("insert into foo values (42,4.2,'42'),(43,4.3,'43'),(44,4.4,'44'),(45,4.5,'45')");
 
 conn.query('select * from foo', function(err, res) {
 	assert.equal(null, err);
@@ -44,10 +43,11 @@ conn.query('select * from foo', function(err, res) {
 	assert.equal(4, res.data.length);
 
 	assert.equal(42, res.data[0][res.structure[0].index]);
-	assert.equal(4.3, res.data[1][1]);
+	assert.equal(4.3, res.data[1][res.col['b']]);
 	assert.equal('44', res.data[2][2]);
 });
 
+/* we can also just put the queries in one .query call */
 conn.query('delete from foo; drop table foo; rollback');
 
 /* query that will stress multi-block operations */
