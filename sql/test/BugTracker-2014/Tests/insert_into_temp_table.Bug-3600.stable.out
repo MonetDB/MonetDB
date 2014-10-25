@@ -64,42 +64,56 @@ Ready.
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "aa1",	"bb1",	"cc1"	]
 #insert into foo values('aa2','bb2','cc2');
 [ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "aa1",	"bb1",	"cc1"	]
+[ "aa2",	"bb2",	"cc2"	]
 #insert into foo values('aa3','bb3','cc3');
 [ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "aa1",	"bb1",	"cc1"	]
+[ "aa2",	"bb2",	"cc2"	]
+[ "aa3",	"bb3",	"cc3"	]
 #update foo set f1 = 'abc';
-[ 0	]
+[ 3	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "abc",	"bb1",	"cc1"	]
+[ "abc",	"bb2",	"cc2"	]
+[ "abc",	"bb3",	"cc3"	]
 #delete from foo where f2 = 'bb2';
-[ 0	]
+[ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "abc",	"bb1",	"cc1"	]
+[ "abc",	"bb3",	"cc3"	]
 #insert into foo values('aa4','bb4','cc4');
 [ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	varchar # type
-% 0,	0,	0 # length
+% 3,	3,	3 # length
+[ "abc",	"bb1",	"cc1"	]
+[ "abc",	"bb3",	"cc3"	]
+[ "aa4",	"bb4",	"cc4"	]
 #drop table foo;
 
 # 16:40:50 >  

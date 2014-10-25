@@ -1,0 +1,18 @@
+This package connects node.js and MonetDB
+
+Example usage:
+
+var conn = require('../monetdb').connect({'dbname':'mydb'} , function(err) {
+	if (!err) console.log('connected');
+});
+
+conn.query('SELECT 1', function(err, res) {
+	if (!err) console.log(res);
+});
+
+conn.query('SELECT id FROM tables WHERE name=? and readonly=?', 
+	['connections', false], function(err, res) {
+	if (!err) console.log(res);
+});
+
+conn.close()
