@@ -188,6 +188,7 @@ if ( task->cl && task->n){\
 #endif
 
 mosaic_export char *MOSfiltername[];
+mosaic_export BUN MOSblocklimit;
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task,int inplace,int flg);
 mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

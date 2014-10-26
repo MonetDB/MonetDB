@@ -119,11 +119,9 @@ MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 /* limit the number of elements to consider in a block
  * It should always be smaller then: ~(0377<<MOSshift)
 */
-static BUN blocksize = 100000;
-
 BUN 
 MOSlimit(void) {
-	return blocksize;
+	return MOSblocklimit;
 	//return (BUN) ~(0377<<MOSshift);
 }
 /* allow for experiementation using different block sizes */

@@ -35,6 +35,7 @@
 #include "mosaic_prefix.h"
 
 char *MOSfiltername[]={"literal","runlength","dictionary","delta","linear","frame","prefix","EOL"};
+BUN MOSblocklimit = 100000;
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -1437,8 +1438,11 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mosaic.mosaic", MAL_MALLOC_FAIL);
 
 	bid = *getArgReference_int(stk,pci,1);
-	if( pci->argc > 1)
+	if( pci->argc > 2)
 		ply = *getArgReference_int(stk,pci,2);
+	MOSblocklimit = 100000;
+	if( pci->argc > 3)
+		MOSblocklimit  = *getArgReference_int(stk,pci,3) * 1000;
 
 	cases = STEP;
 	for ( i=ply-1; i > 0 && cases * STEP < 1024; i--)
