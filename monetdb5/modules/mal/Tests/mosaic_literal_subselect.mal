@@ -97,3 +97,15 @@ io.print(s);
 xs:= mosaic.subselect(x,c,nil:int,nil:int,false,false,true);
 io.print(xs);
 
+s:= bat.new(:oid,:str);
+bat.append(s,"the");
+bat.append(s,"big");
+bat.append(s,"brown");
+bat.append(s,"fox");
+
+ys:= mosaic.compress(s,"literal");
+
+t:= algebra.subselect(s,"big","fox",true,true,false);
+io.print(t);
+t:= mosaic.subselect(ys,"big","fox",true,true,false);
+io.print(t);

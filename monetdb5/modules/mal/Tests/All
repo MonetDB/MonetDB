@@ -68,7 +68,7 @@ manifold
 manifoldstr
 
 mosaic_literal
-mosaic_literal_inplace
+#mosaic_literal_inplace
 mosaic_runlength
 mosaic_mix
 mosaic_dictionary

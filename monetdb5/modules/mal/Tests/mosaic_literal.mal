@@ -10,3 +10,14 @@ x:= mosaic.compress(b,"literal");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);
 io.print(z);
+
+
+s:= bat.new(:oid,:str);
+bat.append(s,"the");
+bat.append(s,"big");
+bat.append(s,"brown");
+bat.append(s,"fox");
+
+y:= mosaic.compress(s,"literal");
+zs:= mosaic.decompress(y);
+io.print(zs);

@@ -151,6 +151,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	flt factor = -1.0;
 	int bits, size;
 	lng store;
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
@@ -161,22 +162,21 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 1:
 		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->stop - task->start;i++, w++)
+			for(i = 0;i < limit; i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == task->stop - task->start)
+			if ( i == limit )
 				break;
 			Prefix(bits, mask, val, val2, 8);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v, i = 0; i < task->stop -task->start; w++, i++){
+			for(w=v, i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
 			bits = i * (8-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
@@ -186,22 +186,21 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 2:
 		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->stop - task->start;i++, w++)
+			for(i = 0;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == task->stop - task->start)
+			if ( i == limit)
 				break;
 			Prefix(bits, mask, val, val2, 16);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v,i = 0; i < task->stop -  task->start; w++, i++){
+			for(w=v,i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
 			bits = i * (16-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
@@ -211,22 +210,21 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 4:
 		{	int *v = ((int*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->stop - task->start;i++, w++)
+			for(i = 0;i < limit ;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == task->stop - task->start)
+			if ( i == limit)
 				break;
 			Prefix(bits, mask, val, val2, 32);
 			if( bits == 0)
 				break;
 			val = *v & mask;
-			for(w=v,i = 0; i < task->stop - task->start; w++, i++){
+			for(w=v,i = 0; i < limit; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
 			bits = i * (32-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
@@ -236,23 +234,22 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < task->stop - task->start;i++, w++)
+			for(i = 0;i < limit ;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == task->stop - task->start)
+			if ( i == limit )
 				break;
 			Prefix(bits, mask, val, val2, 64);
 			if( bits == 0)
 				break;
 			val = *v & mask;
 			if( bits)
-			for(w=v, i = 0; i < task->stop - task->start; w++, i++){
+			for(w=v, i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
 					break;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
 			bits = i * (64-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned(MosaicBlkSize + 2 * sizeof(lng) + store,lng);
@@ -296,11 +293,11 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	case 1:
 		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			bte *dst = (bte*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 			unsigned long *base;
 			int bits, rbits; 
 			// search first non-identical value
-			for(i = task->start;i < limit;i++, w++)
+			for(i = 0;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -317,7 +314,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			
 			val = *v & mask;	//reference value
 			if( i < limit)
-			for(j=0, w = v, i = task->start; i < limit; w++, i++, j++){
+			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = (unsigned long)( *w & (~mask)); // residu
@@ -329,12 +326,12 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	case 2:
 		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			sht *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->stop - task->start >= MOSlimit()?  task->start + MOSlimit(): task->stop;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 			unsigned long *base;
 			int bits, rbits;
 
 			// search first non-identical value
-			for(i = task->start;i < limit;i++, w++)
+			for(i = 0;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -351,7 +348,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			
 			val = *v & mask;	//reference value
 			if( i < limit)
-			for(j=0, w = v, i = task->start; i < limit; w++, i++, j++){
+			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = *w & (~mask); // residu
@@ -363,12 +360,12 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	case 4:
 		{	int *v = ((int*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			int *dst = (int*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 			unsigned long *base;
 			int bits, rbits;
 
 			// search first non-identical value
-			for(i = task->start;i < limit;i++, w++)
+			for(i = 0;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -386,7 +383,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			val = *v & mask;	//reference value
 			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			if( i < limit)
-			for(j=0, w = v, i =task->start; i < limit; w++, i++, j++){
+			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
 				m =(unsigned long) (*w & (~mask)); // residu
@@ -398,12 +395,12 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask, m;
 			lng *dst = (lng*)  (((char*) blk) + MosaicBlkSize);
-			BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit(): task->stop;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 			unsigned long *base;
 			int bits, rbits; 
 
 			// search first non-identical value
-			for(i = task->start;i < limit;i++, w++)
+			for(i = 0;i < limit;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -421,7 +418,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			val = *v & mask;	//reference value
 			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, rbits,mask);
 			if( i < limit)
-			for(j=0, w = v, i = task->start; i < limit; w++, i++,j++){
+			for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
 				if ( val  != (*w & mask) )
 					break;
 				m = *w & (~mask); // residu

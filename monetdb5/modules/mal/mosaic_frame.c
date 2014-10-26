@@ -102,14 +102,13 @@ MOSskip_frame(Client cntxt, MOStask task)
 #define estimateFrame(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	TPE *dict= (TPE*)hdr->frame;\
-	for(i =task->start; i<task->stop; i++, val++){\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
 		MOSfind(j,delta,0,hdr->framesize);\
 		if( j == hdr->framesize || dict[j] != delta )\
 			break;\
 	}\
-	i -= task->start;\
-	if ( i > MOSlimit() ) i = MOSlimit();\
 	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,TPE);\
 }
 
@@ -118,7 +117,8 @@ MOSskip_frame(Client cntxt, MOStask task)
 #define makeFrame(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	TPE *dict = (TPE*)hdr->frame,v;\
-	for(i =task->start; i< task->stop; i++, val++){\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for(i =0; i< limit; i++, val++){\
 		delta = *val - frame;\
 		for(j= 0; j< hdr->framesize; j++)\
 			if( dict[j] == delta) break;\
@@ -177,8 +177,9 @@ MOScreateframe(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
 			int *dict = (int*)hdr->frame,v;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
-			for(i =task->start; i< task->stop; i++, val++){
+			for(i =0; i< limit; i++, val++){
 				delta = *val - frame;
 				for(j= 0; j< hdr->framesize; j++)
 					if( dict[j] == delta) break;
@@ -243,13 +244,13 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
 			int *dict = (int*)hdr->frame;
-			for(i =task->start; i<task->stop; i++, val++){
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			for(i =0; i<limit; i++, val++){
 				delta= *val - frame;
 				MOSfind(j,delta,0,hdr->framesize);
 				if( j == hdr->framesize || dict[j] != delta)
 					break;
 			}
-			i -= task->start;
 			if ( i > MOSlimit() ) i = MOSlimit();
 			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,lng);
 		}
@@ -276,24 +277,23 @@ MOSestimate_frame(Client cntxt, MOStask task)
 #define FRAMEcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	TPE *dict = (TPE*)hdr->frame;\
-	BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit(): task->stop;\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
     *(TPE*) task->dst = frame;\
 	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	base[0]=0;\
-	for(i =task->start; i<limit; i++, val++){\
+	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
 		MOSfind(j,delta,0,hdr->framesize);\
 		if(j == hdr->framesize || dict[j] != delta) \
 			break;\
 		else {\
 			MOSincCnt(blk,1);\
-			framecompress(base,(i- task->start),hdr->framebits,j);\
+			framecompress(base,i,hdr->framebits,j);\
 		}\
 	}\
 	assert(i);\
 }
-
 
 void
 MOScompress_frame(Client cntxt, MOStask task)
@@ -322,14 +322,14 @@ MOScompress_frame(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
 			int *dict = (int*)hdr->frame;
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			*(int*) task->dst = frame;
 			task->dst += sizeof(unsigned long);
 			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
 			base[0]=0;
-			for(i =task->start; i<limit; i++, val++){
+			for(i =0; i<limit; i++, val++){
 				delta = *val - frame;
 				MOSfind(j,delta,0,hdr->framesize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d framebits %d\n",i, *val,j,hdr->framebits);
@@ -337,13 +337,13 @@ MOScompress_frame(Client cntxt, MOStask task)
 					break;
 				else {
 					MOSincCnt(blk,1);
-					cid = ((i- task->start) * hdr->framebits)/64;
-					lshift= 63 -(((i- task->start) * hdr->framebits) % 64) ;
+					cid = i * hdr->framebits/64;
+					lshift= 63 -((i * hdr->framebits) % 64) ;
 					if ( lshift >= hdr->framebits){
 						base[cid]= base[cid] | (((unsigned long)j) << (lshift-hdr->framebits));
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d \n",cid, lshift, hdr->framebits);
 					}else{ 
-						rshift= 63 -  (((i- task->start)+1) * hdr->framebits) % 64;
+						rshift= 63 -  ((i+1) * hdr->framebits) % 64;
 						base[cid]= base[cid] | (((unsigned long)j) >> (hdr->framebits-lshift));
 						base[cid+1]= 0 | (((unsigned long)j)  << rshift);
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d %d val %o %o\n", cid, lshift, rshift,

@@ -82,13 +82,14 @@ MOSskip_delta(Client cntxt, MOStask task)
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
-	for(v++,i =1; i<task->stop - task->start; i++,v++){\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop-task->start;\
+	for(v++,i =1; i<limit; i++,v++){\
 		delta = *v -val;\
 		if ( EXPR)\
 			break;\
 		val = *v;\
 	}\
-	factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,TYPE);\
+	if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,TYPE);\
 }
 
 // estimate the compression level 
@@ -118,13 +119,14 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	break;
 	case TYPE_int:
 		{	int *v = ((int*)task->src) + task->start, val= *v, delta=0;
-			for(v++,i =1; i<task->stop - task->start; i++,v++){
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop-task->start;
+			for(v++,i =1; i<limit; i++,v++){
 				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
 				val = *v;
 			}
-			factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,int);
+			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,int);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.

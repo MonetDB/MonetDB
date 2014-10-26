@@ -106,13 +106,12 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 #define estimateDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	TPE *dict= (TPE*)hdr->dict;\
-	for(i =task->start; i<task->stop; i++, val++){\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for(i =0; i<limit; i++, val++){\
 		MOSfind(j,*val,0,hdr->dictsize);\
 		if( j == hdr->dictsize || dict[j] != *val )\
 			break;\
 	}\
-	i -= task->start;\
-	if ( i > MOSlimit() ) i = MOSlimit();\
 	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,TPE);\
 }
 
@@ -121,7 +120,8 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 #define makeDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	TPE *dict = (TPE*)hdr->dict,v;\
-	for(i =task->start; i< task->stop; i++, val++){\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for(i = 0; i< limit; i++, val++){\
 		for(j= 0; j< hdr->dictsize; j++)\
 			if( dict[j] == *val) break;\
 		if ( j == hdr->dictsize){\
@@ -179,8 +179,9 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start;
 			int *dict = (int*)hdr->dict,v;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
-			for(i =task->start; i< task->stop; i++, val++){
+			for(i =0; i< limit; i++, val++){
 				for(j= 0; j< hdr->dictsize; j++)
 					if( dict[j] == *val) break;
 				if ( j == hdr->dictsize){
@@ -275,17 +276,17 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 #define DICTcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	TPE *dict = (TPE*)hdr->dict;\
-	BUN limit = task->stop - task->start > MOSlimit()? task->start + MOSlimit(): task->stop;\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
 	base  = (unsigned long*) task->dst; \
 	base[0]=0;\
-	for(i =task->start; i<limit; i++, val++){\
+	for(i =0; i<limit; i++, val++){\
 		MOSfind(j,*val,0,hdr->dictsize);\
 		if(j == hdr->dictsize || dict[j] != *val) \
 			break;\
 		else {\
 			MOSincCnt(blk,1);\
-			dictcompress(base,(i- task->start),hdr->bits,j);\
+			dictcompress(base,i,hdr->bits,j);\
 		}\
 	}\
 	assert(i);\
@@ -308,7 +309,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTcompress(sht); break;
-	case TYPE_lng: DICTcompress(lng); break;
+	case TYPE_int: DICTcompress(int); break;
 	case TYPE_oid: DICTcompress(oid); break;
 	case TYPE_wrd: DICTcompress(wrd); break;
 	case TYPE_flt: DICTcompress(flt); break;
@@ -316,28 +317,28 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTcompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int *val = ((int*)task->src) + task->start;
-			int *dict = (int*)hdr->dict;
-			BUN limit = task->elm > MOSlimit()? MOSlimit(): task->elm;
+	case TYPE_lng:
+		{	lng *val = ((lng*)task->src) + task->start;
+			lng *dict = (lng*)hdr->dict;
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			base  = (unsigned long*) task->dst; // start of bit vector
 			base[0]=0;
-			for(i =task->start; i<limit; i++, val++){
+			for(i =0; i<limit; i++, val++){
 				MOSfind(j,*val,0,hdr->dictsize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d bits %d\n",i, *val,j,hdr->bits);
 				if( j == hdr->dictsize || dict[j] != *val )
 					break;
 				else {
 					MOSincCnt(blk,1);
-					cid = ((i- task->start) * hdr->bits)/64;
-					lshift= 63 -(((i- task->start) * hdr->bits) % 64) ;
+					cid = i * hdr->bits/64;
+					lshift= 63 -((i * hdr->bits) % 64) ;
 					if ( lshift >= hdr->bits){
 						base[cid]= base[cid] | (((unsigned long)j) << (lshift-hdr->bits));
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d \n",cid, lshift, hdr->bits);
 					}else{ 
-						rshift= 63 -  (((i- task->start)+1) * hdr->bits) % 64;
+						rshift= 63 -  ((i+1) * hdr->bits) % 64;
 						base[cid]= base[cid] | (((unsigned long)j) >> (hdr->bits-lshift));
 						base[cid+1]= 0 | (((unsigned long)j)  << rshift);
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d %d val %o %o\n", cid, lshift, rshift,

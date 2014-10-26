@@ -125,10 +125,10 @@ MOSskip_linear(Client cntxt, MOStask task)
 #define Estimate(TYPE)\
 {	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
 	TYPE step = *v - val;\
-	for( i=1; i < task->stop - task->start; i++, val = *v, v++)\
+	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	for( i=1; i < limit; i++, val = *v, v++)\
 	if (  *v - val != step)\
 		break;\
-	if( i >= MOSlimit()) i = MOSlimit();\
 	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
 }
 
@@ -163,10 +163,10 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *v = ((int*)task->src)+ task->start, val= *v++;
 			int step = *v - val;
-			for(i=1; i<task->stop - task->start; i++, val = *v++)
+			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			for(i=1; i<limit; i++, val = *v++)
 			if ( *v -val != step)
 				break;
-			if( i >= MOSlimit()) i = MOSlimit();
 			factor =  ( (flt)i * sizeof(int))/wordaligned( MosaicBlkSize + 2 * sizeof(int),int);
 		}
 	}

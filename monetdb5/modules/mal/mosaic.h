@@ -88,11 +88,6 @@ typedef int *MosaicBlk;
 #define MOSgetCnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
 #define MOSincCnt(Blk,I) *(Blk)= *(Blk)+I
 
-/* limit the number of elements to consider in a block
- * It should always be smaller then: ~(0377<<MOSshift)
-*/
-#define MOSlimit() (int) ~(0377<<MOSshift)
-
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
  */
@@ -206,5 +201,6 @@ mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
+mosaic_export BUN MOSlimit(void);
 
 #endif /* _MOSLIST_H */
