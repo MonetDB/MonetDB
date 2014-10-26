@@ -12,6 +12,7 @@ function MonetDBConnection(options, conncallback) {
 	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
 	this.do_close = false;
+	this.alldone = false;
 
 	this.queryqueue = [];
 	var thizz = this;
@@ -40,7 +41,7 @@ function MonetDBConnection(options, conncallback) {
 		}
 		thizz.env = {};
 		resp.data.forEach(function(l) { 
-			thizz.env[l.name] = l.value;
+			thizz.env[l[resp.col.name]] = l[resp.col.value];
 		 });
 	});
 	this.request('SELECT 42', function(x) {
@@ -52,7 +53,6 @@ function MonetDBConnection(options, conncallback) {
 MonetDBConnection.prototype.request = 
 MonetDBConnection.prototype.query = function() {
 	var message = arguments[0];
-
 	var params = [];
 	var callback = undefined;
 	var raw = false;
@@ -101,6 +101,11 @@ MonetDBConnection.prototype.query = function() {
 			message = 's' + message + ';';
 		}
 		this.queryqueue.push({'message' : message , 'callback' : callback});
+		/* if no other queries are still running, we need to call next_op to send it */
+		if (this.alldone) {
+			this.alldone = false;
+			next_op.call(this);
+		}
 	}
 	return this;
 }
@@ -112,17 +117,12 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	thizz.query(query, function(error, resp) {
 		if (!error) {
 			var execfun = function(bindparams, ecallback) {
-				/* the prepare response tells us how many parameters we need to bind */
-				if (bindparams.length != resp.rows-1) {
-					ecallback('missing parameters');
-					return;
-				}
 				var quoted = bindparams.map(function(param) {
 					var type = typeof param;
 					switch(type) {
 						case 'boolean':
 						case 'number':
-							return ''+param;
+							return '' + param;
 							break
 						case 'string':
 						/* escape single quotes except if they are already escaped */
@@ -142,7 +142,7 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 				thizz.query('Xrelease ' + resp.queryid, undefined, true);
 			}
 
-			callback(null, {'message' : 'ok', 'prepare' :  resp, 'exec' : execfun, 'release' : releasefun});
+			callback(null, {'prepare' :  resp, 'exec' : execfun, 'release' : releasefun});
 		}
 		else {
 			callback(error);
@@ -151,7 +151,6 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	return this;
 }
 
-/* we need to wait till everything is done before we close the socket */
 MonetDBConnection.prototype.disconnect = 
 MonetDBConnection.prototype.close = function() {
 	this.do_close = true;
@@ -164,7 +163,7 @@ exports.connect = exports.open = function() {
 
 function handle_message(message) {
 	if (this.options.debug)
-		console.log('RX ['+this.state+']: '+message);
+		console.log('RX ['+this.state+']: ' + message);
 
 	/* prompt, good */
 	if (message == '') {
@@ -203,7 +202,7 @@ function handle_message(message) {
 
 	/* error message */
 	if (message.charAt(0) == '!') {
-		error = message.substring(1,message.length-1);
+		error = message.substring(1, message.length - 1);
 	}
 
 	/* query result */
@@ -221,6 +220,7 @@ function handle_message(message) {
 
 function next_op() {
 	if (this.queryqueue.length < 1) {
+		this.alldone = true;
 		if (this.do_close) {
 			this.socket.destroy();
 		}
@@ -455,5 +455,3 @@ function __get_connect_args(options) {
 	__check_arg(options, 'debug'   , 'boolean', false);
   return options;
 }
-
-

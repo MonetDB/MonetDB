@@ -20,6 +20,7 @@ monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
 /* now actually connect */
 var conn = monetdb.connect({dbname:dbname, port:dbport, debug: false}, function(err) {
 	assert.equal(null, err);
+	assert.equal(conn.env.gdk_dbname, dbname);
 });
 
 
