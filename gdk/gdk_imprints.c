@@ -29,6 +29,8 @@
 #include "gdk_private.h"
 #include "gdk_imprints.h"
 
+#define IMPRINTS_VERSION	2
+
 #define BINSIZE(B, FUNC, T) do {		\
 	switch (B) {				\
 		case 8: FUNC(T,8); break;	\
@@ -639,7 +641,7 @@ BATimprints(BAT *b)
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
-			    ((hdata[0] & 0xFF00) >> 8) == 2 && /* version 2 */
+			    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
 			    st.st_size >= (off_t) (imprints->imprints->size =
@@ -723,7 +725,7 @@ BATimprints(BAT *b)
 		 * In addition, we add some housekeeping entries at
 		 * the start so that we can determine whether we can
 		 * trust the imprints when encountered on startup (including
-		 * a version number -- CURRENT VERSION is 1 ). */
+		 * a version number -- CURRENT VERSION is 2). */
 		if (HEAPalloc(imprints->imprints,
 			      64 * b->T->width +
 			      64 * 2 * SIZEOF_OID +
@@ -800,9 +802,9 @@ BATimprints(BAT *b)
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			/* add version number */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 8;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 2 << 16;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
 #if defined(NATIVE_WIN32)
