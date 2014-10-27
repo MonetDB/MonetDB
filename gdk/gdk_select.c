@@ -344,7 +344,7 @@ do {									\
 #define checkMINMAX(B)							\
 do {									\
 	int ii;								\
-	BUN *imp_cnt = (BUN *) (((oid *)imprints->stats)+128);		\
+	BUN *imp_cnt = imprints->stats + 128;				\
 	imp_min = imp_max = nil;					\
 	for (ii = 0; ii < B; ii++) {					\
 		if ((imp_min == nil) && (imp_cnt[ii])) {		\
