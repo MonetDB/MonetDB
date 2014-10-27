@@ -13,7 +13,11 @@ monetdb.connect({dbname:'nonexist', port:dbport}, function(err) {
 	assert(err);
 });
 
-monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
+var failedconn = monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
+	assert(err);
+});
+/* try to query on a failed connection, we need this callback */
+failedconn.query('SELECT 1',function(err,res) {
 	assert(err);
 });
 

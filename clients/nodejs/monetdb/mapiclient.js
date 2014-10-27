@@ -28,6 +28,8 @@ function MonetDBConnection(options, conncallback) {
 	this.socket.on('error', function(x) {
 		if (conncallback != undefined)
 			conncallback(x.toString());
+		this.state = 'disconnected';
+		cleanup.call(thizz);
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
@@ -44,7 +46,7 @@ function MonetDBConnection(options, conncallback) {
 			thizz.env[l[resp.col.name]] = l[resp.col.value];
 		 });
 	});
-	this.request('SELECT 42', function(x) {
+	this.query('SELECT 42', function(x) {
 		if (this.conn_callback != undefined)
 			this.conn_callback(null);
 	});
@@ -69,19 +71,27 @@ MonetDBConnection.prototype.query = function() {
 		}
 	}
 
+	if (this.state == 'disconnected') {
+		if (callback != undefined) {
+			callback('Invalid connection');
+		}
+		cleanup.call(this);
+		return;
+	}
+
 	if (Array.isArray(arguments[1])) {
 		params = arguments[1];
 		callback = arguments[2];
 		raw = arguments[3];
 
-		this.prepare(message, function(err, res) {
+		this.prepare(message, function(err, resp) {
 			if (err) {
 				if (callback != undefined) {
 					callback(err);
 				}
 				return;
 			}
-			res.exec(params, function(err, res) {
+			resp.exec(params, function(err, rese) {
 				if (err) {
 					if (callback != undefined) {
 						callback(err);
@@ -89,8 +99,9 @@ MonetDBConnection.prototype.query = function() {
 					return;
 				}
 				if (callback != undefined) {
-					callback(null, res);
+					callback(null, rese);
 				}
+				resp.release();
 			});
 		});
 	}
@@ -183,6 +194,8 @@ function handle_message(message) {
 			message = 'Error: ' + message.substring(1, message.length - 1);
 			if (this.conn_callback != undefined)
 				this.conn_callback(message);
+			this.state = 'disconnected';
+			cleanup.call(this);
 			return;
 		}
 
@@ -217,7 +230,6 @@ function handle_message(message) {
 	next_op.call(this);
 }
 
-
 function next_op() {
 	if (this.queryqueue.length < 1) {
 		this.alldone = true;
@@ -230,7 +242,16 @@ function next_op() {
 	var op = this.queryqueue.shift();
 	send_message.call(this, op.message);
 	this.read_callback = op.callback;
-}	
+}
+
+function cleanup() {
+	while (this.queryqueue.length > 0) {
+		var op = this.queryqueue.shift();
+		if (op.callback != undefined) {
+			op.callback('Invalid connection');
+		}
+	}
+}
 
 function handle_input(data) {
 	/* we need to read a header obviously */
