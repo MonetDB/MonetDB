@@ -217,11 +217,11 @@ struct Imprints {
 	bte bits;		/* how many bits in imprints */
 	Heap *imprints;
 	void *bins;		/* pointer into imprints heap (bins borders)  */
-	void *stats;	/* pointer into imprints heap (stats per bin) */
+	BUN *stats;		/* pointer into imprints heap (stats per bin) */
 	void *imps;		/* pointer into imprints heap (bit vectors)   */
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
-	BUN dictcnt;	/* counter for cache dictionary               */
+	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
 typedef struct {

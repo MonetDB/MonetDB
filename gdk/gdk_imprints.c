@@ -29,6 +29,8 @@
 #include "gdk_private.h"
 #include "gdk_imprints.h"
 
+#define IMPRINTS_VERSION	2
+
 #define BINSIZE(B, FUNC, T) do {		\
 	switch (B) {				\
 		case 8: FUNC(T,8); break;	\
@@ -457,8 +459,10 @@ do {									\
 			if (!cnt_bins[bin]++) {				\
 				min_bins[bin] = max_bins[bin] = i;	\
 			} else {					\
-				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i; \
-				if (col[i] > col[max_bins[bin]]) max_bins[bin] = i; \
+				if (col[i] < col[min_bins[bin]])	\
+					min_bins[bin] = i;		\
+				if (col[i] > col[max_bins[bin]])	\
+					max_bins[bin] = i;		\
 			}						\
 		}							\
 	}								\
@@ -491,14 +495,14 @@ do {									\
 } while (0)
 
 static int
-imprints_create(BAT *b, void *inbins, void *stats, bte bits,
+imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
 	BUN i;
 	BUN dcnt, icnt, new;
-	oid *min_bins = (oid *) stats;
-	oid *max_bins = min_bins + 64;
-	BUN *cnt_bins = (BUN *)(max_bins + 64);
+	BUN *min_bins = stats;
+	BUN *max_bins = min_bins + 64;
+	BUN *cnt_bins = max_bins + 64;
 	bte bin = 0;
 	dcnt = icnt = 0;
 	for (i = 0; i < 64; i++)
@@ -637,8 +641,7 @@ BATimprints(BAT *b)
 		}
 		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
 			b->batCacheid > 0 ? 't' : 'h');
-		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1)
-			                                                      / IMPS_PAGE;
+		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints->farmid = BBPselectfarm(PERSISTENT, b->ttype,
 							   imprintsheap);
 		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
@@ -647,7 +650,7 @@ BATimprints(BAT *b)
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
-			    ((hdata[0] & 0xFF00) >> 8) == 2 && /* version 2 */
+			    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
 			    st.st_size >= (off_t) (imprints->imprints->size =
@@ -665,9 +668,8 @@ BATimprints(BAT *b)
 				imprints->impcnt = (BUN) hdata[1];
 				imprints->dictcnt = (BUN) hdata[2];
 				imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
-				imprints->stats = (char *) imprints->bins + 64 * b->T->width;
-				imprints->imps = (char *) imprints->stats + 64 * 2 * SIZEOF_OID
-					                                      + 64 * SIZEOF_BUN;
+				imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
+				imprints->imps = (void *) (imprints->stats + 64 * 3);
 				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 				b->T->imprints = imprints;
 				close(fd);
@@ -731,7 +733,7 @@ BATimprints(BAT *b)
 		 * In addition, we add some housekeeping entries at
 		 * the start so that we can determine whether we can
 		 * trust the imprints when encountered on startup (including
-		 * a version number -- CURRENT VERSION is 1 ). */
+		 * a version number -- CURRENT VERSION is 2). */
 		if (HEAPalloc(imprints->imprints,
 			      64 * b->T->width +
 			      64 * 2 * SIZEOF_OID +
@@ -749,9 +751,8 @@ BATimprints(BAT *b)
 			return NULL;
 		}
 		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
-		imprints->stats = (char *) imprints->bins + 64 * b->T->width;
-		imprints->imps = (char *) imprints->stats + 64 * 2 * SIZEOF_OID +
-			                                        64 * SIZEOF_BUN;
+		imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
+		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
 		switch (ATOMstorage(b->T->type)) {
@@ -813,9 +814,9 @@ BATimprints(BAT *b)
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			/* add version number */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 8;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 2 << 16;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
 #if defined(NATIVE_WIN32)
@@ -829,9 +830,9 @@ BATimprints(BAT *b)
 		}
 		b->T->imprints = imprints;
 	}
- 
-        t1 = GDKusec();
-        ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
+
+	t1 = GDKusec();
+	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
   do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -977,7 +978,7 @@ IMPSprint(BAT *b)
 	cchdc_t *d;
 	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
-	oid *min_bins, *max_bins;
+	BUN *min_bins, *max_bins;
 	BUN *cnt_bins;
 	bte j;
 	int i;
@@ -986,21 +987,21 @@ IMPSprint(BAT *b)
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;
-	min_bins = (oid *) imprints->stats;
+	min_bins = imprints->stats;
 	max_bins = min_bins + 64;
-	cnt_bins = (BUN *)(max_bins + 64);
+	cnt_bins = max_bins + 64;
 
 	fprintf(stderr,
 		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
 		imprints->bits, imprints->impcnt, imprints->dictcnt);
 	fprintf(stderr,"MIN = ");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " OIDFMT " ] ", min_bins[i]);
+		fprintf(stderr, "[ " BUNFMT " ] ", min_bins[i]);
 	}
 	fprintf(stderr,"\n");
 	fprintf(stderr,"MAX = ");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " OIDFMT " ] ", max_bins[i]);
+		fprintf(stderr, "[ " BUNFMT " ] ", max_bins[i]);
 	}
 	fprintf(stderr,"\n");
 	fprintf(stderr,"COUNT = ");
