@@ -348,10 +348,10 @@ do {									\
 	imp_min = imp_max = nil;					\
 	for (ii = 0; ii < B; ii++) {					\
 		if ((imp_min == nil) && (imp_cnt[ii])) {		\
-			imp_min = src[((oid *)imprints->stats)[ii]];	\
+			imp_min = basesrc[imprints->stats[ii]];		\
 		}							\
 		if ((imp_max == nil) && (imp_cnt[B-1-ii])) {		\
-			imp_max = src[(((oid *)imprints->stats)+64)[B-1-ii]]; \
+			imp_max = basesrc[imprints->stats[64+B-1-ii]];	\
 		}							\
 	}								\
 	assert((imp_min != nil) && (imp_max != nil));			\
@@ -479,6 +479,7 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	TYPE minval = MINVALUE##TYPE;					\
 	TYPE maxval = MAXVALUE##TYPE;					\
 	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
+	const TYPE *basesrc;						\
 	oid o;								\
 	BUN w, p = r;							\
 	BUN pr_off = 0;							\
@@ -490,12 +491,14 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	(void) hval;							\
 	if (use_imprints && VIEWtparent(b)) {				\
 		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
+		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
 		imprints = parent->T->imprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
 				(TYPE *)Tloc(parent,0)+BUNfirst(parent)); \
 		BBPunfix(parent->batCacheid);				\
 	} else {							\
 		imprints= b->T->imprints;				\
+		basesrc = (const TYPE *) Tloc(b, BUNfirst(b));		\
 	}								\
 	END;								\
 	if (equi) {							\
