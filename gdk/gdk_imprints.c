@@ -453,12 +453,12 @@ do {									\
 		}							\
 		GETBIN##B(bin,col[i]);					\
 		mask = IMPSsetBit(B,mask,bin);				\
-		if (col[i] != nil) { /* do not count nils */			\
-			if (!cnt_bins[bin]++) {					\
-				min_bins[bin] = max_bins[bin] = i;		\
-			} else {												\
-				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i;	\
-				if (col[i] > col[max_bins[bin]]) max_bins[bin] = i;	\
+		if (col[i] != nil) { /* do not count nils */		\
+			if (!cnt_bins[bin]++) {				\
+				min_bins[bin] = max_bins[bin] = i;	\
+			} else {					\
+				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i; \
+				if (col[i] > col[max_bins[bin]]) max_bins[bin] = i; \
 			}						\
 		}							\
 	}								\
