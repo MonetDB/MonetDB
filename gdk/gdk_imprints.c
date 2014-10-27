@@ -459,8 +459,10 @@ do {									\
 			if (!cnt_bins[bin]++) {				\
 				min_bins[bin] = max_bins[bin] = i;	\
 			} else {					\
-				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i; \
-				if (col[i] > col[max_bins[bin]]) max_bins[bin] = i; \
+				if (col[i] < col[min_bins[bin]])	\
+					min_bins[bin] = i;		\
+				if (col[i] > col[max_bins[bin]])	\
+					max_bins[bin] = i;		\
 			}						\
 		}							\
 	}								\
@@ -631,8 +633,7 @@ BATimprints(BAT *b)
 		}
 		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
 			b->batCacheid > 0 ? 't' : 'h');
-		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1)
-			                                                      / IMPS_PAGE;
+		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints->farmid = BBPselectfarm(PERSISTENT, b->ttype,
 							   imprintsheap);
 		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
@@ -818,9 +819,9 @@ BATimprints(BAT *b)
 		}
 		b->T->imprints = imprints;
 	}
- 
-        t1 = GDKusec();
-        ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
+
+	t1 = GDKusec();
+	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
   do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");

@@ -221,7 +221,7 @@ struct Imprints {
 	void *imps;		/* pointer into imprints heap (bit vectors)   */
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
-	BUN dictcnt;	/* counter for cache dictionary               */
+	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
 typedef struct {
