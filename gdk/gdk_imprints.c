@@ -453,22 +453,13 @@ do {									\
 		}							\
 		GETBIN##B(bin,col[i]);					\
 		mask = IMPSsetBit(B,mask,bin);				\
-		if (!cnt_bins[bin]++) {					\
-			min_bins[bin] = max_bins[bin] = i;		\
-		} else {						\
-			/* nil value can not be min */			\
-			if ((bin == 0) && (col[i] != nil)) {		\
-				/* in case the first value was nil and min_bin[0] \
-				 * has been initialized with it */	\
-				if (col[min_bins[0]] == nil) {		\
-					min_bins[0] = i;		\
-				} else if (col[i] < col[min_bins[0]]) {	\
-					min_bins[0] = i;		\
-				}					\
-			} else	{					\
-				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i; \
+		if (col[i] != nil) { /* do not count nils */			\
+			if (!cnt_bins[bin]++) {					\
+				min_bins[bin] = max_bins[bin] = i;		\
+			} else {												\
+				if (col[i] < col[min_bins[bin]]) min_bins[bin] = i;	\
+				if (col[i] > col[max_bins[bin]]) max_bins[bin] = i;	\
 			}						\
-			if (col[i] > col[max_bins[bin]]) max_bins[bin] = i; \
 		}							\
 	}								\
 	/* one last left */						\
@@ -573,7 +564,7 @@ BATimprints(BAT *b)
 {
 	BAT *o = NULL;
 	Imprints *imprints;
-	lng t0 =0,t1=0;
+	lng t0 = 0, t1 = 0;
 
 	assert(BAThdense(b));	/* assert void head */
 
@@ -656,7 +647,7 @@ BATimprints(BAT *b)
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
-			    ((hdata[0] & 0xFF00) >> 8) == 1 && /* version 1 */
+			    ((hdata[0] & 0xFF00) >> 8) == 2 && /* version 2 */
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
 			    st.st_size >= (off_t) (imprints->imprints->size =
@@ -824,7 +815,7 @@ BATimprints(BAT *b)
 			/* add version number */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 8;
 			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
+			((size_t *) imprints->imprints->base)[0] |= (size_t) 2 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
 #if defined(NATIVE_WIN32)

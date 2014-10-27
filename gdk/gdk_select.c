@@ -341,6 +341,28 @@ do {									\
 	}								\
 } while (0)
 
+#define checkMINMAX(B)													\
+do {																	\
+	int ii;																\
+	BUN *imp_cnt = (BUN *) (((oid *)imprints->stats)+128);				\
+	imp_min = imp_max = nil;											\
+	for (ii = 0; ii < B; ii++) {										\
+		if ((imp_min == nil) && (imp_cnt[ii])) {						\
+			imp_min = src[((oid *)imprints->stats)[ii]];				\
+		}																\
+		if ((imp_max == nil) && (imp_cnt[B-1-ii])) {					\
+			imp_max = src[(((oid *)imprints->stats)+64)[B-1-ii]];		\
+		}																\
+	}																	\
+	assert((imp_min != nil) && (imp_max != nil));						\
+	if (!s && !VIEWtparent(b)) { /* no candidate list and no views*/	\
+		if ((vl > imp_max || vh < imp_min) ||							\
+			(anti && (vl < imp_min && vh > imp_max))) {					\
+		return 0;														\
+		}																\
+	}																	\
+} while (0)																\
+
 /* choose number of bits */
 #define bitswitch(CAND,TEST)						\
 do {									\
@@ -352,10 +374,10 @@ do {									\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #TEST);					\
 	switch (imprints->bits) {					\
-	case 8:  impsmask(CAND,TEST,8); break;				\
-	case 16: impsmask(CAND,TEST,16); break;				\
-	case 32: impsmask(CAND,TEST,32); break;				\
-	case 64: impsmask(CAND,TEST,64); break;				\
+	case 8:  checkMINMAX(8); impsmask(CAND,TEST,8); break;				\
+	case 16: checkMINMAX(16); impsmask(CAND,TEST,16); break;				\
+	case 32: checkMINMAX(32); impsmask(CAND,TEST,32); break;				\
+	case 64: checkMINMAX(64); impsmask(CAND,TEST,64); break;				\
 	default: assert(0); break;					\
 	}								\
 } while (0)
@@ -462,11 +484,13 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 {									\
 	TYPE vl = *(const TYPE *) tl;					\
 	TYPE vh = *(const TYPE *) th;					\
-	TYPE v;								\
-	TYPE nil = TYPE##_nil;						\
+	TYPE imp_min;									\
+	TYPE imp_max;									\
+	TYPE v;											\
+	TYPE nil = TYPE##_nil;							\
 	TYPE minval = MINVALUE##TYPE;					\
 	TYPE maxval = MAXVALUE##TYPE;					\
-	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
+	const TYPE *src = (const TYPE *) Tloc(b, 0);	\
 	oid o;								\
 	BUN w, p = r;							\
 	BUN pr_off = 0;							\
