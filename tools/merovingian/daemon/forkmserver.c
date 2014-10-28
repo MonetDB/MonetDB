@@ -487,22 +487,22 @@ forkMserver(char *database, sabdb** stats, int force)
 				(*stats)->conns->val != NULL &&
 				(*stats)->scens != NULL &&
 				(*stats)->scens->val != NULL)
-				{
-					sablist *scen = (*stats)->scens;
-					do {
-						if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
-							break;
-					} while ((scen = scen->next) != NULL);
-					if (scen == NULL) {
-						/* we don't know what it's doing, but we don't like it
-						 * any case, so kill it */
-						terminateProcess(dp);
-						msab_freeStatus(stats);
-						pthread_mutex_unlock(&fork_lock);
-						return(newErr("database '%s' did not initialise the sql "
-									  "scenario", database));
-					}
-				} else if (dp != NULL) {
+			{
+				sablist *scen = (*stats)->scens;
+				do {
+					if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
+						break;
+				} while ((scen = scen->next) != NULL);
+				if (scen == NULL) {
+					/* we don't know what it's doing, but we don't like it
+					 * any case, so kill it */
+					terminateProcess(dp);
+					msab_freeStatus(stats);
+					pthread_mutex_unlock(&fork_lock);
+					return(newErr("database '%s' did not initialise the sql "
+								  "scenario", database));
+				}
+			} else if (dp != NULL) {
 				terminateProcess(dp);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&fork_lock);
