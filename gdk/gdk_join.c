@@ -1362,10 +1362,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		return GDK_SUCCEED;
 	}
 
-	/* hashes work on HEAD column */
-	r = BATmirror(r);
 	if (BATprepareHash(r))
 		goto bailout;
+	/* HASHloop works on HEAD column */
+	r = BATmirror(r);
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
 

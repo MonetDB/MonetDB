@@ -178,11 +178,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
 	off = b->hseqbase - b->batFirst;
-	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
 		return NULL;
 	}
+	b = BATmirror(b);	/* HASHloop works on HEAD column */
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;

@@ -3122,7 +3122,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 		BAT *bm = BATmirror(b);
 
-		if (BATprepareHash(bm))
+		if (BATprepareHash(b))
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {

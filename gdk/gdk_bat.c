@@ -526,10 +526,10 @@ BATclear(BAT *b, int force)
 
 	/* kill all search accelerators */
 	if (b->H->hash) {
-		HASHremove(b);
+		HASHremove(bm);
 	}
 	if (b->T->hash) {
-		HASHremove(bm);
+		HASHremove(b);
 	}
 	IMPSdestroy(b);
 
@@ -1229,12 +1229,12 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 
 		if (b->H->hash) {
-			HASHins(b, p, h);
+			HASHins(bm, p, h);
 			if (hsize && hsize != b->H->vheap->size)
 				HEAPwarm(b->H->vheap);
 		}
 		if (b->T->hash) {
-			HASHins(bm, p, t);
+			HASHins(b, p, t);
 
 			if (tsize && tsize != b->T->vheap->size)
 				HEAPwarm(b->T->vheap);
@@ -1334,12 +1334,12 @@ BUNappend(BAT *b, const void *t, bit force)
 	 * REASON: some accelerator updates (qsignature) use the hashes!
 	 */
 	if (b->H->hash && h) {
-		HASHins(b, i, h);
+		HASHins(bm, i, h);
 		if (hsize && hsize != b->H->vheap->size)
 			HEAPwarm(b->H->vheap);
 	}
 	if (b->T->hash) {
-		HASHins(bm, i, t);
+		HASHins(b, i, t);
 
 		if (tsize && tsize != b->T->vheap->size)
 			HEAPwarm(b->T->vheap);
@@ -1928,9 +1928,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			 * BUNlocate). Other threads might then crash.
 			 */
 			if (dohash(v->H))
-				(void) BATprepareHash(v);
-			if (dohash(v->T))
 				(void) BATprepareHash(BATmirror(v));
+			if (dohash(v->T))
+				(void) BATprepareHash(v);
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -1944,7 +1944,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 					v = BATmirror(v);
 				}
 				/* remove the least selective hash table */
-				HASHremove(BATmirror(v));
+				HASHremove(v);
 			}
 			if (v->H->hash == NULL) {
 				usemirror();

@@ -302,13 +302,13 @@ BATins(BAT *b, BAT *n, bit force)
 	    (b->batCount > 0 || !n->hkey) &&
 	    (BATcount(b) ||
 	     (BATcount(n) && n->htype != TYPE_void && !n->hdense))) {
-		BAThash(b, BATcount(b) + BATcount(n));
+		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
 	if (b->T->hash == NULL && b->tkey & BOUND2BTRUE &&
 	    (b->batCount > 0 || !n->tkey) &&
 	    (BATcount(b) ||
 	     (BATcount(n) && n->ttype != TYPE_void && !n->tdense))) {
-		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
+		BAThash(b, BATcount(b) + BATcount(n));
 	}
 	b->batDirty = 1;
 	if (fastpath) {
@@ -525,10 +525,10 @@ BATappend(BAT *b, BAT *n, bit force)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	/* a hash is useless for void bats */
 	if (b->H->hash)
-		HASHremove(b);
+		HASHremove(BATmirror(b));
 
 	if (b->T->hash && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
-		HASHremove(BATmirror(b));
+		HASHremove(b);
 	}
 	if (b->T->hash != NULL ||
 	    (b->tkey & BOUND2BTRUE) != 0 ||
@@ -639,7 +639,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &h, t);
 						if (b->T->hash) {
-							HASHins(bm, i, t);
+							HASHins(b, i, t);
 						}
 						h++;
 						i++;
@@ -655,7 +655,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &on, t);
 						if (b->T->hash) {
-							HASHins(bm, i, t);
+							HASHins(b, i, t);
 						}
 						i++;
 					}
@@ -677,7 +677,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				bunfastins(b, &h, t);
 				if (b->T->hash) {
-					HASHins(bm, i, t);
+					HASHins(b, i, t);
 				}
 				i++;
 				h++;
@@ -693,7 +693,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				bunfastins(b, &on, t);
 				if (b->T->hash) {
-					HASHins(bm, i, t);
+					HASHins(b, i, t);
 				}
 				i++;
 			}
@@ -1454,26 +1454,26 @@ BATmark(BAT *b, oid oid_base)
 		}					\
 	} while (0)
 
-#define mark_grp_loop4(BUNhead, BUNtail, init_n)	\
-	do {							\
-		oid u = oid_nil;				\
-		oid n = oid_nil;				\
-								\
-		bn->T->nil = 0;					\
-		BATloop(b, p, q) {				\
-			oid v = * (oid *) BUNtail(bi, p);	\
-								\
-			if (v != u) {				\
-				init_n;				\
-				u = v;				\
-			} else if (n != oid_nil) {		\
-				n++;				\
-			}					\
-			if (n == oid_nil)			\
-				bn->T->nil =1;			\
+#define mark_grp_loop4(BUNhead, BUNtail, init_n)			\
+	do {								\
+		oid u = oid_nil;					\
+		oid n = oid_nil;					\
+									\
+		bn->T->nil = 0;						\
+		BATloop(b, p, q) {					\
+			oid v = * (oid *) BUNtail(bi, p);		\
+									\
+			if (v != u) {					\
+				init_n;					\
+				u = v;					\
+			} else if (n != oid_nil) {			\
+				n++;					\
+			}						\
+			if (n == oid_nil)				\
+				bn->T->nil =1;				\
 			bunfastins_nocheck_inc(bn, r, BUNhead(bi, p), &n); \
-		}						\
-		bn->T->nonil = !bn->T->nil;			\
+		}							\
+		bn->T->nonil = !bn->T->nil;				\
 	} while (0)
 
 #define mark_grp_loop3(BUNhead, BUNtail, BUNfnd)			\

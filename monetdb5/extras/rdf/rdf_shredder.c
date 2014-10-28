@@ -163,7 +163,7 @@ bun = BUNfnd(BATmirror(X),(ptr)Y);\
 if (bun == BUN_NONE) {\
 	if (BATcount(X) > 4 * X->T->hash->mask) {\
 		HASHdestroy(X);\
-		BAThash(BATmirror(X), 2*BATcount(X));\
+		BAThash((X), 2*BATcount(X));\
 	}\
 	bun = (BUN) X->batCount;\
 	X = BUNappend(X, (ptr)Y, TRUE);\
@@ -233,7 +233,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 		if (bun == BUN_NONE) {
 			if (graph[MAP_LEX]->T->hash && BATcount(graph[MAP_LEX]) > 4 * graph[MAP_LEX]->T->hash->mask) {
 				HASHdestroy(graph[MAP_LEX]);
-				BAThash(BATmirror(graph[MAP_LEX]), 2*BATcount(graph[MAP_LEX]));
+				BAThash(graph[MAP_LEX], 2*BATcount(graph[MAP_LEX]));
 			}
 			bun = (BUN) ((graph[MAP_LEX])->hseqbase + (graph[MAP_LEX])->batCount);
 			graph[MAP_LEX] = BUNappend(graph[MAP_LEX], (ptr)triple->object, TRUE);

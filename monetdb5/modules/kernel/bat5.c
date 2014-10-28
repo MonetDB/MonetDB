@@ -1860,7 +1860,7 @@ BKCsetHash(bit *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BAThash(BATmirror(b), 0);
+	bn = BAThash(b, 0);
 	*ret = b == bn;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
