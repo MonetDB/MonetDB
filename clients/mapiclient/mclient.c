@@ -1509,7 +1509,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				mnstr_printf(toConsole,
 					     LLFMT " affected row%s",
 					     aff,
-					     aff == 1 ? "s" : "");
+					     aff != 1 ? "s" : "");
 				if (lid != -1) {
 					mnstr_printf(toConsole,
 						     ", last generated key: "
