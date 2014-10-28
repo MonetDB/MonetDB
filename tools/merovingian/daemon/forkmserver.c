@@ -541,6 +541,13 @@ forkMserver(char *database, sabdb** stats, int force)
 							   "itself down after starting, "
 							   "check monetdbd's logfile for possible "
 							   "hints", database));
+				case SABdbStarting:
+					return(newErr(
+							   "database '%s' has inconsistent state "
+							   "(sabaoth administration reports starting up, "
+							   "but process seems gone), "
+							   "review monetdbd's "
+							   "logfile for any peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)state));
 				}

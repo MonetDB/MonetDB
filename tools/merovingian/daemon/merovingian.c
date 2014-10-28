@@ -294,6 +294,11 @@ terminateProcess(void *p)
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
+		case SABdbStarting:
+			Mfprintf(stderr, "database '%s' appears to be starting up\n",
+					 dbname);
+			/* starting up, so we'll go to the shut down phase */
+			break;
 		default:
 			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
@@ -332,6 +337,7 @@ terminateProcess(void *p)
 		} else {
 			switch (stats->state) {
 				case SABdbRunning:
+				case SABdbStarting:
 					/* ok, try again */
 				break;
 				case SABdbCrashed:
