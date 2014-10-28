@@ -162,9 +162,12 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	return this;
 }
 
-MonetDBConnection.prototype.disconnect = 
+MonetDBConnection.prototype.disconnect =
 MonetDBConnection.prototype.close = function() {
 	this.do_close = true;
+	if (this.queryqueue.length < 1) {
+		next_op.call(this);
+	}
 	return this;
 }
 
@@ -467,12 +470,42 @@ function __check_arg(options, argname, type, dflt) {
 }
 
 function __get_connect_args(options) {
-	__check_arg(options, 'dbname'  , 'string' , 'demo');
-	__check_arg(options, 'user'    , 'string' , 'monetdb');
-	__check_arg(options, 'password', 'string' , 'monetdb');
-	__check_arg(options, 'host'    , 'string' , 'localhost');
-	__check_arg(options, 'port'    , 'number' , 50000);
-	__check_arg(options, 'language', 'string' , 'sql');
-	__check_arg(options, 'debug'   , 'boolean', false);
+	__check_arg(options, 'dbname'  , 'string'  , 'demo');
+	__check_arg(options, 'user'    , 'string'  , 'monetdb');
+	__check_arg(options, 'password', 'string'  , 'monetdb');
+	__check_arg(options, 'host'    , 'string'  , 'localhost');
+	__check_arg(options, 'port'    , 'number'  , 50000);
+	__check_arg(options, 'language', 'string'  , 'sql');
+	__check_arg(options, 'debug'   , 'boolean' , false);
+	__check_arg(options, 'q'       , 'function', undefined);
+
   return options;
 }
+
+/* Q integration, <robin.cijvat@monetdbsolutions.com> */
+['request', 'query', 'prepare'].forEach(function(funToQ) {
+	var funQ = funToQ + 'Q';
+	MonetDBConnection.prototype[funQ] = function() {
+		if (this.options.q == undefined) {
+			console.warn('We need Q as part of the connect options (q).');
+			return;
+		}
+		return this.options.q.npost(this, funToQ, arguments);
+	}
+});
+
+exports.connectQ = exports.openQ = function(options) {
+	if (options.q == undefined) {
+		console.warn('We need Q as part of the connect options (q).');
+		return;
+	}
+   var deferred = options.q.defer();
+   var conn = exports.open(options, function(err) {
+       if(err) {
+           return deferred.reject(new Error(err));
+       }
+       deferred.resolve(conn);
+   });
+   return deferred.promise;
+}
+
