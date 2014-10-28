@@ -1,3 +1,9 @@
+monetdb (11.19.3-20141028) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Oct 2014 09:02:24 +0100
+
 monetdb (11.19.1-20141024) unstable; urgency=low
 
   * Rebuilt.

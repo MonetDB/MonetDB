@@ -960,6 +960,9 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Oct 28 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.3-20141028
+- Rebuilt.
+
 * Fri Oct 24 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
 - Rebuilt.
 - BZ#2618: Implement master slave scheme
