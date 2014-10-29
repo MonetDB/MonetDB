@@ -99,6 +99,8 @@ MOSinitHeader(MOStask task)
 	hdr->factor = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
+	hdr->checksum.sumlng = 0;
+	hdr->checksum2.sumlng = 0;
 }
 
 // position the task on the mosaic blk to be scanned

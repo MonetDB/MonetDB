@@ -77,6 +77,7 @@ MOSskip_literal(Client cntxt, MOStask task)
 
 #define LITERALcompress(TYPE)\
 {	*(TYPE*) task->dst = ((TYPE*) task->src)[task->start];\
+	hdr->checksum.sum##TYPE += *(TYPE*) task->dst;\
 	task->dst += sizeof(TYPE);\
 	MOSincCnt(blk,1);\
 }
@@ -85,6 +86,7 @@ MOSskip_literal(Client cntxt, MOStask task)
 void
 MOScompress_literal(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN cnt = MOSgetCnt(blk);
 
@@ -106,6 +108,7 @@ MOScompress_literal(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 	{	*(int*) task->dst = ((int*) task->src)[task->start];
+		hdr->checksum.sumint += *(int*) task->dst;
 		task->dst += sizeof(int);
 		MOSincCnt(blk,1);
 	}
@@ -126,14 +129,17 @@ MOScompress_literal(Client cntxt, MOStask task)
 // the inverse operator, extend the src
 #define LITERALdecompress(TYPE)\
 { BUN lim = MOSgetCnt(blk); \
-	for(i = 0; i < lim; i++) \
+	for(i = 0; i < lim; i++) {\
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
+	hdr->checksum2.sum##TYPE += ((TYPE*)compressed)[i]; \
+	}\
 	task->src += i * sizeof(TYPE);\
 }
 
 void
 MOSdecompress_literal(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 	char *compressed;
@@ -154,8 +160,10 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 	{ BUN lim = MOSgetCnt(blk);	
-		for(i = 0; i < lim; i++) 
+		for(i = 0; i < lim; i++) {
 			((int*)task->src)[i] = ((int*)compressed)[i];
+			hdr->checksum2.sumint += ((int*)compressed)[i]; \
+		}
 		task->src += i * sizeof(int);
 	}
 	break;

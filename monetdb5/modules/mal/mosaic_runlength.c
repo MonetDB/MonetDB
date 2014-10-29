@@ -169,6 +169,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	for(v++, i =1; i<limit; i++,v++)\
 	if ( *v != val)\
 		break;\
+	hdr->checksum.sum##TYPE += i * val;\
 	MOSincCnt(blk, i);\
 	task->dst +=  sizeof(TYPE);\
 }
@@ -177,6 +178,7 @@ void
 MOScompress_runlength(Client cntxt, MOStask task)
 {
 	BUN i ;
+	MosaicHdr hdr  = task->hdr;
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
@@ -202,6 +204,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 			for(v++,i = 1; i<limit; i++, v++)
 			if ( *v != val)
 				break;
+			hdr->checksum.sumint += i * val;
 			MOSincCnt(blk,i);
 			task->dst +=  sizeof(int);
 		}
@@ -226,12 +229,14 @@ MOScompress_runlength(Client cntxt, MOStask task)
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val;\
+	hdr->checksum2.sum##TYPE += i * val;\
 	task->src += i * sizeof(TYPE);\
 }
 
 void
 MOSdecompress_runlength(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
 	char *compressed;
@@ -255,6 +260,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val;
+			hdr->checksum2.sumint += i * val;
 			task->src += i * sizeof(int);
 		}
 		break;

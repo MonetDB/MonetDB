@@ -647,6 +647,8 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		BBPreleaseref(b->batCacheid);
 		BBPkeepref( *ret = bsrc->batCacheid);
 	}
+	if( task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng)
+		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
 	GDKfree(task);
 
 	//if (!b->T->heap.compressed && b->ttype != TYPE_void) {
@@ -1309,6 +1311,86 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, int bid)
 	GDKfree(type);
 	BBPreleaseref(bid);
 	return 1;
+
+}
+/* slice a fixed size atom into thin columns*/
+static str
+MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
+{
+	BUN i;
+	BUN cnt= BATcount(b);
+	BAT *bats[8];
+	bte *thin[8];
+	assert(size < 8);
+	(void) cntxt;
+
+	for( i = 0; i< size; i++){
+		bats[i] = BATnew(TYPE_void,TYPE_bte, cnt, TRANSIENT);
+		if ( bats[i] == NULL){
+			for( ;i>0; i--)
+				BBPreleaseref(bats[--i]->batCacheid);
+			throw(MAL,"mosaic.slice", MAL_MALLOC_FAIL);
+		}
+		slices[i] = bats[i]->batCacheid;
+		thin[i]= (bte*) Tloc(bats[i],0);
+		BATsetcount(bats[i], cnt);
+	}
+	switch(b->ttype){
+	case TYPE_int:
+	{ union {
+		unsigned int val;
+		bte thin[4];
+	  } map;
+	  unsigned int *val = (unsigned int*) Tloc(b,0);
+	  for(i=0; i < cnt; i++, val++){
+		map.val = *val;
+		*thin[0] = map.thin[0]; thin[0]++;
+		*thin[1] = map.thin[1]; thin[1]++;
+		*thin[2] = map.thin[2]; thin[2]++;
+		*thin[3] = map.thin[3]; thin[3]++;
+	  }
+	}
+	break;
+	case TYPE_lng:
+	{ union {
+		unsigned int val;
+		bte thin[4];
+	  } map;
+	  unsigned int *val = (unsigned int*) Tloc(b,0);
+	  for(i=0; i < cnt; i++, val++){
+		map.val = *val;
+		*thin[0] = map.thin[0]; thin[0]++;
+		*thin[1] = map.thin[1]; thin[1]++;
+		*thin[2] = map.thin[2]; thin[2]++;
+		*thin[3] = map.thin[3]; thin[3]++;
+		*thin[4] = map.thin[4]; thin[4]++;
+		*thin[5] = map.thin[5]; thin[5]++;
+		*thin[6] = map.thin[6]; thin[6]++;
+		*thin[7] = map.thin[7]; thin[7]++;
+	  }
+	}
+	break;
+	default:
+		assert(0);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat slices[8];
+	BAT *b;
+	BUN s;
+	(void) cntxt;
+
+	s = (BUN) ATOMsize(getArgType(mb,pci,pci->retc));
+	if( s > 8)
+		throw(MAL,"mosaic.slice", "illegal type witdh");
+	b = BATdescriptor(* getArgReference_bat(stk,pci, pci->retc));
+	if ( b == NULL)
+		throw(MAL,"mosaic.slice", RUNTIME_OBJECT_MISSING);
+	return MOSsliceInternal(cntxt, slices, s,b);
 }
 
 str
@@ -1489,3 +1571,4 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	return MAL_SUCCEED;
 }
+

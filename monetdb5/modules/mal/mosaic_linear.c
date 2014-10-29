@@ -186,6 +186,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	for(i=1; i<limit; i++, val = *v++)\
 	if (  *v - val != step)\
 		break;\
+	else hdr->checksum.sum##TYPE += val;\
 	MOSincCnt(blk, i);\
 	task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);\
 }
@@ -194,6 +195,7 @@ void
 MOScompress_linear(Client cntxt, MOStask task)
 {
 	BUN i;
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
@@ -220,6 +222,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 			for(i=1; i<limit; i++, val = *v++)
 			if ( *v-val != step)
 				break;
+			else hdr->checksum.sumint += val;
 			MOSincCnt(blk,i);
 			task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
 		}
@@ -243,14 +246,17 @@ MOScompress_linear(Client cntxt, MOStask task)
 {	TYPE val = *(TYPE*) linear_base(blk);\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
 	BUN lim = MOSgetCnt(blk);\
-	for(i = 0; i < lim; i++)\
+	for(i = 0; i < lim; i++) {\
 		((TYPE*)task->src)[i] = val + (int) i * step;\
+		hdr->checksum2.sum##TYPE += ((TYPE*)task->src)[i];\
+	}\
 	task->src += i * sizeof(TYPE);\
 }
 
 void
 MOSdecompress_linear(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr =  task->hdr;
 	MosaicBlk blk =  task->blk;
 	BUN i;
 	(void) cntxt;
@@ -271,8 +277,10 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 		{	int val = *(int*) linear_base(blk) ;
 			int step = *(int*) linear_step(task,blk);
 			BUN lim= MOSgetCnt(blk);
-			for(i = 0; i < lim; i++)
+			for(i = 0; i < lim; i++){
 				((int*)task->src)[i] = val + i * step;
+				hdr->checksum2.sumint += (val + i *step);
+			}
 			task->src += i * sizeof(int);
 		}
 	break;

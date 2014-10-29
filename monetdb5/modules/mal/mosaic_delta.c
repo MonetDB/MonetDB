@@ -144,6 +144,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	*(TYPE*)task->dst = val;\
 	task->dst += sizeof(TYPE);\
 	for(v++,i =1; i<limit; i++,v++){\
+		hdr->checksum.sum##TYPE += *v;\
 		delta = *v -val;\
 		if ( EXPR )\
 			break;\
@@ -157,6 +158,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 void
 MOScompress_delta(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i = 0;
 
@@ -179,6 +181,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 			*(lng*)task->dst = val;
 			task->dst += sizeof(lng);
 			for(v++, i =1; i<limit; i++, v++){
+				hdr->checksum.sumint += *v;
 				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
@@ -211,6 +214,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
 	for(i = 0; i < lim; i++) {\
+		hdr->checksum2.sum##TYPE += val;\
 		((TYPE*)task->src)[i] = val;\
 		val += (bte) *task->dst++;\
 	}\
@@ -220,6 +224,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 void
 MOSdecompress_delta(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 	(void) cntxt;
@@ -240,6 +245,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 		val = *(lng*)task->dst ;
 		task->dst += sizeof(lng);
 		for(i = 0; i < lim; i++) {
+			hdr->checksum2.sumlng += val;
 			((lng*)task->src)[i] = val;
 			val += *(bte*) task->dst++;
 		}

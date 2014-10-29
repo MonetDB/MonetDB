@@ -281,6 +281,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	base  = (unsigned long*) task->dst; \
 	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
+		hdr->checksum.sum##TPE += *val;\
 		MOSfind(j,*val,0,hdr->dictsize);\
 		if(j == hdr->dictsize || dict[j] != *val) \
 			break;\
@@ -326,6 +327,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 			base  = (unsigned long*) task->dst; // start of bit vector
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
+				hdr->checksum.sumlng += *val;
 				MOSfind(j,*val,0,hdr->dictsize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d bits %d\n",i, *val,j,hdr->bits);
 				if( j == hdr->dictsize || dict[j] != *val )
@@ -371,6 +373,7 @@ if ( lshift >= hdr->bits){\
 	for(i = 0; i < lim; i++){\
 		dictdecompress(i);\
 		((TPE*)task->src)[i] = dict[j];\
+		hdr->checksum2.sum##TPE += dict[j];\
 	}\
 	task->src += i * sizeof(TPE);\
 }
@@ -416,6 +419,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cid %lo %lo val %o %o\n", cid, lshift, rshift,base[cid],base[cid+1], m1,  m2);
 				  }
 				((int*)task->src)[i] = dict[j];
+				hdr->checksum2.sumint += dict[j];
 			}
 			task->src += i * sizeof(int);
 		}

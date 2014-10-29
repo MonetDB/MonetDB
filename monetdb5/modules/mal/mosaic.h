@@ -59,6 +59,18 @@
 #define MOSAICINDEX 4  //> 2 elements
 typedef struct MOSAICHEADER{
 	int version;
+	union{
+		bte sumbte;
+		bit sumbit;
+		sht sumsht;
+		int sumint;
+		oid sumoid;
+		lng sumlng;
+		hge sumhge;
+		wrd sumwrd;
+		flt sumflt;
+		dbl sumdbl;
+	} checksum, checksum2;
 	// collect compression statistics for the particular task
 	lng blks[MOSAIC_METHODS];	
 	lng elms[MOSAIC_METHODS];	
@@ -201,6 +213,7 @@ mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
 mosaic_export BUN MOSlimit(void);
 

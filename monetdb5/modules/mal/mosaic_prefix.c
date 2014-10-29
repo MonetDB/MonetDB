@@ -280,6 +280,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN i, j =0 ;
 	int size;
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
 
 	(void) cntxt;
@@ -319,6 +320,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 					break;
 				m = (unsigned long)( *w & (~mask)); // residu
 				compress(base,j,rbits,m);
+				hdr->checksum.sumbte += val;
 			}
 			MOSincCnt(blk,j);
 		}
@@ -353,6 +355,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 					break;
 				m = *w & (~mask); // residu
 				compress(base,j,rbits,m);
+				hdr->checksum.sumsht += val;
 			}
 			MOSincCnt(blk,j);
 		}
@@ -388,6 +391,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 					break;
 				m =(unsigned long) (*w & (~mask)); // residu
 				compress(base,j,rbits,m);
+				hdr->checksum.sumint += val;
 			}
 			MOSincCnt(blk,j);
 		}
@@ -423,6 +427,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 					break;
 				m = *w & (~mask); // residu
 				compress(base,j,rbits,m);
+				hdr->checksum.sumlng += val;
 			}
 			MOSincCnt(blk,j);
 		}
@@ -449,6 +454,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 void
 MOSdecompress_prefix(Client cntxt, MOStask task)
 {
+	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
 	int size;
@@ -474,6 +480,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
+				hdr->checksum.sumsht += v;
 				*w++ = v;
 			}
 		}
@@ -494,6 +501,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
+				hdr->checksum.sumsht += v;
 				*w++ = v;
 			}
 		}
@@ -526,6 +534,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 					v= val | (m1 <<(rbits-lshift)) | m2;
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,base[cell],base[cell+1], m1,  m2);
 				  }
+				hdr->checksum.sumint += v;
 				*w++ = v;
 			}
 		}
@@ -546,6 +555,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
+				hdr->checksum.sumlng += v;
 				*w++ = v;
 			}
 		}

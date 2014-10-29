@@ -46,6 +46,9 @@ address MOSoptimize
 comment "Perform a search thru the compression space using up to 2^ply
 candidate combinations and blk*1000 blocksize limits";
 
+pattern slice(bid:lng)(b0:bte,b1:bte,b2:bte,b3:bte,b4:bte,b5:bte,b6:bte,b7:bte)
+address MOSslice
+comment "Break column into verticalslices";
 
 pattern dump(b:bat[:oid,:any])
 address MOSdump
@@ -249,3 +252,4 @@ comment "Overloaded leftfetchjoin operation";
 pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address MOSjoin
 comment "Overloaded join operation";
+

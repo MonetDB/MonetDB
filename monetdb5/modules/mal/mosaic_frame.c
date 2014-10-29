@@ -283,6 +283,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
+		hdr->checksum.sum##TPE += *val;\
 		delta = *val - frame;\
 		MOSfind(j,delta,0,hdr->framesize);\
 		if(j == hdr->framesize || dict[j] != delta) \
@@ -330,6 +331,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
+				hdr->checksum.sumint += *val;
 				delta = *val - frame;
 				MOSfind(j,delta,0,hdr->framesize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d framebits %d\n",i, *val,j,hdr->framebits);
@@ -377,6 +379,7 @@ if ( lshift >= hdr->framebits){\
 	for(i = 0; i < lim; i++){\
 		framedecompress(i);\
 		((TPE*)task->src)[i] = frame + dict[j];\
+		hdr->checksum2.sum##TPE += dict[j];\
 	}\
 	task->src += i * sizeof(TPE);\
 }
@@ -422,6 +425,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 					j= ((m1 <<(hdr->framebits-lshift)) | m2) & 0377;\
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cid %lo %lo val %o %o\n", cid, lshift, rshift,base[cid],base[cid+1], m1,  m2);
 				  }
+				hdr->checksum2.sumint += dict[j];
 				((int*)task->src)[i] = frame + dict[j];
 			}
 			task->src += i * sizeof(int);
