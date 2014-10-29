@@ -3796,6 +3796,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		node *n, *m;
 		list *nexps;
 
+		if (f->func->type != type)
+			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 		if (f->func->vararg) 
 			return exp_op(sql->sa, exps, f);
 	       	nexps = new_exp_list(sql->sa);
