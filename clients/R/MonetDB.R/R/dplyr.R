@@ -19,12 +19,31 @@ src_translate_env.src_monetdb <- function(x) {
 }
 
 src_desc.src_monetdb <- function(x) {
-  paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ") [", x$info$merovingian_uri,"]")
+  paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ")")
 }
 
 tbl.src_monetdb <- function(src, from, ...) {
   monetdb_check_subquery(from)
   dplyr::tbl_sql("monetdb", src = src, from = from, ...)
+}
+
+sample_n.tbl_monetdb <- function(x, size, replace = FALSE, weight = NULL) {
+  if (replace || !is.null(weight)) {
+    stop("Sorry, replace and weight are not supported for MonetDB tables. \
+      Consider collect()'ing first.")
+  }
+  dbGetQuery(x$src$con, dplyr::build_sql(x$query$sql, " SAMPLE ", as.integer(size)))
+}
+
+sample_frac.tbl_monetdb <- function(tbl, frac=1, replace = FALSE, weight = NULL) {
+  if (frac < 0 || frac > 1) {
+    stop("frac must be in [0,1]")
+  }
+  n <- as.integer(round(dim(tbl)[[1]] * frac))
+  if (n < 1) {
+    stop("not sampling 0 rows...")
+  }
+  sample_n(tbl, n, replace, weight)
 }
 
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {

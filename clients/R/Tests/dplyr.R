@@ -96,6 +96,10 @@ print(nrow(head(anti_join(player_info, hof), n=10L)))
 }))
 # TODO: set ops
 
+# sample functions
+print(nrow(sample_n(player_info, 10L)))
+print(nrow(head(sample_frac(player_info, .5), n=10L)))
+
 # Arbitrary SQL -------------------------------------------------------------
 # You can also provide sql as is, using the sql function:
 batting2008 <- tbl(dps,
