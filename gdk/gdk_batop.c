@@ -1442,219 +1442,95 @@ BATmark(BAT *b, oid oid_base)
 	return bn;
 }
 
-#define mark_grp_init(BUNfnd)				\
-	do {						\
-		BUN w;					\
-							\
-		BUNfnd(w, gi, &v);			\
-		if (w != BUN_NONE) {			\
-			n = * (oid *) BUNtloc(gi, w);	\
-		} else {				\
-			n = oid_nil;			\
-		}					\
-	} while (0)
-
-#define mark_grp_loop4(BUNhead, BUNtail, init_n)			\
-	do {								\
-		oid u = oid_nil;					\
-		oid n = oid_nil;					\
-									\
-		bn->T->nil = 0;						\
-		BATloop(b, p, q) {					\
-			oid v = * (oid *) BUNtail(bi, p);		\
-									\
-			if (v != u) {					\
-				init_n;					\
-				u = v;					\
-			} else if (n != oid_nil) {			\
-				n++;					\
-			}						\
-			if (n == oid_nil)				\
-				bn->T->nil =1;				\
-			bunfastins_nocheck_inc(bn, r, BUNhead(bi, p), &n); \
-		}							\
-		bn->T->nonil = !bn->T->nil;				\
-	} while (0)
-
-#define mark_grp_loop3(BUNhead, BUNtail, BUNfnd)			\
-	do {								\
-		bn->T->nil = 0;						\
-		BATloop(b, p, q) {					\
-			oid n = oid_nil;				\
-			BUN w;						\
-			const void *v = BUNtail(bi, p);			\
-			oid *m;						\
-									\
-			BUNfnd(w, gci, v);				\
-			if (w != BUN_NONE && *(m = (oid*) BUNtloc(gci, w)) != oid_nil) { \
-				n = (*m)++;				\
-			} else						\
-				bn->T->nil = 1;				\
-			bunfastins_nocheck_inc(bn, r, BUNhead(bi, p), &n); \
-		}							\
-		bn->T->nonil = !bn->T->nil;				\
-	} while (0)
-
-#define mark_grp_loop2(BUNhead, BUNtail)				\
-	do {								\
-		if (gc) {						\
-			BATiter gci = bat_iterator(gc);			\
-									\
-			if (BAThdense(gc)) {				\
-				mark_grp_loop3(BUNhead,			\
-					       BUNtail, BUNfndVOID);	\
-			} else {					\
-				mark_grp_loop3(BUNhead,			\
-					       BUNtail, BUNfndOID);	\
-			}						\
-		} else {						\
-			if (s) {					\
-				mark_grp_loop4(BUNhead,			\
-					       BUNtail, n = *s);	\
-			} else {					\
-				if (BAThdense(g)) {			\
-					mark_grp_loop4(BUNhead,		\
-						       BUNtail,		\
-						       mark_grp_init(BUNfndVOID)); \
-				} else {				\
-					mark_grp_loop4(BUNhead,		\
-						       BUNtail,		\
-						       mark_grp_init(BUNfndOID)); \
-				}					\
-			}						\
-		}							\
-	} while (0)
-
 BAT *
-BATmark_grp(BAT *b, BAT *g, const oid *s)
+BATmark_grp(BAT *g, BAT *e, const oid *s)
 {
-	BAT *bn = NULL, *gc = NULL;
-	bit trivprop = FALSE;
+	BAT *bn;
+	BAT *ec;
+	oid *ecp, *bp;
+	oid eco;
+	const oid *gp;
+	BUN i;
 
-	BATcheck(b, "BATmark_grp");
 	BATcheck(g, "BATmark_grp");
-	ERRORcheck(b->ttype != TYPE_void && b->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT b must be oid.\n");
-	ERRORcheck(g->htype != TYPE_void && g->htype != TYPE_oid,
-		   "BATmark_grp: head of BAT g must be oid.\n");
-	ERRORcheck(b->ttype == TYPE_void && b->tseqbase == oid_nil,
-		   "BATmark_grp: tail of BAT b must not be nil.\n");
-	ERRORcheck(g->htype == TYPE_void && g->hseqbase == oid_nil,
-		   "BATmark_grp: head of BAT g must not be nil.\n");
+	BATcheck(e, "BATmark_grp");
+	ERRORcheck(g->ttype != TYPE_void && g->ttype != TYPE_oid,
+		   "BATmark_grp: tail of BAT g must be oid.\n");
+	ERRORcheck(e->htype != TYPE_void && e->htype != TYPE_oid,
+		   "BATmark_grp: head of BAT e must be oid.\n");
+	ERRORcheck(g->ttype == TYPE_void && g->tseqbase == oid_nil,
+		   "BATmark_grp: tail of BAT g must not be nil.\n");
+	ERRORcheck(e->htype == TYPE_void && e->hseqbase == oid_nil,
+		   "BATmark_grp: head of BAT e must not be nil.\n");
 	ERRORcheck(s && *s == oid_nil,
 		   "BATmark_grp: base oid s must not be nil.\n");
-	ERRORcheck(!s && g->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT g must be oid.\n");
+	ERRORcheck(!s && e->ttype != TYPE_oid,
+		   "BATmark_grp: tail of BAT e must be oid.\n");
 
-	if (BATcount(b) == 0 || BATcount(g) == 1) {
-		if (s) {
-			return BATmark(b, *s);
-		} else {
-			BATiter gi = bat_iterator(g);
+	assert(BAThdense(g));
+	assert(BAThdense(e));
+	assert(ATOMtype(g->ttype) == TYPE_oid);
+	assert(ATOMtype(e->ttype) == TYPE_oid);
+	assert(s == NULL || *s != oid_nil);
 
-			return BATmark(b, *(oid *) BUNtloc(gi, BUNfirst(g)));
-		}
+	if (BATtdense(g)) {
+		if (s)
+			return BATconst(g, TYPE_oid, s, TRANSIENT);
+		return BATproject(g, e);
 	}
 
-	if (!BATtordered(b)) {
-		if (s) {
-			BUN p, q, r;
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(g), TRANSIENT);
+	if (bn == NULL)
+		return NULL;
 
-			if (BAThdense(g)) {
-				gc = BATnew(TYPE_void, TYPE_oid, BATcount(g), TRANSIENT);
-				if (gc == NULL)
-					return NULL;
-				r = BUNfirst(gc);
-				BATloop(g, p, q) {
-					bunfastapp_nocheck_inc(gc, r, s);
-				}
-			} else {
-				BATiter gi = bat_iterator(g);
-
-				gc = BATnew(TYPE_oid, TYPE_oid, BATcount(g), TRANSIENT);
-				if (gc == NULL)
-					return NULL;
-				r = BUNfirst(gc);
-				BATloop(g, p, q) {
-					bunfastins_nocheck_inc(gc, r, BUNhloc(gi, p), s);
-				}
-			}
-			BATsetcount(gc, BATcount(g));
-			gc->hdense = BAThdense(g);
-			if (gc->hdense) {
-				BATseqbase(gc, g->hseqbase);
-				gc->hsorted = 1;
-			} else {
-				gc->hsorted = BAThordered(g);
-			}
-			gc->hrevsorted = BAThrevordered(g);
-			BATkey(gc, (gc->hdense || g->hkey != FALSE));
-			gc->H->nonil = g->H->nonil;
-			gc->T->nonil = 1;
-		} else {
-			gc = BATcopy(g, g->htype, g->ttype, TRUE, TRANSIENT);
-			if (gc == NULL)
-				return NULL;
-		}
-	}
-	bn = BATnew(b->htype, TYPE_oid, BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		if (gc)
-			BBPreclaim(gc);
+	if (s)
+		ec = BATconst(e, TYPE_oid, s, TRANSIENT);
+	else
+		ec = BATcopy(e, TYPE_void, TYPE_oid, TRUE, TRANSIENT);
+	if (ec == NULL) {
+		BBPreclaim(bn);
 		return NULL;
 	}
 
-	{
-		BUN p, q, r = BUNfirst(bn);
-		BATiter bi = bat_iterator(b);
-		BATiter gi = bat_iterator(g);
+	BATsetcount(bn, BATcount(g));
+	BATseqbase(bn, g->hseqbase);
+	bn->T->nil = 0;
+	if (BATcount(g) <= 1) {
+		bn->T->sorted = 1;
+		bn->T->revsorted = 1;
+		bn->T->key = 1;
+	} else {
+		bn->T->sorted = 0;
+		bn->T->revsorted = 0;
+		bn->T->key = 0;
+	}
+	ecp = (oid *) Tloc(ec, BUNfirst(ec));
+	eco = ec->hseqbase;
+	gp = (const oid *) Tloc(g, BUNfirst(g));
+	bp = (oid *) Tloc(bn, BUNfirst(bn));
 
-		if (b->hvarsized) {
-			if (b->ttype == TYPE_void) {
-				mark_grp_loop2(BUNhvar, BUNtvar);
-			} else {
-				mark_grp_loop2(BUNhvar, BUNtloc);
-			}
+	for (i = 0; i < g->batCount; i++) {
+		if (gp[i] < eco ||
+		    gp[i] >= eco + BATcount(ec) ||
+		    ecp[gp[i] - eco] == oid_nil) {
+			bp[i] = oid_nil;
+			bn->T->nil = 1;
 		} else {
-			if (b->ttype == TYPE_void) {
-				mark_grp_loop2(BUNhloc, BUNtvar);
-			} else {
-				mark_grp_loop2(BUNhloc, BUNtloc);
-			}
+			bp[i] = ecp[gp[i] - eco]++;
 		}
-		BATsetcount(bn, BATcount(b));
 	}
-
-	trivprop = (BATcount(bn) < 2);
-	ALIGNsetH(bn, b);
-	bn->hsorted = trivprop || BAThordered(b);
-	bn->hrevsorted = trivprop || BAThrevordered(b);
-	bn->hdense = BAThdense(b) || (trivprop && b->htype == TYPE_oid);
-	if (bn->hdense) {
-		BATseqbase(bn, b->hseqbase);
+	BBPreclaim(ec);
+	bn->T->nonil = !bn->T->nil;
+	if (BATcount(e) == 1 && bn->T->nonil) {
+		bn->T->sorted = 1;
+		bn->T->dense = 1;
+		bn->T->key = 1;
+		if (BATcount(bn) > 0)
+			bn->T->seq = bp[0];
+		else
+			bn->T->seq = 0;
 	}
-	BATkey(bn, (bn->hdense || b->hkey != FALSE));
-	bn->tsorted = trivprop;
-	bn->trevsorted = trivprop;
-	bn->tdense = trivprop;
-	if (BATtdense(bn)) {
-		BATiter bni = bat_iterator(bn);
-
-		BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
-	}
-	BATkey(BATmirror(bn), trivprop);
-	bn->H->nonil = b->H->nonil;
-
-	if (gc)
-		BBPreclaim(gc);
 	return bn;
-  bunins_failed:
-  hashfnd_failed:
-	if (gc)
-		BBPreclaim(gc);
-	if (bn)
-		BBPreclaim(bn);
-	return NULL;
 }
 
 /* return a new BAT of length n with a dense head and the constant v
