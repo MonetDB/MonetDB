@@ -1353,8 +1353,8 @@ MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
 	break;
 	case TYPE_lng:
 	{ union {
-		unsigned int val;
-		bte thin[4];
+		lng val;
+		bte thin[8];
 	  } map;
 	  unsigned int *val = (unsigned int*) Tloc(b,0);
 	  for(i=0; i < cnt; i++, val++){

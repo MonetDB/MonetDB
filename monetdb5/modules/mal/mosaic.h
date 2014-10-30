@@ -66,7 +66,9 @@ typedef struct MOSAICHEADER{
 		int sumint;
 		oid sumoid;
 		lng sumlng;
+#ifdef HAVE_hge
 		hge sumhge;
+#endif
 		wrd sumwrd;
 		flt sumflt;
 		dbl sumdbl;
