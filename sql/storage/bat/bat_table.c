@@ -155,7 +155,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	b = full_column(tr, c);
-	q = BUNfnd(b, (ptr) &rid);
+	q = BUNfnd(BATmirror(b), (ptr) &rid);
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;

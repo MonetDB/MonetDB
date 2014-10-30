@@ -1160,11 +1160,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @item int
  * @tab BUNdelHead (BAT *b, ptr left, bit force)
  * @item BUN
- * @tab BUNfnd (BAT *b, ptr head)
- * @item void
- * @tab BUNfndOID (BUN result, BATiter bi, oid *head)
- * @item void
- * @tab BUNfndSTD (BUN result, BATiter bi, ptr head)
+ * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
  * @tab BUNlocate (BAT *b, ptr head, ptr tail)
  * @item ptr
@@ -1196,9 +1192,7 @@ gdk_export bte ATOMelmshift(int sz);
  * flags. Beware!
  *
  * The routine BUNfnd provides fast access to a single BUN providing a
- * value for the head of the binary association.  A very fast shortcut
- * for BUNfnd if the selection type is known to be integer or OID, is
- * provided in the form of the macro BUNfndOID.
+ * value for the tail of the binary association.
  *
  * To select on a tail, one should use the reverse view obtained by
  * BATmirror.
@@ -1391,24 +1385,14 @@ gdk_export BAT *BUNreplace(BAT *b, const void *left, const void *right, bit forc
 gdk_export BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 
-gdk_export BUN BUNfnd(BAT *b, const void *left);
+gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-#define BUNfndVOID(p,bi,v)						\
-	((p) = (((*(const oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
-		(*(const oid*)(v) < (bi).b->hseqbase) |			\
-		(*(const oid*)(v) >= (bi).b->hseqbase + (bi).b->batCount)) ? \
+#define BUNfndVOID(b, v)						\
+	(((*(const oid*)(v) == oid_nil) ^ ((b)->tseqbase == oid_nil)) | \
+		(*(const oid*)(v) < (b)->tseqbase) |			\
+		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
-	 BUNfirst((bi).b) + (BUN) (*(const oid*)(v) - (bi).b->hseqbase))
-
-#define BUNfndOID(p,bi,v)			\
-	do {					\
-		if (BAThdense(bi.b)) {		\
-			BUNfndVOID(p,bi,v);	\
-		} else {			\
-			HASHfnd_oid(p,bi,v);	\
-		}				\
-	} while (0)
-#define BUNfndSTD(p,bi,v) ((p) = BUNfnd(bi.b,v))
+	 BUNfirst((b)) + (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
 #define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase != oid_nil ? \
 			 TYPE_oid : (b)->htype)

@@ -325,7 +325,7 @@ TKNZRappend(oid *pos, str *s)
 	}
 
 	/* findcommn */
-	p = BUNfnd(BATmirror(tokenBAT[0].val), parts[0]);
+	p = BUNfnd(tokenBAT[0].val, parts[0]);
 	if (p != BUN_NONE) {
 		prv = (oid) p;
 		for (i = 1; i < new; i++) {
@@ -338,7 +338,7 @@ TKNZRappend(oid *pos, str *s)
 
 	if (i == depth) {
 		comp = COMP(prv, depth);
-		*pos = BUNfnd(BATmirror(tokenBAT[INDEX].val), (ptr) & comp);
+		*pos = BUNfnd(tokenBAT[INDEX].val, (ptr) & comp);
 		if (*pos != BUN_NONE) {
 			/* the string is already there */
 			/* printf("The string %s is already there",url); */
@@ -493,7 +493,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (depth > tokenDepth) {
 		pos = oid_nil;
 	} else {
-		p = BUNfnd(BATmirror(tokenBAT[0].val), parts[0]);
+		p = BUNfnd(tokenBAT[0].val, parts[0]);
 		if (p != BUN_NONE) {
 			prv = (oid) p;
 			for (i = 1; i < depth; i++) {
@@ -504,7 +504,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pos = oid_nil;
 			} else {
 				comp = COMP(prv, i);
-				pos = BUNfnd(BATmirror(tokenBAT[INDEX].val), (ptr) & comp);
+				pos = BUNfnd(tokenBAT[INDEX].val, (ptr) & comp);
 			}
 		} else {
 			pos = oid_nil;

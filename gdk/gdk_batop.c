@@ -625,7 +625,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	} else {
 		BUN p, q;
 		BUN i = BUNlast(b);
-		BAT *bm = BBP_cache(-b->batCacheid);
 		BATiter ni = bat_iterator(n);
 
 		if (b->tkey & BOUND2BTRUE) {
@@ -636,7 +635,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATloop(n, p, q) {
 					const void *t = BUNtail(ni, p);
 
-					if (BUNfnd(bm, t) == BUN_NONE) {
+					if (BUNfnd(b, t) == BUN_NONE) {
 						bunfastins(b, &h, t);
 						if (b->T->hash) {
 							HASHins(b, i, t);
@@ -652,7 +651,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATloop(n, p, q) {
 					const void *t = BUNtail(ni, p);
 
-					if (BUNfnd(bm, t) == BUN_NONE) {
+					if (BUNfnd(b, t) == BUN_NONE) {
 						bunfastins(b, &on, t);
 						if (b->T->hash) {
 							HASHins(b, i, t);

@@ -1197,10 +1197,10 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 	void_materialize(b, h);
 	void_materialize(b, t);
 
-	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h)) != BUN_NONE) {
+	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(bm, h)) != BUN_NONE) {
 		if (BUNinplace(b, p, h, t, force) == NULL)
 			return NULL;
-	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(bm, t)) != BUN_NONE) {
+	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(b, t)) != BUN_NONE) {
 		if (BUNinplace(bm, p, t, h, force) == NULL)
 			return NULL;
 	} else {
@@ -1292,8 +1292,8 @@ BUNappend(BAT *b, const void *t, bit force)
 	}
 
 	assert(!isVIEW(b));
-	bm = BBP_cache(-b->batCacheid);
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t) != BUN_NONE) {
+	bm = BATmirror(b);
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
 		return b;
 	}
 
@@ -1566,17 +1566,19 @@ BAT *
 BUNdelHead(BAT *b, const void *x, bit force)
 {
 	BUN p;
+	BAT *bm;
 
 	BATcheck(b, "BUNdelHead");
 
+	bm = BATmirror(b);
 	if (x == NULL) {
 		x = ATOMnilptr(b->htype);
 	}
-	if ((p = BUNfnd(b, x)) != BUN_NONE) {
+	if ((p = BUNfnd(bm, x)) != BUN_NONE) {
 		ALIGNdel(b, "BUNdelHead", force);	/* zap alignment info */
 		do {
 			BUNdelete(b, p, force);
-		} while ((p = BUNfnd(b, x)) != BUN_NONE);
+		} while ((p = BUNfnd(bm, x)) != BUN_NONE);
 	}
 	return b;
 }
@@ -1686,10 +1688,10 @@ BUNreplace(BAT *b, const void *h, const void *t, bit force)
 	BATcheck(h, "BUNreplace: head value is nil");
 	BATcheck(t, "BUNreplace: tail value is nil");
 
-	if ((p = BUNfnd(b, h)) == BUN_NONE)
+	if ((p = BUNfnd(BATmirror(b), h)) == BUN_NONE)
 		return b;
 
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(BATmirror(b), t) != BUN_NONE) {
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
 		return b;
 	}
 	if (b->ttype == TYPE_void) {
@@ -1714,14 +1716,14 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	int res = GDK_SUCCEED;
 	BUN p = BUN_NONE;
 	BUN oldInserted = b->batInserted;
-	BATiter bi = bat_iterator(b);
+	BAT *bm = BATmirror(b);
 
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
 	assert(b->batCount > (id -b->hseqbase));
 
 	b->batInserted = 0;
-	BUNfndVOID(p, bi, (ptr) &id);
+	p = BUNfndVOID(bm, &id);
 
 	assert(force || p >= b->batInserted);	/* we don't want delete/ins */
 	assert(force || !b->batRestricted);
@@ -1766,10 +1768,10 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = BATatoms[b->htype].atomCmp;
+	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
 
 	BATloop(b, p, q) {
-		if ((*cmp)(v, BUNhead(bi, p)) == 0)
+		if ((*cmp)(v, BUNtail(bi, p)) == 0)
 			return p;
 	}
 	return BUN_NONE;
@@ -1779,20 +1781,19 @@ BUN
 BUNfnd(BAT *b, const void *v)
 {
 	BUN r = BUN_NONE;
-	BATiter bi = bat_iterator(b);
+	BATiter bi;
 
 	BATcheck(b, "BUNfnd");
 	if (!v)
 		return r;
-	if (BAThvoid(b)) {
-		BUNfndVOID(r, bi, v);
-		return r;
+	if (BATtvoid(b))
+		return BUNfndVOID(b, v);
+	if (!b->T->hash) {
+		if (BATtordered(b) || BATtrevordered(b))
+			return SORTfnd(b, v);
 	}
-	if (!b->H->hash) {
-		if (BAThordered(b) || BAThrevordered(b))
-			return SORTfnd(BATmirror(b), v);
-	}
-	switch (ATOMstorage(b->htype)) {
+	bi = bat_iterator(BATmirror(b)); /* HASHfnd works on head */
+	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		HASHfnd_bte(r, bi, v);
 		break;
@@ -1876,7 +1877,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	    (BATtordered(b) &&
 	     (*tcmp) (y, BUNtail(bi, p)) == 0 &&
 	     (*tcmp) (y, BUNtail(bi, q - 1)) == 0)) {
-		return BUNfnd(b, x);
+		return BUNfnd(BATmirror(b), x);
 	}
 
 	/* positional lookup is always the best choice */

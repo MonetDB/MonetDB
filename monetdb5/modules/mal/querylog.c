@@ -305,7 +305,7 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	initQlog();
 	MT_lock_set(&mal_profileLock, "querylog.define");
-	o = BUNfnd( BATmirror(QLOG_cat_id), &mb->tag);
+	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
 		QLOG_cat_id = BUNappend(QLOG_cat_id,&mb->tag,FALSE);

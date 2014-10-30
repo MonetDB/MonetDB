@@ -1999,7 +1999,7 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, h, val);
-	q = BUNfnd(BATmirror(b), val);
+	q = BUNfnd(b, val);
 	*ret = (q != BUN_NONE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2016,7 +2016,7 @@ ALGfind(ptr ret, const bat *bid, ptr val)
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, h, val);
-	q = BUNfnd(b, val);
+	q = BUNfnd(BATmirror(b), val);
 
 	if (q == BUN_NONE){
 		BBPreleaseref(b->batCacheid);
