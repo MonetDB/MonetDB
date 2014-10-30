@@ -12,6 +12,7 @@ function MonetDBConnection(options, conncallback) {
 	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
 	this.do_close = false;
+	this.close_callback = null;
 	this.alldone = false;
 
 	this.queryqueue = [];
@@ -163,7 +164,8 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 }
 
 MonetDBConnection.prototype.disconnect =
-MonetDBConnection.prototype.close = function() {
+MonetDBConnection.prototype.close = function(callback) {
+	this.close_callback = callback;
 	this.do_close = true;
 	if (this.queryqueue.length < 1) {
 		next_op.call(this);
@@ -238,6 +240,7 @@ function next_op() {
 		this.alldone = true;
 		if (this.do_close) {
 			this.socket.destroy();
+			this.close_callback && this.close_callback(null);
 		}
 		return;
 	}
@@ -483,7 +486,7 @@ function __get_connect_args(options) {
 }
 
 /* Q integration, <robin.cijvat@monetdbsolutions.com> */
-['request', 'query', 'prepare'].forEach(function(funToQ) {
+['request', 'query', 'prepare', 'close', 'disconnect'].forEach(function(funToQ) {
 	var funQ = funToQ + 'Q';
 	MonetDBConnection.prototype[funQ] = function() {
 		if (this.options.q == undefined) {
