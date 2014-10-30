@@ -154,7 +154,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						mnstr_printf(cntxt->fdout, "%s\n", query);
 #endif
 						BBPunfix(bn->batCacheid);
-						msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE);
+						msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
 						if (msg) {
 							GDKfree(dquery);
 							GDKfree(query);
@@ -162,7 +162,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							GDKfree(minval);
 							return msg;
 						}
-						msg = SQLstatementIntern(cntxt, &query, "SQLanalyze", TRUE, FALSE);
+						msg = SQLstatementIntern(cntxt, &query, "SQLanalyze", TRUE, FALSE, NULL);
 						if (msg) {
 							GDKfree(dquery);
 							GDKfree(query);

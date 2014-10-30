@@ -17,6 +17,8 @@ dbport <- 50000
 dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
+if (length(args) > 1) 
+	dbname <- args[[2]]
 
 
 # old way

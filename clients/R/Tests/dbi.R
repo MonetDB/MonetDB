@@ -9,6 +9,8 @@ dbport <- 50000
 dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
+if (length(args) > 1) 
+	dbname <- args[[2]]
 
 options(monetdb.insert.splitsize=10)
 
@@ -155,6 +157,17 @@ stopifnot(identical(1L, tsize(conn, tname)))
 dbCommit(conn)
 stopifnot(identical(1L, tsize(conn, tname)))
 dbRemoveTable(conn,tname)
+
+# funny characters in strings
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+sq <- dbSendQuery(conn,"CREATE TABLE monetdbtest (a string)")
+sq <- dbSendQuery(conn,"INSERT INTO monetdbtest VALUES ('Роман Mühleisen')")
+stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
+sq <- dbSendQuery(conn,"DELETE FROM monetdbtest")
+dbSendUpdate(conn, "INSERT INTO monetdbtest (a) VALUES (?)", "Роман Mühleisen")
+stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
+dbRollback(conn)
 
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors

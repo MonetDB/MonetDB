@@ -569,7 +569,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			fits_open_file(&fptr, fname, READONLY, &status);
 			if (status == 0) {
 				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
-				msg = SQLstatementIntern(cntxt, &s, "fits.listofdir", TRUE, FALSE);
+				msg = SQLstatementIntern(cntxt, &s, "fits.listofdir", TRUE, FALSE, NULL);
 				fits_close_file(fptr, &status);
 			}
 		}
@@ -612,7 +612,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_open_file(&fptr, fname, READONLY, &status);
 		if (status == 0) {
 			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
-			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE);
+			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE, NULL);
 			fits_close_file(fptr, &status);
 			break;
 		}
@@ -800,7 +800,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (j = 1; j <= cnum; j++, cid++) {
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, cname, tform, tunit, j, (int)tid);
-			msg = SQLstatementIntern(cntxt, &s, "fits.attach", TRUE, FALSE);
+			msg = SQLstatementIntern(cntxt, &s, "fits.attach", TRUE, FALSE, NULL);
 			if (msg != MAL_SUCCEED) {
 				fits_close_file(fptr, &status);
 				return msg;
