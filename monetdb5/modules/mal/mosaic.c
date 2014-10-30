@@ -450,6 +450,9 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task, int inplace,
 		BBPreleaseref(bsrc->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(bcompress));
+		// retain the stringwidth
+		bsrc->T->width = bcompress->T->width ;
+		bsrc->T->shift = bcompress->T->shift ;
 		bsrc->T->heap.dirty = 1;
 		bsrc->T->heap.free = (size_t) (task->dst - Tloc(bsrc,BUNfirst(bsrc)) );
 		bsrc->T->heap.compressed= 1;
@@ -522,7 +525,8 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
-	bsrc = BATnew(b->htype,b->ttype,BATgrows(b)+ MosaicHdrSize,TRANSIENT);
+	// use a copy to ensure you get the vheap as well
+	bsrc = BATcopy(b,b->htype,b->ttype,TRUE, TRANSIENT);
 	if ( bsrc == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
@@ -637,6 +641,8 @@ MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
 	} else {
 		BATsetcount(bsrc,BATcount(b));
 		bsrc->batDirty = 1;
+		bsrc->T->width = b->T->width;
+		bsrc->T->shift = b->T->shift;
 		bsrc->T->heap.free = (size_t) (BATcount(b) * b->T->width);
 		bsrc->T->heap.compressed= 0;
         bsrc->hdense = 1;

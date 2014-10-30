@@ -30,6 +30,14 @@ function user.main():void;
 #mosaic.dump(x); 
     z := mosaic.decompress(x);
     io.print(z);
+    s := bat.new(:oid,:str);
+    bat.append(s,"the");
+    bat.append(s,"big");
+    bat.append(s,"brown");
+    bat.append(s,"fox");
+    y := mosaic.compress(s,"literal");
+    zs := mosaic.decompress(y);
+    io.print(zs);
 end main;
 #--------------------------#
 # h	t  # name
@@ -51,6 +59,14 @@ end main;
 [ 3@0,	50  ]
 [ 4@0,	19531015  ]
 [ 5@0,	9  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"the"  ]
+[ 1@0,	"big"  ]
+[ 2@0,	"brown"  ]
+[ 3@0,	"fox"  ]
 
 # 23:21:09 >  
 # 23:21:09 >  "Done."
