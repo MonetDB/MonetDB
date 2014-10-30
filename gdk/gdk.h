@@ -1394,14 +1394,11 @@ gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 gdk_export BUN BUNfnd(BAT *b, const void *left);
 
 #define BUNfndVOID(p,bi,v)						\
-	do {								\
-		BUN result = BUNfirst((bi).b) + (BUN) (*(const oid*)(v) - (bi).b->hseqbase); \
-		int check =						\
-			(((*(const oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
-			 (*(const oid*) (v) < (bi).b->hseqbase) |		\
-			 (*(const oid*) (v) >= (bi).b->hseqbase + (bi).b->batCount));	\
-		(p) = check?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */ \
-	} while (0)
+	((p) = (((*(const oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
+		(*(const oid*)(v) < (bi).b->hseqbase) |			\
+		(*(const oid*)(v) >= (bi).b->hseqbase + (bi).b->batCount)) ? \
+	 BUN_NONE :							\
+	 BUNfirst((bi).b) + (BUN) (*(const oid*)(v) - (bi).b->hseqbase))
 
 #define BUNfndOID(p,bi,v)			\
 	do {					\
