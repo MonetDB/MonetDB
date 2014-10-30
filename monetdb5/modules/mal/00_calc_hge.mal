@@ -55,12 +55,12 @@ comment "Unary negation of V";
 
 
 pattern ++(v:hge) :hge
-address CMDvarINCR
+address CMDvarINCRsignal
 comment "Unary V + 1";
 
 
 pattern --(v:hge) :hge
-address CMDvarDECR
+address CMDvarDECRsignal
 comment "Unary V - 1";
 
 
