@@ -678,7 +678,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids */
 		unsigned char *bgrps = GDKmalloc(256);
-		unsigned char v, *w = (unsigned char *) Tloc(b, BUNfirst(b));
+		const unsigned char *w = (const unsigned char *) Tloc(b, BUNfirst(b));
+		unsigned char v;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(wrd));
@@ -701,7 +702,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids */
 		unsigned short *sgrps = GDKmalloc(65536 * sizeof(short));
-		unsigned short v, *w = (unsigned short *) Tloc(b, BUNfirst(b));
+		const unsigned short *w = (const unsigned short *) Tloc(b, BUNfirst(b));
+		unsigned short v;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(wrd));
