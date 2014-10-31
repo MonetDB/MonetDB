@@ -197,8 +197,8 @@ MKEYbathash(bat *res, const bat *bid)
 		BATkey(BATmirror(dst), 0);
 		dst->tsorted = dst->trevsorted = 0;
 	}
-	dst->T->nonil = b->T->nonil;
-	dst->T->nil = b->T->nil;
+	dst->T->nonil = 0;
+	dst->T->nil = 0;
 
 	if (dst->htype != b->htype) {
 		BAT *x = VIEWcreate(b, dst);

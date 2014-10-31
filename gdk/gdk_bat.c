@@ -951,7 +951,8 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	/* set properties (note that types may have changed in the copy) */
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
-	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
+	} else if (ATOMstorage(ht) == ATOMstorage(b->htype) &&
+		   BATatoms[ht].atomCmp == BATatoms[b->htype].atomCmp) {
 		bn->hsorted = b->hsorted;
 		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
@@ -964,7 +965,8 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
-	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
+	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
+		   BATatoms[tt].atomCmp == BATatoms[b->ttype].atomCmp) {
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;

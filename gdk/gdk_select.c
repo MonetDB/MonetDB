@@ -354,11 +354,9 @@ do {									\
 		}							\
 	}								\
 	assert((imp_min != nil) && (imp_max != nil));			\
-	if (!s && !VIEWtparent(b)) { /* no candidate list and no views*/ \
-		if ((vl > imp_max || vh < imp_min) ||			\
-		    (anti && (vl < imp_min && vh > imp_max))) {		\
-			return 0;					\
-		}							\
+	if ((vl > imp_max || vh < imp_min) ||				\
+	    (anti && (vl < imp_min && vh > imp_max))) {			\
+		return 0;						\
 	}								\
 } while (0)
 
