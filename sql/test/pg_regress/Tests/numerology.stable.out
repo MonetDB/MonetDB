@@ -92,10 +92,10 @@ Ready.
 #CREATE TABLE TEMP_FLOAT (f1 double);
 #INSERT INTO TEMP_FLOAT (f1)
 #  SELECT cast(f1 as double) FROM INT4_TBL;
-[ 5	]
+[ 10	]
 #INSERT INTO TEMP_FLOAT (f1)
 #  SELECT cast(f1 as double) FROM INT2_TBL;
-[ 5	]
+[ 10	]
 #SELECT '' AS ten, f1 FROM TEMP_FLOAT
 #  ORDER BY f1;
 % .L,	sys.temp_float # table_name
@@ -103,14 +103,24 @@ Ready.
 % char,	double # type
 % 0,	24 # length
 [ "",	-2147483647	]
+[ "",	-2147483647	]
+[ "",	-123456	]
 [ "",	-123456	]
 [ "",	-32767	]
+[ "",	-32767	]
+[ "",	-1234	]
 [ "",	-1234	]
 [ "",	0	]
 [ "",	0	]
+[ "",	0	]
+[ "",	0	]
+[ "",	1234	]
 [ "",	1234	]
 [ "",	32767	]
+[ "",	32767	]
 [ "",	123456	]
+[ "",	123456	]
+[ "",	2147483647	]
 [ "",	2147483647	]
 #CREATE TABLE TEMP_INT4 (f1 integer);
 #INSERT INTO TEMP_INT4 (f1)
@@ -119,7 +129,7 @@ Ready.
 [ 4	]
 #INSERT INTO TEMP_INT4 (f1)
 #  SELECT cast(f1 as integer) FROM INT2_TBL;
-[ 5	]
+[ 10	]
 #SELECT '' AS nine, f1 FROM TEMP_INT4
 #  ORDER BY f1;
 % .L,	sys.temp_int4 # table_name
@@ -127,13 +137,18 @@ Ready.
 % char,	int # type
 % 0,	6 # length
 [ "",	-32767	]
+[ "",	-32767	]
+[ "",	-1234	]
 [ "",	-1234	]
 [ "",	-34	]
 [ "",	0	]
 [ "",	0	]
 [ "",	0	]
+[ "",	0	]
 [ "",	1004	]
 [ "",	1234	]
+[ "",	1234	]
+[ "",	32767	]
 [ "",	32767	]
 #CREATE TABLE TEMP_INT2 (f1 smallint);
 #INSERT INTO TEMP_INT2 (f1)
@@ -143,7 +158,7 @@ Ready.
 #INSERT INTO TEMP_INT2 (f1)
 #  SELECT cast(f1 as smallint) FROM INT4_TBL
 #  WHERE (f1 >= -32767) AND (f1 <= 32767);
-[ 1	]
+[ 2	]
 #SELECT '' AS five, f1 FROM TEMP_INT2
 #  ORDER BY f1;
 % .L,	sys.temp_int2 # table_name
@@ -154,16 +169,17 @@ Ready.
 [ "",	0	]
 [ "",	0	]
 [ "",	0	]
+[ "",	0	]
 [ "",	1004	]
 #CREATE TABLE TEMP_GROUP (f1 integer, f2 integer, f3 double);
 #INSERT INTO TEMP_GROUP
 #  SELECT 1, (- i.f1), (- f.f1)
 #  FROM INT4_TBL i, FLOAT8_TBL f;
-[ 25	]
+[ 50	]
 #INSERT INTO TEMP_GROUP
 #  SELECT 2, i.f1, f.f1
 #  FROM INT4_TBL i, FLOAT8_TBL f;
-[ 25	]
+[ 50	]
 #SELECT DISTINCT f1 AS two FROM TEMP_GROUP;
 % sys.L # table_name
 % two # name
