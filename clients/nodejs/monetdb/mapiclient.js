@@ -328,73 +328,72 @@ function _parsetuples(names, types, lines) {
 	for (li in lines) {
 		var line = lines[li];
 		var resultline = [];
-		var tokenStart = 2;
-		var endQuote = 0;
-		var valPtr = '';
 		var cCol = 0;
-
+		var curtok = '';
 		/* mostly adapted from clients/R/MonetDB.R/src/mapisplit.c */
-		for (var curPos = tokenStart; curPos < line.length - 1; curPos++) {
+		for (var curPos = 2; curPos < line.length - 1; curPos++) {
 			var chr = line.charAt(curPos);
 			switch (state) {
 			case 'INCRAP':
 				if (chr != '\t' && chr != ',') {
-					tokenStart = curPos;
 					if (chr == '"') {
 						state = 'INQUOTES';
-						tokenStart++;
 					} else {
 						state = 'INTOKEN';
+						curtok += chr;
 					}
 				}
 				break;
 			case 'INTOKEN':
 				if (chr == ',' || curPos == line.length - 2) {
-					var tokenLen = curPos - tokenStart - endQuote;
-					valPtr = line.substring(tokenStart, tokenStart + tokenLen);
-					if (tokenLen < 1 || valPtr == 'NULL') {
+					if (curtok == 'NULL') {
 						resultline.push(undefined);
 
 					} else {
 						switch(types[cCol]) {
 							case 'boolean':
-								resultline.push(valPtr == 'true');
+								resultline.push(curtok == 'true');
 								break;
 							case 'tinyint':
 							case 'smallint':
 							case 'int':
 							case 'wrd':
 							case 'bigint':
-								resultline.push(parseInt(valPtr));
+								resultline.push(parseInt(curtok));
 								break
 							case 'real':
 							case 'double':
 							case 'decimal':
-								resultline.push(parseFloat(valPtr));
+								resultline.push(parseFloat(curtok));
 								break
 							default:
-								resultline.push(valPtr);
+								// we need to unescape double quotes
+								//valPtr = valPtr.replace(/[^\\]\\"/g, '"');
+								resultline.push(curtok);
 								break;
 						}
 					}
 					cCol++;
-					endQuote = 0;
 					state = 'INCRAP';
+					curtok = '';
+				} else {
+					curtok += chr;
 				}
 				break;
 			case 'ESCAPED':
 				state = 'INQUOTES';
+				curtok += chr;
 				break;
 			case 'INQUOTES':
 				if (chr == '"') {
 					state = 'INTOKEN';
-					endQuote++;
 					break;
 				}
 				if (chr == '\\') {
 					state = 'ESCAPED';
 					break;
 				}
+				curtok += chr;
 				break;
 			}
 		}

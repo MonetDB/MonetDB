@@ -90,6 +90,16 @@ conn.query('SELECT id from tables where name=? and type=? and readonly=?',
 
 }); 
 
+/* some quoting fun, jesus */
+conn.query("SELECT '\\\\asdf','\"', '\\\"', '\\\\\"', '\\''", function(err, res) {
+	assert.equal(null, err);
+	assert.equal('\\asdf', res.data[0][0]);
+	assert.equal('"', res.data[0][1]);
+	assert.equal('\"', res.data[0][2]);
+	assert.equal('\\"', res.data[0][3]);
+	assert.equal("'", res.data[0][4]);
+});
+
 /* prepared statements can also be re-used  */
 conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', function(err, res){
 	assert.equal(null, err);
