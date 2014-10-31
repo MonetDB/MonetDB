@@ -1,0 +1,164 @@
+stdout of test 'shop` in directory 'sql/test/json` itself:
+
+
+# 15:07:23 >  
+# 15:07:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32484" "--set" "mapi_usock=/var/tmp/mtest-6396/.s.monetdb.32484" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_json" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:07:23 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_json', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32484/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6396/.s.monetdb.32484
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 15:07:24 >  
+# 15:07:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6396" "--port=32484"
+# 15:07:24 >  
+
+#create table books(i integer, j json);
+#insert into books values( 1, ' { 
+#    "book": 
+#      { "category": "reference",
+#        "author": "Nigel Rees",
+#        "title": "Sayings of the Century",
+#        "price": 8.95
+#      }}');
+[ 1	]
+#insert into books values( 2, ' { 
+#    "book": 
+#      { "category": "fiction",
+#        "author": "Evelyn Waugh",
+#        "title": "Sword of Honour",
+#        "price": 12.99
+#      }}');
+[ 1	]
+#insert into books values( 3, ' { 
+#    "book": 
+#      { "category": "fiction",
+#        "author": "Herman Melville",
+#        "title": "Moby Dick",
+#        "isbn": "0-553-21311-3",
+#        "price": 8.99
+#      }}');
+[ 1	]
+#insert into books values( 3, ' { 
+#    "book": 
+#      { "category": "fiction",
+#        "author": "J. R. R. Tolkien",
+#        "title": "The Lord of the Rings",
+#        "isbn": "0-395-19395-8",
+#        "price": 22.99
+#      }}');
+[ 1	]
+#select * from books;
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	192 # length
+[ 1,	" { \n    \"book\": \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      }}"	]
+[ 2,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      }}"	]
+[ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      }}"	]
+[ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }}"	]
+#SELECT json.filter(j,'book.author') FROM books;
+% sys.L # table_name
+% filter_j # name
+% json # type
+% 20 # length
+[ "[\"Nigel Rees\"]"	]
+[ "[\"Evelyn Waugh\"]"	]
+[ "[\"Herman Melville\"]"	]
+[ "[\"J. R. R. Tolkien\"]"	]
+#SELECT json.text(json.filter(j,'book.author')) FROM books;
+% sys.L # table_name
+% text_filter_j # name
+% clob # type
+% 16 # length
+[ "Nigel Rees"	]
+[ "Evelyn Waugh"	]
+[ "Herman Melville"	]
+[ "J. R. R. Tolkien"	]
+#SELECT * FROM books 
+#WHERE json.text(json.filter(j,'book.author')) = 'Nigel Rise';
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	0 # length
+[ 1,	" { \n    \"book\": \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      }}"	]
+#SELECT * FROM books 
+#WHERE json.text(json.filter(j,'..author')) = 'Nigel Rise';
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	0 # length
+[ 1,	" { \n    \"book\": \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      }}"	]
+#SELECT * FROM books 
+#WHERE json.number(json.filter(j,'book.price')) >= 12.99;
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	192 # length
+[ 2,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      }}"	]
+[ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }}"	]
+#SELECT * FROM books 
+#WHERE json.number(json.filter(j,'..price')) >= 12.99;
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	192 # length
+[ 2,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      }}"	]
+[ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }}"	]
+#SELECT * FROM books 
+#WHERE json.text(j) like '%Tolkien%';
+% sys.books,	sys.books # table_name
+% i,	j # name
+% int,	json # type
+% 1,	192 # length
+[ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }}"	]
+#drop table books;
+
+# 15:07:24 >  
+# 15:07:24 >  "Done."
+# 15:07:24 >  
+
