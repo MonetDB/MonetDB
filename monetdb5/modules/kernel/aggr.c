@@ -682,13 +682,17 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils, abort_on_error);
 	if (quantilefunc) {
-		assert(BATcount(q)>0);
+		assert(BATcount(q) > 0 || BATcount(b) == 0);
 		assert(q->ttype == TYPE_dbl);
-		qvalue = ((const double *)Tloc(q, BUNfirst(q)))[0];
-		if (qvalue <  0|| qvalue > 1) {
-			char *s;
-			s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
-			return s;
+		if (BATcount(q) == 0) {
+			qvalue = 0.5;
+		} else {
+			qvalue = ((const dbl *)Tloc(q, BUNfirst(q)))[0];
+			if (qvalue <  0|| qvalue > 1) {
+				char *s;
+				s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
+				return s;
+			}
 		}
 		bn = (*quantilefunc)(b, g, e, s, tp, qvalue, skip_nils, abort_on_error);
 	}
