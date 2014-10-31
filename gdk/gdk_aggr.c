@@ -323,10 +323,10 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		return BUN_NONE;
 	}
 
-	switch (ATOMstorage(tp2)) {
+	switch (tp2) {
 	case TYPE_bte: {
 		bte *sums = (bte *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, bte);
 			break;
@@ -337,7 +337,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	}
 	case TYPE_sht: {
 		sht *sums = (sht *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, sht);
 			break;
@@ -349,15 +349,21 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		}
 		break;
 	}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 	case TYPE_int: {
 		int *sums = (int *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, int);
 			break;
 		case TYPE_sht:
 			AGGR_SUM(sht, int);
 			break;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 		case TYPE_int:
 			AGGR_SUM(int, int);
 			break;
@@ -366,18 +372,27 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		}
 		break;
 	}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 	case TYPE_lng: {
 		lng *sums = (lng *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, lng);
 			break;
 		case TYPE_sht:
 			AGGR_SUM(sht, lng);
 			break;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 		case TYPE_int:
 			AGGR_SUM(int, lng);
 			break;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
+#endif
 		case TYPE_lng:
 			AGGR_SUM(lng, lng);
 			break;
@@ -388,7 +403,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	}
 	case TYPE_flt: {
 		flt *sums = (flt *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_flt:
 			AGGR_SUM(flt, flt);
 			break;
@@ -399,7 +414,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	}
 	case TYPE_dbl: {
 		dbl *sums = (dbl *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_flt:
 			AGGR_SUM(flt, dbl);
 			break;
@@ -531,25 +546,32 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 		GDKerror("BATsum: %s\n", err);
 		return GDK_FAIL;
 	}
-	switch (ATOMstorage(tp)) {
+	switch (tp) {
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : 0;
 		break;
 	case TYPE_sht:
 		* (sht *) res = nil_if_empty ? sht_nil : 0;
 		break;
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 	case TYPE_int:
 		* (int *) res = nil_if_empty ? int_nil : 0;
 		break;
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : 0;
 		break;
 	case TYPE_flt:
 	case TYPE_dbl:
-		switch (ATOMstorage(b->ttype)) {
+		switch (b->ttype) {
 		case TYPE_bte:
 		case TYPE_sht:
 		case TYPE_int:
+		case TYPE_wrd:
 		case TYPE_lng:
 		{
 			/* special case for summing integer types into
@@ -572,7 +594,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 				/* there were nils */
 				avg = dbl_nil;
 			}
-			if (ATOMstorage(tp) == TYPE_flt) {
+			if (tp == TYPE_flt) {
 				if (avg == dbl_nil)
 					*(flt *) res = flt_nil;
 				else if (cnt > 0 &&
@@ -604,7 +626,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 		default:
 			break;
 		}
-		if (ATOMstorage(b->ttype) == TYPE_dbl)
+		if (b->ttype == TYPE_dbl)
 			* (dbl *) res = nil_if_empty ? dbl_nil : 0;
 		else
 			* (flt *) res = nil_if_empty ? flt_nil : 0;
@@ -792,10 +814,10 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		return GDK_FAIL;
 	}
 
-	switch (ATOMstorage(tp2)) {
+	switch (tp2) {
 	case TYPE_bte: {
 		bte *prods = (bte *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, bte, sht);
 			break;
@@ -806,7 +828,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	}
 	case TYPE_sht: {
 		sht *prods = (sht *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, sht, int);
 			break;
@@ -818,9 +840,12 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		}
 		break;
 	}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 	case TYPE_int: {
 		int *prods = (int *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, int, lng);
 			break;
@@ -828,6 +853,9 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 			AGGR_PROD(sht, int, lng);
 			break;
 		case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 			AGGR_PROD(int, int, lng);
 			break;
 		default:
@@ -835,9 +863,12 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		}
 		break;
 	}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 	case TYPE_lng: {
 		lng *prods = (lng *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_LNG(bte);
 			break;
@@ -845,9 +876,15 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 			AGGR_PROD_LNG(sht);
 			break;
 		case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_LNG(int);
 			break;
 		case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_LNG(lng);
 			break;
 		default:
@@ -857,7 +894,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	}
 	case TYPE_flt: {
 		flt *prods = (flt *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, flt);
 			break;
@@ -865,9 +902,15 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 			AGGR_PROD_FLOAT(sht, flt);
 			break;
 		case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_FLOAT(int, flt);
 			break;
 		case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_FLOAT(lng, flt);
 			break;
 		case TYPE_flt:
@@ -880,7 +923,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	}
 	case TYPE_dbl: {
 		dbl *prods = (dbl *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, dbl);
 			break;
@@ -888,9 +931,15 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 			AGGR_PROD_FLOAT(sht, dbl);
 			break;
 		case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_FLOAT(int, dbl);
 			break;
 		case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
+#endif
 			AGGR_PROD_FLOAT(lng, dbl);
 			break;
 		case TYPE_flt:
@@ -1032,9 +1081,15 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		* (sht *) res = nil_if_empty ? sht_nil : (sht) 1;
 		break;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		* (int *) res = nil_if_empty ? int_nil : (int) 1;
 		break;
 	case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 		* (lng *) res = nil_if_empty ? lng_nil : (lng) 1;
 		break;
 	case TYPE_flt:
@@ -1276,10 +1331,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	}
 
 	/* allocate temporary space to do per group calculations */
-	switch (ATOMstorage(b->ttype)) {
+	switch (b->ttype) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
+	case TYPE_wrd:
 	case TYPE_lng:
 		rems = GDKzalloc(ngrp * sizeof(BUN));
 		if (rems == NULL)
@@ -1309,7 +1365,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	switch (ATOMstorage(b->ttype)) {
+	switch (b->ttype) {
 	case TYPE_bte:
 		AGGR_AVG(bte);
 		break;
@@ -1317,9 +1373,15 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		AGGR_AVG(sht);
 		break;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		AGGR_AVG(int);
 		break;
 	case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 		AGGR_AVG(lng);
 		break;
 	case TYPE_flt:
@@ -2387,7 +2449,7 @@ calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 
 	assert(issample == 0 || issample == 1);
 
-	switch (ATOMstorage(tp)) {
+	switch (tp) {
 	case TYPE_bte:
 		AGGR_STDEV_SINGLE(bte);
 		break;
@@ -2395,9 +2457,15 @@ calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 		AGGR_STDEV_SINGLE(sht);
 		break;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		AGGR_STDEV_SINGLE(int);
 		break;
 	case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 		AGGR_STDEV_SINGLE(lng);
 		break;
 	case TYPE_flt:
@@ -2585,7 +2653,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	switch (ATOMstorage(b->ttype)) {
+	switch (b->ttype) {
 	case TYPE_bte:
 		AGGR_STDEV(bte);
 		break;
@@ -2593,9 +2661,15 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_STDEV(sht);
 		break;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		AGGR_STDEV(int);
 		break;
 	case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 		AGGR_STDEV(lng);
 		break;
 	case TYPE_flt:

@@ -1676,39 +1676,34 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	case TYPE_void:
 		v = &oid_nil;
 		BATseqbase(BATmirror(bn), oid_nil);
-		bn->T->nil = n >= 1;
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
 			((bte *) p)[i] = *(bte *) v;
-		bn->T->nil = n >= 1 && *(bte *) v == bte_nil;
 		break;
 	case TYPE_sht:
 		for (i = 0; i < n; i++)
 			((sht *) p)[i] = *(sht *) v;
-		bn->T->nil = n >= 1 && *(sht *) v == sht_nil;
 		break;
 	case TYPE_int:
 	case TYPE_flt:
 		assert(sizeof(int) == sizeof(flt));
 		for (i = 0; i < n; i++)
 			((int *) p)[i] = *(int *) v;
-		bn->T->nil = n >= 1 && (ATOMstorage(tailtype) == TYPE_int ? *(int *) v == int_nil : *(flt *) v == flt_nil);
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
 		assert(sizeof(lng) == sizeof(dbl));
 		for (i = 0; i < n; i++)
 			((lng *) p)[i] = *(lng *) v;
-		bn->T->nil = n >= 1 && (ATOMstorage(tailtype) == TYPE_lng ? *(lng *) v == lng_nil : *(dbl *) v == dbl_nil);
 		break;
 	default:
-		bn->T->nil = n >= 1 && ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) == 0;
 		for (i = BUNfirst(bn), n += i; i < n; i++)
 			tfastins_nocheck(bn, i, v, Tsize(bn));
 		n -= BUNfirst(bn);
 		break;
 	}
+	bn->T->nil = n >= 1 && (*BATatoms[tailtype].atomCmp)(v, BATatoms[tailtype].atomNull) == 0;
 	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
