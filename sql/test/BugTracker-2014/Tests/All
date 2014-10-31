@@ -48,3 +48,4 @@ duplicate_primary_keys.Bug-3474
 copy_decimal_into.Bug-3596
 queueError.Bug-3604
 querylog.Bug-3607
+fk-property-assert.Bug-3612
