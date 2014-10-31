@@ -109,6 +109,3 @@ conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', fun
 });
 
 conn.close();
-
-
-
