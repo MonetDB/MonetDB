@@ -182,13 +182,12 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		BBPreclaim(bn);
 		return NULL;
 	}
-	b = BATmirror(b);	/* HASHloop works on HEAD column */
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		HASHloop(bi, b->H->hash, i, tl) {
+		HASHloop(bi, b->T->hash, i, tl) {
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, dst, cnt, o,
@@ -198,7 +197,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			}
 		}
 	} else {
-		HASHloop(bi, b->H->hash, i, tl) {
+		HASHloop(bi, b->T->hash, i, tl) {
 			o = (oid) (i + off);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),

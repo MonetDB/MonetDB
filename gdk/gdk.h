@@ -3078,17 +3078,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
 	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
 	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 
 /*
  * For string search, we can optimize if the string heap has
@@ -3098,28 +3098,28 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * numbers instead of strings:
  */
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
+	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->T->vheap,v); \
 	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
-		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
+		if (VarHeapValRaw((bi).b->T->heap.base, hb, (bi).b->T->width) == idx)
 /*
  * The following example shows how the hashloop is used:
  *
  * @verbatim
  * void
- * print_books(BAT *author_books, str author)
+ * print_books(BAT *books_author, str author)
  * {
- *         BAT *b = author_books;
+ *         BAT *b = books_author;
  *         BUN i;
  *
  *         printf("%s\n==================\n", author);
- *         HASHloop(b, (b)->H->hash, i, author)
- *			printf("%s\n", ((str) BUNtail(b, i));
+ *         HASHloop(b, (b)->T->hash, i, author)
+ *			printf("%s\n", ((str) BUNhead(b, i));
  * }
  * @end verbatim
  *
  * Note that for optimization purposes, we could have used a
- * HASHloop_str instead, and also a BUNtvar instead of a BUNtail
- * (since we know the tail-type of author_books is string, hence
+ * HASHloop_str instead, and also a BUNhvar instead of a BUNhead
+ * (since we know the head-type of books_author is string, hence
  * variable-sized). However, this would make the code less general.
  *
  * @- specialized hashloops
@@ -3132,18 +3132,18 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h,HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
+		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -3164,7 +3164,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_any(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
+		if (atom_EQ(v, BUNtail(bi, hb), (bi).b->ttype))
 
 /*
  * @- loop over a BAT with ordered tail

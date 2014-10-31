@@ -75,14 +75,13 @@ static char name[128];
 
 static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 {
-	BAT *m = BATmirror(b);
-	BATiter mi = bat_iterator(m);
+	BATiter bi = bat_iterator(b);
 	BATiter biidx = bat_iterator(bidx);
 
 	BUN p;
 	if (b->T->hash == NULL)
-		BAThash(b, 2 * BATcount(m));
-	HASHloop_str(mi, m->H->hash, p, part)
+		BAThash(b, 2 * BATcount(b));
+	HASHloop_str(bi, b->T->hash, p, part)
 	{
 		if (*((oid *) BUNtail(biidx, p)) == *prv) {
 			*prv = (oid) p;

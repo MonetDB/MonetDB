@@ -1792,7 +1792,7 @@ BUNfnd(BAT *b, const void *v)
 		if (BATtordered(b) || BATtrevordered(b))
 			return SORTfnd(b, v);
 	}
-	bi = bat_iterator(BATmirror(b)); /* HASHfnd works on head */
+	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		HASHfnd_bte(r, bi, v);
@@ -2040,25 +2040,26 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	if (b->H->hash) {
 		BUN h;
 
+		bi = bat_iterator(BATmirror(b)); /* HASHloop works on tail */
 		if (hint && tint) {
 			HASHloop_int(bi, b->H->hash, h, x)
-			    if (*(int *) y == *(int *) BUNtloc(bi, h))
+			    if (*(int *) y == *(int *) BUNhloc(bi, h))
 				return h;
 		} else if (hint && tlng) {
 			HASHloop_int(bi, b->H->hash, h, x)
-			    if (*(lng *) y == *(lng *) BUNtloc(bi, h))
+			    if (*(lng *) y == *(lng *) BUNhloc(bi, h))
 				return h;
 		} else if (hlng && tint) {
 			HASHloop_lng(bi, b->H->hash, h, x)
-			    if (*(int *) y == *(int *) BUNtloc(bi, h))
+			    if (*(int *) y == *(int *) BUNhloc(bi, h))
 				return h;
 		} else if (hlng && tlng) {
 			HASHloop_lng(bi, b->H->hash, h, x)
-			    if (*(lng *) y == *(lng *) BUNtloc(bi, h))
+			    if (*(lng *) y == *(lng *) BUNhloc(bi, h))
 				return h;
 		} else {
 			HASHloop(bi, b->H->hash, h, x)
-			    if ((*tcmp) (y, BUNtail(bi, h)) == 0)
+			    if ((*tcmp) (y, BUNhead(bi, h)) == 0)
 				return h;
 		}
 		return BUN_NONE;
