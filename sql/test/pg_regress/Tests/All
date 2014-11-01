@@ -70,12 +70,12 @@ select_into
 #ToDo select_having
 #ToDo subselect
 #ToDo union
-case
+case		#[MK] interactive behavior is inconsistent with script run, see bugreport
 #ToDo join
 #ToDo aggregates
 #ToDo transactions
-#ToDo random
-#ToDo portals
+random	#[MK] causes an non-displayed error and lost of information in the result
+#portals [MK] MonetDB does not support SQL cursor/fetch operations
 arrays
 #btree_index	[MK]MonetDB does not support construction of btrees
 #hash_index		[MK]MonetDB does not support hash index management by the user
@@ -84,20 +84,20 @@ arrays
 #ToDo privileges
 #ToDo rules
 #ToDo select_views
-#ToDo portals_p2
+#ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables
 loadwisconsin #[MK] copied from benchmarks
-limit	#[MK]
+limit	#[MK] handles
 #ToDo plpgsql
 #ToDo copy2
 #ToDo temp
-#ToDo domain [MK] MonetDB does not support type/domain/object system
+#domain [MK] MonetDB does not support type/domain/object system
 #ToDo rangefuncs
-#ToDo prepare [MK] seems like a useful feature
+#prepare [MK] seems like a useful feature
 without_oid
 #ToDo conversion
-#ToDo truncate [MK] a combination of a DROP TABLE followed by its CREATE table
+#truncate [MK] a combination of a DROP TABLE followed by its CREATE table, feature request?
 alter_table
 #ToDo sequence
 #ToDo polymorphism
