@@ -87,6 +87,9 @@ Ready.
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]
+[ "a"	]
+[ "ab"	]
+[ "abcd"	]
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % .L # table_name
 % text(name) # name
@@ -112,6 +115,9 @@ Ready.
 % char(varchar) # name
 % char # type
 % 10 # length
+[ "a"	]
+[ "ab"	]
+[ "abcd"	]
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]
