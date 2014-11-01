@@ -87,7 +87,8 @@ arrays
 #ToDo portals_p2
 #ToDo foreign_key
 #ToDo cluster
-#ToDo limit
+loadwisconsin
+limit
 #ToDo plpgsql
 #ToDo copy2
 #ToDo temp
