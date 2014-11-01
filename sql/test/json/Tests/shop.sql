@@ -43,9 +43,9 @@ SELECT json.text(json.filter(j,'book.author')) FROM books;
 
 -- a single author from the book store
 SELECT * FROM books 
-WHERE json.text(json.filter(j,'book.author')) = 'Nigel Rise';
+WHERE json.text(json.filter(j,'book.author')) = 'Nigel Rees';
 SELECT * FROM books 
-WHERE json.text(json.filter(j,'..author')) = 'Nigel Rise';
+WHERE json.text(json.filter(j,'..author')) = 'Nigel Rees';
 
 -- numeric calculations
 SELECT * FROM books 

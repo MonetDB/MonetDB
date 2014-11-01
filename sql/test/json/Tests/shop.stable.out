@@ -124,14 +124,14 @@ Ready.
 % sys.books,	sys.books # table_name
 % i,	j # name
 % int,	json # type
-% 1,	0 # length
+% 1,	155 # length
 [ 1,	" { \n    \"book\": \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      }}"	]
 #SELECT * FROM books 
 #WHERE json.text(json.filter(j,'..author')) = 'Nigel Rise';
 % sys.books,	sys.books # table_name
 % i,	j # name
 % int,	json # type
-% 1,	0 # length
+% 1,	155 # length
 [ 1,	" { \n    \"book\": \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      }}"	]
 #SELECT * FROM books 
 #WHERE json.number(json.filter(j,'book.price')) >= 12.99;
