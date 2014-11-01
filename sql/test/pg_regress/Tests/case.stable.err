@@ -29,31 +29,32 @@ stderr of test 'case` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- CASE
-#-- Test the case statement
-#--
-#--
-#-- Simplest examples without tables
-#--
-#-- Test for cases involving untyped literals in test expression
-#--
-#-- Examples of targets involving tables
-#--
-#--
-#-- Examples of qualifications involving tables
-#--
-#--
-#-- NULLIF() and COALESCE()
-#-- Shorthand forms for typical CASE constructs
-#--  defined in the SQL92 standard.
-#--
-#--
-#-- Examples of updates involving tables
-#--
-#--
-#-- Clean up
-#--
+MAPI  = (monetdb) /var/tmp/mtest-14363/.s.monetdb.36251
+QUERY = SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 COMMIT;
+ERROR = !syntax error, unexpected COMMIT, expecting END in: "select case 'a' when 'a' then 1 else 2 commit"
+MAPI  = (monetdb) /var/tmp/mtest-14363/.s.monetdb.36251
+QUERY = UPDATE CASE_TBL
+          SET i = CASE WHEN i >= 3 THEN (- i)
+                        ELSE (2 * i) COMMIT;
+ERROR = !syntax error, unexpected COMMIT, expecting END in: "update case_tbl
+        !  set i = case when i >= 3 then (- i)
+        !                else (2 * "
+MAPI  = (monetdb) /var/tmp/mtest-14363/.s.monetdb.36251
+QUERY = UPDATE CASE_TBL
+          SET i = CASE WHEN i >= 2 THEN (2 * i)
+                        ELSE (3 * i) COMMIT;
+ERROR = !syntax error, unexpected COMMIT, expecting END in: "update case_tbl
+        !  set i = case when i >= 2 then (2 * i)
+        !                else (3 "
+MAPI  = (monetdb) /var/tmp/mtest-14363/.s.monetdb.36251
+QUERY = UPDATE CASE_TBL
+          SET i = CASE WHEN b.i >= 2 THEN (2 * j)
+                        ELSE (3 * j) END
+          FROM CASE2_TBL b
+          WHERE j = -CASE_TBL.i;
+ERROR = !syntax error, unexpected FROM, expecting SCOLON in: "update case_tbl
+        !  set i = case when b.i >= 2 then (2 * j)
+        !                else ("
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

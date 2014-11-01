@@ -70,15 +70,15 @@ select_into
 #ToDo select_having
 #ToDo subselect
 #ToDo union
-#ToDo case
+case
 #ToDo join
 #ToDo aggregates
 #ToDo transactions
 #ToDo random
 #ToDo portals
 arrays
-#ToDo btree_index
-#ToDo hash_index
+#btree_index	[MK]MonetDB does not support construction of btrees
+#hash_index		[MK]MonetDB does not support hash index management by the user
 #ToDo update
 #ToDo namespace
 #ToDo privileges
@@ -86,22 +86,22 @@ arrays
 #ToDo select_views
 #ToDo portals_p2
 #ToDo foreign_key
-#ToDo cluster
-loadwisconsin
-limit
+#cluster	[MK]MonetDB does not support clustering of tables
+loadwisconsin #[MK] copied from benchmarks
+limit	#[MK]
 #ToDo plpgsql
 #ToDo copy2
 #ToDo temp
-#ToDo domain
+#ToDo domain [MK] MonetDB does not support type/domain/object system
 #ToDo rangefuncs
-#ToDo prepare
+#ToDo prepare [MK] seems like a useful feature
 without_oid
 #ToDo conversion
-#ToDo truncate
+#ToDo truncate [MK] a combination of a DROP TABLE followed by its CREATE table
 alter_table
 #ToDo sequence
 #ToDo polymorphism
-#ToDo rowtypes
+#rowtypes [MK] MonetDB does not support object type definitions 
 #ToDo stats
 
 # these four were in a 2005 pgregress set, but are no longer
