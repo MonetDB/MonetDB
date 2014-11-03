@@ -484,6 +484,8 @@ find_posthread_locked(pthread_t tid)
 	return NULL;
 }
 
+#ifndef NDEBUG
+/* only used in an assert */
 static struct posthread *
 find_posthread(pthread_t tid)
 {
@@ -494,6 +496,7 @@ find_posthread(pthread_t tid)
 	pthread_mutex_unlock(&posthread_lock);
 	return p;
 }
+#endif
 
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
