@@ -340,6 +340,7 @@ discoveryRunner(void *d)
 				Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
 						"discovery services disabled\n", e);
 				free(e);
+				free(ckv);
 				return;
 			}
 

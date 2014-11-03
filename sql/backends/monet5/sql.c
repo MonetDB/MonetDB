@@ -2782,26 +2782,33 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		}
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 
 	/* convert UTF-8 encoded file name to the character set of our
 	 * own locale before passing it on to the system call */
-	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED ||
-	    (msg = STRIconv(&filename, fname, &utf8, &cs)) != MAL_SUCCEED) {
+	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		return msg;
+	}
+	msg = STRIconv(&filename, fname, &utf8, &cs);
+	GDKfree(cs);
+	if (msg != MAL_SUCCEED) {
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
 		return msg;
 	}
 
-	GDKfree(cs);
 	len = strlen((char *) (*N));
 	if ((ns = GDKmalloc(len + 1)) == NULL) {
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
+		GDKfree(filename);
 		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 	}
 	GDKstrFromStr(ns, *N, len);
@@ -2815,7 +2822,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(rsep);
 		GDKfree(ssep);
 		GDKfree(ns);
-		throw(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+		msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+		GDKfree(filename);
+		return msg;
 	}
 #if SIZEOF_VOID_P == 4
 	s = bstream_create(ss, 0x20000);
@@ -2870,18 +2879,35 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	len = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(len + 1), *T, len);
+	if ((tsep = GDKmalloc(len + 1)) == NULL)
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(len + 1), *R, len);
+	if ((rsep = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(rsep, *R, len);
 	len = 0;
 	if (*S && strcmp(str_nil, *(char **) S)) {
 		len = strlen((char *) (*S));
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+		}
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 	len = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
+	if ((ns = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(ns, *N, len);
 	len = 0;
 	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 	GDKfree(tsep);

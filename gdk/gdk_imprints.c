@@ -932,8 +932,9 @@ IMPSremove(BAT *b)
 	if ((imprints = b->T->imprints) != NULL) {
 		b->T->imprints = NULL;
 
-		HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-			   b->batCacheid > 0 ? "timprints" : "himprints");
+		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
+			       b->batCacheid > 0 ? "timprints" : "himprints"))
+			IODEBUG THRprintf(GDKstdout, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
 
 		GDKfree(imprints->imprints);
 		GDKfree(imprints);

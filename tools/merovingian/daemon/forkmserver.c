@@ -281,7 +281,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char pipeline[512];
 		char *readonly = NULL;
 		char *embeddedr = NULL;
-		char *argv[24];	/* for the exec arguments */
+		char *argv[26];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
 

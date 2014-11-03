@@ -742,8 +742,9 @@ getFileSize(stream *s)
        if (s->read == file_read) {
                struct stat stb;
 
-               fstat(fileno((FILE *) s->stream_data.p), &stb);
-               return (size_t) stb.st_size;
+               if (fstat(fileno((FILE *) s->stream_data.p), &stb) == 0)
+		       return (size_t) stb.st_size;
+	       /* we shouldn't get here... */
        }
        return 0;               /* unknown */
 }
@@ -1690,11 +1691,11 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t nr = 0, size = (ssize_t) (elmsize * cnt);
 
-	if (s->errnr || size == 0)
+	if (s->errnr)
 		return -1;
-
 	if (size == 0)
 		return 0;
+
 #ifdef _MSC_VER
 	/* recv only takes an int parameter, and read does not accept
 	 * sockets */
