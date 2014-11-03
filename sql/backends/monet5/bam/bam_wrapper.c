@@ -942,11 +942,12 @@ process_header(bam_wrapper * bw)
 								   rg_fields_found[11]);
 
 					/* if this point is reached, option wasn't recognized */
-					clear_bam_header_line(&hl);
-					throw(MAL, "process_header",
+					msg = createException(MAL, "process_header",
 						  ERR_PROCESS_HEADER
 						  "Unknown option '%s' found in header tag RG",
 						  bw->file_location, hl.options[o].tag);
+					clear_bam_header_line(&hl);
+					return msg;
 				}
 				if (!rg_fields_found[0]) {
 					clear_bam_header_line(&hl);
