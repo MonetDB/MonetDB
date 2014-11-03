@@ -1685,11 +1685,11 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t nr = 0, size = (ssize_t) (elmsize * cnt);
 
-	if (s->errnr || size == 0)
+	if (s->errnr)
 		return -1;
-
 	if (size == 0)
 		return 0;
+
 #ifdef _MSC_VER
 	/* recv only takes an int parameter, and read does not accept
 	 * sockets */
