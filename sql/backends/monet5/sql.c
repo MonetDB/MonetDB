@@ -2784,15 +2784,21 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* convert UTF-8 encoded file name to the character set of our
 	 * own locale before passing it on to the system call */
-	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED ||
-	    (msg = STRIconv(&filename, fname, &utf8, &cs)) != MAL_SUCCEED) {
+	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		return msg;
+	}
+	msg = STRIconv(&filename, fname, &utf8, &cs);
+	GDKfree(cs);
+	if (msg != MAL_SUCCEED) {
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
 		return msg;
 	}
 
-	GDKfree(cs);
 	len = strlen((char *) (*N));
 	if ((ns = GDKmalloc(len + 1)) == NULL) {
 		GDKfree(tsep);
