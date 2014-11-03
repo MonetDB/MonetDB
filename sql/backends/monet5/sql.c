@@ -2778,7 +2778,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		}
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 
@@ -2872,18 +2872,35 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	len = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(len + 1), *T, len);
+	if ((tsep = GDKmalloc(len + 1)) == NULL)
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(len + 1), *R, len);
+	if ((rsep = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(rsep, *R, len);
 	len = 0;
 	if (*S && strcmp(str_nil, *(char **) S)) {
 		len = strlen((char *) (*S));
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+		}
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 	len = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
+	if ((ns = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(ns, *N, len);
 	len = 0;
 	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 	GDKfree(tsep);
