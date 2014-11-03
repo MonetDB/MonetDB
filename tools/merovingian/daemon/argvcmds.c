@@ -55,7 +55,7 @@ command_help(int argc, char *argv[])
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("usage: monetdbd start [-n] <dbfarm>\n");
 		printf("  Starts the monetdbd deamon for the given dbfarm.\n");
-		printf("  When -n is given, monetdbd will not fork into the background.");
+		printf("  When -n is given, monetdbd will not fork into the background.\n");
 	} else if (strcmp(argv[1], "stop") == 0) {
 		printf("usage: monetdbd stop <dbfarm>\n");
 		printf("  Stops a running monetdbd deamon for the given dbfarm.\n");

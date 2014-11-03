@@ -24,7 +24,7 @@
 /* #define _DEBUG_EXCEPTION_		trace the exception handling */
 
 /* These are the exceptions known, adding new ones here requires to also
- * add the "full" name to the exceptionNames array below */
+ * add the "full" name to the exceptionNames array in mal_exception.c */
 enum malexception {
 	MAL=0,
 	ILLARG,
