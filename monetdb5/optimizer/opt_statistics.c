@@ -99,13 +99,13 @@ QOTupdateStatistics(str nme, int actions, lng val)
 
 	QOTstatisticsInit();
 	MT_lock_set(&qotlock, "QOT statistics");
-	p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
+	p = BUNfnd(qotStat[QOTnames],(ptr)nme);
 	if (p == BUN_NONE) {
 		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
-		p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
+		p = BUNfnd(qotStat[QOTnames],(ptr)nme);
 		if (p == BUN_NONE){
 			MT_lock_unset(&qotlock, "QOT statistics");
 			return;
@@ -114,7 +114,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi = bat_iterator(qotStat[QOTnames]);
 	idx = *(oid*) BUNhead(bi,p);
 
-	p = BUNfnd(qotStat[QOTcalls],&idx);
+	p = BUNfnd(BATmirror(qotStat[QOTcalls]),&idx);
 	if (p == BUN_NONE) {
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout,"#Could not access 'calls'\n");
@@ -128,7 +128,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
-	p = BUNfnd(qotStat[QOTactions],&idx);
+	p = BUNfnd(BATmirror(qotStat[QOTactions]),&idx);
 	if (p == BUN_NONE){
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout,"#Could not access 'actions'\n");
@@ -142,7 +142,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
-	p = BUNfnd(qotStat[QOTtimings],&idx);
+	p = BUNfnd(BATmirror(qotStat[QOTtimings]),&idx);
 	if (p == BUN_NONE){
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout, "#Could not access 'timings'\n");

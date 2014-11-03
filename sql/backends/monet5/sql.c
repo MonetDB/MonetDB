@@ -3053,7 +3053,7 @@ HASHfndTwice(BAT *b, ptr v)
 	BUN i = BUN_NONE;
 	int first = 1;
 
-	HASHloop(bi, b->H->hash, i, v) {
+	HASHloop(bi, b->T->hash, i, v) {
 		if (!first)
 			return 1;
 		first = 0;
@@ -3120,9 +3120,8 @@ not_unique_oids(bat *ret, const bat *bid)
 	} else {
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
-		BAT *bm = BATmirror(b);
 
-		if (BATprepareHash(bm))
+		if (BATprepareHash(b))
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
@@ -3135,7 +3134,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		rt = (oid *) Tloc(bn, BUNfirst(bn));
 		for (; vp < ve; vp++, h++) {
 			/* try to find value twice */
-			if (HASHfndTwice(bm, vp)) {
+			if (HASHfndTwice(b, vp)) {
 				*rh++ = *h;
 				*rt++ = *vp;
 			}

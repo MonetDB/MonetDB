@@ -29,6 +29,13 @@ stderr of test 'numerology` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = CREATE TABLE INT2_TBL(f1 smallint);
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = CREATE TABLE INT4_TBL(f1 integer);
+
+
 
 # 17:21:41 >  
 # 17:21:41 >  "Done."

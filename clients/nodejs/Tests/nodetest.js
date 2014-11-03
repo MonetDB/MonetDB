@@ -13,21 +13,25 @@ monetdb.connect({dbname:'nonexist', port:dbport}, function(err) {
 	assert(err);
 });
 
-monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
+var failedconn = monetdb.connect({dbname:dbname, user:'nonexist', port:dbport}, function(err) {
+	assert(err);
+});
+/* try to query on a failed connection, we need this callback */
+failedconn.query('SELECT 1',function(err,res) {
 	assert(err);
 });
 
 /* now actually connect */
-var conn = monetdb.connect({dbname:dbname, port:dbport, debug: true}, function(err) {
+var conn = monetdb.connect({dbname:dbname, port:dbport, debug: false}, function(err) {
 	assert.equal(null, err);
+	assert.equal(conn.env.gdk_dbname, dbname);
 });
 
 
-/* some querying */
-conn.query('start transaction');
-
-conn.query('create table foo(a int, b float, c clob)');
-conn.query("insert into foo values (42,4.2,'42'),(43,4.3,'43'),(44,4.4,'44'),(45,4.5,'45')");
+/* some querying, call chaining */
+conn.query('start transaction').
+	query('create table foo(a int, b float, c clob)').
+	query("insert into foo values (42,4.2,'42'),(43,4.3,'43'),(44,4.4,'44'),(45,4.5,'45')");
 
 conn.query('select * from foo', function(err, res) {
 	assert.equal(null, err);
@@ -44,10 +48,11 @@ conn.query('select * from foo', function(err, res) {
 	assert.equal(4, res.data.length);
 
 	assert.equal(42, res.data[0][res.structure[0].index]);
-	assert.equal(4.3, res.data[1][1]);
+	assert.equal(4.3, res.data[1][res.col['b']]);
 	assert.equal('44', res.data[2][2]);
 });
 
+/* we can also just put the queries in one .query call */
 conn.query('delete from foo; drop table foo; rollback');
 
 /* query that will stress multi-block operations */
@@ -85,6 +90,16 @@ conn.query('SELECT id from tables where name=? and type=? and readonly=?',
 
 }); 
 
+/* some quoting fun, jesus */
+conn.query("SELECT '\\\\asdf','\"', '\\\"', '\\\\\"', '\\''", function(err, res) {
+	assert.equal(null, err);
+	assert.equal('\\asdf', res.data[0][0]);
+	assert.equal('"', res.data[0][1]);
+	assert.equal('\"', res.data[0][2]);
+	assert.equal('\\"', res.data[0][3]);
+	assert.equal("'", res.data[0][4]);
+});
+
 /* prepared statements can also be re-used  */
 conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', function(err, res){
 	assert.equal(null, err);
@@ -104,6 +119,3 @@ conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', fun
 });
 
 conn.close();
-
-
-

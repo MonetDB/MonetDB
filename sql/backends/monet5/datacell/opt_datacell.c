@@ -35,7 +35,7 @@
 #include "opt_statistics.h"
 #include "opt_dataflow.h"
 
-static int
+int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0, fnd, mvc = 0;
@@ -315,7 +315,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 str
-OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme;
 	str fcnnme;

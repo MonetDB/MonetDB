@@ -25,14 +25,28 @@ stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:52:52 >  
-# 14:52:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8439" "--port=31752"
-# 14:52:52 >  
+# 17:37:48 >  
+# 17:37:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"
+# 17:37:48 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = select avg(f1) from interval_tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = select avg(cast(f1 as double)) from interval_tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = select avg(cast(f1 as decimal(9,3))) from interval_tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+QUERY = select sum(f1) from interval_tbl;
 
 
 
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 17:37:49 >  
+# 17:37:49 >  "Done."
+# 17:37:49 >  
 

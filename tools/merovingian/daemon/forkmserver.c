@@ -500,22 +500,22 @@ forkMserver(char *database, sabdb** stats, int force)
 				(*stats)->conns->val != NULL &&
 				(*stats)->scens != NULL &&
 				(*stats)->scens->val != NULL)
-				{
-					sablist *scen = (*stats)->scens;
-					do {
-						if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
-							break;
-					} while ((scen = scen->next) != NULL);
-					if (scen == NULL) {
-						/* we don't know what it's doing, but we don't like it
-						 * any case, so kill it */
-						terminateProcess(dp);
-						msab_freeStatus(stats);
-						pthread_mutex_unlock(&fork_lock);
-						return(newErr("database '%s' did not initialise the sql "
-									  "scenario", database));
-					}
-				} else if (dp != NULL) {
+			{
+				sablist *scen = (*stats)->scens;
+				do {
+					if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
+						break;
+				} while ((scen = scen->next) != NULL);
+				if (scen == NULL) {
+					/* we don't know what it's doing, but we don't like it
+					 * any case, so kill it */
+					terminateProcess(dp);
+					msab_freeStatus(stats);
+					pthread_mutex_unlock(&fork_lock);
+					return(newErr("database '%s' did not initialise the sql "
+								  "scenario", database));
+				}
+			} else if (dp != NULL) {
 				terminateProcess(dp);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&fork_lock);
@@ -554,6 +554,13 @@ forkMserver(char *database, sabdb** stats, int force)
 							   "itself down after starting, "
 							   "check monetdbd's logfile for possible "
 							   "hints", database));
+				case SABdbStarting:
+					return(newErr(
+							   "database '%s' has inconsistent state "
+							   "(sabaoth administration reports starting up, "
+							   "but process seems gone), "
+							   "review monetdbd's "
+							   "logfile for any peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)state));
 				}

@@ -206,10 +206,10 @@ BATundo(BAT *b)
 			ptr t = BUNtail(bi, p);
 
 			if (b->H->hash) {
-				HASHins(b, i, h);
+				HASHins(bm, i, h);
 			}
 			if (b->T->hash) {
-				HASHins(bm, i, t);
+				HASHins(b, i, t);
 			}
 		}
 	}

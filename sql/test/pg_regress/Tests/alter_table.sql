@@ -945,7 +945,7 @@ drop table p1 cascade;
 
 create domain mytype as text;
 create temp table foo (f1 text, f2 mytype, f3 text);
-create temp table foo (f1 text, f2 text, f3 text);
+create temp table foo (f1 text, f2 text, f3 text) on commit preserve rows;
 
 insert into foo values('aa','bb','cc');
 select * from foo;

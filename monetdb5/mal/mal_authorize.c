@@ -218,7 +218,7 @@ AUTHcheckCredentials(
 	if (*username == NULL || strNil(*username))
 		throw(INVCRED, "checkCredentials", "invalid credentials for unknown user");
 
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	if (p == BUN_NONE) {
 		/* DO NOT reveal that the user doesn't exist here! */
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", *username);
@@ -235,7 +235,7 @@ AUTHcheckCredentials(
 	}
 
 	/* find the corresponding password to the user */
-	q = BUNfnd(pass, id);
+	q = BUNfnd(BATmirror(pass), id);
 	assert (q != BUN_NONE);
 	passi = bat_iterator(pass);
 	tmp = (str)BUNtail(passi, q);
@@ -281,7 +281,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd) {
 	rethrow("addUser", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* ensure that the username is not already there */
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	if (p != BUN_NONE)
 		throw(MAL, "addUser", "user '%s' already exists", *username);
 
@@ -292,7 +292,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd) {
 	BUNappend(pass, hash, FALSE);
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
 	id = (oid*)(BUNhead(useri, p));
@@ -324,7 +324,7 @@ AUTHremoveUser(Client *c, str *username) {
 		throw(ILLARG, "removeUser", "username should not be nil");
 
 	/* ensure that the username exists */
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	if (p == BUN_NONE)
 		throw(MAL, "removeUser", "no such user: '%s'", *username);
 	useri = bat_iterator(user);
@@ -370,11 +370,11 @@ AUTHchangeUsername(Client *c, str *olduser, str *newuser)
 		throw(ILLARG, "changeUsername", "new username should not be nil");
 
 	/* see if the olduser is valid */
-	p = BUNfnd(BATmirror(user), *olduser);
+	p = BUNfnd(user, *olduser);
 	if (p == BUN_NONE)
 		throw(MAL, "changeUsername", "user '%s' does not exist", *olduser);
 	/* ... and if the newuser is not there yet */
-	q = BUNfnd(BATmirror(user), *newuser);
+	q = BUNfnd(user, *newuser);
 	if (q != BUN_NONE)
 		throw(MAL, "changeUsername", "user '%s' already exists", *newuser);
 
@@ -410,7 +410,7 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 
 	/* check the old password */
 	id = (*c)->user;
-	p = BUNfnd(pass, &id);
+	p = BUNfnd(BATmirror(pass), &id);
 	assert(p != BUN_NONE);
 	passi = bat_iterator(pass);
 	tmp = BUNtail(passi, p);
@@ -465,7 +465,7 @@ AUTHsetPassword(Client *c, str *username, str *passwd) {
 
 	id = (*c)->user;
 	/* find the name of the administrator and see if it equals username */
-	p = BUNfnd(user, &id);
+	p = BUNfnd(BATmirror(user), &id);
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
 	tmp = BUNtail(useri, p);
@@ -474,7 +474,7 @@ AUTHsetPassword(Client *c, str *username, str *passwd) {
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
 
 	/* see if the user is valid */
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	if (p == BUN_NONE)
 		throw(MAL, "setPassword", "no such user '%s'", *username);
 	id = *(oid*)BUNhead(useri, p);
@@ -482,7 +482,7 @@ AUTHsetPassword(Client *c, str *username, str *passwd) {
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	p = BUNfnd(pass, &id);
+	p = BUNfnd(BATmirror(pass), &id);
 	assert (p != BUN_NONE);
 	BUNinplace(pass, p, &id, hash, FALSE);
 	GDKfree(hash);
@@ -507,7 +507,7 @@ AUTHresolveUser(str *username, oid *uid)
 	if (uid == NULL || *uid == oid_nil)
 		throw(ILLARG, "resolveUser", "userid should not be nil");
 
-	p = BUNfnd(user, uid);
+	p = BUNfnd(BATmirror(user), uid);
 	if (p == BUN_NONE)
 		throw(MAL, "resolveUser", "No such user with id: " OIDFMT, *uid);
 
@@ -533,7 +533,7 @@ AUTHgetUsername(str *username, Client *c) {
 	BATiter useri;
 
 	id = (*c)->user;
-	p = BUNfnd(user, &id);
+	p = BUNfnd(BATmirror(user), &id);
 
 	/* If you ask for a username using a client struct, and that user
 	 * doesn't exist, you seriously screwed up somehow.  If this
@@ -578,12 +578,12 @@ AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	if (*username == NULL || strNil(*username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
 
-	p = BUNfnd(BATmirror(user), *username);
+	p = BUNfnd(user, *username);
 	if (p == BUN_NONE)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", *username);
 	i = bat_iterator(user);
 	id = *(oid*)BUNhead(i, p);
-	p = BUNfnd(pass, &id);
+	p = BUNfnd(BATmirror(pass), &id);
 	assert(p != BUN_NONE);
 	i = bat_iterator(pass);
 	tmp = BUNtail(i, p);

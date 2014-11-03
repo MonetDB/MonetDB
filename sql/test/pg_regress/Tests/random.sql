@@ -7,33 +7,43 @@
 SELECT count(*) FROM onek;
 
 -- pick three random rows, they shouldn't match
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1)
-INTERSECT
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1)
-INTERSECT
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1);
+-- MonetDB does not allow LIMIT in subqueries
+-- (SELECT unique1 AS random
+--   FROM onek ORDER BY random() LIMIT 1)
+-- INTERSECT
+-- (SELECT unique1 AS random
+--   FROM onek ORDER BY random() LIMIT 1)
+-- INTERSECT
+-- (SELECT unique1 AS random
+--   FROM onek ORDER BY random() LIMIT 1);
 
 -- count roughly 1/10 of the tuples
-SELECT count(*) AS random INTO RANDOM_TBL
-  FROM onek WHERE random() < 1.0/10;
+-- this one causes an undetected error
+CREATE TEMPORARY TABLE random_tbl( random double);
+
+INSERT INTO random_tbl SELECT count(*) AS random 
+  FROM onek WHERE rand() < 1.0/10;
+
+DROP TABLE random_tbl;
+
+CREATE TEMPORARY TABLE random_tbl( random bigint);
+INSERT INTO random_tbl SELECT count(*) AS random 
+  FROM onek WHERE 1.0/rand() < 1.0/10;
 
 -- select again, the count should be different
 INSERT INTO RANDOM_TBL (random)
   SELECT count(*)
-  FROM onek WHERE random() < 1.0/10;
+  FROM onek WHERE 1.0/rand() < 1.0/10;
 
 -- select again, the count should be different
 INSERT INTO RANDOM_TBL (random)
   SELECT count(*)
-  FROM onek WHERE random() < 1.0/10;
+  FROM onek WHERE 1.0/rand() < 1.0/10;
 
 -- select again, the count should be different
 INSERT INTO RANDOM_TBL (random)
   SELECT count(*)
-  FROM onek WHERE random() < 1.0/10;
+  FROM onek WHERE 1.0/rand() < 1.0/10;
 
 -- now test that they are different counts
 SELECT random, count(random) FROM RANDOM_TBL

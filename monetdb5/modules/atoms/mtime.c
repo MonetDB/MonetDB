@@ -1358,7 +1358,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 	tzone *z;
 	BATiter tzi;
 
-	if ((p = BUNfnd(BATmirror(timezone_name), *name)) == BUN_NONE)
+	if ((p = BUNfnd(timezone_name, *name)) == BUN_NONE)
 		throw(MAL, "mtime.setTimezone", "unknown timezone");
 	tzi = bat_iterator(timezone_def);
 	z = (tzone *) BUNtail(tzi, p);

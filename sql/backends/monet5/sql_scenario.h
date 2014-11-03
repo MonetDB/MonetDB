@@ -30,6 +30,9 @@ sql5_export str SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str SQLprelude(void *ret);
 sql5_export str SQLepilogue(void *ret);
 
+sql5_export int SQLautocommit(Client c, mvc *m);
+sql5_export void SQLtrans(mvc *m);
+
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
 sql5_export str SQLinitClient(Client c);

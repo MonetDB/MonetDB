@@ -20,23 +20,20 @@ stdout of test 'create_misc` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 17:37:56 >  
+# 17:37:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"
+# 17:37:56 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- CREATE_MISC
-#--
-#-- CLASS POPULATION
-#--	(any resemblance to real life is purely coincidental)
-#--
-#INSERT INTO tenk2 VALUES (tenk1.*);
-[ 1 ]
-#SELECT * INTO TABLE onek2 FROM onek;
-#INSERT INTO fast_emp4000 VALUES (slow_emp4000.*);
-[ 1 ]
+#INSERT INTO tenk2 SELECT * FROM tenk1;
+[ 0	]
+#CREATE TABLE onek2 AS
+#SELECT *
+#-- INTO TABLE onek2
+# FROM onek
+#WITH DATA;
+#INSERT INTO fast_emp4000 (SELECT * FROM slow_emp4000);
+[ 0	]
+#CREATE TABLE Bprime AS
 #SELECT *
 #   INTO TABLE Bprime
 #   FROM tenk1
@@ -45,12 +42,12 @@ Ready.
 #   SELECT 'posthacking', p.string
 #   FROM person* p
 #   WHERE p.name = 'mike' or p.name = 'jeff';
-[ 1 ]
-#INSERT INTO hobbies_r (string, person)
-#   SELECT 'basketball', p.string
+[ 0	]
+#INSERT INTO hobbies_r (name, person)
+#   SELECT 'basketball', p.name
 #   FROM person p
 #   WHERE p.name = 'joe' or p.name = 'sally';
-[ 1 ]
+[ 0	]
 #INSERT INTO hobbies_r (name) VALUES ('skywalking');
 [ 1 ]
 #INSERT INTO equipment_r (string, hobby) VALUES ('advil', 'posthacking');
@@ -68,15 +65,16 @@ Ready.
 #INSERT INTO ihighway 
 #   SELECT * 
 #   FROM road 
-#   WHERE name ~ 'I- .*';
-[ 1 ]
-#INSERT INTO shighway 
+#   WHERE name = 'I- .*';
+[ 0	]
+#INSERT INTO shighway (name, thepath)
 #   SELECT * 
 #   FROM road 
-#   WHERE name ~ 'State Hwy.*';
-[ 1 ]
+#   WHERE name = 'State Hwy.*';
+[ 0	]
 #UPDATE shighway
 #   SET surface = 'asphalt';
+[ 0	]
 #INSERT INTO a_star (class, a) VALUES ('a', 1);
 [ 1 ]
 #INSERT INTO a_star (class, a) VALUES ('a', 2);

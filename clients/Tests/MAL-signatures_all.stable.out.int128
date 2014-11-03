@@ -40603,7 +40603,7 @@ command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2]
 address BKCdelete_bun;
 comment Delete one specific BUN.
 
-command bat.densebat(size:wrd):bat[:void,:void] 
+command bat.densebat(size:wrd):bat[:oid,:oid] 
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'size'.
 
@@ -42476,7 +42476,7 @@ address CMDvarADDsignal;
 comment Return V1 + V2, guarantee no overflow by returning larger type
 
 pattern calc.++(v:hge):hge 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.-(v1:dbl,v2:dbl):dbl 
@@ -42944,7 +42944,7 @@ address CMDvarSUBsignal;
 comment Return V1 - V2, guarantee no overflow by returning larger type
 
 pattern calc.--(v:hge):hge 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.-(v:hge):hge 
@@ -51047,8 +51047,10 @@ pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.hash(v:hge):wrd 
-address MKEYhash_hge;
+pattern mkey.hash(v:hge):wrd 
+address MKEYhash;
+comment calculate a hash value
+
 pattern mkey.hash(v:str):wrd 
 address MKEYhash;
 comment calculate a hash value

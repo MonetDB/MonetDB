@@ -18,7 +18,7 @@
  */
 
 /*
- * Martin Kersten
+ * (c) 2013 Martin Kersten
  */
 #include "monetdb_config.h"
 #include "json.h"

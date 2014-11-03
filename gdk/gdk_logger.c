@@ -70,10 +70,6 @@
 #include "gdk_logger.h"
 #include <string.h>
 
-static BUN BUNfndT(BAT *b, const void *v)
-{
-	return BUNfnd(BATmirror(b), v);
-}
 /*
  * The log record encoding is geared at reduced storage space, but at
  * the expense of readability. A user can not easily inspect the log a
@@ -237,7 +233,7 @@ la_bat_clear(logger *lg, logaction *la)
 		fprintf(stderr, "#la_bat_clear %s\n", la->name);
 	/* do we need to skip these old updates */
 	if (BATcount(lg->snapshots_bid)) {
-		BUN p = BUNfndT(lg->snapshots_bid, &bid);
+		BUN p = BUNfnd(lg->snapshots_bid, &bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -270,7 +266,7 @@ log_read_seq(logger *lg, logformat *l)
 		return LOG_ERR;
 	}
 
-	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
+	if ((p = BUNfnd(lg->seqs_id, &seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
 		BUNdelete(lg->seqs_val, p, FALSE);
 	}
@@ -429,7 +425,7 @@ la_bat_updates(logger *lg, logaction *la)
 
 	/* do we need to skip these old updates */
 	if (BATcount(lg->snapshots_bid)) {
-		BUN p = BUNfndT(lg->snapshots_bid, &bid);
+		BUN p = BUNfnd(lg->snapshots_bid, &bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -457,7 +453,7 @@ la_bat_updates(logger *lg, logaction *la)
 					const void *h = BUNhead(bi, p);
 					const void *t = BUNtail(bi, p);
 
-					if (BUNfnd(b, h) == BUN_NONE) {
+					if (BUNfnd(BATmirror(b), h) == BUN_NONE) {
 						/* if value doesn't
 						 * exist, insert it if
 						 * b void headed,
@@ -506,7 +502,7 @@ la_bat_destroy(logger *lg, logaction *la)
 		BUN p;
 
 		logger_del_bat(lg, bid);
-		if ((p = BUNfndT(lg->snapshots_bid, &bid)) != BUN_NONE) {
+		if ((p = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -619,7 +615,7 @@ la_bat_use(logger *lg, logaction *la)
 		return;
 	}
 	logger_add_bat(lg, b, la->name);
-	if ((p = BUNfndT(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE) {
+	if ((p = BUNfnd(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE) {
 		BUNdelete(lg->snapshots_bid, p, FALSE);
 		BUNdelete(lg->snapshots_tid, p, FALSE);
 	}
@@ -1042,7 +1038,7 @@ logger_commit(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
 
-	p = BUNfndT(lg->seqs_id, &id);
+	p = BUNfnd(lg->seqs_id, &id);
 	BUNdelete(lg->seqs_id, p, FALSE);
 	BUNdelete(lg->seqs_val, p, FALSE);
 	BUNappend(lg->seqs_id, &id, FALSE);
@@ -1395,7 +1391,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		if (lg->seqs_val == 0)
 			logger_fatal("logger_load: inconsistent database, seqs_val does not exist", 0, 0, 0);
 		if (BATcount(lg->seqs_id) && !lg->shared) {
-			BUN p = BUNfndT(lg->seqs_id, &id);
+			BUN p = BUNfnd(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
 			if (lg->debug & 1) {
 				fprintf(stderr, "#logger_load setting new logger id to " LLFMT "\n", lg->id);
@@ -1897,7 +1893,7 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
-	BUN p = BUNfndT(lg->seqs_id, &seq);
+	BUN p = BUNfnd(lg->seqs_id, &seq);
 
 	if (p != BUN_NONE) {
 		*id = *(lng *) Tloc(lg->seqs_val, p);
@@ -1962,7 +1958,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
-		if ((p = BUNfndT(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE){
+		if ((p = BUNfnd(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE){
 			BUNdelete(lg->snapshots_bid, p, FALSE);
 			BUNdelete(lg->snapshots_tid, p, FALSE);
 		}
@@ -2007,7 +2003,7 @@ log_bat_transient(logger *lg, const char *name)
 	lg->changes++;
 
 	/* if this is a snapshot bat, we need to skip all changes */
-	if ((p = BUNfndT(lg->snapshots_bid, &bid)) != BUN_NONE) {
+	if ((p = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -2321,7 +2317,7 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
-	if ((p = BUNfndT(lg->seqs_id, &seq)) != BUN_NONE) {
+	if ((p = BUNfnd(lg->seqs_id, &seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
 		BUNdelete(lg->seqs_val, p, FALSE);
 	}
@@ -2436,14 +2432,14 @@ void
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
-	BUN p = BUNfndT(lg->catalog_bid, &bid), q;
+	BUN p = BUNfnd(lg->catalog_bid, &bid), q;
 
 	assert(p != BUN_NONE);
 
 	/* if this is a not logger commited snapshot bat, make it
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
-	    (q = BUNfndT(lg->snapshots_bid, &bid)) != BUN_NONE) {
+	    (q = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
 
 		BUNdelete(lg->snapshots_bid, q, FALSE);
 		BUNdelete(lg->snapshots_tid, q, FALSE);
@@ -2467,7 +2463,7 @@ log_bid
 logger_find_bat(logger *lg, const char *name)
 {
 	log_bid res = 0;
-	BUN p = BUNfndT(lg->catalog_nme, name);
+	BUN p = BUNfnd(lg->catalog_nme, name);
 
 	if (p != BUN_NONE)
 		res = *(log_bid *) Tloc(lg->catalog_bid, p);

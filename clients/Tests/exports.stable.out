@@ -233,7 +233,7 @@ BAT *BUNdel(BAT *b, const void *left, const void *right, bit force);
 BAT *BUNdelHead(BAT *b, const void *left, bit force);
 BUN BUNdelete(BAT *b, BUN p, bit force);
 BAT *BUNfastins(BAT *b, const void *left, const void *right);
-BUN BUNfnd(BAT *b, const void *left);
+BUN BUNfnd(BAT *b, const void *right);
 BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 BAT *BUNins(BAT *b, const void *left, const void *right, bit force);
 BAT *BUNreplace(BAT *b, const void *left, const void *right, bit force);

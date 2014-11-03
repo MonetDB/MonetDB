@@ -12,6 +12,8 @@ function MonetDBConnection(options, conncallback) {
 	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
 	this.do_close = false;
+	this.close_callback = null;
+	this.alldone = false;
 
 	this.queryqueue = [];
 	var thizz = this;
@@ -27,6 +29,8 @@ function MonetDBConnection(options, conncallback) {
 	this.socket.on('error', function(x) {
 		if (conncallback != undefined)
 			conncallback(x.toString());
+		this.state = 'disconnected';
+		cleanup.call(thizz);
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
@@ -40,10 +44,10 @@ function MonetDBConnection(options, conncallback) {
 		}
 		thizz.env = {};
 		resp.data.forEach(function(l) { 
-			thizz.env[l.name] = l.value;
+			thizz.env[l[resp.col.name]] = l[resp.col.value];
 		 });
 	});
-	this.request('SELECT 42', function(x) {
+	this.query('SELECT 42', function(x) {
 		if (this.conn_callback != undefined)
 			this.conn_callback(null);
 	});
@@ -52,7 +56,6 @@ function MonetDBConnection(options, conncallback) {
 MonetDBConnection.prototype.request = 
 MonetDBConnection.prototype.query = function() {
 	var message = arguments[0];
-
 	var params = [];
 	var callback = undefined;
 	var raw = false;
@@ -69,19 +72,27 @@ MonetDBConnection.prototype.query = function() {
 		}
 	}
 
+	if (this.state == 'disconnected') {
+		if (callback != undefined) {
+			callback('Invalid connection');
+		}
+		cleanup.call(this);
+		return;
+	}
+
 	if (Array.isArray(arguments[1])) {
 		params = arguments[1];
 		callback = arguments[2];
 		raw = arguments[3];
 
-		this.prepare(message, function(err, res) {
+		this.prepare(message, function(err, resp) {
 			if (err) {
 				if (callback != undefined) {
 					callback(err);
 				}
 				return;
 			}
-			res.exec(params, function(err, res) {
+			resp.exec(params, function(err, rese) {
 				if (err) {
 					if (callback != undefined) {
 						callback(err);
@@ -89,8 +100,9 @@ MonetDBConnection.prototype.query = function() {
 					return;
 				}
 				if (callback != undefined) {
-					callback(null, res);
+					callback(null, rese);
 				}
+				resp.release();
 			});
 		});
 	}
@@ -101,7 +113,13 @@ MonetDBConnection.prototype.query = function() {
 			message = 's' + message + ';';
 		}
 		this.queryqueue.push({'message' : message , 'callback' : callback});
+		/* if no other queries are still running, we need to call next_op to send it */
+		if (this.alldone) {
+			this.alldone = false;
+			next_op.call(this);
+		}
 	}
+	return this;
 }
 
 MonetDBConnection.prototype.prepare = function(query, callback) {
@@ -111,17 +129,12 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	thizz.query(query, function(error, resp) {
 		if (!error) {
 			var execfun = function(bindparams, ecallback) {
-				/* the prepare response tells us how many parameters we need to bind */
-				if (bindparams.length != resp.rows-1) {
-					ecallback('missing parameters');
-					return;
-				}
 				var quoted = bindparams.map(function(param) {
 					var type = typeof param;
 					switch(type) {
 						case 'boolean':
 						case 'number':
-							return ''+param;
+							return '' + param;
 							break
 						case 'string':
 						/* escape single quotes except if they are already escaped */
@@ -141,18 +154,23 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 				thizz.query('Xrelease ' + resp.queryid, undefined, true);
 			}
 
-			callback(null, {'message' : 'ok', 'prepare' :  resp, 'exec' : execfun, 'release' : releasefun});
+			callback(null, {'prepare' :  resp, 'exec' : execfun, 'release' : releasefun});
 		}
 		else {
 			callback(error);
 		}
 	});
+	return this;
 }
 
-/* we need to wait till everything is done before we close the socket */
-MonetDBConnection.prototype.disconnect = 
-MonetDBConnection.prototype.close = function() {
+MonetDBConnection.prototype.disconnect =
+MonetDBConnection.prototype.close = function(callback) {
+	this.close_callback = callback;
 	this.do_close = true;
+	if (this.queryqueue.length < 1) {
+		next_op.call(this);
+	}
+	return this;
 }
 
 exports.connect = exports.open = function() {
@@ -161,7 +179,7 @@ exports.connect = exports.open = function() {
 
 function handle_message(message) {
 	if (this.options.debug)
-		console.log('RX ['+this.state+']: '+message);
+		console.log('RX ['+this.state+']: ' + message);
 
 	/* prompt, good */
 	if (message == '') {
@@ -181,6 +199,8 @@ function handle_message(message) {
 			message = 'Error: ' + message.substring(1, message.length - 1);
 			if (this.conn_callback != undefined)
 				this.conn_callback(message);
+			this.state = 'disconnected';
+			cleanup.call(this);
 			return;
 		}
 
@@ -200,7 +220,7 @@ function handle_message(message) {
 
 	/* error message */
 	if (message.charAt(0) == '!') {
-		error = message.substring(1,message.length-1);
+		error = message.substring(1, message.length - 1);
 	}
 
 	/* query result */
@@ -215,11 +235,12 @@ function handle_message(message) {
 	next_op.call(this);
 }
 
-
 function next_op() {
 	if (this.queryqueue.length < 1) {
+		this.alldone = true;
 		if (this.do_close) {
 			this.socket.destroy();
+			this.close_callback && this.close_callback(null);
 		}
 		return;
 	}
@@ -227,7 +248,16 @@ function next_op() {
 	var op = this.queryqueue.shift();
 	send_message.call(this, op.message);
 	this.read_callback = op.callback;
-}	
+}
+
+function cleanup() {
+	while (this.queryqueue.length > 0) {
+		var op = this.queryqueue.shift();
+		if (op.callback != undefined) {
+			op.callback('Invalid connection');
+		}
+	}
+}
 
 function handle_input(data) {
 	/* we need to read a header obviously */
@@ -298,73 +328,72 @@ function _parsetuples(names, types, lines) {
 	for (li in lines) {
 		var line = lines[li];
 		var resultline = [];
-		var tokenStart = 2;
-		var endQuote = 0;
-		var valPtr = '';
 		var cCol = 0;
-
+		var curtok = '';
 		/* mostly adapted from clients/R/MonetDB.R/src/mapisplit.c */
-		for (var curPos = tokenStart; curPos < line.length - 1; curPos++) {
+		for (var curPos = 2; curPos < line.length - 1; curPos++) {
 			var chr = line.charAt(curPos);
 			switch (state) {
 			case 'INCRAP':
 				if (chr != '\t' && chr != ',') {
-					tokenStart = curPos;
 					if (chr == '"') {
 						state = 'INQUOTES';
-						tokenStart++;
 					} else {
 						state = 'INTOKEN';
+						curtok += chr;
 					}
 				}
 				break;
 			case 'INTOKEN':
 				if (chr == ',' || curPos == line.length - 2) {
-					var tokenLen = curPos - tokenStart - endQuote;
-					valPtr = line.substring(tokenStart, tokenStart + tokenLen);
-					if (tokenLen < 1 || valPtr == 'NULL') {
+					if (curtok == 'NULL') {
 						resultline.push(undefined);
 
 					} else {
 						switch(types[cCol]) {
 							case 'boolean':
-								resultline.push(valPtr == 'true');
+								resultline.push(curtok == 'true');
 								break;
 							case 'tinyint':
 							case 'smallint':
 							case 'int':
 							case 'wrd':
 							case 'bigint':
-								resultline.push(parseInt(valPtr));
+								resultline.push(parseInt(curtok));
 								break
 							case 'real':
 							case 'double':
 							case 'decimal':
-								resultline.push(parseFloat(valPtr));
+								resultline.push(parseFloat(curtok));
 								break
 							default:
-								resultline.push(valPtr);
+								// we need to unescape double quotes
+								//valPtr = valPtr.replace(/[^\\]\\"/g, '"');
+								resultline.push(curtok);
 								break;
 						}
 					}
 					cCol++;
-					endQuote = 0;
 					state = 'INCRAP';
+					curtok = '';
+				} else {
+					curtok += chr;
 				}
 				break;
 			case 'ESCAPED':
 				state = 'INQUOTES';
+				curtok += chr;
 				break;
 			case 'INQUOTES':
 				if (chr == '"') {
 					state = 'INTOKEN';
-					endQuote++;
 					break;
 				}
 				if (chr == '\\') {
 					state = 'ESCAPED';
 					break;
 				}
+				curtok += chr;
 				break;
 			}
 		}
@@ -443,14 +472,42 @@ function __check_arg(options, argname, type, dflt) {
 }
 
 function __get_connect_args(options) {
-	__check_arg(options, 'dbname'  , 'string' , 'demo');
-	__check_arg(options, 'user'    , 'string' , 'monetdb');
-	__check_arg(options, 'password', 'string' , 'monetdb');
-	__check_arg(options, 'host'    , 'string' , 'localhost');
-	__check_arg(options, 'port'    , 'number' , 50000);
-	__check_arg(options, 'language', 'string' , 'sql');
-	__check_arg(options, 'debug'   , 'boolean', false);
+	__check_arg(options, 'dbname'  , 'string'  , 'demo');
+	__check_arg(options, 'user'    , 'string'  , 'monetdb');
+	__check_arg(options, 'password', 'string'  , 'monetdb');
+	__check_arg(options, 'host'    , 'string'  , 'localhost');
+	__check_arg(options, 'port'    , 'number'  , 50000);
+	__check_arg(options, 'language', 'string'  , 'sql');
+	__check_arg(options, 'debug'   , 'boolean' , false);
+	__check_arg(options, 'q'       , 'function', undefined);
+
   return options;
 }
 
+/* Q integration, <robin.cijvat@monetdbsolutions.com> */
+['request', 'query', 'prepare', 'close', 'disconnect'].forEach(function(funToQ) {
+	var funQ = funToQ + 'Q';
+	MonetDBConnection.prototype[funQ] = function() {
+		if (this.options.q == undefined) {
+			console.warn('We need Q as part of the connect options (q).');
+			return;
+		}
+		return this.options.q.npost(this, funToQ, arguments);
+	}
+});
+
+exports.connectQ = exports.openQ = function(options) {
+	if (options.q == undefined) {
+		console.warn('We need Q as part of the connect options (q).');
+		return;
+	}
+   var deferred = options.q.defer();
+   var conn = exports.open(options, function(err) {
+       if(err) {
+           return deferred.reject(new Error(err));
+       }
+       deferred.resolve(conn);
+   });
+   return deferred.promise;
+}
 
