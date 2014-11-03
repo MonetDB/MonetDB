@@ -2760,29 +2760,58 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	be = cntxt->sqlcontext;
 	len = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(len + 1), *T, len);
+	if ((tsep = GDKmalloc(len + 1)) == NULL)
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(len + 1), *R, len);
+	if ((rsep = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(rsep, *R, len);
 	len = 0;
 	if (*S && strcmp(str_nil, *(char **) S)) {
 		len = strlen((char *) (*S));
+		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		}
 		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
 		len = 0;
 	}
 
-	STRcodeset(&cs);
-	STRIconv(&filename, fname, &utf8, &cs);
+	/* convert UTF-8 encoded file name to the character set of our
+	 * own locale before passing it on to the system call */
+	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED ||
+	    (msg = STRIconv(&filename, fname, &utf8, &cs)) != MAL_SUCCEED) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		return msg;
+	}
+
 	GDKfree(cs);
 	len = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
+	if ((ns = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(ns, *N, len);
 	len = 0;
 	ss = open_rastream(filename);
 	if (!ss || mnstr_errnr(ss)) {
 		int errnr = mnstr_errnr(ss);
 		if (ss)
 			mnstr_destroy(ss);
-		throw(IO, "streams.open", "could not open file '%s': %s", filename, strerror(errnr));
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		GDKfree(ns);
+		throw(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
 	}
 #if SIZEOF_VOID_P == 4
 	s = bstream_create(ss, 0x20000);
