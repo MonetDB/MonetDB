@@ -825,7 +825,7 @@ command_status(int argc, char *argv[])
 		         = 8 chars
 		*/
 
-		len = dbwidth < 4 ? 4 : dbwidth + 2 + 5 + 2 + 8 + 2 + uriwidth;
+		len = (dbwidth < 4 ? 4 : dbwidth) + 2 + 5 + 2 + 8 + 2 + uriwidth;
 		if (twidth > 0 && len > twidth) {
 			if (len - twidth < 10) {
 				uriwidth -= len - twidth;
