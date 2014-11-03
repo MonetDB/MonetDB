@@ -144,12 +144,13 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		char buf[1];
 		int *c_d;
 
-		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
-			return(newErr("cannot open socket: %s", strerror(errno)));
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
+			return(newErr("cannot open socket: %s", strerror(errno)));
+		}
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
