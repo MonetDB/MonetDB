@@ -736,8 +736,9 @@ getFileSize(stream *s)
        if (s->read == file_read) {
                struct stat stb;
 
-               fstat(fileno((FILE *) s->stream_data.p), &stb);
-               return (size_t) stb.st_size;
+               if (fstat(fileno((FILE *) s->stream_data.p), &stb) == 0)
+		       return (size_t) stb.st_size;
+	       /* we shouldn't get here... */
        }
        return 0;               /* unknown */
 }
