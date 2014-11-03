@@ -40,7 +40,12 @@
 
 #undef BATsample
 
+#ifdef STATIC_CODE_ANALYSIS
+#define DRAND (0.5)
+#else
 #define DRAND ((double)rand()/(double)RAND_MAX)
+#endif
+
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {

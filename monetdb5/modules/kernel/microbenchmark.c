@@ -32,6 +32,10 @@
 #include <mal_exception.h>
 #include "microbenchmark.h"
 
+#ifdef STATIC_CODE_ANALYSIS
+#define rand()		0
+#endif
+
 static int
 BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 {
