@@ -989,6 +989,7 @@ sql_update_oct2014_2(Client c)
 				SQLautocommit(c, sql);
 			SQLtrans(sql);
 		}
+		GDKfree(buf);
 	}
 
 	if (iresult) {
@@ -1035,6 +1036,7 @@ sql_update_oct2014_2(Client c)
 				SQLautocommit(c, sql);
 			SQLtrans(sql);
 		}
+		GDKfree(buf);
 	}
 
 
