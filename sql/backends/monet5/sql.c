@@ -2804,6 +2804,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
+		GDKfree(filename);
 		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 	}
 	GDKstrFromStr(ns, *N, len);
@@ -2817,7 +2818,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(rsep);
 		GDKfree(ssep);
 		GDKfree(ns);
-		throw(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+		msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+		GDKfree(filename);
+		return msg;
 	}
 #if SIZEOF_VOID_P == 4
 	s = bstream_create(ss, 0x20000);
