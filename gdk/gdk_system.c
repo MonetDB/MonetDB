@@ -473,6 +473,28 @@ static struct posthread {
 } *posthreads = NULL;
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 
+static struct posthread *
+find_posthread_locked(pthread_t tid)
+{
+	struct posthread *p;
+
+	for (p = posthreads; p; p = p->next)
+		if (p->tid == tid)
+			return p;
+	return NULL;
+}
+
+static struct posthread *
+find_posthread(pthread_t tid)
+{
+	struct posthread *p;
+
+	pthread_mutex_lock(&posthread_lock);
+	p = find_posthread_locked(tid);
+	pthread_mutex_unlock(&posthread_lock);
+	return p;
+}
+
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
@@ -483,18 +505,22 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 #endif
 
 static void
-rm_posthread(struct posthread *p, int lock)
+rm_posthread_locked(struct posthread *p)
 {
 	struct posthread **pp;
 
-	if (lock)
-		pthread_mutex_lock(&posthread_lock);
 	for (pp = &posthreads; *pp && *pp != p; pp = &(*pp)->next)
 		;
 	if (*pp)
 		*pp = p->next;
-	if (lock)
-		pthread_mutex_unlock(&posthread_lock);
+}
+
+static void
+rm_posthread(struct posthread *p)
+{
+	pthread_mutex_lock(&posthread_lock);
+	rm_posthread_locked(p);
+	pthread_mutex_unlock(&posthread_lock);
 }
 
 static void
@@ -522,10 +548,14 @@ join_threads(void)
 			n = p->next;
 			if (p->exited) {
 				tid = p->tid;
-				rm_posthread(p, 0);
 				pthread_mutex_unlock(&posthread_lock);
 				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
+				/* find the thread again, mostly to
+				 * keep Coverity happy */
+				p = find_posthread_locked(tid);
+				assert(p != NULL);
+				rm_posthread_locked(p);
 				free(p);
 				waited = 1;
 				break;
@@ -578,7 +608,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
 	} else if (p) {
-		rm_posthread(p, 1);
+		rm_posthread(p);
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -587,26 +617,16 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	return ret;
 }
 
-static struct posthread *
-find_posthread(pthread_t tid)
-{
-	struct posthread *p;
-
-	pthread_mutex_lock(&posthread_lock);
-	for (p = posthreads; p; p = p->next)
-		if (p->tid == tid)
-			break;
-	pthread_mutex_unlock(&posthread_lock);
-	return p;
-}
-
 void
 MT_exiting_thread(void)
 {
 	struct posthread *p;
+	pthread_t tid = pthread_self();
 
-	if ((p = find_posthread(pthread_self())) != NULL)
+	pthread_mutex_lock(&posthread_lock);
+	if ((p = find_posthread_locked(tid)) != NULL)
 		p->exited = 1;
+	pthread_mutex_unlock(&posthread_lock);
 }
 
 void
