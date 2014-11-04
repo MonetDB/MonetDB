@@ -530,10 +530,14 @@ static void
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
+	pthread_t tid = p->tid;
 
 	(*p->func)(p->arg);
 	pthread_mutex_lock(&posthread_lock);
-	p->exited = 1;
+	/* *p may have been freed by join_threads, so try to find it
+         * again before using it */
+	if ((p = find_posthread_locked(tid)) != NULL)
+		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
 }
 
@@ -551,15 +555,11 @@ join_threads(void)
 			n = p->next;
 			if (p->exited) {
 				tid = p->tid;
+				rm_posthread_locked(p);
+				free(p);
 				pthread_mutex_unlock(&posthread_lock);
 				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
-				/* find the thread again, mostly to
-				 * keep Coverity happy */
-				p = find_posthread_locked(tid);
-				assert(p != NULL);
-				rm_posthread_locked(p);
-				free(p);
 				waited = 1;
 				break;
 			}
