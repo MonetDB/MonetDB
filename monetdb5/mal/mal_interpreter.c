@@ -531,7 +531,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ){
+	if ( startpc == 1 &&  startpc < mb->stop ){
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
@@ -545,6 +545,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
+		// incomplete block being executed, requires at least signature and end statement
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
@@ -762,6 +763,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* monitoring information should reflect the input arguments,
 			   which may be removed by garbage collection  */
+			/* BEWARE, the SQL engine or MAL function could zap the block, leaving garbage behind in pci */
+			/* this hack means we loose a closing event */
+			if( mb->stop <= 1)
+				continue;
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 			runtimeProfileFinish(cntxt, mb);
 			/* check for strong debugging after each MAL statement */
