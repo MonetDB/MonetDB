@@ -474,7 +474,6 @@ char **getHelp(Module m, str inputpat, int completion)
 		GDKfree(pat);
 		return msg;
 	}
-	if( m1 ) m = m1;
 
 #ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
