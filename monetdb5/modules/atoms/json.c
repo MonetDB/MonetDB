@@ -2096,9 +2096,9 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
       out:
 	if (t2)
 		BBPunfix(t2->batCacheid);
-	if (freeb && b)
+	if (freeb)
 		BBPunfix(b->batCacheid);
-	if (freeg && g)
+	if (freeg)
 		BBPunfix(g->batCacheid);
 	if (buf)
 		GDKfree(buf);
