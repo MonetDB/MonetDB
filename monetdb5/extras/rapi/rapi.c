@@ -352,7 +352,7 @@ int RAPIinstalladdons(void) {
 	SEXP librisexp;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
+	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
 			 "rapi_packages");
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
@@ -368,7 +368,7 @@ int RAPIinstalladdons(void) {
 	UNPROTECT(1);
 
 	// run rapi.R environment setup script
-	snprintf(rapiinclude, BUFSIZ, "source(\"%s\")",
+	snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")",
 			 locate_file("rapi", ".R", 0));
 	R_tryEvalSilent(
 		VECTOR_ELT(
@@ -402,7 +402,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	int i, j = 1;
 	char argbuf[64];
 	char argnames[1000] = "";
+	size_t pos;
 	char* rcall;
+	size_t rcalllen;
 	size_t ret_rows = 0;
 	int ret_cols = 0; /* int because pci->retc is int, too*/
 	str *args;
@@ -422,7 +424,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			  rapi_enableflag);
 	}
 
-	rcall = malloc(strlen(exprStr) + sizeof(argnames) + 100);
+	rcalllen = strlen(exprStr) + sizeof(argnames) + 100;
+	rcall = malloc(rcalllen);
 	if (rcall == NULL) {
 		throw(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 	}
@@ -459,7 +462,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				args[i] = GDKstrdup("aggr_group");
 				seengrp = TRUE;
 			} else {
-				sprintf(argbuf, "arg%i", i - pci->retc - 1);
+				snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
 			}
 		}
@@ -559,15 +562,21 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	 * a clear path for return values, namely using the builtin return() function
 	 * this is also compatible with PL/R
 	 */
-	for (i = pci->retc + 2; i < pci->argc; i++) {
-		strcat(argnames, args[i]);
-		if (i < pci->argc - 1) {
-			strcat(argnames, ", ");
-		}
+	pos = 0;
+	for (i = pci->retc + 2; i < pci->argc && pos < sizeof(argnames); i++) {
+		pos += snprintf(argnames + pos, sizeof(argnames) - pos, "%s%s",
+						args[i], i < pci->argc - 1 ? ", " : "");
 	}
-	sprintf(rcall,
-			"ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
-			argnames, exprStr, argnames);
+	if (pos >= sizeof(argnames)) {
+		msg = createException(MAL, "rapi.eval", "Command too large");
+		goto wrapup;
+	}
+	if (snprintf(rcall, rcalllen,
+				 "ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
+				 argnames, exprStr, argnames) >= (int) rcalllen) {
+		msg = createException(MAL, "rapi.eval", "Command too large");
+		goto wrapup;
+	}
 #ifdef _RAPI_DEBUG_
 	printf("# R call %s\n",rcall);
 #endif
