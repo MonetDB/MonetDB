@@ -18,3 +18,5 @@ HAVE_LIBR?rapi10
 
 # disabled for now
 #Mbeddedsql5--help
+
+simpleSQL
