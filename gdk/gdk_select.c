@@ -355,8 +355,9 @@ do {									\
 		}							\
 	}								\
 	assert((imp_min != nil) && (imp_max != nil));			\
-	if ((vl > imp_max || vh < imp_min) ||				\
-	    (anti && (vl < imp_min && vh > imp_max))) {			\
+	if (anti ?							\
+	    vl < imp_min && vh > imp_max :				\
+	    vl > imp_max || vh < imp_min) {				\
 		return 0;						\
 	}								\
 } while (0)
