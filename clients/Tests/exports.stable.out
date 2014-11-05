@@ -2581,7 +2581,7 @@ str pack2Ref;
 str packRef;
 str parametersRef;
 str parseError(Client cntxt, str msg);
-int parseMAL(Client cntxt, Symbol curPrg);
+int parseMAL(Client cntxt, Symbol curPrg, int skipcomments);
 str partitionRef;
 str passRef;
 str pcreRef;
