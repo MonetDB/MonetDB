@@ -220,8 +220,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
-	setVarFixed(nmb,k);
-	setVarUDFtype(nmb,k);
+	if ( isVarFixed(nmb,k)) 
+		setVarFixed(nmb,k);
+	if (isVarUDFtype(nmb,k))
+		setVarUDFtype(nmb,k);
 	
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
@@ -241,8 +243,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL)
 		fcn = NULL;
-	else
+	else {
 		fcn = q->fcn;
+		// retain the type detected
+		if ( !isVarFixed(mb, getArg(pci,0)))
+			setVarType( mb, getArg(pci,0), newBatType(TYPE_void,getArgType(nmb,q,0)) );
+	}
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(cntxt->fdout,"success? %s\n",(fcn == NULL? "no":"yes"));
 	printInstruction(cntxt->fdout,nmb,0,q,LIST_MAL_ALL);

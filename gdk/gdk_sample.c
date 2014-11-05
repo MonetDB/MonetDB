@@ -57,13 +57,13 @@
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
-	BUN oid;
+	oid o;
 	struct oidtreenode *left;
 	struct oidtreenode *right;
 };
 
 static struct oidtreenode *
-OIDTreeNew(BUN oid)
+OIDTreeNew(oid o)
 {
 	struct oidtreenode *node = GDKmalloc(sizeof(struct oidtreenode));
 
@@ -71,24 +71,24 @@ OIDTreeNew(BUN oid)
 		GDKerror("#BATsample: memory allocation error");
 		return NULL ;
 	}
-	node->oid = oid;
+	node->o = o;
 	node->left = NULL;
 	node->right = NULL;
 	return node;
 }
 
 static int
-OIDTreeMaybeInsert(struct oidtreenode **nodep, BUN oid)
+OIDTreeMaybeInsert(struct oidtreenode **nodep, oid o)
 {
 	while (*nodep) {
-		if (oid == (*nodep)->oid)
+		if (o == (*nodep)->o)
 			return 0;
-		if (oid < (*nodep)->oid)
+		if (o < (*nodep)->o)
 			nodep = &(*nodep)->left;
 		else
 			nodep = &(*nodep)->right;
 	}
-	if ((*nodep = OIDTreeNew(oid)) == NULL)
+	if ((*nodep = OIDTreeNew(o)) == NULL)
 		return -1;
 	return 1;
 }
@@ -99,27 +99,27 @@ OIDTreeToBAT(struct oidtreenode *node, BAT *bat)
 {
 	if (node->left != NULL)
 		OIDTreeToBAT(node->left, bat);
-	((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = node->oid;
+	((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = node->o;
 	if (node->right != NULL )
 		OIDTreeToBAT(node->right, bat);
 }
 
 /* Antiset traversal, give us all values but the ones in the tree */
 static void
-OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, BUN start, BUN stop)
+OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 {
-	BUN noid;
+	oid noid;
 
 	if (node->left != NULL)
-        	OIDTreeToBATAntiset(node->left, bat, start, node->oid);
+        	OIDTreeToBATAntiset(node->left, bat, start, node->o);
 	else
-		for (noid = start+1; noid < node->oid; noid++)
+		for (noid = start; noid < node->o; noid++)
 			((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
 
         if (node->right != NULL)
- 		OIDTreeToBATAntiset(node->right, bat, node->oid, stop);
+ 		OIDTreeToBATAntiset(node->right, bat, node->o, stop);
 	else
-		for (noid = node->oid+1; noid < stop; noid++)
+		for (noid = node->o+1; noid < stop; noid++)
                         ((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
 }
 
@@ -176,8 +176,8 @@ BATsample(BAT *b, BUN n)
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), b->H->seq);
 	} else {
-		BUN minoid = b->hseqbase;
-		BUN maxoid = b->hseqbase + cnt;
+		oid minoid = b->hseqbase;
+		oid maxoid = b->hseqbase + cnt;
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
 		bit antiset = n > cnt / 2;
@@ -192,11 +192,11 @@ BATsample(BAT *b, BUN n)
 		}
 		/* while we do not have enough sample OIDs yet */
 		while (rescnt < n) {
-			BUN candoid;
+			oid candoid;
 			int rc;
 			do {
 				/* generate a new random OID */
-				candoid = (BUN) (minoid + DRAND * (maxoid - minoid));
+				candoid = (oid) (minoid + DRAND * (maxoid - minoid));
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while ((rc = OIDTreeMaybeInsert(&tree, candoid)) == 0);
@@ -212,7 +212,7 @@ BATsample(BAT *b, BUN n)
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
-			OIDTreeToBATAntiset(tree, bn, minoid - 1, maxoid + 1);
+			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
 		}
 		OIDTreeDestroy(tree);
 
