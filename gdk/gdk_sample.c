@@ -43,7 +43,10 @@
 #ifdef STATIC_CODE_ANALYSIS
 #define DRAND (0.5)
 #else
-#define DRAND ((double)rand()/(double)RAND_MAX)
+/* the range of rand() is [0..RAND_MAX], i.e. inclusive;
+ * cast first, add later: on Linux RAND_MAX == INT_MAX, so adding 1
+ * will overflow, but INT_MAX does fit in a double */
+#define DRAND ((double)rand() / ((double)RAND_MAX + 1))
 #endif
 
 
