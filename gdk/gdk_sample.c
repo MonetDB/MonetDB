@@ -66,6 +66,7 @@ static int OIDTreeLookup(struct oidtreenode* node, BUN target) {
 		else
 			node = node->right;
 	}
+	return FALSE;
 }
 
 static struct oidtreenode* OIDTreeNew(BUN oid) {
