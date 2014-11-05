@@ -58,17 +58,13 @@ struct oidtreenode {
 };
 
 static int OIDTreeLookup(struct oidtreenode* node, BUN target) {
-	if (node == NULL) {
-		return (FALSE);
-	} else {
+	while (node) {
 		if (target == node->oid)
 			return (TRUE);
-		else {
-			if (target < node->oid)
-				return (OIDTreeLookup(node->left, target));
-			else
-				return (OIDTreeLookup(node->right, target));
-		}
+		else if (target < node->oid)
+			node = node->left;
+		else
+			node = node->right;
 	}
 }
 
