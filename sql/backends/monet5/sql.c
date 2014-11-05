@@ -358,13 +358,13 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str answ = *getArgReference_str(stk, pci, 0);
+	str msg;
 
-	CLTshutdown(cntxt, mb, stk, pci);
-
-	// administer the shutdown
-	mnstr_printf(GDKstdout, "#%s\n", answ);
-	return MAL_SUCCEED;
+	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
+		// administer the shutdown
+		mnstr_printf(GDKstdout, "#%s\n", *getArgReference_str(stk, pci, 0));
+	}
+	return msg;
 }
 
 str
