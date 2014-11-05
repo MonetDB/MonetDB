@@ -46,7 +46,12 @@
 /* the range of rand() is [0..RAND_MAX], i.e. inclusive;
  * cast first, add later: on Linux RAND_MAX == INT_MAX, so adding 1
  * will overflow, but INT_MAX does fit in a double */
+#if RAND_MAX < 46340	    /* 46340*46340 = 2147395600 < INT_MAX */
+/* random range is too small, double it */
+#define DRAND ((double)(rand() * (RAND_MAX + 1) + rand()) / ((double) ((RAND_MAX + 1) * (RAND_MAX + 1))))
+#else
 #define DRAND ((double)rand() / ((double)RAND_MAX + 1))
+#endif
 #endif
 
 
