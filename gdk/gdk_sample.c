@@ -81,16 +81,15 @@ static struct oidtreenode* OIDTreeNew(BUN oid) {
 	return (node);
 }
 
-static struct oidtreenode* OIDTreeInsert(struct oidtreenode* node, BUN oid) {
-	if (node == NULL) {
-		return (OIDTreeNew(oid));
-	} else {
-		if (oid <= node->oid)
-			node->left = OIDTreeInsert(node->left, oid);
+static struct oidtreenode* OIDTreeInsert(struct oidtreenode** nodep, BUN oid) {
+	while (*nodep) {
+		if (oid <= (*nodep)->oid)
+			nodep = &(*nodep)->left;
 		else
-			node->right = OIDTreeInsert(node->right, oid);
-		return (node);
+			nodep = &(*nodep)->right;
 	}
+	*nodep = OIDTreeNew(oid);
+	return *nodep;
 }
 
 /* inorder traversal, gives us a sorted BAT */
@@ -191,14 +190,13 @@ BATsample(BAT *b, BUN n) {
 				candoid = (BUN) (minoid + DRAND * (maxoid - minoid));
 				/* if that candidate OID was already generated, try again */
 			} while (OIDTreeLookup(tree, candoid));
-			ttree = OIDTreeInsert(tree, candoid);
+			ttree = OIDTreeInsert(&tree, candoid);
 			if (ttree == NULL) {
 				GDKerror("#BATsample: memory allocation error");
 				/* if malloc fails, we still need to clean up the tree */
 				OIDTreeDestroy(tree);
 				return NULL;
 			}
-			tree = ttree;
 			rescnt++;
 		}
 		if (!antiset) {
