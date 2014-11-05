@@ -23,9 +23,7 @@
  */
 /*
  * Execution of SQL instructions.
- * Before we are can process SQL statements the global catalog
- * should be initialized. Thereafter, each time a client enters
- * we update its context descriptor to denote an SQL scenario.
+ * Before we are can process SQL statements the global catalog should be initialized. 
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
@@ -35,25 +33,11 @@
 #include "sql_optimizer.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
-#include "sql_readline.h"
-#include "sql_user.h"
 #include "sql_execute.h"
-#include "sql_datetime.h"
-#include "mal_io.h"
-#include "mal_parser.h"
-#include "mal_builder.h"
-#include "mal_namespace.h"
 #include "mal_debugger.h"
-#include "mal_linker.h"
-#include "bat5.h"
-#include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
-#include "opt_statistics.h"
-#include "opt_prelude.h"
-#include "opt_pipes.h"
 #include <unistd.h>
-#include "sql_upgrades.h"
 
 /*
  * The SQLcompile operation can be used by separate
@@ -71,8 +55,11 @@
 /* #define _SQL_COMPILE */
 
 /*
-BEWARE: SQLstatementIntern only commits after all statements found
-in expr are executed, when autocommit mode is enabled.
+* BEWARE: SQLstatementIntern only commits after all statements found
+* in expr are executed, when autocommit mode is enabled.
+*
+* The tricky part for this statement is to ensure that the SQL statement
+* is executed within the client context specified. This leads to context juggling.
 */
 str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result)
@@ -82,6 +69,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	mvc *o, *m;
 	int ac, sizevars, topvars;
 	sql_var *vars;
+	int oldvtop, oldstop = 1;
 	buffer *b;
 	char *n;
 	stream *buf;
@@ -124,6 +112,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	if (result)
 		m->reply_size = -2; /* do not cleanup, result tables */
 
+	/* mimick a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);
@@ -139,9 +128,9 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	m->params = NULL;
 	m->argc = 0;
 	m->session->auto_commit = 0;
-
 	if (!m->sa)
 		m->sa = sa_create();
+
 	/*
 	 * System has been prepared to parse it and generate code.
 	 * Scan the complete string for SQL statements, stop at the first error.
@@ -150,7 +139,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
 		stmt *s;
-		int oldvtop, oldstop;
 		MalStkPtr oldglb = c->glb;
 
 		if (!m->sa)
