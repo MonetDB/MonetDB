@@ -58,8 +58,8 @@
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
 	BUN oid;
-	struct oidtreenode* left;
-	struct oidtreenode* right;
+	struct oidtreenode *left;
+	struct oidtreenode *right;
 };
 
 static struct oidtreenode *
@@ -78,7 +78,7 @@ OIDTreeNew(BUN oid)
 }
 
 static int
-OIDTreeMaybeInsert(struct oidtreenode** nodep, BUN oid)
+OIDTreeMaybeInsert(struct oidtreenode **nodep, BUN oid)
 {
 	while (*nodep) {
 		if (oid == (*nodep)->oid)
@@ -95,7 +95,7 @@ OIDTreeMaybeInsert(struct oidtreenode** nodep, BUN oid)
 
 /* inorder traversal, gives us a sorted BAT */
 static void
-OIDTreeToBAT(struct oidtreenode* node, BAT *bat)
+OIDTreeToBAT(struct oidtreenode *node, BAT *bat)
 {
 	if (node->left != NULL)
 		OIDTreeToBAT(node->left, bat);
@@ -106,7 +106,7 @@ OIDTreeToBAT(struct oidtreenode* node, BAT *bat)
 
 /* Antiset traversal, give us all values but the ones in the tree */
 static void
-OIDTreeToBATAntiset(struct oidtreenode* node, BAT *bat, BUN start, BUN stop)
+OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, BUN start, BUN stop)
 {
 	BUN noid;
 
@@ -124,7 +124,7 @@ OIDTreeToBATAntiset(struct oidtreenode* node, BAT *bat, BUN start, BUN stop)
 }
 
 static void
-OIDTreeDestroy(struct oidtreenode* node)
+OIDTreeDestroy(struct oidtreenode *node)
 {
 	if (node == NULL) {
 		return;
@@ -178,7 +178,8 @@ BATsample(BAT *b, BUN n)
 	} else {
 		BUN minoid = b->hseqbase;
 		BUN maxoid = b->hseqbase + cnt;
-		/* if someone samples more than half of our tree, we do the antiset */
+		/* if someone samples more than half of our tree, we
+		 * do the antiset */
 		bit antiset = n > cnt / 2;
 		slen = n;
 		if (antiset)
