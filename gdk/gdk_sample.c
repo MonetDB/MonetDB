@@ -113,7 +113,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 	if (node->left != NULL)
         	OIDTreeToBATAntiset(node->left, bat, start, node->o);
 	else
-		for (noid = start+1; noid < node->o; noid++)
+		for (noid = start; noid < node->o; noid++)
 			((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
 
         if (node->right != NULL)
@@ -212,7 +212,7 @@ BATsample(BAT *b, BUN n)
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
-			OIDTreeToBATAntiset(tree, bn, minoid - 1, maxoid + 1);
+			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
 		}
 		OIDTreeDestroy(tree);
 
