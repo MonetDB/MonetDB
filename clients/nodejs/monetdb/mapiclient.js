@@ -59,7 +59,6 @@ MonetDBConnection.prototype.query = function() {
 	var params = [];
 	var callback = undefined;
 	var raw = false;
-
 	for (argi in arguments) {
 		if (typeof arguments[argi] == 'function') {
 			callback = arguments[argi];
@@ -103,8 +102,6 @@ MonetDBConnection.prototype.query = function() {
 		});
 	}
 	else {
-		callback = arguments[1];
-		raw = arguments[2];
 		if (!raw) {
 			message = 's' + message + ';';
 		}
