@@ -80,11 +80,7 @@ MonetDBConnection.prototype.query = function() {
 		return;
 	}
 
-	if (Array.isArray(arguments[1])) {
-		params = arguments[1];
-		callback = arguments[2];
-		raw = arguments[3];
-
+	if (params.length > 0) {
 		this.prepare(message, function(err, resp) {
 			if (err) {
 				if (callback != undefined) {
