@@ -1727,7 +1727,7 @@ maybeextend(int idx)
 		     i = BBP_next(i))
 			n++;
 		if (n > l) {
-			m = t;
+			m = (t + last) & BBP_THREADMASK;
 			l = n;
 		}
 	}
