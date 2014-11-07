@@ -29,11 +29,11 @@ stderr of test 'limit` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5419/.s.monetdb.33993
+MAPI  = (monetdb) /var/tmp/mtest-21173/.s.monetdb.38969
 QUERY = SELECT '' AS five, unique1, unique2, stringu1 
         		FROM onek
         		ORDER BY unique1 OFFSET 990 LIMIT 5;
-
+ERROR = !syntax error, unexpected LIMIT, expecting SCOLON in: "select '' as five, unique1, unique2, stringu1 
         !		from onek
         !		order by unique1 of"
 

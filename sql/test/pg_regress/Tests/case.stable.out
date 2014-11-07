@@ -197,29 +197,29 @@ Ready.
 % isnull_not_isnull_f # name
 % double # type
 % 24 # length
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
-[ 1 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10	]
+[ 20	]
+[ -30	]
+[ 1	]
+[ 10	]
+[ 20	]
+[ -30	]
 [ 2 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10	]
+[ 20	]
+[ -30	]
 [ 3 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10	]
+[ 20	]
+[ -30	]
 [ 2 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
-[ 1 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10	]
+[ 20	]
+[ -30	]
+[ 1	]
+[ 10	]
+[ 20	]
+[ -30	]
 [ -6 ]
 
 #SELECT *
@@ -276,27 +276,27 @@ Ready.
 % i,	f # name
 % int,	double # type
 % 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
+[ 1,	10	]
+[ 2,	20	]
+[ 3,	-30	]
 [ 4,	NULL	]
 #SELECT * FROM CASE_TBL;
 % sys.case_tbl,	sys.case_tbl # table_name
 % i,	f # name
 % int,	double # type
 % 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
+[ 1,	10	]
+[ 2,	20	]
+[ 3,	-30	]
 [ 4,	NULL	]
 #SELECT * FROM CASE_TBL;
 % sys.case_tbl,	sys.case_tbl # table_name
 % i,	f # name
 % int,	double # type
 % 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
+[ 1,	10	]
+[ 2,	20	]
+[ 3,	-30	]
 [ 4,	NULL	]
 #DROP TABLE CASE_TBL;
 #DROP TABLE CASE2_TBL;

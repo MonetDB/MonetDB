@@ -32,30 +32,20 @@ Ready.
 #--
 #-- count the number of tuples originally, should be 1000
 #SELECT count(*) FROM onek;
-% sys.L0 # table_name
-% count # name
-% ? # type
-% ? # length
-[ 1000 ]
-
-#-- pick three random rows, they shouldn't match
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1)
-INTERSECT
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1)
-INTERSECT
-(SELECT unique1 AS random
-  FROM onek ORDER BY random() LIMIT 1);
-% sys.L0 # table_name
-% random # name
-% ? # type
-% ? # length
-
-#-- count roughly 1/10 of the tuples
-#SELECT count(*) AS random INTO RANDOM_TBL
-#  FROM onek WHERE random() < 1.0/10;
-#-- select again, the count should be different
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#CREATE TEMPORARY TABLE random_tbl( random double);
+#INSERT INTO random_tbl SELECT count(*) AS random 
+#  FROM onek WHERE rand() < 1.0/10;
+[ 1	]
+#DROP TABLE random_tbl;
+#CREATE TEMPORARY TABLE random_tbl( random bigint);
+#INSERT INTO random_tbl SELECT count(*) AS random 
+#  FROM onek WHERE 1.0/rand() < 1.0/10;
+[ 1	]
 #INSERT INTO RANDOM_TBL (random)
 #  SELECT count(*)
 #  FROM onek WHERE random() < 1.0/10;
@@ -73,22 +63,18 @@ INTERSECT
 #-- now test that they are different counts
 #SELECT random, count(random) FROM RANDOM_TBL
 #  GROUP BY random HAVING count(random) > 3;
-% sys.L0,	sys.L0 # table_name
-% random,	count # name
-% ?,	? # type
-% ?,	? # length
-
+% tmp.random_tbl,	tmp.L1 # table_name
+% random,	L1 # name
+% bigint,	wrd # type
+% 1,	1 # length
 #SELECT AVG(random) FROM RANDOM_TBL
 #  HAVING AVG(random) NOT BETWEEN 80 AND 120;
-% sys.L0 # table_name
-% avg # name
-% ? # type
-% ? # length
+% .L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
 
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 12:56:12 >  
+# 12:56:12 >  "Done."
+# 12:56:12 >  
 
