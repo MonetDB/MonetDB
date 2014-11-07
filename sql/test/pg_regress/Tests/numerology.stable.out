@@ -234,8 +234,6 @@ Ready.
 #DROP TABLE TEMP_FLOAT;
 #DROP TABLE TEMP_GROUP;
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 # 17:11:19 >  
 # 17:11:19 >  "Done."
 # 17:11:19 >  

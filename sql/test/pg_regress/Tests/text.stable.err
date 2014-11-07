@@ -78,8 +78,6 @@ stderr of test 'text` in directory 'sql/test/pg_regress` itself:
 # 17:59:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5665" "--port=31854"
 # 17:59:44 >  
 
-= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/text.out) ! =
-
 # 22:26:27 >  
 # 22:26:27 >  Done.
 # 22:26:27 >  

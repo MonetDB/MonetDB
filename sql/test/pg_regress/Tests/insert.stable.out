@@ -24,8 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 #--
 #-- insert with DEFAULT in the target_list
 #--
@@ -57,8 +55,6 @@ Ready.
 [ NULL,	5,	"test"	]
 [ NULL,	7,	"testing"	]
 #drop table inserttest;
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."
