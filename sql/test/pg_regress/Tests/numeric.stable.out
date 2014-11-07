@@ -1104,7 +1104,7 @@ Ready.
 % L1 # name
 % double # type
 % 24 # length
-[ -13430913	]
+[ -13430913.59	]
 #CREATE TABLE fract_only (id int, val numeric(4,4));
 #INSERT INTO fract_only VALUES (1, '0.0');
 [ 1	]

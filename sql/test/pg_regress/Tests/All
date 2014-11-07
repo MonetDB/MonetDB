@@ -1,3 +1,5 @@
+# IMPORTANT: export environment variable LC_ALL="en_US.UTF-8"  before running these tests.
+
 #ToDo load
 
 # pgregress set; in order as given by
