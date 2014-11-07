@@ -172,8 +172,7 @@ the build process would be much more like Unix than what is described
 here).
 
 We currently use Microsoft Visual Studio 2010 and Intel(R) C++
-Compiler Professional 11.1.046, the latter using Microsoft Visual
-Studio 9.0.
+Compiler XE 13.1.2.190, the latter using Microsoft Visual Studio 10.0.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -204,19 +203,6 @@ A version of Bison for Windows can be gotten from the GnuWin32 project
 at http://gnuwin32.sourceforge.net/.  Click on the Packages
 link on the left and then on Bison, and get the Setup file and install
 it.
-
-However, we use the version of bison that comes with Cygwin__.
-
-__ http://www.cygwin.com/
-
-Flex
-----
-
-Flex is a fast lexical analyzer generator.
-
-A version of Flex for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
-the left and then on Flex, and get the Setup file and install it.
 
 However, we use the version of bison that comes with Cygwin__.
 
@@ -259,17 +245,21 @@ the Win32 Installer, install it, and run it.  It will come up with a
 window where you have to fill in the location of the source code and
 where to build the binaries.  Fill in where you extracted the PCRE
 sources, and some other folder (I used a ``build`` folder which I
-created within the PCRE source tree).  You need to configure some PCRE
-build options.  I chose to do build shared libs, to match newlines
-with the ``ANYCRLF`` option, and to do have UTF-8 support and support
-for Unicode properties.  When you're satisfied with the options, click
-on Configure, and then on Generate.  Then in the build folder you've
-chosen, open the PCRE.sln file with Visual Studio, and build and
-install.  Make sure you set the Solution Configuration to Release if
-you want to build a releasable version of the MonetDB suite.  By
-default the library will be installed in ``C:\Program Files\PCRE``.
+created within the PCRE source tree), then click on the Configure
+button.  This pops up a dialog to choose the compiler.  I chose Visual
+Studio 10 2010.
 
-For Windows64, select the correct compiler (``Visual Studio 9 2010
+You need to configure some PCRE build options.  I chose to do build
+shared libs, to match newlines with the ``ANYCRLF`` option, and to do
+have UTF-8 support and support for Unicode properties.  When you're
+satisfied with the options, click on Generate.  Then in the build
+folder you've chosen, open the PCRE.sln file with Visual Studio, and
+build and install.  Make sure you set the Solution Configuration to
+Release if you want to build a releasable version of the MonetDB
+suite.  By default the library will be installed in ``C:\Program
+Files\PCRE``.
+
+For Windows64, select the correct compiler (``Visual Studio 10 2010
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
 ``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program Files/PCRE``.
@@ -285,7 +275,7 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.1b).  Follow the instructions in the file
+stable version (1.0.1j).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
@@ -346,7 +336,7 @@ Studio 2008 a warning.
 .. For a debug version, add ``debug=yes cruntime=/MDd`` to the
    ``cscript`` command and edit the file ``Makefile.msvc`` to add a
    ``d`` to the definitions of ``XML_SO``, ``XML_IMP``, ``XML_A``, and
-   ``XML_A_DLL``.
+   ``XML_A_DLL``.  Also add ``d`` to the ``zlib.lib`` and ``iconv.lib``.
 
 After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
@@ -698,7 +688,7 @@ is an example: version numbers may differ)::
 
  rem Python is required
  set Path=C:\Python27;%Path%
- rem Bison and Flex (and Diff)
+ rem Bison (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
  rem Java is optional, set JAVA_HOME for convenience
  set JAVA_HOME=%ProgramFiles%\Java\jdk1.5.0_16

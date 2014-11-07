@@ -4121,7 +4121,7 @@ mapi_execute_internal(MapiHdl hdl)
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL) {
-		mnstr_write(mid->to, ";", 1, 1);
+		mnstr_write(mid->to, "\n;", 2, 1);
 		check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 		if (mid->tracelog) {
 			mnstr_write(mid->tracelog, ";", 1, 1);
