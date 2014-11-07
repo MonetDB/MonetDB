@@ -34,9 +34,9 @@ KernSmooth 2.23 loaded
 Copyright M. P. Wand 1997-2009
 Loading required package: grid
 
-Attaching package: ‘survey’
+Attaching package: 'survey'
 
-The following object is masked from ‘package:graphics’:
+The following object is masked from 'package:graphics':
 
     dotchart
 
