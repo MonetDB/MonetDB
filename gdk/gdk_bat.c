@@ -534,13 +534,13 @@ BATclear(BAT *b, int force)
 	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
-	if (b->batDeleted == b->batInserted &&
+	if ((b->batDeleted == b->batInserted || force) &&
 	    BATatoms[b->htype].atomDel == NULL &&
 	    BATatoms[b->ttype].atomDel == NULL) {
 		Heap hh, th;
 
 		/* no stable elements: we do a quick heap clean */
-		/* need to clean heap which keep data even though the
+		/* need to clean heap which keeps data even though the
 		   BUNs got removed. This means reinitialize when
 		   free > 0
 		*/
