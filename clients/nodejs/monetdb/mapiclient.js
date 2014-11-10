@@ -123,6 +123,9 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 		if (!error) {
 			var execfun = function(bindparams, ecallback) {
 				var quoted = bindparams.map(function(param) {
+					if(param === null) {
+						return "NULL";
+					}
 					var type = typeof param;
 					switch(type) {
 						case 'boolean':
