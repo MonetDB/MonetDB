@@ -111,7 +111,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 			((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
 
         if (node->right != NULL)
- 		OIDTreeToBATAntiset(node->right, bat, node->o, stop);
+ 		OIDTreeToBATAntiset(node->right, bat, node->o + 1, stop);
 	else
 		for (noid = node->o+1; noid < stop; noid++)
                         ((oid *) bat->T->heap.base)[bat->batFirst + bat->batCount++] = noid;
