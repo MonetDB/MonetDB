@@ -199,6 +199,8 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+BAT *VIEWhead(BAT *b)
+	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)

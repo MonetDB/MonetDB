@@ -392,16 +392,6 @@ VIEWhead(BAT *b)
 	return bn;
 }
 
-BAT *
-VIEWhead_(BAT *b, int mode)
-{
-	BAT *bn = VIEWhead(b);
-
-	if (bn)
-		bn->batRestricted = mode;
-	return bn;
-}
-
 /*
  * the @#VIEWcombine@ routine effortlessly produces a view with double
  * vision on the head column.

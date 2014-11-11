@@ -375,8 +375,6 @@ void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 BAT *VIEWcombine(BAT *b);
 BAT *VIEWcreate(BAT *h, BAT *t);
 BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
-BAT *VIEWhead(BAT *b);
-BAT *VIEWhead_(BAT *b, int mode);
 size_t _MT_npages;
 size_t _MT_pagesize;
 int batFromStr(const char *src, int *len, bat **dst);
