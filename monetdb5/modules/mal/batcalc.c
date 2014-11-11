@@ -762,56 +762,6 @@ CMDbatDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 calcdivtype, 1, "batcalc./");
 }
 
-#if 0
-batcalc_export str CMDbatDIVflt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatDIVflt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtype, 0, "batcalc.div_fltnoerror");
-}
-
-batcalc_export str CMDbatDIVfltsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatDIVfltsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtype, 1, "batcalc.div_flt");
-}
-
-batcalc_export str CMDbatDIVdbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatDIVdbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtypedbl, 0, "batcalc.div_dblnoerror");
-}
-
-batcalc_export str CMDbatDIVdblsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatDIVdblsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
-						 calcdivtypedbl, 1, "batcalc.div_dbl");
-}
-#endif
-
 batcalc_export str CMDbatMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 str

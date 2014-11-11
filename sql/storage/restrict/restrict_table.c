@@ -57,7 +57,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
 	BUN q;
-	BAT *b = NULL, *s = NULL, *r = NULL, *d = NULL;
+	BAT *b = NULL, *s = NULL, *d = NULL;
 	oid rid = oid_nil;
 	sql_column *nc;
 	void *nv;
@@ -84,11 +84,10 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	if (d)
 		bat_destroy(d);
 
-	r = BATmirror(b);
-	q = BUNfnd(r, value);
+	q = BUNfnd(b, value);
 	if (q != BUN_NONE) {
-		BATiter ri = bat_iterator(r);
-		rid = *(oid *) BUNtail(ri, q);
+		BATiter bi = bat_iterator(b);
+		rid = *(oid *) BUNhead(bi, q);
 	}
 	bat_destroy(b);
 	return rid;
@@ -108,7 +107,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	if (d)
 		bat_destroy(d);
 
-	q = BUNfnd(b, (ptr) &rid);
+	q = BUNfnd(BATmirror(b), (ptr) &rid);
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;

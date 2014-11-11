@@ -338,10 +338,10 @@ cluster_orderby(MalBlkPtr mb)
 			state = ORDERBY_SORT;
 			o = getArg(q,0);
 			ord[j++] = i;
-			/* TODO + markT + reverse */
+			/* TODO + mark + reverse */
 		} else if ((state == ORDERBY_SORT || state == ORDERBY_REFINE) &&
 		    getModuleId(q) == algebraRef &&
-		    getFunctionId(q) == markTRef &&
+		    getFunctionId(q) == markRef &&
 			/* mark with base */
 		    (q->argc == 2 || q->argc == 3) && o == getArg(q,1)) {
 			state = ORDERBY_MARK;
@@ -499,7 +499,7 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 
 			old[join[j]] = NULL;
 			/* find mark - reverse and reverse - mark - reverse */
-			if (getFunctionId(o) == markTRef &&
+			if (getFunctionId(o) == markRef &&
 			    getArg(o, 1) == njn0) {
 				res = mr;
 				mr0 = getArg(o, 0);
@@ -515,7 +515,7 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 				res = rmr;
 				rmr0 = getArg(o, 0);
 			}
-			if (getFunctionId(o) == markTRef &&
+			if (getFunctionId(o) == markRef &&
 			    getArg(o, 1) == rmr0) {
 				in = rmr;
 				res = rmr;
@@ -613,7 +613,7 @@ cluster_join(MalBlkPtr mb)
 			join[j++] = i;
 		} else if (state == JOIN_JOIN &&
 		    getModuleId(q) == algebraRef &&
-		    getFunctionId(q) == markTRef &&
+		    getFunctionId(q) == markRef &&
 			/* mark with base */
 		    (q->argc == 2 || q->argc == 3) && jn == getArg(q,1)) {
 			state_mr = JOIN_MARK;
@@ -635,7 +635,7 @@ cluster_join(MalBlkPtr mb)
 			join[j++] = i;
 		} else if (state_rmr == JOIN_REVERSE &&
 		    getModuleId(q) == algebraRef &&
-		    getFunctionId(q) == markTRef &&
+		    getFunctionId(q) == markRef &&
 			/* mark with base */
 		    (q->argc == 2 || q->argc == 3) && rmr == getArg(q,1)) {
 			state_rmr = JOIN_MARK;

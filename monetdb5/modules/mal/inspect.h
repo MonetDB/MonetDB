@@ -41,8 +41,6 @@
 #define inspect_export extern
 #endif
 
-inspect_export str INSPECTgetFunction(int *ret);
-inspect_export str INSPECTgetModule(int *ret);
 inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

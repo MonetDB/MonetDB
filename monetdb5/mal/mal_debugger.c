@@ -1049,11 +1049,11 @@ static MalBlkPtr trapped_mb;
 static MalStkPtr trapped_stk;
 static int trapped_pc;
 
-str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	InstrPtr p;
 	int cnt = 20;   /* total 10 sec delay */
-	p = getInstrPtr(mb, pc);
+	int pc = getPC(mb,p);
+
 	mnstr_printf(mal_clients[0].fdout, "#trapped %s.%s[%d]\n",
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
 	printInstruction(mal_clients[0].fdout, mb, stk, p, LIST_MAL_DEBUG);
@@ -1097,7 +1097,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		cntxt->mdb = &state;
 		mnstr_printf(mal_clients[0].fdout, "#Process %d put to sleep\n", (int) (cntxt - mal_clients));
 		cntxt->itrace = 'W';
-		mdbTrap(cntxt, mb, stk, pc);
+		mdbTrap(cntxt, mb, stk, state.p);
 		while (cntxt->itrace == 'W')
 			MT_sleep_ms(300);
 		mnstr_printf(mal_clients[0].fdout, "#Process %d woke up\n", (int) (cntxt - mal_clients));
@@ -1108,7 +1108,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* a trapped call leads to process suspension */
 	/* then the console can be used to attach a debugger */
 	if (mb->trap) {
-		mdbTrap(cntxt, mb, stk, pc);
+		mdbTrap(cntxt, mb, stk, getInstrPtr(mb,pc));
 		return;
 	}
 	p = getInstrPtr(mb, pc);
@@ -1437,7 +1437,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 					BBPunfix(b[1]->batCacheid);
 				return;
 			}
-			p = BUNfnd(b[0], props);
+			p = BUNfnd(BATmirror(b[0]), props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));

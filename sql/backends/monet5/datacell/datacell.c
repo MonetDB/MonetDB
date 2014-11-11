@@ -332,7 +332,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL) {
 		if (pci->argc == 3) {
 			def = *getArgReference_str(stk, pci, 2);
-			msg = SQLstatementIntern(cntxt, &def, lnme, 0, 0);
+			msg = SQLstatementIntern(cntxt, &def, lnme, 1, 0, 0);
 			if (msg)
 				return msg;
 			qry = cntxt->curprg->def;
@@ -441,8 +441,8 @@ str
 DCdump(void *ret)
 {
 	BSKTdump(ret);
-	RCdump();
-	EMdump();
+	RCdump(ret);
+	EMdump(ret);
 	PNdump(ret);
 	return MAL_SUCCEED;
 }

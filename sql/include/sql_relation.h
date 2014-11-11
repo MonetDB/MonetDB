@@ -155,6 +155,8 @@ typedef enum operator_type {
 	(et == e_atom)
 #define is_func(et) \
 	(et == e_func)
+#define is_map_op(et) \
+	(et == e_func || et == e_convert)
 #define is_column(et) \
 	(et != e_cmp)
 #define is_rank_op(e) \

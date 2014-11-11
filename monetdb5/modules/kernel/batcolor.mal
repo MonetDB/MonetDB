@@ -68,6 +68,10 @@ command value(c:bat[:oid,:color]) :bat[:oid,:flt]
 address CLRbatValue
 comment	"Extracts value component from a color atom";
 
+command ycc(y:bat[:oid,:flt],cr:bat[:oid,:flt],cb:bat[:oid,:flt]) :bat[:oid,:color] 
+address CLRbatycc
+comment	"Converts an YCC triplets to a color atom";
+
 command luminance (c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatLuminance
 comment	"Extracts Y(luminance) component from a color atom";

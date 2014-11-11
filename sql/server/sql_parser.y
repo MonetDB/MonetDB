@@ -539,7 +539,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY STREAM MERGE REMOTE REPLICA
+%token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -1394,8 +1394,11 @@ table_def:
 
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
+ |  TEMP		{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
+ |  LOCAL TEMP		{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
+ |  GLOBAL TEMP		{ $$ = SQL_GLOBAL_TEMP; }
  ;
 
 opt_on_commit: /* only for temporary tables */
@@ -4901,6 +4904,7 @@ non_reserved_word:
 |  URI		{ $$ = sa_strdup(SA, "uri"); }
 |  FILTER	{ $$ = sa_strdup(SA, "filter"); }
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+|  TEMP		{ $$ = sa_strdup(SA, "temp"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 ;

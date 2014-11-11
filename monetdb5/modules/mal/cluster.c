@@ -171,7 +171,7 @@ CLUSTER_key( bat *M, const bat *B){
 
 	if ((b = BATdescriptor(*B)) == NULL)
 		throw(MAL, "cluster.key", INTERNAL_BAT_ACCESS);
-	(void) BATprepareHash(BATmirror(b)); /* only produce the hash structure! */
+	(void) BATprepareHash(b); /* only produce the hash structure! */
 
 	if ((map = BATnew(TYPE_void, TYPE_oid, BATcount(b)+1, TRANSIENT)) == NULL) {
 		BBPunfix(*B);

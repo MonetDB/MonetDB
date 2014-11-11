@@ -19,6 +19,7 @@
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
+#include "mtime.h"
 #include "querylog.h"
 
 int 
@@ -65,7 +66,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	name= getArg(q,0)= newVariable(mb,GDKstrdup("name"),TYPE_str);
 	defineQuery = pushArgument(mb,defineQuery,name);
 	q = newStmt(mb, "mtime", "current_timestamp");
-	start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
+	start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_timestamp);
 	defineQuery = pushArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 

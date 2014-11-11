@@ -1877,7 +1877,7 @@ parseTuple(Client cntxt)
 #define BRKONERR if (curPrg->def->errors >= MAXERRORS) \
 		return curPrg->def->errors;
 int
-parseMAL(Client cntxt, Symbol curPrg)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
@@ -1920,13 +1920,8 @@ parseMAL(Client cntxt, Symbol curPrg)
 			}
 			if (e > start)
 				*e = 0;
-			if (e > start && curBlk->stop > 0 &&
-				strncmp("line ", start, 5) != 0) {
+			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-/*
- * Comment lines produced by Mx, i.e. #line directives are not saved.
- * The deadcode optimizer removes all comment information.
- */
 				curInstr = newInstruction(curBlk, REMsymbol);
 				cst.vtype = TYPE_str;
 				cst.len = (int) strlen(start);

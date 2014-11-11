@@ -106,7 +106,7 @@ libgeom_export const char *geom_type2str(int t);
 
 typedef struct wkb {
 	int len;
-	char data[1];
+	char data[];
 } wkb;
 
 typedef struct {

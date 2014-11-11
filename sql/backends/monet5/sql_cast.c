@@ -69,16 +69,6 @@ str_2_timestamp(timestamp *res, const str *val)
 }
 
 str
-SQLtimestamp_2_str(str *res, const timestamp *val)
-{
-	char *p = NULL;
-	int len = 0;
-	timestamp_tostr(&p, &len, val);
-	*res = p;
-	return MAL_SUCCEED;
-}
-
-str
 batnil_2_timestamp(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
@@ -163,16 +153,6 @@ str_2_daytime(daytime *res, const str *val)
 		if (p)
 			GDKfree(p);
 	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLdaytime_2_str(str *res, const daytime *val)
-{
-	char *p = NULL;
-	int len = 0;
-	daytime_tostr(&p, &len, val);
-	*res = p;
 	return MAL_SUCCEED;
 }
 
@@ -332,14 +312,6 @@ batstr_2_date(bat *res, const bat *bid)
 }
 
 str
-nil_2_sqlblob(sqlblob * *res, const void *val)
-{
-	(void) val;
-	*res = ATOMnilptr(TYPE_blob);
-	return MAL_SUCCEED;
-}
-
-str
 str_2_sqlblob(sqlblob * *res, const str *val)
 {
 	ptr p = NULL;
@@ -369,32 +341,6 @@ SQLsqlblob_2_str(str *res, const sqlblob * val)
 	int len = 0;
 	sqlblob_tostr(&p, &len, val);
 	*res = p;
-	return MAL_SUCCEED;
-}
-
-str
-batnil_2_sqlblob(bat *res, const bat *bid)
-{
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p, q;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2_sqlblob", "Cannot access descriptor");
-	}
-	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(dst, b->hseqbase);
-	BATloop(b, p, q) {
-		sqlblob *r = ATOMnilptr(TYPE_blob);
-		BUNins(dst, BUNhead(bi, p), r, FALSE);
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

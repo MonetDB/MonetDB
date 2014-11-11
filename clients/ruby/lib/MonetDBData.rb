@@ -241,7 +241,7 @@ class MonetDBData
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
     if @lang == LANG_SQL
-        return "s" + q + ";"
+        return "s" + q + "\n;"
     else
       raise LanguageNotSupported, @lang
     end

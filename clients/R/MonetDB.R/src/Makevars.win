@@ -1,1 +1,0 @@
-PKG_LIBS= -lws2_32

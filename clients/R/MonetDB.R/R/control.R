@@ -10,7 +10,7 @@ monetdb.server.start <-
       
       # run script
       system(bat.file,wait=T)
-      
+
       # read pid from file
       pid <- scan(pidfile,what=integer(),n=1)
       return(pid)
@@ -75,7 +75,7 @@ monetdb.server.stop <-
       system(paste0("kill ",correct.pid))  
       waittime <- 2
       if (!wait) return(TRUE)
-      Sys.sleep(1)
+      Sys.sleep(.5)
       repeat {
         psout <- system(paste0("ps ax | grep \"^", correct.pid, ".*mserver5\""), ignore.stdout=T) 
         if (psout != 0) break

@@ -331,6 +331,8 @@ extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnu
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
+extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
+extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt);
 extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);
@@ -363,6 +365,7 @@ extern void sql_trans_end(sql_session *s);
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern void sql_trans_drop_dependencies(sql_trans *tr, int depend_id);
+extern void sql_trans_drop_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern list* sql_trans_get_dependencies(sql_trans *tr, int id, short depend_type, list *ignore_ids);
 extern int sql_trans_get_dependency_type(sql_trans *tr, int depend_id, short depend_type);
 extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type);

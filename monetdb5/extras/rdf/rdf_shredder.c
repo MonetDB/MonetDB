@@ -159,11 +159,11 @@ warningHandler (void *user_data, raptor_locator* locator,
  */
 
 #define rdf_BUNappend_unq(X,Y)\
-bun = BUNfnd(BATmirror(X),(ptr)Y);\
+bun = BUNfnd((X),(ptr)Y);\
 if (bun == BUN_NONE) {\
 	if (BATcount(X) > 4 * X->T->hash->mask) {\
 		HASHdestroy(X);\
-		BAThash(BATmirror(X), 2*BATcount(X));\
+		BAThash((X), 2*BATcount(X));\
 	}\
 	bun = (BUN) X->batCount;\
 	X = BUNappend(X, (ptr)Y, TRUE);\
@@ -229,11 +229,11 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 		rdf_BUNappend(graph[O_sort], &bun);
 		bun = BUN_NONE;
 	} else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL) {
-		bun = BUNfnd(BATmirror(graph[MAP_LEX]),(ptr)triple->object);
+		bun = BUNfnd(graph[MAP_LEX],(ptr)triple->object);
 		if (bun == BUN_NONE) {
 			if (graph[MAP_LEX]->T->hash && BATcount(graph[MAP_LEX]) > 4 * graph[MAP_LEX]->T->hash->mask) {
 				HASHdestroy(graph[MAP_LEX]);
-				BAThash(BATmirror(graph[MAP_LEX]), 2*BATcount(graph[MAP_LEX]));
+				BAThash(graph[MAP_LEX], 2*BATcount(graph[MAP_LEX]));
 			}
 			bun = (BUN) ((graph[MAP_LEX])->hseqbase + (graph[MAP_LEX])->batCount);
 			graph[MAP_LEX] = BUNappend(graph[MAP_LEX], (ptr)triple->object, TRUE);
@@ -353,6 +353,7 @@ post_processing (parserData *pdata)
 	BATiter bi, mi;
 	BUN p, d, r;
 	oid *bt;
+	BAT *map_oidm;
 
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
@@ -366,10 +367,11 @@ post_processing (parserData *pdata)
 	/* convert old oids of O_sort to new ones */
 	bi = bat_iterator(graph[O_sort]);
 	mi = bat_iterator(map_oid);
+	map_oidm = BATmirror(map_oid);
 	BATloop(graph[O_sort], p, d) {
 		bt = (oid *) BUNtloc(bi, p);
 		if (*bt >= (RDF_MIN_LITERAL)) {
-			BUNfndVOID(r, mi, bt);
+			r = BUNfndVOID(map_oidm, bt);
 			void_inplace(graph[O_sort], p, BUNtloc(mi, r), 1);
 		}
 	}

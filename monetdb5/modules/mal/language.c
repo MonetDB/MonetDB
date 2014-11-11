@@ -245,22 +245,3 @@ CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	throw(MAL, "mal.call", PROGRAM_NYI);
 }
-
-str
-CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;		/* fool compiler */
-	throw(MAL, "mal.include", PROGRAM_NYI);
-}
-
-str
-CMDdebug(int *ret, int *flg)
-{
-	*ret = GDKdebug;
-	if (*flg)
-		GDKdebug = *flg;
-	return MAL_SUCCEED;
-}

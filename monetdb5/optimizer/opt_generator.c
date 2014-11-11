@@ -63,7 +63,7 @@ int
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q;
-	int i,j,k, used= 0, cases, blocked;
+	int i,j,k, actions=0, used= 0, cases, blocked;
 
 	(void) cntxt;
 	(void) stk;
@@ -104,6 +104,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						} else
 							used++;
 					} else
+					if ( getModuleId(q) == sqlRef && getFunctionId(q) ==  putName("exportValue",11) && isaBatType(getArgType(mb,p,0)) ){
+						// interface expects scalar type only, not expressable in MAL signature
+						blocked++;
+						mb->errors++;
+						showException(cntxt->fdout, MAL, "generate_series", "internal error, generate_series is a table producing function");
+					}else 
 					if ( getModuleId(q) == languageRef && getFunctionId(q) == passRef && getArg(q,1) == getArg(p,0))
 						// nothing happens in this instruction
 						used++;
@@ -119,6 +125,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					setModuleId(p, generatorRef);
 					setFunctionId(p, parametersRef);
 					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
+					actions++;
 				} else used = 0;
 #ifdef VLT_DEBUG
 				mnstr_printf(cntxt->fdout,"#generator target %d cases %d used %d error %d\n",getArg(p,0), cases, used, p->typechk);
@@ -129,5 +136,5 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #ifdef VLT_DEBUG
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
-	return used== 0;
+	return actions;
 }

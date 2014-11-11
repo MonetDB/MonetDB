@@ -327,6 +327,7 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 
 	cst.vtype= TYPE_sht;
 	cst.val.shval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_sht,&cst);
 	return pushArgument(mb, q, _t);
 }

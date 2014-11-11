@@ -127,12 +127,11 @@ update_val( sql_bat *bat, oid rid, void *upd, int isnew)
 			u = bat_new(TYPE_oid, b->ttype, 1, PERSISTENT);
 			bat->ubid = temp_create(u);
 		}
-		if (BUNfnd(u, (ptr)&rid) == BUN_NONE) {
+		if (BUNfnd(BATmirror(u), (ptr)&rid) == BUN_NONE) {
 			BUN p;
 			BATiter bi = bat_iterator(b);
-			/* avoid "dereferencing type-punned pointer will break strict-aliasing rules" */
-			ptr _rid = (ptr)&rid;
-			BUNfndVOID(p, bi, _rid);  
+			BAT *bm = BATmirror(b);
+			p = BUNfndVOID(bm, &rid);
 			BUNins(u, &rid, BUNtail(bi,p), FALSE);
 		}
 		bat_destroy(u);

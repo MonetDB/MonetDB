@@ -1,0 +1,42 @@
+stderr of test 'crash.Bug-3609` in directory 'sql/backends/monet5/generator` itself:
+
+
+# 22:37:45 >  
+# 22:37:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33733" "--set" "mapi_usock=/var/tmp/mtest-5645/.s.monetdb.33733" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_backends_monet5_generator" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 22:37:45 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/Oct2014//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33733
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5645/.s.monetdb.33733
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/Oct2014//Linux/var/MonetDB/mTests_sql_backends_monet5_generator
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 22:37:46 >  
+# 22:37:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5645" "--port=33733"
+# 22:37:46 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-30092/.s.monetdb.31340
+QUERY = select generate_series(0,2,1);
+ERROR = !SELECT: no such operator 'generate_series'
+
+
+
+# 22:37:46 >  
+# 22:37:46 >  "Done."
+# 22:37:46 >  
+

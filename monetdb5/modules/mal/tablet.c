@@ -350,7 +350,7 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 	for (i = 0; i < nr_attrs; i++) {
 		if (fmt[i].c == NULL)
 			continue;
-		fmt[i].p = BUNfnd(fmt[i].c, id);
+		fmt[i].p = BUNfnd(BATmirror(fmt[i].c), id);
 
 		if (fmt[i].p == BUN_NONE)
 			break;

@@ -130,24 +130,12 @@
 
 #define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
 
-mkey_export str  MKEYrotate(wrd *ret, wrd *v, int *nbits);
+mkey_export str  MKEYrotate(wrd *ret, const wrd *v, const int *nbits);
 mkey_export str  MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYhash_bit(wrd *ret, bit *v);
-mkey_export str  MKEYhash_bte(wrd *ret, bte *v);
-mkey_export str  MKEYhash_sht(wrd *ret, sht *v);
-mkey_export str  MKEYhash_int(wrd *ret, int *v);
-mkey_export str  MKEYhash_flt(wrd *ret, flt *v);
-mkey_export str  MKEYhash_wrd(wrd *ret, wrd *v);
-mkey_export str  MKEYhash_dbl(wrd *ret, dbl *v);
-mkey_export str  MKEYhash_lng(wrd *ret, lng *v);
-#ifdef HAVE_HGE
-mkey_export str  MKEYhash_hge(wrd *ret, hge *v);
-#endif
-mkey_export str  MKEYhash_str(wrd *ret, str *v);
 mkey_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYbulk_rotate_xor_hash(bat *ret, bat *hid, int *nbits,bat *bid);
+mkey_export str  MKEYbulk_rotate_xor_hash(bat *ret, const bat *hid, const int *nbits, const bat *bid);
 mkey_export str  MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYconstbulk_rotate_xor_hash(bat *ret, wrd *h, int *nbits,bat *bid);
-mkey_export str  MKEYbathash(bat *res, bat *bid );
+mkey_export str  MKEYconstbulk_rotate_xor_hash(bat *ret, const wrd *h, const int *nbits, const bat *bid);
+mkey_export str  MKEYbathash(bat *res, const bat *bid);
 
 #endif /* _MKEY_H */
