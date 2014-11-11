@@ -112,7 +112,7 @@ bl_postversion( void *lg)
 		if (!b)
 			return;
 		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
+		b1 = BATnew(TYPE_void, TYPE_bte, BATcount(b), PERSISTENT);
 		if (!b1)
 			return;
         	BATseqbase(b1, b->hseqbase);
