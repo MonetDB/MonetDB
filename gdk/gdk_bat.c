@@ -2714,7 +2714,10 @@ BATmode(BAT *b, int mode)
 		BBPdirty(1);
 
 		if (mode == PERSISTENT && isVIEW(b)) {
-			VIEWreset(b);
+			if (VIEWreset(b) == NULL) {
+				GDKerror("BATmode: cannot allocate memory.\n");
+				return NULL;
+			}
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
