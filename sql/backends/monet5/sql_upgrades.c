@@ -949,12 +949,6 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'db_users', 'env', 'generate_series', 'storage', 'storagemodel', 'var') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);
 
-	/* new file 75_storagemodel.sql */
-	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.storage;\n"
-	"create function sys.\"storage\"()\n"
-	"returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string,"
-	"location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean, compress boolean)\n"
-	"external name sql.\"storage\";returns table (value tinyint)\n");
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
@@ -979,6 +973,14 @@ sql_update_feb2015(Client c)
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t int) returns timestamp external name timestamp.epoch;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t timestamp) returns int external name timestamp.epoch;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t bigint) returns timestamp external name calc.timestamp;\n");
+
+	/* 75_storagemodel.sql change in function sys.storage() */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.storage;\n"
+			"create function sys.\"storage\"()\n"
+			"returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string,"
+			"location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean, compress boolean)\n"
+			"external name sql.\"storage\";returns table (value tinyint)\n");
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
