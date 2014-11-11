@@ -209,10 +209,9 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 	}
 	if (nr_threads <= 0) {
-		msg = createException(MAL, "bam_loader",
-					  "We can not get the work done with only %d threads",
-					  nr_threads);
-		goto cleanup;
+		nr_threads = 1;
+	} else if(nr_threads > 4) {
+		nr_threads = 4;
 	}
 
 	/* Get SQL context */
@@ -381,7 +380,6 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	TO_LOG("<bam_loader> Copying data into DB...\n");
 	/* All threads finished succesfully, copy all data into DB */
 	for (i = 0; i < nr_files; ++i) {
-		prepare_for_copy(bws + i);
 		if ((msg = copy_into_db(cntxt, bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
 		}

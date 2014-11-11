@@ -97,7 +97,6 @@ typedef struct bam_wrapper {
 str ordering_str(ordering ord);
 str init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			 lng file_id, sht dbschema);
-void prepare_for_copy(bam_wrapper * bw);
 void clear_bam_wrapper(bam_wrapper * bw);
 str process_header(bam_wrapper * bw);
 str process_alignments(bam_wrapper *bw, bit *some_thread_failed);	/* (*some_thread_failed) will be set to TRUE if some thread fails during processing alignments */

@@ -99,6 +99,44 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			  file_location, flushdir, strerror(errno));
 	}
 
+	// Construct all the file paths to the binary files
+	for (i = 0; i < 6; ++i) {
+		snprintf(bw->fp_files[i], BW_FP_BUF_SIZE, "%s/files_%d",
+			 flushdir, i);
+	}
+	for (i = 0; i < 7; ++i) {
+		snprintf(bw->fp_sq[i], BW_FP_BUF_SIZE, "%s/sq_%d", flushdir,
+			 i);
+	}
+	for (i = 0; i < 13; ++i) {
+		snprintf(bw->fp_rg[i], BW_FP_BUF_SIZE, "%s/rg_%d", flushdir,
+			 i);
+	}
+	for (i = 0; i < 6; ++i) {
+		snprintf(bw->fp_pg[i], BW_FP_BUF_SIZE, "%s/pg_%d", flushdir,
+			 i);
+	}
+	for (i = 0; i < 12; ++i) {
+		snprintf(bw->fp_alignments[i], BW_FP_BUF_SIZE,
+			 "%s/alignments_%d", flushdir, i);
+	}
+	for (i = 0; i < 4; ++i) {
+		snprintf(bw->fp_alignments_extra[i], BW_FP_BUF_SIZE,
+			 "%s/alignments_extra_%d", flushdir, i);
+	}
+	if (dbschema == 1) {
+		for (i = 0; i < 23; ++i) {
+			snprintf(bw->fp_alignments_paired_primary[i],
+				 BW_FP_BUF_SIZE,
+				 "%s/alignments_paired_primary_%d", flushdir,
+				 i);
+			snprintf(bw->fp_alignments_paired_secondary[i],
+				 BW_FP_BUF_SIZE,
+				 "%s/alignments_paired_secondary_%d",
+				 flushdir, i);
+		}
+	}
+
 	if (type == BAM) {
 		/* Open BAM file and read its header */
 		if ((bw->bam.input = bam_open(file_location, "r")) == NULL) {
@@ -184,105 +222,102 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	bw->cnt_alignments_paired_secondary = 0;
 	bw->cnt_alignments_total = 0;
 
+
+	return MAL_SUCCEED;
+}
+
+
+static str 
+open_header_write_streams(bam_wrapper * bw)
+{
+	int i;
+
 	for (i = 0; i < 6; ++i) {
-		snprintf(bw->fp_files[i], BW_FP_BUF_SIZE, "%s/files_%d",
-			 flushdir, i);
 		if ((bw->files[i] = bsopen(bw->fp_files[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_files[i]);
+				  bw->file_location, bw->fp_files[i]);
 		}
 	}
 	for (i = 0; i < 7; ++i) {
-		snprintf(bw->fp_sq[i], BW_FP_BUF_SIZE, "%s/sq_%d", flushdir,
-			 i);
 		if ((bw->sq[i] = bsopen(bw->fp_sq[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_sq[i]);
+				  bw->file_location, bw->fp_sq[i]);
 		}
 	}
 	for (i = 0; i < 13; ++i) {
-		snprintf(bw->fp_rg[i], BW_FP_BUF_SIZE, "%s/rg_%d", flushdir,
-			 i);
 		if ((bw->rg[i] = bsopen(bw->fp_rg[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_rg[i]);
+				  bw->file_location, bw->fp_rg[i]);
 		}
 	}
 	for (i = 0; i < 6; ++i) {
-		snprintf(bw->fp_pg[i], BW_FP_BUF_SIZE, "%s/pg_%d", flushdir,
-			 i);
 		if ((bw->pg[i] = bsopen(bw->fp_pg[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_pg[i]);
+				  bw->file_location, bw->fp_pg[i]);
 		}
 	}
+	return MAL_SUCCEED;
+}
+
+
+static str
+open_alignment_write_streams(bam_wrapper * bw) {
+	int i;
+
 	for (i = 0; i < 12; ++i) {
-		snprintf(bw->fp_alignments[i], BW_FP_BUF_SIZE,
-			 "%s/alignments_%d", flushdir, i);
 		if ((bw->alignments[i] =
 			 bsopen(bw->fp_alignments[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_alignments[i]);
+				  bw->file_location, bw->fp_alignments[i]);
 		}
 	}
 	for (i = 0; i < 4; ++i) {
-		snprintf(bw->fp_alignments_extra[i], BW_FP_BUF_SIZE,
-			 "%s/alignments_extra_%d", flushdir, i);
 		if ((bw->alignments_extra[i] =
 			 bsopen(bw->fp_alignments_extra[i])) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
-				  file_location, bw->fp_alignments_extra[i]);
+				  bw->file_location, bw->fp_alignments_extra[i]);
 		}
 	}
-	if (dbschema == 1) {
+	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
-			snprintf(bw->fp_alignments_paired_primary[i],
-				 BW_FP_BUF_SIZE,
-				 "%s/alignments_paired_primary_%d", flushdir,
-				 i);
 			if ((bw->alignments_paired_primary[i] =
 				 bsopen(bw->fp_alignments_paired_primary[i])) ==
 				NULL) {
 				throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER
 					  "Binary file '%s' could not be opened",
-					  file_location,
+					  bw->file_location,
 					  bw->fp_alignments_paired_primary[i]);
 			}
-			snprintf(bw->fp_alignments_paired_secondary[i],
-				 BW_FP_BUF_SIZE,
-				 "%s/alignments_paired_secondary_%d",
-				 flushdir, i);
 			if ((bw->alignments_paired_secondary[i] =
 				 bsopen(bw->fp_alignments_paired_secondary[i])) ==
 				NULL) {
 				throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER
 					  "Binary file '%s' could not be opened",
-					  file_location,
+					  bw->file_location,
 					  bw->fp_alignments_paired_secondary[i]);
 			}
 		}
 	}
-
 	return MAL_SUCCEED;
 }
 
+
 static void
-close_write_streams(bam_wrapper * bw, bit unlink_files)
-{
+close_header_write_streams(bam_wrapper * bw) {
 	int i;
 
 	for (i = 0; i < 6; ++i) {
@@ -292,48 +327,43 @@ close_write_streams(bam_wrapper * bw, bit unlink_files)
 			 * close_streams gets called again */
 			bw->files[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_files[i]);
 	}
 	for (i = 0; i < 7; ++i) {
 		if (bw->sq[i]) {
 			close_stream(bw->sq[i]);
 			bw->sq[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_sq[i]);
 	}
 	for (i = 0; i < 13; ++i) {
 		if (bw->rg[i]) {
 			close_stream(bw->rg[i]);
 			bw->rg[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_rg[i]);
 	}
 	for (i = 0; i < 6; ++i) {
 		if (bw->pg[i]) {
 			close_stream(bw->pg[i]);
 			bw->pg[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_pg[i]);
 	}
+}
+
+
+static void
+close_alignment_write_streams(bam_wrapper * bw) {
+	int i;
+
 	for (i = 0; i < 12; ++i) {
 		if (bw->alignments[i]) {
 			close_stream(bw->alignments[i]);
 			bw->alignments[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_alignments[i]);
 	}
 	for (i = 0; i < 4; ++i) {
 		if (bw->alignments_extra[i]) {
 			close_stream(bw->alignments_extra[i]);
 			bw->alignments_extra[i] = NULL;
 		}
-		if (unlink_files)
-			unlink(bw->fp_alignments_extra[i]);
 	}
 	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
@@ -347,24 +377,15 @@ close_write_streams(bam_wrapper * bw, bit unlink_files)
 						 alignments_paired_secondary[i]);
 				bw->alignments_paired_secondary[i] = NULL;
 			}
-			if (unlink_files) {
-				unlink(bw->fp_alignments_paired_primary[i]);
-				unlink(bw->fp_alignments_paired_primary[i]);
-			}
 		}
 	}
-}
-
-void
-prepare_for_copy(bam_wrapper * bw)
-{
-	close_write_streams(bw, FALSE);
 }
 
 void
 clear_bam_wrapper(bam_wrapper * bw)
 {
 	char flushdir[128];
+	int i;
 
 	/* Clear bam/sam specific fields */
 	if (bw->type == BAM) {
@@ -383,8 +404,35 @@ clear_bam_wrapper(bam_wrapper * bw)
 		}
 	}
 
-	/* Close file streams and remove files */
-	close_write_streams(bw, TRUE);
+	/* Close file streams if this was not done yet */
+	close_header_write_streams(bw);
+	close_alignment_write_streams(bw);
+
+	/* And remove the write stream files that still exist */
+	for (i = 0; i < 6; ++i) {
+		unlink(bw->fp_files[i]);
+	}
+	for (i = 0; i < 7; ++i) {
+		unlink(bw->fp_sq[i]);
+	}
+	for (i = 0; i < 13; ++i) {
+		unlink(bw->fp_rg[i]);
+	}
+	for (i = 0; i < 6; ++i) {
+		unlink(bw->fp_pg[i]);
+	}
+	for (i = 0; i < 12; ++i) {
+		unlink(bw->fp_alignments[i]);
+	}
+	for (i = 0; i < 4; ++i) {
+		unlink(bw->fp_alignments_extra[i]);
+	}
+	if (bw->dbschema == 1) {
+		for (i = 0; i < 23; ++i) {
+			unlink(bw->fp_alignments_paired_primary[i]);
+			unlink(bw->fp_alignments_paired_primary[i]);
+		}
+	}
 
 	/* Finally, attempt to remove flush directory */
 	snprintf(flushdir, 128, DIR_BINARIES "/" LLFMT, bw->file_id);
@@ -719,6 +767,10 @@ process_header(bam_wrapper * bw)
 	bit eof = FALSE;
 	str s;
 	lng l;
+
+	if((msg = open_header_write_streams(bw)) != MAL_SUCCEED) {
+		return msg;
+	}
 
 	hl.options = NULL;
 	if (bw->type == BAM) {
@@ -1091,6 +1143,8 @@ process_header(bam_wrapper * bw)
 
 	if (hd_comment.s)
 		free(hd_comment.s);
+
+	close_header_write_streams(bw);
 
 	return MAL_SUCCEED;
 }
@@ -2068,6 +2122,10 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		goto cleanup;
 	}
 
+	if((msg = open_alignment_write_streams(bw)) != MAL_SUCCEED) {
+		goto cleanup;
+	}
+
 	while (TRUE) { /* One iteration per alignment */
 		alignment *a;
 		int aux_len = 0;
@@ -2227,6 +2285,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		}
 		GDKfree(aligs);
 	}
+	close_alignment_write_streams(bw);
 	if (msg != MAL_SUCCEED) {
 		/* An error occurred in this thread, indicate this by
 		 * setting the shared failure bit to TRUE */
