@@ -30,18 +30,8 @@ stderr of test 'survey` in directory 'clients/R` itself:
 # 14:26:23 >  "R" "--vanilla" "--slave" "--args" "38676"
 # 14:26:23 >  
 
-KernSmooth 2.23 loaded
-Copyright M. P. Wand 1997-2009
-Loading required package: grid
 
-Attaching package: 'survey'
-
-The following object is masked from 'package:graphics':
-
-    dotchart
-
-
-# 14:26:26 >  
-# 14:26:26 >  "Done."
-# 14:26:26 >  
+# 13:05:49 >  
+# 13:05:49 >  "Done."
+# 13:05:49 >  
 
