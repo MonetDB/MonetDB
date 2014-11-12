@@ -81,6 +81,10 @@ geom_export str wkbgetcoordX(dbl *out, wkb **geom);
 geom_export str wkbgetcoordY(dbl *out, wkb **geom);
 geom_export str wkbcreatepoint(wkb **out, const dbl *x, const dbl *y);
 geom_export str wkbcreatepoint_bat(bat *out, const bat *x, const bat *y);
+geom_export str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y);
+geom_export double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
+geom_export str pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, int *point_x, int *point_y);
+geom_export str wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbDimension(int *out, wkb **geom);
 geom_export str wkbGeometryTypeId(int *out, wkb **geom);
@@ -827,6 +831,293 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 	BBPkeepref(*out = bo->batCacheid);
 	return MAL_SUCCEED;
 }
+
+	inline double
+isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
+{
+	return ( (P1x - P0x) * (P2y - P0y)
+			- (P2x -  P0x) * (P1y - P0y) );
+}
+
+str
+pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
+{
+	BAT *bo = NULL, *bpx = NULL, *bpy;
+	dbl *px = NULL, *py = NULL;
+	BUN i = 0, cnt;
+	int j = 0, nv;
+	struct timeval stop, start;
+	unsigned long long t;
+	bte *cs = NULL;
+
+	/*Get the BATs*/
+	if ((bpx = BATdescriptor(*point_x)) == NULL) {
+		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+	}
+
+	if ((bpy = BATdescriptor(*point_y)) == NULL) {
+		BBPreleaseref(bpx->batCacheid);
+		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+	}
+
+	/*Check BATs alignment*/
+	if ( bpx->htype != TYPE_void ||
+			bpy->htype != TYPE_void ||
+			bpx->hseqbase != bpy->hseqbase ||
+			BATcount(bpx) != BATcount(bpy)) {
+		BBPreleaseref(bpx->batCacheid);
+		BBPreleaseref(bpy->batCacheid);
+		throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
+	}
+
+	/*Create output BAT*/
+	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+		BBPreleaseref(bpx->batCacheid);
+		BBPreleaseref(bpy->batCacheid);
+		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bo, bpx->hseqbase);
+
+	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
+	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
+	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+
+	gettimeofday(&start, NULL);
+	nv = nvert -1;
+	cnt = BATcount(bpx);
+	cs = (bte*) Tloc(bo,BUNfirst(bo));
+	for (i = 0; i < cnt; i++) {
+		int wn = 0;
+		for (j = 0; j < nv; j++) {
+			if (vy[j] <= py[i]) {
+				if (vy[j+1] > py[i])
+					if (isLeft( vx[j], vy[j], vx[j+1], vy[j+1], px[i], py[i]) > 0)
+						++wn;
+			}
+			else {
+				if (vy[j+1]  <= py[i])
+					if (isLeft( vx[j], vy[j], vx[j+1], vy[j+1], px[i], py[i]) < 0)
+						--wn;
+			}
+		}
+		*cs++ = wn & 1;
+	}
+	gettimeofday(&stop, NULL);
+	t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+	printf("took %llu ms\n", t);
+
+	gettimeofday(&start, NULL);
+	BATsetcount(bo,cnt);
+	BATderiveProps(bo,FALSE);
+	gettimeofday(&stop, NULL);
+	t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+	printf("Append took %llu ms\n", t);
+
+	BBPreleaseref(bpx->batCacheid);
+	BBPreleaseref(bpy->batCacheid);
+	BBPkeepref(*out = bo->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, int *point_x, int *point_y)
+{
+	BAT *bo = NULL, *bpx = NULL, *bpy;
+	dbl *px = NULL, *py = NULL;
+	BUN i = 0, cnt = 0;
+	int j = 0, h = 0;
+	bte *cs = NULL;
+
+	/*Get the BATs*/
+	if ((bpx = BATdescriptor(*point_x)) == NULL) {
+		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+	}
+	if ((bpy = BATdescriptor(*point_y)) == NULL) {
+		BBPreleaseref(bpx->batCacheid);
+		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
+	}
+
+	/*Check BATs alignment*/
+	if ( bpx->htype != TYPE_void ||
+			bpy->htype != TYPE_void ||
+			bpx->hseqbase != bpy->hseqbase ||
+			BATcount(bpx) != BATcount(bpy)) {
+		BBPreleaseref(bpx->batCacheid);
+		BBPreleaseref(bpy->batCacheid);
+		throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
+	}
+
+	/*Create output BAT*/
+	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+		BBPreleaseref(bpx->batCacheid);
+		BBPreleaseref(bpy->batCacheid);
+		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bo, bpx->hseqbase);
+
+	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs*/
+	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
+	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+	cnt = BATcount(bpx);
+	cs = (bte*) Tloc(bo,BUNfirst(bo));
+	for (i = 0; i < cnt; i++) {
+		int wn = 0;
+
+		/*First check the holes*/
+		for (h = 0; h < nholes; h++) {
+			int nv = hn[h]-1;
+			wn = 0;
+			for (j = 0; j < nv; j++) {
+				if (hy[h][j] <= py[i]) {
+					if (hy[h][j+1] > py[i])
+						if (isLeft( hx[h][j], hy[h][j], hx[h][j+1], hy[h][j+1], px[i], py[i]) > 0)
+							++wn;
+				}
+				else {
+					if (hy[h][j+1]  <= py[i])
+						if (isLeft( hx[h][j], hy[h][j], hx[h][j+1], hy[h][j+1], px[i], py[i]) < 0)
+							--wn;
+				}
+			}
+
+			/*It is in one of the holes*/
+			if (wn) {
+				break;
+			}
+		}
+
+		if (wn)
+			continue;
+
+		/*If not in any of the holes, check inside the Polygon*/
+		for (j = 0; j < nvert-1; j++) {
+			if (vy[j] <= py[i]) {
+				if (vy[j+1] > py[i])
+					if (isLeft( vx[j], vy[j], vx[j+1], vy[j+1], px[i], py[i]) > 0)
+						++wn;
+			}
+			else {
+				if (vy[j+1]  <= py[i])
+					if (isLeft( vx[j], vy[j], vx[j+1], vy[j+1], px[i], py[i]) < 0)
+						--wn;
+			}
+		}
+		*cs++ = wn&1;
+	}
+	BATsetcount(bo,cnt);
+	BATderiveProps(bo,FALSE);
+	BBPreleaseref(bpx->batCacheid);
+	BBPreleaseref(bpy->batCacheid);
+	BBPkeepref(*out = bo->batCacheid);
+	return MAL_SUCCEED;
+}
+
+#define POLY_NUM_VERT 120
+#define POLY_NUM_HOLE 10
+
+str
+wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y) {
+	double *vert_x, *vert_y, **holes_x = NULL, **holes_y= NULL;
+	int *holes_n= NULL, j;
+	wkb *geom = NULL;
+	str msg = NULL;
+
+
+	str err = NULL;
+	str geom_str = NULL;
+	char *str2, *token, *subtoken;
+	char *saveptr1 = NULL, *saveptr2 = NULL;
+	int nvert = 0, nholes = 0;
+
+	geom = (wkb*) *a;
+
+	if ((err = wkbAsText(&geom_str, &geom)) != MAL_SUCCEED) {
+		msg = createException(MAL, "geom.Contain_bat", "%s", err);
+		GDKfree(err);
+		return msg;
+	}
+	geom_str = strchr(geom_str, '(');
+	geom_str+=2;
+
+	/*Lets get the polygon*/
+	token = strtok_r(geom_str, ")", &saveptr1);
+	vert_x = GDKmalloc(POLY_NUM_VERT*sizeof(double));
+	vert_y = GDKmalloc(POLY_NUM_VERT*sizeof(double));
+
+	for (str2 = token; ; str2 = NULL) {
+		subtoken = strtok_r(str2, ",", &saveptr2);
+		if (subtoken == NULL)
+			break;
+		sscanf(subtoken, "%lf %lf", &vert_x[nvert], &vert_y[nvert]);
+		nvert++;
+		if ((nvert%POLY_NUM_VERT) == 0) {
+			vert_x = GDKrealloc(vert_x, nvert*2*sizeof(double));
+			vert_y = GDKrealloc(vert_y, nvert*2*sizeof(double));
+		}
+	}
+
+	token = strtok_r(NULL, ")", &saveptr1);
+	if (token) {
+		holes_x = GDKzalloc(POLY_NUM_HOLE*sizeof(double*));
+		holes_y = GDKzalloc(POLY_NUM_HOLE*sizeof(double*));
+		holes_n = GDKzalloc(POLY_NUM_HOLE*sizeof(double*));
+	}
+	/*Lets get all the holes*/
+	while (token) {
+		int nhole = 0;
+		token = strchr(token, '(');
+		if (!token)
+			break;
+		token++;
+
+		if (!holes_x[nholes])
+			holes_x[nholes] = GDKzalloc(POLY_NUM_VERT*sizeof(double));
+		if (!holes_y[nholes])
+			holes_y[nholes] = GDKzalloc(POLY_NUM_VERT*sizeof(double));
+
+		for (str2 = token; ; str2 = NULL) {
+			subtoken = strtok_r(str2, ",", &saveptr2);
+			if (subtoken == NULL)
+				break;
+			sscanf(subtoken, "%lf %lf", &holes_x[nholes][nhole], &holes_y[nholes][nhole]);
+			nhole++;
+			if ((nhole%POLY_NUM_VERT) == 0) {
+				holes_x[nholes] = GDKrealloc(holes_x[nholes], nhole*2*sizeof(double));
+				holes_y[nholes] = GDKrealloc(holes_y[nholes], nhole*2*sizeof(double));
+			}
+		}
+
+		holes_n[nholes] = nhole;
+		nholes++;
+		if ((nholes%POLY_NUM_HOLE) == 0) {
+			holes_x = GDKrealloc(holes_x, nholes*2*sizeof(double*));
+			holes_y = GDKrealloc(holes_y, nholes*2*sizeof(double*));
+			holes_n = GDKrealloc(holes_n, nholes*2*sizeof(int));
+		}
+		token = strtok_r(NULL, ")", &saveptr1);
+	}
+
+	if (nholes)
+		msg = pnpolyWithHoles_(out, (int) nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
+	else {
+		msg = pnpoly_(out, (int) nvert, vert_x, vert_y, point_x, point_y);
+	}
+
+	GDKfree(vert_x);
+	GDKfree(vert_y);
+	if (holes_x && holes_y && holes_n) {
+		for (j = 0; j < nholes; j ++) {
+			GDKfree(holes_x[j]);
+			GDKfree(holes_y[j]);
+		}
+		GDKfree(holes_x);
+		GDKfree(holes_y);
+		GDKfree(holes_n);
+	}
+
+	return msg;
+}
+
 
 str
 mbroverlaps(bit *out, mbr **b1, mbr **b2)
