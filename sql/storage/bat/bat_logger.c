@@ -75,6 +75,31 @@ I( char *buf, char *schema, char *table, char *iname)
 }
 
 
+#ifndef HAVE_STRCASESTR
+static const char *
+strcasestr(const char *haystack, const char *needle)
+{
+	const char *p, *np = 0, *startn = 0;
+
+	for (p = haystack; *p; p++) {
+		if (np) {
+			if (toupper(*p) == toupper(*np)) {
+				if (!*++np)
+					return startn;
+			} else
+				np = 0;
+		} else if (toupper(*p) == toupper(*needle)) {
+			np = needle + 1;
+			startn = p;
+			if (!*np)
+				return startn;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static void 
 bl_postversion( void *lg) 
 {
@@ -177,7 +202,7 @@ bl_postversion( void *lg)
 			/* beware these will all be drop and recreated in the sql
 			 * upgrade code */
 			name = BUNtail(fi, p);
-			if (strstr(name, "RETURNS TABLE") != NULL) 
+			if (strcasestr(name, "RETURNS TABLE") != NULL) 
 				void_inplace(u, p, &type, TRUE);
 		}
 		b1 = BATsetaccess(b1, BAT_READ);
