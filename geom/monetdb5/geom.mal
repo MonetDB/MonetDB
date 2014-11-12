@@ -172,10 +172,6 @@ command Contains(a:wkb, b:wkb) :bit
 address wkbContains
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
 
-command Contains(a:wkb, x:dbl, y:dbl) :bit
-address wkbContains
-comment "Returns true if the Geometry a 'spatially contains' Geometry b";
-
 command Overlaps(a:wkb, b:wkb) :bit
 address wkbOverlaps
 comment "Returns true if the Geometry a 'spatially overlaps' Geometry b";
@@ -193,11 +189,6 @@ module batgeom;
 command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 address wkbcreatepoint_bat
 comment "Construct a point-BAT from two geometry-BATs";
-
-command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
-address wkbContains_bat
-comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
-
 module geom;
 
 # @+ ogc information methods

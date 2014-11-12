@@ -83,7 +83,6 @@ CREATE FUNCTION Touches(a Geometry, b Geometry) RETURNS BOOLEAN external name ge
 CREATE FUNCTION Crosses(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Crosses";
 CREATE FUNCTION Within(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Within";
 CREATE FUNCTION Contains(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Contains";
-CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
 CREATE FUNCTION Overlaps(a Geometry, b Geometry) RETURNS BOOLEAN external name geom."Overlaps";
 CREATE FUNCTION Relate(a Geometry, b Geometry, pattern STRING) RETURNS BOOLEAN external name geom."Relate";
 
