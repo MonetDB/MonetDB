@@ -23,12 +23,11 @@ Building MonetDB On Windows
 +++++++++++++++++++++++++++
 
 In this document we describe how to build the MonetDB suite of
-programs on Windows using the sources from our source repository at
-`our server`__.  This document is mainly targeted at building on
-Windows on a 32-bit architecture, but there are notes throughout about
-building on Windows on a 64-bit architecture which is indicated with
-Windows64.  We have successfully built on Windows XP, Windows Server,
-and Windows 7.
+programs on Windows using the sources from `our source repository`__.
+This document is mainly targeted at building on Windows on a 32-bit
+architecture, but there are notes throughout about building on Windows
+on a 64-bit architecture which is indicated with Windows64.  We have
+successfully built on Windows XP, Windows Server, and Windows 7.
 
 __ http://dev.monetdb.org/hg/MonetDB/
 
@@ -172,7 +171,8 @@ the build process would be much more like Unix than what is described
 here).
 
 We currently use Microsoft Visual Studio 2010 and Intel(R) C++
-Compiler XE 13.1.2.190, the latter using Microsoft Visual Studio 10.0.
+Compiler XE 13.1.2.190, the latter using Microsoft Visual Studio
+10.0.  Older versions haven't been tried in a long time.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -262,7 +262,27 @@ Files\PCRE``.
 For Windows64, select the correct compiler (``Visual Studio 10 2010
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
-``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program Files/PCRE``.
+``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program
+Files/PCRE``.
+
+In order to get a version number in the DLL that is produced, we added
+a file ``version.rc`` to the sources for the ``pcre`` subproject.  The
+contents of the file are::
+
+ #include <Windows.h>
+ VS_VERSION_INFO	VERSIONINFO
+ FILEVERSION		8,36,0,0	// change as appropriate
+ PRODUCTVERSION		8,36,0,0	// change as appropriate
+ FILEFLAGSMASK		0x3fL
+ FILEFLAGS		0
+ FILEOS			VOS_NT_WINDOWS32
+ FILETYPE		VFT_DLL
+ FILESUBTYPE		VFT2_UNKNOWN
+ BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+   END
+ END
 
 __ http://www.pcre.org/
 
@@ -338,6 +358,29 @@ Studio 2008 a warning.
    ``d`` to the definitions of ``XML_SO``, ``XML_IMP``, ``XML_A``, and
    ``XML_A_DLL``.  Also add ``d`` to the ``zlib.lib`` and ``iconv.lib``.
 
+In order to get a version number in the DLL that is produced, we added
+a file ``version.rc`` in the ``win32`` folder.  The contents of the
+file are::
+
+ #include <Windows.h>
+ VS_VERSION_INFO	VERSIONINFO
+ FILEVERSION		2,9,2,0		// change as appropriate
+ PRODUCTVERSION		2,9,2,0		// change as appropriate
+ FILEFLAGSMASK		0x3fL
+ FILEFLAGS		0
+ FILEOS			VOS_NT_WINDOWS32
+ FILETYPE		VFT_DLL
+ FILESUBTYPE		VFT2_UNKNOWN
+ BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+   END
+ END
+
+To use it, we also added ``version.res`` after ``$(XML_OBJS)`` in
+``win32\Makefile.msvc`` both in the list of dependencies of
+``$(BINDIR)\$(XML_SO)`` and in the command to produce said file.
+
 After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
 
@@ -365,6 +408,32 @@ in the instructions.
    nmake /f makefile.vc MSVC_VER=1600
 
 .. On Windows64, add WIN64=YES to the nmake command line.
+
+.. For a debug build, add ``BUILD_DEBUG=YES`` to the ``nmake`` command
+   line.
+
+In order to get a version number in the DLL that is produced, we added
+a file ``version.rc`` in the ``src`` folder.  The contents of the
+file are::
+
+ #include <Windows.h>
+ VS_VERSION_INFO	VERSIONINFO
+ FILEVERSION		3,4,2,0		// change as appropriate
+ PRODUCTVERSION		3,4,2,0		// change as appropriate
+ FILEFLAGSMASK		0x3fL
+ FILEFLAGS		0
+ FILEOS			VOS_NT_WINDOWS32
+ FILETYPE		VFT_DLL
+ FILESUBTYPE		VFT2_UNKNOWN
+ BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+   END
+ END
+
+To use it, we also added ``version.res`` at the end of the definition
+of the ``OBJ`` macro and to the list of dependencies of and the
+command for ``$(CDLLNAME)`` in ``src\Makefile.vc``.
 
 After this, install the library somewhere, e.g. in
 ``C:\geos-3.4.2.win32``::
@@ -524,6 +593,28 @@ the following patches to the files ``makefile.msc`` and ``bzlib.h``
   #else
   #   define BZ_API(func) func
 
+In order to get a version number in the DLL that is produced, we added
+a file ``version.rc`` in the top-level folder.  The contents of the
+file are::
+
+ #include <Windows.h>
+ VS_VERSION_INFO	VERSIONINFO
+ FILEVERSION		1,0,6,0		// change as appropriate
+ PRODUCTVERSION		1,0,6,0		// change as appropriate
+ FILEFLAGSMASK		0x3fL
+ FILEFLAGS		0
+ FILEOS			VOS_NT_WINDOWS32
+ FILETYPE		VFT_DLL
+ FILESUBTYPE		VFT2_UNKNOWN
+ BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+   END
+ END
+
+To use it, we also added ``version.res`` to the list of dependencies of and the
+command for ``lib`` in ``makefile.msc``.
+
 After this, compile using ``nmake /f makefile.msc`` and copy the files
 ``bzlib.h``, ``libbz2.dll``, and ``libbz2.lib`` to a location where
 the MonetDB build process can find them,
@@ -533,9 +624,9 @@ e.g. ``C:\bzip2-1.0.5.win32``.
    mt /nologo /manifest libbz2.dll.manifest /Outputresource:libbz2.dll;2
 
 .. For a debug build, change the definition of CFLAGS to contain
-.. ``-MDd -D_DEBUG -Od`` instead of ``-MD -Ox``, and change all
-.. occurences of ``libbz2.dll`` and ``libbz2.lib`` to ``libbz2d.dll``
-.. and ``libbz2d.lib``.
+   ``-MDd -D_DEBUG -Od`` instead of ``-MD -Ox``, and change all
+   occurences of ``libbz2.dll`` and ``libbz2.lib`` to ``libbz2d.dll``
+   and ``libbz2d.lib``.
 
 Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and

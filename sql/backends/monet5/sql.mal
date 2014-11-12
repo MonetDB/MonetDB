@@ -309,9 +309,13 @@ pattern drop_func_upgrade_oct2014(id:int) :int
 address UPGdrop_func
 comment "Drop the function identified by id, needed for the Oct2014 upgrade";
 
-pattern create_func_upgrade_oct2014(f:str) :int
+pattern create_func_upgrade_oct2014(sname:str,f:str) :int
 address UPGcreate_func
 comment "Create the function described by f, needed for the Oct2014 upgrade";
+
+pattern create_view_upgrade_oct2014(sname:str,v:str) :int
+address UPGcreate_view
+comment "Create the view described by f, needed for the Oct2014 upgrade";
 
 pattern exportHead{unsafe}(s:streams, res_id:int) :void
 address mvc_export_head_wrap

@@ -751,17 +751,26 @@ sql_update_oct2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "delete from _tables where name like '#%%';\n");
 
 	/* all UNION functions need to be drop and recreated */
-	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014 as (select * from functions where type = 5 and language <> 0) with data;\n");
+	/* keep views depending on UNION funcs */
+
+	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014_views as (select s.name, t.query from tables t, schemas s where s.id = t.schema_id and t.id in (select d.depend_id from dependencies d where d.id in (select f.id from functions f where f.type = 5 and f.language <> 0) and d.depend_type = 5)) with data;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014 as (select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.type = 5 and f.language <> 0) with data;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014_changes (c bigint);\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n"); 
 	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function drop_func_upgrade_oct2014;\n");
 
-	pos += snprintf(buf + pos, bufsize - pos, "create function create_func_upgrade_oct2014( f string ) returns int external name sql.create_func_upgrade_oct2014;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select create_func_upgrade_oct2014(func) from upgradeOct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create function create_func_upgrade_oct2014( sname string, f string ) returns int external name sql.create_func_upgrade_oct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select create_func_upgrade_oct2014(name, func) from upgradeOct2014;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function create_func_upgrade_oct2014;\n");
 
+	/* recreate views depending on union funcs */
+	pos += snprintf(buf + pos, bufsize - pos, "create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function create_view_upgrade_oct2014;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014_views;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014_changes;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014;\n");
 

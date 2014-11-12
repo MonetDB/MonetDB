@@ -920,21 +920,56 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str func = *getArgReference_str(stk, pci, 1);
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str func = *getArgReference_str(stk, pci, 2);
 	stmt *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
 	s = sql_parse(sql, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, func);
+		mvc_set_schema(sql, osname);
 	} else {
+		mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
+}
+
+str
+UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str view = *getArgReference_str(stk, pci, 2);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
+	s = sql_parse(sql, sa_create(), view, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
+		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
+
+		msg = create_table_or_view(sql, schema, v, temp);
+		mvc_set_schema(sql, osname);
+	} else {
+		mvc_set_schema(sql, osname);
+		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
 	}
 	return msg;
 }
