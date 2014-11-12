@@ -1677,7 +1677,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
-	     logger_cleanup(lg, 1) != LOG_OK)) {
+	     logger_cleanup(lg, 0) != LOG_OK)) {
 		logger_destroy(lg);
 
 		return NULL;
@@ -1801,10 +1801,43 @@ logger_restart(logger *lg)
 	return res;
 }
 
-/* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
+/* Clean-up write-ahead log files already persisted in the BATs.
  * Update the LOGFILE and delete all bak- files as well.
- * If the keep_persisted_log_files, only the bak- files are deleted.
  */
+static int
+logger_cleanup_old(logger *lg, int keep_persisted_log_files)
+{
+	char buf[BUFSIZ];
+	lng id;
+	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	int cleanupResult = 0;
+
+	// Calculate offset based on the number of files to keep
+	id = lg->id - keep_persisted_log_files;
+
+	// Stop cleaning up once bak- files are no longer found
+	while (cleanupResult == LOG_OK) {
+		// clean up the WAL file
+		if (lg->debug & 1) {
+			snprintf(buf, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, id);
+			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
+		}
+		snprintf(buf, BUFSIZ, LLFMT, id);
+		cleanupResult = GDKunlink(farmid, lg->dir, LOGFILE, buf);
+
+		// clean up the bak- WAL files
+		if (lg->debug & 1) {
+			snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, id);
+			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
+		}
+		snprintf(buf, BUFSIZ, "bak-" LLFMT, id);
+		cleanupResult = GDKunlink(farmid, lg->dir, LOGFILE, buf);
+
+		id = id - 1;
+	}
+	return LOG_OK;
+}
+
 int
 logger_cleanup(logger *lg, int keep_persisted_log_files)
 {
@@ -1819,7 +1852,9 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 		fprintf(stderr, "#logger_cleanup %s\n", buf);
 	}
 
-	if (!keep_persisted_log_files) {
+	if (keep_persisted_log_files == 0) {
+		// If keep_persisted_log_files is 0, remove the last persisted WAL files as well
+		// => less work for logger_cleanup_old()
 		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
@@ -1838,13 +1873,24 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 		}
 		fclose(fp);
 	}
+
 	snprintf(buf, BUFSIZ, "bak-" LLFMT, lg->id);
 
 	GDKunlink(farmid, lg->dir, LOGFILE, buf);
 
+	if (keep_persisted_log_files > 0) {
+		// Clean up the old WAL files as well, if any
+		// We will ignore the output of logger_cleanup_old
+		logger_cleanup_old(lg, keep_persisted_log_files);
+	}
+
 	return LOG_OK;
 }
 
+/* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
+ * Keeps only the number of files set in lg->keep_persisted_log_files.
+ * Only the bak- files are deleted for the preserved WAL files.
+ */
 lng
 logger_changes(logger *lg)
 {

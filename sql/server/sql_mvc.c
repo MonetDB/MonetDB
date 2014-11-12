@@ -51,7 +51,8 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	 * -1 by default, meaning it should be ignored, since it is not set */
 	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
-	/* Get and pass on the flag if old WAL files should be preserved. 0 (no) by default */
+	/* Get and pass on the flag how many WAL files should be preserved.
+	 * 0 by default - keeps only the current WAL file. */
 	log_settings->keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
 
 	mvc_debug = debug&4;
