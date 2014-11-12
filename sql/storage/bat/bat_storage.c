@@ -31,14 +31,22 @@ timestamp_delta( sql_delta *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
+	if (0 && d && d->cached) {
+		bat_destroy(d->cached);
+		d->cached = NULL;
+	}
 	return d;
 }
 
-static sql_dbat *
+sql_dbat *
 timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
+	if (0 && d && d->cached) {
+		bat_destroy(d->cached);
+		d->cached = NULL;
+	}
 	return d;
 }
 
@@ -646,6 +654,11 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	}
        	bat = t->data;
 	/* delete all cached copies */
+
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		sql_delta *bat;
@@ -1259,6 +1272,10 @@ destroy_dbat(sql_trans *tr, sql_dbat *bat)
 		_DELETE(bat->dname);
 	if (bat->dbid)
 		temp_destroy(bat->dbid);
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	bat->dbid = 0;
 	bat->dname = NULL;
 	_DELETE(bat);
@@ -1712,6 +1729,15 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 
 	if (!fdb)
 		return ok;
+
+	if (fdb->cached) {
+		bat_destroy(fdb->cached);
+		fdb->cached = NULL;
+	}
+	if (tdb->cached) {
+		bat_destroy(tdb->cached);
+		tdb->cached = NULL;
+	}
 	assert(store_nr_active==1);
 	db = temp_descriptor(fdb->dbid);
 	if (BUNlast(db) > db->batInserted || cleared) {
