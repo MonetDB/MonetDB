@@ -1009,7 +1009,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	} else if (f != GDKout) {
 		if (!stethoscope ) {
 			MT_sleep_ms(4000); /* delay for stethoscope */
-			mnstr_close(f);
+			close_stream(f);
 		}
 	}
 }

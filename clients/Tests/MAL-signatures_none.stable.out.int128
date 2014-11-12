@@ -2837,14 +2837,13 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+function algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ILIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
 
-command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
+function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
-function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.ilike(s:str,pat:str):bit 
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
@@ -2893,24 +2892,16 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+function algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address LIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
-command algebra.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCRElike_join_pcre;
+function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
 function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
-command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
-address PCRElikesubselect3;
-comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
-
 command algebra.likesubselect(b:bat[:oid,:str],s:bat[:oid,:oid],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
 address PCRElikesubselect2;
 comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
-
-command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
-address PCRElikesubselect1;
-comment Select all head values for which the tail value is "like"	the given (SQL-style) pattern.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
 command algebra.like(s:str,pat:str):bit 
 address PCRElike2;
@@ -2969,10 +2960,6 @@ comment Returns all the result of a join, plus the BUNS formed NIL in		the tail 
 command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGouterjoin;
 comment Returns all the result of a join, plus the BUNS formed NIL in		the tail and the head-values of 'outer' whose tail-value does		not match an head-value in 'inner'.
-
-command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1]) (c:bat[:oid,:oid],d:bat[:oid,:any_1]) 
-address ALGprejoin;
-comment Recluster the table to reduce random access behavior.
 
 pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
 address ALGprojecttail;
@@ -3330,7 +3317,7 @@ address BATPCRElike2;
 command batalgebra.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCRElike;
 command batalgebra.not_ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotliike2;
+address BATPCREnotilike2;
 command batalgebra.not_ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCREnotilike;
 command batalgebra.not_like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
@@ -3413,14 +3400,6 @@ command batstr.endsWith(s:bat[:oid,:str],suffix:bat[:oid,:str]):bat[:oid,:bit]
 address STRbatSuffix;
 comment Suffix check.
 
-command batstr.ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREilike2;
-command batstr.ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREilike;
-command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCRElike2;
-command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCRElike;
 command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatLpad2_bat_bat;
 comment Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
@@ -3461,14 +3440,6 @@ command batstr.length(s:bat[:oid,:str]):bat[:oid,:int]
 address STRbatLength;
 comment Return the length of a string.
 
-command batstr.not_ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotilike2;
-command batstr.not_ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREnotilike;
-command batstr.not_like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotlike2;
-command batstr.not_like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREnotlike;
 command batstr.nbytes(s:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatBytes;
 comment Return the string length in bytes.
@@ -3621,9 +3592,9 @@ command batmmath.exp(x:bat[:oid,:flt]):bat[:oid,:flt]
 address CMDscience_bat_flt_exp;
 command batmmath.exp(x:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address CMDscience_bat_dbl_exp;
-command batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+pattern batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 address CMDbatMODsignal;
-command batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+pattern batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
 address CMDbatMODsignal;
 command batmmath.floor(x:bat[:oid,:flt]):bat[:oid,:flt] 
 address CMDscience_bat_flt_floor;
@@ -40534,10 +40505,6 @@ command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):void 
-address BKCdelete_bat;
-comment Delete from the first BAT all BUNs with a corresponding head          in the second.
-
 command bat.delete(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address BKCdelete_all;
 comment Delete all BUNs in a BAT.
@@ -42423,7 +42390,7 @@ address CMDvarADDsignal;
 comment Return V1 + V2, guarantee no overflow by returning larger type
 
 pattern calc.++(v:hge):hge 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.-(v1:dbl,v2:dbl):dbl 
@@ -42891,7 +42858,7 @@ address CMDvarSUBsignal;
 comment Return V1 - V2, guarantee no overflow by returning larger type
 
 pattern calc.--(v:hge):hge 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.-(v:hge):hge 
@@ -48212,7 +48179,7 @@ command calc.ptr(v:ptr):ptr
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
 
-command calc.rowid(v:any_1,schema:str,table:str):oid 
+pattern calc.rowid(v:any_1,schema:str,table:str):oid 
 address sql_rowid;
 comment return the next rowid
 
@@ -48979,7 +48946,7 @@ address URLnoop;
 comment Create an URL from a string literal
 
 command calc.url(s:str):url 
-address URLnoop;
+address URLnew;
 comment Create an URL from a string literal
 
 pattern calc.void(v:str):void 
@@ -49109,6 +49076,22 @@ comment cast number to decimal(wrd) and check for overflow
 command calc.wrd(v:flt,digits:int,scale:int):wrd 
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int,scale:int):wrd 
+address str_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int):wrd 
+address str_2num_wrd;
+comment cast to wrd and check for overflow
+
+command calc.wrd(v:void,digits:int,scale:int):wrd 
+address nil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:void,digits:int):wrd 
+address nil_2num_wrd;
+comment cast to wrd and check for overflow
 
 pattern calc.wrd(v:str):wrd 
 address CMDvarCONVERT;
@@ -50284,13 +50267,21 @@ command lsst.ptinsphbox(ra:dbl,dec:dbl,ra_min:dbl,dec_min:dbl,ra_max:dbl,dec_max
 address qserv_ptInSphBox;
 comment Returns 1 if the given spherical longitude/latitude box contains the given position
 
-command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int) (lr:bat[:oid,:oid],rr:bat[:oid,:oid]) 
+command lsst.xmatchsubjoin(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (lr:bat[:oid,:oid],rr:bat[:oid,:oid]) 
+address LSSTxmatchsubjoin;
+comment Return the HtmID pairs that lie within the same triangle at level depth
+
+command lsst.xmatchsubselect(l:bat[:oid,:lng],cand:bat[:oid,:oid],r:lng,depth:int,anti:bit):bat[:oid,:oid] 
+address LSSTxmatchsubselect;
+comment Return the HtmID's that lie within the same triangle as r at level depth
+
+command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,anti:bit):bit 
 address LSSTxmatch;
 comment Return the HtmID pairs that lie within the same triangle at level depth
 
-command mapreduce.getCloud(nme:str):bat[:oid,:str] 
-address MRgetCloud;
-comment Localize the elements of a named cloud
+command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit 
+address LSSTxmatch;
+comment Return true when the HtmID pairs that lie within the same triangle at level depth
 
 pattern mapi.bind(key:int,remoteName:str):bat[:oid,:any_2] 
 address SERVERbindBAT;
@@ -50452,7 +50443,7 @@ command mapi.query(mid:int,qry:str):int
 address SERVERquery;
 comment Send the query for execution
 
-command mapi.rpc(key:int,qry:str):void 
+command mapi.rpc(key:int,qry:str):int 
 address SERVERquery;
 comment Send a simple query for execution.
 
@@ -50482,7 +50473,7 @@ command mapi.resume():void
 address SERVERresume;
 comment Resume connection listeners.
 
-command mapi.setAlias(dbalias:str):void 
+command mapi.setAlias(key:int,dbalias:str):void 
 address SERVERsetAlias;
 comment Give the channel a logical name.
 
@@ -50497,6 +50488,10 @@ comment Terminate connection listeners.
 command mapi.trace(mid:int,flag:int):void 
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
+
+command mapreduce.getCloud(nme:str):bat[:oid,:str] 
+address MRgetCloud;
+comment Localize the elements of a named cloud
 
 pattern manual.completion(pat:str):void 
 address MANUALcompletion;
@@ -50756,8 +50751,10 @@ pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.hash(v:hge):wrd 
-address MKEYhash_hge;
+pattern mkey.hash(v:hge):wrd 
+address MKEYhash;
+comment calculate a hash value
+
 pattern mkey.hash(v:str):wrd 
 address MKEYhash;
 comment calculate a hash value
@@ -51225,7 +51222,7 @@ address MTIMEtzone_create_dst;
 comment create a timezone as an hour difference	from GMT and a DST.
 
 command mtime.timezone(s:lng):timezone 
-address MTIMEtzone_create;
+address MTIMEtzone_create_lng;
 comment Convert the int to a timezone.
 
 command mtime.timezone(s:int):timezone 
@@ -51651,7 +51648,7 @@ command pcre.match(s:str,pat:str):bit
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
 
-pattern pcre.prelude():void 
+command pcre.prelude():void 
 address pcre_init;
 comment Initialize pcre
 
@@ -51919,15 +51916,11 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
 comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
 comment Returns the oids of a uniform sample of size s
 
@@ -52634,10 +52627,6 @@ command str.endsWith(s:str,suffix:str):bit
 address STRSuffix;
 comment Suffix check.
 
-command str.ilike(s:str,pat:str):bit 
-address PCREilike2;
-command str.ilike(s:str,pat:str,esc:str):bit 
-address PCREilike3;
 command str.insert(s:str,start:int,l:int,s2:str):str 
 address STRinsert;
 comment Insert a string into another
@@ -52646,10 +52635,6 @@ command str.iconv(org:str,fromCs:str,toCs:str):str
 address STRIconv;
 comment String codeset conversion
 
-command str.like(s:str,pat:str):bit 
-address PCRElike2;
-command str.like(s:str,pat:str,esc:str):bit 
-address PCRElike3;
 command str.locate(s1:str,s2:str,start:int):int 
 address STRlocate2;
 comment Locate the start position of a string
@@ -52686,14 +52671,6 @@ command str.length(s:str):int
 address STRLength;
 comment Return the length of a string.
 
-command str.not_ilike(s:str,pat:str):bit 
-address PCREnotilike2;
-command str.not_ilike(s:str,pat:str,esc:str):bit 
-address PCREnotilike3;
-command str.not_like(s:str,pat:str):bit 
-address PCREnotlike2;
-command str.not_like(s:str,pat:str,esc:str):bit 
-address PCREnotlike3;
 command str.nbytes(s:str):int 
 address STRBytes;
 comment Return the string length in bytes.
@@ -52920,31 +52897,31 @@ command streams.writeStr{unsafe}(s:streams,data:str):void
 address mnstr_write_stringwrap;
 comment write data on the stream
 
-command sysmon.pause(id:lng):void 
+pattern sysmon.pause(id:lng):void 
 address SYSMONpause;
 comment Temporary suspend a single query
 
-command sysmon.pause(id:int):void 
+pattern sysmon.pause(id:int):void 
 address SYSMONpause;
-command sysmon.pause(id:sht):void 
+pattern sysmon.pause(id:sht):void 
 address SYSMONpause;
 pattern sysmon.queue() (tag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],qrytag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-command sysmon.resume(id:lng):void 
+pattern sysmon.resume(id:lng):void 
 address SYSMONresume;
 comment Resume processing 
 
-command sysmon.resume(id:int):void 
+pattern sysmon.resume(id:int):void 
 address SYSMONresume;
-command sysmon.resume(id:sht):void 
+pattern sysmon.resume(id:sht):void 
 address SYSMONresume;
-command sysmon.stop(id:lng):void 
+pattern sysmon.stop(id:lng):void 
 address SYSMONstop;
 comment Stop a single query a.s.a.p.
 
-command sysmon.stop(id:int):void 
+pattern sysmon.stop(id:int):void 
 address SYSMONstop;
-command sysmon.stop(id:sht):void 
+pattern sysmon.stop(id:sht):void 
 address SYSMONstop;
 command timezone.#fromstr():timezone 
 address tzone_fromstr;

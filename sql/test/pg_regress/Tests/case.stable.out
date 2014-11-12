@@ -24,8 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 #--
 #-- CASE
 #-- Test the case statement
@@ -197,29 +195,29 @@ Ready.
 % isnull_not_isnull_f # name
 % double # type
 % 24 # length
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
-[ 1 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
+[ 1	]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
 [ 2 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
 [ 3 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
 [ 2 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
-[ 1 ]
-[ 10.1 ]
-[ 20.2 ]
-[ -30.3 ]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
+[ 1	]
+[ 10.1	]
+[ 20.2	]
+[ -30.3	]
 [ -6 ]
 
 #SELECT *
@@ -300,8 +298,6 @@ Ready.
 [ 4,	NULL	]
 #DROP TABLE CASE_TBL;
 #DROP TABLE CASE2_TBL;
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

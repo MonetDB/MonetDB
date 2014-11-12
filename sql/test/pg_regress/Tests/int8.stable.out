@@ -24,8 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 #--
 #-- bigint
 #-- Test bigint 64-bit integers.
@@ -129,19 +127,19 @@ Ready.
 % 0,	16,	24 # length
 [ "",	123,	123	]
 [ "",	123,	123	]
-[ "",	4567890123456789,	4,567890123e+15	]
-[ "",	4567890123456789,	4,567890123e+15	]
-[ "",	4567890123456789,	4,567890123e+15	]
+[ "",	4567890123456789,	4.567890123e+15	]
+[ "",	4567890123456789,	4.567890123e+15	]
+[ "",	4567890123456789,	4.567890123e+15	]
 #SELECT '' AS five, q2, cast(q2 as double) FROM INT8_TBL;
 % .L,	sys.int8_tbl,	sys.int8_tbl # table_name
 % five,	q2,	q2 # name
 % char,	bigint,	double # type
 % 0,	17,	24 # length
 [ "",	456,	456	]
-[ "",	4567890123456789,	4,567890123e+15	]
+[ "",	4567890123456789,	4.567890123e+15	]
 [ "",	123,	123 ]
-[ "",	4567890123456789,	4,567890123e+15	]
-[ "",	-4567890123456789,	-4,567890123e+15	]
+[ "",	4567890123456789,	4.567890123e+15	]
+[ "",	-4567890123456789,	-4.567890123e+15	]
 #SELECT '' AS five, 2 * q1 AS "twice integer" FROM INT8_TBL;
 % .L,	.L # table_name
 % five,	twice integer # name

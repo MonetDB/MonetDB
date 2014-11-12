@@ -164,7 +164,7 @@ err
 openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 {
 	struct sockaddr_un server;
-	int sock = -1;
+	int sock;
 	int omask;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -181,6 +181,7 @@ openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 	omask = umask(mode);
 	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 		umask(omask);
+		closesocket(sock);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",
 				path, strerror(errno)));
 	}

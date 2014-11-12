@@ -29,15 +29,15 @@ stderr of test 'create_operator` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE OPERATOR ## ( 
            leftarg = string,
            rightarg = string,
            procedure = path_inter,
            commutator = ## 
         );
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !syntax error, unexpected IDENT, expecting INDEX in: "create operator"
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE OPERATOR <% (
            leftarg = string,
            rightarg = widget,
@@ -45,24 +45,27 @@ QUERY = CREATE OPERATOR <% (
            commutator = >% ,
            negator = >=% 
         );
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !syntax error, unexpected IDENT, expecting INDEX in: "create operator"
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE OPERATOR @#@ (
            rightarg = bigint,		-- left unary 
            procedure = numeric_fac 
         );
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !syntax error, unexpected IDENT, expecting INDEX in: "create operator"
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE OPERATOR #@# (
            leftarg = bigint,		-- right unary
            procedure = numeric_fac
         );
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !syntax error, unexpected IDENT, expecting INDEX in: "create operator"
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE OPERATOR #%# ( 
            leftarg = bigint,		-- right unary 
            procedure = numeric_fac 
         );
+ERROR = !syntax error, unexpected IDENT, expecting INDEX in: "create operator"
+
+
 
 
 

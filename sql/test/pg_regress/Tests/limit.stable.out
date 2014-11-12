@@ -24,8 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 #--
 #-- LIMIT
 #-- Check the LIMIT/OFFSET feature of SELECT
@@ -35,103 +33,57 @@ Ready.
 #		ORDER BY unique1 LIMIT 2;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % two,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	2,	3,	16 # length
-[ "",	51,	76,	"ZBAAAA" ]
-[ "",	52,	985,	"ACAAAA" ]
-
-#SELECT ''::text AS five, unique1, unique2, stringu1 
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
+#SELECT '' AS five, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 60 
 #		ORDER BY unique1 LIMIT 5;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % five,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	2,	3,	16 # length
-[ "",	61,	560,	"JCAAAA" ]
-[ "",	62,	633,	"KCAAAA" ]
-[ "",	63,	296,	"LCAAAA" ]
-[ "",	64,	479,	"MCAAAA" ]
-[ "",	65,	64,	"NCAAAA" ]
-
-#SELECT ''::text AS two, unique1, unique2, stringu1 
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
+#SELECT '' AS two, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 60 AND unique1 < 63
 #		ORDER BY unique1 LIMIT 5;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % two,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	2,	3,	16 # length
-[ "",	61,	560,	"JCAAAA" ]
-[ "",	62,	633,	"KCAAAA" ]
-
-#SELECT ''::text AS three, unique1, unique2, stringu1 
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
+#SELECT '' AS three, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 100 
 #		ORDER BY unique1 LIMIT 3 OFFSET 20;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % three,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	3,	3,	16 # length
-[ "",	121,	700,	"REAAAA" ]
-[ "",	122,	519,	"SEAAAA" ]
-[ "",	123,	777,	"TEAAAA" ]
-
-#SELECT ''::text AS zero, unique1, unique2, stringu1 
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
+#SELECT '' AS zero, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 < 50 
 #		ORDER BY unique1 DESC LIMIT 8 OFFSET 99;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % zero,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	1,	1,	16 # length
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
 #SELECT '' AS eleven, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 < 50 
 #		ORDER BY unique1 DESC LIMIT 20 OFFSET 39;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % eleven,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	2,	3,	16 # length
-[ "",	10,	520,	"KAAAAA" ]
-[ "",	9,	49,	"JAAAAA" ]
-[ "",	8,	653,	"IAAAAA" ]
-[ "",	7,	647,	"HAAAAA" ]
-[ "",	6,	978,	"GAAAAA" ]
-[ "",	5,	541,	"FAAAAA" ]
-[ "",	4,	833,	"EAAAAA" ]
-[ "",	3,	431,	"DAAAAA" ]
-[ "",	2,	326,	"CAAAAA" ]
-[ "",	1,	214,	"BAAAAA" ]
-[ "",	0,	998,	"AAAAAA" ]
-
-#SELECT ''::text AS ten, unique1, unique2, stringu1 
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
+#SELECT '' AS ten, unique1, unique2, stringu1 
 #		FROM onek
 #		ORDER BY unique1 OFFSET 990;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % ten,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	3,	3,	16 # length
-[ "",	990,	369,	"CMAAAA" ]
-[ "",	991,	426,	"DMAAAA" ]
-[ "",	992,	363,	"EMAAAA" ]
-[ "",	993,	661,	"FMAAAA" ]
-[ "",	994,	695,	"GMAAAA" ]
-[ "",	995,	144,	"HMAAAA" ]
-[ "",	996,	258,	"IMAAAA" ]
-[ "",	997,	21,	"JMAAAA" ]
-[ "",	998,	549,	"KMAAAA" ]
-[ "",	999,	152,	"LMAAAA" ]
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
 #SELECT '' AS five, unique1, unique2, stringu1 
 #		FROM onek
 #		ORDER BY unique1 LIMIT 5 OFFSET 900;
 % .L,	sys.onek,	sys.onek,	sys.onek # table_name
 % five,	unique1,	unique2,	stringu1 # name
-% char,	int,	int,	char # type
-% 0,	3,	3,	16 # length
-[ "",	900,	913,	"QIAAAA" ]
-[ "",	901,	931,	"RIAAAA" ]
-[ "",	902,	702,	"SIAAAA" ]
-[ "",	903,	641,	"TIAAAA" ]
-[ "",	904,	793,	"UIAAAA" ]
-
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
+% char,	int,	int,	clob # type
+% 0,	1,	1,	0 # length
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

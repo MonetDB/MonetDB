@@ -29,27 +29,27 @@ stderr of test 'create_aggregate` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE AGGREGATE newavg (
            sfunc = int4_accum, basetype = integer, stype = _numeric, 
            finalfunc = numeric_avg,
            initcond1 = '{0,0,0}'
         );
-
+ERROR = !syntax error, unexpected '=' in: "create aggregate newavg (
         !   sfunc ="
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE AGGREGATE newsum (
            sfunc1 = int4pl, basetype = integer, stype1 = integer, 
            initcond1 = '0'
         );
-
+ERROR = !syntax error, unexpected '=' in: "create aggregate newsum (
         !   sfunc1 ="
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = CREATE AGGREGATE newcnt (
            sfunc = int4inc, basetype = 'any', stype = integer,
            initcond = '0'
         );
-
+ERROR = !syntax error, unexpected '=' in: "create aggregate newcnt (
         !   sfunc ="
 
 # 17:11:19 >  

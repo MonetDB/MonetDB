@@ -358,13 +358,13 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str answ = *getArgReference_str(stk, pci, 0);
+	str msg;
 
-	CLTshutdown(cntxt, mb, stk, pci);
-
-	// administer the shutdown
-	mnstr_printf(GDKstdout, "#%s\n", answ);
-	return MAL_SUCCEED;
+	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
+		// administer the shutdown
+		mnstr_printf(GDKstdout, "#%s\n", *getArgReference_str(stk, pci, 0));
+	}
+	return msg;
 }
 
 str
@@ -920,21 +920,56 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str func = *getArgReference_str(stk, pci, 1);
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str func = *getArgReference_str(stk, pci, 2);
 	stmt *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
 	s = sql_parse(sql, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, func);
+		mvc_set_schema(sql, osname);
 	} else {
+		mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
+}
+
+str
+UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str view = *getArgReference_str(stk, pci, 2);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
+	s = sql_parse(sql, sa_create(), view, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
+		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
+
+		msg = create_table_or_view(sql, schema, v, temp);
+		mvc_set_schema(sql, osname);
+	} else {
+		mvc_set_schema(sql, osname);
+		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
 	}
 	return msg;
 }
@@ -2764,29 +2799,67 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	be = cntxt->sqlcontext;
 	len = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(len + 1), *T, len);
+	if ((tsep = GDKmalloc(len + 1)) == NULL)
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(len + 1), *R, len);
+	if ((rsep = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(rsep, *R, len);
 	len = 0;
 	if (*S && strcmp(str_nil, *(char **) S)) {
 		len = strlen((char *) (*S));
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		}
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 
-	STRcodeset(&cs);
-	STRIconv(&filename, fname, &utf8, &cs);
+	/* convert UTF-8 encoded file name to the character set of our
+	 * own locale before passing it on to the system call */
+	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		return msg;
+	}
+	msg = STRIconv(&filename, fname, &utf8, &cs);
 	GDKfree(cs);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		return msg;
+	}
+
 	len = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
+	if ((ns = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		GDKfree(filename);
+		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(ns, *N, len);
 	len = 0;
 	ss = open_rastream(filename);
 	if (!ss || mnstr_errnr(ss)) {
 		int errnr = mnstr_errnr(ss);
 		if (ss)
 			mnstr_destroy(ss);
-		throw(IO, "streams.open", "could not open file '%s': %s", filename, strerror(errnr));
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		GDKfree(ns);
+		msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+		GDKfree(filename);
+		return msg;
 	}
 #if SIZEOF_VOID_P == 4
 	s = bstream_create(ss, 0x20000);
@@ -2841,18 +2914,35 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	len = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(len + 1), *T, len);
+	if ((tsep = GDKmalloc(len + 1)) == NULL)
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(len + 1), *R, len);
+	if ((rsep = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(rsep, *R, len);
 	len = 0;
 	if (*S && strcmp(str_nil, *(char **) S)) {
 		len = strlen((char *) (*S));
-		GDKstrFromStr(ssep = GDKmalloc(len + 1), *S, len);
+		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+		}
+		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
 	len = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(len + 1), *N, len);
+	if ((ns = GDKmalloc(len + 1)) == NULL) {
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
+		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+	}
+	GDKstrFromStr(ns, *N, len);
 	len = 0;
 	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 	GDKfree(tsep);
@@ -2920,14 +3010,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* handle the various cases */
 		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), TRANSIENT);
+			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), PERSISTENT);
 			if (c == NULL)
 				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
-			c = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+			c = BATnew(TYPE_void, TYPE_str, 0, PERSISTENT);
 			if (c == NULL)
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);

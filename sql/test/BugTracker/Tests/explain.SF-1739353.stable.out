@@ -55,7 +55,7 @@ Operation successful
 |     X_42 := io.stdout();                                             |
 |     sql.exportResult(X_42,X_36);                                     |
 | end s2_1;                                                                       |
-| # querylog.define("explain select \"name\" from \"tables\";","sequential_pipe") |
+| # querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe") |
 +-------------------------------------------------------------------------------------+
 30 rows
 

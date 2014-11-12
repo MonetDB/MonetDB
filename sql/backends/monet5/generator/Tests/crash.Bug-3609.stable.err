@@ -30,8 +30,9 @@ stderr of test 'crash.Bug-3609` in directory 'sql/backends/monet5/generator` its
 # 22:37:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5645" "--port=33733"
 # 22:37:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-2737/.s.monetdb.36093
+MAPI  = (monetdb) /var/tmp/mtest-30092/.s.monetdb.31340
 QUERY = select generate_series(0,2,1);
+ERROR = !SELECT: no such operator 'generate_series'
 
 
 

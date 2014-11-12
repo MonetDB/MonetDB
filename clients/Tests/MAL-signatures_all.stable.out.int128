@@ -13,17 +13,12 @@ stdout of test 'MAL-signatures_all` in directory 'clients` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:33053/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13793/.s.monetdb.33053
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 21:44:51 >  
-# 21:44:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13793" "--port=33053"
-# 21:44:51 >  
+# 15:16:50 >  
+# 15:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9622" "--port=32080"
+# 15:16:50 >  
 
 #?*)
 command aggr.avg(b:bat[:oid,:hge],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
@@ -228,7 +223,6 @@ comment Return the current size (in number of elements) in a BAT.
 
 command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
-
 command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
 address JSONgroupStr;
 comment Aggregate the double values to array.
@@ -50563,10 +50557,6 @@ command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit
 address LSSTxmatch;
 comment Return true when the HtmID pairs that lie within the same triangle at level depth
 
-command mapreduce.getCloud(nme:str):bat[:oid,:str] 
-address MRgetCloud;
-comment Localize the elements of a named cloud
-
 pattern mapi.bind(key:int,remoteName:str):bat[:oid,:any_2] 
 address SERVERbindBAT;
 comment Bind a remote variable to a local one.
@@ -50772,6 +50762,10 @@ comment Terminate connection listeners.
 command mapi.trace(mid:int,flag:int):void 
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
+
+command mapreduce.getCloud(nme:str):bat[:oid,:str] 
+address MRgetCloud;
+comment Localize the elements of a named cloud
 
 pattern manual.completion(pat:str):void 
 address MANUALcompletion;
@@ -53743,7 +53737,7 @@ address rule_fromstr;
 command zrule.#tostr():str 
 address rule_tostr;
 
-# 21:44:58 >  
-# 21:44:58 >  "Done."
-# 21:44:58 >  
+# 15:15:16 >  
+# 15:15:16 >  "Done."
+# 15:15:16 >  
 

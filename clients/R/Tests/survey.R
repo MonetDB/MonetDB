@@ -2,8 +2,10 @@ ll <- NULL
 if (Sys.getenv("TSTTRGDIR") != "") {
 	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
 }
-library(MonetDB.R,quietly=T,lib.loc=ll)
-library(sqlsurvey,quietly=T)
+suppressMessages({
+	library(MonetDB.R,quietly=T,lib.loc=ll)
+	library(sqlsurvey,quietly=T)
+})
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000

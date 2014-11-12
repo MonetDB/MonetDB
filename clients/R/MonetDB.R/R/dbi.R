@@ -46,8 +46,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
                                                      password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", 
                                                      ..., url="") {
   
-  if (substring(url, 1, 10) == "monetdb://") {
-    dbname <- url
+  if (substring(dbname, 1, 10) == "monetdb://") {
+    url <- dbname
   }
   timeout <- as.integer(timeout)
   
@@ -231,7 +231,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
             # Auto-convert? 
             # statement <- enc2utf8(statement)
             if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
-            resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, ";"), async=async))
+            resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, "\n;"), async=async))
             
             env <- new.env(parent=emptyenv())
             

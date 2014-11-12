@@ -308,11 +308,13 @@ terminateProcess(void *p)
 
 	if (d->type == MEROFUN) {
 		multiplexDestroy(dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	} else if (d->type != MERODB) {
 		/* barf */
 		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	}

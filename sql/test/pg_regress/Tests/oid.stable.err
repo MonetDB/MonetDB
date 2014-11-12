@@ -29,32 +29,35 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 # 11:47:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25307" "--port=34790"
 # 11:47:28 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-1040');   -- negative oids are not allowed in MonetDB, so this should fail
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '-1040' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string 'asdfasd' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('99asdfasd');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '99asdfasd' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    d');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '5    d' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('    5d');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '    5d' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    5');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '5    5' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES (' - 500');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string ' - 500' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('32958209582039852935');
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+ERROR = !conversion of string '32958209582039852935' to type oid failed.
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
+ERROR = !conversion of string '-23582358720398502385' to type oid failed.
+
+
 
 
 

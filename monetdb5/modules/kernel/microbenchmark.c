@@ -32,6 +32,10 @@
 #include <mal_exception.h>
 #include "microbenchmark.h"
 
+#ifdef STATIC_CODE_ANALYSIS
+#define rand()		0
+#endif
+
 static int
 BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 {
@@ -72,12 +76,16 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 		srand(seed);
 	if (*domain == int_nil) {
 		BATloop(b, p, q) {
-			/* coverity[dont_call] */
 			*(int *) Tloc(b, p) = rand();
 		}
+#if RAND_MAX < 46340	    /* 46340*46340 = 2147395600 < INT_MAX */
+	} else if (*domain > RAND_MAX + 1) {
+		BATloop(b, p, q) {
+			*(int *) Tloc(b, p) = (rand() * (RAND_MAX + 1) + rand()) % *domain;
+		}
+#endif
 	} else {
 		BATloop(b, p, q) {
-			/* coverity[dont_call] */
 			*(int *) Tloc(b, p) = rand() % *domain;
 		}
 	}
@@ -141,7 +149,6 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
-		/* coverity[dont_call] */
 		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
@@ -214,18 +221,15 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 
 	lastbun = firstbun + skewedSize;
 	for(p=firstbun; p <lastbun; p++)
-		/* coverity[dont_call] */
 		*(int *) Tloc(b, p) = (int)rand() % skewedDomain;
 
 	lastbun = BUNlast(b);
 	for(; p <lastbun; p++)
-		/* coverity[dont_call] */
 		*(int *) Tloc(b, p) = ((int)rand() % (*domain-skewedDomain)) + skewedDomain;
 
 	/* mix BUNs randomly */
 
 	for (r = i = 0; i < n; i++) {
-		/* coverity[dont_call] */
 		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
@@ -328,7 +332,6 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 
 	/* mix BUNs randomly */
 	for (r = 0, i = 0; i < n; i++) {
-		/* coverity[dont_call] */
 		BUN idx = i + (BUN) ((r += (unsigned int) rand()) % (n - i));
 		int val;
 
@@ -411,7 +414,6 @@ MBMmix(bat *bn, bat *batid)
 	firstbun = BUNfirst(b);
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
-		/* coverity[dont_call] */
 		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 

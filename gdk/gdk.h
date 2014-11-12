@@ -2900,8 +2900,6 @@ gdk_export void BATderiveHeadProps(BAT *b, int expensive);
 
 gdk_export BAT *VIEWcreate(BAT *h, BAT *t);
 gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
-gdk_export BAT *VIEWhead(BAT *b);
-gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 

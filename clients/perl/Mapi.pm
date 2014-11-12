@@ -195,7 +195,8 @@ sub doRequest {
   my($self,$cmd) = @_;
 
   $cmd = "S" . $cmd if $self->{lang} eq 'sql';
-  $cmd = $cmd . ";\n" unless $cmd =~ m/;\n$/;
+  # even if the query ends with a ;, this never hurts and fixes the -- on last line bug
+  $cmd = $cmd . "\n;\n";
   print "doRequest:$cmd\n" if ($self->{trace});
   $self->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
   $self->resetState();

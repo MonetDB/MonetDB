@@ -69,15 +69,12 @@ stderr of test 'strings_concat` in directory 'sql/test/pg_regress` itself:
 # 22:00:36 >  ./strings_concat.SQL.sh strings_concat 
 # 22:00:36 >  
 
-
-MAPI  = (monetdb) /var/tmp/mtest-6793/.s.monetdb.30280
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = SELECT 'first line'
         ' - next line' /* this comment is not allowed here */
         ' - third line'
         	AS "Illegal 
 ERROR = !unexpected end of input
-
-= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/strings_concat.out) ! =
 
 # 22:00:37 >  
 # 22:00:37 >  Done.

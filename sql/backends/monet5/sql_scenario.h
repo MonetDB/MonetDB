@@ -25,6 +25,7 @@
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG */
 
+sql5_export int SQLdebug;
 sql5_export str SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLprelude(void *ret);
@@ -43,6 +44,7 @@ sql5_export str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export int handle_error(mvc *m, stream *out, int pstatus);
 #ifdef HAVE_HGE
 sql5_export str SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif

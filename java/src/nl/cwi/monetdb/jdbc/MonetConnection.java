@@ -271,8 +271,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		// fill the query templates
 		if (lang == LANG_SQL) {
 			queryTempl[0] = "s";		// pre
-			queryTempl[1] = ";";		// post
-			queryTempl[2] = ";\n";		// separator
+			queryTempl[1] = "\n;";		// post
+			queryTempl[2] = "\n;\n";	// separator
 
 			commandTempl[0] = "X";		// pre
 			commandTempl[1] = null;		// post

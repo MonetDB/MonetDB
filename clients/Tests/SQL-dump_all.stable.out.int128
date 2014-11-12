@@ -13,11 +13,7 @@ stdout of test 'SQL-dump_all` in directory 'clients` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:34237/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13451/.s.monetdb.34237
-# MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
+
 
 Ready.
 # SQL catalog created, loading sql scripts once
@@ -50,9 +46,9 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 15:01:36 >  
-# 15:01:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13451" "--port=34237"
-# 15:01:36 >  
+# 15:16:56 >  
+# 15:16:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9622" "--port=32080"
+# 15:16:56 >  
 
 SCHEMA  bam
 SCHEMA  json
@@ -1408,7 +1404,6 @@ external name sql.sysmon_stop;
 -- Copyright August 2008-2014 MonetDB B.V.
 -- All Rights Reserved.
 
-
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
 -- footprint of the persistent tables and the maximum playground used
@@ -1473,7 +1468,6 @@ begin
 	set "distinct" = "count" -- assume all distinct
 	where "type" = 'varchar' or "type"='clob';
 end;
-
 -- The contents of this file are subject to the MonetDB Public License
 -- Version 1.1 (the "License"); you may not use this file except in
 -- compliance with the License. You may obtain a copy of the License at
@@ -9771,7 +9765,7 @@ CREATE TABLE "sys"."user_role" (
 );
 COMMIT;
 
-# 13:32:07 >  
-# 13:32:07 >  "Done."
-# 13:32:07 >  
+# 15:15:20 >  
+# 15:15:20 >  "Done."
+# 15:15:20 >  
 
