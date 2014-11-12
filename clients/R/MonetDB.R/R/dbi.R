@@ -46,8 +46,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
                                                      password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", 
                                                      ..., url="") {
   
-  if (substring(url, 1, 10) == "monetdb://") {
-    dbname <- url
+  if (substring(dbname, 1, 10) == "monetdb://") {
+    url <- dbname
   }
   timeout <- as.integer(timeout)
   
