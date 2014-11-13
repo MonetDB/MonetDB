@@ -58,6 +58,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	mvc_debug = debug&4;
 	if (mvc_debug) {
 		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
+		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings->keep_persisted_log_files);
 		if (log_settings->shared_logdir != NULL) {
 			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings->shared_logdir);
 		}

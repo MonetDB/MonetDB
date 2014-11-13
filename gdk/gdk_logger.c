@@ -1677,7 +1677,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
-	     logger_cleanup(lg, 0) != LOG_OK)) {
+	     logger_cleanup(lg, -1) != LOG_OK)) {
 		logger_destroy(lg);
 
 		return NULL;
@@ -1810,20 +1810,21 @@ logger_cleanup_old(logger *lg, int keep_persisted_log_files)
 	char buf[BUFSIZ];
 	lng id;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
-	int cleanupResult = 0;
+	int cleanupResultLog = 0;
+	int cleanupResultBak = 0;
 
 	// Calculate offset based on the number of files to keep
 	id = lg->id - keep_persisted_log_files;
 
 	// Stop cleaning up once bak- files are no longer found
-	while (cleanupResult == LOG_OK) {
+	while (id > 0 && (cleanupResultLog == LOG_OK || cleanupResultBak == LOG_OK)) {
 		// clean up the WAL file
 		if (lg->debug & 1) {
 			snprintf(buf, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, id);
 			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
 		}
 		snprintf(buf, BUFSIZ, LLFMT, id);
-		cleanupResult = GDKunlink(farmid, lg->dir, LOGFILE, buf);
+		cleanupResultLog = GDKunlink(farmid, lg->dir, LOGFILE, buf);
 
 		// clean up the bak- WAL files
 		if (lg->debug & 1) {
@@ -1831,7 +1832,7 @@ logger_cleanup_old(logger *lg, int keep_persisted_log_files)
 			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
 		}
 		snprintf(buf, BUFSIZ, "bak-" LLFMT, id);
-		cleanupResult = GDKunlink(farmid, lg->dir, LOGFILE, buf);
+		cleanupResultBak = GDKunlink(farmid, lg->dir, LOGFILE, buf);
 
 		id = id - 1;
 	}
