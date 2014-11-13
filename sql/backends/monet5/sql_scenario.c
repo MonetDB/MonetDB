@@ -1316,6 +1316,53 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2014_sp1(Client c)
+{
+	size_t bufsize = 8192*2, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "\n\
+	create table upgradeOct2014_views as (select s.name, t.query from tables t, schemas s where s.id = t.schema_id and t.id in (select d.depend_id from dependencies d where d.id in (select f.id from functions f where f.func ilike '%%returns table%%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0) and d.depend_type = 5)) with data;\n\
+	create table upgradeOct2014 as select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.func ilike '%%returns table%%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0 order by f.id with data;\n\
+	create table upgradeOct2014_changes (c bigint);\n\
+	\n\
+	create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;\n\
+	drop function drop_func_upgrade_oct2014;\n\
+	\n\
+	create function create_func_upgrade_oct2014( sname string, f string ) returns int external name sql.create_func_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select create_func_upgrade_oct2014(name, func) from upgradeOct2014;\n\
+	drop function create_func_upgrade_oct2014;\n\
+	\n\
+	create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;\n\
+	drop function create_view_upgrade_oct2014;\n\
+						\n\
+	drop table upgradeOct2014_views;\n\
+	drop table upgradeOct2014_changes;\n\
+	drop table upgradeOct2014;\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -1482,6 +1529,14 @@ SQLinitClient(Client c)
 		sql_find_subtype(&tp, "clob", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
 			if ((err = sql_update_oct2014(c)) !=NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if table returning function sys.environment() does not exist, we need to
+		 * update from oct2014->sp1 */
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "environment", NULL, NULL, F_UNION)) {
+			if ((err = sql_update_oct2014_sp1(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
