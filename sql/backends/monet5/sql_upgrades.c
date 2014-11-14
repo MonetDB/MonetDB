@@ -1015,6 +1015,12 @@ sql_update_feb2015(Client c)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t int) returns timestamp external name timestamp.epoch;\n");
@@ -1027,6 +1033,12 @@ sql_update_feb2015(Client c)
        pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
        pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 #endif
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
