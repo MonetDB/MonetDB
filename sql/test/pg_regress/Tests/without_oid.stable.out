@@ -118,29 +118,29 @@ Ready.
 [ 9136	]
 #SELECT * FROM sys.storage
 # WHERE "table" IN ('wi', 'wo');
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
-% 3,	2,	3,	3,	7,	4,	1,	5,	1,	1,	1,	5 # length
-[ "sys",	"wi",	"oid",	"oid",	"22/2262",	9136,	8,	73088,	0,	0,	0,	false	]
-[ "sys",	"wi",	"i",	"int",	"22/2275",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n1",	"int",	"22/2276",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n2",	"int",	"22/2277",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n3",	"int",	"23/2300",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n4",	"int",	"23/2301",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n5",	"int",	"23/2302",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n6",	"int",	"23/2303",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n7",	"int",	"23/2304",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wi",	"n8",	"int",	"23/2305",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"i",	"int",	"22/2273",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n1",	"int",	"22/2246",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n2",	"int",	"22/2245",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n3",	"int",	"22/2244",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n4",	"int",	"22/2243",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n5",	"int",	"22/2242",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n6",	"int",	"22/2240",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n7",	"int",	"22/2241",	9136,	4,	36544,	0,	0,	0,	true	]
-[ "sys",	"wo",	"n8",	"int",	"23/2306",	9136,	4,	36544,	0,	0,	0,	true	]
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
+% clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 3,	2,	3,	3,	4,	1,	5,	1,	1,	1,	5 # length
+[ "sys",	"wi",	"oid",	"oid",	9136,	8,	73088,	0,	0,	0,	false	]
+[ "sys",	"wi",	"i",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n1",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n2",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n3",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n4",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n5",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n6",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n7",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"n8",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"i",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n1",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n2",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n3",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n4",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n5",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n6",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n7",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wo",	"n8",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 #DROP TABLE wi;
 #DROP TABLE wo;
 #CREATE TABLE create_table_test (
