@@ -29,20 +29,22 @@ stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 # 17:37:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"
 # 17:37:48 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = select avg(f1) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = select avg(cast(f1 as double)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and decimal(18,3) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = select avg(cast(f1 as decimal(9,3))) from interval_tbl;
 ERROR = !types sec_interval(13,0) and decimal(9,3) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = select sum(f1) from interval_tbl;
+
+
 
 
 

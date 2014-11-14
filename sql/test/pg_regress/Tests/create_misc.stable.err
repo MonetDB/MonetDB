@@ -29,16 +29,18 @@ stderr of test 'create_misc` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = INSERT INTO tenk2 SELECT * FROM tenk1;
 
-MAPI  = (monetdb) /var/tmp/mtest-11397/.s.monetdb.35273
+MAPI  = (monetdb) /var/tmp/mtest-8087/.s.monetdb.35165
 QUERY = CREATE TABLE Bprime AS
         SELECT *
         --   INTO TABLE Bprime
            FROM tenk1
            WHERE unique2 < 1000
         WITH DATA;
+
+
 
 
 # 17:11:19 >  

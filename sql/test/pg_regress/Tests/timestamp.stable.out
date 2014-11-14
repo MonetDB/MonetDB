@@ -62,16 +62,6 @@ Ready.
 [ 1	]
 #INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamp));
 [ 1	]
-#SELECT d1 FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl # table_name
-% d1 # name
-% timestamp # type
-% 22 # length
-[ 2014-11-14 14:10:24.00	]
-[ 2014-11-14 14:10:24.00	]
-[ 2014-11-14 00:00:00.00	]
-[ 2014-11-13 00:00:00.00	]
-[ 2014-11-15 00:00:00.00	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(current_date as timestamp);
 % sys.L1 # table_name
 % one # name
