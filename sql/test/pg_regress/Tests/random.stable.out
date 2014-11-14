@@ -33,8 +33,8 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
-% 1 # length
-[ 0	]
+% 4 # length
+[ 1000	]
 #CREATE TEMPORARY TABLE random_tbl( random double);
 #INSERT INTO random_tbl SELECT count(*) AS random 
 #  FROM onek WHERE rand() < 1.0/10;
