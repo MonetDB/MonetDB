@@ -844,9 +844,9 @@ external name sql.analyze;\n");
 
 	/* 17_compress script has been removed */
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcompress;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcdeompress;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzctruncate;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcexpand;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzdecompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gztruncate;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzexpand;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
