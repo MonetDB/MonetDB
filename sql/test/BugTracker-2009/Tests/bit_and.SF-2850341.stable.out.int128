@@ -37,6 +37,12 @@ Ready.
 % bigint # type
 % 19 # length
 [ 3749090034127126942	]
+#select bit_and(3749090034127126942, 0xffffffffffffffff);
+% .L # table_name
+% bit_and_single_value # name
+% hugeint # type
+% 19 # length
+[ 3749090034127126942	]
 
 # 18:18:45 >  
 # 18:18:45 >  "Done."
