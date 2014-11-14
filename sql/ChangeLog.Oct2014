@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Nov 14 2014 Sjoerd Mullender <sjoerd@acm.org>
+- A number of bugs were fixed in the code to upgrade a database from
+  previous releases.  This version should fix the upgrade of a database
+  that had been upgraded to the Oct2014 release, but also properly
+  upgrade directly from (at least) Jan2014 and Feb2013 releases.
+
