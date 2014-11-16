@@ -52,3 +52,4 @@ querylog.Bug-3607
 fk-property-assert.Bug-3612
 coalesce.Bug-3616
 hexadecimal_literals.Bug-3621
+orderby_column_exp.Bug-3620
