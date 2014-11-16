@@ -4536,7 +4536,7 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	if (!r)
 		return e;
 
-	if (!is_project(r->op)) {
+	if (!is_project(r->op) || is_set(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		(*R)->l = r;
 		set_processed(r);
