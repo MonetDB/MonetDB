@@ -153,7 +153,7 @@ monet5_find_user(ptr mp, str user)
 	users = db_users(c);
 	if (!users)
 		return -1;
-	p = BUNfnd(BATmirror(users), user);
+	p = BUNfnd(users, user);
 	BBPunfix(users->batCacheid);
 
 	/* yeah, I would prefer to return something different too */

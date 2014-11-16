@@ -1,57 +1,51 @@
 stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:18 >  
-# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:18 >  
+# 17:48:53 >  
+# 17:48:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30983" "--set" "mapi_usock=/var/tmp/mtest-5017/.s.monetdb.30983" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:48:53 >  
 
-# MonetDB 5 server v11.18.0
+# MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_pg_regress', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:30983/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5017/.s.monetdb.30983
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 17:48:54 >  
+# 17:48:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5017" "--port=30983"
+# 17:48:54 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- ALTER_TABLE
-#-- add attribute
-#--
 #CREATE TABLE tmp (initial integer);
 #ALTER TABLE tmp ADD COLUMN a integer default 3;
-#ALTER TABLE tmp ADD COLUMN b name;
+#ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 #ALTER TABLE tmp ADD COLUMN c text;
 #ALTER TABLE tmp ADD COLUMN d double;
 #ALTER TABLE tmp ADD COLUMN e float;
 #ALTER TABLE tmp ADD COLUMN f smallint;
 #ALTER TABLE tmp ADD COLUMN g string;
-#ALTER TABLE tmp ADD COLUMN h abstime;
+#ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 #ALTER TABLE tmp ADD COLUMN i char;
-#ALTER TABLE tmp ADD COLUMN j abstime[];
+#ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 #ALTER TABLE tmp ADD COLUMN k integer;
-#ALTER TABLE tmp ADD COLUMN l tid;
-#ALTER TABLE tmp ADD COLUMN m xid;
-#ALTER TABLE tmp ADD COLUMN n oidvector;
-#--ALTER TABLE tmp ADD COLUMN o lock;
-#ALTER TABLE tmp ADD COLUMN p smgr;
+#ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
+#ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
+#ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
+#ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 #ALTER TABLE tmp ADD COLUMN q string;
-#ALTER TABLE tmp ADD COLUMN r lseg;
+#ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 #ALTER TABLE tmp ADD COLUMN s string;
 #ALTER TABLE tmp ADD COLUMN t string;
-#ALTER TABLE tmp ADD COLUMN u tinterval;
+#ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 #ALTER TABLE tmp ADD COLUMN v timestamp;
 #ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 #ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
@@ -64,40 +58,38 @@ Ready.
 #	314159, '(1,1)', '512',
 #	'1 2 3 4 5 6 7 8', 'magnetic disk', '(1.1,1.1)', '(4.1,4.1,3.1,3.1)',
 #	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
-#	now, '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
+#	cast('2014-11-14 16:27:15.0' as timestamptz), '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 [ 1	]
 #SELECT * FROM tmp;
 % sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp # table_name
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-10-10 13:51:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4.1,	4.1,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-11-14 16:27:15.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
-#-- the wolf bug - schema mods caused inconsistent row descriptors 
 #CREATE TABLE tmp (
 #	initial 	integer
 #);
 #ALTER TABLE tmp ADD COLUMN a integer;
-#ALTER TABLE tmp ADD COLUMN b name;
+#ALTER TABLE tmp ADD COLUMN b string;  -- name replaced by string
 #ALTER TABLE tmp ADD COLUMN c text;
 #ALTER TABLE tmp ADD COLUMN d double;
 #ALTER TABLE tmp ADD COLUMN e float;
 #ALTER TABLE tmp ADD COLUMN f smallint;
 #ALTER TABLE tmp ADD COLUMN g string;
-#ALTER TABLE tmp ADD COLUMN h abstime;
+#ALTER TABLE tmp ADD COLUMN h string; -- abstime replaced by string
 #ALTER TABLE tmp ADD COLUMN i char;
-#ALTER TABLE tmp ADD COLUMN j abstime[];
+#ALTER TABLE tmp ADD COLUMN j string; -- abstime[] replaced by string
 #ALTER TABLE tmp ADD COLUMN k integer;
-#ALTER TABLE tmp ADD COLUMN l tid;
-#ALTER TABLE tmp ADD COLUMN m xid;
-#ALTER TABLE tmp ADD COLUMN n oidvector;
-#--ALTER TABLE tmp ADD COLUMN o lock;
-#ALTER TABLE tmp ADD COLUMN p smgr;
+#ALTER TABLE tmp ADD COLUMN l string; -- tid replaced by string
+#ALTER TABLE tmp ADD COLUMN m string; -- xid replaced by string
+#ALTER TABLE tmp ADD COLUMN n string; -- oidvector replaced by string
+#ALTER TABLE tmp ADD COLUMN p string; -- smgr replaced by string
 #ALTER TABLE tmp ADD COLUMN q string;
-#ALTER TABLE tmp ADD COLUMN r lseg;
+#ALTER TABLE tmp ADD COLUMN r string; -- lseg replaced by string
 #ALTER TABLE tmp ADD COLUMN s string;
 #ALTER TABLE tmp ADD COLUMN t string;
-#ALTER TABLE tmp ADD COLUMN u tinterval;
+#ALTER TABLE tmp ADD COLUMN u string; -- tinterval replaced by string
 #ALTER TABLE tmp ADD COLUMN v timestamp;
 #ALTER TABLE tmp ADD COLUMN w interval second; -- interval replaced by interval second
 #ALTER TABLE tmp ADD COLUMN x string; -- double[] replaced by string
@@ -117,14 +109,10 @@ Ready.
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
 % 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
-[ NULL,	4,	"name",	"text",	4,	4,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-10-10 13:51:58.000000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
+[ NULL,	4,	"name",	"text",	4.1,	4.1,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-11-14 23:59:59.900000,	1.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
-#--
-#-- rename - check on both non-temp and temp tables
-#--
 #CREATE TABLE tmp (regtable int);
 #CREATE TEMP TABLE tmp (tmptable int);
-#ALTER TABLE tmp RENAME TO tmp_new;
 #SELECT * FROM tmp;
 % sys.tmp # table_name
 % regtable # name
@@ -135,252 +123,188 @@ Ready.
 % regtable # name
 % int # type
 % 1 # length
+#DROP TABLE tmp;
+#CREATE VIEW tmp_view (unique1) AS SELECT unique1 FROM tenk1;
+#SELECT unique1 FROM tenk1 WHERE unique1 < 5;
+% sys.tenk1 # table_name
+% unique1 # name
+% int # type
+% 1 # length
+[ 4	]
+[ 2	]
+[ 1	]
+[ 3	]
+[ 0	]
 #CREATE TABLE tmp2 (a int primary key);
 #CREATE TABLE tmp3 (a int, b int);
 #CREATE TABLE tmp4 (a int, b int, unique(a,b));
 #CREATE TABLE tmp5 (a int, b int);
-#-- Insert rows into tmp2 (pktable)
 #INSERT INTO tmp2 values (1);
-[ 1 ]
+[ 1	]
 #INSERT INTO tmp2 values (2);
-[ 1 ]
+[ 1	]
 #INSERT INTO tmp2 values (3);
-[ 1 ]
+[ 1	]
 #INSERT INTO tmp2 values (4);
-[ 1 ]
-#-- Insert rows into tmp3
+[ 1	]
 #INSERT INTO tmp3 values (1,10);
-[ 1 ]
+[ 1	]
 #INSERT INTO tmp3 values (1,20);
-[ 1 ]
+[ 1	]
 #INSERT INTO tmp3 values (5,50);
-[ 1 ]
+[ 1	]
 #DELETE FROM tmp3 where a=5;
 [ 1	]
 #ALTER TABLE tmp3 add constraint tmpconstr foreign key (a) references tmp2 match full;
-#-- Try (and fail) to create constraint from tmp5(a) to tmp4(a) - unique constraint on
-#-- tmp4 is a,b
-#
 #DROP TABLE tmp5;
 #DROP TABLE tmp4;
 #DROP TABLE tmp3;
 #DROP TABLE tmp2;
-#-- Foreign key adding test with mixed types
-#-- Note: these tables are TEMP to avoid name conflicts when this test
-#-- is run in parallel with foreign_key.sql.
-#CREATE TEMP TABLE PKTABLE (ptest1 int PRIMARY KEY);
+#CREATE /* TEMP */ TABLE PKTABLE (ptest1 int PRIMARY KEY);
 #CREATE TEMP TABLE FKTABLE (ftest1 inet);
-#-- This next should fail, because inet=int does not exist
-#-- This should also fail for the same reason, but here we
-#-- give the column string
-#-- This should succeed, even though they are different types
-#-- because varchar=int does exist
 #DROP TABLE FKTABLE;
+#CREATE /* TEMP */ TABLE FKTABLE (ftest1 varchar(10));
+#ALTER TABLE FKTABLE ADD FOREIGN KEY(ftest1) references pktable;
 #DROP TABLE pktable cascade;
-#CREATE TEMP TABLE PKTABLE (ptest1 int, ptest2 inet,
+#DROP TABLE fktable;
+#CREATE /* TEMP */ TABLE PKTABLE (ptest1 int, ptest2 inet,
 #                           PRIMARY KEY(ptest1, ptest2));
-#CREATE TEMP TABLE FKTABLE (ftest1 int, ftest2 inet);
-#-- As does this...
-#-- temp tables should go away by themselves, need not drop them.
-#-- test check constraint adding
+#CREATE /* TEMP */ TABLE FKTABLE (ftest1 inet, ftest2 timestamp);
+#DROP TABLE FKTABLE;
+#CREATE /* TEMP*/  TABLE FKTABLE (ftest1 inet, ftest2 timestamp);
+#DROP TABLE FKTABLE;
+#CREATE /* TEMP */ TABLE FKTABLE (ftest1 int, ftest2 inet);
+#DROP TABLE FKTABLE;
+#DROP TABLE PKTABLE cascade;
 #create table atacc1 ( test int );
 #insert into atacc1 (test) values (2);
 [ 1	]
 #insert into atacc1 (test) values (4);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- let's do one where the check fails when added
 #create table atacc1 ( test int );
-#-- insert a soon to be failing row
 #insert into atacc1 (test) values (2);
-[ 1 ]
-#-- add a check constraint (fails)
-#
+[ 1	]
 #insert into atacc1 (test) values (4);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- let's do one where the check fails because the column doesn't exist
 #create table atacc1 ( test int );
-#-- add a check constraint (fails)
-#
 #drop table atacc1;
-#-- something a little more complicated
 #create table atacc1 ( test int, test2 int, test3 int);
 #insert into atacc1 (test,test2,test3) values (4,4,2);
 [ 1	]
 #insert into atacc1 (test,test2,test3) values (4,4,5);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- lets do some naming tests
 #create table atacc1 (test int check (test>3), test2 int);
 #insert into atacc1 (test2, test) values (3, 4);
 [ 1	]
 #drop table atacc1;
-#-- inheritance related tests
 #create table atacc1 (test int);
 #create table atacc2 (test2 int);
 #create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
 #insert into atacc2 (test2) values (-3);
 [ 1	]
 #insert into atacc2 (test2) values (3);
-[ 1 ]
+[ 1	]
 #insert into atacc3 (test2) values (-3);
 [ 1	]
 #insert into atacc3 (test2) values (3);
-[ 1 ]
+[ 1	]
 #drop table atacc3;
 #drop table atacc2;
 #drop table atacc1;
-#-- let's try only to add only to the parent
 #create table atacc1 (test int);
 #create table atacc2 (test2 int);
-#create table atacc3 (test3 int); -- inherits (atacc1, atacc2)
+#create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
 #insert into atacc2 (test2) values (-3);
-[ 1 ]
+[ 1	]
 #insert into atacc2 (test2) values (3);
 [ 1	]
 #insert into atacc3 (test2) values (-3);
 [ 1	]
 #insert into atacc3 (test2) values (3);
-[ 1 ]
+[ 1	]
 #drop table atacc3;
 #drop table atacc2;
 #drop table atacc1;
-#-- test unique constraint adding
 #create table atacc1 ( test int );
-#-- add a unique constraint
 #alter table atacc1 add constraint atacc_test1 unique (test);
 #insert into atacc1 (test) values (2);
-[ 1 ]
-#-- should fail
-#
-#-- should succeed
+[ 1	]
 #insert into atacc1 (test) values (4);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- let's do one where the unique constraint fails when added
 #create table atacc1 ( test int );
-#-- insert soon to be failing rows
 #insert into atacc1 (test) values (2);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test) values (2);
-[ 1 ]
-#-- add a unique constraint (fails)
+[ 1	]
 #insert into atacc1 (test) values (3);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- let's do one where the unique constraint fails
-#-- because the column doesn't exist
 #create table atacc1 ( test int );
-#-- add a unique constraint (fails)
-#
 #drop table atacc1;
-#-- something a little more complicated
 #create table atacc1 ( test int, test2 int);
-#-- add a unique constraint
 #alter table atacc1 add constraint atacc_test1 unique (test, test2);
 #insert into atacc1 (test,test2) values (4,4);
-[ 1 ]
-#-- should fail
-#
-#-- should all succeed
+[ 1	]
 #insert into atacc1 (test,test2) values (4,5);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test,test2) values (5,4);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test,test2) values (5,5);
-[ 1 ]
+[ 1	]
+#alter table atacc1 drop constraint atacc_test1;
 #drop table atacc1;
-#-- lets do some naming tests
 #create table atacc1 (test int, test2 int, unique(test));
 #alter table atacc1 add unique (test2);
 #insert into atacc1 (test2, test) values (3, 3);
-[ 1 ]
-#
+[ 1	]
 #drop table atacc1;
-#-- test primary key constraint adding
 #create table atacc1 ( test int );
-#-- add a primary key constraint
 #alter table atacc1 add constraint atacc_test1 primary key (test);
 #insert into atacc1 (test) values (2);
-[ 1 ]
-#-- should fail
-#
-#-- should succeed
+[ 1	]
 #insert into atacc1 (test) values (4);
-[ 1 ]
-#-- inserting NULL should fail
-#
-#-- try adding a second primary key (should fail)
-#
-#-- drop first primary key constraint
+[ 1	]
 #alter table atacc1 drop constraint atacc_test1 restrict;
+#alter table atacc1 add constraint atacc_test1 primary key (test);
 #drop table atacc1;
-#-- let's do one where the primary key constraint fails when added
 #create table atacc1 ( test int );
-#-- insert soon to be failing rows
 #insert into atacc1 (test) values (2);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test) values (2);
-[ 1 ]
-#-- add a primary key (fails)
+[ 1	]
 #insert into atacc1 (test) values (3);
-[ 1 ]
+[ 1	]
 #delete from atacc1 where test = 2;
 [ 2	]
 #alter table atacc1 add constraint atacc_test1 primary key (test);
 #drop table atacc1;
-#-- let's do another one where the primary key constraint fails when added
 #create table atacc1 ( test int );
-#-- insert soon to be failing row
 #insert into atacc1 (test) values (NULL);
-[ 1 ]
-#-- add a primary key (fails)
-#
+[ 1	]
 #insert into atacc1 (test) values (3);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- let's do one where the primary key constraint fails
-#-- because the column doesn't exist
 #create table atacc1 ( test int );
-#-- add a primary key constraint (fails)
-#
 #drop table atacc1;
-#-- something a little more complicated
 #create table atacc1 ( test int, test2 int);
-#-- add a primary key constraint
 #alter table atacc1 add constraint atacc_test1 primary key (test, test2);
 #insert into atacc1 (test,test2) values (4,4);
-[ 1 ]
-#-- should fail
-#
-#
-#
-#
-#-- should all succeed
+[ 1	]
 #insert into atacc1 (test,test2) values (4,5);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test,test2) values (5,4);
-[ 1 ]
+[ 1	]
 #insert into atacc1 (test,test2) values (5,5);
-[ 1 ]
+[ 1	]
 #drop table atacc1;
-#-- lets do some naming tests
 #create table atacc1 (test int, test2 int, primary key(test));
 #insert into atacc1 (test2, test) values (3, 3);
-[ 1 ]
-#
-#
+[ 1	]
 #drop table atacc1;
-#-- alter table / alter column [set/drop] not null tests
-#-- try altering system catalogs, should fail
-#
-#
-#-- try altering non-existent table, should fail
-#
-#
-#-- test setting columns to null and not null and vice versa
-#-- test checking for null values and primary key
 #create table atacc1 (test int not null);
 #alter table atacc1 add constraint "atacc1_pkey" primary key (test);
 #alter table atacc1 drop constraint "atacc1_pkey";
@@ -397,11 +321,8 @@ Ready.
 [ 1	]
 #alter table atacc1 alter test set not null;
 #create view myview as select * from atacc1;
-#
-#
 #drop view myview;
 #drop table atacc1;
-#-- test inheritance
 #create table parent (a int);
 #create table child (a int, b varchar(255)); -- inherits (parent)
 #alter table parent alter a set not null;
@@ -409,10 +330,10 @@ Ready.
 [ 1	]
 #insert into child (a, b) values (NULL, 'foo');
 [ 1	]
-#alter table parent alter a set not null;
+#alter table /* only */ parent alter a set not null;
 #delete from parent;
 [ 0	]
-#alter table parent alter a set not null;
+#alter table /* only */ parent alter a set not null;
 #insert into child (a, b) values (NULL, 'foo');
 [ 1	]
 #delete from child;
@@ -420,13 +341,12 @@ Ready.
 #alter table child alter a set not null;
 #drop table child;
 #drop table parent;
-#-- test setting and removing default values
 #create table def_test (
 #	c1	integer default 5,
 #	c2	text default 'initial_default'
 #);
 #insert into def_test default values;
-[ 1 ]
+[ 1	]
 #select * from def_test;
 % sys.def_test,	sys.def_test # table_name
 % c1,	c2 # name
@@ -435,7 +355,7 @@ Ready.
 [ 5,	"initial_default"	]
 #alter table def_test alter column c1 drop default;
 #insert into def_test default values;
-[ 1 ]
+[ 1	]
 #select * from def_test;
 % sys.def_test,	sys.def_test # table_name
 % c1,	c2 # name
@@ -445,7 +365,7 @@ Ready.
 [ NULL,	"initial_default"	]
 #alter table def_test alter column c2 drop default;
 #insert into def_test default values;
-[ 1 ]
+[ 1	]
 #select * from def_test;
 % sys.def_test,	sys.def_test # table_name
 % c1,	c2 # name
@@ -457,98 +377,56 @@ Ready.
 #alter table def_test alter column c1 set default 10;
 #alter table def_test alter column c2 set default 'new_default';
 #insert into def_test default values;
-[ 1 ]
+[ 1	]
 #select * from def_test;
 % sys.def_test,	sys.def_test # table_name
 % c1,	c2 # name
 % int,	clob # type
 % 2,	15 # length
-[ 5,	"initial_default" ]
+[ 5,	"initial_default"	]
 [ NULL,	"initial_default"	]
 [ NULL,	NULL	]
-[ 10,	"new_default" ]
-
-#-- set defaults to an incorrect type: this should fail
-#
+[ 10,	"new_default"	]
+#alter table def_test alter column c1 set default 'wrong_datatype';
 #alter table def_test alter column c2 set default 20;
-#-- set defaults on a non-existent column: this should fail
-#
-#-- set defaults on views: we need to create a view, add a rule
-#-- to allow insertions into it, and then alter the view to add
-#-- a default
 #create view def_view_test as select * from def_test;
 #select * from def_view_test;
 % sys.def_view_test,	sys.def_view_test # table_name
 % c1,	c2 # name
 % int,	clob # type
 % 2,	15 # length
-[ 5,	"initial_default" ]
+[ 5,	"initial_default"	]
 [ NULL,	"initial_default"	]
 [ NULL,	NULL	]
-[ 10,	"new_default" ]
+[ 10,	"new_default"	]
 #drop view def_view_test;
 #drop table def_test;
-#-- alter table / drop column tests
-#-- try altering system catalogs, should fail
-#
-#-- try altering non-existent table, should fail
-#
-#-- test dropping columns
 #create table atacc1 (a integer not null, b integer, c integer not null, d integer);
 #insert into atacc1 values (1, 2, 3, 4);
-[ 1 ]
+[ 1	]
 #alter table atacc1 drop a;
-#
-#-- SELECTs
 #select * from atacc1;
 % sys.atacc1,	sys.atacc1,	sys.atacc1 # table_name
 % b,	c,	d # name
 % int,	int,	int # type
 % 1,	1,	1 # length
-[ 2,	3,	4 ]
-
-#
-#
-#
-#
+[ 2,	3,	4	]
 #select atacc1.* from atacc1;
 % sys.atacc1,	sys.atacc1,	sys.atacc1 # table_name
 % b,	c,	d # name
 % int,	int,	int # type
 % 1,	1,	1 # length
-[ 2,	3,	4 ]
-
-#
-#
+[ 2,	3,	4	]
 #select b,c,d from atacc1;
 % sys.atacc1,	sys.atacc1,	sys.atacc1 # table_name
 % b,	c,	d # name
 % int,	int,	int # type
 % 1,	1,	1 # length
-[ 2,	3,	4 ]
-
-#
-#
-#
-#
-#
-#
-#-- UPDATEs
-#
-#
-#
-#
-#-- INSERTs
-#
-#
+[ 2,	3,	4	]
 #insert into atacc1 values (11, 12, 13);
-[ 1 ]
-#
-#
-#
-#
+[ 1	]
 #insert into atacc1 (b,c,d) values (11,12,13);
-[ 1 ]
+[ 1	]
 #delete from atacc1;
 [ 3	]
 #create view myview as select * from atacc1;
@@ -560,11 +438,8 @@ Ready.
 #drop view myview;
 #create table atacc2 (id integer unique);
 #drop table atacc2;
-#
-#
-#-- test create as and select into
 #insert into atacc1 values (21, 22, 23);
-[ 1 ]
+[ 1	]
 #create table test1 as select * from atacc1 WITH DATA;
 #select * from test1;
 % sys.test1,	sys.test1,	sys.test1 # table_name
@@ -575,7 +450,6 @@ Ready.
 #drop table test1;
 #alter table atacc1 drop c;
 #alter table atacc1 drop d;
-#alter table atacc1 drop b;
 #select * from atacc1;
 % sys.atacc1 # table_name
 % b # name
@@ -583,10 +457,9 @@ Ready.
 % 2 # length
 [ 21	]
 #drop table atacc1;
-#-- test inheritance
 #create table parent (a int, b int, c int);
 #insert into parent values (1, 2, 3);
-[ 1 ]
+[ 1	]
 #alter table parent drop a;
 #create table child (b int, c int, d varchar(255)); -- inherits (parent)
 #insert into child values (12, 13, 'testing');
@@ -596,7 +469,7 @@ Ready.
 % b,	c # name
 % int,	int # type
 % 1,	1 # length
-[ 2,	3 ]
+[ 2,	3	]
 #select * from child;
 % sys.child,	sys.child,	sys.child # table_name
 % b,	c,	d # name
@@ -609,7 +482,7 @@ Ready.
 % b # name
 % int # type
 % 1 # length
-[ 2 ]
+[ 2	]
 #select * from child;
 % sys.child,	sys.child,	sys.child # table_name
 % b,	c,	d # name
@@ -618,70 +491,62 @@ Ready.
 [ 12,	13,	"testing"	]
 #drop table child;
 #drop table parent;
-#-- test copy in/out
 #create table test (a integer, b integer, c integer);
 #insert into test values (1,2,3);
-[ 1 ]
+[ 1	]
 #alter table test drop a;
 #drop table test;
-#-- test inheritance
 #create table dropColumn (a int, b int, e int);
-#create table dropColumnChild (c int); -- inherits (dropColumn)
-#create table dropColumnAnother (d int); -- inherits (dropColumnChild)
-#-- these two should fail
-#
-#
-#-- these three should work
-#alter table only dropColumn drop column e;
+#create table dropColumnChild (a int, b int, e int, c int); -- inherits (dropColumn)
+#create table dropColumnAnother (a int, b int, e int, c int, d int); -- inherits (dropColumnChild)
+#alter table dropColumnchild drop column a;
+#alter table /* only */ dropColumnChild drop column b;
+#alter table /* only */ dropColumn drop column e;
 #alter table dropColumnChild drop column c;
 #alter table dropColumn drop column a;
+#drop table dropColumnAnother;
+#drop table dropColumnChild;
+#drop table dropColumn;
 #create table renameColumn (a int);
-#create table renameColumnChild (b int); -- inherits (renameColumn)
-#create table renameColumnAnother (c int); -- inherits (renameColumnChild)
-#-- these three should fail
-#
-#
-#
-#-- these should work
-#alter table renameColumn rename column a to d;
-#alter table renameColumnChild rename column b to a;
-#-- this should work
+#create table renameColumnChild (a int, b int); -- inherits (renameColumn)
+#create table renameColumnAnother (a int, b int, c int); -- inherits (renameColumnChild)
 #alter table renameColumn add column w int;
-#-- this should fail
-#
-#-- Test corner cases in dropping of inherited columns
+#alter table /* only */ renameColumn add column x int;
+#drop table renameColumn cascade;
+#drop table renameColumnChild cascade;
+#drop table renameColumnAnother cascade;
 #create table p1 (f1 int, f2 int);
-#create table c1 (f1 int not null); -- inherits(p1)
-#alter table p1 drop column f1;
-#drop table c1;
-#drop table p1 cascade;
-#create table p1 (f1 int, f2 int);
-#create table c1 (); -- inherits(p1)
-#-- should be rejected since c1.f1 is inherited
-#
-#alter table p1 drop column f1;
-#drop table c1;
-#drop table p1 cascade;
-#create table p1 (f1 int, f2 int);
-#create table c1 (); -- inherits(p1)
-#-- should be rejected since c1.f1 is inherited
-#
-#alter table only p1 drop column f1;
-#-- c1.f1 is NOT dropped, but must now be considered non-inherited
+#create table c1 (f2 int, f1 int not null); -- inherits(p1)
 #alter table c1 drop column f1;
+#alter table p1 drop column f1;
+#drop table c1;
 #drop table p1 cascade;
 #create table p1 (f1 int, f2 int);
+#create table c1 (f1 int, f2 int); -- inherits(p1)
+#alter table c1 drop column f1;
+#alter table p1 drop column f1;
+#drop table c1;
+#drop table p1 cascade;
+#create table p1 (f1 int, f2 int);
+#create table c1 (f1 int, f2 int); -- inherits(p1)
+#alter table c1 drop column f1;
+#alter table /* only */ p1 drop column f1;
+#drop table c1;
+#drop table p1 cascade;
+#create table p1 (f1 int, f2 int);
+#create table c1 (f1 int not null, f2 int); -- inherits(p1)
+#alter table c1 drop column f1;
+#alter table /* only */ p1 drop column f1;
+#drop table c1;
 #drop table p1 cascade;
 #create table p1(id int, name text);
 #create table p2(id2 int, name text, height int);
+#create table c1(age int, id int, name text); -- inherits(p1,p2)
+#create table gc1(age int, id int, name text); -- inherits (c1)
+#alter table /* only */ p1 drop column name;
 #alter table p2 drop column name;
-#-- should be rejected since its inherited
-#
-#-- should work, and drop gc1.name along
+#alter table gc1 drop column name;
 #alter table c1 drop column name;
-#-- should fail: column does not exist
-#
-#-- should work and drop the attribute in all tables
 #alter table p2 drop column height;
 #drop table c1;
 #drop table p2 cascade;
@@ -729,6 +594,7 @@ Ready.
 % 1 # length
 [ 1	]
 #drop table altwithoid;
+#drop table altinhoid;
 #create table p1 (f1 int);
 #create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
 #alter table p1 add column a1 int check (a1 > 0);
@@ -751,38 +617,45 @@ Ready.
 [ 1,	3,	"ABC"	]
 #drop table c1 cascade;
 #drop table p1 cascade;
-#create temp table foo (f1 text, f2 text, f3 text);
+#create temp table foo (f1 text, f2 text, f3 text) on commit preserve rows;
 #insert into foo values('aa','bb','cc');
 [ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	clob # type
-% 0,	0,	0 # length
+% 2,	2,	2 # length
+[ "aa",	"bb",	"cc"	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	clob # type
-% 0,	0,	0 # length
+% 2,	2,	2 # length
+[ "aa",	"bb",	"cc"	]
 #insert into foo (f1, f3) values('qq','rr');
 [ 1	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	clob # type
-% 0,	0,	0 # length
+% 2,	2,	2 # length
+[ "aa",	"bb",	"cc"	]
+[ "qq",	NULL,	"rr"	]
 #update foo set f3 = 'zz';
-[ 0	]
+[ 2	]
 #select * from foo;
 % tmp.foo,	tmp.foo,	tmp.foo # table_name
 % f1,	f2,	f3 # name
 % clob,	clob,	clob # type
-% 0,	0,	0 # length
+% 2,	2,	2 # length
+[ "aa",	"bb",	"zz"	]
+[ "qq",	NULL,	"zz"	]
 #select f3,max(f1) from foo group by f3;
 % tmp.foo,	tmp.L1 # table_name
 % f3,	L1 # name
 % clob,	clob # type
-% 0,	0 # length
+% 2,	2 # length
+[ "zz",	"qq"	]
 #drop table foo;
 #create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
 #insert into anothertab (atcol2) values (true);
@@ -861,7 +734,7 @@ Ready.
 [ 3,	"three"	]
 #drop table another;
 
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 17:48:55 >  
+# 17:48:55 >  "Done."
+# 17:48:55 >  
 

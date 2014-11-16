@@ -4075,14 +4075,14 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
 		set_nodistinct(rel);
 
-	if (rel->op == op_project && rel->l && rel->exps && !rel->r && !project_unsafe(rel)) {
+	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -7181,7 +7181,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	if (gp.cnt[op_select])
-		rel = rewrite(sql, rel, &rel_push_select_down_union, &changes); 
+		rel = rewrite_topdown(sql, rel, &rel_push_select_down_union, &changes); 
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
@@ -7211,7 +7211,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
 	if (gp.cnt[op_project])
-		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);
+		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */
 	if (level <= 0)

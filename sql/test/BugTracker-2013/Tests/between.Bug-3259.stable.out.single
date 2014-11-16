@@ -48,13 +48,13 @@ Ready.
 function user.s2_1():void;
     X_1 := sql.mvc();
     X_2:bat[:oid,:oid]  := sql.tid(X_1,"sys","treeitems");
-    X_5 := sql.bind(X_1,"sys","treeitems","pre",0);
+    X_5:bat[:oid,:lng]  := sql.bind(X_1,"sys","treeitems","pre",0);
     X_8 := algebra.leftfetchjoin(X_2,X_5);
-    X_9 := sql.bind(X_1,"sys","treeitems","size",0);
+    X_9:bat[:oid,:lng]  := sql.bind(X_1,"sys","treeitems","size",0);
     X_11 := algebra.leftfetchjoin(X_2,X_9);
     X_12:bat[:oid,:lng]  := batcalc.+(X_8,X_11);
     (X_13,r1_18) := algebra.join(X_8,X_8,X_12,true,true);
-    X_16 := sql.bind(X_1,"sys","treeitems","subject",0);
+    X_16:bat[:oid,:int]  := sql.bind(X_1,"sys","treeitems","subject",0);
     X_18 := algebra.leftfetchjoin(X_2,X_16);
     X_19 := algebra.leftfetchjoin(r1_18,X_18);
     X_20 := algebra.leftfetchjoin(X_13,X_18);

@@ -304,8 +304,6 @@ CONDITIONALS = {
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
-    'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
-    'ENABLE_CRACKERS'      : "@ENABLE_CRACKERS_FALSE@",
     'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
@@ -1142,8 +1140,11 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         testlist = tl
     else:
         for tc in open(os.path.join(TSTSRCDIR,"All")):
+            if tc.find('#') >= 0:
+                # get rid of comment anywhere on line
+                tc = tc.split('#', 1)[0]
             tc = tc.strip()
-            if tc  and  tc[0] != "#":
+            if tc:
                 if tc.find('?') > -1:
                     cond,tst = tc.split('?')
                 else:

@@ -48,3 +48,7 @@ duplicate_primary_keys.Bug-3474
 copy_decimal_into.Bug-3596
 insert_into_temp_table.Bug-3600
 queueError.Bug-3604
+querylog.Bug-3607
+fk-property-assert.Bug-3612
+coalesce.Bug-3616
+hexadecimal_literals.Bug-3621

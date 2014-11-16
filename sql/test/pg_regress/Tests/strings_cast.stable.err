@@ -69,7 +69,13 @@ stderr of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 # 12:37:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8489" "--port=38828"
 # 12:37:08 >  
 
-= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/strings_cast.out) ! =
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
+QUERY = CREATE TABLE VARCHAR_TBL(f1 varchar(4));
+ERROR = !CREATE TABLE: name 'varchar_tbl' already in use
+
+
+
+
 
 # 22:34:06 >  
 # 22:34:06 >  Done.

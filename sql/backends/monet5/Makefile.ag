@@ -41,6 +41,9 @@ lib__sql = {
 		mal_backend.c mal_backend.h \
 		sql_user.c sql_user.h \
 		sql_scenario.c sql_scenario.h \
+		sql_execute.c sql_execute.h \
+		sql_assert.c sql_assert.h \
+		sql_upgrades.c sql_upgrades.h \
 		rel_bin.c rel_bin.h \
 		sql_statement.c sql_statement.h \
 		sql_statistics.c sql_statistics.h \

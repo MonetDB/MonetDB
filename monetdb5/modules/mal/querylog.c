@@ -36,6 +36,7 @@
 
 #include "monetdb_config.h"
 #include "querylog.h"
+#include "mtime.h"
 
 /* (c) M.L. Kersten
  * The query logger facility is hardwired to avoid interference 
@@ -188,15 +189,15 @@ _initQlog(void)
 {
 	QLOG_cat_id = QLOGcreate("cat","id",TYPE_oid);
 	QLOG_cat_user = QLOGcreate("cat","user",TYPE_str);
-	QLOG_cat_defined = QLOGcreate("cat","defined",TYPE_lng);
+	QLOG_cat_defined = QLOGcreate("cat","defined",TYPE_timestamp);
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
 	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
-	QLOG_calls_start = QLOGcreate("calls","start",TYPE_lng);
-	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_lng);
+	QLOG_calls_start = QLOGcreate("calls","start",TYPE_timestamp);
+	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_timestamp);
 	QLOG_calls_arguments = QLOGcreate("calls","arguments",TYPE_str);
 	QLOG_calls_tuples = QLOGcreate("calls","tuples",TYPE_wrd);
 	QLOG_calls_exec = QLOGcreate("calls","exec",TYPE_lng);
@@ -298,13 +299,13 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *q = getArgReference_str(stk,pci,1);
 	str *pipe = getArgReference_str(stk,pci,2);
 	str  *usr = getArgReference_str(stk,pci,3);
-	lng *tick = getArgReference_lng(stk,pci,4);
+	timestamp *tick = getArgReference_TYPE(stk,pci,4,timestamp);
 	oid o;
 
 	(void) cntxt;
 	initQlog();
 	MT_lock_set(&mal_profileLock, "querylog.define");
-	o = BUNfnd( BATmirror(QLOG_cat_id), &mb->tag);
+	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
 		QLOG_cat_id = BUNappend(QLOG_cat_id,&mb->tag,FALSE);
@@ -323,8 +324,8 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *tick1  = getArgReference_lng(stk,pci,1);
-	lng *tick2  = getArgReference_lng(stk,pci,2);
+	timestamp *tick1  = getArgReference_TYPE(stk,pci,1,timestamp);
+	timestamp *tick2  = getArgReference_TYPE(stk,pci,2,timestamp);
 	str *arg	= getArgReference_str(stk,pci,3);
 	wrd *tuples = getArgReference_wrd(stk,pci,4);
 	lng *xtime  = getArgReference_lng(stk,pci,5);

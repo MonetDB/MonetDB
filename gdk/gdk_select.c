@@ -178,7 +178,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
 	off = b->hseqbase - b->batFirst;
-	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
 		return NULL;
@@ -188,7 +187,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		HASHloop(bi, b->H->hash, i, tl) {
+		HASHloop(bi, b->T->hash, i, tl) {
 			o = (oid) (i + off);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, dst, cnt, o,
@@ -198,7 +197,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			}
 		}
 	} else {
-		HASHloop(bi, b->H->hash, i, tl) {
+		HASHloop(bi, b->T->hash, i, tl) {
 			o = (oid) (i + off);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
@@ -341,6 +340,27 @@ do {									\
 	}								\
 } while (0)
 
+#define checkMINMAX(B)							\
+do {									\
+	int ii;								\
+	BUN *imp_cnt = imprints->stats + 128;				\
+	imp_min = imp_max = nil;					\
+	for (ii = 0; ii < B; ii++) {					\
+		if ((imp_min == nil) && (imp_cnt[ii])) {		\
+			imp_min = basesrc[imprints->stats[ii]];		\
+		}							\
+		if ((imp_max == nil) && (imp_cnt[B-1-ii])) {		\
+			imp_max = basesrc[imprints->stats[64+B-1-ii]];	\
+		}							\
+	}								\
+	assert((imp_min != nil) && (imp_max != nil));			\
+	if (anti ?							\
+	    vl < imp_min && vh > imp_max :				\
+	    vl > imp_max || vh < imp_min) {				\
+		return 0;						\
+	}								\
+} while (0)
+
 /* choose number of bits */
 #define bitswitch(CAND,TEST)						\
 do {									\
@@ -352,10 +372,10 @@ do {									\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #TEST);					\
 	switch (imprints->bits) {					\
-	case 8:  impsmask(CAND,TEST,8); break;				\
-	case 16: impsmask(CAND,TEST,16); break;				\
-	case 32: impsmask(CAND,TEST,32); break;				\
-	case 64: impsmask(CAND,TEST,64); break;				\
+	case 8:  checkMINMAX(8); impsmask(CAND,TEST,8); break;		\
+	case 16: checkMINMAX(16); impsmask(CAND,TEST,16); break;	\
+	case 32: checkMINMAX(32); impsmask(CAND,TEST,32); break;	\
+	case 64: checkMINMAX(64); impsmask(CAND,TEST,64); break;	\
 	default: assert(0); break;					\
 	}								\
 } while (0)
@@ -462,11 +482,14 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 {									\
 	TYPE vl = *(const TYPE *) tl;					\
 	TYPE vh = *(const TYPE *) th;					\
+	TYPE imp_min;							\
+	TYPE imp_max;							\
 	TYPE v;								\
 	TYPE nil = TYPE##_nil;						\
 	TYPE minval = MINVALUE##TYPE;					\
 	TYPE maxval = MAXVALUE##TYPE;					\
 	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
+	const TYPE *basesrc;						\
 	oid o;								\
 	BUN w, p = r;							\
 	BUN pr_off = 0;							\
@@ -478,12 +501,14 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	(void) hval;							\
 	if (use_imprints && VIEWtparent(b)) {				\
 		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
+		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
 		imprints = parent->T->imprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
 				(TYPE *)Tloc(parent,0)+BUNfirst(parent)); \
 		BBPunfix(parent->batCacheid);				\
 	} else {							\
 		imprints= b->T->imprints;				\
+		basesrc = (const TYPE *) Tloc(b, BUNfirst(b));		\
 	}								\
 	END;								\
 	if (equi) {							\

@@ -312,16 +312,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF DOCTOOLS
-	$(ECHO) DOCTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) DOCTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF ENABLE_CRACKERS
-	$(ECHO) ENABLE_CRACKERS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) ENABLE_CRACKERS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF ENABLE_DATACELL
 	$(ECHO) ENABLE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

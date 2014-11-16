@@ -294,6 +294,11 @@ terminateProcess(void *p)
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
+		case SABdbStarting:
+			Mfprintf(stderr, "database '%s' appears to be starting up\n",
+					 dbname);
+			/* starting up, so we'll go to the shut down phase */
+			break;
 		default:
 			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
@@ -303,11 +308,13 @@ terminateProcess(void *p)
 
 	if (d->type == MEROFUN) {
 		multiplexDestroy(dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	} else if (d->type != MERODB) {
 		/* barf */
 		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	}
@@ -332,6 +339,7 @@ terminateProcess(void *p)
 		} else {
 			switch (stats->state) {
 				case SABdbRunning:
+				case SABdbStarting:
 					/* ok, try again */
 				break;
 				case SABdbCrashed:

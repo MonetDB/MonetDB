@@ -77,6 +77,8 @@ peeringServerThread(void *d)
 				(unsigned int)getConfNum(_mero_props, "port"));
 		if (write(s, data, strlen(data)) == -1) {
 			close(s);
+			if (masquerade)
+				free(masquerade);
 			return;
 		}
 	} else if (len > 0 && strcmp(data, "proxy") == 0) {
@@ -110,6 +112,8 @@ peeringServerThread(void *d)
 	if (pipe(discreader) == -1) {
 		/* bla error */
 		close(s);
+		if (masquerade)
+			free(masquerade);
 		return;
 	}
 	registerMessageTap(discreader[0]);

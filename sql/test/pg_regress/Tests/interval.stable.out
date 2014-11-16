@@ -238,36 +238,12 @@ Ready.
 [ "",	0.000	]
 [ "",	0.000	]
 [ "",	0.000	]
-#select avg(f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
-% sec_interval # type
-% 0 # length
-[ 1416.66667	]
-#select avg(cast(f1 as double)) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ 1416.66667	]
-#select avg(cast(f1 as decimal)) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
-% decimal # type
-% 24 # length
-[ 1416.66667	]
-#select avg(cast(f1 as decimal(9,3))) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
-% decimal # type
-% 24 # length
-[ 1416.66667	]
 #select avg(cast(f1 as integer)) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
-[ 1416	]
+[ 1416.666667	]
 #select min(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
@@ -280,16 +256,10 @@ Ready.
 % sec_interval # type
 % 0 # length
 [ 6.000	]
-#select sum(f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
-% sec_interval # type
-% 0 # length
-[ 17000	]
 #select sum(cast(f1 as integer)) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
-% bigint # type
+% hugeint # type
 % 5 # length
 [ 17000	]
 #select count(f1) from interval_tbl;

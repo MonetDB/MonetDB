@@ -1,3 +1,4 @@
+start transaction;
 create temp table foo (f1 string, f2 text, f3 varchar(12345678));
 insert into foo values('aa1','bb1','cc1');
 select * from foo;
@@ -12,4 +13,5 @@ select * from foo;
 insert into foo values('aa4','bb4','cc4');
 select * from foo;
 drop table foo;
+commit;
 

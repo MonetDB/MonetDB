@@ -135,7 +135,7 @@ class Connection(object):
 
     def execute(self, query):
         """ use this for executing SQL queries """
-        return self.command('s' + query + ';')
+        return self.command('s' + query + '\n;')
 
     def command(self, command):
         """ use this function to send low level mapi commands """

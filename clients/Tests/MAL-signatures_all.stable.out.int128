@@ -13,17 +13,12 @@ stdout of test 'MAL-signatures_all` in directory 'clients` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:33053/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13793/.s.monetdb.33053
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 21:44:51 >  
-# 21:44:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13793" "--port=33053"
-# 21:44:51 >  
+# 15:16:50 >  
+# 15:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9622" "--port=32080"
+# 15:16:50 >  
 
 #?*)
 command aggr.avg(b:bat[:oid,:hge],g:bat[:oid,:oid],e:bat[:oid,:any_1]) (X_4:bat[:oid,:dbl],X_5:bat[:oid,:wrd]) 
@@ -228,7 +223,6 @@ comment Return the current size (in number of elements) in a BAT.
 
 command aggr.exist(b:bat[:oid,:any_2],h:any_1):bit 
 address ALGexist;
-
 command aggr.jsonaggr(val:bat[:oid,:dbl]):str 
 address JSONgroupStr;
 comment Aggregate the double values to array.
@@ -40603,7 +40597,7 @@ command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2]
 address BKCdelete_bun;
 comment Delete one specific BUN.
 
-command bat.densebat(size:wrd):bat[:void,:void] 
+command bat.densebat(size:wrd):bat[:oid,:oid] 
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'size'.
 
@@ -42476,7 +42470,7 @@ address CMDvarADDsignal;
 comment Return V1 + V2, guarantee no overflow by returning larger type
 
 pattern calc.++(v:hge):hge 
-address CMDvarINCR;
+address CMDvarINCRsignal;
 comment Unary V + 1
 
 pattern calc.-(v1:dbl,v2:dbl):dbl 
@@ -42944,7 +42938,7 @@ address CMDvarSUBsignal;
 comment Return V1 - V2, guarantee no overflow by returning larger type
 
 pattern calc.--(v:hge):hge 
-address CMDvarDECR;
+address CMDvarDECRsignal;
 comment Unary V - 1
 
 pattern calc.-(v:hge):hge 
@@ -44527,7 +44521,7 @@ pattern calc.==(v1:bte,v2:hge):bit
 address CMDvarEQ;
 comment Return V1 == V2
 
-command calc.=(v:inet,w:inet):bit 
+command calc.==(v:inet,w:inet):bit 
 address INET_comp_EQ;
 comment Equality of two inets
 
@@ -50563,10 +50557,6 @@ command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit
 address LSSTxmatch;
 comment Return true when the HtmID pairs that lie within the same triangle at level depth
 
-command mapreduce.getCloud(nme:str):bat[:oid,:str] 
-address MRgetCloud;
-comment Localize the elements of a named cloud
-
 pattern mapi.bind(key:int,remoteName:str):bat[:oid,:any_2] 
 address SERVERbindBAT;
 comment Bind a remote variable to a local one.
@@ -50772,6 +50762,10 @@ comment Terminate connection listeners.
 command mapi.trace(mid:int,flag:int):void 
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
+
+command mapreduce.getCloud(nme:str):bat[:oid,:str] 
+address MRgetCloud;
+comment Localize the elements of a named cloud
 
 pattern manual.completion(pat:str):void 
 address MANUALcompletion;
@@ -51047,8 +51041,10 @@ pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.hash(v:hge):wrd 
-address MKEYhash_hge;
+pattern mkey.hash(v:hge):wrd 
+address MKEYhash;
+comment calculate a hash value
+
 pattern mkey.hash(v:str):wrd 
 address MKEYhash;
 comment calculate a hash value
@@ -52445,7 +52441,11 @@ pattern sql.copy_from(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,fname
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
-pattern sql.create_func_upgrade_oct2014(f:str):int 
+pattern sql.create_view_upgrade_oct2014(sname:str,v:str):int 
+address UPGcreate_view;
+comment Create the view described by f, needed for the Oct2014 upgrade
+
+pattern sql.create_func_upgrade_oct2014(sname:str,f:str):int 
 address UPGcreate_func;
 comment Create the function described by f, needed for the Oct2014 upgrade
 
@@ -53741,7 +53741,7 @@ address rule_fromstr;
 command zrule.#tostr():str 
 address rule_tostr;
 
-# 21:44:58 >  
-# 21:44:58 >  "Done."
-# 21:44:58 >  
+# 15:15:16 >  
+# 15:15:16 >  "Done."
+# 15:15:16 >  
 

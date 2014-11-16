@@ -850,11 +850,12 @@ process_header(bam_wrapper * bw)
 
 					/* if this point is reached, option
 					 * wasn't recognized */
-					clear_bam_header_line(&hl);
-					throw(MAL, "process_header",
+					msg = createException(MAL, "process_header",
 						  ERR_PROCESS_HEADER
 						  "Unknown option '%s' found in header tag HD",
 						  bw->file_location, hl.options[o].tag);
+					clear_bam_header_line(&hl);
+					return msg;
 				}
 				if (!hd_fields_found[0]) {
 					clear_bam_header_line(&hl);
@@ -899,11 +900,12 @@ process_header(bam_wrapper * bw)
 
 					/* if this point is reached, option
 					 * wasn't recognized */
-					clear_bam_header_line(&hl);
-					throw(MAL, "process_header",
+					msg = createException(MAL, "process_header",
 						  ERR_PROCESS_HEADER
 						  "Unknown option '%s' found in header tag SQ",
 						  bw->file_location, hl.options[o].tag);
+					clear_bam_header_line(&hl);
+					return msg;
 				}
 				if (!sq_fields_found[0]) {
 					clear_bam_header_line(&hl);
@@ -994,11 +996,12 @@ process_header(bam_wrapper * bw)
 								   rg_fields_found[11]);
 
 					/* if this point is reached, option wasn't recognized */
-					clear_bam_header_line(&hl);
-					throw(MAL, "process_header",
+					msg = createException(MAL, "process_header",
 						  ERR_PROCESS_HEADER
 						  "Unknown option '%s' found in header tag RG",
 						  bw->file_location, hl.options[o].tag);
+					clear_bam_header_line(&hl);
+					return msg;
 				}
 				if (!rg_fields_found[0]) {
 					clear_bam_header_line(&hl);
@@ -1114,11 +1117,12 @@ process_header(bam_wrapper * bw)
 				kputs(hl.options[0].value, &hd_comment);
 				comment_found = TRUE;
 			} else {
-				clear_bam_header_line(&hl);
-				throw(MAL, "process_header",
+				msg = createException(MAL, "process_header",
 					  ERR_PROCESS_HEADER
 					  "Incorrect header tag '%s' found in BAM file",
 					  bw->file_location, hl.header_tag);
+				clear_bam_header_line(&hl);
+				return msg;
 			}
 
 			/* everything went ok, clear the header line and move

@@ -392,16 +392,6 @@ VIEWhead(BAT *b)
 	return bn;
 }
 
-BAT *
-VIEWhead_(BAT *b, int mode)
-{
-	BAT *bn = VIEWhead(b);
-
-	if (bn)
-		bn->batRestricted = mode;
-	return bn;
-}
-
 /*
  * the @#VIEWcombine@ routine effortlessly produces a view with double
  * vision on the head column.
@@ -803,9 +793,9 @@ VIEWdestroy(BAT *b)
 
 	/* remove any leftover private hash structures */
 	if (b->H->hash)
-		HASHremove(b);
-	if (b->T->hash)
 		HASHremove(BATmirror(b));
+	if (b->T->hash)
+		HASHremove(b);
 	IMPSdestroy(b);
 	VIEWunlink(b);
 

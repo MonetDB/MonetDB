@@ -1451,7 +1451,7 @@ static str
 convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 {
 	BATiter toi = bat_iterator(to);
-	BATiter fromi = bat_iterator(BATmirror(from));	/* hashes work on head columns */
+	BATiter fromi = bat_iterator(from);
 	size_t len = strlen(s);
 	unsigned char *dst;
 	const unsigned char *src = (const unsigned char *) s;

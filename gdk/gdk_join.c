@@ -1362,8 +1362,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		return GDK_SUCCEED;
 	}
 
-	/* hashes work on HEAD column */
-	r = BATmirror(r);
 	if (BATprepareHash(r))
 		goto bailout;
 	ri = bat_iterator(r);
@@ -1384,7 +1382,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 			}
 			nr = 0;
 			if (rcand) {
-				HASHloop(ri, r->H->hash, rb, v) {
+				HASHloop(ri, r->T->hash, rb, v) {
 					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
@@ -1393,7 +1391,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						break;
 				}
 			} else {
-				HASHloop(ri, r->H->hash, rb, v) {
+				HASHloop(ri, r->T->hash, rb, v) {
 					rb0 = rb - BUNfirst(r); /* zero-based */
 					if (rb0 < rstart || rb0 >= rend)
 						continue;
@@ -1445,7 +1443,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
-		int t = r->htype;
+		int t = r->ttype;
 		if (t != ATOMstorage(t) &&
 		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
 		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
@@ -1466,7 +1464,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					lskipped = BATcount(r1) > 0;
 					continue;
 				}
-				HASHloop(ri, r->H->hash, rb, v) {
+				HASHloop(ri, r->T->hash, rb, v) {
 					ro = (oid) (rb + rbun2oid);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
@@ -1481,7 +1479,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						lskipped = BATcount(r1) > 0;
 						continue;
 					}
-					HASHloop_int(ri, r->H->hash, rb, v) {
+					HASHloop_int(ri, r->T->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
 							continue;
@@ -1496,7 +1494,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						lskipped = BATcount(r1) > 0;
 						continue;
 					}
-					HASHloop_lng(ri, r->H->hash, rb, v) {
+					HASHloop_lng(ri, r->T->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
 							continue;
@@ -1512,7 +1510,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						lskipped = BATcount(r1) > 0;
 						continue;
 					}
-					HASHloop_hge(ri, r->H->hash, rb, v) {
+					HASHloop_hge(ri, r->T->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
 							continue;
@@ -1528,7 +1526,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						lskipped = BATcount(r1) > 0;
 						continue;
 					}
-					HASHloop(ri, r->H->hash, rb, v) {
+					HASHloop(ri, r->T->hash, rb, v) {
 						rb0 = rb - BUNfirst(r); /* zero-based */
 						if (rb0 < rstart || rb0 >= rend)
 							continue;

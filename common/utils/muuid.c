@@ -52,16 +52,16 @@ generateUUID(void)
 	/* try to do some pseudo interesting stuff, and stash it in the
 	 * format of a UUID to at least return some uniform answer */
 	char out[37];
-	union {
-		unsigned char randbuf[16];
-		unsigned short s[8];
-	} r;
+	unsigned char randbuf[16];
 
-	if (RAND_bytes(r.randbuf, 16) >= 0) {
+	if (RAND_bytes(randbuf, 16) >= 0) {
 		snprintf(out, sizeof(out),
-			 "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
-			 r.s[0], r.s[1], r.s[2], r.s[3],
-			 r.s[4], r.s[5], r.s[6], r.s[7]);
+			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+			 "%02x%02x%02x%02x%02x%02x",
+			 randbuf[0], randbuf[1], randbuf[2], randbuf[3],
+			 randbuf[4], randbuf[5], randbuf[6], randbuf[7],
+			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
+			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
 	} else {
 		/* generate something like this:
 		 * cefa7a9c-1dd2-11b2-8350-880020adbeef

@@ -99,7 +99,7 @@ command isnil(v:inet):bit
 address INET_isnil
 comment "Nil test for inet value";
 
-command =(v:inet,w:inet):bit
+command ==(v:inet,w:inet):bit
 address INET_comp_EQ
 comment "Equality of two inets";
 

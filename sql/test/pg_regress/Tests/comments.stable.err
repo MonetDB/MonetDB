@@ -1,9 +1,9 @@
 stderr of test 'comments` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:18 >  
-# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:18 >  
+# 17:48:12 >  
+# 17:48:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30983" "--set" "mapi_usock=/var/tmp/mtest-5017/.s.monetdb.30983" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:48:12 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,26 +17,27 @@ stderr of test 'comments` in directory 'sql/test/pg_regress` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38959
-# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	mapi_port = 30983
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5017/.s.monetdb.30983
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
 # cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 17:48:13 >  
+# 17:48:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5017" "--port=30983"
+# 17:48:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26507/.s.monetdb.36849
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = /* This block comment surrounds a query which itself has a block comment...
         SELECT /* embedded single line */ 'embedded' AS x2;
 ERROR = !syntax error, unexpected STRING in: "/* This block comment surrounds a query which itself has a block comment...
         !SELE"
-MAPI  = (monetdb) /var/tmp/mtest-26507/.s.monetdb.36849
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = */
-
+        
         SELECT -- continued after the following block comments...
         /* Deeply nested comment.
            This includes a single apostrophe to make sure we aren't decoding this part as a string.
@@ -53,10 +54,7 @@ QUERY = */
         'deeply nested example' AS sixth;
 ERROR = !syntax error, unexpected '*' in: "*"
 
-
-
-
-# 16:12:37 >  
-# 16:12:37 >  "Done."
-# 16:12:37 >  
+# 17:48:13 >  
+# 17:48:13 >  "Done."
+# 17:48:13 >  
 

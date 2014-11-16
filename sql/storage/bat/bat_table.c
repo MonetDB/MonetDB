@@ -23,7 +23,7 @@
 #include "bat_storage.h"
 
 static BAT *
-delta_cands(sql_trans *tr, sql_table *t)
+_delta_cands(sql_trans *tr, sql_table *t)
 {
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
@@ -54,7 +54,26 @@ delta_cands(sql_trans *tr, sql_table *t)
 }
 
 static BAT *
-delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
+delta_cands(sql_trans *tr, sql_table *t)
+{
+	sql_dbat *d;
+	BAT *tids;
+
+	if (!t->data) {
+		sql_table *ot = tr_find_table(tr->parent, t);
+		t->data = timestamp_dbat(ot->data, tr->stime);
+	}
+	d = t->data;
+	if (d->cached && !tr->parent) 
+		return temp_descriptor(d->cached->batCacheid);
+	tids = _delta_cands(tr, t);
+	if (!d->cached && !tr->parent) /* only cache during catalog loading */
+		d->cached = temp_descriptor(tids->batCacheid);
+	return tids;
+}
+
+static BAT *
+delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
@@ -91,17 +110,17 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 	}
 	bat_destroy(u); 
 	(void)c;
-	if (!bat->cached) 
+	if (!bat->cached && !tr->parent) 
 		bat->cached = temp_descriptor(b->batCacheid);
 	return b;
 }
 
 static BAT *
-delta_full_bat( sql_column *c, sql_delta *bat, int temp)
+delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 {
-	if (bat->cached) 
+	if (bat->cached && !tr->parent) 
 		return temp_descriptor(bat->cached->batCacheid);
-	return delta_full_bat_( c, bat, temp);
+	return delta_full_bat_( tr, c, bat, temp);
 }
 
 static BAT *
@@ -109,9 +128,9 @@ full_column(sql_trans *tr, sql_column *c)
 {
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = oc->data;
+		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-	return delta_full_bat(c, c->data, isTemp(c));
+	return delta_full_bat(tr, c, c->data, isTemp(c));
 }
 
 static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
@@ -155,7 +174,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	b = full_column(tr, c);
-	q = BUNfnd(b, (ptr) &rid);
+	q = BUNfnd(BATmirror(b), (ptr) &rid);
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;

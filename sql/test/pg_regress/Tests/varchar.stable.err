@@ -69,25 +69,18 @@ stderr of test 'varchar` in directory 'sql/test/pg_regress` itself:
 # 22:22:59 >  ./varchar.SQL.sh varchar 
 # 22:22:59 >  
 
-
-# 22:22:59 >  
-# 22:22:59 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=30462  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/varchar.sql
-# 22:22:59 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('cd');
 ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ');
 ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcde');
 ERROR = !value too long for type (var)char(4)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-3202/.s.monetdb.36448
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd    ');
 ERROR = !value too long for type (var)char(4)
-
-= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/varchar.out) ! =
 
 # 22:22:59 >  
 # 22:22:59 >  Done.

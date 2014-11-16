@@ -211,8 +211,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
-			HASHloop_str((y), (y).b->H->hash, _i, (z)) {	\
+		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+			HASHloop_str((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
@@ -223,8 +223,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
-			HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {	\
+		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+			HASHloop_str_hv((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
@@ -235,8 +235,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
-			HASHloop((y), (y).b->H->hash, _i, (z)) {	\
+		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+			HASHloop((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
@@ -247,8 +247,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0)) {		\
-			HASHloop_##TYPE((y), (y).b->H->hash, _i, (z)) {	\
+		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+			HASHloop_##TYPE((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
@@ -303,16 +303,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		HASHputall(h,i,_c);		\
 	} while (0)
 
-/* HASHins now receives a BAT* param and has become adaptive; killing
- * wrongly configured hash tables */
-/* use HASHins_any or HASHins_<tpe> instead if you know what you're
- * doing or want to keep the hash whatever */
+/* HASHins receives a BAT* param and is adaptive, killing wrongly
+ * configured hash tables.
+ * Use HASHins_any or HASHins_<tpe> instead if you know what you're
+ * doing or want to keep the hash. */
 #define HASHins(b,i,v)							\
 	do {								\
 		if (((i) & 1023) == 1023 && HASHgonebad((b),(v)))	\
 			HASHremove(b);					\
 		else							\
-			HASHins_any((b)->H->hash,(i),(v));		\
+			HASHins_any((b)->T->hash,(i),(v));		\
 	} while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT

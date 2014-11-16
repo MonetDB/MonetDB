@@ -275,8 +275,11 @@ MATHunary_FINITE(bit *res, const dbl *a)
 str
 MATHrandint(int *res)
 {
-	/* coverity[dont_call] */
+#ifdef STATIC_CODE_ANALYSIS
+	*res = 0;
+#else
 	*res = rand();
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -284,8 +287,11 @@ str
 MATHrandintarg(int *res, const int *dummy)
 {
 	(void) dummy;
-	/* coverity[dont_call] */
+#ifdef STATIC_CODE_ANALYSIS
+	*res = 0;
+#else
 	*res = rand();
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -301,8 +307,11 @@ str
 MATHsqlrandint(int *res, const int *seed)
 {
 	srand(*seed);
-	/* coverity[dont_call] */
+#ifdef STATIC_CODE_ANALYSIS
+	*res = 0;
+#else
 	*res = rand();
+#endif
 	return MAL_SUCCEED;
 }
 

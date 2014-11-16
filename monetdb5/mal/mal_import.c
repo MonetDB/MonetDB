@@ -205,8 +205,12 @@ malInclude(Client c, str name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
-				parseMAL(c, c->curprg);
+				parseMAL(c, c->curprg, 1);
 				bstream_destroy(c->fdin);
+/*
+				mnstr_printf(c->fdout,"\n# file %s\n",name);
+				printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
+*/
 			} else {
 				GDKfree(s); // not interested in error here
 				s = MAL_SUCCEED;
