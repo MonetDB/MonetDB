@@ -381,7 +381,7 @@ subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
 	return -1;
 }
 
-static int
+int
 arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 {
 	if (a->type.type->eclass == EC_ANY)
@@ -545,8 +545,8 @@ is_sqlfunc(sql_func *f)
 	return f->sql;
 }
 
-static sql_subfunc*
-_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
+sql_subfunc*
+sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 {
 	node *tn;
 	unsigned int scale = 0, digits = 0;
@@ -613,9 +613,9 @@ func_cmp(sql_allocator *sa, sql_func *f, char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (f->vararg) 
-			return _dup_subfunc(sa, f, NULL, NULL);
+			return sql_dup_subfunc(sa, f, NULL, NULL);
 		if (nrargs < 0 || list_length(f->ops) == nrargs) 
-			return _dup_subfunc(sa, f, NULL, NULL);
+			return sql_dup_subfunc(sa, f, NULL, NULL);
 	}
 	return NULL;
 }
@@ -693,7 +693,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) 
-				return _dup_subfunc(sa, f, NULL, tp);
+				return sql_dup_subfunc(sa, f, NULL, tp);
 		}
 	}
 	if (tp && tp->type->eclass == EC_NUM) {
@@ -706,7 +706,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 			if (strcmp(f->base.name, sqlfname) == 0 && list_length(f->ops) == nrargs) {
 				if (((sql_arg *) f->ops->h->data)->type.type->eclass == EC_DEC && 
 				    ((sql_arg *) f->ops->h->data)->type.type->localtype == tp->type->localtype) 
-					return _dup_subfunc(sa, f, NULL, tp);
+					return sql_dup_subfunc(sa, f, NULL, tp);
 			}
 		}
 	}
@@ -720,7 +720,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 				continue;
 			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) 
-					return _dup_subfunc(sa, f, NULL, tp);
+					return sql_dup_subfunc(sa, f, NULL, tp);
 			}
 		}
 	}
@@ -772,7 +772,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-				return _dup_subfunc(sa, f, ops, NULL);
+				return sql_dup_subfunc(sa, f, ops, NULL);
 		}
 	}
 	if (s) {
@@ -785,7 +785,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 				continue;
 			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-					return _dup_subfunc(sa, f, ops, NULL);
+					return sql_dup_subfunc(sa, f, ops, NULL);
 			}
 		}
 	}
@@ -839,7 +839,7 @@ sql_bind_func_result_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *op
 			continue;
 		firstres = f->res->h->data;
 		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-			return _dup_subfunc(sa, f, ops, NULL);
+			return sql_dup_subfunc(sa, f, ops, NULL);
 	}
 	return NULL;
 }
