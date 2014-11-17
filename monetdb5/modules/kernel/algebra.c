@@ -2165,28 +2165,6 @@ str ALGreuse(bat *ret, const bat *bid)
 }
 
 /*
- * The avg aggregate only works for int and float fields.
- */
-str
-ALGavg(dbl *res, const bat *bid)
-{
-	BAT *b;
-	int ret;
-	BUN cnt;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
-	ret = BATcalcavg(b, NULL, res, &cnt);
-	BBPreleaseref(b->batCacheid);
-	if (ret == GDK_FAIL)
-		throw(MAL, "aggr.avg", SEMANTIC_TYPE_MISMATCH);
-	/* backward compatibility: return nil if there are nils in the input */
-	if (cnt < BATcount(b))
-		*res = dbl_nil;
-	return MAL_SUCCEED;
-}
-
-/*
  * BAT standard deviation
  */
 str
