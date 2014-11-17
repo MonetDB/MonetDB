@@ -138,8 +138,8 @@ command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRavg12_dbl;
 comment Grouped tail average on bte
 
-command aggr.avg(b:bat[:oid,:any_2]):dbl 
-address ALGavg;
+pattern aggr.avg(b:bat[:oid,:any_2]):dbl 
+address CMDcalcavg;
 comment Gives the avg of all tail values
 
 function aggr.corr(e1:bat[:oid,:dbl],e2:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:dbl];
