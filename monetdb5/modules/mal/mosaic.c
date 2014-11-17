@@ -115,7 +115,7 @@ MOSdumpInternal(Client cntxt, BAT *b){
 str
 MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	int bid = *(int*) getArgReference(stk,pci,1);
+	bat bid = *getArgReference_bat(stk,pci,1);
 	BAT *b;
 	str msg = MAL_SUCCEED;
 
@@ -183,7 +183,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
 			TASK->dst = ((char*) TASK->blk)+ MosaicBlkSize;
 
 str
-MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task, int inplace, int debug)
+MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace, int debug)
 {
 	BAT *bsrc;		// the source BAT
 	BAT *bcompress; // the BAT that will contain the compressed version
@@ -241,7 +241,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task, int inplace,
 	BATseqbase(bsrc,bcompress->hseqbase);
 
 	if( inplace){
-		// It should always take less space then the orginal column.
+		// It should always take less space than the orginal column.
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
 		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
@@ -269,7 +269,7 @@ MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task, int inplace,
 			throw(MAL, "mosaic.compress", "Can not claim server");
 		}
 	} else {
-		// It should always take less space then the orginal column.
+		// It should always take less space than the orginal column.
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
 		// Initialize local compressed copy
@@ -484,7 +484,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 
 	if( pci->argc == 3)
-		prop = *(str*) getArgReference(stk,pci,2);
+		prop = *getArgReference_str(stk,pci,2);
 	if( prop && !strstr(prop,"mosaic"))
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			task->filter[i]= strstr(prop,MOSfiltername[i]) != 0;
@@ -492,14 +492,14 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			task->filter[i]= 1;
 
-	prop= MOScompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1), task, 0, flg);
+	prop= MOScompressInternal(cntxt, getArgReference_bat(stk,pci,0), getArgReference_bat(stk,pci,1), task, 0, flg);
 	GDKfree(task);
 	return prop;
 }
 
 // bulk decompress a heap
 str
-MOSdecompressInternal(Client cntxt, int *ret, int *bid, int inplace)
+MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 {	
 	BAT *bsrc, *b;
 	MOStask task;
@@ -668,20 +668,20 @@ str
 MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) mb;
-	return MOSdecompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1),0);
+	return MOSdecompressInternal(cntxt, getArgReference_bat(stk,pci,0), getArgReference_bat(stk,pci,1),0);
 }
 
 str
 MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) mb;
-	return MOSdecompressInternal(cntxt, (int*) getArgReference(stk,pci,0), (int*) getArgReference(stk,pci,1),1);
+	return MOSdecompressInternal(cntxt, getArgReference_bat(stk,pci,0), getArgReference_bat(stk,pci,1),1);
 }
 
 // The remainders is cloned from the generator code base
 // overload the algebra functions to check for compressed heaps.
 static int
-isCompressed(int bid)
+isCompressed(bat bid)
 {
 	BAT *b;
 	int r=0;
@@ -725,7 +725,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *li, *hi, *anti;
 	void *low, *hgh;
-	int *ret, *bid, *cid= 0;
+	bat *ret, *bid, *cid= 0;
 	int i;
 	int startblk,stopblk; // block range to scan
 	BUN cnt = 0;
@@ -736,19 +736,19 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	ret = (int *) getArgReference(stk, pci, 0);
-	bid = (int *) getArgReference(stk, pci, 1);
+	ret = getArgReference_bat(stk, pci, 0);
+	bid = getArgReference_bat(stk, pci, 1);
 
 	if (pci->argc == 8) {	/* candidate list included */
-		cid = (int *) getArgReference(stk, pci, 2);
+		cid = getArgReference_bat(stk, pci, 2);
 		i = 3;
 	} else
 		i = 2;
 	low = (void *) getArgReference(stk, pci, i);
 	hgh = (void *) getArgReference(stk, pci, i + 1);
-	li = (bit *) getArgReference(stk, pci, i + 2);
-	hi = (bit *) getArgReference(stk, pci, i + 3);
-	anti = (bit *) getArgReference(stk, pci, i + 4);
+	li = getArgReference_bit(stk, pci, i + 2);
+	hi = getArgReference_bit(stk, pci, i + 3);
+	anti = getArgReference_bit(stk, pci, i + 4);
 	//
 	// use default implementation if possible
 	if( !isCompressed(*bid)){
@@ -794,11 +794,11 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
-		// don't use more parallelism then entries in the header
+		// don't use more parallelism than entries in the header
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
-			* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+			*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
@@ -851,7 +851,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
-	* (bat *) getArgReference(stk, pci, 0) = bn->batCacheid;
+	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	GDKfree(task);
 	BBPkeepref(bn->batCacheid);
 	return msg;
@@ -860,7 +860,8 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, *cid =0,  *ret, *bid;
+	int idx;
+	bat *cid =0,  *ret, *bid;
 	int startblk, stopblk; // block range to scan
 	int part,nrofparts;
 	BAT *b = 0, *cand = 0, *bn = NULL;
@@ -872,14 +873,14 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	(void) cntxt;
-	ret= (int*) getArgReference(stk,pci,0);
-	bid= (int*) getArgReference(stk,pci,1);
+	ret= getArgReference_bat(stk,pci,0);
+	bid= getArgReference_bat(stk,pci,1);
 	if( pci->argc == 5){ // candidate list included
-		cid = (int*) getArgReference(stk,pci, 2);
+		cid = getArgReference_bat(stk,pci, 2);
 		idx = 3;
 	} else idx = 2;
 	low= (void*) getArgReference(stk,pci,idx);
-	oper= (char**) getArgReference(stk,pci,idx+1);
+	oper= getArgReference_str(stk,pci,idx+1);
 
 	if( !isCompressed(*bid)){
 		if( cid)
@@ -925,11 +926,11 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
-		// don't use more parallelism then entries in the header
+		// don't use more parallelism than entries in the header
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
-			BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
+			BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -984,7 +985,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn->tsorted = 1;
 		bn->trevsorted = BATcount(bn) <= 1;
 		bn->tkey = 1;
-		BBPkeepref(*(int*)getArgReference(stk,pci,0)= bn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	GDKfree(task);
 	return msg;
@@ -992,7 +993,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *lid =0, *rid=0;
+	bat *ret, *lid =0, *rid=0;
 	int part, nrofparts;
 	int startblk,stopblk;
 	BAT *bl = NULL, *br = NULL, *bn;
@@ -1004,9 +1005,9 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	ret = (int*) getArgReference(stk,pci,0);
-	lid = (int*) getArgReference(stk,pci,1);
-	rid = (int*) getArgReference(stk,pci,2);
+	ret = getArgReference_bat(stk,pci,0);
+	lid = getArgReference_bat(stk,pci,1);
+	rid = getArgReference_bat(stk,pci,2);
 
 	if( !isCompressed(*rid))
 		return ALGleftfetchjoin(ret,lid,rid);
@@ -1055,7 +1056,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// determine block range to scan for partitioned columns
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
-		// don't use more parallelism then entries in the header
+		// don't use more parallelism than entries in the header
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part >= nrofparts){
@@ -1129,7 +1130,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *ret2,*lid,*rid;
+	bat *ret, *ret2,*lid,*rid;
 	int part, nrofparts;
 	int startblk,stopblk;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
@@ -1140,18 +1141,18 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	ret = (int*) getArgReference(stk,pci,0);
-	ret2 = (int*) getArgReference(stk,pci,1);
-	lid = (int*) getArgReference(stk,pci,2);
-	rid = (int*) getArgReference(stk,pci,3);
+	ret = getArgReference_bat(stk,pci,0);
+	ret2 = getArgReference_bat(stk,pci,1);
+	lid = getArgReference_bat(stk,pci,2);
+	rid = getArgReference_bat(stk,pci,3);
 
 	if( !isCompressed(*lid) && !isCompressed(*rid))
 		return ALGjoin2(ret,ret2,lid,rid);
 
-	bl = BATdescriptor(*(int*) getArgReference(stk,pci,2));
+	bl = BATdescriptor(*lid);
 	if( bl == NULL)
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
-	br = BATdescriptor(*(int*) getArgReference(stk,pci,3));
+	br = BATdescriptor(*rid);
 	if( br == NULL){
 		BBPreleaseref(bl->batCacheid);
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
@@ -1245,11 +1246,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     brn->trevsorted = cnt <= 1;
     BATderiveProps(brn,0);
     if( swapped){
-        BBPkeepref(*(int*)getArgReference(stk,pci,0)= brn->batCacheid);
-        BBPkeepref(*(int*)getArgReference(stk,pci,1)= bln->batCacheid);
+        BBPkeepref(*ret= brn->batCacheid);
+        BBPkeepref(*ret2= bln->batCacheid);
     } else {
-        BBPkeepref(*(int*)getArgReference(stk,pci,0)= bln->batCacheid);
-        BBPkeepref(*(int*)getArgReference(stk,pci,1)= brn->batCacheid);
+        BBPkeepref(*ret= bln->batCacheid);
+        BBPkeepref(*ret2= brn->batCacheid);
     }
 	GDKfree(task);
     return msg;
@@ -1259,7 +1260,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // all possible compression options.
 
 static int
-MOSanalyseInternal(Client cntxt, int threshold, MOStask task, int bid)
+MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 {
 	BAT *b;
 	int ret = 0;
@@ -1403,7 +1404,8 @@ MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j,k,limit,bid, cand=1;
+	int i,j,k,limit, cand=1;
+	bat bid;
 	int threshold= 1000;
 	str properties[32] ={0};
 	float xf[32];
@@ -1417,7 +1419,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 
 	if(pci->argc > 1 && getArgType(mb,pci,1) == TYPE_str){
-		c= properties[0] = *(str*) getArgReference(stk,pci,1);
+		c= properties[0] = *getArgReference_str(stk,pci,1);
 		top++;
 		while ( (c=strchr(c,';'))  && top <32){
 			*c++ = 0;
@@ -1429,7 +1431,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	if( pci->argc > cand ){
-		bid = *(int*) getArgReference(stk,pci,cand);
+		bid = *getArgReference_bat(stk,pci,cand);
 		mx = 0;
 		for( j = 0; j < top; j++){
 			if( properties[j] && !strstr(properties[j],"mosaic"))
