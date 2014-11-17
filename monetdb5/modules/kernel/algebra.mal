@@ -653,32 +653,32 @@ command max(b:bat[:any_1,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-command avg (b:bat[:oid,:bte] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:bte] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:sht] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:sht] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:int] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:int] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:wrd] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:wrd] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:lng] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:lng] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:flt] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:flt] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
-command avg (b:bat[:oid,:dbl] ) :dbl
-address ALGavg
+pattern avg (b:bat[:oid,:dbl] ) :dbl
+address CMDcalcavg
 comment "Gives the avg of all tail values";
 
 # Standard deviation
