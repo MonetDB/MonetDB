@@ -2339,7 +2339,7 @@ main(int argc, char **argv)
 		case 'u':
 			if (user)
 				free(user);
-			user = optarg;
+			user = strdup(optarg);
 			/* force password prompt */
 			if (password)
 				free(password);
@@ -2354,7 +2354,7 @@ main(int argc, char **argv)
 		case 'P':
 			if (password)
 				free(password);
-			password = optarg;
+			password = strdup(optarg);
 			break;
 		case 'p':
 			if (optarg)
