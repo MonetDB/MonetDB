@@ -2310,7 +2310,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:h:?T:i:t:r:o:Db:B:A:s:m:a",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:t:r:o:Db:B:A:s:m:a",
 					long_options, &option_index);
 		if (c == -1)
 			break;
