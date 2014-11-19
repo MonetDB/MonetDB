@@ -34,8 +34,6 @@
 #define algebra_export extern
 #endif
 
-algebra_export str ALGavg(dbl *res, const bat *bid);
-
 algebra_export str ALGstdev(dbl *res, const bat *bid);
 algebra_export str ALGstdevp(dbl *res, const bat *bid);
 algebra_export str ALGvariance(dbl *res, const bat *bid);
