@@ -725,7 +725,6 @@ str ALARMtimers(bat *res);
 str ALARMusec(lng *ret);
 str ALGantijoin(bat *result, const bat *lid, const bat *rid);
 str ALGantijoin2(bat *l, bat *r, const bat *lid, const bat *rid);
-str ALGavg(dbl *res, const bat *bid);
 str ALGbandjoin(bat *result, const bat *lid, const bat *rid, const void *minus, const void *plus, const bit *li, const bit *hi);
 str ALGbandjoin2(bat *l, bat *r, const bat *lid, const bat *rid, const void *minus, const void *plus, const bit *li, const bit *hi);
 str ALGbandjoin_default(bat *result, const bat *lid, const bat *rid, const void *minus, const void *plus);

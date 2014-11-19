@@ -791,8 +791,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				list *b = NULL;
 				sql_schema *old_schema = cur_schema(sql);
 	
+				if (create) /* needed for recursive functions */
+					sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
 				sql->session->schema = s;
 				b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
+				sql->forward = NULL;
 				sql->session->schema = old_schema;
 				sql->params = NULL;
 				if (!b) 
@@ -811,8 +814,6 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				/* in execute mode we instantiate the function */
 				if (instantiate || deps) {
 					return rel_psm_block(sql->sa, b);
-				} else if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);

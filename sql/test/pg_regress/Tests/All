@@ -53,6 +53,7 @@ comments
 #ToDo opr_sanity
 insert
 #ToDo create_type
+loadwisconsin #[MK] copied from benchmarks
 create_table
 create_misc
 create_operator
@@ -89,7 +90,6 @@ arrays
 #ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables
-loadwisconsin #[MK] copied from benchmarks
 limit	#[MK] handles
 #ToDo plpgsql
 #ToDo copy2

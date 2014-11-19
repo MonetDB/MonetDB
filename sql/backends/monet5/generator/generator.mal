@@ -221,6 +221,17 @@ pattern join(b:bat[:oid,:dbl], gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,
 address VLTgenerator_join
 comment "Overloaded join operation";
 
-#pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-#address VLTgenerator_join
-#comment "Overloaded join operation";
+pattern join(gen:bat[:oid,:bte], low:bat[:oid,:bte], hgh:bat[:oid,:bte], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin;
+pattern join(gen:bat[:oid,:sht], low:bat[:oid,:sht], hgh:bat[:oid,:sht], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin;
+pattern join(gen:bat[:oid,:int], low:bat[:oid,:int], hgh:bat[:oid,:int], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin;
+pattern join(gen:bat[:oid,:lng], low:bat[:oid,:lng], hgh:bat[:oid,:lng], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin;
+pattern join(gen:bat[:oid,:flt], low:bat[:oid,:flt], hgh:bat[:oid,:flt], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin;
+pattern join(gen:bat[:oid,:dbl], low:bat[:oid,:dbl], hgh:bat[:oid,:dbl], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+address VLTgenerator_rangejoin
+comment "Overloaded range join operation";
+

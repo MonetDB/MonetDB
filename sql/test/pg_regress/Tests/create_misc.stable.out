@@ -24,8 +24,6 @@ Ready.
 # 17:37:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"
 # 17:37:56 >  
 
-#INSERT INTO tenk2 SELECT * FROM tenk1;
-[ 0	]
 #CREATE TABLE onek2 AS
 #SELECT *
 #-- INTO TABLE onek2

@@ -25,7 +25,7 @@ INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as time
 INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
 INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
 
-SELECT d1 FROM TIMESTAMP_TBL;
+--SELECT d1 FROM TIMESTAMP_TBL;
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(current_date as timestamp);
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0) as timestamp);
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0) as timestamp);
