@@ -15,6 +15,7 @@ CREATE TABLE equipment_r (
 	hobby		text
 );
 
+/* tables onek, tenk1 and tenk2 are already created in loadwisconsin.sql
 CREATE TABLE onek (
 	unique1		integer,
 	unique2		integer,
@@ -71,7 +72,7 @@ CREATE TABLE tenk2 (
 	stringu2	string,
 	string4		string
 );
-
+*/
 
 CREATE TABLE person (
 	name 		text,

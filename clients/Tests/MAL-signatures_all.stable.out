@@ -138,8 +138,8 @@ command aggr.avg(b:bat[:oid,:bte],e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRavg12_dbl;
 comment Grouped tail average on bte
 
-command aggr.avg(b:bat[:oid,:any_2]):dbl 
-address ALGavg;
+pattern aggr.avg(b:bat[:oid,:any_2]):dbl 
+address CMDcalcavg;
 comment Gives the avg of all tail values
 
 function aggr.corr(e1:bat[:oid,:dbl],e2:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:dbl];
@@ -34544,7 +34544,7 @@ pattern calc.==(v1:bit,v2:bit):bit
 address CMDvarEQ;
 comment Return V1 == V2
 
-command calc.=(v:inet,w:inet):bit 
+command calc.==(v:inet,w:inet):bit 
 address INET_comp_EQ;
 comment Equality of two inets
 
@@ -41458,7 +41458,11 @@ pattern sql.copy_from(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,fname
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
-pattern sql.create_func_upgrade_oct2014(f:str):int 
+pattern sql.create_view_upgrade_oct2014(sname:str,v:str):int 
+address UPGcreate_view;
+comment Create the view described by f, needed for the Oct2014 upgrade
+
+pattern sql.create_func_upgrade_oct2014(sname:str,f:str):int 
 address UPGcreate_func;
 comment Create the function described by f, needed for the Oct2014 upgrade
 

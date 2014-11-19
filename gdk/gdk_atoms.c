@@ -1050,10 +1050,6 @@ strHash(const char *s)
 	return res;
 }
 
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
-
 void
 strCleanHash(Heap *h, int rebuild)
 {

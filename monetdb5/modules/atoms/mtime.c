@@ -2272,49 +2272,69 @@ MTIMEtzone_extract_minutes(int *ret, const tzone *t)
 str
 MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
-	if (*sec > 0) {
-		int delta = -(*sec / 86400);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*sec == int_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*sec >= 0)
+		delta = -(int) (*sec / 86400);
+	else
+		delta = (int) (-*sec / 86400);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_sub_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
-	if (*msec > 0) {
-		int delta = (int) -(*msec / 86400000);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*msec == lng_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*msec > 0)
+		delta = -(int) (*msec / 86400000);
+	else
+		delta = (int) (-*msec / 86400000);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_add_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
-	if (*sec > 0) {
-		int delta = *sec / 86400;
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*sec == int_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*sec >= 0)
+		delta = (int) (*sec / 86400);
+	else
+		delta = -(int) (-*sec / 86400);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_add_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
-	if (*msec > 0) {
-		int delta = (int) (*msec / 86400000);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*msec == lng_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*msec > 0)
+		delta = (int) (*msec / 86400000);
+	else
+		delta = -(int) (-*msec / 86400000);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str

@@ -83,6 +83,7 @@ extern char *sql_subtype_string(sql_subtype *t);
 
 extern int type_cmp(sql_type *t1, sql_type *t2);
 extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
+extern int arg_subtype_cmp(sql_arg *a, sql_subtype *t);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
 
@@ -118,6 +119,7 @@ extern sql_func *sql_create_func4(sql_allocator *sa, char *name, char *mod, char
 extern sql_func *sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops, sql_arg *res, bit side_effect, int type, int fix_scale);
 
 extern sql_func *sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_arg *res);
+extern sql_subfunc* sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member);
 
 extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);

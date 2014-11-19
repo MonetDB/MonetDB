@@ -965,21 +965,56 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str func = *getArgReference_str(stk, pci, 1);
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str func = *getArgReference_str(stk, pci, 2);
 	stmt *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
 	s = sql_parse(sql, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, func);
+		mvc_set_schema(sql, osname);
 	} else {
+		mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
+}
+
+str
+UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str view = *getArgReference_str(stk, pci, 2);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
+	s = sql_parse(sql, sa_create(), view, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
+		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
+
+		msg = create_table_or_view(sql, schema, v, temp);
+		mvc_set_schema(sql, osname);
+	} else {
+		mvc_set_schema(sql, osname);
+		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
 	}
 	return msg;
 }
@@ -2401,10 +2436,10 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len;
 	int *res_id = getArgReference_int(stk, pci, 0);
 	int *nr_cols = getArgReference_int(stk, pci, 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, 5);
 	int mtype = getArgType(mb, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2792,10 +2827,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str filename, cs;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
 	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
@@ -2911,10 +2946,10 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len = 0;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
@@ -3020,14 +3055,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* handle the various cases */
 		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), TRANSIENT);
+			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), PERSISTENT);
 			if (c == NULL)
 				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
-			c = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+			c = BATnew(TYPE_void, TYPE_str, 0, PERSISTENT);
 			if (c == NULL)
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);

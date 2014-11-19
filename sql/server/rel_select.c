@@ -1422,6 +1422,49 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 	return NULL;
 }
 
+static sql_subfunc *
+bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
+{
+	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
+	    list_cmp(sql->forward->ops, ops, (fcmp)&arg_subtype_cmp) == 0) 
+		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
+	return sql_bind_func_(sql->sa, s, fname, ops, type);
+}
+
+static sql_subfunc *
+bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, int type )
+{
+	assert(t1);
+	if (sql->forward) {
+		if (strcmp(fname, sql->forward->base.name) == 0 && 
+		   ((!t1 && list_length(sql->forward->ops) == 0) || 
+		    (!t2 && list_length(sql->forward->ops) == 1 && subtype_cmp(sql->forward->ops->h->data, t1) == 0) ||
+		    (list_length(sql->forward->ops) == 2 && 
+		     	subtype_cmp(sql->forward->ops->h->data, t1) == 0 &&
+		     	subtype_cmp(sql->forward->ops->h->next->data, t2) == 0))) {
+			return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
+		}
+	}
+	return sql_bind_func(sql->sa, s, fname, t1, t2, type);
+}
+
+static sql_subfunc *
+bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs)
+{
+	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
+		list_length(sql->forward->ops) == nrargs && is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type)) 
+		return sql_dup_subfunc(sql->sa, sql->forward, NULL, t);
+	return sql_bind_member(sql->sa, s, fname, t, nrargs);
+}
+
+static sql_subfunc *
+find_func(mvc *sql, sql_schema *s, char *fname, int len, int type )
+{
+	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == len) 
+		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
+	return sql_find_func(sql->sa, s, fname, len, type);
+}
+
 static sql_rel *
 rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 {
@@ -1490,12 +1533,12 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 		
 		if (sname)
 			s = mvc_bind_schema(sql, sname);
-		sf = sql_bind_func_(sql->sa, s, fname, tl, F_UNION);
+		sf = bind_func_(sql, s, fname, tl, F_UNION);
 		if (sf) {
 			e = exp_op(sql->sa, exps, sf);
 		} else if (list_length(tl) &&
-			   ((sf = sql_bind_member(sql->sa, s, fname, tl->h->data, list_length(tl))) != NULL ||
-		   	    (sf = sql_find_func(sql->sa, s, fname, list_length(tl), F_UNION)) != NULL)){
+			   ((sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl))) != NULL ||
+		   	    (sf = find_func(sql, s, fname, list_length(tl), F_UNION)) != NULL)){
 			node *n, *m;
 			list *nexps;
 
@@ -3495,12 +3538,12 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 	if (!s)
 		s = sql->session->schema;
 	t = exp_subtype(e);
-	f = sql_bind_func(sql->sa, s, fname, t, NULL, type);
+	f = bind_func(sql, s, fname, t, NULL, type);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
 	if (!f &&
-	   (f = sql_find_func(sql->sa, s, fname, 1, type)) != NULL &&
+	   (f = find_func(sql, s, fname, 1, type)) != NULL &&
 	   ((card == card_none && !f->res) || 
 	    (card != card_none && f->res))) {
 
@@ -3563,9 +3606,9 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (!s)
 		s = sql->session->schema;
 	t = exp_subtype(e);
-	f = sql_bind_func(sql->sa, s, fname, t, NULL, type);
+	f = bind_func(sql, s, fname, t, NULL, type);
 	if (!f)
-		f = sql_bind_func(sql->sa, s, fname, t, NULL, F_AGGR);
+		f = bind_func(sql, s, fname, t, NULL, F_AGGR);
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
 
@@ -3628,9 +3671,9 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		t2 = exp_subtype(r);
 	}
 
-	f = sql_bind_func(sql->sa, s, fname, t1, t2, type);
+	f = bind_func(sql, s, fname, t1, t2, type);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->sa, s, fname, t2, t1, type);
+		f = bind_func(sql, s, fname, t2, t1, type);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -3677,7 +3720,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		sql_exp *or = r;
 
 		if (!EC_NUMBER(t1->type->eclass) &&
-		   (f = sql_bind_member(sql->sa, s, fname, t1, 2)) != NULL &&
+		   (f = bind_member_func(sql, s, fname, t1, 2)) != NULL &&
 	     	   ((card == card_none && !f->res) || 
 	    	    (card != card_none && f->res))) {
 			/* try finding function based on first argument */
@@ -3701,7 +3744,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			/* try operators */
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
-			f = sql_bind_func(sql->sa, s, fname, t1, t2, type);
+			f = bind_func(sql, s, fname, t1, t2, type);
 			if (f && 
 	     	    	   ((card == card_none && !f->res) || 
 	    	    	    (card != card_none && f->res))) {
@@ -3735,7 +3778,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		t1 = exp_subtype(l);
 		(void) exp_subtype(r);
 
-		if ((f = sql_bind_member(sql->sa, s, fname, t1, 2)) != NULL &&
+		if ((f = bind_member_func(sql, s, fname, t1, 2)) != NULL &&
 	     	   ((card == card_none && !f->res) || 
 	    	    (card != card_none && f->res))) {
 			/* try finding function based on first argument */
@@ -3755,7 +3798,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		l = ol;
 		r = or;
 		/* everything failed, fall back to bind on function name only */
-		if ((f = sql_find_func(sql->sa, s, fname, 2, type)) != NULL &&
+		if ((f = find_func(sql, s, fname, 2, type)) != NULL &&
 	     	   ((card == card_none && !f->res) || 
 	    	    (card != card_none && f->res))) {
 
@@ -3807,7 +3850,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		s = mvc_bind_schema(sql, sname);
 
 	if (type == F_FUNC) {
-		sql_subfunc *func = sql_find_func(sql->sa, s, fname, 2, F_AGGR);
+		sql_subfunc *func = find_func(sql, s, fname, 2, F_AGGR);
 		if (func) {
 			if (!l || !r) { /* reset error */
 				sql->session->status = 0;
@@ -3839,7 +3882,7 @@ rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp *a4, sql_schem
 
 	if (!s)
 		s = sql->session->schema;
-	f = sql_bind_func_(sql->sa, s, fname, tl, type);
+	f = bind_func_(sql, s, fname, tl, type);
 	if (!f)
 		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 	if (!a4)
@@ -3879,11 +3922,11 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
-	f = sql_bind_func_(sql->sa, s, fname, tl, type);
+	f = bind_func_(sql, s, fname, tl, type);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
-	} else if (((f = sql_bind_member(sql->sa, s, fname, obj_type, nr_args)) != NULL ||
-		   (f = sql_find_func(sql->sa, s, fname, nr_args, type)) != NULL)){
+	} else if (((f = bind_member_func(sql, s, fname, obj_type, nr_args)) != NULL ||
+		   (f = find_func(sql, s, fname, nr_args, type)) != NULL)){
 		node *n, *m;
 		list *nexps;
 
@@ -4584,7 +4627,7 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	if (!r)
 		return e;
 
-	if (!is_project(r->op)) {
+	if (!is_project(r->op) || is_set(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		(*R)->l = r;
 		set_processed(r);
@@ -4786,7 +4829,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if (!obe)
 			return NULL;
 	}
-	wf = sql_bind_func(sql->sa, s, aname, idtype, NULL, F_FUNC);
+	wf = bind_func(sql, s, aname, idtype, NULL, F_FUNC);
 	if (!wf)
 		return sql_error(sql, 02, "SELECT: function '%s' not found", aname );
 	/* now we need the gbe and obe lists */
