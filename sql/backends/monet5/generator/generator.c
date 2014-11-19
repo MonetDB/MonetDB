@@ -218,7 +218,7 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (q->argv[0] == target && getModuleId(q) == generatorRef && getFunctionId(q) == parametersRef)
+		if (q->argv[0] == target && getModuleId(q) == generatorRef && (getFunctionId(q) == parametersRef || getFunctionId(q) == seriesRef))
 			p = q;
 		if (q == pci)
 			return p;

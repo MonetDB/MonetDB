@@ -63,7 +63,7 @@ int
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q;
-	int i,j,k, actions=0, used= 0, cases, blocked;
+	int i,j,k, actions=0, used, cases, blocked;
 
 	(void) cntxt;
 	(void) stk;
@@ -73,6 +73,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef){
 			/* found a target for propagation */
+			used = 0;
 			if ( assignedOnce(mb, getArg(p,0)) ){
 				cases = useCount(mb, getArg(p,0));
 				blocked = 0;
@@ -116,8 +117,10 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					else {
 						// check for use without conversion
 						for(k = q->retc; k < q->argc; k++)
-						if( getArg(q,k) == getArg(p,0))
+						if( getArg(q,k) == getArg(p,0)){
 							blocked++;
+						}
+						// materialize a copy and re-use where appropriate
 					}
 				}
 				// fix the original, only when all use cases are replaced by the overloaded function
@@ -125,8 +128,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					setModuleId(p, generatorRef);
 					setFunctionId(p, parametersRef);
 					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
+				}
+				if( used)
 					actions++;
-				} else used = 0;
 #ifdef VLT_DEBUG
 				mnstr_printf(cntxt->fdout,"#generator target %d cases %d used %d error %d\n",getArg(p,0), cases, used, p->typechk);
 #endif
