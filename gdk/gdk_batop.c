@@ -177,7 +177,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
-				memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->size);
+				memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->free);
 				b->T->vheap->free = toff + n->T->vheap->free;
 				/* flush double-elimination hash table */
 				memset(b->T->vheap->base, 0, GDK_STRHASHSIZE);
@@ -330,23 +330,36 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				if (b->H->type)
 					*(oid *) Hloc(b, BUNlast(b)) = *(oid *) hp;
 				v = (var_t) (off >> GDK_VARSHIFT);
+				if (b->T->width < SIZEOF_VAR_T &&
+				    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
+					/* offset isn't going to fit,
+					 * so widen offset heap */
+					if (GDKupgradevarheap(b->T, v, 0, force) == GDK_FAIL) {
+						goto bunins_failed;
+					}
+					btw = b->T->width;
+				}
 				switch (btw) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);
+					b->T->heap.free += 1;
 					break;
 				case 2:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
 					*(unsigned short *)Tloc(b, BUNlast(b)) = (unsigned short) (v - GDK_VAROFFSET);
+					b->T->heap.free += 2;
 					break;
 #if SIZEOF_VAR_T == 8
 				case 4:
 					assert(v < ((var_t) 1 << 32));
 					*(unsigned int *)Tloc(b, BUNlast(b)) = (unsigned int) v;
+					b->T->heap.free += 4;
 					break;
 #endif
 				default:
 					*(var_t *)Tloc(b, BUNlast(b)) = v;
+					b->T->heap.free += SIZEOF_VAR_T;
 					break;
 				}
 				b->batCount++;

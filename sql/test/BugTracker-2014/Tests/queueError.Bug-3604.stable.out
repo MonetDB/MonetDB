@@ -53,21 +53,24 @@ Ready.
 # 11:43:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3599" "--port=35114"
 # 11:43:52 >  
 
-#select qtag,user,status,query from sys.queue();
-% .L,	.L1,	.L1,	.L1 # table_name
-% qtag,	L1,	status,	query # name
-% bigint,	varchar,	clob,	clob # type
-% 1,	0,	0,	0 # length
-#select qtag,user,status,query from sys.queue();
-% .L,	.L1,	.L1,	.L1 # table_name
-% qtag,	L1,	status,	query # name
-% bigint,	varchar,	clob,	clob # type
-% 1,	0,	0,	0 # length
-#select qtag,user,status,query from sys.queue();
-% .L,	.L1,	.L1,	.L1 # table_name
-% qtag,	L1,	status,	query # name
-% bigint,	varchar,	clob,	clob # type
-% 1,	0,	0,	0 # length
+#select user,status,query from sys.queue();
+% .L1,	.L1,	.L1 # table_name
+% L1,	status,	query # name
+% varchar,	clob,	clob # type
+% 7,	7,	42 # length
+[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
+#select user,status,query from sys.queue();
+% .L1,	.L1,	.L1 # table_name
+% L1,	status,	query # name
+% varchar,	clob,	clob # type
+% 7,	7,	42 # length
+[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
+#select user,status,query from sys.queue();
+% .L1,	.L1,	.L1 # table_name
+% L1,	status,	query # name
+% varchar,	clob,	clob # type
+% 7,	7,	42 # length
+[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
 
 # 11:43:52 >  
 # 11:43:52 >  "Done."

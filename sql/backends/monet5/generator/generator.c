@@ -904,7 +904,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{ bte f,l,s; bte *v; BUN w;
 	f = *getArgReference_bte(stk,p, 1);
 	l = *getArgReference_bte(stk,p, 2);
-	s = *getArgReference_bte(stk,p, 3);
+	if ( p->argc == 3)
+		s = f<l? (bte) 1: (bte)-1;
+	else s = * getArgReference_bte(stk, p, 3);
 	incr = s > 0;
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.join","Illegal range");
@@ -985,21 +987,22 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* The operands of a join operation can either be defined on a generator */
 #define VLTrangejoin(TPE, ABS) \
-{ TPE f,f1,f2,l,s; TPE *vlow,*vhgh; BUN w;\
+{ TPE f,f1,l,s; TPE *vlow,*vhgh; BUN w;\
 	f = *getArgReference_bte(stk,p, 1);\
 	l = *getArgReference_bte(stk,p, 2);\
-	s = *getArgReference_bte(stk,p, 3);\
+	if ( p->argc == 3) \
+		s = f<l? (TPE) 1: (TPE)-1;\
+	else s = * getArgReference_##TPE(stk, p, 3); \
 	incr = s > 0;\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.rangejoin","Illegal range");\
 	vlow = (TPE*) Tloc(blow,BUNfirst(blow));\
 	vhgh = (TPE*) Tloc(bhgh,BUNfirst(bhgh));\
 	for( ; cnt >0; cnt--, o++,vlow++,vhgh++){\
-		f1 = f + floor(abs(*vlow-f)/abs(s)) * s;\
+		f1 = f + floor(ABS(*vlow-f)/ABS(s)) * s;\
 		if ( f1 < *vlow ) f1+= s;\
-		f2 = *vhgh < l? *vhgh: l;\
-		w = (BUN) floor(abs(f1-f)/abs(s));\
-		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < f2 || (ri && f1 == f2)); f1 += s, w++){\
+		w = (BUN) floor(ABS(f1-f)/ABS(s));\
+		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){\
 			if(c == limit)\
 				VLTrangeExpand();\
 			*ol++ = (oid) w;\
@@ -1037,12 +1040,12 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	ri = *getArgReference_bit(stk,pci,6);
 
 	cnt = BATcount(blow);
+	limit = 2 * cnt; //top off result before expansion
 	tpe = blow->ttype;
 	o= blow->hseqbase;
 	
-	bln = BATnew(TYPE_void,TYPE_oid, 2*cnt, TRANSIENT);
-	brn = BATnew(TYPE_void,TYPE_oid, 2*cnt, TRANSIENT);
-	limit= BATcapacity(bln);
+	bln = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
+	brn = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
 	if( bln == NULL || brn == NULL){
 		if(bln) BBPreleaseref(bln->batCacheid);
 		if(brn) BBPreleaseref(brn->batCacheid);
@@ -1055,24 +1058,26 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: // VLTrangejoin(bte,abs); break; 
-	{ bte f,f1,f2,l,s; bte *vlow,*vhgh; BUN w;
-	f = *getArgReference_bte(stk,p, 1);
-	l = *getArgReference_bte(stk,p, 2);
-	s = *getArgReference_bte(stk,p, 3);
+	case TYPE_bte: VLTrangejoin(bte,abs); break; 
+	case TYPE_sht: //VLTrangejoin(sht,abs); break;
+	{ sht f,f1,l,s; sht *vlow,*vhgh; BUN w;
+	f = *getArgReference_sht(stk,p, 1);
+	l = *getArgReference_sht(stk,p, 2);
+	if ( p->argc == 3)
+		s = f<l? (sht) 1: (sht)-1;
+	else s = * getArgReference_sht(stk, p, 3); 
 	incr = s > 0;
 
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.rangejoin","Illegal range");
 
-	vlow = (bte*) Tloc(blow,BUNfirst(blow));
-	vhgh = (bte*) Tloc(bhgh,BUNfirst(bhgh));
+	vlow = (sht*) Tloc(blow,BUNfirst(blow));
+	vhgh = (sht*) Tloc(bhgh,BUNfirst(bhgh));
 	for( ; cnt >0; cnt--, o++,vlow++,vhgh++){
 		f1 = f + floor(abs(*vlow-f)/abs(s)) * s;
 		if ( f1 < *vlow ) f1+= s;
-		f2 = *vhgh < l? *vhgh: l;
 		w = (BUN) floor(abs(f1-f)/abs(s));
-		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < f2 || (ri && f1 == f2)); f1 += s, w++){
+		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){
 			if(c == limit)
 				VLTrangeExpand();
 			*ol++ = (oid) w;
@@ -1081,7 +1086,6 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 	} }
 	break;
-	case TYPE_sht: VLTrangejoin(sht,abs); break;
 	case TYPE_int: VLTrangejoin(int,abs); break;
 	case TYPE_lng: VLTrangejoin(lng,llabs); break;
 #ifdef HAVE_HGE
