@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a change to the way in which string bats are appended.
+  We now try harder to limit the growth of the string heap.
+
 * Wed Nov  5 2014 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed some problems with BATsample.  It was possible for BATsample to
   return a value that was just beyond the end of the sampled BAT.  Also,

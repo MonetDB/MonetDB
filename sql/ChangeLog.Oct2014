@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed sys.queue() implementation to report on other queries being
+  executed.
+
 * Fri Nov 14 2014 Sjoerd Mullender <sjoerd@acm.org>
 - A number of bugs were fixed in the code to upgrade a database from
   previous releases.  This version should fix the upgrade of a database
