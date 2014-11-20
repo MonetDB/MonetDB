@@ -1,6 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed adding of 0 intervals to dates.
-

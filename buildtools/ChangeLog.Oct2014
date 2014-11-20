@@ -1,7 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Fri Nov  7 2014 Sjoerd Mullender <sjoerd@acm.org>
-- The libraries included in the Windows installers have been upgraded.
-  We now use libxml2-2.9.2, openssl-1.0.1j, pcre-8.36, and zlib-1.2.8.
-
