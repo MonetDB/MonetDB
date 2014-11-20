@@ -177,7 +177,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
-				memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->size);
+				memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->free);
 				b->T->vheap->free = toff + n->T->vheap->free;
 				/* flush double-elimination hash table */
 				memset(b->T->vheap->base, 0, GDK_STRHASHSIZE);
