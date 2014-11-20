@@ -192,7 +192,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			 * first that the width of b's offset heap can
 			 * accommodate all values. */
 			if (b->T->width < SIZEOF_VAR_T &&
-			    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
+			    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
 				if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) == GDK_FAIL) {
@@ -331,7 +331,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					*(oid *) Hloc(b, BUNlast(b)) = *(oid *) hp;
 				v = (var_t) (off >> GDK_VARSHIFT);
 				if (b->T->width < SIZEOF_VAR_T &&
-				    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
+				    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
 					if (GDKupgradevarheap(b->T, v, 0, force) == GDK_FAIL) {
