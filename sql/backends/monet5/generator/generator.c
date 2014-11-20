@@ -995,10 +995,10 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vlow = (TPE*) Tloc(blow,BUNfirst(blow));\
 	vhgh = (TPE*) Tloc(bhgh,BUNfirst(bhgh));\
 	for( ; cnt >0; cnt--, o++,vlow++,vhgh++){\
-		f1 = f + floor(abs(*vlow-f)/abs(s)) * s;\
+		f1 = f + floor(ABS(*vlow-f)/ABS(s)) * s;\
 		if ( f1 < *vlow ) f1+= s;\
 		f2 = *vhgh < l? *vhgh: l;\
-		w = (BUN) floor(abs(f1-f)/abs(s));\
+		w = (BUN) floor(ABS(f1-f)/ABS(s));\
 		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < f2 || (ri && f1 == f2)); f1 += s, w++){\
 			if(c == limit)\
 				VLTrangeExpand();\
