@@ -904,7 +904,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{ bte f,l,s; bte *v; BUN w;
 	f = *getArgReference_bte(stk,p, 1);
 	l = *getArgReference_bte(stk,p, 2);
-	s = *getArgReference_bte(stk,p, 3);
+	if ( p->argc == 3)
+		s = f<l? (bte) 1: (bte)-1;
+	else s = * getArgReference_bte(stk, p, 3);
 	incr = s > 0;
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.join","Illegal range");
@@ -988,9 +990,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 { TPE f,f1,l,s; TPE *vlow,*vhgh; BUN w;\
 	f = *getArgReference_bte(stk,p, 1);\
 	l = *getArgReference_bte(stk,p, 2);\
-	if ( p->argc == 4)\
-		s = *getArgReference_bte(stk,p, 3);\
-	else s = 1;\
+	if ( p->argc == 3) \
+		s = f<l? (TPE) 1: (TPE)-1;\
+	else s = * getArgReference_##TPE(stk, p, 3); \
 	incr = s > 0;\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.rangejoin","Illegal range");\
@@ -1061,9 +1063,9 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	{ sht f,f1,l,s; sht *vlow,*vhgh; BUN w;
 	f = *getArgReference_sht(stk,p, 1);
 	l = *getArgReference_sht(stk,p, 2);
-	if ( p->argc == 4)
-		s = *getArgReference_sht(stk,p, 3);
-	else s = 1;
+	if ( p->argc == 3)
+		s = f<l? (sht) 1: (sht)-1;
+	else s = * getArgReference_sht(stk, p, 3); 
 	incr = s > 0;
 
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
