@@ -113,6 +113,7 @@ get_inserts( sql_rel *ins )
 static sql_rel *
 rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 {
+	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *wrd;
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
@@ -156,6 +157,7 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	}
 	/* append inserts to hash */
 	append(get_inserts(inserts), h);
+	exp_setname(sql->sa, h, i->t->base.name, iname);
 	return inserts;
 }
 
