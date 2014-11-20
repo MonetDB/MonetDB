@@ -62,15 +62,12 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 	unsigned int tiv;	/* tail value-as-int */
 #endif
 	var_t v;		/* value */
-	int ntw, btw;		/* shortcuts for {b,n}->T->width */
 	size_t off;		/* offset within n's string heap */
 
 	assert(b->htype == TYPE_void || b->htype == TYPE_oid);
 	if (n->batCount == 0)
 		return b;
 	ni = bat_iterator(n);
-	btw = b->T->width;
-	ntw = n->T->width;
 	hp = NULL;
 	tp = NULL;
 	if (append && b->htype != TYPE_void) {
@@ -199,9 +196,8 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
-				btw = b->T->width;
 			}
-			switch (btw) {
+			switch (b->T->width) {
 			case 1:
 				tt = TYPE_bte;
 				tp = &tbv;
@@ -235,12 +231,12 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			append = 1;
 		}
 	}
-	if (toff == 0 && ntw == btw && (b->htype == TYPE_void || !append)) {
+	if (toff == 0 && n->T->width == b->T->width && (b->htype == TYPE_void || !append)) {
 		/* we don't need to do any translation of offset
 		 * values, nor do we need to do any calculations for
 		 * the head column, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, BUNfirst(n)),
-		       BATcount(n) * ntw);
+		       BATcount(n) * n->T->width);
 		if (b->htype != TYPE_void) {
 			assert(n->htype == b->htype);
 			assert(!append);
@@ -265,7 +261,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			if (!append && b->htype)
 				hp = BUNhloc(ni, p);
 
-			switch (ntw) {
+			switch (n->T->width) {
 			case 1:
 				v = (var_t) *tbp++ + GDK_VAROFFSET;
 				break;
@@ -284,7 +280,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
 			assert(v >= GDK_VAROFFSET);
 			assert(((size_t) v << GDK_VARSHIFT) < b->T->vheap->free);
-			switch (btw) {
+			switch (b->T->width) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 				tbv = (unsigned char) (v - GDK_VAROFFSET);
@@ -337,9 +333,8 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					if (GDKupgradevarheap(b->T, v, 0, force) == GDK_FAIL) {
 						goto bunins_failed;
 					}
-					btw = b->T->width;
 				}
-				switch (btw) {
+				switch (b->T->width) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);
