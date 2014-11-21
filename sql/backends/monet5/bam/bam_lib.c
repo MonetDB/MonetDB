@@ -401,18 +401,26 @@ seq_length_bat(bat * ret, bat * bid)
 str
 seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_cigar)
 {
-	BAT *seqs, *poss, *cigars, *result;
-	BUN seq = 0, pos = 0, cigar = 0, seq_end = 0;
-	BATiter seq_it, pos_it, cigar_it;
+	BAT *seqs, *poss, *refs, *cigars, *result;
+	BUN ref= 0, seq = 0, pos = 0, cigar = 0, seq_end = 0;
+	BATiter ref_it, seq_it, pos_it, cigar_it;
 
 	assert(ret != NULL && ref_pos != NULL && alg_seq != NULL && alg_pos != NULL && alg_cigar != NULL);
 
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
-		(cigars = BATdescriptor(*alg_cigar)) == NULL) 
-		throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+	    (refs = BATdescriptor(*ref_pos)) == NULL ||
+		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
+			if( seqs) BBPreleaseref(seqs->batCacheid);
+			if( poss) BBPreleaseref(poss->batCacheid);
+			if( refs) BBPreleaseref(refs->batCacheid);
+			throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
+		BBPreleaseref(seqs->batCacheid);
+		BBPreleaseref(poss->batCacheid);
+		BBPreleaseref(refs->batCacheid);
 		throw(MAL, "seq_char_bat", 
 			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
@@ -421,27 +429,37 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(seqs->batCacheid);
+		BBPreleaseref(poss->batCacheid);
+		BBPreleaseref(refs->batCacheid);
 		throw(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, seqs->hseqbase);
 
+	ref = BUNfirst(refs);
 	seq = BUNfirst(seqs);
 	pos = BUNfirst(poss);
 	cigar = BUNfirst(cigars);
 	seq_end = BUNlast(seqs);
 
+	ref_it = bat_iterator(refs);
 	seq_it = bat_iterator(seqs);
 	pos_it = bat_iterator(poss);
 	cigar_it = bat_iterator(cigars);
 
 	while(seq < seq_end) {
 		str seq_val = (str) BUNtail(seq_it, seq);
+		int * ref_val = (int *) BUNtail(ref_it, ref);
 		int * pos_val = (int *) BUNtail(pos_it, pos);
 		str cigar_val = (str) BUNtail(cigar_it, cigar);
 		str r;
 		str msg;
 
-		if ((msg = seq_char(&r, ref_pos, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
+		if ((msg = seq_char(&r, ref_val, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
+			BBPreleaseref(refs->batCacheid);
+			BBPreleaseref(seqs->batCacheid);
+			BBPreleaseref(poss->batCacheid);
+			BBPreleaseref(cigars->batCacheid);
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
@@ -452,6 +470,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	}
 
 	/* release input BAT-descriptors */
+	BBPreleaseref(refs->batCacheid);
 	BBPreleaseref(seqs->batCacheid);
 	BBPreleaseref(poss->batCacheid);
 	BBPreleaseref(cigars->batCacheid);
