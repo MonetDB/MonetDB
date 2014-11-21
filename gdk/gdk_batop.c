@@ -41,6 +41,35 @@
 		}							\
 	} while (0)
 
+gdk_return
+unshare_string_heap(BAT *b)
+{
+	if (b->ttype == TYPE_str &&
+	    b->T->vheap->parentid != abs(b->batCacheid)) {
+		Heap *h = GDKzalloc(sizeof(Heap));
+		if (h == NULL)
+			return GDK_FAIL;
+		h->parentid = abs(b->batCacheid);
+		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
+		if (b->T->vheap->filename) {
+			char *nme = BBP_physical(b->batCacheid);
+			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
+			if (h->filename == NULL) {
+				GDKfree(h);
+				return GDK_FAIL;
+			}
+		}
+		if (HEAPcopy(h, b->T->vheap) < 0) {
+			HEAPfree(h, 1);
+			GDKfree(h);
+			return GDK_FAIL;
+		}
+		BBPunshare(b->T->vheap->parentid);
+		b->T->vheap = h;
+	}
+	return GDK_SUCCEED;
+}
+
 /* We try to be clever when appending one string bat to another.
  * First of all, we try to actually share the string heap so that we
  * don't need an extra copy, and if that can't be done, we see whether
@@ -108,27 +137,9 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				toff = 0;
 			} else if (b->T->vheap->parentid == n->T->vheap->parentid) {
 				toff = 0;
-			} else if (b->T->vheap->parentid != bid) {
-				Heap *h = GDKzalloc(sizeof(Heap));
-				if (h == NULL)
-					return NULL;
-				h->parentid = bid;
-				h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-				if (b->T->vheap->filename) {
-					char *nme = BBP_physical(b->batCacheid);
-					h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-					if (h->filename == NULL) {
-						GDKfree(h);
-						return NULL;
-					}
-				}
-				if (HEAPcopy(h, b->T->vheap) < 0) {
-					HEAPfree(h, 1);
-					GDKfree(h);
-					return NULL;
-				}
-				BBPunshare(b->T->vheap->parentid);
-				b->T->vheap = h;
+			} else if (b->T->vheap->parentid != bid &&
+				   unshare_string_heap(b) == GDK_FAIL) {
+				return NULL;
 			}
 		}
 		if (toff == ~(size_t) 0 && n->batCount > 1024) {
