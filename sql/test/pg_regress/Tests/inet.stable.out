@@ -186,6 +186,44 @@ Ready.
 % four,	cidr,	masklen(cidr),	inet,	masklen(inet) # name
 % char,	inet,	int,	inet,	int # type
 % 0,	0,	1,	0,	1 # length
+#SELECT '' AS six, c AS cidr, i AS inet FROM INET_TBL
+#  WHERE c = i;
+% .L,	sys.L,	sys.L # table_name
+% six,	cidr,	inet # name
+% char,	inet,	inet # type
+% 0,	0,	0 # length
+[ "",	10.1.2.3,	10.1.2.3	]
+#SELECT '' AS ten, i, c,
+#  i < c AS lt, i <= c AS le, i = c AS eq
+#  , i >= c AS ge, i > c AS gt, i <> c AS ne
+#--  i << c AS sb, i <<= c AS sbe,
+#--  i >> c AS sup, i >>= c AS spe
+#  FROM INET_TBL;
+% .L,	sys.inet_tbl,	sys.inet_tbl,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% ten,	i,	c,	lt,	le,	eq,	ge,	gt,	ne # name
+% char,	inet,	inet,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	5,	5,	5,	5,	5,	5 # length
+[ "",	192.168.1.226/24,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.226,	192.168.1.0/26,	false,	false,	false,	true,	true,	true	]
+[ "",	192.168.1.0/24,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.0/25,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.255/24,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.255/25,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	10.1.2.3/8,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	10.1.2.3/8,	10.0.0.0,	false,	false,	false,	true,	true,	true	]
+[ "",	10.1.2.3,	10.1.2.3,	false,	true,	true,	true,	false,	false	]
+[ "",	10.1.2.3/24,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	10.1.2.3/16,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	10.1.2.3/8,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	11.1.2.3/8,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	9.1.2.3/8,	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	(nil),	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	(nil),	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	(nil),	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.226,	192.168.1.2/30,	false,	false,	false,	true,	true,	true	]
+[ "",	(nil),	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "",	192.168.1.226,	192.168.1.2/30,	false,	false,	false,	true,	true,	true	]
+[ "",	(nil),	(nil),	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #CREATE INDEX inet_idx1 ON inet_tbl(i);
 #DROP INDEX inet_idx1;
 
