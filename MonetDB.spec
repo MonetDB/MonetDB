@@ -960,6 +960,9 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Nov 21 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.7-20141121
+- Rebuilt.
+
 * Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
 - Rebuilt.
 - BZ#3580: cosmetic change (append newline)
