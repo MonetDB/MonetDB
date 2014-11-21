@@ -1204,6 +1204,11 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			return NULL;
 		}
 
+		if (unshare_string_heap(b) == GDK_FAIL) {
+			GDKerror("BUNins: failed to unshare string heap\n");
+			return NULL;
+		}
+
 		ALIGNins(b, "BUNins", force);
 		b->batDirty = 1;
 		if (b->H->hash && b->H->vheap)
@@ -1309,6 +1314,11 @@ BUNappend(BAT *b, const void *t, bit force)
 		id = b->batCount == 0 ? 0 : MAXoid(b) + 1;
 	}
 	void_materialize(b, t);
+
+	if (unshare_string_heap(b) == GDK_FAIL) {
+		GDKerror("BUNappend: failed to unshare string heap\n");
+		return NULL;
+	}
 
 	setcolprops(b, b->H, h);
 	setcolprops(b, b->T, t);
