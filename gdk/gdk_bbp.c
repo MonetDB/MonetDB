@@ -2110,17 +2110,18 @@ incref(bat i, int logical, int lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPincref");
 		return 0;
 	}
-	/* parent BATs are not relevant for logical refs */
-	hp = logical ? 0 : bs->B.H->heap.parentid;
-	tp = logical ? 0 : bs->B.T->heap.parentid;
-	hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
-	tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
 
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
-	if (logical)
+	if (logical) {
+		/* parent BATs are not relevant for logical refs */
+		hp = tp = hvp = tvp = 0;
 		refs = ++BBP_lrefs(i);
-	else {
+	} else {
+		hp = bs->B.H->heap.parentid;
+		tp = bs->B.T->heap.parentid;
+		hvp = bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
+		tvp = bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
 		refs = ++BBP_refs(i);
 		if (refs == 1 && (hp || tp || hvp || tvp)) {
 			/* If this is a view, we must load the parent
