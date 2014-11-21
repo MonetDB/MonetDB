@@ -401,7 +401,7 @@ seq_length_bat(bat * ret, bat * bid)
 str
 seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_cigar)
 {
-	BAT *seqs, *poss, *refs, *cigars, *result;
+	BAT *seqs = NULL, *poss = NULL, *refs = NULL, *cigars = NULL, *result = NULL;
 	BUN ref= 0, seq = 0, pos = 0, cigar = 0, seq_end = 0;
 	BATiter ref_it, seq_it, pos_it, cigar_it;
 
