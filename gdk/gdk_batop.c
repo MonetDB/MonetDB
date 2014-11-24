@@ -76,7 +76,7 @@ unshare_string_heap(BAT *b)
  * it makes sense to just quickly copy the whole string heap instead
  * of inserting individual strings.  See the comments in the code for
  * more information. */
-static BAT *
+static gdk_return
 insert_string_bat(BAT *b, BAT *n, int append, int force)
 {
 	BATiter ni;		/* iterator */
@@ -95,7 +95,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 
 	assert(b->htype == TYPE_void || b->htype == TYPE_oid);
 	if (n->batCount == 0)
-		return b;
+		return GDK_SUCCEED;
 	ni = bat_iterator(n);
 	hp = NULL;
 	tp = NULL;
@@ -139,7 +139,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				toff = 0;
 			} else if (b->T->vheap->parentid != bid &&
 				   unshare_string_heap(b) == GDK_FAIL) {
-				return NULL;
+				return GDK_FAIL;
 			}
 		}
 		if (toff == ~(size_t) 0 && n->batCount > 1024) {
@@ -379,13 +379,13 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 		b->tvarsized = 1;
 		b->ttype = TYPE_str;
 	}
-	return b;
+	return GDK_SUCCEED;
       bunins_failed:
 	if (toff != ~(size_t) 0) {
 		b->tvarsized = 1;
 		b->ttype = TYPE_str;
 	}
-	return NULL;
+	return GDK_FAIL;
 }
 
 /*
@@ -558,7 +558,8 @@ BATins(BAT *b, BAT *n, bit force)
 			   !GDK_ELIMDOUBLES(n->T->vheap) &&
 			   b->T->vheap->hashash == n->T->vheap->hashash &&
 			   VIEWtparent(n) == 0) {
-			b = insert_string_bat(b, n, 0, force);
+			if (insert_string_bat(b, n, 0, force) == GDK_FAIL)
+				return NULL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -766,8 +767,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash) {
-			b = insert_string_bat(b, n, 1, force);
-			if (b == NULL)
+			if (insert_string_bat(b, n, 1, force) == GDK_FAIL)
 				return NULL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&

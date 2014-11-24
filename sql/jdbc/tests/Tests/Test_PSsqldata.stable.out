@@ -53,11 +53,11 @@ Ready.
 0. false	false
 1. 2 parameters:	2
 1.
-	type          1111
+	type          12
 	typename      inet
 	classname     nl.cwi.monetdb.jdbc.types.INET
 2.
-	type          1111
+	type          12
 	typename      url
 	classname     nl.cwi.monetdb.jdbc.types.URL
 1.	172.5.5.5/24
