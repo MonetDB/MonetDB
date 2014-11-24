@@ -49,8 +49,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	tag = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
 	user = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	started = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
-	estimate = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
+	started = BATnew(TYPE_void, TYPE_timestamp, 256, TRANSIENT);
+	estimate = BATnew(TYPE_void, TYPE_timestamp, 256, TRANSIENT);
 	progress = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
 	activity = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	oids = BATnew(TYPE_void, TYPE_oid, 256, TRANSIENT);
