@@ -51,3 +51,4 @@ querylog.Bug-3607
 fk-property-assert.Bug-3612
 hexadecimal_literals.Bug-3621
 orderby_column_exp.Bug-3620
+case-sqrt.Bug-3627
