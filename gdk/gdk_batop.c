@@ -41,6 +41,35 @@
 		}							\
 	} while (0)
 
+gdk_return
+unshare_string_heap(BAT *b)
+{
+	if (b->ttype == TYPE_str &&
+	    b->T->vheap->parentid != abs(b->batCacheid)) {
+		Heap *h = GDKzalloc(sizeof(Heap));
+		if (h == NULL)
+			return GDK_FAIL;
+		h->parentid = abs(b->batCacheid);
+		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
+		if (b->T->vheap->filename) {
+			char *nme = BBP_physical(b->batCacheid);
+			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
+			if (h->filename == NULL) {
+				GDKfree(h);
+				return GDK_FAIL;
+			}
+		}
+		if (HEAPcopy(h, b->T->vheap) < 0) {
+			HEAPfree(h, 1);
+			GDKfree(h);
+			return GDK_FAIL;
+		}
+		BBPunshare(b->T->vheap->parentid);
+		b->T->vheap = h;
+	}
+	return GDK_SUCCEED;
+}
+
 /* We try to be clever when appending one string bat to another.
  * First of all, we try to actually share the string heap so that we
  * don't need an extra copy, and if that can't be done, we see whether
@@ -62,15 +91,12 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 	unsigned int tiv;	/* tail value-as-int */
 #endif
 	var_t v;		/* value */
-	int ntw, btw;		/* shortcuts for {b,n}->T->width */
 	size_t off;		/* offset within n's string heap */
 
 	assert(b->htype == TYPE_void || b->htype == TYPE_oid);
 	if (n->batCount == 0)
 		return b;
 	ni = bat_iterator(n);
-	btw = b->T->width;
-	ntw = n->T->width;
 	hp = NULL;
 	tp = NULL;
 	if (append && b->htype != TYPE_void) {
@@ -111,27 +137,9 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				toff = 0;
 			} else if (b->T->vheap->parentid == n->T->vheap->parentid) {
 				toff = 0;
-			} else if (b->T->vheap->parentid != bid) {
-				Heap *h = GDKzalloc(sizeof(Heap));
-				if (h == NULL)
-					return NULL;
-				h->parentid = bid;
-				h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-				if (b->T->vheap->filename) {
-					char *nme = BBP_physical(b->batCacheid);
-					h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-					if (h->filename == NULL) {
-						GDKfree(h);
-						return NULL;
-					}
-				}
-				if (HEAPcopy(h, b->T->vheap) < 0) {
-					HEAPfree(h, 1);
-					GDKfree(h);
-					return NULL;
-				}
-				BBPunshare(b->T->vheap->parentid);
-				b->T->vheap = h;
+			} else if (b->T->vheap->parentid != bid &&
+				   unshare_string_heap(b) == GDK_FAIL) {
+				return NULL;
 			}
 		}
 		if (toff == ~(size_t) 0 && n->batCount > 1024) {
@@ -192,16 +200,15 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			 * first that the width of b's offset heap can
 			 * accommodate all values. */
 			if (b->T->width < SIZEOF_VAR_T &&
-			    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
+			    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
 				if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) == GDK_FAIL) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
-				btw = b->T->width;
 			}
-			switch (btw) {
+			switch (b->T->width) {
 			case 1:
 				tt = TYPE_bte;
 				tp = &tbv;
@@ -235,12 +242,12 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			append = 1;
 		}
 	}
-	if (toff == 0 && ntw == btw && (b->htype == TYPE_void || !append)) {
+	if (toff == 0 && n->T->width == b->T->width && (b->htype == TYPE_void || !append)) {
 		/* we don't need to do any translation of offset
 		 * values, nor do we need to do any calculations for
 		 * the head column, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, BUNfirst(n)),
-		       BATcount(n) * ntw);
+		       BATcount(n) * n->T->width);
 		if (b->htype != TYPE_void) {
 			assert(n->htype == b->htype);
 			assert(!append);
@@ -265,7 +272,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			if (!append && b->htype)
 				hp = BUNhloc(ni, p);
 
-			switch (ntw) {
+			switch (n->T->width) {
 			case 1:
 				v = (var_t) *tbp++ + GDK_VAROFFSET;
 				break;
@@ -284,7 +291,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
 			assert(v >= GDK_VAROFFSET);
 			assert(((size_t) v << GDK_VARSHIFT) < b->T->vheap->free);
-			switch (btw) {
+			switch (b->T->width) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 				tbv = (unsigned char) (v - GDK_VAROFFSET);
@@ -331,15 +338,14 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 					*(oid *) Hloc(b, BUNlast(b)) = *(oid *) hp;
 				v = (var_t) (off >> GDK_VARSHIFT);
 				if (b->T->width < SIZEOF_VAR_T &&
-				    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
+				    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
 					if (GDKupgradevarheap(b->T, v, 0, force) == GDK_FAIL) {
 						goto bunins_failed;
 					}
-					btw = b->T->width;
 				}
-				switch (btw) {
+				switch (b->T->width) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);

@@ -172,6 +172,8 @@ int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
 void IMPSprint(BAT *b)
 	__attribute__((__visibility__("hidden")));
 #endif
+gdk_return unshare_string_heap(BAT *b)
+	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
