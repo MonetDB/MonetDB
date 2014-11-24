@@ -1642,7 +1642,7 @@ str MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *
 str MTIMEtime_sub_msec_interval_wrap(daytime *ret, const daytime *t, const lng *msec);
 str MTIMEtimestamp(timestamp *ret, const int *sec);
 str MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src);
-str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msecs);
+str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec);
 str MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *months);
 str MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *t, const int *months);
 str MTIMEtimestamp_bulk(bat *ret, bat *bid);
@@ -1662,7 +1662,7 @@ str MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid);
 str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *d);
 str MTIMEtimestamp_hours(int *ret, const timestamp *t);
 str MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z);
-str MTIMEtimestamp_lng(timestamp *ret, const lng *msecs);
+str MTIMEtimestamp_lng(timestamp *ret, const lng *msec);
 str MTIMEtimestamp_lng_bulk(bat *ret, bat *bid);
 str MTIMEtimestamp_milliseconds(int *ret, const timestamp *t);
 str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
