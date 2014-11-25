@@ -53,7 +53,9 @@ pattern bam_export(output_path:str):void
 address bam_exportf
 comment "Export results in the bam.export table to a BAM file"
 
+
 # BAT signatures for bam_lib
+
 module batbam;
 
 command bam_flag(flags:bat[:oid,:sht], name:str):bat[:oid,:bit]
@@ -72,6 +74,6 @@ command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
 address seq_length_bat
 comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
 
-command seq_char(ref_pos:bat[:oid,:int], alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
+command seq_char(ref_pos:int, alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
 address seq_char_bat
 comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)"
