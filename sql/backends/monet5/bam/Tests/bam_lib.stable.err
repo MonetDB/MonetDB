@@ -1,0 +1,87 @@
+stderr of test 'bam_lib` in directory 'sql/backends/monet5/bam` itself:
+
+
+# 09:28:35 >  
+# 09:28:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33399" "--set" "mapi_usock=/var/tmp/mtest-22883/.s.monetdb.33399" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:28:35 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33399
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22883/.s.monetdb.33399
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+# <bam_loader>: Loader started for 1 BAM file...
+# # <bam_loader> Retrieving next file id...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam'...
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam'...
+# # CREATE TABLE bam.alignments_1 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT alignments_1_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_1 ( 
+# 		tag						   CHAR(2)	 NOT NULL, 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		type						  CHAR(1)	 NOT NULL, 
+# 		value						 STRING, 
+# 		CONSTRAINT alignments_extra_1_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), 
+# 		CONSTRAINT alignments_extra_1_fkey_virtual_offset FOREIGN KEY (virtual_offset) 
+# 			REFERENCES bam.alignments_1 (virtual_offset) 
+# 	);
+# # <bam_loader> Creating reader threads...
+# # <bam_loader> Waiting for reader threads to finish...
+# # <Thread 0> Starting on next file...
+# # <Thread 0> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam' (file id 1)...
+# # <Thread 0> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/bam/Tests/files/file1.bam' (file id 1) processed!
+# # <Thread 0> Starting on next file...
+# # <Thread 0> No files left to work on; thread done
+# # <bam_loader> Copying data into DB...
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/1/files_0', 'bam_binaries/1/files_1', 'bam_binaries/1/files_2', 'bam_binaries/1/files_3', 'bam_binaries/1/files_4', 'bam_binaries/1/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/1/sq_0', 'bam_binaries/1/sq_1', 'bam_binaries/1/sq_2', 'bam_binaries/1/sq_3', 'bam_binaries/1/sq_4', 'bam_binaries/1/sq_5', 'bam_binaries/1/sq_6');
+# COPY BINARY INTO bam.pg	FROM ('bam_binaries/1/pg_0', 'bam_binaries/1/pg_1', 'bam_binaries/1/pg_2', 'bam_binaries/1/pg_3', 'bam_binaries/1/pg_4', 'bam_binaries/1/pg_5');
+# COPY BINARY INTO bam.alignments_1 FROM 	('bam_binaries/1/alignments_0', 'bam_binaries/1/alignments_1', 'bam_binaries/1/alignments_2', 'bam_binaries/1/alignments_3', 'bam_binaries/1/alignments_4', 'bam_binaries/1/alignments_5', 'bam_binaries/1/alignments_6', 'bam_binaries/1/alignments_7', 'bam_binaries/1/alignments_8', 'bam_binaries/1/alignments_9', 'bam_binaries/1/alignments_10', 'bam_binaries/1/alignments_11');
+# COPY BINARY INTO bam.alignments_extra_1 FROM ('bam_binaries/1/alignments_extra_0', 'bam_binaries/1/alignments_extra_1', 'bam_binaries/1/alignments_extra_2', 'bam_binaries/1/alignments_extra_3');
+# 
+# # <bam_loader>: Loader finished processing 1 BAM file...
+# 
+# 09:28:35 >  
+# 09:28:35 >  "/usr/bin/python2" "bam_lib.SQL.py" "bam_lib"
+# 09:28:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-22883/.s.monetdb.33399
+QUERY = SELECT bam_flag(111, 'Fail-hard');
+ERROR = !Unknown flag name given: Fail-hard
+MAPI  = (monetdb) /var/tmp/mtest-22883/.s.monetdb.33399
+QUERY = SELECT reverse_seq('invalidchars');
+ERROR = !Invalid character found in sequence: 'i'
+
+# 09:28:36 >  
+# 09:28:36 >  "Done."
+# 09:28:36 >  
