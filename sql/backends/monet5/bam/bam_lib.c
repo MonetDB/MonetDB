@@ -54,6 +54,7 @@ bam_flag(bit * ret, sht * flag, str * name)
 	return MAL_SUCCEED;
 }
 
+// use a simple lookup table for these mappings
 str
 reverse_seq(str * ret, str * seq)
 {
@@ -253,6 +254,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(flags->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, flags->hseqbase);
@@ -289,6 +291,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(seqs->batCacheid);
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, seqs->hseqbase);
@@ -301,6 +304,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 
 		if ((msg = reverse_seq(&r, &t)) != MAL_SUCCEED) {
 			BBPreleaseref(result->batCacheid);
+			BBPreleaseref(seqs->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -330,6 +334,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(quals), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(quals->batCacheid);
 		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, quals->hseqbase);
@@ -341,6 +346,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_qual(&r, &t)) != MAL_SUCCEED) {
+			BBPreleaseref(quals->batCacheid);
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
@@ -371,6 +377,7 @@ seq_length_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(cigars->batCacheid);
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, cigars->hseqbase);
@@ -384,6 +391,7 @@ seq_length_bat(bat * ret, bat * bid)
 
 		if ((msg = seq_length(&r, &t)) != MAL_SUCCEED) {
 			BBPreleaseref(result->batCacheid);
+			BBPreleaseref(cigars->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) &r, FALSE);
