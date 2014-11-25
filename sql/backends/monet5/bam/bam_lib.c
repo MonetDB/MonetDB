@@ -196,7 +196,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 				  "Error parsing CIGAR string '%s'\n", *alg_cigar);
 		advance_ref_pos = (op == 'M' || op == 'D' || 
 			op == 'N' || op == '=' || op == 'X');
-		advance_seq_pos = (op == 'M' || op == 'I'); // TODO: Find out which chars advance the seq pos
+		advance_seq_pos = (op == 'M' || op == 'I' || op == '='); // TODO: Find out which chars advance the seq pos
 		if(advance_seq_pos) {
 			seq_pos += cnt;
 		}
@@ -397,7 +397,6 @@ seq_length_bat(bat * ret, bat * bid)
 	return MAL_SUCCEED;
 }
 
-
 str
 seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_cigar)
 {
@@ -417,7 +416,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
 	}
-
+	
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
@@ -450,7 +449,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		++pos;
 		++cigar;
 	}
-
+	
 	/* release input BAT-descriptors */
 	BBPreleaseref(seqs->batCacheid);
 	BBPreleaseref(poss->batCacheid);
