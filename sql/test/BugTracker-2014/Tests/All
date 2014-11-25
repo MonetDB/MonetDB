@@ -54,3 +54,5 @@ coalesce.Bug-3616
 hexadecimal_literals.Bug-3621
 orderby_column_exp.Bug-3620
 typecast_error.Bug-3622
+case-sqrt.Bug-3627
+column-with-comma.Bug-3616
