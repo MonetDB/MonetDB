@@ -1,10 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Wed Nov  5 2014 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed some problems with BATsample.  It was possible for BATsample to
-  return a value that was just beyond the end of the sampled BAT.  Also,
-  on some systems the range of the rand() function is rather limited
-  (0..32767) and trying to get a sample larger than this range would
-  result in an infinite loop.
-

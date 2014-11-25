@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -960,6 +960,48 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datad
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Nov 21 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.7-20141121
+- Rebuilt.
+
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- Rebuilt.
+- BZ#3580: cosmetic change (append newline)
+- BZ#3609: Incorrect use of generate_series
+- BZ#3611: quantile() and median() commands crash when used 2x on the
+  same variable on a null table
+- BZ#3612: assertion failure when deleting rows from table to which a
+  FK constraint is defined
+- BZ#3620: ORDER BY broken when using UNION ALL
+- BZ#3621: Hexadecimal literal vs decimal literal
+
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- gdk: Implemented a change to the way in which string bats are appended.
+  We now try harder to limit the growth of the string heap.
+
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- monetdb5: Fixed adding of 0 intervals to dates.
+
+* Thu Nov 20 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- sql: Fixed sys.queue() implementation to report on other queries being
+  executed.
+
+* Fri Nov 14 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- sql: A number of bugs were fixed in the code to upgrade a database from
+  previous releases.  This version should fix the upgrade of a database
+  that had been upgraded to the Oct2014 release, but also properly
+  upgrade directly from Jan2014 and Feb2013 releases.
+
+* Fri Nov  7 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- buildtools: The libraries included in the Windows installers have been upgraded.
+  We now use libxml2-2.9.2, openssl-1.0.1j, pcre-8.36, and zlib-1.2.8.
+
+* Wed Nov  5 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.5-20141120
+- gdk: Fixed some problems with BATsample.  It was possible for BATsample to
+  return a value that was just beyond the end of the sampled BAT.  Also,
+  on some systems the range of the rand() function is rather limited
+  (0..32767) and trying to get a sample larger than this range would
+  result in an infinite loop.
+
 * Tue Oct 28 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.3-20141028
 - Rebuilt.
 

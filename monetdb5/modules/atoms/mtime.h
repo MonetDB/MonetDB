@@ -75,15 +75,20 @@ typedef int daytime;
  * @- timestamp
  * Timestamp is implemented as a record that contains a date and a time (GMT).
  */
-typedef struct {
+typedef union {
+	lng alignment;
+	struct {
 #ifndef WORDS_BIGENDIAN
-	daytime msecs;
-	date days;
+		daytime p_msecs;
+		date p_days;
 #else
-	date days;
-	daytime msecs;
+		date p_days;
+		daytime p_msecs;
 #endif
+	} payload;
 } timestamp;
+#define msecs payload.p_msecs
+#define days payload.p_days
 
 /*
  * @- rule
@@ -172,7 +177,7 @@ mtime_export str MTIMEdate_adddays(date *ret, const date *v, const int *delta);
 mtime_export str MTIMEdate_addmonths(date *ret, const date *v, const int *delta);
 mtime_export str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
 mtime_export str MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
-mtime_export str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msecs);
+mtime_export str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec);
 mtime_export str MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2);
 mtime_export str MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z);
@@ -228,7 +233,7 @@ mtime_export str MTIMEunix_epoch(timestamp *ret);
 mtime_export str MTIMEepoch2int(int *res, const timestamp *ts);
 mtime_export str MTIMEtimestamp(timestamp *ret, const int *sec);
 mtime_export str MTIMEtimestamp_bulk(bat *ret, bat *bid);
-mtime_export str MTIMEtimestamp_lng(timestamp *ret, const lng *msecs);
+mtime_export str MTIMEtimestamp_lng(timestamp *ret, const lng *msec);
 mtime_export str MTIMEtimestamp_lng_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEruleDef0(rule *ret, const int *m, const int *d, const int *w, const int *h, const int *mint);
 mtime_export str MTIMEruleDef1(rule *ret, const int *m, const char * const *dnme, const int *w, const int *h, const int *mint);

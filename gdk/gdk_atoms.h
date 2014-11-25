@@ -244,7 +244,7 @@ gdk_export const ptr ptr_nil;
 		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
 			goto bunins_failed;				\
 	} while (0)
-#define ATOMputFIX(type, heap, dst, src)				\
+#define ATOMputFIX(type, dst, src)					\
 	do {								\
 		int t_ = (type);					\
 		void *d_ = (dst);					\
@@ -290,7 +290,7 @@ gdk_export const ptr ptr_nil;
 		*d_ = loc_;						\
 		ATOMfix(t_, s_);					\
 	} while (0)
-#define ATOMreplaceFIX(type, heap, dst, src)				\
+#define ATOMreplaceFIX(type, dst, src)					\
 	do {								\
 		int t_ = (type);					\
 		void *d_ = (dst);					\
