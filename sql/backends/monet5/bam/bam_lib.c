@@ -229,16 +229,44 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 	return MAL_SUCCEED;
 }
 
+#define init_props() { \
+	output->tsorted = TRUE; \
+	output->trevsorted = TRUE; \
+}
 
+#define update_props(TPE) { \
+	output->tsorted = output->tsorted && \
+		(c == 0 || *cur_out >= prev_out); \
+	output->trevsorted = output->trevsorted && \
+		(c == 0 || *cur_out <= prev_out); \
+	output->T->nil = output->T->nil || *cur_out == TPE##_nil; \
+	output->T->nonil = output->T->nonil && *cur_out != TPE##_nil; \
+}
 
+#define update_props_str() { \
+	output->tsorted = output->tsorted && \
+		(c == 0 || strcmp(*cur_out, prev_out) >= 0); \
+	output->trevsorted = output->trevsorted && \
+		(c == 0 || strcmp(*cur_out, prev_out) <= 0); \
+	output->T->nil = output->T->nil || *cur_out == str_nil; \
+	output->T->nonil = output->T->nonil && *cur_out != str_nil; \
+}
+
+#define finish_props() { \
+	BATsetcount(output, BATcount(input)); \
+	BATseqbase(output, input->hseqbase); \
+	output->tkey = FALSE; /* Tail values are not unique */ \
+}
 
 str
 bam_flag_bat(bat * ret, bat * bid, str * name)
 {
-	BAT *flags, *result;
-	BATiter li;
-	BUN p = 0, q = 0;
+	BAT *input, *output;
+	sht prev_out = 0;
+	sht *cur_in;
+	bit *cur_out;
 	sht k;
+	BUN c;
 
 	assert(ret != NULL && bid != NULL && name != NULL);
 
@@ -247,32 +275,77 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
 			  *name);
 
-	if ((flags = BATdescriptor(*bid)) == NULL)
+	if ((input = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags), TRANSIENT);
-	if (result == NULL) {
+	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
+	if (output == NULL) {
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(result, flags->hseqbase);
-
-	li = bat_iterator(flags);
-
-	BATloop(flags, p, q) {
-		sht t = *(sht *) BUNtail(li, p);
-		bit r = kth_bit(t, k);
-
-		BUNappend(result, (ptr) &r, FALSE);
+	
+	init_props();
+	cur_in = (sht *) Tloc(input, BUNfirst(input));
+	cur_out = (bit *) Tloc(output, BUNfirst(output));
+	for(c = 0; c < BATcount(input); ++c) {
+		*cur_out = kth_bit(*cur_in, k);
+		update_props(bit);
+		cur_in++;
+		prev_out = *cur_out++;
 	}
+	finish_props();
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(flags->batCacheid);
+	BBPreleaseref(input->batCacheid);
 
-	BBPkeepref((*ret = result->batCacheid));
+	BBPkeepref((*ret = output->batCacheid));
 
 	return MAL_SUCCEED;
 }
+
+/* Commented out, since string heap addition needs to be added
+str
+reverse_seq_bat(bat * ret, bat * bid)
+{
+	BAT *input, *output;
+	str prev_out = 0;
+	str *cur_in;
+	str *cur_out;
+	BUN c;
+	str msg;
+
+	assert(ret != NULL && bid != NULL);
+
+	if ((input = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);
+*/
+	/* allocate result BAT */
+/*	output = BATnew(TYPE_void, TYPE_str, BATcount(input), TRANSIENT);
+	if (output == NULL) {
+		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
+	}
+
+	init_props();
+	cur_in = (str *) Tloc(input, BUNfirst(input));
+	cur_out = (str *) Tloc(output, BUNfirst(output));
+	for(c = 0; c < BATcount(input); ++c) {
+		if ((msg = reverse_seq(cur_out, cur_in)) != MAL_SUCCEED) {
+			BBPreleaseref(output->batCacheid);
+			return msg;
+		}
+		update_props_str();
+		cur_in++;
+		prev_out = *cur_out++;
+	}
+	finish_props();
+*/
+	/* release input BAT-descriptor */
+/*	BBPreleaseref(input->batCacheid);
+
+	BBPkeepref((*ret = output->batCacheid));
+
+	return MAL_SUCCEED;
+}*/
 
 str
 reverse_seq_bat(bat * ret, bat * bid)
@@ -355,6 +428,50 @@ reverse_qual_bat(bat * ret, bat * bid)
 
 	return MAL_SUCCEED;
 }
+
+/*str Does not work, probably has to do with we not being able to traverse the
+      CIGAR string input BAT like this
+seq_length_bat(bat * ret, bat * bid)
+{
+	BAT *input, *output;
+	sht prev_out = 0;
+	str *cur_in;
+	int *cur_out;
+	BUN c;
+	str msg;
+
+	assert(ret != NULL && bid != NULL);
+
+	if ((input = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
+*/
+	/* allocate result BAT */
+/*	output = BATnew(TYPE_void, TYPE_int, BATcount(input), TRANSIENT);
+	if (output == NULL) {
+		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
+	}
+
+	init_props();
+	cur_in = (str *) Tloc(input, BUNfirst(input));
+	cur_out = (int *) Tloc(output, BUNfirst(output));
+	for(c = 0; c < BATcount(input); ++c) {
+		if ((msg = seq_length(cur_out, cur_in)) != MAL_SUCCEED) {
+			BBPreleaseref(output->batCacheid);
+			return msg;
+		}
+		update_props(int);
+		cur_in++;
+		prev_out = *cur_out++;
+	}
+	finish_props();
+*/
+	/* release input BAT-descriptor */
+/*	BBPreleaseref(input->batCacheid);
+
+	BBPkeepref((*ret = output->batCacheid));
+
+	return MAL_SUCCEED;
+}*/
 
 str
 seq_length_bat(bat * ret, bat * bid)
