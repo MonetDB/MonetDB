@@ -264,6 +264,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	/* allocate result BAT */
 	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
+		BBPreleaseref(input->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
 	
@@ -345,6 +346,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(seqs->batCacheid);
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, seqs->hseqbase);
@@ -356,6 +358,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_seq(&r, &t)) != MAL_SUCCEED) {
+			BBPreleaseref(seqs->batCacheid);
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
@@ -386,6 +389,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(quals), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(quals->batCacheid);
 		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, quals->hseqbase);
@@ -397,6 +401,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_qual(&r, &t)) != MAL_SUCCEED) {
+			BBPreleaseref(quals->batCacheid);
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
@@ -471,6 +476,7 @@ seq_length_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
+		BBPreleaseref(cigars->batCacheid);
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, cigars->hseqbase);
@@ -483,6 +489,7 @@ seq_length_bat(bat * ret, bat * bid)
 		int r;
 
 		if ((msg = seq_length(&r, &t)) != MAL_SUCCEED) {
+			BBPreleaseref(cigars->batCacheid);
 			BBPreleaseref(result->batCacheid);
 			return msg;
 		}
@@ -500,27 +507,33 @@ seq_length_bat(bat * ret, bat * bid)
 str
 seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_cigar)
 {
-	BAT *seqs, *poss, *cigars, *result;
+	BAT *seqs = NULL, *poss = NULL, *cigars = NULL, *result = NULL;
 	BUN seq = 0, pos = 0, cigar = 0, seq_end = 0;
 	BATiter seq_it, pos_it, cigar_it;
+
+	str msg = MAL_SUCCEED;
 
 	assert(ret != NULL && ref_pos != NULL && alg_seq != NULL && alg_pos != NULL && alg_cigar != NULL);
 
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
-		(cigars = BATdescriptor(*alg_cigar)) == NULL) 
-		throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
+		msg = createException(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+		goto cleanup;
+	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
-		throw(MAL, "seq_char_bat", 
+		msg = createException(MAL, "seq_char_bat", 
 			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
+		goto cleanup;
 	}
 	
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		throw(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+		goto cleanup;
 	}
 	BATseqbase(result, seqs->hseqbase);
 
@@ -541,8 +554,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		str msg;
 
 		if ((msg = seq_char(&r, ref_pos, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
-			return msg;
+			goto cleanup;
 		}
 		BUNappend(result, (ptr) r, FALSE);
 		++seq;
@@ -550,12 +562,13 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		++cigar;
 	}
 	
+cleanup:
 	/* release input BAT-descriptors */
-	BBPreleaseref(seqs->batCacheid);
-	BBPreleaseref(poss->batCacheid);
-	BBPreleaseref(cigars->batCacheid);
+	if(seqs) BBPreleaseref(seqs->batCacheid);
+	if(poss) BBPreleaseref(poss->batCacheid);
+	if(cigars) BBPreleaseref(cigars->batCacheid);
 
-	BBPkeepref((*ret = result->batCacheid));
+	if(result) BBPkeepref((*ret = result->batCacheid));
 
-	return MAL_SUCCEED;
+	return msg;
 }
