@@ -26,26 +26,78 @@
 #include "monetdb_config.h"
 #include "bam_lib.h"
 
-#define flag_str2sht(flag_str)						\
-	(strcmp(flag_str, "mult_segm") == 0 ? 0 :			\
-	 (strcmp(flag_str, "prop_alig") == 0 ? 1 :			\
-	  (strcmp(flag_str, "segm_unma") == 0 ? 2 :			\
-	   (strcmp(flag_str, "next_unma") == 0 ? 3 :			\
-		(strcmp(flag_str, "segm_reve") == 0 ? 4 :			\
-		 (strcmp(flag_str, "next_reve") == 0 ? 5 :			\
-		  (strcmp(flag_str, "firs_segm") == 0 ? 6 :			\
-		   (strcmp(flag_str, "last_segm") == 0 ? 7 :		\
-		(strcmp(flag_str, "seco_alig") == 0 ? 8 :		\
-		 (strcmp(flag_str, "qual_cont") == 0 ? 9 :		\
-		  (strcmp(flag_str, "opti_dupl") == 0 ? 10 :		\
-		   (strcmp(flag_str, "supp_alig") == 0 ? 11 : -1))))))))))))
+/* Map string to integer by adding all odd and subtracting all even numbers
+ * For the strings that we want to detect, this gives the following:
+ * mult_segm -> 71
+ * prop_alig -> 101
+ * segm_unma -> 84
+ * next_unma -> 89
+ * segm_reve -> 73
+ * next_reve -> 78
+ * firs_segm -> 83
+ * last_segm -> 97
+ * seco_alig -> 106
+ * qual_cont -> 98
+ * opti_dupl -> 118
+ * supp_alig -> 102
+ *
+ * These integers fit in an array of 48 positions
+ * Define two arrays:
+ * - One that maps int position to the bit position that we
+ *   are looking for
+ * - One that maps bit position to string, so we can check if
+ *   the input really was one of the valid strings (since many)
+ *   strings will map to the same integer
+ */
+
+sht intbit_map[] = {
+	 0, -1,  4, -1, -1, -1, -1,  5, -1, -1,
+	-1, -1,  6,  2, -1, -1, -1, -1,  3, -1,
+	-1, -1, -1, -1, -1, -1,  7,  9, -1, -1,
+	 1, 11, -1, -1, -1,  8, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, 10
+};
+
+str posstr_map[] = {
+	"mult_segm",
+	"prop_alig",
+	"segm_unma",
+	"next_unma",
+	"segm_reve",
+	"next_reve",
+	"firs_segm",
+	"last_segm",
+	"seco_alig",
+	"qual_cont",
+	"opti_dupl",
+	"supp_alig"
+};
+
+static sht 
+flag_str2sht(str flag_str) {
+	int i = 0;
+	int mult = 1;
+	int strnum = -71;
+	char c;
+	sht k = -1;
+	while((c = flag_str[i++]) != '\0') {
+		strnum += mult * (int)c;
+		mult *= -1;
+	}
+	if(strnum < 0 || strnum > 47 || (k = intbit_map[strnum]) < 0 ||
+			strcmp(posstr_map[k], flag_str) != 0) {
+		k = -1;
+	}
+	return k;
+}
 
 #define kth_bit(flag, k) ((flag & (1 << k)) == (1 << k))
 
 str
 bam_flag(bit * ret, sht * flag, str * name)
 {
-	sht k = flag_str2sht(*name);
+	sht k;
+	k = flag_str2sht(*name);
 
 	if (k < 0)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
