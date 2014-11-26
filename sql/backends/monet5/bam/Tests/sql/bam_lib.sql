@@ -131,7 +131,7 @@ SELECT seq_char(11, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
 SELECT seq_char(16, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
 SELECT seq_char(17, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
 
-# Bulk, does not work properly yet...
-# SELECT 17922987 AS ref_pos, seq, pos, cigar, seq_char(17922987, seq, pos, cigar) AS seq_char
-# FROM bam.alignments_1
-# WHERE seq_char(17922987, seq, pos, cigar) IS NOT NULL;
+# Bulk
+SELECT 17922987 AS ref_pos, seq, pos, cigar, seq_char(17922987, seq, pos, cigar) AS seq_char
+FROM bam.alignments_1
+WHERE seq_char(17922987, seq, pos, cigar) IS NOT NULL;

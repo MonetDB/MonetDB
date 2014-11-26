@@ -1,9 +1,9 @@
 stdout of test 'bam_lib` in directory 'sql/backends/monet5/bam` itself:
 
 
-# 10:07:17 >  
-# 10:07:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35421" "--set" "mapi_usock=/var/tmp/mtest-25140/.s.monetdb.35421" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 10:07:17 >  
+# 08:43:53 >  
+# 08:43:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35352" "--set" "mapi_usock=/var/tmp/mtest-9342/.s.monetdb.35352" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:43:53 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/bam` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:35421/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25140/.s.monetdb.35421
+# Listening for connection requests on mapi:monetdb://robin-xps13:35352/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9342/.s.monetdb.35352
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
@@ -51,9 +51,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 10:07:18 >  
-# 10:07:18 >  "/usr/bin/python2" "bam_lib.SQL.py" "bam_lib"
-# 10:07:18 >  
+# 08:43:54 >  
+# 08:43:54 >  "/usr/bin/python2" "bam_lib.SQL.py" "bam_lib"
+# 08:43:54 >  
 
 #SET SCHEMA bam;
 #SELECT bam_flag(1, 'mult_segm');
@@ -771,7 +771,15 @@ Ready.
 % char # type
 % 1 # length
 [ NULL	]
+#SELECT 17922987 AS ref_pos, seq, pos, cigar, seq_char(17922987, seq, pos, cigar) AS seq_char
+#FROM bam.alignments_1
+#WHERE seq_char(17922987, seq, pos, cigar) IS NOT NULL;
+% .L,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	.L # table_name
+% ref_pos,	seq,	pos,	cigar,	seq_char # name
+% int,	clob,	int,	clob,	char # type
+% 8,	100,	8,	21,	1 # length
+[ 17922987,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	17922987,	"3=1X1=1X43=1X16=1X33=",	"T"	]
 
-# 10:07:18 >  
-# 10:07:18 >  "Done."
-# 10:07:18 >  
+# 08:43:54 >  
+# 08:43:54 >  "Done."
+# 08:43:54 >  
