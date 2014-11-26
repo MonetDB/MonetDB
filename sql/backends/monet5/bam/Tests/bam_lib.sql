@@ -1,9 +1,5 @@
 SET SCHEMA bam;
 
-# Load a file to test our bam_lib functions on
-CALL bam_loader_file('PWD/files/file1.bam', 0);
-
-
 # BAM_FLAG
 
 # Should all give 'true'

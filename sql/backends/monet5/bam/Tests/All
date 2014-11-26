@@ -26,3 +26,4 @@ HAVE_SAMTOOLS?query2.11
 HAVE_SAMTOOLS?query2.12
 HAVE_SAMTOOLS?mergetable
 HAVE_SAMTOOLS?bam_lib
+#HAVE_SAMTOOLS?coverage_usecase

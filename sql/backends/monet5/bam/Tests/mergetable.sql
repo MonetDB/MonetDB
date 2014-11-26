@@ -1,8 +1,5 @@
 SET SCHEMA bam;
 
-# Load files
-CALL bam_loader_repos('PWD/files', 0, 4);
-
 # Add a merge table over these files
 CREATE MERGE TABLE alignments (
 	"virtual_offset" BIGINT        NOT NULL,
