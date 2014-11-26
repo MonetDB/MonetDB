@@ -244,6 +244,11 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// It should always take less space than the orginal column.
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
+		if (BATsetaccess(bcompress, BAT_WRITE) == NULL) {
+			BBPreleaseref(bsrc->batCacheid);
+			BBPreleaseref(bcompress->batCacheid);
+			throw(MAL, "mosaic.compress", GDK_EXCEPTION);
+		}
 		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
 		if( bcompress == NULL){
 			BBPreleaseref(bsrc->batCacheid);
@@ -445,7 +450,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		bcompress->T->heap.free = (size_t) (task->dst - Tloc(bcompress,BUNfirst(bcompress)) );
 		bcompress->T->heap.compressed= 1;
 		MCexitMaintenance(cntxt);
-		BATsave(bcompress);
+		BATsetaccess(bcompress, BAT_READ);
 		BBPkeepref(*ret = bcompress->batCacheid);
 		BBPreleaseref(bsrc->batCacheid);
 	} else {
