@@ -54,68 +54,51 @@ bam_flag(bit * ret, sht * flag, str * name)
 	return MAL_SUCCEED;
 }
 
+char reverse_seq_map[] = {
+	'T', //A
+	'V', //B
+	'G', //C
+	'H', //D
+	 0 , //E
+	 0 , //F
+	'C', //G
+	'D', //H
+	 0 , //I
+	 0 , //J
+	'M', //K
+	 0 , //L
+	'K', //M
+	'N', //N
+	 0 , //O
+	 0 , //P
+	 0 , //Q
+	'Y', //R
+	'S', //S
+	'A', //T
+	 0 , //U
+	'B', //V
+	'W', //W
+	 0 , //X
+	'R'  //Y
+};
+
 str
 reverse_seq(str * ret, str * seq)
 {
 	str result;
 	unsigned int i;
 	unsigned int len = strlen(*seq);
+	sht map_index;
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
 		throw(MAL, "reverse_seq", MAL_MALLOC_FAIL);
+
 	for (i = 0; i < len; ++i) {
-		switch ((*seq)[i]) {
-		case 'A':
-			result[len - i - 1] = 'T';
-			break;
-		case 'T':
-			result[len - i - 1] = 'A';
-			break;
-		case 'C':
-			result[len - i - 1] = 'G';
-			break;
-		case 'G':
-			result[len - i - 1] = 'C';
-			break;
-		case 'R':
-			result[len - i - 1] = 'Y';
-			break;
-		case 'Y':
-			result[len - i - 1] = 'R';
-			break;
-		case 'S':
-			result[len - i - 1] = 'S';
-			break;
-		case 'W':
-			result[len - i - 1] = 'W';
-			break;
-		case 'K':
-			result[len - i - 1] = 'M';
-			break;
-		case 'M':
-			result[len - i - 1] = 'K';
-			break;
-		case 'H':
-			result[len - i - 1] = 'D';
-			break;
-		case 'D':
-			result[len - i - 1] = 'H';
-			break;
-		case 'V':
-			result[len - i - 1] = 'B';
-			break;
-		case 'B':
-			result[len - i - 1] = 'V';
-			break;
-		case 'N':
-			result[len - i - 1] = 'N';
-			break;
-		default:
-			GDKfree(result);
-			throw(MAL, "reverse_seq",
-				  "Invalid character found in sequence: '%c'\n",
-				  (*seq)[i]);
+		map_index = (sht)((*seq)[i] - 'A');
+		if(map_index < 0 || map_index > 24 ||
+				(result[len - i - 1] = reverse_seq_map[map_index]) == 0) {
+			result[len - i - 1] = '?';
 		}
 	}
 	result[len] = '\0';
