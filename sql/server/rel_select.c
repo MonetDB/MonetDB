@@ -3284,7 +3284,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			rexps = right->exps;
 			if (!is_project(right->op) || list_length(ll) != list_length(rexps)) {
 				if (list_length(ll) == 1)
-					return sql_error(sql, 02, "IN: iinner query should return a single column");
+					return sql_error(sql, 02, "IN: inner query should return a single column");
 				return NULL;
 			}
 
