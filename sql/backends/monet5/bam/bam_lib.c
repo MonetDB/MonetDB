@@ -141,17 +141,21 @@ reverse_seq(str * ret, str * seq)
 	unsigned int i;
 	unsigned int len = strlen(*seq);
 	sht map_index;
+	str forward = *seq;
+	str backward;
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
 		throw(MAL, "reverse_seq", MAL_MALLOC_FAIL);
 
+	backward = &result[len-1];
 	for (i = 0; i < len; ++i) {
-		map_index = (sht)((*seq)[i] - 'A');
+		map_index = (sht)(*forward++ - 'A');
 		if(map_index < 0 || map_index > 24 ||
-				(result[len - i - 1] = reverse_seq_map[map_index]) == 0) {
-			result[len - i - 1] = '?';
+				(*backward = reverse_seq_map[map_index]) == 0) {
+			*backward = '?';
 		}
+		--backward;
 	}
 	result[len] = '\0';
 	*ret = result;
@@ -164,12 +168,16 @@ reverse_qual(str * ret, str * qual)
 	str result;
 	unsigned int i;
 	unsigned int len = strlen(*qual);
+	str forward = *qual;
+	str backward;
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
 		throw(MAL, "reverse_qual", MAL_MALLOC_FAIL);
+
+	backward = &result[len-1];
 	for (i = 0; i < len; ++i)
-		result[len - i - 1] = (*qual)[i];
+		*backward-- = *forward++;
 	result[len] = '\0';
 	*ret = result;
 	return MAL_SUCCEED;
