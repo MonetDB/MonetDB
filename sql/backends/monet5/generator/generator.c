@@ -30,6 +30,8 @@
 #include "math.h"
 
 
+#define IDENTITY(x)	(x)
+
 /*
  * The noop simply means that we keep the properties for the generator object.
  */
@@ -986,10 +988,10 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* The operands of a join operation can either be defined on a generator */
-#define VLTrangejoin(TPE, ABS) \
+#define VLTrangejoin(TPE, ABS, FLOOR) \
 { TPE f,f1,l,s; TPE *vlow,*vhgh; BUN w;\
-	f = *getArgReference_bte(stk,p, 1);\
-	l = *getArgReference_bte(stk,p, 2);\
+	f = *getArgReference_##TPE(stk,p, 1);\
+	l = *getArgReference_##TPE(stk,p, 2);\
 	if ( p->argc == 3) \
 		s = f<l? (TPE) 1: (TPE)-1;\
 	else s = * getArgReference_##TPE(stk, p, 3); \
@@ -999,9 +1001,9 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vlow = (TPE*) Tloc(blow,BUNfirst(blow));\
 	vhgh = (TPE*) Tloc(bhgh,BUNfirst(bhgh));\
 	for( ; cnt >0; cnt--, done++, o++,vlow++,vhgh++){\
-		f1 = f + floor(ABS(*vlow-f)/ABS(s)) * s;\
+		f1 = f + FLOOR(ABS(*vlow-f)/ABS(s)) * s;\
 		if ( f1 < *vlow ) f1+= s;\
-		w = (BUN) floor(ABS(f1-f)/ABS(s));\
+		w = (BUN) FLOOR(ABS(f1-f)/ABS(s));\
 		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){\
 			if(c == limit)\
 				VLTrangeExpand();\
@@ -1058,43 +1060,15 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: VLTrangejoin(bte,abs); break; 
-	case TYPE_sht: VLTrangejoin(sht,abs); break;
-	case TYPE_int: VLTrangejoin(int,abs); break;
-	case TYPE_lng: //VLTrangejoin(lng,llabs); break;
-	{ lng f,f1,l,s; lng *vlow,*vhgh; BUN w;
-	f = *getArgReference_lng(stk,p, 1);
-	l = *getArgReference_lng(stk,p, 2);
-	if ( p->argc == 3)
-		s = f<l? (lng) 1: (lng)-1;
-	else s = * getArgReference_sht(stk, p, 3); 
-	incr = s > 0;
-
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
-		throw(MAL,"generator.rangejoin","Illegal range");
-
-	vlow = (lng*) Tloc(blow,BUNfirst(blow));
-	vhgh = (lng*) Tloc(bhgh,BUNfirst(bhgh));
-	for( ; cnt >0; done++,cnt--, o++,vlow++,vhgh++){
-		f1 = f + floor(abs(*vlow-f)/abs(s)) * s;
-		if ( f1 < *vlow ) f1+= s;
-		w = (BUN) floor(abs(f1-f)/abs(s));
-		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){
-			if(c == limit){
-				limit += 0;
-				VLTrangeExpand();
-			}
-			*ol++ = (oid) w;
-			*or++ = o;
-			c++;
-		}
-	} }
-	break;
+	case TYPE_bte: VLTrangejoin(bte,abs,IDENTITY); break;
+	case TYPE_sht: VLTrangejoin(sht,abs,IDENTITY); break;
+	case TYPE_int: VLTrangejoin(int,abs,IDENTITY); break;
+	case TYPE_lng: VLTrangejoin(lng,llabs,IDENTITY); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: VLTrangejoin(hge,HGE_ABS); break;
+	case TYPE_hge: VLTrangejoin(hge,HGE_ABS,IDENTITY); break;
 #endif
-	case TYPE_flt: VLTrangejoin(flt,fabsf); break;
-	case TYPE_dbl: VLTrangejoin(dbl,fabs); break;
+	case TYPE_flt: VLTrangejoin(flt,fabsf,floorf); break;
+	case TYPE_dbl: VLTrangejoin(dbl,fabs,floor); break;
 	default:
 		if( tpe == TYPE_timestamp){ 
 			// it is easier to produce the timestamp series
