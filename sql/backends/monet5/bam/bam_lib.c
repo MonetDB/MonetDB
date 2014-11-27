@@ -186,9 +186,8 @@ reverse_qual(str * ret, str * qual)
 #define next_cigar_op(fn) { \
 	str tmp; \
 	cnt = strtol(s, &tmp, 10); \
-	if(cnt <= 0 || s == tmp) { \
-		*ret = -1; \
-		throw(MAL, fn, "Could not read CIGAR operation"); \
+	if(cnt <= 0 || s == tmp || *s == '\0') { \
+		throw(MAL, fn, "Could not parse CIGAR string"); \
 	} \
 	s = tmp; \
 	op = *s++; \
@@ -219,30 +218,26 @@ seq_length(int * ret, str * cigar)
 str
 seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar) 
 {
-	str cigar_consumable = *alg_cigar;
+	str s = *alg_cigar;
 	int seq_pos = -1;
 	int cur_ref_pos = *alg_pos - 1;
+
+	long int cnt;
+	char op;
 	
-	if (cigar_consumable[0] == '\0' || 
-			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
+	if (*s == '\0' || (*s == '*' && *(s+1) == '\0')) {
 		*ret = GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
 	while(TRUE) {
-		int cnt;
-		char op;
-		int nr_chars_read;
 		bit advance_ref_pos;
 		bit advance_seq_pos;
 
-		if (sscanf
-			(cigar_consumable, "%d%c%n", &cnt, &op,
-			 &nr_chars_read) != 2)
-			throw(MAL, "seq_char",
-				  "Error parsing CIGAR string '%s'\n", *alg_cigar);
+		next_cigar_op("seq_char");
+		
 		advance_ref_pos = (op == 'M' || op == 'D' || 
 			op == 'N' || op == '=' || op == 'X');
-		advance_seq_pos = (op == 'M' || op == 'I' || op == '='); // TODO: Find out which chars advance the seq pos
+		advance_seq_pos = (op == 'M' || op == 'I' || op == '='); // TODO: Find out which chars advance the seq pos exactly
 		if(advance_seq_pos) {
 			seq_pos += cnt;
 		}
@@ -257,8 +252,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 				break;
 			}
 		}
-		cigar_consumable += nr_chars_read;
-		if(cigar_consumable[0] == '\0') {
+		if(*s == '\0') {
 			seq_pos = -1;
 			break;
 		}
