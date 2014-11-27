@@ -183,31 +183,34 @@ reverse_qual(str * ret, str * qual)
 	return MAL_SUCCEED;
 }
 
+#define next_cigar_op(fn) { \
+	str tmp; \
+	cnt = strtol(s, &tmp, 10); \
+	if(cnt <= 0 || s == tmp) { \
+		*ret = -1; \
+		throw(MAL, fn, "Could not read CIGAR operation"); \
+	} \
+	s = tmp; \
+	op = *s++; \
+}
+
 str
 seq_length(int * ret, str * cigar)
 {
 	int result = 0;
-	str cigar_consumable = *cigar;
+	str s = *cigar;
+	long int cnt;
+	char op;
 
-	if (cigar_consumable[0] == '\0' || 
-			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
+	if (*s == '\0' || (*s == '*' && *(s+1) == '\0')) {
 		*ret = -1;
 		return MAL_SUCCEED;
 	}
-	while (cigar_consumable[0] != '\0') {
-		int cnt;
-		char op;
-		int nr_chars_read;
-
-		if (sscanf
-			(cigar_consumable, "%d%c%n", &cnt, &op,
-			 &nr_chars_read) != 2)
-			throw(MAL, "seq_length",
-				  "Error parsing CIGAR string '%s'\n", *cigar);
+	while (*s != '\0') {
+		next_cigar_op("seq_length");
 		if (op == 'M' || op == 'D' || op == 'N' || op == '='
 			|| op == 'X')
 			result += cnt;
-		cigar_consumable += nr_chars_read;
 	}
 	*ret = result;
 	return MAL_SUCCEED;
