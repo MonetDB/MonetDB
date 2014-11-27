@@ -3,11 +3,11 @@ module bam;
 
 # Bam loader related signatures
 
-pattern bam_loader_repos(bam_repos:str, dbschema:sht, nr_threads:sht):void
+pattern bam_loader_repos(bam_repos:str, dbschema:sht):void
 address bam_loader_repos
 comment "Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema";
 
-pattern bam_loader_files(bam_files:str, dbschema:sht, nr_threads:sht):void
+pattern bam_loader_files(bam_files:str, dbschema:sht):void
 address bam_loader_files
 comment "Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema";
 

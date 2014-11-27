@@ -1,9 +1,9 @@
 CREATE SCHEMA bam;
 
-CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT, nr_threads SMALLINT)
+CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT)
 EXTERNAL NAME bam.bam_loader_repos;
 
-CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT, nr_threads SMALLINT)
+CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT)
 EXTERNAL NAME bam.bam_loader_files;
 
 CREATE PROCEDURE bam.bam_loader_file(bam_file STRING, dbschema SMALLINT)

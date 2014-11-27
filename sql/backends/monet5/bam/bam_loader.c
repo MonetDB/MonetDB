@@ -419,8 +419,10 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str bam_repos = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
 	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
-	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
+	/* For now, we hard code the number of threads, since the SQL
+	   level should not bother with this */
+
+	sht nr_threads = 4;
 
 	str *filenames = NULL;
 	int nr_files = 0;
@@ -539,8 +541,9 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str bam_files = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
 	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
-	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
+	/* For now, we hard code the number of threads, since the SQL
+	   level should not bother with this */
+	sht nr_threads = 4;
 
 	str *filenames = NULL;
 	int nr_files = 0;
