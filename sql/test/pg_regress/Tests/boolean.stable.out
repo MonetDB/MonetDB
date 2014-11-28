@@ -240,7 +240,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE f1 = NOT FALSE;
 % .L,	sys.booltbl1 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	true	]
@@ -251,7 +251,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE NOT FALSE = f1;
 % .L,	sys.booltbl1 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	true	]
@@ -262,7 +262,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE f1 = (NOT FALSE);
 % .L,	sys.booltbl1 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	true	]
@@ -281,7 +281,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE f1 = NOT TRUE;
 % .L,	sys.booltbl1 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
@@ -289,7 +289,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE NOT TRUE = f1;
 % .L,	sys.booltbl1 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
@@ -297,7 +297,7 @@ Ready.
 #   FROM BOOLTBL1
 #   WHERE f1 = (NOT TRUE);
 % .L,	sys.booltbl1 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
@@ -312,21 +312,21 @@ Ready.
 #   FROM BOOLTBL2
 #   WHERE f1 = NOT FALSE;
 % .L,	sys.booltbl2 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 #SELECT '' AS "Not False", f1
 #   FROM BOOLTBL2
 #   WHERE NOT FALSE = f1;
 % .L,	sys.booltbl2 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 #SELECT '' AS "Not False", f1
 #   FROM BOOLTBL2
 #   WHERE f1 = (NOT FALSE);
 % .L,	sys.booltbl2 # table_name
-% Not False,	f1 # name
+% "Not False",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 #SELECT '' AS "False", f1
@@ -345,7 +345,7 @@ Ready.
 #   FROM BOOLTBL2
 #   WHERE f1 = NOT TRUE;
 % .L,	sys.booltbl2 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
@@ -357,7 +357,7 @@ Ready.
 #   FROM BOOLTBL2
 #   WHERE NOT TRUE = f1;
 % .L,	sys.booltbl2 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
@@ -369,7 +369,7 @@ Ready.
 #   FROM BOOLTBL2
 #   WHERE f1 = (NOT TRUE);
 % .L,	sys.booltbl2 # table_name
-% Not True,	f1 # name
+% "Not True",	f1 # name
 % char,	boolean # type
 % 0,	5 # length
 [ "",	false	]
