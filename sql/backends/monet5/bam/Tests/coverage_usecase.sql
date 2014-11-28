@@ -40,6 +40,10 @@ GROUP BY grp_start, grp_end
 ORDER BY average DESC;
 
 
+# Diversity from the use case for the btw paper is not calculated, since we do not have a reference string for
+# our small test files
+
+
 # Clean up
 DROP VIEW coverage;
 DROP TABLE base;
