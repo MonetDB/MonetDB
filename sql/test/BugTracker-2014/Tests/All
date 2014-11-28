@@ -53,3 +53,4 @@ hexadecimal_literals.Bug-3621
 orderby_column_exp.Bug-3620
 case-sqrt.Bug-3627
 column-with-comma.Bug-3616
+stddev-empty.Bug-3628
