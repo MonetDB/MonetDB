@@ -422,7 +422,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* For now, we hard code the number of threads, since the SQL
 	   level should not bother with this */
 
-	sht nr_threads = 4;
+	sht nr_threads = GDKnr_threads;
 
 	str *filenames = NULL;
 	int nr_files = 0;
@@ -543,7 +543,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
 	/* For now, we hard code the number of threads, since the SQL
 	   level should not bother with this */
-	sht nr_threads = 4;
+	sht nr_threads = GDKnr_threads;
 
 	str *filenames = NULL;
 	int nr_files = 0;
