@@ -25,18 +25,6 @@
 #include "sql_privileges.h"
 
 static sql_exp *
-nth( list *l, int n)
-{
-	int i;
-	node *m;
-
-	for (i=0, m = l->h; i<n && m; i++, m = m->next) ; 
-	if (m)
-		return m->data;
-	return NULL;
-}
-
-static sql_exp *
 insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 {
 	if (s->token == SQL_NULL) {
@@ -129,7 +117,7 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	wrd = sql_bind_localtype("wrd");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
-		sql_exp *e = nth(get_inserts(inserts), c->c->colnr);
+		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
 
 		if (h && i->type == hash_idx)  { 
 			list *exps = new_exp_list(sql->sa);
@@ -189,7 +177,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *_is = nth(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 		char *ename = exp_name(_is);
 
@@ -540,7 +528,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			sql_kc *c = m->data;
 			sql_exp *e;
 
-	       		e = nth(get_inserts(updates), c->c->colnr+1);
+	       		e = list_fetch(get_inserts(updates), c->c->colnr+1);
 			
 			if (h && i->type == hash_idx)  { 
 				list *exps = new_exp_list(sql->sa);
@@ -632,7 +620,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 
