@@ -375,10 +375,19 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		}
 	}	break;
 	case e_convert: {
-		stmt *l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
+		/* if input is type any NULL or column of nulls, change type */
 		list *tps = e->r;
 		sql_subtype *from = tps->h->data;
 		sql_subtype *to = tps->h->next->data;
+		stmt *l;
+
+		if (from->type->localtype == 0) {
+			l = stmt_atom(sql->sa, atom_general(sql->sa, to, NULL));
+			if (exp_card(e->l) > CARD_ATOM) 
+				l = const_column(sql->sa, l);
+		} else {
+	       		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
+		}
 		if (!l) 
 			return NULL;
 		s = stmt_convert(sql->sa, l, from, to);
@@ -529,7 +538,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 		/* HACK: correct cardinality for window functions */
-		if (e->card > CARD_AGGR)
+		if (exp_card(e) > CARD_AGGR)
 			s->nrcols = 2;
 	} 	break;
 	case e_column: {
