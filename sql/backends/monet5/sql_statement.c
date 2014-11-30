@@ -1655,7 +1655,11 @@ stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts)
 	list_append(l, ifstmts);
 	list_append(l, stmt_control_end(sa, cstmt));
 	if (elsestmts) {
-		cond = stmt_unop(sa, cond, not);
+		sql_subfunc *or = sql_bind_func(sa, NULL, "or", bt, bt, F_FUNC);
+		sql_subfunc *isnull = sql_bind_func(sa, NULL, "isnull", bt, NULL, F_FUNC);
+		cond = stmt_binop(sa, 
+				stmt_unop(sa, cond, not),
+				stmt_unop(sa, cond, isnull), or);
 		list_append(l, cstmt = stmt_cond(sa, cond, NULL, 0));
 		list_append(l, elsestmts);
 		list_append(l, stmt_control_end(sa, cstmt));

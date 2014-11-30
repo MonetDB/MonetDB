@@ -56,3 +56,7 @@ orderby_column_exp.Bug-3620
 typecast_error.Bug-3622
 case-sqrt.Bug-3627
 column-with-comma.Bug-3616
+stddev-empty.Bug-3628
+ifthenelse.Bug-3629
+order_by_incorrect_error.Bug-3630
+
