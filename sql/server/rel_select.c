@@ -4243,9 +4243,11 @@ rel_cast(mvc *sql, sql_rel **rel, symbol *se, int f)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
+	if (e) 
+		e = rel_check_type(sql, tpe, e, type_cast);
 	if (e)
-		return rel_check_type(sql, tpe, e, type_cast);
-	return NULL;
+		exp_label(sql->sa, e, ++sql->label);
+	return e;
 }
 
 static sql_exp *

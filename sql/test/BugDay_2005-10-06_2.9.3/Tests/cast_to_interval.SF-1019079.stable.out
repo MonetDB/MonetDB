@@ -15,8 +15,8 @@ Ready.
 
 
 #select cast('0' as interval year);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 0 # length
 [ 0	]

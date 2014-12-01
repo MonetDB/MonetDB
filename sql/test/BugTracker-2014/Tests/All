@@ -53,7 +53,7 @@ hexadecimal_literals.Bug-3621
 orderby_column_exp.Bug-3620
 case-sqrt.Bug-3627
 column-with-comma.Bug-3616
+missing_alias.Bug-3626
 stddev-empty.Bug-3628
 ifthenelse.Bug-3629
 order_by_incorrect_error.Bug-3630
-
