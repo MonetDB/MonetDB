@@ -43,7 +43,7 @@ int
 INETfromString(str src, int *len, inet **retval)
 {
 	int i, last, type;
-	lng parse;
+	long parse;
 	char *endptr;
 	char sep;
 
@@ -71,16 +71,12 @@ INETfromString(str src, int *len, inet **retval)
 			sep = src[i];
 			src[i] = '\0';
 			parse = strtol(src + last, &endptr, 10);
-			if (*endptr != '\0') {
-				/* this is for the cat his violin
-				throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
-				*/
+			if (*endptr != '\0' || last >= i) {
+				GDKerror("Error while parsing, unexpected string '%s'", endptr);
 				goto error;
 			}
 			if (parse > 255 || parse < 0) {
-				/* this is for the cat his violin
-				throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
-				*/
+				GDKerror("Illegal quad value: %ld", parse);
 				goto error;
 			}
 			switch (type) {
@@ -123,17 +119,13 @@ INETfromString(str src, int *len, inet **retval)
 	 * the contract is that the caller makes sure the string is
 	 * null-terminated here */
 	parse = strtol(src + last, &endptr, 10);
-	if (*endptr != '\0') {
-		/* this is for the cat his violin
-		throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
-		*/
+	if (*endptr != '\0' || (sep != '/' && last >= i)) {
+		GDKerror("Error while parsing, unexpected string '%s'", endptr);
 		goto error;
 	}
 	if (type == 3) {
 		if (parse > 255 || parse < 0) {
-			/* this is for the cat his violin
-			throw(PARSE, "inet.fromStr", "Illegal quad value: %d", parse);
-			*/
+			GDKerror("Illegal quad value: %ld", parse);
 			goto error;
 		}
 		(*retval)->q4 = (unsigned char) parse;
@@ -141,16 +133,12 @@ INETfromString(str src, int *len, inet **retval)
 		(*retval)->mask = (unsigned char) 32;
 	} else if (type == 4) {
 		if (parse < 0 || parse > 32) {
-			/* this is for the cat his violin
-			throw(PARSE, "inet.fromStr", "Illegal mask value: %d", parse);
-			*/
+			GDKerror("Illegal mask value: %ld", parse);
 			goto error;
 		}
 		(*retval)->mask = (unsigned char) parse;
 	} else {
-		/* this is for the cat his violin
-		   throw(PARSE, "inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
-		   */
+		GDKerror("Error while parsing, unexpected string '%s'", endptr);
 		goto error;
 	}
 
@@ -158,7 +146,7 @@ INETfromString(str src, int *len, inet **retval)
 error: /* catch exception: return NULL */
 	in_setnil(*retval);
 	*len = 0;	/* signal INETnew something went wrong */
-	return(i - 1);
+	return 0;
 }
 /**
  * Returns the string representation of the given inet value.
@@ -199,7 +187,7 @@ INETnew(inet *retval, str *in)
 	int len = sizeof(inet);
 
 	pos = INETfromString(*in, &len, &retval);
-	if (len == 0)
+	if (pos == 0)
 		throw(PARSE, "inet.new", "Error while parsing at char %d", pos + 1);
 
 	return (MAL_SUCCEED);
