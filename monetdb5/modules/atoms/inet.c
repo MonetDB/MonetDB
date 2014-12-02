@@ -45,7 +45,7 @@ INETfromString(str src, int *len, inet **retval)
 	int i, last, type;
 	long parse;
 	char *endptr;
-	char sep;
+	char sep = '.';
 
 	last = 0;
 	type = 0;
