@@ -375,10 +375,19 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		}
 	}	break;
 	case e_convert: {
-		stmt *l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
+		/* if input is type any NULL or column of nulls, change type */
 		list *tps = e->r;
 		sql_subtype *from = tps->h->data;
 		sql_subtype *to = tps->h->next->data;
+		stmt *l;
+
+		if (from->type->localtype == 0) {
+			l = stmt_atom(sql->sa, atom_general(sql->sa, to, NULL));
+			if (exp_card(e->l) > CARD_ATOM) 
+				l = const_column(sql->sa, l);
+		} else {
+	       		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
+		}
 		if (!l) 
 			return NULL;
 		s = stmt_convert(sql->sa, l, from, to);
@@ -529,7 +538,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 		/* HACK: correct cardinality for window functions */
-		if (e->card > CARD_AGGR)
+		if (exp_card(e) > CARD_AGGR)
 			s->nrcols = 2;
 	} 	break;
 	case e_column: {
@@ -2760,18 +2769,6 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 }
 
 static stmt *
-nth( list *l, int n)
-{
-	int i;
-	node *m;
-
-	for (i=0, m = l->h; i<n && m; i++, m = m->next) ; 
-	if (m)
-		return m->data;
-	return NULL;
-}
-
-static stmt *
 stmt_selectnonil( mvc *sql, stmt *col, stmt *s )
 {
 	sql_subtype *t = tail_type(col);
@@ -2798,7 +2795,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 
 	if (list_length(k->columns) > 1) {
 		node *m;
-		stmt *s, *ins = nth(inserts, 0)->op1;
+		stmt *s = list_fetch(inserts, 0), *ins = s->op1;
 		sql_subaggr *sum;
 		stmt *ssum = NULL;
 		stmt *col = NULL;
@@ -2811,13 +2808,14 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 				s = stmt_uselect(sql->sa, stmt_idx(sql, k->idx, dels), idx_inserts, cmp_equal, s);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
 				col = stmt_col(sql, c->c, dels);
 				if ((k->type == ukey) && stmt_has_null(col)) {
 					stmt *nn = stmt_selectnonil(sql, col, s);
-					s = stmt_uselect( sql->sa, col, nth(inserts, c->c->colnr)->op1, cmp_equal, nn);
+					s = stmt_uselect( sql->sa, col, cs->op1, cmp_equal, nn);
 				} else {
-					s = stmt_uselect( sql->sa, col, nth(inserts, c->c->colnr)->op1, cmp_equal, s);
+					s = stmt_uselect( sql->sa, col, cs->op1, cmp_equal, s);
 				}
 			}
 		} else {
@@ -2829,10 +2827,11 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			}
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
 				col = stmt_col(sql, c->c, dels);
 				list_append(lje, col);
-				list_append(rje, nth(inserts, c->c->colnr)->op1);
+				list_append(rje, cs->op1);
 			}
 			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);
@@ -2848,11 +2847,12 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;
+				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
 				if (orderby_grp)
-					orderby = stmt_reorder(sql->sa, nth(inserts, c->c->colnr)->op1, 1, orderby_ids, orderby_grp);
+					orderby = stmt_reorder(sql->sa, cs->op1, 1, orderby_ids, orderby_grp);
 				else
-					orderby = stmt_order(sql->sa, nth(inserts, c->c->colnr)->op1, 1);
+					orderby = stmt_order(sql->sa, cs->op1, 1);
 				orderby_ids = stmt_result(sql->sa, orderby, 1);
 				orderby_grp = stmt_result(sql->sa, orderby, 2);
 			}
@@ -2874,7 +2874,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		res = stmt_exception(sql->sa, s, msg, 00001);
 	} else {		/* single column key */
 		sql_kc *c = k->columns->h->data;
-		stmt *s, *h = nth(inserts, c->c->colnr)->op1;
+		stmt *s = list_fetch(inserts, c->c->colnr), *h = s->op1;
 
 		s = stmt_col(sql, c->c, dels);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -2901,7 +2901,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			stmt *ssum, *ss;
 
-			stmt *g, *ins = nth(inserts, c->c->colnr)->op1;
+			stmt *g = list_fetch(inserts, c->c->colnr), *ins = g->op1;
 
 			/* inserted vaules may be null */
 			if ((k->type == ukey) && stmt_has_null(ins)) {
@@ -2935,7 +2935,7 @@ static stmt *
 insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	char *msg = NULL;
-	stmt *s = nth(inserts, 0)->op1;
+	stmt *cs = list_fetch(inserts, 0), *s = cs->op1;
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -4241,11 +4241,8 @@ rel2bin_delete( mvc *sql, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_output(mvc *sql, sql_rel *rel, list *refs) 
 {
-	node *n = rel->exps->h;
-	char *tsep = sa_strdup(sql->sa, E_ATOM_STRING(n->data));
-	char *rsep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->data));
-	char *ssep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->data));
-	char *ns   = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->next->data));
+	node *n;
+	char *tsep, *rsep, *ssep, *ns;
 	char *fn   = NULL;
 	stmt *s = NULL, *fns = NULL;
 	list *slist = sa_list(sql->sa);
@@ -4254,6 +4251,16 @@ rel2bin_output(mvc *sql, sql_rel *rel, list *refs)
 		s = subrel_bin(sql, rel->l, refs);
 	if (!s) 
 		return NULL;	
+
+	if (!rel->exps){ /* rows affacted */
+		list_append(slist, stmt_affected_rows(sql->sa, s));
+		return stmt_list(sql->sa, slist);
+	}
+	n = rel->exps->h;
+	tsep = sa_strdup(sql->sa, E_ATOM_STRING(n->data));
+	rsep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->data));
+	ssep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->data));
+	ns   = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->next->data));
 
 	if (n->next->next->next->next) {
 		fn = E_ATOM_STRING(n->next->next->next->next->data);

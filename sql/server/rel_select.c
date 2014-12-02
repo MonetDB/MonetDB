@@ -3594,17 +3594,22 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
 
-	if (!e) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+
+	if (!s)
+		return NULL;
+	if (!e)
+		f = find_func(sql, s, fname, 1, F_AGGR);
+	if (!e && f) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		return rel_aggr(sql, rel, se, fs);
 	}
+	if (!e)
+		return NULL;
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	if (!s)
-		s = sql->session->schema;
 	t = exp_subtype(e);
 	f = bind_func(sql, s, fname, t, NULL, type);
 	if (!f)
@@ -3836,22 +3841,27 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
+	sql_subfunc *sf = NULL;
+
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (!s)
+		return NULL;
 
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
-	if (!l && !r) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+	if (!l && !r)
+		sf = find_func(sql, s, fname, 2, F_AGGR);
+	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		return rel_aggr(sql, rel, se, f);
 	}
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-
 	if (type == F_FUNC) {
-		sql_subfunc *func = find_func(sql, s, fname, 2, F_AGGR);
-		if (func) {
+		sf = find_func(sql, s, fname, 2, F_AGGR);
+		if (sf) {
 			if (!l || !r) { /* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -4640,12 +4650,12 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 		if (r && or != r)
 			(*R)->l = r;
 		/* add to internal project */
-		if (is_processed(r) && e) {
+		if (e && is_processed(r)) {
 			rel_project_add_exp(sql, r, e);
 			e = rel_lastexp(sql, r);
 		}
 		/* try with reverted aliases */
-		if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+		if (!e && r && sql->session->status != -ERR_AMBIGUOUS) {
 			sql_rel *nr = rel_project(sql->sa, r, rel_projections_(sql, r));
 
 			/* reset error */

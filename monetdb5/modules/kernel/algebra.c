@@ -2177,7 +2177,7 @@ ALGstdev(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2193,7 +2193,7 @@ ALGstdevp(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2212,7 +2212,7 @@ ALGvariance(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
@@ -2228,7 +2228,7 @@ ALGvariancep(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_population(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
