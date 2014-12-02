@@ -27,7 +27,6 @@
 #include <math.h>
 
 extern double sqrt(double x);
-extern double cbrt(double x);
 extern double sin(double x);
 extern double cos(double x);
 extern double fabs(double x);
