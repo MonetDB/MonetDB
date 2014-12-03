@@ -15,8 +15,8 @@ Ready.
 
 
 #select cast(true as integer);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -30,7 +30,7 @@ Ready.
 [ true	]
 [ false	]
 #select cast(i<2 as integer)+1 from a;
-% sys.L # table_name
+% sys.L1 # table_name
 % sql_add_<_i # name
 % bigint # type
 % 1 # length

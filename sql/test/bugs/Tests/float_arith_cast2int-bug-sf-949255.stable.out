@@ -35,14 +35,14 @@ Ready.
 % 24 # length
 [ 1	]
 #select cast(3.14/3.14 as integer);
-% .L # table_name
-% sql_div_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select cast(f/f as integer) from x;
-% sys.L # table_name
-% sql_div_f # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]

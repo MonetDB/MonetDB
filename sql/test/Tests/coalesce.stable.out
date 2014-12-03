@@ -60,6 +60,15 @@ Ready.
 [ 2,	"user unknown"	]
 [ 3,	"c"	]
 [ 4,	"user unknown"	]
+#select id, coalesce(age,'age unknown') from coalescetest;
+% sys.coalescetest,	sys.L # table_name
+% id,	isnull_not_isnull_age # name
+% int,	char # type
+% 1,	11 # length
+[ 1,	"20"	]
+[ 2,	"26"	]
+[ 3,	"age unknown"	]
+[ 4,	"age unknown"	]
 #select id, coalesce(age,-1) from coalescetest;
 % sys.coalescetest,	sys.L # table_name
 % id,	isnull_not_isnull_age # name
@@ -69,6 +78,15 @@ Ready.
 [ 2,	26	]
 [ 3,	-1	]
 [ 4,	-1	]
+#select id, coalesce(name, age, 'unknown') from coalescetest;
+% sys.coalescetest,	sys.L # table_name
+% id,	isnull_not_isnull_name # name
+% int,	char # type
+% 1,	10 # length
+[ 1,	"a"	]
+[ 2,	"26"	]
+[ 3,	"c"	]
+[ 4,	"unknown"	]
 #SELECT COALESCE(NULL,'x');
 % .L # table_name
 % isnull_single_value # name

@@ -15,8 +15,8 @@ Ready.
 
 
 #select cast( 1 as varchar(10));
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 1 # length
 [ "1"	]
