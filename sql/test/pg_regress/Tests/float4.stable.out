@@ -45,31 +45,31 @@ Ready.
 #INSERT INTO FLOAT4_TBL(f1) VALUES ('       ');
 [ 1	]
 #SELECT cast('NaN' as real);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % real # type
 % 15 # length
 [ NULL	]
 #SELECT cast('nan' as real);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % real # type
 % 15 # length
 [ NULL	]
 #SELECT cast('   NAN  ' as real);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % real # type
 % 15 # length
 [ NULL	]
 #SELECT cast('          -INFINiTY   ' as real);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % real # type
 % 15 # length
 [ -inf	]
 #SELECT cast('nan' as real) / cast('nan' as real);
-% .L # table_name
+% .L2 # table_name
 % sql_div_single_value # name
 % real # type
 % 15 # length
