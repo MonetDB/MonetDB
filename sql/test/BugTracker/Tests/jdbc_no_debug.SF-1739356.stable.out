@@ -55,12 +55,12 @@ Operation successful
 |     X_2 := sql.mvc();                                               |
 |     X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);          |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
-|     X_64 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);          |
+|     X_61 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);                  |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_65 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2:sht,2:sht,true,true,true); |
+|     X_62 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2:sht,2:sht,true,true,true); |
 |     X_15:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1);                 |
-|     X_67 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);                 |
-|     X_17 := sql.subdelta(X_64,X_6,X_12,X_65,X_67);                                  |
+|     X_64 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);                 |
+|     X_17 := sql.subdelta(X_61,X_6,X_12,X_62,X_64);                                  |
 |     X_18:bat[:oid,:int]  := sql.bind(X_2,"sys","_tables","id",0);                   |
 |     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","id",2);            |
 |     X_22:bat[:oid,:int]  := sql.bind(X_2,"sys","_tables","id",1);           |
@@ -78,7 +78,7 @@ Operation successful
 |     X_38 := aggr.count(X_37);                                        |
 |     X_39 := bat.append(X_26,X_38,true);                              |
 |     X_40:wrd  := aggr.sum(X_39);                                            |
-|     sql.exportValue(1,".L1","L1","wrd",64,0,6,X_40,"");                     |
+|     sql.resultSet(".L1","L1","wrd",64,0,X_40);                                      |
 | end s3_1;                                                                   |
 | # querylog.define("explain select count(*) from tables\n;","sequential_pipe") |
 +-------------------------------------------------------------------------------------+

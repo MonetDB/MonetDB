@@ -113,6 +113,10 @@ pattern eval(cmd:str, output:bit):void
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
+pattern eval(cmd:str)(nme:bat[:oid,:str],tpe:bat[:oid,:str],val:bat[:oid,:any]...)
+address SQLstatementResult
+comment "Compile and execute a single sql statement. Return the result set for rendering";
+
 pattern include(fname:str):void 
 address SQLinclude
 comment "Compile and execute a sql statements on the file";
@@ -282,13 +286,28 @@ comment "Prepare a row result set";
 pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set";
+pattern resultSet{unsafe}(tbl:str, attr:str, tpe:str, len:int,scale:int, val:any) :int 
+address mvc_scalar_value_wrap
+comment "Prepare a table result set";
+
 pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
 address mvc_result_value_wrap
 comment "Add the value to the row query result";
-
 pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
 comment "Add the column to the table query result";
+
+pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+address mvc_row_value_wrap
+comment "Prepare a table result set";
+
+pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+address mvc_result_table_wrap
+comment "Prepare a table result set";
+
+pattern copy_into{unsafe}(fname:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+address mvc_copy_into_wrap
+comment "Prepare a table result set for the COPY INTO";
 
 pattern declaredTable{unsafe}( name:str ) :int 
 address mvc_declared_table_wrap
@@ -309,13 +328,9 @@ pattern drop_func_upgrade_oct2014(id:int) :int
 address UPGdrop_func
 comment "Drop the function identified by id, needed for the Oct2014 upgrade";
 
-pattern create_func_upgrade_oct2014(sname:str,f:str) :int
+pattern create_func_upgrade_oct2014(f:str) :int
 address UPGcreate_func
 comment "Create the function described by f, needed for the Oct2014 upgrade";
-
-pattern create_view_upgrade_oct2014(sname:str,v:str) :int
-address UPGcreate_view
-comment "Create the view described by f, needed for the Oct2014 upgrade";
 
 pattern exportHead{unsafe}(s:streams, res_id:int) :void
 address mvc_export_head_wrap
@@ -341,9 +356,9 @@ pattern affectedRows{unsafe}(mvc:int, nr:wrd, w:str) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
-pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
-address mvc_export_value_wrap 
-comment "export a single value onto the stream s";
+#pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
+#address mvc_export_value_wrap 
+#comment "export a single value onto the stream s";
 
 pattern copy_from{unsafe}( sname:str, tname:str, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)

@@ -37,7 +37,6 @@
  * reduce the cost to prepare MAL statements significantly.
  *
  * A dummy module is needed to load properly.
- * @-
  */
 #include "monetdb_config.h"
 #include "sql_gencode.h"
@@ -69,7 +68,7 @@ static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top);
  *
  * The catalog relations should be maintained in a MAL box, which
  * provides the handle for transaction management.
- * @-
+ *
  * The atoms produced by the parser should be converted back into
  * MAL constants. Ideally, this should not be necessary when the
  * SQL parser keeps the string representation around.
@@ -120,9 +119,7 @@ argumentZero(MalBlkPtr mb, int tpe)
 }
 
 /*
- * @-
- * To speedup code generation we freeze the references to the major modules.
- * This safes table lookups.
+ * To speedup code generation we freeze the references to the major module names.
  */
 static str exportValueRef;
 static str exportResultRef;
@@ -139,15 +136,57 @@ initSQLreferences(void)
 }
 
 /*
- * @-
  * The dump_header produces a sequence of instructions for
  * the front-end to prepare presentation of a result table.
+ *
+ * A secondary scheme is added to assemblt all information
+ * in columns first. Then it can be returned to the environment.
  */
+#define NEWRESULTSET
+
+#define meta(Id,Tpe) \
+q = newStmt(mb, batRef, newRef);\
+q= pushType(mb,q, TYPE_oid);\
+q= pushType(mb,q, Tpe);\
+Id = getArg(q,0); \
+list = pushArgument(mb,list,Id);
+
+#define metaInfo(Id,Tpe,Val)\
+p = newStmt(mb, batRef, appendRef);\
+p = pushArgument(mb,p, Id);\
+p = push##Tpe(mb,p, Val);\
+Id = getArg(p,0);
+
+
 static int
 dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
 	InstrPtr q;
+	int ret = -1;
+
+#ifdef NEWRESULTSET
+	// gather the meta information
+	int tblId, nmeId, tpeId, lenId, scaleId;
+	InstrPtr p, list;
+	(void) p;
+
+	list = newInstruction(mb,ASSIGNsymbol);
+	meta(tblId,TYPE_str);
+	meta(nmeId,TYPE_str);
+	meta(tpeId,TYPE_str);
+	meta(lenId,TYPE_int);
+	meta(scaleId,TYPE_int);
+	getArg(list,0) = newTmpVariable(mb,TYPE_int);
+	setModuleId(list, sqlRef);
+	setFunctionId(list, resultSetRef);
+	getArg(list,1) = tblId;
+	getArg(list,2) = nmeId;
+	getArg(list,3) = tpeId;
+	getArg(list,4) = lenId;
+	getArg(list,5) = scaleId;
+#endif
+	(void) s;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
@@ -167,6 +206,15 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
+#ifdef NEWRESULTSET
+			metaInfo(tblId,Str,fqtn);
+			metaInfo(nmeId,Str,cn);
+			metaInfo(tpeId,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+			metaInfo(lenId,Int,t->digits);
+			metaInfo(scaleId,Int,t->scale);
+			list = pushArgument(mb,list,c->nr);
+#else
+			(void) s;
 			q = newStmt1(mb, sqlRef, "rsColumn");
 			q = pushArgument(mb, q, s->nr);
 			q = pushStr(mb, q, fqtn);
@@ -175,6 +223,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			q = pushInt(mb, q, t->digits);
 			q = pushInt(mb, q, t->scale);
 			q = pushArgument(mb, q, c->nr);
+#endif
 			_DELETE(fqtn);
 		} else
 			q = NULL;
@@ -183,7 +232,16 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		if (q == NULL)
 			return -1;
 	}
-	return 0;
+#ifdef NEWRESULTSET
+	getArg(list,1) = tblId;
+	getArg(list,2) = nmeId;
+	getArg(list,3) = tpeId;
+	getArg(list,4) = lenId;
+	getArg(list,5) = scaleId;
+	ret = getArg(list,0);
+	pushInstruction(mb,list);
+#endif
+	return ret;
 }
 
 static int
@@ -2216,8 +2274,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			sql->mvc_var = s->nr = getDestVar(q);
 		} break;
-		case st_output:
-		case st_export:{
+		case st_output:{
 			stmt *lst = s->op1;
 
 			if (_dumpstmt(sql, mb, lst) < 0)
@@ -2227,7 +2284,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				list *l = lst->op4.lval;
 				int file, cnt = list_length(l);
 				stmt *first;
+#ifndef NEWRESULTSET
 				InstrPtr k;
+#endif
 
 				n = l->h;
 				first = n->data;
@@ -2249,6 +2308,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
+#ifndef NEWRESULTSET
 					q = newStmt2(mb, sqlRef, exportValueRef);
 					if (q) {
 						s->nr = getDestVar(q);
@@ -2258,10 +2318,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
 						q = pushInt(mb, q, t->digits);
 						q = pushInt(mb, q, t->scale);
-						q = pushInt(mb, q, t->type->eclass);
 						q = pushArgument(mb, q, c->nr);
-						q = pushStr(mb, q, "");	/* warning */
+						q = pushStr(mb, q, ""); /* warning */
 					}
+#else
+					q = newStmt2(mb, sqlRef, resultSetRef);
+					if (q) {
+						s->nr = getDestVar(q);
+						q = pushStr(mb, q, fqtn);
+						q = pushStr(mb, q, cn);
+						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+						q = pushInt(mb, q, t->digits);
+						q = pushInt(mb, q, t->scale);
+						q = pushArgument(mb, q, c->nr);
+					}
+#endif
 					_DELETE(ntn);
 					_DELETE(nsn);
 					_DELETE(fqtn);
@@ -2269,6 +2340,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				}
+#ifndef NEWRESULTSET
 				k = newStmt2(mb, sqlRef, resultSetRef);
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
@@ -2287,7 +2359,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					k = pushInt(mb, k, sql->mvc->type);
 				}
 				(void) pushArgument(mb, k, first->nr);
-				if (dump_header(sql->mvc, mb, s, l) < 0)
+#endif
+				if ( (s->nr =dump_header(sql->mvc, mb, s, l)) < 0)
 					return -1;
 
 				if (s->type == st_export && s->op2) {
@@ -2313,7 +2386,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					if (q == NULL)
 						return -1;
 					file = getDestVar(q);
-				} else {
+				}
+#ifndef NEWRESULTSET
+				else {
 					q = newStmt(mb, "io", "stdout");
 					if (q == NULL)
 						return -1;
@@ -2330,6 +2405,150 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					if (q == NULL)
 						return -1;
 				}
+#else
+#endif
+			} else {
+				q = newStmt1(mb, sqlRef, "print");
+				q = pushStr(mb, q, "not a valid output list\n");
+				if (q == NULL)
+					return -1;
+				s->nr = 1;
+			}
+		}
+		break;
+		case st_export:{
+			stmt *lst = s->op1;
+
+			if (_dumpstmt(sql, mb, lst) < 0)
+				return -1;
+
+			if (lst->type == st_list) {
+				list *l = lst->op4.lval;
+				int file, cnt = list_length(l);
+				stmt *first;
+#ifndef NEWRESULTSET
+				InstrPtr k;
+#endif
+
+				n = l->h;
+				first = n->data;
+
+				/* single value result, has a fast exit */
+				if (cnt == 1 && first->nrcols <= 0 && s->type != st_export) {
+					stmt *c = n->data;
+					sql_subtype *t = tail_type(c);
+					char *tname = table_name(sql->mvc->sa, c);
+					char *sname = schema_name(sql->mvc->sa, c);
+					char *_empty = "";
+					char *tn = (tname) ? tname : _empty;
+					char *sn = (sname) ? sname : _empty;
+					char *cn = column_name(sql->mvc->sa, c);
+					char *ntn = sql_escape_ident(tn);
+					char *nsn = sql_escape_ident(sn);
+					size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+					char *fqtn = NEW_ARRAY(char, fqtnl);
+
+					snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
+
+#ifndef NEWRESULTSET
+					q = newStmt2(mb, sqlRef, exportValueRef);
+					if (q) {
+						s->nr = getDestVar(q);
+						q = pushInt(mb, q, sql->mvc->type);
+						q = pushStr(mb, q, fqtn);
+						q = pushStr(mb, q, cn);
+						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+						q = pushInt(mb, q, t->digits);
+						q = pushInt(mb, q, t->scale);
+						q = pushArgument(mb, q, c->nr);
+						q = pushStr(mb, q, ""); /* warning */
+					}
+#else
+					q = newStmt2(mb, sqlRef, resultSetRef);
+					if (q) {
+						s->nr = getDestVar(q);
+						q = pushStr(mb, q, fqtn);
+						q = pushStr(mb, q, cn);
+						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+						q = pushInt(mb, q, t->digits);
+						q = pushInt(mb, q, t->scale);
+						q = pushArgument(mb, q, c->nr);
+					}
+#endif
+					_DELETE(ntn);
+					_DELETE(nsn);
+					_DELETE(fqtn);
+					if (q == NULL)
+						return -1;
+					break;
+				}
+#ifndef NEWRESULTSET
+				k = newStmt2(mb, sqlRef, resultSetRef);
+				s->nr = getDestVar(k);
+				k = pushInt(mb, k, cnt);
+				if (s->type == st_export) {
+					node *n = s->op4.lval->h;
+					char *sep = n->data;
+					char *rsep = n->next->data;
+					char *ssep = n->next->next->data;
+					char *ns = n->next->next->next->data;
+
+					k = pushStr(mb, k, sep);
+					k = pushStr(mb, k, rsep);
+					k = pushStr(mb, k, ssep);
+					k = pushStr(mb, k, ns);
+				} else {
+					k = pushInt(mb, k, sql->mvc->type);
+				}
+				(void) pushArgument(mb, k, first->nr);
+#endif
+				if ( (s->nr =dump_header(sql->mvc, mb, s, l)) < 0)
+					return -1;
+
+				if (s->type == st_export && s->op2) {
+					int codeset;
+
+					q = newStmt(mb, "str", "codeset");
+					if (q == NULL)
+						return -1;
+					codeset = getDestVar(q);
+					if ((file = _dumpstmt(sql, mb, s->op2)) < 0)
+						return -1;
+
+					q = newStmt(mb, "str", "iconv");
+					q = pushArgument(mb, q, file);
+					q = pushStr(mb, q, "UTF-8");
+					q = pushArgument(mb, q, codeset);
+					if (q == NULL)
+						return -1;
+					file = getDestVar(q);
+
+					q = newStmt(mb, "streams", "openWrite");
+					q = pushArgument(mb, q, file);
+					if (q == NULL)
+						return -1;
+					file = getDestVar(q);
+				}
+#ifndef NEWRESULTSET
+				else {
+					q = newStmt(mb, "io", "stdout");
+					if (q == NULL)
+						return -1;
+					file = getDestVar(q);
+				}
+				q = newStmt2(mb, sqlRef, exportResultRef);
+				q = pushArgument(mb, q, file);
+				q = pushArgument(mb, q, s->nr);
+				if (q == NULL)
+					return -1;
+				if (s->type == st_export && s->op2) {
+					q = newStmt(mb, "streams", "close");
+					q = pushArgument(mb, q, file);
+					if (q == NULL)
+						return -1;
+				}
+#else
+#endif
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
 				q = pushStr(mb, q, "not a valid output list\n");

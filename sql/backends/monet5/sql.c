@@ -920,56 +920,21 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str func = *getArgReference_str(stk, pci, 2);
+	str func = *getArgReference_str(stk, pci, 1);
 	stmt *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
 	s = sql_parse(sql, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, func);
-		mvc_set_schema(sql, osname);
 	} else {
-		mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
-	}
-	return msg;
-}
-
-str
-UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str view = *getArgReference_str(stk, pci, 2);
-	stmt *s;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
-	s = sql_parse(sql, sa_create(), view, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
-		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
-
-		msg = create_table_or_view(sql, schema, v, temp);
-		mvc_set_schema(sql, osname);
-	} else {
-		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
 	}
 	return msg;
 }
@@ -2391,10 +2356,10 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len;
 	int *res_id = getArgReference_int(stk, pci, 0);
 	int *nr_cols = getArgReference_int(stk, pci, 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, 5);
+	unsigned char **T = (unsigned char **) getArgReference(stk, pci, 2);
+	unsigned char **R = (unsigned char **) getArgReference(stk, pci, 3);
+	unsigned char **S = (unsigned char **) getArgReference(stk, pci, 4);
+	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 5);
 	int mtype = getArgType(mb, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2432,7 +2397,231 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return res;
 }
 
-/* str mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid); */
+/* pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int */
+/* New result set rendering infrastructure */
+static str
+mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res_id =getArgReference_int(stk,pci,0);
+	bat tblId= *getArgReference_bat(stk, pci,1);
+	bat atrId= *getArgReference_bat(stk, pci,2);
+	bat tpeId= *getArgReference_bat(stk, pci,3);
+	bat lenId= *getArgReference_bat(stk, pci,4);
+	bat scaleId= *getArgReference_bat(stk, pci,5);
+	bat bid;
+	int i,res;
+	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	int *digits, *scaledigits;
+	oid o = 0;
+	BATiter itertbl,iteratr,itertpe;
+	mvc *m = NULL;
+	BAT *b, *tbl, *atr, *tpe,*len,*scale;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	bid = *getArgReference_bat(stk,pci,6);
+	b = BATdescriptor(bid);
+	if ( b == NULL)
+		throw(MAL,"sql.resultset","failed to access order column");
+	res = *res_id = mvc_result_table(m, pci->argc - (pci->retc + 5), 1, b);
+	if (res < 0)
+		msg = createException(SQL, "sql.resultSet", "failed");
+	BBPunfix(b->batCacheid);
+
+	tbl = BATdescriptor(tblId);
+	atr = BATdescriptor(atrId);
+	tpe = BATdescriptor(tpeId);
+	len = BATdescriptor(lenId);
+	scale = BATdescriptor(scaleId);
+	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+		goto wrapup_result_set;
+	// mimick the old rsColumn approach;
+	itertbl = bat_iterator(tbl);
+	iteratr = bat_iterator(atr);
+	itertpe = bat_iterator(tpe);
+	digits = (int*) Tloc(len,BUNfirst(len));
+	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+
+	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+		bid = *getArgReference_bat(stk,pci,i);
+		tblname = BUNtail(itertbl,o);
+		colname = BUNtail(iteratr,o);
+		tpename = BUNtail(itertpe,o);
+		b = BATdescriptor(bid);
+		if ( b == NULL)
+			msg= createException(MAL,"sql.resultset","failed to access result column");
+		else
+		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
+			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
+		if( b)
+			BBPreleaseref(bid);
+	}
+	// now sent it to the channel cntxt->fdout
+	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
+		msg = createException(SQL, "sql.resultset", "failed");
+wrapup_result_set:
+	if( tbl) BBPreleaseref(tblId);
+	if( atr) BBPreleaseref(atrId);
+	if( tpe) BBPreleaseref(tpeId);
+	if( len) BBPreleaseref(lenId);
+	if( scale) BBPreleaseref(scaleId);
+	return msg;
+}
+
+/* Copy the result set into a CSV file */
+str
+mvc_copy_into_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res_id =getArgReference_int(stk,pci,0);
+	str fname = *getArgReference_str(stk,pci,1);
+	str colsep = *getArgReference_str(stk,pci,2);
+	str rowsep = *getArgReference_str(stk,pci,3);
+	str quoterep = *getArgReference_str(stk,pci,4);
+	str nullrep = *getArgReference_str(stk,pci,5);
+
+	bat tblId= *getArgReference_bat(stk, pci,6);
+	bat atrId= *getArgReference_bat(stk, pci,7);
+	bat tpeId= *getArgReference_bat(stk, pci,8);
+	bat lenId= *getArgReference_bat(stk, pci,9);
+	bat scaleId= *getArgReference_bat(stk, pci,10);
+	bat bid;
+	int i,res;
+	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	int *digits, *scaledigits;
+	oid o = 0;
+	BATiter itertbl,iteratr,itertpe;
+	mvc *m = NULL;
+	BAT *b, *tbl, *atr, *tpe,*len,*scale;
+
+	(void) fname;
+	(void) colsep;
+	(void) rowsep;
+	(void) quoterep;
+	(void) nullrep;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	bid = *getArgReference_bat(stk,pci,6);
+	b = BATdescriptor(bid);
+	if ( b == NULL)
+		throw(MAL,"sql.resultset","failed to access order column");
+	res = *res_id = mvc_result_table(m, pci->argc - (pci->retc + 5), 1, b);
+	if (res < 0)
+		msg = createException(SQL, "sql.resultSet", "failed");
+	BBPunfix(b->batCacheid);
+
+	tbl = BATdescriptor(tblId);
+	atr = BATdescriptor(atrId);
+	tpe = BATdescriptor(tpeId);
+	len = BATdescriptor(lenId);
+	scale = BATdescriptor(scaleId);
+	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+		goto wrapup_result_set;
+	// mimick the old rsColumn approach;
+	itertbl = bat_iterator(tbl);
+	iteratr = bat_iterator(atr);
+	itertpe = bat_iterator(tpe);
+	digits = (int*) Tloc(len,BUNfirst(len));
+	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+
+	for( i = 11; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+		bid = *getArgReference_bat(stk,pci,i);
+		tblname = BUNtail(itertbl,o);
+		colname = BUNtail(iteratr,o);
+		tpename = BUNtail(itertpe,o);
+		b = BATdescriptor(bid);
+		if ( b == NULL)
+			msg= createException(MAL,"sql.resultset","failed to access result column");
+		else
+		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
+			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
+		if( b)
+			BBPreleaseref(bid);
+	}
+	// now sent it to the channel cntxt->fdout
+	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
+		msg = createException(SQL, "sql.resultset", "failed");
+wrapup_result_set:
+	if( tbl) BBPreleaseref(tblId);
+	if( atr) BBPreleaseref(atrId);
+	if( tpe) BBPreleaseref(tpeId);
+	if( len) BBPreleaseref(lenId);
+	if( scale) BBPreleaseref(scaleId);
+	return msg;
+}
+
+/* pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int */
+str
+mvc_row_value_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res_id= getArgReference_int(stk, pci,0);
+	bat tblId= *getArgReference_bat(stk, pci,1);
+	bat atrId= *getArgReference_bat(stk, pci,2);
+	bat tpeId= *getArgReference_bat(stk, pci,3);
+	bat lenId= *getArgReference_bat(stk, pci,4);
+	bat scaleId= *getArgReference_bat(stk, pci,5);
+	int i, res;
+	str tblname, colname, tpename, msg= MAL_SUCCEED;
+	int *digits, *scaledigits;
+	oid o = 0;
+	BATiter itertbl,iteratr,itertpe;
+	mvc *m = NULL;
+//	res_table *t= NULL;
+	ptr v;
+	int mtype;
+	BAT  *tbl, *atr, *tpe,*len,*scale;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+//	m->results = t = res_table_create(m->session->tr, m->result_id++, pci->argc - (pci->retc+5), 1, m->results, NULL);
+	res = *res_id = mvc_result_table(m, pci->argc - (pci->retc + 5), 1, NULL);
+
+	tbl = BATdescriptor(tblId);
+	atr = BATdescriptor(atrId);
+	tpe = BATdescriptor(tpeId);
+	len = BATdescriptor(lenId);
+	scale = BATdescriptor(scaleId);
+	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+		goto wrapup_result_set;
+	// mimick the old rsColumn approach;
+	itertbl = bat_iterator(tbl);
+	iteratr = bat_iterator(atr);
+	itertpe = bat_iterator(tpe);
+	digits = (int*) Tloc(len,BUNfirst(len));
+	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+
+	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+		tblname = BUNtail(itertbl,o);
+		colname = BUNtail(iteratr,o);
+		tpename = BUNtail(itertpe,o);
+
+		v = getArgReference(stk, pci, i);
+		mtype = getArgType(mb, pci, i);
+		if (ATOMextern(mtype))
+			v = *(ptr *) v;
+		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
+			throw(SQL, "sql.rsColumn", "failed");
+	}
+//	*res_id = t->id;
+	//if (*res_id < 0)
+		//msg = createException(SQL, "sql.resultSet", "failed");
+	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
+		msg = createException(SQL, "sql.resultset", "failed");
+wrapup_result_set:
+	if( tbl) BBPreleaseref(tblId);
+	if( atr) BBPreleaseref(atrId);
+	if( tpe) BBPreleaseref(tpeId);
+	if( len) BBPreleaseref(lenId);
+	if( scale) BBPreleaseref(scaleId);
+	return msg;
+}
+
 str
 mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2440,10 +2629,18 @@ mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *order;
 	mvc *m = NULL;
 	str msg;
-	int *res_id = getArgReference_int(stk, pci, 0);
-	int *nr_cols = getArgReference_int(stk, pci, 1);
-	int *qtype = getArgReference_int(stk, pci, 2);
-	bat *order_bid = getArgReference_bat(stk, pci, 3);
+	int *res_id;
+	int *nr_cols;
+	int *qtype;
+	bat *order_bid;
+
+	if ( pci->argc > 6)
+		return mvc_result_set_wrap(cntxt,mb,stk,pci);
+
+	res_id = getArgReference_int(stk, pci, 0);
+	nr_cols = getArgReference_int(stk, pci, 1);
+	qtype = getArgReference_int(stk, pci, 2);
+	order_bid = getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2672,9 +2869,14 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
+	if( pci->argc > 5){
+		res_id = getArgReference_int(stk, pci, 2);
+		if (mvc_export_result(b, cntxt->fdout, *res_id))
+			throw(SQL, "sql.exportResult", "failed");
+	} else
 	if (mvc_export_result(b, *s, *res_id))
 		throw(SQL, "sql.exportResult", "failed");
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 /* str mvc_export_chunk_wrap(int *ret, stream **s, int *res_id, str *w); */
@@ -2718,20 +2920,59 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return NULL;
 }
 
-str
-/*mvc_export_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
-mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+// collect the SQL type identifier associated with a string
+static int
+SQLname2eclass(const str *type)
 {
-	int *qtype = getArgReference_int(stk, pci, 1);
-	str *tn = getArgReference_str(stk, pci, 2);
-	str *cn = getArgReference_str(stk, pci, 3);
-	str *type = getArgReference_str(stk, pci, 4);
-	int *digits = getArgReference_int(stk, pci, 5);
-	int *scale = getArgReference_int(stk, pci, 6);
-	int *eclass = getArgReference_int(stk, pci, 7);
-	ptr p = getArgReference(stk, pci, 8);
-	int mtype = getArgType(mb, pci, 8);
-	str *w = getArgReference_str(stk, pci, 9), msg;
+	int ec = 0;
+	if ( strcmp(*type,"char") == 0)
+		ec = EC_CHAR;
+	else
+	if ( strncmp(*type,"int",3) == 0 || strcmp(*type,"tinyint") == 0 || strcmp(*type,"bigint") == 0 ||
+		strcmp(*type,"wrd") == 0 || strcmp(*type,"smallint") == 0 || strcmp(*type,"hugeint") == 0)
+		ec = EC_NUM;
+	else
+	if ( strcmp(*type,"wrd") == 0)
+		ec = EC_NUM;
+	else
+	if ( strcmp(*type,"boolean") == 0)
+		ec = EC_BIT;
+	else
+	if ( strcmp(*type,"varchar") == 0)
+		ec = EC_STRING;
+	else
+	if ( strcmp(*type,"double") == 0)
+		ec = EC_FLT;
+	else
+	if ( strcmp(*type,"time") == 0)
+		ec = EC_TIME;
+	else
+	if ( strcmp(*type,"timestamp") == 0 || strcmp(*type,"timestamptz") == 0)
+		ec = EC_TIMESTAMP;
+	else
+	if ( strcmp(*type,"date") == 0)
+		ec = EC_DATE;
+	else
+	if ( strcmp(*type,"decimal") == 0)
+		ec = EC_DEC;
+	else
+	if ( strstr(*type, "_interval") )
+		ec = EC_INTERVAL;
+	return ec;
+}
+str
+/*mvc_scalar_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
+mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *tn = getArgReference_str(stk, pci, 1);
+	str *cn = getArgReference_str(stk, pci, 2);
+	str *type = getArgReference_str(stk, pci, 3);
+	int *digits = getArgReference_int(stk, pci, 4);
+	int *scale = getArgReference_int(stk, pci, 5);
+	int ec  =0;
+	ptr p = getArgReference(stk, pci, 6);
+	int mtype = getArgType(mb, pci, 6);
+	str msg;
 	backend *b = NULL;
 
 	(void) mb;		/* NOT USED */
@@ -2740,7 +2981,9 @@ mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	if (ATOMextern(mtype))
 		p = *(ptr *) p;
-	if (b->out == NULL || mvc_export_value(b, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, *w, "NULL") != SQL_OK)
+
+	ec = SQLname2eclass(type);
+	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, ec, p, mtype, "", "NULL") != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;
 }
@@ -2782,10 +3025,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str filename, cs;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
 	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
@@ -2901,10 +3144,10 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len = 0;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
@@ -3010,14 +3253,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* handle the various cases */
 		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), PERSISTENT);
+			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), TRANSIENT);
 			if (c == NULL)
 				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 1);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
-			c = BATnew(TYPE_void, TYPE_str, 0, PERSISTENT);
+			c = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 			if (c == NULL)
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			BATseqbase(c, 0);

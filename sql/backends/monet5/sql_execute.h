@@ -21,6 +21,7 @@
 #define _SQL_EXECUTE_H_
 #include "sql.h"
 
+sql5_export str SQLstatementREST(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result);
 sql5_export str SQLexecutePrepared(Client c, backend *be, cq *q);
 sql5_export str SQLengineIntern(Client c, backend *be);

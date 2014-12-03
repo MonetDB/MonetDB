@@ -29,6 +29,16 @@ Ready.
 % clob # type
 % 81 # length
 function user.s3_1{autoCommit=true}(A0:dbl):void;
+    X_18 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_18,"sys.L");
+    X_21 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_21,"power_x");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_31 := bat.append(X_22,"double");
+    X_23 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_23,53);
+    X_25 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_25,0);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","sf_2596114");
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
@@ -37,10 +47,7 @@ function user.s3_1{autoCommit=true}(A0:dbl):void;
     X_15 := sql.delta(X_7,X_10,r1_10,X_13);
     X_16 := algebra.leftfetchjoin(X_4,X_15);
     X_17:bat[:oid,:dbl]  := batmmath.pow(X_16,A0);
-    X_18 := sql.resultSet(1,1,X_17);
-    sql.rsColumn(X_18,"sys.L","power_x","double",53,0,X_17);
-    X_24 := io.stdout();
-    sql.exportResult(X_24,X_18);
+    sql.resultSet(X_27,X_29,X_31,X_33,X_35,X_17);
 end s3_1;
 # querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe")
 #explain select x*x from SF_2596114;
@@ -49,6 +56,16 @@ end s3_1;
 % clob # type
 % 74 # length
 function user.s4_1{autoCommit=true}():void;
+    X_17 := bat.new(nil:oid,nil:str);
+    X_26 := bat.append(X_17,"sys.L");
+    X_20 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_20,"sql_mul_x");
+    X_21 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_21,"double");
+    X_22 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_22,53);
+    X_24 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_24,0);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","sf_2596114");
     X_6:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
@@ -57,10 +74,7 @@ function user.s4_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16:bat[:oid,:dbl]  := batcalc.*(X_15,X_15);
-    X_17 := sql.resultSet(1,1,X_16);
-    sql.rsColumn(X_17,"sys.L","sql_mul_x","double",53,0,X_16);
-    X_23 := io.stdout();
-    sql.exportResult(X_23,X_17);
+    sql.resultSet(X_26,X_28,X_30,X_32,X_34,X_16);
 end s4_1;
 # querylog.define("explain select x*x from sf_2596114;","sequential_pipe")
 #drop table SF_2596114;

@@ -27,16 +27,26 @@ Operation successful
 | mal    |
 +=====================================================================================+
 | function user.s2_1{autoCommit=true}():void;                                  |
+|     X_36 := bat.new(nil:oid,nil:str);                                               |
+|     X_45 := bat.append(X_36,".tables");                                             |
+|     X_39 := bat.new(nil:oid,nil:str);                                               |
+|     X_47 := bat.append(X_39,"name");                                                |
+|     X_40 := bat.new(nil:oid,nil:str);                                               |
+|     X_49 := bat.append(X_40,"varchar");                                             |
+|     X_41 := bat.new(nil:oid,nil:int);                                               |
+|     X_51 := bat.append(X_41,1024);                                                  |
+|     X_43 := bat.new(nil:oid,nil:int);                                               |
+|     X_53 := bat.append(X_43,0);                                                     |
 |     X_3:bat[:oid,:str]  := bat.new(nil:oid,nil:str);                |
 |     X_2 := sql.mvc(); |
 |     X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);              |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");       |
-|     X_59 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);              |
+|     X_70 := algebra.subselect(X_9,X_6,2:sht,2:sht,true,true,true);                  |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2);    |
-|     X_60 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2:sht,2:sht,true,true,true); |
+|     X_71 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2:sht,2:sht,true,true,true); |
 |     X_15:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1);                 |
-|     X_62 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);                 |
-|     X_17 := sql.subdelta(X_59,X_6,X_12,X_60,X_62);                                  |
+|     X_73 := algebra.subselect(X_15,X_6,2:sht,2:sht,true,true,true);                 |
+|     X_17 := sql.subdelta(X_70,X_6,X_12,X_71,X_73);                                  |
 |     X_18:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",0);                 |
 |     (X_20,r1_25) := sql.bind(X_2,"sys","_tables","name",2);          |
 |     X_22:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",1);             |
@@ -50,14 +60,11 @@ Operation successful
 |     X_33 := X_31;                                                    |
 |     X_34 := algebra.leftfetchjoin(X_29,X_33);                        |
 |     X_35 := bat.append(X_24,X_34,true);                              |
-|     X_36 := sql.resultSet(1,1,X_35);                                 |
-|     sql.rsColumn(X_36,".tables","name","varchar",1024,0,X_35);       |
-|     X_42 := io.stdout();                                             |
-|     sql.exportResult(X_42,X_36);                                     |
+|     sql.resultSet(X_45,X_47,X_49,X_51,X_53,X_35);                                   |
 | end s2_1;                                                                       |
 | # querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe") |
 +-------------------------------------------------------------------------------------+
-30 rows
+37 rows
 
 
 # 15:15:37 >  

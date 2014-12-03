@@ -35,6 +35,16 @@ Ready.
 % clob # type
 % 93 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
+    X_21 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_21,"sys.tab_2826");
+    X_24 := bat.new(nil:oid,nil:str);
+    X_32 := bat.append(X_24,"d");
+    X_25 := bat.new(nil:oid,nil:str);
+    X_33 := bat.append(X_25,"double");
+    X_26 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_26,53);
+    X_28 := bat.new(nil:oid,nil:int);
+    X_37 := bat.append(X_28,0);
     X_3 := sql.mvc();
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
     (X_10,r1_10) := sql.bind(X_3,"sys","tab_2826","d",2);
@@ -42,14 +52,11 @@ function user.s5_1{autoCommit=true}(A0:flt):void;
     X_15 := sql.delta(X_7,X_10,r1_10,X_13);
     X_16 := X_15;
     X_17 := batcalc.flt(X_16);
-    X_41 := batmmath.log10(X_17);
+    X_52 := batmmath.log10(X_17);
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tab_2826");
-    X_18 := algebra.thetasubselect(X_41,X_4,A0,">");
+    X_18 := algebra.thetasubselect(X_52,X_4,A0,">");
     X_20 := sql.projectdelta(X_18,X_7,X_10,r1_10,X_13);
-    X_21 := sql.resultSet(1,1,X_20);
-    sql.rsColumn(X_21,"sys.tab_2826","d","double",53,0,X_20);
-    X_26 := io.stdout();
-    sql.exportResult(X_26,X_21);
+    sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_20);
 end s5_1;
 # querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","default_pipe")
 #select * from tab_2826 where func_2826(d) > 1;   
