@@ -61,6 +61,31 @@ Ready.
 % clob # type
 % 577 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
+    X_165 := bat.new(nil:oid,nil:str);
+    X_174 := bat.append(X_165,"sys.part");
+    X_184 := bat.append(X_174,"sys.part");
+    X_191 := bat.append(X_184,"sys.part");
+    X_199 := bat.append(X_191,"sys.L4");
+    X_168 := bat.new(nil:oid,nil:str);
+    X_176 := bat.append(X_168,"p_brand");
+    X_185 := bat.append(X_176,"p_type");
+    X_192 := bat.append(X_185,"p_size");
+    X_201 := bat.append(X_192,"supplier_cnt");
+    X_169 := bat.new(nil:oid,nil:str);
+    X_178 := bat.append(X_169,"varchar");
+    X_187 := bat.append(X_178,"varchar");
+    X_194 := bat.append(X_187,"int");
+    X_203 := bat.append(X_194,"wrd");
+    X_170 := bat.new(nil:oid,nil:int);
+    X_180 := bat.append(X_170,10);
+    X_188 := bat.append(X_180,25);
+    X_196 := bat.append(X_188,32);
+    X_205 := bat.append(X_196,64);
+    X_172 := bat.new(nil:oid,nil:int);
+    X_182 := bat.append(X_172,0);
+    X_190 := bat.append(X_182,0);
+    X_198 := bat.append(X_190,0);
+    X_207 := bat.append(X_198,0);
     X_13 := sql.mvc();
     X_14:bat[:oid,:oid]  := sql.tid(X_13,"sys","partsupp");
     X_17:bat[:oid,:int]  := sql.bind(X_13,"sys","partsupp","ps_suppkey",0);
@@ -123,10 +148,10 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6
     X_108 := bat.mergecand(X_106,X_107);
     X_109 := algebra.leftfetchjoin(X_108,X_65);
     (X_110,r1_125) := algebra.subjoin(X_64,X_109,nil:BAT,nil:BAT,true,nil:lng);
-    X_213 := algebra.leftfetchjoin(r1_125,X_108);
-    X_114:bat[:oid,:str]  := algebra.leftfetchjoin(X_213,X_81);
-    X_115:bat[:oid,:str]  := algebra.leftfetchjoin(X_213,X_89);
-    X_116:bat[:oid,:int]  := algebra.leftfetchjoin(X_213,X_73);
+    X_233 := algebra.leftfetchjoin(r1_125,X_108);
+    X_114:bat[:oid,:str]  := algebra.leftfetchjoin(X_233,X_81);
+    X_115:bat[:oid,:str]  := algebra.leftfetchjoin(X_233,X_89);
+    X_116:bat[:oid,:int]  := algebra.leftfetchjoin(X_233,X_73);
     X_117:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_110,X_53,X_26);
     (X_118,r1_137,r2_137) := group.subgroup(X_117);
     (X_121,r1_140,r2_140) := group.subgroup(X_116,X_118);
@@ -148,16 +173,10 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6
     (X_155,r1_174,r2_174) := algebra.subsort(X_143,r1_171,r2_171,false,false);
     (X_158,r1_177,r2_177) := algebra.subsort(X_142,r1_174,r2_174,false,false);
     X_161 := algebra.leftfetchjoin(r1_177,X_144);
-    X_164 := algebra.leftfetchjoin(r1_177,X_146);
-    X_163 := algebra.leftfetchjoin(r1_177,X_142);
     X_162 := algebra.leftfetchjoin(r1_177,X_143);
-    X_165 := sql.resultSet(4,1,X_161);
-    sql.rsColumn(X_165,"sys.part","p_brand","varchar",10,0,X_161);
-    sql.rsColumn(X_165,"sys.part","p_type","varchar",25,0,X_162);
-    sql.rsColumn(X_165,"sys.part","p_size","int",32,0,X_163);
-    sql.rsColumn(X_165,"sys.L4","supplier_cnt","wrd",64,0,X_164);
-    X_186 := io.stdout();
-    sql.exportResult(X_186,X_165);
+    X_163 := algebra.leftfetchjoin(r1_177,X_142);
+    X_164 := algebra.leftfetchjoin(r1_177,X_146);
+    sql.resultSet(X_199,X_201,X_203,X_205,X_207,X_161,X_162,X_163,X_164);
 end s2_1;
 # querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe")
 
