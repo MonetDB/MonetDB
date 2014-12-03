@@ -59,3 +59,4 @@ missing_alias.Bug-3626
 stddev-empty.Bug-3628
 ifthenelse.Bug-3629
 order_by_incorrect_error.Bug-3630
+incorrect_floating_point_cast.Bug-3633
