@@ -199,7 +199,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	unsigned int scale = sql_max(i->scale, r->scale);
 
 	*super = *r;
-	if (i->type->base.id >r->type->base.id) {
+	if (i->type->base.id >r->type->base.id || 
+	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		tpe = i->type->sqlname;
 		radix = i->type->radix;
 	}

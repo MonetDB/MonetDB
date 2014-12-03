@@ -22,7 +22,7 @@
 #include "gdk_private.h"
 #include <math.h>
 
-#ifdef _MSC_VER
+#ifndef HAVE_NEXTAFTERF
 #define nextafter	_nextafter
 float nextafterf(float x, float y);
 #endif

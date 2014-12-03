@@ -62,9 +62,9 @@ SQLFreeStmt
 SQLGetConnectAttr
 SQLGetConnectAttrA
 SQLGetConnectAttrW
-SQLGetConnectOption
-SQLGetConnectOptionA
-SQLGetConnectOptionW
+SQLGetConnectOption=SQLGetConnectOption_deprecated
+SQLGetConnectOptionA=SQLGetConnectOptionA_deprecated
+SQLGetConnectOptionW=SQLGetConnectOptionW_deprecated
 SQLGetCursorName
 SQLGetCursorNameA
 SQLGetCursorNameW
@@ -118,9 +118,9 @@ SQLRowCount
 SQLSetConnectAttr
 SQLSetConnectAttrA
 SQLSetConnectAttrW
-SQLSetConnectOption
-SQLSetConnectOptionA
-SQLSetConnectOptionW
+SQLSetConnectOption=SQLSetConnectOption_deprecated
+SQLSetConnectOptionA=SQLSetConnectOptionA_deprecated
+SQLSetConnectOptionW=SQLSetConnectOptionW_deprecated
 SQLSetCursorName
 SQLSetCursorNameA
 SQLSetCursorNameW

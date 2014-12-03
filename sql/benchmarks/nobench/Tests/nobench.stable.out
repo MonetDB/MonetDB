@@ -175,8 +175,8 @@ Ready.
 [ 0	]
 [ 6	]
 #select cast(json.text(json.filter(js,'num')) as integer) from bench10;
-% sys.L # table_name
-% text_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 9	]

@@ -1,8 +1,8 @@
 # three valued logic, using a sequential plan
 # for use in parallel blocks check for the nil in both branches
-# F b1 THEN RETURN 1;
+# IF b1 THEN RETURN 1;
 # ELSEIF NOT(b1) THEN RETURN 0;
-#  ELSE RETURN NULL;
+# ELSE RETURN NULL;
 # END IF;
 
 function threevaluedlogic(B:bit):bit;

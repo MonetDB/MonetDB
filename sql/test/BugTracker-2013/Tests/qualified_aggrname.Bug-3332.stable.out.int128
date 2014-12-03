@@ -50,8 +50,8 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select sys.median(cast (id as double)) from tbls;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 5183	]
