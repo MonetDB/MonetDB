@@ -5624,7 +5624,7 @@ CREATE TABLE "sys"."dependencies" (
 	"depend_id"   INTEGER,
 	"depend_type" SMALLINT
 );
-COPY 204 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 206 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
 363	5243	7
 364	5243	7
 866	5243	7
@@ -5778,7 +5778,9 @@ COPY 204 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 207	5610	7
 32	5622	7
 427	5622	7
+111	5622	7
 113	5622	7
+34	5622	7
 5617	5622	7
 5663	5671	5
 5673	5679	5
