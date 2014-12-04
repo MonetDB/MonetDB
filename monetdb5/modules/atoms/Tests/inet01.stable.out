@@ -22,6 +22,9 @@ function user.main():void;
     i4 := inet.new("192.168.0.3/24");
     io.print(i4);
     i5 := inet.new("/0");
+catch ParseException:str ;
+    io.printf("Caught parse exception\n");
+exit ParseException:str ;
     io.print(i5);
     i6 := inet.new("127/32");
     io.print(i6);
@@ -44,7 +47,8 @@ end main;
 [ 192.168.0.0/24 ]
 [ 192.168.0.0/16 ]
 [ 192.168.0.3/24 ]
-[ 0.0.0.0/0 ]
+Caught parse exception
+[ (nil) ]
 [ 127.0.0.0 ]
 [ 127.0.0.0 ]
 [ false ]
