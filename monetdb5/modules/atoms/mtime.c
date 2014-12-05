@@ -3462,6 +3462,6 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
-	throw(MAL, "mtime.str_to_date", "strptime support missing");
+	throw(MAL, "mtime.str_to_date", "strftime support missing");
 #endif
 }
