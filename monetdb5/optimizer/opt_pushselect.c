@@ -268,7 +268,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
+	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
 		GDKfree(vars);
 		return 0;
 	}
@@ -442,7 +442,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slimit= mb->ssize;
 	old = mb->stmt;
 
-	if (newMalBlkStmt(mb, mb->ssize+(5*push_down_delta)) <0 ) {
+	if (newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
 		return actions;

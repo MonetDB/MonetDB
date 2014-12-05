@@ -248,7 +248,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			eolife[getArg(p,j)]= i;
 	}
 
-	if ( newMalBlkStmt(mb, mb->ssize+mb->vtop) <0 )
+	// make sure we have space for the language.pass operation
+	// for all variables within the barrier
+	if ( newMalBlkStmt(mb, mb->ssize) <0 )
 		goto wrapup;
 	
 	pushInstruction(mb,old[0]);

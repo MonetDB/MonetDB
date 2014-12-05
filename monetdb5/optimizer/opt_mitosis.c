@@ -169,7 +169,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->ssize + 2 * estimate) < 0)
+	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
 		return 0;
 	estimate = 0;
 
