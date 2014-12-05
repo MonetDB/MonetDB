@@ -433,19 +433,19 @@ Ready.
 % today # name
 % date # type
 % 10 # length
-[ 2014-11-28	]
+[ 2014-12-05	]
 #SELECT sql_sub(current_date, 24*60*60.0) AS "yesterday";
 % .L # table_name
 % yesterday # name
 % date # type
 % 10 # length
-[ 2014-11-27	]
+[ 2014-12-04	]
 #SELECT sql_add(current_date, 24*60*60.0) AS "tomorrow";
 % .L # table_name
 % tomorrow # name
 % date # type
 % 10 # length
-[ 2014-11-29	]
+[ 2014-12-06	]
 #SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
 % .L # table_name
 % One day # name

@@ -59,13 +59,13 @@ Ready.
 [ "",	0.000	]
 #SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 <> cast('@ 10 days' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % five,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
 #SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 <= cast('@ 5 hours' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % three,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
@@ -79,13 +79,13 @@ Ready.
 [ "",	0.000	]
 #SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 < cast('@ 1 day' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % three,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
 #SELECT '' AS one, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 = cast('@ 34 years' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % one,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
@@ -99,7 +99,7 @@ Ready.
 [ "",	0.000	]
 #SELECT '' AS two, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 >= cast('@ 1 month' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % two,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
@@ -113,7 +113,7 @@ Ready.
 [ "",	0.000	]
 #SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
 #   WHERE RELTIME_TBL.f1 > cast('@ 3 seconds ago' as interval second);
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % five,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
