@@ -1091,7 +1091,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* static struct Mallinfo prevMalloc; */
 	char buf[1024];
-	char ctm[27]={0}, *tbuf;
+	char ctm[27]={0};
 	int tid = (int)THRgettid();
 	char abuf[BUFSIZ], *tpe;
 	int i, j;
@@ -1141,15 +1141,19 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 	 */
 #ifdef HAVE_CTIME_R3
-	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
+	if (ctime_r(&clk, ctm, sizeof(ctm)) == NULL)
+		strncpy(ctm, "", sizeof(ctm));
 #else
 #ifdef HAVE_CTIME_R
-	tbuf = ctime_r(&clk, ctm);
+	if (ctime_r(&clk, ctm) == NULL)
+		strncpy(ctm, "", sizeof(ctm));
 #else
-	tbuf = ctime(&clk);
+	{
+		char *tbuf = ctime(&clk);
+		strncpy(ctm, tbuf ? tbuf : "", sizeof(ctm));
+	}
 #endif
 #endif
-	strncpy(ctm, (tbuf?tbuf:""),26);
 	/* sneakily overwrite year with second fraction */
 	snprintf(ctm + 19, 6, ".%03d", (int)(clock.tv_usec / 1000));
 

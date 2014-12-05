@@ -30,17 +30,11 @@ stderr of test 'date_script_test.Bug-2973` in directory 'sql/test/BugTracker-201
 # 14:12:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36122"
 # 14:12:34 >  
 
-MAPI  = monetdb@LAB03:39057
+MAPI  = monetdb@LAB03:34616
 QUERY = select str_to_date('12-01-01','%y-%m-%d');
 ERROR = !strptime support missing
-MAPI  = monetdb@LAB03:39057
+MAPI  = monetdb@LAB03:34616
 QUERY = select str_to_date('2012-01-01','%Y-%m-%d');
-ERROR = !strptime support missing
-MAPI  = monetdb@LAB03:39057
-QUERY = select date_to_str('2012-02-11','%y/%m/%d');
-ERROR = !strptime support missing
-MAPI  = monetdb@LAB03:39057
-QUERY = select date_to_str('2012-02-11','%Y/%m/%d');
 ERROR = !strptime support missing
 
 # 14:12:34 >  
