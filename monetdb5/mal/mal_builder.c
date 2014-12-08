@@ -327,6 +327,7 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 
 	cst.vtype= TYPE_sht;
 	cst.val.shval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_sht,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -433,7 +434,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		_t = defConstant(mb,tpe,&cst);
 	} else {
 		cst.vtype = TYPE_bat;
-		cst.val.bval = 0;
+		cst.val.bval = bat_nil;
 		_t = defConstant(mb,TYPE_bat,&cst);
 		mb->var[_t]->type = tpe;
 	}

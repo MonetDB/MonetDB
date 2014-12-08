@@ -29,6 +29,8 @@
 #include "gdk_private.h"
 #include "gdk_imprints.h"
 
+#define IMPRINTS_VERSION	2
+
 #define BINSIZE(B, FUNC, T) do {		\
 	switch (B) {				\
 		case 8: FUNC(T,8); break;	\
@@ -412,6 +414,7 @@ do {									\
 	uint##B##_t *im = (uint##B##_t *) imps;				\
 	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
 	TYPE *bins = (TYPE *) inbins;					\
+	TYPE nil = TYPE##_nil;						\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
 	for (i = 0; i < b->batCount; i++) {				\
@@ -452,6 +455,16 @@ do {									\
 		}							\
 		GETBIN##B(bin,col[i]);					\
 		mask = IMPSsetBit(B,mask,bin);				\
+		if (col[i] != nil) { /* do not count nils */		\
+			if (!cnt_bins[bin]++) {				\
+				min_bins[bin] = max_bins[bin] = i;	\
+			} else {					\
+				if (col[i] < col[min_bins[bin]])	\
+					min_bins[bin] = i;		\
+				if (col[i] > col[max_bins[bin]])	\
+					max_bins[bin] = i;		\
+			}						\
+		}							\
 	}								\
 	/* one last left */						\
 	if (prvmask == mask && dcnt > 0 &&				\
@@ -482,13 +495,18 @@ do {									\
 } while (0)
 
 static int
-imprints_create(BAT *b, void *inbins, bte bits,
+imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
 	BUN i;
 	BUN dcnt, icnt, new;
+	BUN *min_bins = stats;
+	BUN *max_bins = min_bins + 64;
+	BUN *cnt_bins = max_bins + 64;
 	bte bin = 0;
 	dcnt = icnt = 0;
+	for (i = 0; i < 64; i++)
+		cnt_bins[i] = 0;
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
@@ -550,6 +568,7 @@ BATimprints(BAT *b)
 {
 	BAT *o = NULL;
 	Imprints *imprints;
+	lng t0 = 0, t1 = 0;
 
 	assert(BAThdense(b));	/* assert void head */
 
@@ -590,6 +609,7 @@ BATimprints(BAT *b)
 	}
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
+	t0= GDKusec();
 	if (b->T->imprints == NULL) {
 		BAT *smp, *s;
 		BUN cnt;
@@ -630,9 +650,14 @@ BATimprints(BAT *b)
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
+			    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
 			    hdata[3] == (size_t) BATcount(b) &&
 			    fstat(fd, &st) == 0 &&
-			    st.st_size >= (off_t) (imprints->imprints->size = imprints->imprints->free = 64 * b->T->width +
+			    st.st_size >= (off_t) (imprints->imprints->size =
+						   imprints->imprints->free =
+						   64 * b->T->width +
+						   64 * 2 * SIZEOF_OID +
+						   64 * SIZEOF_BUN +
 						   pages * ((bte) hdata[0] / 8) +
 						   hdata[2] * sizeof(cchdc_t) +
 						   sizeof(uint64_t) /* padding for alignment */
@@ -643,7 +668,8 @@ BATimprints(BAT *b)
 				imprints->impcnt = (BUN) hdata[1];
 				imprints->dictcnt = (BUN) hdata[2];
 				imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
-				imprints->imps = (char *) imprints->bins + 64 * b->T->width;
+				imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
+				imprints->imps = (void *) (imprints->stats + 64 * 3);
 				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 				b->T->imprints = imprints;
 				close(fd);
@@ -699,15 +725,19 @@ BATimprints(BAT *b)
 		if (cnt < 8)
 			imprints->bits = 8;
 
-		/* The heap we create here consists of three parts:
+		/* The heap we create here consists of four parts:
 		 * bins, max 64 entries with bin boundaries, domain of b;
+		 * stats, min/max/count for each bin, min/max are oid, and count BUN;
 		 * imps, max one entry per "page", entry is "bits" wide;
 		 * dict, max two entries per three "pages".
 		 * In addition, we add some housekeeping entries at
 		 * the start so that we can determine whether we can
-		 * trust the imprints when encountered on startup. */
+		 * trust the imprints when encountered on startup (including
+		 * a version number -- CURRENT VERSION is 2). */
 		if (HEAPalloc(imprints->imprints,
 			      64 * b->T->width +
+			      64 * 2 * SIZEOF_OID +
+			      64 * SIZEOF_BUN +
 			      pages * (imprints->bits / 8) +
 			      pages * sizeof(cchdc_t) +
 			      sizeof(uint64_t) /* padding for alignment */
@@ -721,7 +751,8 @@ BATimprints(BAT *b)
 			return NULL;
 		}
 		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
-		imprints->imps = (char *) imprints->bins + 64 * b->T->width;
+		imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
+		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
 		switch (ATOMstorage(b->T->type)) {
@@ -757,13 +788,14 @@ BATimprints(BAT *b)
 
 		if (!imprints_create(b,
 				     imprints->bins,
+				     imprints->stats,
 				     imprints->bits,
 				     imprints->imps,
 				     &imprints->impcnt,
 				     imprints->dict,
 				     &imprints->dictcnt)) {
 			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->imprints);
+			HEAPfree(imprints->imprints, 1);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
@@ -774,13 +806,16 @@ BATimprints(BAT *b)
 		assert(imprints->dictcnt <= pages);
 		imprints->imprints->free = (size_t) ((char *) ((cchdc_t *) imprints->dict + imprints->dictcnt) - imprints->imprints->base);
 		/* add info to heap for when they become persistent */
-		((size_t *) imprints->imprints->base)[0] = (size_t) imprints->bits;
+		((size_t *) imprints->imprints->base)[0] = (size_t) (imprints->bits);
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
 		if (HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+			/* add version number */
+			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
+			/* sync-on-disk checked bit */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
@@ -795,6 +830,12 @@ BATimprints(BAT *b)
 		}
 		b->T->imprints = imprints;
 	}
+ 
+        t1 = GDKusec();
+        ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
+
+	t1 = GDKusec();
+	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
   do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -813,32 +854,32 @@ BATimprints(BAT *b)
 #define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
 
 int
-IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
+IMPSgetbin(int tpe, bte bits, const char *inbins, const void *v)
 {
 	int ret = -1;
 
 	switch (tpe) {
 	case TYPE_bte:
 	{
-		bte *bins = (bte *) inbins;
+		const bte *bins = (bte *) inbins;
 		BINSIZE(bits, getbin, bte);
 	}
 		break;
 	case TYPE_sht:
 	{
-		sht *bins = (sht *) inbins;
+		const sht *bins = (sht *) inbins;
 		BINSIZE(bits, getbin, sht);
 	}
 		break;
 	case TYPE_int:
 	{
-		int *bins = (int *) inbins;
+		const int *bins = (int *) inbins;
 		BINSIZE(bits, getbin, int);
 	}
 		break;
 	case TYPE_lng:
 	{
-		lng *bins = (lng *) inbins;
+		const lng *bins = (lng *) inbins;
 		BINSIZE(bits, getbin, lng);
 	}
 		break;
@@ -852,13 +893,13 @@ IMPSgetbin(int tpe, bte bits, char *inbins, const void *v)
 #endif
 	case TYPE_flt:
 	{
-		flt *bins = (flt *) inbins;
+		const flt *bins = (flt *) inbins;
 		BINSIZE(bits, getbin, flt);
 	}
 		break;
 	case TYPE_dbl:
 	{
-		dbl *bins = (dbl *) inbins;
+		const dbl *bins = (dbl *) inbins;
 		BINSIZE(bits, getbin, dbl);
 	}
 		break;
@@ -891,14 +932,16 @@ IMPSremove(BAT *b)
 	assert(!VIEWtparent(b));
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-	imprints = b->T->imprints;
-	b->T->imprints = NULL;
+	if ((imprints = b->T->imprints) != NULL) {
+		b->T->imprints = NULL;
 
-	HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-		   b->batCacheid > 0 ? "timprints" : "himprints");
+		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
+			       b->batCacheid > 0 ? "timprints" : "himprints"))
+			IODEBUG THRprintf(GDKstdout, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
 
-	GDKfree(imprints->imprints);
-	GDKfree(imprints);
+		GDKfree(imprints->imprints);
+		GDKfree(imprints);
+	}
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
@@ -939,16 +982,37 @@ IMPSprint(BAT *b)
 	cchdc_t *d;
 	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
+	BUN *min_bins, *max_bins;
+	BUN *cnt_bins;
 	bte j;
+	int i;
 
 	if (!BATimprints(b))
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;
+	min_bins = imprints->stats;
+	max_bins = min_bins + 64;
+	cnt_bins = max_bins + 64;
 
 	fprintf(stderr,
 		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
 		imprints->bits, imprints->impcnt, imprints->dictcnt);
+	fprintf(stderr,"MIN = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " BUNFMT " ] ", min_bins[i]);
+	}
+	fprintf(stderr,"\n");
+	fprintf(stderr,"MAX = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " BUNFMT " ] ", max_bins[i]);
+	}
+	fprintf(stderr,"\n");
+	fprintf(stderr,"COUNT = ");
+	for (i = 0; i < imprints->bits; i++) {
+		fprintf(stderr, "[ " BUNFMT " ] ", cnt_bins[i]);
+	}
+	fprintf(stderr,"\n");
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");

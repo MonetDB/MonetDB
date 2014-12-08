@@ -93,7 +93,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return NULL;
 	}
 	for ( i= pci->retc; i< pci->argc; i++, a->last++) {
-		a->bid[a->last] = *(int*) getArgReference(stk,pci,i);
+		a->bid[a->last] = *getArgReference_bat(stk,pci,i);
 		b = a->cols[a->last]= BATdescriptor(a->bid[a->last]);
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
@@ -167,9 +167,9 @@ GROUPdelete(AGGRtask *a){
 str
 GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *grp = (bat *) getArgReference(stk, pci, 0);
-	bat *ext = (bat *) getArgReference(stk, pci, 1);
-	bat *hist = (bat *) getArgReference(stk, pci, 2);
+	bat *grp = getArgReference_bat(stk, pci, 0);
+	bat *ext = getArgReference_bat(stk, pci, 1);
+	bat *hist = getArgReference_bat(stk, pci, 2);
 	int i, j;
 	bat oldgrp, oldext, oldhist;
 	str msg = MAL_SUCCEED;

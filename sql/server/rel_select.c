@@ -194,7 +194,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 
 /* return all expressions, with table name == tname */
 static list *
-rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
+rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 {
 	list *exps;
 
@@ -214,15 +214,15 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_table_projections( sql, rel->l, tname);
+		exps = rel_table_projections( sql, rel->l, tname, level+1);
 		if (exps)
 			return exps;
-		return rel_table_projections( sql, rel->r, tname);
+		return rel_table_projections( sql, rel->r, tname, level+1);
 	case op_apply:
 	case op_semi:
 	case op_anti:
 	case op_select:
-		return rel_table_projections( sql, rel->l, tname);
+		return rel_table_projections( sql, rel->l, tname, level+1);
 
 	case op_topn:
 	case op_sample:
@@ -231,8 +231,8 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_except:
 	case op_inter:
 	case op_project:
-		if (!is_processed(rel))
-			return rel_table_projections( sql, rel->l, tname);
+		if (!is_processed(rel) && level == 0)
+			return rel_table_projections( sql, rel->l, tname, level+1);
 		/* fall through */
 	case op_table:
 	case op_basetable:
@@ -1756,7 +1756,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			return rel;
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->tables.set))
-			return sql_error(sql, 02, "Unable to query empty Merge or Replica tables");
+			return sql_error(sql, 02, "MERGE or REPLICA TABLE should have at least one table associated");
 
 		return rel_basetable(sql, t, tname);
 	} else if (tableref->token == SQL_VALUES) {
@@ -2378,10 +2378,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;
 
-	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0 ||
-	   (rs2 && rel_convert_types(sql, &ls, &rs2, 1, type_equal) < 0)) 
-		return NULL;
 	if (!rs2) {
+		sql_exp *ors = NULL;
+
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
 	
@@ -2394,8 +2393,24 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 
 			type = (int)swap_compare((comp_type)type);
 		}
+		if (!exp_subtype(ls) && !exp_subtype(rs)) 
+			return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
+		ors = rs;
+		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL) { 
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+
+			rs = ors;
+			/* handle NULL left-columns */
+			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)
+				return NULL;
+		}
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
+		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL ||
+	   	    (rs2 && (rs2 = rel_check_type(sql, exp_subtype(ls), rs2, type_equal)) == NULL)) 
+			return NULL;
 		e = exp_compare2(sql->sa, ls, rs, rs2, type);
 	}
 	if (anti)
@@ -3877,6 +3892,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		node *n, *m;
 		list *nexps;
 
+		if (f->func->type != type)
+			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 		if (f->func->vararg) 
 			return exp_op(sql->sa, exps, f);
 	       	nexps = new_exp_list(sql->sa);
@@ -3941,10 +3958,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	if (groupby->op != op_groupby)		/* implicit groupby */
 		*rel = rel_project2groupby(sql, groupby);
-	if (!*rel) {
-		rel_destroy(groupby);
+	if (!*rel)
 		return NULL;
-	}
 
 	if (f == sql_where) {
 		char *uaname = malloc(strlen(aname) + 1);
@@ -4174,8 +4189,6 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		if (!tpe) 
 			return sql_error(sql, 02, "result type missing");
 		supertype(&rtype, restype, tpe);
-		if (!tpe) 
-			return sql_error(sql, 02, "result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		restype = &rtype;
 	}
 	if (opt_else || else_exp) {
@@ -4190,6 +4203,8 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			tpe = &rtype;
 		}
 		restype = tpe;
+		if (restype->type->localtype == TYPE_void) /* NULL */
+			restype = sql_bind_localtype("str");
 
 		if (!result || !(result = rel_check_type(sql, restype, result, type_equal))) 
 			return NULL;
@@ -4198,9 +4213,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		if (!res) 
 			return NULL;
 	} else {
-		sql_exp *a = exp_atom(sql->sa, atom_general(sql->sa, restype, NULL));
-
-		res = a;
+		if (restype->type->localtype == TYPE_void) /* NULL */
+			restype = sql_bind_localtype("str");
+		res = exp_atom(sql->sa, atom_general(sql->sa, restype, NULL));
 	}
 
 	for (n = conds->h, m = results->h; n && m; n = n->next, m = m->next) {
@@ -5000,7 +5015,7 @@ rel_table_exp(mvc *sql, sql_rel **rel, symbol *column_e )
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps;
 	
-		if ((exps = rel_table_projections(sql, *rel, tname)) != NULL)
+		if ((exps = rel_table_projections(sql, *rel, tname, 0)) != NULL)
 			return exps;
 		if (!tname)
 			return sql_error(sql, 02,

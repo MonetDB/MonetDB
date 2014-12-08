@@ -39,11 +39,7 @@
 #include "bat5.h"
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define transaction_export extern __declspec(dllimport)
-#else
 #define transaction_export extern __declspec(dllexport)
-#endif
 #else
 #define transaction_export extern
 #endif
@@ -51,14 +47,13 @@
 transaction_export str TRNglobal_sync(bit *ret);
 transaction_export str TRNglobal_abort(bit *ret);
 transaction_export str TRNglobal_commit(bit *ret);
-transaction_export str TRNsub_commit(bit *ret, int *bid);
 transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNsubcommit(bit *ret, int *bid);
-transaction_export str TRNtrans_prev(int *ret, int *bid);
-transaction_export str TRNtrans_alpha(int *ret, int *bid);
-transaction_export str TRNtrans_delta(int *ret, int *bid);
+transaction_export str TRNsubcommit(bit *ret, bat *bid);
+transaction_export str TRNtrans_prev(bat *ret, bat *bid);
+transaction_export str TRNtrans_alpha(bat *ret, bat *bid);
+transaction_export str TRNtrans_delta(bat *ret, bat *bid);
 
 #include "mal_exception.h"
 str
@@ -82,7 +77,7 @@ TRNglobal_commit(bit *ret)
 	return MAL_SUCCEED;
 }
 str
-TRNsubcommit(bit *ret, int *bid)
+TRNsubcommit(bit *ret, bat *bid)
 {
 	BAT *b;
 	b= BATdescriptor(*bid);
@@ -96,13 +91,14 @@ TRNsubcommit(bit *ret, int *bid)
 str
 TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}
@@ -116,13 +112,14 @@ TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.abort",  RUNTIME_OBJECT_MISSING);
 		}
@@ -135,13 +132,14 @@ TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, *bid;
+	int i;
+	bat *bid;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
-		bid = (int *) getArgReference(stk, p, i);
+		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}
@@ -152,7 +150,7 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-TRNtrans_prev(int *ret, int *bid)
+TRNtrans_prev(bat *ret, bat *bid)
 {
 	BAT *b,*bn= NULL;
 	b= BATdescriptor(*bid);
@@ -165,13 +163,13 @@ TRNtrans_prev(int *ret, int *bid)
 }
 
 str
-TRNtrans_alpha(int *ret, int *bid)
+TRNtrans_alpha(bat *ret, bat *bid)
 {
 	return BKCgetAlpha(ret, bid);
 }
 
 str
-TRNtrans_delta(int *ret, int *bid)
+TRNtrans_delta(bat *ret, bat *bid)
 {
 	return BKCgetDelta(ret, bid);
 }

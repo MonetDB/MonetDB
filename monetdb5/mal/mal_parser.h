@@ -31,7 +31,7 @@
 #define prevChar(X) if(X->yycur) X->yycur--
 
 mal_export void initParser(void);   /* needed in src/mal/mal.c */
-mal_export int parseMAL(Client cntxt, Symbol curPrg);
+mal_export int parseMAL(Client cntxt, Symbol curPrg, int skipcomments);
 mal_export void echoInput(Client cntxt);
 mal_export void debugParser(int i);
 mal_export str parseError(Client cntxt, str msg);

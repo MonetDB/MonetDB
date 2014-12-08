@@ -26,6 +26,7 @@
 #include "mal_linker.h"
 #include "mal_function.h"	/* for throw() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
+#include "mal_private.h"
 
 #include "mutils.h"
 #include <sys/types.h> /* opendir */

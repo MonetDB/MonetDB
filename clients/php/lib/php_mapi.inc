@@ -744,7 +744,7 @@
 	function format_query($query, $lang) {
 		if ($lang == LANG_SQL) {
 
-			return "s" . $query . ";";
+			return "s" . $query . "\n;";
 		}
 		return FALSE;
 	}

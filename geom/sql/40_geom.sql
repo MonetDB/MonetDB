@@ -4052,16 +4052,15 @@ CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTER
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
 CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Within";
 CREATE FUNCTION ST_Contains(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Contains";
-CREATE FUNCTION ST_Contains(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer, filterVersion integer, spatialVersion integer) RETURNS boolean EXTERNAL NAME geom."Contains";
 CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Overlaps";
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
-CREATE FUNCTION ST_Distance(geom1 Geometry, xCoordinate double, yCoordinate double, srid integer, filterVersion integer, spatialVersion integer) RETURNS double EXTERNAL NAME geom."Distance";
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";
 CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
+CREATE AGGREGATE ST_Union(geom Geometry) RETURNS Geometry external name geom."Union";
 CREATE FUNCTION ST_SymDifference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."SymDifference";
 CREATE FUNCTION ST_Buffer(geom Geometry, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
 CREATE FUNCTION ST_ConvexHull(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ConvexHull";
@@ -4144,7 +4143,6 @@ CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry ex
 --CREATE FUNCTION ST_BdMPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdMPolyFromWKB";
 
 --CREATE FUNCTION ST_M(geom Geometry) RETURNS double EXTERNAL NAME geom."M"; --geos does not support M coordinate (at least in the c version)
---CREATE FUNCTION ST_DWithin RETURNS EXTERNAL NAME --not in SFA, it uses spatial index to do a quick filtering before (usually) calling distance
 --CREATE FUNCTION ST_CurveToLine RETURNS EXTERNAL NAME --geos does not support CIRCULARSTRING and does not have such function
 
 
@@ -4190,7 +4188,8 @@ CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry EXTE
 --CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePointM";
 --CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
---CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine";
+CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name geom."MakeLine";
+CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine"; --two single geometries
 --CREATE FUNCTION ST_MakeLine(geoms_arr Geometry[]) RETURNS Geometry external name geom."MakeLine";
 --CREATE FUNCTION ST_LineFromMultiPoint(pointGeom Geometry) RETURNS Geometry external name geom."LineFromMultiPoint"; --gets mutlipoint returns linestring
 CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double, srid integer) RETURNS Geometry external name geom."MakeEnvelope";
@@ -4224,7 +4223,7 @@ CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geo
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail"; 
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry, flags integer) RETURNS A_CUSTOM_ROW EXTERNAL NAME
 --CREATE FUNCTION ST_NDims(geom Geometry) RETURNS integer EXTERNAL NAME
---CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom;
+CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NPoints";
 CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningfull for polygon and multipolygon
 CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
@@ -4336,6 +4335,7 @@ CREATE FUNCTION ST_CoveredBy(geom1 Geometry, geom2 Geometry) RETURNS boolean EXT
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
+CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin";
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME
@@ -4367,11 +4367,13 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 --CREATE FUNCTION ST_Buffer(geom Geometry, radius double, buffer_style_parameters string) RETURNS Geometry EXTERNAL NAME geom."Buffer";
 --CREATE FUNCTION ST_Buffer(geog Geography, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
 --CREATE FUNCTION ST_BuildArea RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Collect RETURNS EXTERNAL NAME
+--collect is the same to union. POstGIS just has a more efficient implementation for it compared to union
+CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Union";
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_DelaunayTriangles RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Dump RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_DumpPoints RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_DelaunayTriangles(geom Geometry, tolerance double, flags integer) RETURNS Geometry EXTERNAL NAME geom."DelaunayTriangles";
+CREATE FUNCTION ST_Dump(geom Geometry) RETURNS TABLE(id integer, polygonWKB Geometry) EXTERNAL NAME geom."Dump";
+CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG Geometry) EXTERNAL NAME geom."DumpPoints";
 --CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Intersection(geog1 Geography, geog2 Geography) RETURNS Geography EXTERNAL NAME geom."Intersection";
@@ -4388,8 +4390,7 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 --CREATE FUNCTION ST_Simplify RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SimplifyPreserveTopology RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Split RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Union(geoms Geometry set???) RETURNS Geometry EXTERNAL NAME geom."Union";
---CREATE FUNCTION ST_Union(geoms Geometry[]) RETURNS Geometry EXTERNAL NAME geom."Union";
+--CREATE FUNCTION ST_Union(geometry set geoms)?????
 --CREATE FUNCTION ST_UnaryUnion RETURNS EXTERNAL NAME
 
 -------------------------------------------------------------------------
@@ -4422,7 +4423,4 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 -- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
-
-CREATE FUNCTION PBSMIndex(x double, y double, xmin double, ymin double, xmax double, ymax double) RETURNS integer EXTERNAL NAME geom."pbsmIndex";
 

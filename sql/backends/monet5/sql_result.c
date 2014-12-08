@@ -423,6 +423,8 @@ bat_max_hgelength(BAT *b)
 		unsigned int i, neg = 0;				\
 		X *r;							\
 		X res = 0;						\
+		while(isspace(*s))					\
+			s++;						\
 		if (*s == '-'){						\
 			neg = 1;					\
 			s++;						\
@@ -443,16 +445,18 @@ bat_max_hgelength(BAT *b)
 				res *= 10;				\
 			}						\
 		}							\
+		while(isspace(*s))					\
+			s++;						\
 		if (*s) {						\
 			if (*s != '.')					\
 				return NULL;				\
 			s++;						\
-			for (i = 0; *s && i < t->scale; i++, s++) {	\
-				if (*s < '0' || *s > '9')		\
-					return NULL;			\
+			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) {	\
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
+			while(isspace(*s))				\
+				s++;					\
 			for (; i < t->scale; i++) {			\
 				res *= 10;				\
 			}						\
@@ -1768,7 +1772,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return -1;
 
 	count = m->reply_size;
-	if (count <= 0 || count >= BATcount(order)) {
+	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
 		count = BATcount(order);
 		clean = 1;
 	}

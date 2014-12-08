@@ -296,7 +296,6 @@ discoveryRunner(void *d)
 	socklen_t peer_addr_len;
 	fd_set fds;
 	struct timeval tv;
-	int c;
 	/* avoid first announce, the HELO will cause an announce when it's
 	 * received by ourself */
 	time_t deadline = 1;
@@ -340,6 +339,7 @@ discoveryRunner(void *d)
 				Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
 						"discovery services disabled\n", e);
 				free(e);
+				free(ckv);
 				return;
 			}
 
@@ -451,9 +451,9 @@ discoveryRunner(void *d)
 			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
-			/* coverity[dont_call] */
-			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
-			sleep_ms(c);
+#ifndef STATIC_CODE_ANALYSIS	/* hide rand() from Coverity */
+			sleep_ms(1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0))));
+#endif
 			/* force an announcement round by dropping the deadline */
 			forceannc = 1;
 			continue;
@@ -517,7 +517,6 @@ discoveryRunner(void *d)
 	}
 
 	/* craft LEAV messages for each db */
-	c = 0;
 	orig = stats;
 	while (stats != NULL) {
 		readProps(ckv, stats->path);
@@ -527,7 +526,6 @@ discoveryRunner(void *d)
 					stats->dbname, _mero_hostname,
 					(unsigned int)getConfNum(_mero_props, "port"));
 			broadcast(buf);
-			c = 1;
 		}
 		freeConfFile(ckv);
 		stats = stats->next;

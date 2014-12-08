@@ -35,6 +35,10 @@
 #define R_INTERFACE_PTRS 1
 #define CSTACK_DEFNS 1
 
+/* R redefines these */
+#undef SIZEOF_SIZE_T
+#undef ERROR
+
 #include <Rembedded.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
@@ -45,73 +49,79 @@
 
 //#define _RAPI_DEBUG_
 
-#define BAT_TO_INTSXP(bat,tpe,retsxp) { \
-	tpe v;	size_t j; \
-	retsxp = PROTECT(NEW_INTEGER(BATcount(bat))); \
-	for (j = 0; j < BATcount(bat); j++) { \
-		v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j]; \
-		if ( v == tpe##_nil) \
-			INTEGER_POINTER(retsxp)[j] = 	NA_INTEGER; \
-		else \
-			INTEGER_POINTER(retsxp)[j] = 	(int)v; \
-	}\
-}
+#define BAT_TO_INTSXP(bat,tpe,retsxp)						\
+	do {													\
+		tpe v;	size_t j;									\
+		retsxp = PROTECT(NEW_INTEGER(BATcount(bat)));		\
+		for (j = 0; j < BATcount(bat); j++) {				\
+			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
+			if ( v == tpe##_nil)							\
+				INTEGER_POINTER(retsxp)[j] = 	NA_INTEGER; \
+			else											\
+				INTEGER_POINTER(retsxp)[j] = 	(int)v;		\
+		}													\
+	} while (0)
 
-#define BAT_TO_REALSXP(bat,tpe,retsxp) { \
-	tpe v; size_t j;	\
-	retsxp = PROTECT(NEW_NUMERIC(BATcount(bat))); \
-	for (j = 0; j < BATcount(bat); j++) { \
-		v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j]; \
-		if ( v == tpe##_nil) \
-			NUMERIC_POINTER(retsxp)[j] = 	NA_REAL; \
-		else \
-			NUMERIC_POINTER(retsxp)[j] = 	(double)v; \
-	}\
-}
+#define BAT_TO_REALSXP(bat,tpe,retsxp)						\
+	do {													\
+		tpe v; size_t j;									\
+		retsxp = PROTECT(NEW_NUMERIC(BATcount(bat)));		\
+		for (j = 0; j < BATcount(bat); j++) {				\
+			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
+			if ( v == tpe##_nil)							\
+				NUMERIC_POINTER(retsxp)[j] = 	NA_REAL;	\
+			else											\
+				NUMERIC_POINTER(retsxp)[j] = 	(double)v;	\
+		}													\
+	} while (0)
 
-#define SCALAR_TO_INTSXP(tpe,retsxp) { \
-	tpe v;	\
-	retsxp = PROTECT(NEW_INTEGER(1)); \
-	v = *(tpe*) getArgReference(stk,pci,i); \
-	if ( v == tpe##_nil) \
-		INTEGER_POINTER(retsxp)[0] = 	NA_INTEGER; \
-	else \
-		INTEGER_POINTER(retsxp)[0] = 	(int)v; \
-}
+#define SCALAR_TO_INTSXP(tpe,retsxp)					\
+	do {												\
+		tpe v;											\
+		retsxp = PROTECT(NEW_INTEGER(1));				\
+		v = *getArgReference_##tpe(stk,pci,i);			\
+		if ( v == tpe##_nil)							\
+			INTEGER_POINTER(retsxp)[0] = 	NA_INTEGER; \
+		else											\
+			INTEGER_POINTER(retsxp)[0] = 	(int)v;		\
+	} while (0)
 
-#define SCALAR_TO_REALSXP(tpe,retsxp) { \
-	tpe v;	\
-	retsxp = PROTECT(NEW_NUMERIC(1)); \
-	v = * (tpe*) getArgReference(stk,pci,i); \
-	if ( v == tpe##_nil) \
-		NUMERIC_POINTER(retsxp)[0] = 	NA_REAL; \
-	else \
-		NUMERIC_POINTER(retsxp)[0] = 	(double)v; \
-}
-#define SXP_TO_BAT(tpe,access_fun,na_check) { \
-	tpe *p, prev = tpe##_nil; \
-	b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);\
-	BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;\
-	b->tsorted = 1; b->trevsorted = 1; \
-	p = (tpe*) Tloc(b, BUNfirst(b));\
-	for( j =0; j< (int) cnt; j++, p++){\
-		*p = (tpe) access_fun(ret_col)[j];\
-		if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
-		if (j > 0){ \
-			if ( *p > prev && b->trevsorted){ \
-				b->trevsorted = 0; \
-				if (*p != prev +1) b->tdense = 0; \
-			} else \
-			if ( *p < prev && b->tsorted){ \
-				b->tsorted = 0; \
-				b->tdense = 0; \
-			} \
-		} \
-		prev = *p; \
-	} \
-	BATsetcount(b,cnt);\
-	BATsettrivprop(b);\
-}
+#define SCALAR_TO_REALSXP(tpe,retsxp) \
+	do {												\
+		tpe v;											\
+		retsxp = PROTECT(NEW_NUMERIC(1));				\
+		v = * getArgReference_##tpe(stk,pci,i);			\
+		if ( v == tpe##_nil)							\
+			NUMERIC_POINTER(retsxp)[0] = 	NA_REAL;	\
+		else											\
+			NUMERIC_POINTER(retsxp)[0] = 	(double)v;	\
+	} while (0)
+
+#define SXP_TO_BAT(tpe,access_fun,na_check)								\
+	do {																\
+		tpe *p, prev = tpe##_nil;										\
+		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
+		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
+		b->tsorted = 1; b->trevsorted = 1;								\
+		p = (tpe*) Tloc(b, BUNfirst(b));								\
+		for( j =0; j< (int) cnt; j++, p++){								\
+			*p = (tpe) access_fun(ret_col)[j];							\
+			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
+			if (j > 0){													\
+				if ( *p > prev && b->trevsorted){						\
+					b->trevsorted = 0;									\
+					if (*p != prev +1) b->tdense = 0;					\
+				} else													\
+					if ( *p < prev && b->tsorted){						\
+						b->tsorted = 0;									\
+						b->tdense = 0;									\
+					}													\
+			}															\
+			prev = *p;													\
+		}																\
+		BATsetcount(b,cnt);												\
+		BATsettrivprop(b);												\
+	} while (0)
 
 const char* rapi_enableflag = "embedded_r";
 
@@ -165,9 +175,6 @@ int RAPIinstalladdons(void);
 
 static int RAPIinitialize(void) {
 // TODO: check for header/library version mismatch?
-#ifdef RIF_HAS_RSIGHAND
-	R_SignalHandlers=0;
-#endif
 	// set R_HOME for packages etc. We know this from our configure script
 	setenv("R_HOME", RHOME, TRUE);
 
@@ -176,7 +183,7 @@ static int RAPIinitialize(void) {
 		structRstart rp;
 		Rstart Rp = &rp;
 		char *rargv[] = { "R", "--slave", "--vanilla" };
-		int stat;
+		int stat = 0;
 
 		R_DefParams(Rp);
 		Rp->R_Slave = (Rboolean) TRUE;
@@ -195,16 +202,14 @@ static int RAPIinitialize(void) {
 		R_SetParams(Rp);
 	}
 
-	// yes, again...
-#ifdef RIF_HAS_RSIGHAND
-	R_SignalHandlers=0;
-#endif
-
 	/* disable stack checking, because threads will throw it off */
 	R_CStackLimit = (uintptr_t) -1;
 	/* redirect input/output and set error handler */
 	R_Outputfile = NULL;
 	R_Consolefile = NULL;
+	/* we do not want R to handle any signal, will interfere with monetdbd */
+	R_SignalHandlers = 0;
+	/* we want control R's output and input */
 	ptr_R_WriteConsoleEx = writeConsoleEx;
 	ptr_R_WriteConsole = writeConsole;
 	ptr_R_ReadConsole = NULL;
@@ -287,22 +292,22 @@ static void my_onintr(int sig)
 //extern Rboolean R_LoadRconsole;
 
 int RAPIinitialize(void) {
-	 structRstart rp;
+	structRstart rp;
 	Rstart Rp = &rp;
 	char Rversion[25], *RHome;
 
 	snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
 	if(strncmp(getDLLVersion(), Rversion, 25) != 0) {
-	fprintf(stderr, "Error: R.DLL version does not match\n");
-	exit(1);
+		fprintf(stderr, "Error: R.DLL version does not match\n");
+		exit(1);
 	}
 
 	R_setStartTime();
 	R_DefParams(Rp);
 	if((RHome = get_R_HOME()) == NULL) {
-	fprintf(stderr,
-		"R_HOME must be set in the environment or Registry\n");
-	exit(2);
+		fprintf(stderr,
+				"R_HOME must be set in the environment or Registry\n");
+		exit(2);
 	}
 	Rp->rhome = RHome;
 	Rp->home = getRUser();
@@ -347,8 +352,8 @@ int RAPIinstalladdons(void) {
 	SEXP librisexp;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, BUFSIZ, "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-			"rapi_packages");
+	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
+			 "rapi_packages");
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return 4;
@@ -363,12 +368,12 @@ int RAPIinstalladdons(void) {
 	UNPROTECT(1);
 
 	// run rapi.R environment setup script
-	snprintf(rapiinclude, BUFSIZ, "source(\"%s\")",
-			locate_file("rapi", ".R", 0));
+	snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")",
+			 locate_file("rapi", ".R", 0));
 	R_tryEvalSilent(
-			VECTOR_ELT(
-					R_ParseVector(mkString(rapiinclude), 1, &status,
-							R_NilValue), 0), R_GlobalEnv, &evalErr);
+		VECTOR_ELT(
+			R_ParseVector(mkString(rapiinclude), 1, &status,
+						  R_NilValue), 0), R_GlobalEnv, &evalErr);
 
 	// of course the script may contain errors as well
 	if (evalErr != FALSE) {
@@ -378,17 +383,17 @@ int RAPIinstalladdons(void) {
 }
 
 rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci) {
+							InstrPtr pci) {
 	return RAPIeval(cntxt, mb, stk, pci, 0);
 }
 rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci) {
+							 InstrPtr pci) {
 	return RAPIeval(cntxt, mb, stk, pci, 1);
 }
 
 str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
-	str exprStr = *(str*) getArgReference(stk, pci, pci->retc + 1);
+	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	SEXP x, env, retval;
 	SEXP varname = R_NilValue;
@@ -397,7 +402,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	int i, j = 1;
 	char argbuf[64];
 	char argnames[1000] = "";
+	size_t pos;
 	char* rcall;
+	size_t rcalllen;
 	size_t ret_rows = 0;
 	int ret_cols = 0; /* int because pci->retc is int, too*/
 	str *args;
@@ -413,11 +420,12 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	if (!RAPIEnabled()) {
 		throw(MAL, "rapi.eval",
-				"Embedded R has not been enabled. Start server with --set %s=true",
-				rapi_enableflag);
+			  "Embedded R has not been enabled. Start server with --set %s=true",
+			  rapi_enableflag);
 	}
 
-	rcall = malloc(strlen(exprStr) + sizeof(argnames) + 100);
+	rcalllen = strlen(exprStr) + sizeof(argnames) + 100;
+	rcall = malloc(rcalllen);
 	if (rcall == NULL) {
 		throw(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 	}
@@ -454,7 +462,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				args[i] = GDKstrdup("aggr_group");
 				seengrp = TRUE;
 			} else {
-				sprintf(argbuf, "arg%i", i - pci->retc - 1);
+				snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
 			}
 		}
@@ -471,14 +479,14 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str)
-				BUNappend(b, *(str*) getArgReference(stk, pci, i), FALSE);
+				BUNappend(b, *getArgReference_str(stk, pci, i), FALSE);
 			else
 				BUNappend(b, getArgReference(stk, pci, i), FALSE);
 			BATsetcount(b, 1);
 			BATseqbase(b, 0);
 			BATsettrivprop(b);
 		} else {
-			b = BATdescriptor(*(int*) getArgReference(stk, pci, i));
+			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -488,36 +496,30 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		// check the BAT count, if it is bigger than RAPI_MAX_TUPLES, fail
 		if (BATcount(b) > RAPI_MAX_TUPLES) {
 			msg = createException(MAL, "rapi.eval",
-					"Got "BUNFMT" rows, but can only handle "LLFMT". Sorry.",
-					BATcount(b), (lng) RAPI_MAX_TUPLES);
+								  "Got "BUNFMT" rows, but can only handle "LLFMT". Sorry.",
+								  BATcount(b), (lng) RAPI_MAX_TUPLES);
 			goto wrapup;
 		}
 		varname = PROTECT(Rf_install(args[i]));
 
 		switch (ATOMstorage(getColumnType(getArgType(mb,pci,i)))) {
 		case TYPE_bte:
-			BAT_TO_INTSXP(b, bte, varvalue)
-			;
+			BAT_TO_INTSXP(b, bte, varvalue);
 			break;
 		case TYPE_sht:
-			BAT_TO_INTSXP(b, sht, varvalue)
-			;
+			BAT_TO_INTSXP(b, sht, varvalue);
 			break;
 		case TYPE_int:
-			BAT_TO_INTSXP(b, int, varvalue)
-			;
+			BAT_TO_INTSXP(b, int, varvalue);
 			break;
 		case TYPE_flt:
-			BAT_TO_REALSXP(b, flt, varvalue)
-			;
+			BAT_TO_REALSXP(b, flt, varvalue);
 			break;
 		case TYPE_dbl:
-			BAT_TO_REALSXP(b, dbl, varvalue)
-			;
+			BAT_TO_REALSXP(b, dbl, varvalue);
 			break;
-		case TYPE_lng: /* R's integers are stored as int, so we cannot be sure lng will fit */
-			BAT_TO_REALSXP(b, lng, varvalue)
-			;
+		case TYPE_lng: /* R's integers are stored as int, so we cannot be sure long will fit */
+			BAT_TO_REALSXP(b, lng, varvalue);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
@@ -531,15 +533,15 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			li = bat_iterator(b);
 			varvalue = PROTECT(NEW_STRING(BATcount(b)));
 			BATloop(b, p, q)
-			{
-				const char *t = (const char *) BUNtail(li, p);
-				if (t == str_nil) {
-					SET_STRING_ELT(varvalue, j, NA_STRING);
-				} else {
-					SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+				{
+					const char *t = (const char *) BUNtail(li, p);
+					if (t == str_nil) {
+						SET_STRING_ELT(varvalue, j, NA_STRING);
+					} else {
+						SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+					}
+					j++;
 				}
-				j++;
-			}
 		}
 			break;
 		default:
@@ -554,21 +556,27 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		UNPROTECT(2);
 	}
 
-	/* we are going to evaluate the user function within a anonymous function call:
+	/* we are going to evaluate the user function within an anonymous function call:
 	 * ret <- (function(arg1){return(arg1*2)})(42)
 	 * the user code is put inside the {}, this keeps our environment clean (TM) and gives
 	 * a clear path for return values, namely using the builtin return() function
 	 * this is also compatible with PL/R
 	 */
-	for (i = pci->retc + 2; i < pci->argc; i++) {
-		strcat(argnames, args[i]);
-		if (i < pci->argc - 1) {
-			strcat(argnames, ", ");
-		}
+	pos = 0;
+	for (i = pci->retc + 2; i < pci->argc && pos < sizeof(argnames); i++) {
+		pos += snprintf(argnames + pos, sizeof(argnames) - pos, "%s%s",
+						args[i], i < pci->argc - 1 ? ", " : "");
 	}
-	sprintf(rcall,
-			"ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
-			argnames, exprStr, argnames);
+	if (pos >= sizeof(argnames)) {
+		msg = createException(MAL, "rapi.eval", "Command too large");
+		goto wrapup;
+	}
+	if (snprintf(rcall, rcalllen,
+				 "ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
+				 argnames, exprStr, argnames) >= (int) rcalllen) {
+		msg = createException(MAL, "rapi.eval", "Command too large");
+		goto wrapup;
+	}
 #ifdef _RAPI_DEBUG_
 	printf("# R call %s\n",rcall);
 #endif
@@ -577,14 +585,14 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	if (LENGTH(x) != 1 || status != PARSE_OK) {
 		msg = createException(MAL, "rapi.eval",
-				"Error parsing R expression '%s'. ", exprStr);
+							  "Error parsing R expression '%s'. ", exprStr);
 		goto wrapup;
 	}
 
 	retval = R_tryEval(VECTOR_ELT(x, 0), env, &evalErr);
 	if (evalErr != FALSE) {
 		msg = createException(MAL, "rapi.eval",
-				"Error running R expression. Error message: %s", R_curErrorBuf());
+							  "Error running R expression. Error message: %s", R_curErrorBuf());
 		goto wrapup;
 	}
 
@@ -593,7 +601,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	ret_rows = LENGTH(VECTOR_ELT(retval, 0));
 	if (ret_cols != pci->retc) {
 		msg = createException(MAL, "rapi.eval",
-				"Expected result of %d columns, got %d", pci->retc, ret_cols);
+							  "Expected result of %d columns, got %d", pci->retc, ret_cols);
 		goto wrapup;
 	}
 
@@ -601,7 +609,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
 		int bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
-		int *ret = (int *) getArgReference(stk, pci, i);
 		cnt = (BUN) ret_rows;
 
 		// hand over the vector into a BAT
@@ -609,9 +616,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		case TYPE_int: {
 			if (!IS_INTEGER(ret_col)) {
 				msg =
-						createException(MAL, "rapi.eval",
-								"wrong R column type for column %d, expected INTeger, got %s.",
-								i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected INTeger, got %s.",
+									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
 			SXP_TO_BAT(int, INTEGER_POINTER, *p==NA_INTEGER);
@@ -620,9 +627,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		case TYPE_lng: {
 			if (!IS_INTEGER(ret_col)) {
 				msg =
-						createException(MAL, "rapi.eval",
-								"wrong R column type for column %d, expected INTeger, got %s.",
-								i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected INTeger, got %s.",
+									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
 			SXP_TO_BAT(lng, INTEGER_POINTER, *p==NA_INTEGER);
@@ -644,9 +651,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		case TYPE_bte: { // only R logical types fit into bte BATs
 			if (!IS_LOGICAL(ret_col)) {
 				msg =
-						createException(MAL, "rapi.eval",
-								"wrong R column type for column %d, expected LoGicaL, got %s.",
-								i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected LoGicaL, got %s.",
+									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
 			SXP_TO_BAT(bte, LOGICAL_POINTER, *p==NA_LOGICAL);
@@ -655,9 +662,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		case TYPE_dbl: {
 			if (!IS_NUMERIC(ret_col)) {
 				msg =
-						createException(MAL, "rapi.eval",
-								"wrong R column type for column %d, expected numeric (REAL), got %s.",
-								i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected numeric (REAL), got %s.",
+									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
 			SXP_TO_BAT(dbl, NUMERIC_POINTER, ISNA(*p));
@@ -668,9 +675,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			size_t j;
 			if (!IS_CHARACTER(ret_col) && !isFactor(ret_col)) {
 				msg =
-						createException(MAL, "rapi.eval",
-								"wrong R column type for column %d, expected STRing/character or factor, got %s.",
-								i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected STRing/character or factor, got %s.",
+									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
 			b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
@@ -709,25 +716,25 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 		default:
 			msg = createException(MAL, "rapi.eval",
-					"unknown return type for return argument %d: %d", i,
-					bat_type);
+								  "unknown return type for return argument %d: %d", i,
+								  bat_type);
 			goto wrapup;
 		}
 		BATsetcount(b, cnt);
 
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
-			*ret = b->batCacheid;
+			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
-			VALinit(getArgReference(stk, pci, i), bat_type,
+			VALinit(&stk->stk[pci->argv[i]], bat_type,
 					Tloc(b, BUNfirst(b)));
 		}
 		msg = MAL_SUCCEED;
 	}
 	/* unprotect environment, so it will be eaten by the GC. */
 	UNPROTECT(1);
-	wrapup:
+  wrapup:
 	MT_lock_unset(&rapiLock, "rapi.evaluate");
 	free(rcall);
 	GDKfree(args);
@@ -735,7 +742,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
-str RAPIprelude(void) {
+str RAPIprelude(void *ret) {
+	(void) ret;
 	MT_lock_init(&rapiLock, "rapi_lock");
 
 	if (RAPIEnabled()) {
@@ -746,7 +754,7 @@ str RAPIprelude(void) {
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
 				throw(MAL, "rapi.eval",
-						"failed to initialise R environment (%i)", initstatus);
+					  "failed to initialise R environment (%i)", initstatus);
 			}
 		}
 		MT_lock_unset(&rapiLock, "rapi.evaluate");

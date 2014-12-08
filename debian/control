@@ -12,13 +12,13 @@ Build-Depends: debhelper (>= 5), autotools-dev, bison, libbz2-dev,
  libreadline-gplv2-dev | libreadline-dev, libssl-dev, libxml2-dev, perl,
  ruby, rubygems | libyaml-0-2, unixodbc-dev, uuid-dev, zlib1g-dev,
  python, python3,
- libbam-dev
+ libbam-dev, pkg-config
 # Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0
 
-Package: libmonetdb10
+Package: libmonetdb11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb1, libmonetdb2
@@ -37,7 +37,7 @@ Description: MonetDB core library
 
 Package: libmonetdb-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb10
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb11
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -47,7 +47,7 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
-Package: libmonetdb-stream5
+Package: libmonetdb-stream6
 Conflicts: libmonetdb-stream2
 Replaces: libmonetdb-stream2
 Architecture: any
@@ -63,7 +63,7 @@ Description: MonetDB stream library
 
 Package: libmonetdb-stream-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-stream5
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-stream6
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -71,9 +71,9 @@ Description: MonetDB stream library development files
  accelerators.  It also has an SQL frontend.
  .
  This package contains the files to develop with the
- libmonetdb-stream5 library.
+ libmonetdb-stream6 library.
 
-Package: libmonetdb-client6
+Package: libmonetdb-client7
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb-client1, libmonetdb-client2
@@ -89,14 +89,14 @@ Description: MonetDB client/server interface library
 
 Package: libmonetdb-client-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-client6
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-client7
 Description: MonetDB client/server interface library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL frontend.
  .
- This package contains the files to develop with the libmonetdb-client6
+ This package contains the files to develop with the libmonetdb-client7
  library.
 
 Package: monetdb-client

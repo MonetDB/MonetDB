@@ -399,6 +399,13 @@ static void ctl_handle_client(
 				} else {
 					if (*p != '\0') {
 						pid_t child;
+						sigset_t blocksig;
+						/* temporarily block SIGCHLD signals until
+						 * we've waited for the child we're about to
+						 * create. See bug http://bugs.monetdb.org/3603. */
+						sigemptyset(&blocksig);
+						sigaddset(&blocksig, SIGCHLD);
+						pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 						if ((child = fork()) == 0) {
 							FILE *secretf;
 							size_t len;
@@ -407,6 +414,10 @@ static void ctl_handle_client(
 							opt *set = malloc(sizeof(opt) * 2);
 							int setlen = 0;
 							char *sadbfarm;
+
+							sigemptyset(&blocksig);
+							sigaddset(&blocksig, SIGCHLD);
+							pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
@@ -456,10 +467,16 @@ static void ctl_handle_client(
 							}
 
 							exit(0); /* return to the parent */
-						} else {
+						} else if (child > 0) {
 							/* wait for the child to finish */
 							waitpid(child, NULL, 0);
+						} else {
+							Mfprintf(_mero_ctlout, "%s: forking failed\n",
+									 origin);
 						}
+						sigemptyset(&blocksig);
+						sigaddset(&blocksig, SIGCHLD);
+						pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 					}
 
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
@@ -953,7 +970,7 @@ controlRunner(void *d)
 			/* nothing interesting has happened */
 			continue;
 		}
-		if (retval < 0) {
+		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			continue;
@@ -965,7 +982,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {

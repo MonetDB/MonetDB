@@ -69,9 +69,9 @@ stderr of test 'primekeyconstraint.SF-2783425` in directory 'sql/test/BugTracker
 # 08:02:34 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=30582 
 # 08:02:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23599/.s.monetdb.33852
+MAPI  = (monetdb) /var/tmp/mtest-11898/.s.monetdb.35572
 QUERY = ALTER TABLE way_nds ADD CONSTRAINT pk_way_nds PRIMARY KEY (way, idx);
-ERROR = !UPDATE: PRIMARY KEY constraint 'way_nds.pk_way_nds' violated
+ERROR = !ALTER TABLE: NOT NULL constraint violated for column way_nds.way
 
 # 08:02:34 >  
 # 08:02:34 >  Done.

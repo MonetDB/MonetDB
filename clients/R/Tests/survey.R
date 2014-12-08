@@ -1,11 +1,19 @@
-library(MonetDB.R,quietly=T)
-library(sqlsurvey,quietly=T)
+ll <- NULL
+if (Sys.getenv("TSTTRGDIR") != "") {
+	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
+}
+suppressMessages({
+	library(MonetDB.R,quietly=T,lib.loc=ll)
+	library(sqlsurvey,quietly=T)
+})
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
 dbname <- "mTests_clients_R"
 if (length(args) > 0) 
 	dbport <- args[[1]]
+if (length(args) > 1) 
+	dbname <- args[[2]]
 
 # install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
 
@@ -20,6 +28,8 @@ x$idkey <- 1:nrow( x )
 
 # monetdb doesn't like the column name `full`
 x$full <- NULL
+
+names(x) <- tolower(gsub(".","_",names(x),fixed=T))
 
 # load the apiclus1 data set into the monetdb
 dbWriteTable( db , 'apiclus1' , x , overwrite = TRUE )

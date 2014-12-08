@@ -15,8 +15,6 @@ debian/tmp/usr/lib/monetdb5/createdb/13_date.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/14_inet.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/15_querylog.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/16_tracelog.sql usr/lib/monetdb5/createdb
-debian/tmp/usr/lib/monetdb5/createdb/17_compress.sql usr/lib/monetdb5/createdb
-debian/tmp/usr/lib/monetdb5/createdb/18_dictionary.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/19_cluster.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/20_vacuum.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/21_dependency_functions.sql usr/lib/monetdb5/createdb
@@ -32,4 +30,5 @@ debian/tmp/usr/lib/monetdb5/createdb/45_uuid.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/75_storagemodel.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/80_statistics.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/80_udf*.sql usr/lib/monetdb5/createdb
+debian/tmp/usr/lib/monetdb5/createdb/90_generator.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/99_system.sql usr/lib/monetdb5/createdb

@@ -97,3 +97,7 @@ extern void startHttpdaemon(void)
 	__attribute__((__visibility__("hidden")));
 extern void stopHttpdaemon(void)
 	__attribute__((__visibility__("hidden")));
+
+/* mal_linker.h */
+extern char *MSP_locate_script(const char *mod_name)
+	__attribute__((__visibility__("hidden")));

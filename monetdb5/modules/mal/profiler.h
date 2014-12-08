@@ -54,7 +54,6 @@ profiler_export str CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr 
 profiler_export str CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -63,21 +62,20 @@ profiler_export str CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr 
 profiler_export str CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDnoopProfiler(int *res);
-profiler_export str CMDclearTrace(int *res);
-profiler_export str CMDdumpTrace(int *res);
-profiler_export str CMDgetTrace(int *res, str *ev);
+profiler_export str CMDnoopProfiler(void *res);
+profiler_export str CMDclearTrace(void *res);
+profiler_export str CMDdumpTrace(void *res);
+profiler_export str CMDgetTrace(bat *res, str *ev);
 profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDcloseProfilerStream(int *res);
-profiler_export str CMDcleanup(int *ret);
+profiler_export str CMDcloseProfilerStream(void *res);
+profiler_export str CMDcleanup(void *ret);
 profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDclearEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetDiskReads(lng *ret);
 profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);
 profiler_export str CMDgetSystemTime(lng *ret);
 profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDtomograph(int *ret);
+profiler_export str CMDtomograph(void *ret);
 profiler_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 profiler_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 #endif  /* _PROFILER_*/

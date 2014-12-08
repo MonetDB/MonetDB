@@ -29,24 +29,18 @@ stderr of test 'numerology` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- NUMEROLOGY
-#-- Test various combinations of numeric types and functions.
-#--
-#--
-#-- Test implicit type conversions
-#-- This fails for Postgres v6.1 (and earlier?)
-#--  so let's try explicit conversions for now - tgl 97/05/07
-#--
-#-- integer
-#-- smallint
-#--
-#-- Group-by combinations
-#--
-#-- GROUP BY a result column name is not legal per SQL92, but we accept it
-#-- anyway (if the name is not the name of any column exposed by FROM).
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+QUERY = CREATE TABLE INT2_TBL(f1 smallint);
+ERROR = !CREATE TABLE: name 'int2_tbl' already in use
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+QUERY = CREATE TABLE INT4_TBL(f1 integer);
+ERROR = !CREATE TABLE: name 'int4_tbl' already in use
 
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+
+
+
+
+# 17:21:41 >  
+# 17:21:41 >  "Done."
+# 17:21:41 >  
 

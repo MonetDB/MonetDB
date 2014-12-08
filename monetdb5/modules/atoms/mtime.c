@@ -1213,7 +1213,7 @@ union lng_tzone {
 #include "mal_exception.h"
 
 str
-MTIMEnil2date(date *ret, const int *src)
+MTIMEnil2date(date *ret, const void *src)
 {
 	(void) src;
 	*ret = date_nil;
@@ -1245,7 +1245,7 @@ static BAT *timezone_name = NULL;
 static BAT *timezone_def = NULL;
 
 str
-MTIMEprelude(void)
+MTIMEprelude(void *ret)
 {
 	const char *msg = NULL;
 	ValRecord vr;
@@ -1258,6 +1258,7 @@ MTIMEprelude(void)
 	BAT *tzbatnme;
 	BAT *tzbatdef;
 
+	(void) ret;
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
 
@@ -1334,14 +1335,16 @@ MTIMEprelude(void)
 }
 
 str
-MTIMEepilogue(void)
+MTIMEepilogue(void *ret)
 {
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str
-MTIMEsynonyms(const bit *allow)
+MTIMEsynonyms(void *ret, const bit *allow)
 {
+	(void) ret;
 	if (*allow != bit_nil)
 		synonyms = *allow;
 	return MAL_SUCCEED;
@@ -1355,7 +1358,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 	tzone *z;
 	BATiter tzi;
 
-	if ((p = BUNfnd(BATmirror(timezone_name), *name)) == BUN_NONE)
+	if ((p = BUNfnd(timezone_name, *name)) == BUN_NONE)
 		throw(MAL, "mtime.setTimezone", "unknown timezone");
 	tzi = bat_iterator(timezone_def);
 	z = (tzone *) BUNtail(tzi, p);
@@ -1366,7 +1369,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 }
 
 str
-MTIMEtzone_set_local(int res, const tzone *z)
+MTIMEtzone_set_local(void *res, const tzone *z)
 {
 	(void) res;					/* fool compilers */
 	return tzone_set_local(z);
@@ -1432,18 +1435,6 @@ MTIMEdate_date(date *d, const date *s)
 }
 
 str
-MTIMEdate_tostr(str *ret, const date *d)
-{
-	int big = 128;
-	char buf[128], *s1 = buf;
-
-	*s1 = 0;
-	date_tostr(&s1, &big, d);
-	*ret = GDKstrdup(buf);
-	return MAL_SUCCEED;
-}
-
-str
 MTIMEdate_fromstr(date *ret, const char * const *s)
 {
 	int len = 0;
@@ -1467,18 +1458,6 @@ MTIMEdate_create(date *ret, const int *year, const int *month, const int *day)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdaytime_tostr(str *ret, const daytime *d)
-{
-	char buf[128], *s = buf;
-	int len = 128;
-
-	*s = 0;
-	daytime_tostr(&s, &len, d);
-	*ret = GDKstrdup(buf);
-	return MAL_SUCCEED;
-}
-
 /* creates a daytime from (hours,minutes,seconds,milliseconds) parameters */
 str
 MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *sec, const int *msec)
@@ -1498,13 +1477,6 @@ MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 		return MAL_SUCCEED;
 	}
 	timestamp_fromstr(*d, &len, &ret);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_timestamp(timestamp *d, const timestamp *s)
-{
-	*d = *s;
 	return MAL_SUCCEED;
 }
 
@@ -2162,18 +2134,6 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 }
 
 str
-MTIMErule_tostr(str *s, const rule *r)
-{
-	char buf[128], *s1 = buf;
-	int len = 128;
-
-	*s1 = 0;
-	rule_tostr(&s1, &len, r);
-	*s = GDKstrdup(buf);
-	return MAL_SUCCEED;
-}
-
-str
 MTIMErule_fromstr(rule *ret, const char * const *s)
 {
 	int len = 0;
@@ -2235,9 +2195,13 @@ MTIMEtzone_create(tzone *ret, const int *minutes)
 }
 
 str
-MTIMEtzone_isnil(bit *retval, const tzone *val)
+MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
 {
-	*retval = tz_isnil(*val);
+	*ret = *tzone_nil;
+	if (*minutes != lng_nil && *minutes < 24 * 60 && -*minutes < 24 * 60) {
+		set_offset(ret, (int) *minutes);
+		ret->dst = FALSE;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -2372,6 +2336,21 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *v, const
 }
 
 str
+MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = (int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
+str
 MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const int *months)
 {
 	daytime t;
@@ -2382,6 +2361,22 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
+
+str
+MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, const lng *months)
+{
+	daytime t;
+	date d;
+	int m;
+	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
+	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	if (*months > (YEAR_MAX*12)) 
+		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+       	m = -(int)*months;
+	MTIMEdate_addmonths(&d, &d, &m);
+	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+}
+
 
 str
 MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *mseconds)

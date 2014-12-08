@@ -26,10 +26,14 @@
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG */
 
+sql5_export int SQLdebug;
 sql5_export str SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLprelude(void);
-sql5_export str SQLepilogue(void);
+sql5_export str SQLprelude(void *ret);
+sql5_export str SQLepilogue(void *ret);
+
+sql5_export int SQLautocommit(Client c, mvc *m);
+sql5_export void SQLtrans(mvc *m);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
@@ -41,17 +45,17 @@ sql5_export str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export int handle_error(mvc *m, stream *out, int pstatus);
 #ifdef HAVE_HGE
 sql5_export str SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
-sql5_export str SQLinitEnvironment(Client cntxt);
+sql5_export str SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+sql5_export str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result);
 sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLtrace(int *ret);
 sql5_export str SQLCacheRemove(Client c, str nme);
 
 sql5_export MT_Lock sql_contextLock;

@@ -9,10 +9,5 @@ io.print(b);
 c:= bat.reverse(b);
 io.print(c);
 
-
-d:= algebra.markT(c);
+d:= algebra.mark(c);
 io.print(d);
-
-#perform header marking
-f:= algebra.markH(b);
-io.print(f);

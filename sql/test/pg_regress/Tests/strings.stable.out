@@ -24,8 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
 #--
 #-- STRINGS
 #-- Test various data entry syntaxes.
@@ -708,7 +706,7 @@ Ready.
 % empty string # name
 % char # type
 % 18 # length
-[ ""	]
+[ "mydatab"	]
 #select substring('@joeuser@mydatabase@', locate('@','@joeuser@mydatabase@', 0) +1, locate('@','@joeuser@mydatabase@', 1) -1) AS "joeuser";
 % .L # table_name
 % joeuser # name

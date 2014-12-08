@@ -51,7 +51,7 @@ static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
  */
 
 /* currently we only find simple column expressions */
-static void *
+void *
 name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt ) 
 {
 	sql_exp *alias = NULL;
@@ -377,6 +377,11 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			}
 			return 6;
 		case cmp_filter:
+			if (exp_card(e->r) > CARD_AGGR) {
+				/* filters for joins are special */
+				*cnt += 1000;
+				return 1000;
+			}
 			*cnt += 2;
 			return 2;
 		case cmp_in: 
@@ -767,8 +772,14 @@ order_joins(mvc *sql, list *rels, list *exps)
 	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(sql, rels, exps);
 
-	if (list_length(rels) > 2 && mvc_debug_on(sql, 256))
-		return rel_planner(sql, rels, sdje);
+	if (list_length(rels) > 2 && mvc_debug_on(sql, 256)) {
+		for(djn = sdje->h; djn; djn = djn->next ) {
+			sql_exp *e = djn->data;
+			list_remove_data(exps, e);
+		}
+		top =  rel_planner(sql, rels, sdje, exps);
+		return top;
+	}
 
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
@@ -1355,7 +1366,6 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 	default:
 		return 1;
 	}
-	return 0;
 }
 
 static int
@@ -1395,8 +1405,6 @@ exp_needs_push_down(sql_exp *e)
 	default:
 		return 0;
 	}
-	return 0;
-
 }
 
 static int
@@ -2050,14 +2058,16 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
 
+		rel->l = rel_project(sql->sa, rel->l, rel->exps);
+
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
 			if (e->card > CARD_ATOM) { /* no need to group by on constants */
-				append(gbe, e);
 				if (!exp_name(e))
 					exp_label(sql->sa, e, ++sql->label);
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+				append(gbe, e);
 			}
 			append(exps, e);
 		}
@@ -4065,14 +4075,14 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
 		set_nodistinct(rel);
 
-	if (rel->op == op_project && rel->l && rel->exps && !rel->r && !project_unsafe(rel)) {
+	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -7171,7 +7181,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	}
 
 	if (gp.cnt[op_select])
-		rel = rewrite(sql, rel, &rel_push_select_down_union, &changes); 
+		rel = rewrite_topdown(sql, rel, &rel_push_select_down_union, &changes); 
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
@@ -7201,7 +7211,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
 	if (gp.cnt[op_project])
-		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);
+		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */
 	if (level <= 0)

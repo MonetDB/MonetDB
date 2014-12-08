@@ -58,7 +58,7 @@ RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
 	(void) mb;
-	recycleCacheLimit = * (int*) getArgReference(stk, p, 1);
+	recycleCacheLimit = * getArgReference_int(stk, p, 1);
 	return MAL_SUCCEED;
 }
 
@@ -77,17 +77,17 @@ RECYCLEdropWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 str RECYCLEappendSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str sch = *(str*) getArgReference(stk, p, 2);
-	str tbl = *(str*) getArgReference(stk, p, 3);
-	str col = *(str*) getArgReference(stk, p, 4);
+	str sch = *getArgReference_str(stk, p, 2);
+	str tbl = *getArgReference_str(stk, p, 3);
+	str col = *getArgReference_str(stk, p, 4);
 	(void) mb;
 	return RECYCLEcolumn(cntxt,sch,tbl,col);
 }
 
 str RECYCLEdeleteSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str sch = *(str*) getArgReference(stk, p, 2);
-	str tbl = *(str*) getArgReference(stk, p, 3);
+	str sch = *getArgReference_str(stk, p, 2);
+	str tbl = *getArgReference_str(stk, p, 3);
 	(void) mb;
 	return RECYCLEcolumn(cntxt,sch,tbl,0);
 }
@@ -95,5 +95,5 @@ str RECYCLEdeleteSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str RECYCLEresetBATwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
-	return RECYCLEresetBAT(cntxt,*(int*) getArgReference(stk,p,1));
+	return RECYCLEresetBAT(cntxt,*getArgReference_bat(stk,p,1));
 }

@@ -37,74 +37,9 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-#ifdef HAVE_HGE
-static hge scales[39] = {
-	(hge) LL_CONSTANT(1),
-	(hge) LL_CONSTANT(10),
-	(hge) LL_CONSTANT(100),
-	(hge) LL_CONSTANT(1000),
-	(hge) LL_CONSTANT(10000),
-	(hge) LL_CONSTANT(100000),
-	(hge) LL_CONSTANT(1000000),
-	(hge) LL_CONSTANT(10000000),
-	(hge) LL_CONSTANT(100000000),
-	(hge) LL_CONSTANT(1000000000),
-	(hge) LL_CONSTANT(10000000000),
-	(hge) LL_CONSTANT(100000000000),
-	(hge) LL_CONSTANT(1000000000000),
-	(hge) LL_CONSTANT(10000000000000),
-	(hge) LL_CONSTANT(100000000000000),
-	(hge) LL_CONSTANT(1000000000000000),
-	(hge) LL_CONSTANT(10000000000000000),
-	(hge) LL_CONSTANT(100000000000000000),
-	(hge) LL_CONSTANT(1000000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
-	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
-};
-#else
-static lng scales[19] = {
-	LL_CONSTANT(1),
-	LL_CONSTANT(10),
-	LL_CONSTANT(100),
-	LL_CONSTANT(1000),
-	LL_CONSTANT(10000),
-	LL_CONSTANT(100000),
-	LL_CONSTANT(1000000),
-	LL_CONSTANT(10000000),
-	LL_CONSTANT(100000000),
-	LL_CONSTANT(1000000000),
-	LL_CONSTANT(10000000000),
-	LL_CONSTANT(100000000000),
-	LL_CONSTANT(1000000000000),
-	LL_CONSTANT(10000000000000),
-	LL_CONSTANT(100000000000000),
-	LL_CONSTANT(1000000000000000),
-	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000),
-	LL_CONSTANT(1000000000000000000)
-};
-#endif
-
 
 str
-nil_2_timestamp(timestamp *res, void *val)
+nil_2_timestamp(timestamp *res, const void *val)
 {
 	(void) val;
 	*res = *timestamp_nil;
@@ -112,7 +47,7 @@ nil_2_timestamp(timestamp *res, void *val)
 }
 
 str
-str_2_timestamp(timestamp *res, str *val)
+str_2_timestamp(timestamp *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -135,17 +70,7 @@ str_2_timestamp(timestamp *res, str *val)
 }
 
 str
-SQLtimestamp_2_str(str *res, timestamp *val)
-{
-	char *p = NULL;
-	int len = 0;
-	timestamp_tostr(&p, &len, val);
-	*res = p;
-	return MAL_SUCCEED;
-}
-
-str
-batnil_2_timestamp(int *res, int *bid)
+batnil_2_timestamp(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -171,7 +96,7 @@ batnil_2_timestamp(int *res, int *bid)
 }
 
 str
-batstr_2_timestamp(int *res, int *bid)
+batstr_2_timestamp(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -202,7 +127,7 @@ batstr_2_timestamp(int *res, int *bid)
 }
 
 str
-nil_2_daytime(daytime *res, void *val)
+nil_2_daytime(daytime *res, const void *val)
 {
 	(void) val;
 	*res = daytime_nil;
@@ -210,7 +135,7 @@ nil_2_daytime(daytime *res, void *val)
 }
 
 str
-str_2_daytime(daytime *res, str *val)
+str_2_daytime(daytime *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -233,17 +158,7 @@ str_2_daytime(daytime *res, str *val)
 }
 
 str
-SQLdaytime_2_str(str *res, daytime *val)
-{
-	char *p = NULL;
-	int len = 0;
-	daytime_tostr(&p, &len, val);
-	*res = p;
-	return MAL_SUCCEED;
-}
-
-str
-batnil_2_daytime(int *res, int *bid)
+batnil_2_daytime(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -269,7 +184,7 @@ batnil_2_daytime(int *res, int *bid)
 }
 
 str
-batstr_2_daytime(int *res, int *bid)
+batstr_2_daytime(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -300,7 +215,7 @@ batstr_2_daytime(int *res, int *bid)
 }
 
 str
-nil_2_date(date *res, void *val)
+nil_2_date(date *res, const void *val)
 {
 	(void) val;
 	*res = date_nil;
@@ -308,7 +223,7 @@ nil_2_date(date *res, void *val)
 }
 
 str
-str_2_date(date *res, str *val)
+str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -331,7 +246,7 @@ str_2_date(date *res, str *val)
 }
 
 str
-SQLdate_2_str(str *res, date *val)
+SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -341,7 +256,7 @@ SQLdate_2_str(str *res, date *val)
 }
 
 str
-batnil_2_date(int *res, int *bid)
+batnil_2_date(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -367,7 +282,7 @@ batnil_2_date(int *res, int *bid)
 }
 
 str
-batstr_2_date(int *res, int *bid)
+batstr_2_date(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -398,15 +313,7 @@ batstr_2_date(int *res, int *bid)
 }
 
 str
-nil_2_sqlblob(sqlblob * *res, void *val)
-{
-	(void) val;
-	*res = ATOMnilptr(TYPE_blob);
-	return MAL_SUCCEED;
-}
-
-str
-str_2_sqlblob(sqlblob * *res, str *val)
+str_2_sqlblob(sqlblob * *res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;
@@ -429,7 +336,7 @@ str_2_sqlblob(sqlblob * *res, str *val)
 }
 
 str
-SQLsqlblob_2_str(str *res, sqlblob * val)
+SQLsqlblob_2_str(str *res, const sqlblob * val)
 {
 	char *p = NULL;
 	int len = 0;
@@ -439,33 +346,7 @@ SQLsqlblob_2_str(str *res, sqlblob * val)
 }
 
 str
-batnil_2_sqlblob(int *res, int *bid)
-{
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p, q;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2_sqlblob", "Cannot access descriptor");
-	}
-	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(dst, b->hseqbase);
-	BATloop(b, p, q) {
-		sqlblob *r = ATOMnilptr(TYPE_blob);
-		BUNins(dst, BUNhead(bi, p), r, FALSE);
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-batstr_2_sqlblob(int *res, int *bid)
+batstr_2_sqlblob(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -533,14 +414,14 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = (str *) getArgReference(stk, pci, 0);
-	int eclass = *(int *) getArgReference(stk, pci, 1);
-	int d = *(int *) getArgReference(stk, pci, 2);
-	int s = *(int *) getArgReference(stk, pci, 3);
-	int has_tz = *(int *) getArgReference(stk, pci, 4);
-	ptr p = (ptr) getArgReference(stk, pci, 5);
+	str *res = getArgReference_str(stk, pci, 0);
+	int eclass = *getArgReference_int(stk, pci, 1);
+	int d = *getArgReference_int(stk, pci, 2);
+	int s = *getArgReference_int(stk, pci, 3);
+	int has_tz = *getArgReference_int(stk, pci, 4);
+	ptr p = getArgReference(stk, pci, 5);
 	int tpe = getArgType(mb, pci, 5);
-	int len = *(int *) getArgReference(stk, pci, 6);
+	int len = *getArgReference_int(stk, pci, 6);
 	mvc *m = NULL;
 	str msg;
 
@@ -563,13 +444,13 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	char *r = NULL;
-	int *res = (int *) getArgReference(stk, pci, 0);
-	int *eclass = (int *) getArgReference(stk, pci, 1);
-	int *d1 = (int *) getArgReference(stk, pci, 2);
-	int *s1 = (int *) getArgReference(stk, pci, 3);
-	int *has_tz = (int *) getArgReference(stk, pci, 4);
-	int *bid = (int *) getArgReference(stk, pci, 5);
-	int *digits = (int *) getArgReference(stk, pci, 6);
+	bat *res = getArgReference_bat(stk, pci, 0);
+	int *eclass = getArgReference_int(stk, pci, 1);
+	int *d1 = getArgReference_int(stk, pci, 2);
+	int *s1 = getArgReference_int(stk, pci, 3);
+	int *has_tz = getArgReference_int(stk, pci, 4);
+	bat *bid = getArgReference_bat(stk, pci, 5);
+	int *digits = getArgReference_int(stk, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;

@@ -24,7 +24,7 @@
 #include "algebra.h"
 
 str
-GRPsubgroup4(bat *ngid, bat *next, bat *nhis, bat *bid, bat *gid, bat *eid, bat *hid)
+GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
 {
 	BAT *b, *g, *e, *h, *gn, *en, *hn;
 	gdk_return r;
@@ -64,13 +64,13 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, bat *bid, bat *gid, bat *eid, bat 
 }
 
 str
-GRPsubgroup2(bat *ngid, bat *next, bat *nhis, bat *bid, bat *gid)
+GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup4(ngid, next, nhis, bid, gid, NULL, NULL);
 }
 
 str
-GRPsubgroup1(bat *ngid, bat *next, bat *nhis, bat *bid)
+GRPsubgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
 {
 	return GRPsubgroup4(ngid, next, nhis, bid, NULL, NULL, NULL);
 }

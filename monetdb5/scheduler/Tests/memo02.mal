@@ -14,23 +14,23 @@
 	bat.append(D,3@0);
 
 	scheduler.choice();
-	T1:= algebra.join(A,B);
-	T2:= algebra.join(B,C);
-	T3:= algebra.join(C,D);
+	T1:= algebra.leftfetchjoin(A,B);
+	T2:= algebra.leftfetchjoin(B,C);
+	T3:= algebra.leftfetchjoin(C,D);
 	scheduler.choice("getVolume",T1,T2,T3);
 
-	T4:= algebra.join(T1,C);
-	T5:= algebra.join(A,T2);
-	T6:= algebra.join(T2,D);
-	T7:= algebra.join(B,T3);
-	T8:= algebra.join(C,D);
+	T4:= algebra.leftfetchjoin(T1,C);
+	T5:= algebra.leftfetchjoin(A,T2);
+	T6:= algebra.leftfetchjoin(T2,D);
+	T7:= algebra.leftfetchjoin(B,T3);
+	T8:= algebra.leftfetchjoin(C,D);
 	scheduler.choice("getVolume",T4,T5,T6,T7,T8);
 
-	T9:= algebra.join(T4,D);
-	T10:= algebra.join(T5,D);
-	T11:= algebra.join(A,T6);
-	T12:= algebra.join(A,T7);
-	T13:= algebra.join(T1,T8);
+	T9:= algebra.leftfetchjoin(T4,D);
+	T10:= algebra.leftfetchjoin(T5,D);
+	T11:= algebra.leftfetchjoin(A,T6);
+	T12:= algebra.leftfetchjoin(A,T7);
+	T13:= algebra.leftfetchjoin(T1,T8);
 	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
 	answer:= scheduler.pick(T9,T10,T11,T12,T13);
 	io.print(answer);

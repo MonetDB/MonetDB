@@ -36,112 +36,7 @@
 
 
 str
-FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
-{
-	lng val = *v;
-
-	/* shortcut nil */
-	if (*v == NIL(TP1)) {
-		*res = NIL(TP2);
-		return (MAL_SUCCEED);
-	}
-
-	/* see if the number fits in the data type */
-	if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-	    && val <= (lng) GDKmax(TP2)
-#endif
-		) {
-		*res = (TP2) val;
-		return (MAL_SUCCEED);
-	} else {
-		throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), val);
-	}
-}
-
-str
-FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
-{
-	BAT *b, *bn;
-	TP1 *p, *q;
-	char *msg = NULL;
-	TP2 *o;
-	lng val;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_2_,TP2)), "Cannot access descriptor");
-	}
-	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_2_,TP2)), MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn, b->hseqbase);
-	bn->H->nonil = 1;
-	bn->T->nonil = 1;
-	o = (TP2 *) Tloc(bn, BUNfirst(bn));
-	p = (TP1 *) Tloc(b, BUNfirst(b));
-	q = (TP1 *) Tloc(b, BUNlast(b));
-	if (b->T->nonil) {
-		for (; p < q; p++, o++) {
-			val = *p;
-			/* see if the number fits in the data type */
-			if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-			    && val <= (lng) GDKmax(TP2)
-#endif
-				) {
-				*o = (TP2) val;
-			} else {
-				msg = createException(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), val);
-				break;
-			}
-		}
-	} else {
-		for (; p < q; p++, o++) {
-			if (*p == NIL(TP1)) {
-				*o = NIL(TP2);
-				bn->T->nonil = FALSE;
-			} else {
-				val = *p;
-				/* see if the number fits in the data type */
-				if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-				    && val <= (lng) GDKmax(TP2)
-#endif
-					) {
-					*o = (TP2) val;
-				} else {
-					msg = createException(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), val);
-					break;
-				}
-			}
-		}
-	}
-	BATsetcount(bn, BATcount(b));
-	bn->hrevsorted = bn->batCount <= 1;
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
-	BATkey(BATmirror(bn), FALSE);
-
-	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
-
-	if (b->htype != bn->htype) {
-		BAT *r = VIEWcreate(b, bn);
-
-		BBPkeepref(*res = r->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		return msg;
-	}
-	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return msg;
-}
-
-str
-FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
+FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 {
 	int scale = *s1;
 	lng val = *v, h = (val < 0) ? -5 : 5;
@@ -168,7 +63,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, int *s1, TP1 *v)
 }
 
 str
-FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
+FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
 {
 	int p = *d2, inlen = 1;
 	lng val = *v, cpyval = val, h = (val < 0) ? -5 : 5;
@@ -208,14 +103,14 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, int *S1, TP1 *v, int *d2, int *S2)
 }
 
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
+FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	int zero = 0;
 	return FUN(,TP1,_dec2dec_,TP2)(res, &zero, v, d2, s2);
 }
 
 str
-FUN(bat,TP1,_dec2_,TP2) (int *res, int *s1, int *bid)
+FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 {
 	BAT *b, *bn;
 	TP1 *p, *q;
@@ -306,7 +201,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, int *s1, int *bid)
 }
 
 str
-FUN(bat,TP1,_dec2dec_,TP2) (int *res, int *S1, int *bid, int *d2, int *S2)
+FUN(bat,TP1,_dec2dec_,TP2) (int *res, const int *S1, const int *bid, const int *d2, const int *S2)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -337,7 +232,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (int *res, int *S1, int *bid, int *d2, int *S2)
 }
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (int *res, int *bid, int *d2, int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
 	BATiter bi;

@@ -26,7 +26,6 @@ rem remove the final backslash from the path
 set MONETDB=%MONETDB:~0,-1%
 
 rem extend the search path with our EXE and DLL folders
-rem we depend on pthreadVC2.dll having been copied to the lib folder
 set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\MonetDB5;%PATH%
 
 rem prepare the arguments to mserver5 to tell it where to put the dbfarm

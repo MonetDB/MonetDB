@@ -809,7 +809,6 @@ typedef struct {
 		wrd wval;
 		flt fval;
 		ptr pval;
-		struct BAT *Bval; /* this field is only used by mel */
 		bat bval;
 		str sval;
 		dbl dval;
@@ -969,9 +968,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
-#define GDKLIBRARY_CHR		061024	/* version that still had chr type */
-#define GDKLIBRARY_SORTED_BYTE	061025	/* version that still had byte-sized sorted flag */
 #define GDKLIBRARY_64_BIT_INT	061026	/* version that had no 128-bit integer option, yet */
 #define GDKLIBRARY		061027
 
@@ -1047,7 +1043,7 @@ typedef int (*GDKfcn) ();
  *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
  * @item int
  * @tab
- *  HEAPfree (Heap *h);
+ *  HEAPfree (Heap *h, int remove);
  * @item int
  * @tab
  *  HEAPextend (Heap *h, size_t size, int mayshare);
@@ -1072,7 +1068,6 @@ typedef int (*GDKfcn) ();
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
@@ -1165,11 +1160,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @item int
  * @tab BUNdelHead (BAT *b, ptr left, bit force)
  * @item BUN
- * @tab BUNfnd (BAT *b, ptr head)
- * @item void
- * @tab BUNfndOID (BUN result, BATiter bi, oid *head)
- * @item void
- * @tab BUNfndSTD (BUN result, BATiter bi, ptr head)
+ * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
  * @tab BUNlocate (BAT *b, ptr head, ptr tail)
  * @item ptr
@@ -1201,9 +1192,7 @@ gdk_export bte ATOMelmshift(int sz);
  * flags. Beware!
  *
  * The routine BUNfnd provides fast access to a single BUN providing a
- * value for the head of the binary association.  A very fast shortcut
- * for BUNfnd if the selection type is known to be integer or OID, is
- * provided in the form of the macro BUNfndOID.
+ * value for the tail of the binary association.
  *
  * To select on a tail, one should use the reverse view obtained by
  * BATmirror.
@@ -1396,27 +1385,14 @@ gdk_export BAT *BUNreplace(BAT *b, const void *left, const void *right, bit forc
 gdk_export BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 
-gdk_export BUN BUNfnd(BAT *b, const void *left);
+gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-#define BUNfndVOID(p,bi,v)						\
-	do {								\
-		BUN result = BUNfirst((bi).b) + (BUN) (*(const oid*)(v) - (bi).b->hseqbase); \
-		int check =						\
-			(((*(const oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
-			 (*(const oid*) (v) < (bi).b->hseqbase) |		\
-			 (*(const oid*) (v) >= (bi).b->hseqbase + (bi).b->batCount));	\
-		(p) = check?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */ \
-	} while (0)
-
-#define BUNfndOID(p,bi,v)			\
-	do {					\
-		if (BAThdense(bi.b)) {		\
-			BUNfndVOID(p,bi,v);	\
-		} else {			\
-			HASHfnd_oid(p,bi,v);	\
-		}				\
-	} while (0)
-#define BUNfndSTD(p,bi,v) ((p) = BUNfnd(bi.b,v))
+#define BUNfndVOID(b, v)						\
+	(((*(const oid*)(v) == oid_nil) ^ ((b)->tseqbase == oid_nil)) | \
+		(*(const oid*)(v) < (b)->tseqbase) |			\
+		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
+	 BUN_NONE :							\
+	 BUNfirst((b)) + (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
 #define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase != oid_nil ? \
 			 TYPE_oid : (b)->htype)
@@ -1562,9 +1538,6 @@ bat_iterator(BAT *b)
  * to insert BUNs at the end of the BAT, but not to modify anything
  * that already was in there.
  */
-#ifndef BATcount
-gdk_export BUN BATcount(BAT *b);
-#endif
 gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
@@ -1624,7 +1597,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
 gdk_export BAT *BATmark(BAT *b, oid base);
-gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
+gdk_export BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
 
@@ -1662,6 +1635,8 @@ gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
+
+#define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);
@@ -2177,7 +2152,7 @@ gdk_export BAT *BAThash(BAT *b, BUN masksize);
 
 /* low level functions */
 
-#define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
+#define BATprepareHash(X) (((X)->T->hash == NULL) && !BAThash((X), 0))
 
 /*
  * @- Column Imprints Functions
@@ -2922,11 +2897,7 @@ gdk_export void BATderiveHeadProps(BAT *b, int expensive);
 
 gdk_export BAT *VIEWcreate(BAT *h, BAT *t);
 gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
-gdk_export BAT *VIEWhead(BAT *b);
-gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
-gdk_export BAT *BATmaterialize(BAT *b);
-gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -3105,17 +3076,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
 	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
 	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 
 /*
  * For string search, we can optimize if the string heap has
@@ -3125,28 +3096,28 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * numbers instead of strings:
  */
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->H->vheap,v); \
+	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->T->vheap,v); \
 	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
-		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
+		if (VarHeapValRaw((bi).b->T->heap.base, hb, (bi).b->T->width) == idx)
 /*
  * The following example shows how the hashloop is used:
  *
  * @verbatim
  * void
- * print_books(BAT *author_books, str author)
+ * print_books(BAT *books_author, str author)
  * {
- *         BAT *b = author_books;
+ *         BAT *b = books_author;
  *         BUN i;
  *
  *         printf("%s\n==================\n", author);
- *         HASHloop(b, (b)->H->hash, i, author)
- *			printf("%s\n", ((str) BUNtail(b, i));
+ *         HASHloop(b, (b)->T->hash, i, author)
+ *			printf("%s\n", ((str) BUNhead(b, i));
  * }
  * @end verbatim
  *
  * Note that for optimization purposes, we could have used a
- * HASHloop_str instead, and also a BUNtvar instead of a BUNtail
- * (since we know the tail-type of author_books is string, hence
+ * HASHloop_str instead, and also a BUNhvar instead of a BUNhead
+ * (since we know the head-type of books_author is string, hence
  * variable-sized). However, this would make the code less general.
  *
  * @- specialized hashloops
@@ -3159,18 +3130,18 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h,HASHprobe(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
+		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
+		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
 
 #define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -3191,7 +3162,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_any(h, v));			\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
+		if (atom_EQ(v, BUNtail(bi, hb), (bi).b->ttype))
 
 /*
  * @- loop over a BAT with ordered tail
@@ -3307,7 +3278,6 @@ gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
-gdk_export BAT *BATcross(BAT *l, BAT *r);
 gdk_export BAT *BATbandjoin(BAT *l, BAT *r, const void *mnus, const void *plus, bit li, bit hi);
 gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
 
@@ -3463,16 +3433,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATuselect(_b, (h), (t));				\
-	})
-
-#define BATsample(b, n)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsample([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsample(_b, (n));					\
 	})
 
 #define BATsemijoin(l, r)						\

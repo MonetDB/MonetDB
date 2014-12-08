@@ -17,5 +17,6 @@
 
 module mkey;
 
-command hash(v:hge):wrd
-address MKEYhash_hge;
+pattern hash(v:hge):wrd
+address MKEYhash
+comment "calculate a hash value";

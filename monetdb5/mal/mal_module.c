@@ -474,7 +474,6 @@ char **getHelp(Module m, str inputpat, int completion)
 		GDKfree(pat);
 		return msg;
 	}
-	if( m1 ) m = m1;
 
 #ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
@@ -496,7 +495,6 @@ char **getHelp(Module m, str inputpat, int completion)
 					snprintf(buf,sizeof(buf)," %s.%s",
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
 					if( tstDuplicate(msg,buf+1) ) {
-						fnd=1;
 						continue;
 					}
 				} else

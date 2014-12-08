@@ -47,6 +47,7 @@ typedef struct{
 	void *last;
 	int	size;
 	int type;
+	BUN cnt;
 	BATiter bi;
 	BUN  o;
 	BUN  q;
@@ -65,68 +66,84 @@ typedef struct{
 
 // Loop through the first BAT
 // keep the last error message received
-#define ManifoldLoop(Type, ...) {			\
-	Type *v = (Type*) mut->args[0].first; 		\
-	for( ; p<q ; p += mut->args[mut->fvar].size){ 	\
-		msg = (*mut->pci->fcn)(v, __VA_ARGS__); \
-		if (msg) 				\
-			break;				\
-		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
-				args[i] += mut->args[i].size;	\
-			} else if (ATOMvarsized(mut->args[i].type)) { \
-				mut->args[i].o++;		\
-				mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
-				args[i] = (void*)  &mut->args[i].s;	 \
-			} else { \
-				mut->args[i].o++;		\
-				mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
-				args[i] = (void*)  &mut->args[i].s;	 \
-			}				\
-		}					\
-		v++;					\
-	}						\
-}
+#define ManifoldLoop(Type, ...)											\
+	do {																\
+		Type *v = (Type*) mut->args[0].first;							\
+		oid oo, olimit = mut->args[mut->fvar].cnt;						\
+		for( oo= 0; oo < olimit; oo++){									\
+			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
+			if (msg) break;												\
+			for( i = mut->fvar; i<= mut->lvar; i++) {					\
+				if(ATOMstorage(mut->args[i].type == TYPE_void) ){		\
+					args[i] = (void*)  &mut->args[i].o;					\
+					mut->args[i].o++;									\
+				} else if(mut->args[i].size == 0) {						\
+					;													\
+				} else if(ATOMstorage(mut->args[i].type) < TYPE_str ) {	\
+					args[i] += mut->args[i].size;						\
+				} else if (ATOMvarsized(mut->args[i].type)) {			\
+					mut->args[i].o++;									\
+					mut->args[i].s = (str *) BUNtail(mut->args[i].bi, mut->args[i].o); \
+					args[i] = (void*)  &mut->args[i].s;					\
+				} else {												\
+					mut->args[i].o++;									\
+					mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
+					args[i] = (void*)  &mut->args[i].s;					\
+				}														\
+			}															\
+			v++;														\
+		}																\
+	} while (0)
 
 // The target BAT tail type determines the result variable
 #ifdef HAVE_HGE
-#define Manifoldbody_hge(...) \
+#define Manifoldbody_hge(...)					\
 	case TYPE_hge: ManifoldLoop(hge,__VA_ARGS__); break
 #else
 #define Manifoldbody_hge(...)
 #endif
-#define Manifoldbody(...) \
-switch(ATOMstorage(mut->args[0].b->T->type)){\
-case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;\
-case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;\
-case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;\
-case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;\
-Manifoldbody_hge(__VA_ARGS__);                      \
-case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;\
-case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;\
-case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;\
-case TYPE_str: \
-default:\
-	for( ; p< q ; p += mut->args[mut->fvar].size){ 		\
-		msg = (*mut->pci->fcn)(&y, __VA_ARGS__); 	\
-		if (msg)					\
-			break;					\
-		bunfastapp(mut->args[0].b, (void*) y);	\
-		for( i = mut->fvar; i<= mut->lvar; i++) {	\
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
-				args[i] += mut->args[i].size;	\
-			} else if(ATOMvarsized(mut->args[i].type)){	\
-				mut->args[i].o++;		\
-				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);\
-				args[i] =  (void*) & mut->args[i].s; 	\
-			} else {				\
-				mut->args[i].o++;		\
-				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);\
-				args[i] =  (void*) & mut->args[i].s; 	\
-			}					\
-		}						\
-	}							\
-}
+#define Manifoldbody(...)												\
+	do {																\
+		switch(ATOMstorage(mut->args[0].b->T->type)){					\
+		case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;			\
+		case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;			\
+		case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;			\
+		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
+		Manifoldbody_hge(__VA_ARGS__);									\
+		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
+		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
+		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
+		case TYPE_str:													\
+		default: {														\
+			oid oo, olimit = mut->args[mut->fvar].cnt;					\
+			for( oo= 0; oo < olimit; oo++){								\
+				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
+				if (msg)												\
+					break;												\
+				bunfastapp(mut->args[0].b, (void*) y);					\
+				for( i = mut->fvar; i<= mut->lvar; i++) {				\
+					if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+						args[i] = (void*)  &mut->args[i].o;				\
+						mut->args[i].o++;								\
+					} else if(mut->args[i].size == 0) {					\
+						;												\
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str){ \
+						args[i] += mut->args[i].size;					\
+					} else if(ATOMvarsized(mut->args[i].type)){			\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o); \
+						args[i] =  (void*) & mut->args[i].s;			\
+					} else {											\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o); \
+						args[i] =  (void*) & mut->args[i].s;			\
+					}													\
+				}														\
+			}															\
+			break;														\
+		}																\
+		}																\
+	} while (0)
 
 // single argument is preparatory step for GDK_mapreduce
 // Only the last error message is returned, the value of
@@ -134,7 +151,6 @@ default:\
 static str
 MANIFOLDjob(MULTItask *mut)
 {	int i;
-	char *p, *q;
 	char **args;
 	str y = NULL, msg= MAL_SUCCEED;
 
@@ -145,9 +161,9 @@ MANIFOLDjob(MULTItask *mut)
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
 		if ( mut->args[i].b ){
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	\
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	
 				args[i] = (char*) mut->args[i].first;
-			} else if(ATOMvarsized(mut->args[i].type)){	\
+			} else if(ATOMvarsized(mut->args[i].type)){	
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s; 
 			} else {
@@ -155,15 +171,13 @@ MANIFOLDjob(MULTItask *mut)
 				args[i] =  (void*) & mut->args[i].s; 
 			}
 		} else {
-			args[i] = (char*) getArgReference(mut->stk,mut->pci,i);
+			args[i] = (char *) getArgReference(mut->stk,mut->pci,i);
 		}
 	}
 
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
 #endif
-	p = (char*)  mut->args[mut->fvar].first;
-	q = (char*)  mut->args[mut->fvar].last;
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
 	case 4: Manifoldbody(args[3]); break;
@@ -206,8 +220,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	tpe =getColumnType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
-	setVarFixed(nmb,k);
-	setVarUDFtype(nmb,k);
+	if ( isVarFixed(nmb,k)) 
+		setVarFixed(nmb,k);
+	if (isVarUDFtype(nmb,k))
+		setVarUDFtype(nmb,k);
 	
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
@@ -227,8 +243,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL)
 		fcn = NULL;
-	else
+	else {
 		fcn = q->fcn;
+		// retain the type detected
+		if ( !isVarFixed(mb, getArg(pci,0)))
+			setVarType( mb, getArg(pci,0), newBatType(TYPE_void,getArgType(nmb,q,0)) );
+	}
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(cntxt->fdout,"success? %s\n",(fcn == NULL? "no":"yes"));
 	printInstruction(cntxt->fdout,nmb,0,q,LIST_MAL_ALL);
@@ -246,6 +266,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MULTIarg *mat;
 	int i, tpe= 0;
 	BUN cnt = 0;
+	oid o = 0;
 	str msg = MAL_SUCCEED;
 	MALfcn fcn;
 
@@ -268,7 +289,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// prepare iterators
 	for( i = pci->retc+2; i < pci->argc; i++){
 		if ( isaBatType(getArgType(mb,pci,i)) ){
-			mat[i].b = BATdescriptor( *(int*) getArgReference(stk,pci,i));
+			mat[i].b = BATdescriptor( *getArgReference_bat(stk,pci,i));
 			if ( mat[i].b == NULL){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -286,13 +307,20 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				mat[i].size = Tsize(mat[i].b);
 			else
 				mat[i].size = BATatoms[ATOMstorage(tpe)].size;
-			mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
-			mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
+			mat[i].cnt = cnt;
+			if ( mat[i].b->ttype == TYPE_void){
+				o = mat[i].b->tseqbase;
+				mat[i].first = mat[i].last = (void*) &o;
+			} else {
+				mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
+				mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
+			}
 			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].o = BUNfirst(mat[i].b);
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
-			mat[i].last = mat[i].first = (void*) getArgReference(stk,pci,i);
+			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
+			mat[i].type = getArgType(mb, pci, i);
 		}
 	}
 
@@ -331,7 +359,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
 	BATderiveProps(mat[0].b, TRUE);
-	BBPkeepref(*(int*) getArgReference(stk,pci,0)=mat[0].b->batCacheid);
+	BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
@@ -343,11 +371,10 @@ wrapup:
 }
 
 // The old code
-str
-MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     char buf[BUFSIZ];
     (void) mb;
     (void) cntxt;
-    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *)getArgReference(stk,p,p->retc), (char *)getArgReference(stk,p,p->retc+1));
+    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *) getArgReference(stk,p,p->retc), (char *) getArgReference(stk,p,p->retc+1));
     throw(MAL, "opt.remap", "%s",buf);
 }

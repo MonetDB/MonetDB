@@ -153,7 +153,7 @@ monet5_find_user(ptr mp, str user)
 	users = db_users(c);
 	if (!users)
 		return -1;
-	p = BUNfnd(BATmirror(users), user);
+	p = BUNfnd(users, user);
 	BBPunfix(users->batCacheid);
 
 	/* yeah, I would prefer to return something different too */
@@ -163,7 +163,7 @@ monet5_find_user(ptr mp, str user)
 str
 db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *r = (bat *) getArgReference(stk, pci, 0);
+	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b = db_users(cntxt);
 	BAT *bm = BATmirror(BATmark(BATmirror(b), 0));
 
@@ -178,8 +178,8 @@ str
 db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret = NULL;
-	str *hash = (str *) getArgReference(stk, pci, 0);
-	str *user = (str *) getArgReference(stk, pci, 1);
+	str *hash = getArgReference_str(stk, pci, 0);
+	str *user = getArgReference_str(stk, pci, 1);
 	(void) mb;
 
 	ret = AUTHgetPasswordHash(hash, &cntxt, user);

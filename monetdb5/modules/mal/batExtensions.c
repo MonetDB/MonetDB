@@ -39,63 +39,25 @@
  * The code to enhance the kernel.
  */
 str
-CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	BAT *b, *bn;
-	int bid = 0, ht, tt;
-	int *res;
-	BUN cap;
-
-	(void) m;
-	(void) cntxt;
-
-	bid = *(int *) getArgReference(s, p, 3);
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	
-	res = (int *) getArgReference(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	cap = BATcount(b) + 64;
-	/* Cloning should include copying of the properties.  */
-	BBPunfix(b->batCacheid);
-	bn= BATnew(ht,tt,cap, TRANSIENT);
-	if( bn == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL,"bat.new", INTERNAL_OBJ_CREATE);
-	}
-	if( b->hseqbase)
-		BATseqbase(bn, b->hseqbase);
-	bn->hkey= b->hkey;
-	bn->tkey= b->tkey;
-	bn->hsorted= b->hsorted;
-	bn->hrevsorted= b->hrevsorted;
-	bn->tsorted= b->tsorted;
-	bn->trevsorted= b->trevsorted;
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt;
 	BUN cap = 0;
-	int *res;
+	bat *res;
 
 	(void) cntxt;
-	res = (int *) getArgReference(s, p, 0);
+	res = getArgReference_bat(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	if (p->argc > 3) {
 		lng lcap;
 
 		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *(lng*) getArgReference(s, p, 3);
+			lcap = *getArgReference_lng(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *(int*) getArgReference(s, p, 3);
+			lcap = (lng) *getArgReference_int(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *(wrd*) getArgReference(s, p, 3);
+			lcap = (lng) *getArgReference_wrd(s, p, 3);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
@@ -115,21 +77,21 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt;
 	BUN cap = 0;
-	int *res;
+	bat *res;
 
 	(void) cntxt;
-	res = (int *) getArgReference(s, p, 0);
+	res = getArgReference_bat(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	if (p->argc > 3) {
 		lng lcap;
 
 		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *(lng*) getArgReference(s, p, 3);
+			lcap = *getArgReference_lng(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *(int*) getArgReference(s, p, 3);
+			lcap = (lng) *getArgReference_int(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *(wrd*) getArgReference(s, p, 3);
+			lcap = (lng) *getArgReference_wrd(s, p, 3);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
@@ -147,7 +109,8 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str
 CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int bid, ht, tt;
+	bat bid;
+	int ht, tt;
 	BUN cap = 0;
 	int *res;
 	BAT *b;
@@ -156,7 +119,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	(void) mb;
 	(void) cntxt;
-	bid = *(int *) getArgReference(s, p, 1);
+	bid = *getArgReference_bat(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	}
@@ -170,7 +133,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	}
 
 	if (p->argc > 2) {
-		lng lcap = *(lng *) getArgReference(s, p, 2);
+		lng lcap = *getArgReference_lng(s, p, 2);
 		if (lcap < 0)
 			throw(MAL, "bat.new", POSITIVE_EXPECTED);
 		if (lcap > (lng) BUN_MAX)
@@ -182,7 +145,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	o = b->hseqbase;
 	BBPunfix(b->batCacheid);
 
-	res = (int *) getArgReference(s, p, 0);
+	res = getArgReference_int(s, p, 0);
 	msg = (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
 	if (msg == MAL_SUCCEED && ht == TYPE_void) {
 		b = BATdescriptor(*res);
@@ -196,7 +159,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 }
 
 str
-CMDBATderivedByName(int *ret, str *nme)
+CMDBATderivedByName(bat *ret, str *nme)
 {
 	BAT *bn;
 	int bid;
@@ -214,13 +177,15 @@ str
 CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
-	int *ret,i,bid;
+	bat *ret;
+	int i;
+	bat bid;
 	VarPtr low, hgh;
 	oid lval,hval=0, step;
 
 	(void) mb;
 	(void) cntxt;
-	bid = *(int *) getArgReference(stk, pci, pci->retc);
+	bid = *getArgReference_bat(stk, pci, pci->retc);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.partition", INTERNAL_BAT_ACCESS);
@@ -248,7 +213,7 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BATseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
-		ret= (int *) getArgReference(stk,pci,i);
+		ret= getArgReference_bat(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
 		low= hgh;
 	}
@@ -259,9 +224,9 @@ str
 CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
-	int *ret,bid;
-	int pieces= *(int*) getArgReference(stk, pci, 2);
-	int idx = *(int*) getArgReference(stk, pci, 3);
+	bat *ret,bid;
+	int pieces= *getArgReference_int(stk, pci, 2);
+	int idx = *getArgReference_int(stk, pci, 3);
 	oid lval,hval=0, step;
 
 	(void) mb;
@@ -271,7 +236,7 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( idx >= pieces || idx <0 )
 		throw(MAL, "bat.partition", ILLEGAL_ARGUMENT " Illegal piece index");
 
-	bid = *(int *) getArgReference(stk, pci, pci->retc);
+	bid = *getArgReference_bat(stk, pci, pci->retc);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.partition", INTERNAL_BAT_ACCESS);
@@ -289,26 +254,27 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
-	ret= (int *) getArgReference(stk,pci,0);
+	ret= getArgReference_bat(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-CMDBATimprints(int *ret, int *bid)
+CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	BATimprints(b);
-	BBPkeepref(*ret = b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str
-CMDBATimprintsize(lng *ret, int *bid)
+CMDBATimprintsize(lng *ret, bat *bid)
 {
 	BAT *b;
 

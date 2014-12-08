@@ -286,6 +286,8 @@ final public class MonetDriver implements Driver {
 	//== end methods of interface driver
 
 	/** A Map containing the mapping between MonetDB types and Java SQL types */
+	/* use SELECT sqlname, * FROM sys.types order by 1, id; to view all MonetDB types */
+	/* see http://docs.oracle.com/javase/7/docs/api/java/sql/Types.html to view all supported java SQL types */
 	static java.util.Map<String, Integer> typeMap = new java.util.HashMap<String, Integer>();
 	static {
 		// fill the typeMap once
@@ -297,9 +299,11 @@ final public class MonetDriver implements Driver {
 		typeMap.put("date", Integer.valueOf(Types.DATE));
 		typeMap.put("decimal", Integer.valueOf(Types.DECIMAL));
 		typeMap.put("double", Integer.valueOf(Types.DOUBLE));
+		typeMap.put("hugeint", Integer.valueOf(Types.NUMERIC));
+		typeMap.put("inet", Integer.valueOf(Types.VARCHAR));
 		typeMap.put("int", Integer.valueOf(Types.INTEGER));
 		typeMap.put("month_interval", Integer.valueOf(Types.INTEGER));
-		typeMap.put("oid", Integer.valueOf(Types.OTHER));
+		typeMap.put("oid", Integer.valueOf(Types.BIGINT));
 		typeMap.put("real", Integer.valueOf(Types.REAL));
 		typeMap.put("sec_interval", Integer.valueOf(Types.DECIMAL));
 		typeMap.put("smallint", Integer.valueOf(Types.SMALLINT));
@@ -309,6 +313,8 @@ final public class MonetDriver implements Driver {
 		typeMap.put("timestamptz", Integer.valueOf(Types.TIMESTAMP));
 		typeMap.put("timetz", Integer.valueOf(Types.TIME));
 		typeMap.put("tinyint", Integer.valueOf(Types.TINYINT));
+		typeMap.put("url", Integer.valueOf(Types.VARCHAR));
+		typeMap.put("uuid", Integer.valueOf(Types.VARCHAR));
 		typeMap.put("varchar", Integer.valueOf(Types.VARCHAR));
 		typeMap.put("wrd", Integer.valueOf(Types.BIGINT));
 	}
@@ -345,11 +351,11 @@ final public class MonetDriver implements Driver {
 	 */
 	static String getSQLTypeMap(String column) {
 		// TODO: StringBuilder?...
-		String ret = "CASE " + column + " ";
-		for (Entry<String, Integer> entry : typeMap.entrySet()) {
-			ret += "WHEN '" + entry.getKey() + "' THEN " + entry.getValue().toString() + " ";
-		}
-		ret += "ELSE " + Types.OTHER + " END";
+		String ret = "CASE " + column;
+ 		for (Entry<String, Integer> entry : typeMap.entrySet()) {
+			ret += " WHEN '" + entry.getKey() + "' THEN " + entry.getValue().toString();
+ 		}
+		ret += " ELSE " + Types.OTHER + " END";
 		return ret;
 	}
 

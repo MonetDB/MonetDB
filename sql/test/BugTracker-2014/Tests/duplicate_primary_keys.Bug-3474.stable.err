@@ -1,0 +1,43 @@
+stderr of test 'duplicate_primary_keys.Bug-3474` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:51:58 >  
+# 14:51:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38963" "--set" "mapi_usock=/var/tmp/mtest-5565/.s.monetdb.38963" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:51:58 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38963
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5565/.s.monetdb.38963
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:51:59 >  
+# 14:51:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5565" "--port=38963"
+# 14:51:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-5565/.s.monetdb.38963
+QUERY = insert into x values ('FIAM','HHZ', '2010-04-25T14:00:00.000');
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'x.x_a_b_c_pkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5565/.s.monetdb.38963
+QUERY = insert into x (select * from y);
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'x.x_a_b_c_pkey' violated
+
+# 14:51:59 >  
+# 14:51:59 >  "Done."
+# 14:51:59 >  
+

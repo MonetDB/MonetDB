@@ -1328,7 +1328,7 @@ if test "x$have_python2" != xno; then
 			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
 			have_python2_libdir=yes
 			;;
-		*)	PYTHON2_LIBDIR="$have_python2_libdir"
+		*)	PYTHON2_LIBDIR="$PROJpython2_libdir"
 			have_python2_libdir=yes
 			;;
 	esac
@@ -1885,11 +1885,11 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.*|yes-yes-clang-5.*)
-			# clang 5.* (at least on Mac OSX Mavericks) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*)
+			# clang 5.*/6.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
-			# option; on Mac OSX Mavericks, "Apple LLVM version
-			# 5.0 (clang-500.2.79) (based on LLVM 3.3svn)"
+			# option; on Mac OS X Yosamite, "Apple LLVM 
+			# version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
 			# complains about "error: argument unused during
 			# compilation: '-pthread'".
 			# However, disabling -pthread completely might be
@@ -2429,8 +2429,8 @@ AC_ARG_WITH(proj,
 	AS_HELP_STRING([--with-proj=DIR],
 		[proj library is installed in DIR]),
 	have_proj="$withval")
-case "$have_proj" in
-yes|auto)
+echo "1 "${have_proj}
+if test "x$have_proj" != xno ; then
 	case "$have_proj" in
 	auto|yes)
 		;;
@@ -2439,37 +2439,26 @@ yes|auto)
 		PROJ_LIBS="-L$have_proj/lib -lproj"
 		;;
 	esac
+	echo "2 "${have_proj}
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
 	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
 	LDFLAGS="$LDFLAGS $PROJ_LIBS"
 	AC_CHECK_HEADER(proj_api.h,
-		AC_CHECK_LIB(proj, pj_init_plus, AC_DEFINE(HAVE_PROJ, 1, [Define if you have the proj library]),
+		AC_CHECK_LIB(proj, pj_init_plus, 
+			AC_DEFINE(HAVE_PROJ, 1, [Define if the proj library exists]), 
 			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
 			have_proj=no; why_have_proj="(proj library not found)" ], ),
 		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
 		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
+echo "3 "${have_proj}
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
-	case "$have_proj" in
-	no)
-		#if test "x$enable_geom" = xyes; then
-		#	AC_MSG_ERROR([$why_have_proj])
-		#fi
-		## no proj, so don't compile geom
-		#enable_geom=no
-		#if test "x$disable_geom" = x; then
-		#	disable_geom="$why_have_proj"
-		#fi
-		PROJ_INCS=""
-		PROJ_LIBS=""
-		;;
-	auto|yes)
-		PROJ_LIBS="-lproj"
-		;;
-	esac
-	;;
-esac
+	if test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"; then
+	    PROJ_INCS=
+	    PROJ_LIBS="-lproj"
+	fi
+fi
 AC_SUBST(PROJ_INCS)
 AC_SUBST(PROJ_LIBS)
 AM_CONDITIONAL(HAVE_PROJ, test x"$have_proj" != xno)
@@ -2689,6 +2678,7 @@ AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
+	fenv.h \
 	getopt.h \
 	iconv.h \
 	ieeefp.h \
@@ -3451,11 +3441,8 @@ typedef lng ptrdiff_t;
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
 #elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
+#define PTRFMT		"%p"
+#define PTRFMTCAST
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)

@@ -31,14 +31,22 @@ timestamp_delta( sql_delta *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
+	if (0 && d && d->cached) {
+		bat_destroy(d->cached);
+		d->cached = NULL;
+	}
 	return d;
 }
 
-static sql_dbat *
+sql_dbat *
 timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
+	if (0 && d && d->cached) {
+		bat_destroy(d->cached);
+		d->cached = NULL;
+	}
 	return d;
 }
 
@@ -646,6 +654,11 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	}
        	bat = t->data;
 	/* delete all cached copies */
+
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		sql_delta *bat;
@@ -1250,12 +1263,19 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 static int
 destroy_dbat(sql_trans *tr, sql_dbat *bat)
 {
-	sql_dbat *n = bat->next;
-
+	sql_dbat *n;
+       
+	if (!bat)
+		return LOG_OK;
+	n = bat->next;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
 		temp_destroy(bat->dbid);
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	bat->dbid = 0;
 	bat->dname = NULL;
 	_DELETE(bat);
@@ -1381,6 +1401,7 @@ empty_col(sql_column *c)
 	assert(c->data && c->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid)
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
@@ -1394,6 +1415,7 @@ empty_idx(sql_idx *i)
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
+	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
 	if (bat->bid == bat->ibid) 
 		bat->bid = copyBat(bat->ibid, type, 0);
 }
@@ -1658,7 +1680,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		} else {
 			assert(cur->T->heap.storage != STORE_PRIV);
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
-			assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
+			assert(!BATcount(ins) || !isEbat(ins));
 			BATappend(cur,ins,TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
@@ -1706,6 +1729,15 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 
 	if (!fdb)
 		return ok;
+
+	if (fdb->cached) {
+		bat_destroy(fdb->cached);
+		fdb->cached = NULL;
+	}
+	if (tdb->cached) {
+		bat_destroy(tdb->cached);
+		tdb->cached = NULL;
+	}
 	assert(store_nr_active==1);
 	db = temp_descriptor(fdb->dbid);
 	if (BUNlast(db) > db->batInserted || cleared) {
@@ -1757,19 +1789,18 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 	if (ft->base.allocated) {
 		if (store_nr_active > 1) { /* move delta */
-			sql_dbat *b = ft->data, *p = NULL;
+			sql_dbat *b = ft->data;
 
 			ft->data = NULL;
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->wtime > oldest->stime) {
-				p = b;
+			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			}
-			if (b && b->wtime > oldest->stime && p) {
-				p->next = NULL;
-				destroy_dbat(tr, b);
+			if (b && b->wtime < oldest->stime) {
+				/* anything older can go */
+				destroy_dbat(tr, b->next);
+				b->next = NULL;
 			}
 		} else {
 			assert(tt->base.allocated);
@@ -1780,38 +1811,37 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
 
-		if (!cc->base.wtime || !cc->base.allocated) {
-			cc->data = NULL;
-			cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
-			continue;
-		}
+		if (cc->base.wtime && cc->base.allocated) {
+			assert(oc->base.wtime < cc->base.wtime);
+			if (store_nr_active > 1) { /* move delta */
+				sql_delta *b = cc->data;
 
-		assert(oc->base.wtime < cc->base.wtime);
-		if (store_nr_active > 1) { /* move delta */
-			sql_delta *b = cc->data, *p = NULL;
-
-			cc->data = NULL;
-			b->next = oc->data;
-			oc->data = b;
-			while (b && b->wtime > oldest->stime) {
-				p = b;
-				b = b->next;
+				cc->data = NULL;
+				b->next = oc->data;
+				oc->data = b;
+				while (b && b->wtime >= oldest->stime) 
+					b = b->next;
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
+				}
+			} else {
+				assert(oc->base.allocated);
+				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 			}
-			if (b && b->wtime > oldest->stime && p) {
-				p->next = NULL;
-				destroy_bat(tr, b);
-			}
-		} else {
-			assert(oc->base.allocated);
-			tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 		}
 
 		oc->null = cc->null;
 		oc->unique = cc->unique;
-		if (cc->storage_type && (!cc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
 			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
-		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+		if (!cc->storage_type)
+			oc->storage_type = NULL;
+		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
 			oc->def = sa_strdup(tr->sa, cc->def);
+		if (!cc->def)
+			oc->def = NULL;
 
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
@@ -1833,18 +1863,17 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				continue;
 			}
 			if (store_nr_active > 1) { /* move delta */
-				sql_delta *b = ci->data, *p = NULL;
+				sql_delta *b = ci->data;
 
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
-				while (b && b->wtime > oldest->stime) {
-					p = b;
+				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				}
-				if (b && b->wtime > oldest->stime && p) {
-					p->next = NULL;
-					destroy_bat(tr, b);
+				if (b && b->wtime < oldest->stime) {
+					/* anything older can go */
+					destroy_bat(tr, b->next);
+					b->next = NULL;
 				}
 			} else {
 				assert(oi->base.allocated);

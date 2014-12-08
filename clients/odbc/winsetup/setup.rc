@@ -78,7 +78,7 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "CWI"
+            VALUE "CompanyName", "MonetDB B.V."
             VALUE "FileDescription", "MonetDB ODBC Setup DLL"
             VALUE "FileVersion", "11.20.0"
             VALUE "InternalName", "libMonetODBCs.dll"

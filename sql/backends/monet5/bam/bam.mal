@@ -35,18 +35,18 @@ address reverse_qual
 comment "Reverse a DNA Quality string."
 
 command seq_length(cigar:str):int
-address seq_length_bat
+address seq_length
 comment "Calculate the real length of a DNA sequence, given its CIGAR string."
 
 
 # Export signatures
 
 pattern sam_export(output_path:str):void
-address sam_export
+address sam_exportf
 comment "Export results in the bam.export table to a SAM file"
 
 pattern bam_export(output_path:str):void
-address bam_export
+address bam_exportf
 comment "Export results in the bam.export table to a BAM file"
 
 

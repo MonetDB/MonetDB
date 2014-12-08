@@ -424,7 +424,7 @@ XMLpi(str *ret, str *target, str *value)
 }
 
 str
-XMLroot(str *ret, str *val, str *version, str *standalone)
+XMLroot(xml *ret, xml *val, str *version, str *standalone)
 {
 	size_t len = 0, i = 0;
 	str buf;
@@ -594,17 +594,18 @@ XMLconcat(xml *ret, xml *left, xml *right)
 str
 XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str *ret = (str *) getArgReference(stk, p, 0);
+	xml *ret = getArgReference_TYPE(stk, p, 0, xml);
 	int i;
 	size_t len;
-	str buf, x;
+	str buf;
+	xml x;
 
 	(void) cntxt;
 	(void) mb;
 
 	len = 2;
 	for (i = p->retc; i < p->argc; i++) {
-		x = *(str *) getArgReference(stk, p, i);
+		x = *getArgReference_TYPE(stk, p, i, xml);
 		if (!strNil(x))
 			if (*x != 'C')
 				throw(MAL, "xml.forest", "arguments must be element content");
@@ -618,7 +619,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	*buf = 0;
 
 	for (i = p->retc; i < p->argc; i++) {
-		x = *(str *) getArgReference(stk, p, i);
+		x = *getArgReference_TYPE(stk, p, i, xml);
 		if (!strNil(x)) {
 			len = strlen(x + 1);
 			strcpy(buf, x + 1);
@@ -631,8 +632,9 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 int TYPE_xml;
 
 str
-XMLprelude(void)
+XMLprelude(void *ret)
 {
+	(void) ret;
 	TYPE_xml = ATOMindex("xml");
 	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();

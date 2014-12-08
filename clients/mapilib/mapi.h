@@ -243,6 +243,9 @@ mapi_export int mapi_get_tableid(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 mapi_export MapiHdl mapi_get_active(Mapi mid);
+#ifdef _MSC_VER
+mapi_export const char *wsaerror(int);
+#endif
 
 #ifdef __cplusplus
 }

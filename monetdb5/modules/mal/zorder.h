@@ -32,13 +32,13 @@
 #endif
 
 zorder_export str ZORDencode_int_oid(oid *z, int *x, int *y);
-zorder_export str ZORDbatencode_int_oid(int *z, int *x, int *y);
+zorder_export str ZORDbatencode_int_oid(bat *z, bat *x, bat *y);
 zorder_export str ZORDdecode_int_oid(int *x, int *y, oid *z);
 zorder_export str ZORDdecode_int_oid_x(int *x, oid *z);
 zorder_export str ZORDdecode_int_oid_y(int *y, oid *z);
-zorder_export str ZORDbatdecode_int_oid(int *x, int *y, int *z);
-zorder_export str ZORDbatdecode_int_oid_x(int *x, int *z);
-zorder_export str ZORDbatdecode_int_oid_y(int *y, int *z);
-zorder_export str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
+zorder_export str ZORDbatdecode_int_oid(bat *x, bat *y, bat *z);
+zorder_export str ZORDbatdecode_int_oid_x(bat *x, bat *z);
+zorder_export str ZORDbatdecode_int_oid_y(bat *y, bat *z);
+zorder_export str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt);
 
 #endif /* _ZORDER_H */

@@ -112,23 +112,23 @@ function LineFromText{unsafe}(wkt:str, srid:int) :wkb;
 	return x;
 end LineFromText;
 function PolygonFromText{unsafe}(wkt:str, srid:int) :wkb;
-	x := wkb.FromText(wkt,srid,4);
+	x := wkb.FromText(wkt,srid,3);
 	return x;
 end PolygonFromText;
 function MPointFromText{unsafe}(wkt:str, srid:int) :wkb;
-	x := wkb.FromText(wkt,srid,5);
+	x := wkb.FromText(wkt,srid,4);
 	return x;
 end MPointFromText;
 function MLineFromText{unsafe}(wkt:str, srid:int) :wkb;
-	x := wkb.FromText(wkt,srid,6);
+	x := wkb.FromText(wkt,srid,5);
 	return x;
 end MLineFromText;
 function MPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
-	x := wkb.FromText(wkt,srid,7);
+	x := wkb.FromText(wkt,srid,6);
 	return x;
 end MPolyFromText;
 function GeomCollFromText{unsafe}(wkt:str, srid:int) :wkb;
-	x := wkb.FromText(wkt,srid,8);
+	x := wkb.FromText(wkt,srid,7);
 	return x;
 end GeomCollFromText;
 
@@ -145,23 +145,23 @@ function LineFromText{unsafe}(wkt:str) :wkb;
 	return x;
 end LineFromText;
 function PolygonFromText{unsafe}(wkt:str) :wkb;
-	x := wkb.FromText(wkt,0,4);
+	x := wkb.FromText(wkt,0,3);
 	return x;
 end PolygonFromText;
 function MPointFromText{unsafe}(wkt:str) :wkb;
-	x := wkb.FromText(wkt,0,5);
+	x := wkb.FromText(wkt,0,4);
 	return x;
 end MPointFromText;
 function MLineFromText{unsafe}(wkt:str) :wkb;
-	x := wkb.FromText(wkt,0,6);
+	x := wkb.FromText(wkt,0,5);
 	return x;
 end MLineFromText;
 function MPolyFromText{unsafe}(wkt:str) :wkb;
-	x := wkb.FromText(wkt,0,7);
+	x := wkb.FromText(wkt,0,6);
 	return x;
 end MPolyFromText;
 function GeomCollFromText{unsafe}(wkt:str) :wkb;
-	x := wkb.FromText(wkt,0,8);
+	x := wkb.FromText(wkt,0,7);
 	return x;
 end GeomCollFromText;
 
@@ -169,7 +169,6 @@ end GeomCollFromText;
 #	x := wkb.FromWKB(wkb_raw, srid, 0);
 #	return x;
 #end GeomFromWKB;
-
 
 function NumInteriorRings{unsafe}(w:wkb) :int;
 	x := NumRings(w, 0);
@@ -229,8 +228,8 @@ command StartPoint(w:wkb) :wkb address wkbStartPoint
 comment "Returns the first point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING";
 command EndPoint(w:wkb) :wkb address wkbEndPoint
 comment "Returns the last point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING.";
-command NumPoints(w:wkb) :int address wkbNumPoints
-comment "The number of points in the Geometry. The geometry should be a linestring";
+command PointsNum(w:wkb, check:int) :int address wkbNumPoints
+comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
 command PointN(w:wkb, n:int) :wkb address wkbPointN
 comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 command Envelope(w:wkb) :wkb address wkbEnvelope
@@ -273,6 +272,8 @@ command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
+command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionAggr
+comment "Gets a BAT with geometries and returns their union"; 
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
 comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";
 command SymDifference(a:wkb, b:wkb) :wkb address wkbSymDifference
@@ -301,6 +302,8 @@ command Covers(a:wkb, b:wkb) :bit address wkbCovers
 comment "Returns TRUE if no point of geometry B is outside geometry A";
 command CoveredBy(a:wkb, b:wkb) :bit address wkbCoveredBy
 comment "Returns TRUE if no point of geometry A is outside geometry B";
+command DWithin(a:wkb, b:wkb, dst:dbl) :bit address wkbDWithin
+comment "Returns true if the two geometries are within the specifies distance from each other";
 command GeometryN(g:wkb, n:int) :wkb address wkbGeometryN
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
 command NumGeometries(g:wkb) :int address wkbNumGeometries
@@ -308,6 +311,23 @@ comment "Returns the number of geometries";
 
 command Transform(g:wkb, srid_src:int, srid_dst:int, proj_src:str, proj_dest:str) :wkb address wkbTransform
 comment "Transforms a geometry from one srid to another";
+#postGIS has also flag=2 and then it returns a TIN
+command DelaunayTriangles(a:wkb, tolerance:dbl, flag:int) :wkb address wkbDelaunayTriangles
+comment "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring";
+command Dump(a:wkb) (id:bat[:oid, :int], geom:bat[:oid, :wkb]) address wkbDump
+comment "Gets a MultiPolygon and returns the Polygons in it";
+command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
+comment "Gets a Geometry and returns the Points in it";
+
+function NumPoints(w:wkb) :int;
+	x := PointsNum(w, 1);
+	return x;
+end NumPoints;
+function NPoints(w:wkb) :int;
+	x := PointsNum(w, 0);
+	return x;
+end NPoints;
+
 
 function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:int) :wkb;
 	x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, srid);
@@ -331,6 +351,11 @@ end MakePolygon;
 #	x := Polygon(external, internal, 0);
 #	return x;
 #end MakePolygon;
+
+command MakeLine(a:wkb, b:wkb) :wkb address wkbMakeLine
+comment "Gets two point or linestring geometries and returns a linestring geometry"; 
+command MakeLine(a:bat[:oid,:wkb]) :wkb address wkbMakeLineAggr
+comment "Gets a BAT with point or linestring geometries and returns a single linestring geometry"; 
 
 command PointOnSurface(w:wkb) :wkb address wkbPointOnSurface
 comment "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.";
@@ -442,20 +467,18 @@ geom.prelude();
 
 module batgeom;
 
-#unsafe prevents mitosis from parallelising it (no it is not true)
-command pbsmIndex{unsafe}(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndex_bat;
+command pbsmIndexCreate(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndexCreate_bat;
+command geom.pbsmIndexLoad() address pbsmIndexLoad_bat;
 
 #the 1 version of the functions use geos the 2 versions have custom implementations
 
 command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_bat;
 command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:dbl] address wkbDistance_bat_geom;
-command Distance(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int, filterVrs:int, spatialVrs:int) :bat[:oid,:dbl] address wkbPointsDistance_geom_bat;
 
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
-command Contains(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int, filterVrs:int, spatialVrs:int) :bat[:oid,:bit] address wkbPointsContains_geom_bat;
 
 #only one argument should be BAT
 #command Filter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbFilter_bat
@@ -463,8 +486,6 @@ command Contains(g:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int, filterVrs:
 command Filter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFilter_geom_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
 command Filter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbFilter_bat_geom;
-command Filter(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], filterVrs:int) :bat[:oid,:oid] address wkbPointsFilter_geom_bat
-comment "Filters x,y coordinates in the BATs";
 
 #command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
 #address wkbcreatepoint_bat
@@ -481,6 +502,10 @@ comment "creates a 2D with m attribute points BAT using three double BATs";
 command setSRID(w:bat[:oid,:wkb], srid:int) :bat[:oid,:wkb] address wkbSetSRID_bat
 comment "Sets the Reference System ID for this Geometry.";
 
+command MakeLine(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbMakeLine_bat
+comment "Gets two BATS of point or linestring geometries and returns a bat with linestring geometries"; 
+command Union(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbUnion_bat
+comment "Gets two BATS of geometries and returns the pairwise unions"; 
 
 
 command mbr(:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbMBR_bat
@@ -565,4 +590,3 @@ end wkb;
 # wkbMultiLineString := 5;
 # wkbMultiPolygon := 6;
 # wkbGeometryCollection := 7;
-

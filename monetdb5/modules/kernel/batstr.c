@@ -45,65 +45,56 @@
 #endif
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define batstr_export extern __declspec(dllimport)
-#else
 #define batstr_export extern __declspec(dllexport)
-#endif
 #else
 #define batstr_export extern
 #endif
 
-batstr_export str STRbatPrefix(bat *ret, bat *l, bat *r);
-batstr_export str STRbatPrefixcst(bat *ret, bat *l, str *cst);
-batstr_export str STRcstPrefixbat(bat *ret, str *cst, bat *r);
-batstr_export str STRbatSuffix(bat *ret, bat *l, bat *r);
-batstr_export str STRbatSuffixcst(bat *ret, bat *l, str *cst);
-batstr_export str STRcstSuffixbat(bat *ret, str *cst, bat *r);
-batstr_export str STRbatstrSearch(bat *ret, bat *l, bat *r);
-batstr_export str STRbatstrSearchcst(bat *ret, bat *l, str *cst);
-batstr_export str STRcststrSearchbat(bat *ret, str *cst, bat *r);
-batstr_export str STRbatRstrSearch(bat *ret, bat *l, bat *r);
-batstr_export str STRbatRstrSearchcst(bat *ret, bat *l, str *cst);
-batstr_export str STRcstRstrSearchbat(bat *ret, str *cst, bat *r);
-batstr_export str STRbatTail(bat *ret, bat *l, bat *r);
-batstr_export str STRbatTailcst(bat *ret, bat *l, bat *cst);
-batstr_export str STRbatWChrAt(bat *ret, bat *l, bat *r);
-batstr_export str STRbatWChrAtcst(bat *ret, bat *l, bat *cst);
-batstr_export str STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep);
+batstr_export str STRbatPrefix(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatPrefixcst(bat *ret, const bat *l, const str *cst);
+batstr_export str STRbatSuffix(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatSuffixcst(bat *ret, const bat *l, const str *cst);
+batstr_export str STRbatstrSearch(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst);
+batstr_export str STRbatRstrSearch(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst);
+batstr_export str STRbatTail(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatTailcst(bat *ret, const bat *l, const int *cst);
+batstr_export str STRbatWChrAt(bat *ret, const bat *l, const bat *r);
+batstr_export str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst);
+batstr_export str STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep);
 
-batstr_export str STRbatLower(bat *ret, bat *l);
-batstr_export str STRbatUpper(bat *ret, bat *l);
-batstr_export str STRbatStrip(bat *ret, bat *l);
-batstr_export str STRbatLtrim(bat *ret, bat *l);
-batstr_export str STRbatRtrim(bat *ret, bat *l);
-batstr_export str STRbatStrip2_const(bat *ret, bat *l, str *s2);
-batstr_export str STRbatLtrim2_const(bat *ret, bat *l, str *s2);
-batstr_export str STRbatRtrim2_const(bat *ret, bat *l, str *s2);
-batstr_export str STRbatStrip2_bat(bat *ret, bat *l, bat *l2);
-batstr_export str STRbatLtrim2_bat(bat *ret, bat *l, bat *l2);
-batstr_export str STRbatRtrim2_bat(bat *ret, bat *l, bat *l2);
+batstr_export str STRbatLower(bat *ret, const bat *l);
+batstr_export str STRbatUpper(bat *ret, const bat *l);
+batstr_export str STRbatStrip(bat *ret, const bat *l);
+batstr_export str STRbatLtrim(bat *ret, const bat *l);
+batstr_export str STRbatRtrim(bat *ret, const bat *l);
+batstr_export str STRbatStrip2_const(bat *ret, const bat *l, const str *s2);
+batstr_export str STRbatLtrim2_const(bat *ret, const bat *l, const str *s2);
+batstr_export str STRbatRtrim2_const(bat *ret, const bat *l, const str *s2);
+batstr_export str STRbatStrip2_bat(bat *ret, const bat *l, const bat *l2);
+batstr_export str STRbatLtrim2_bat(bat *ret, const bat *l, const bat *l2);
+batstr_export str STRbatRtrim2_bat(bat *ret, const bat *l, const bat *l2);
 
-batstr_export str STRbatLpad_const(bat *ret, bat *l, int *n);
-batstr_export str STRbatRpad_const(bat *ret, bat *l, int *n);
-batstr_export str STRbatLpad_bat(bat *ret, bat *l, bat *n);
-batstr_export str STRbatRpad_bat(bat *ret, bat *l, bat *n);
-batstr_export str STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2);
-batstr_export str STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2);
-batstr_export str STRbatLpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
-batstr_export str STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2);
-batstr_export str STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
-batstr_export str STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2);
-batstr_export str STRbatLpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
-batstr_export str STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2);
+batstr_export str STRbatLpad_const(bat *ret, const bat *l, const int *n);
+batstr_export str STRbatRpad_const(bat *ret, const bat *l, const int *n);
+batstr_export str STRbatLpad_bat(bat *ret, const bat *l, const bat *n);
+batstr_export str STRbatRpad_bat(bat *ret, const bat *l, const bat *n);
+batstr_export str STRbatLpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
+batstr_export str STRbatRpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
+batstr_export str STRbatLpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
+batstr_export str STRbatRpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
+batstr_export str STRbatLpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
+batstr_export str STRbatRpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
+batstr_export str STRbatLpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
+batstr_export str STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
 
-batstr_export str STRbatLength(bat *ret, bat *l);
-batstr_export str STRbatstringLength(bat *ret, bat *l);
-batstr_export str STRbatBytes(bat *ret, bat *l);
+batstr_export str STRbatLength(bat *ret, const bat *l);
+batstr_export str STRbatstringLength(bat *ret, const bat *l);
+batstr_export str STRbatBytes(bat *ret, const bat *l);
 
-batstr_export str STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length);
-batstr_export str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t);
-batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
+batstr_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length);
+batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t);
 
 
 #define prepareOperand(X,Y,Z)					\
@@ -160,7 +151,7 @@ batstr_export str STRbatreplace(bat *ret, bat *l, str *pat, str *s2);
 	BBPreleaseref(Z->batCacheid);
 
 static str
-do_batstr_int(bat *ret, bat *l, const char *name, str (*func)(int *, str *))
+do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -197,25 +188,25 @@ bunins_failed:
 }
 
 str
-STRbatLength(bat *ret, bat *l)
+STRbatLength(bat *ret, const bat *l)
 {
 	return do_batstr_int(ret, l, "batstr.Length", STRLength);
 }
 
 str
-STRbatstringLength(bat *ret, bat *l)
+STRbatstringLength(bat *ret, const bat *l)
 {
 	return do_batstr_int(ret, l, "batstr.stringLength", STRSQLLength);
 }
 
 str
-STRbatBytes(bat *ret, bat *l)
+STRbatBytes(bat *ret, const bat *l)
 {
 	return do_batstr_int(ret, l, "batstr.Bytes", STRBytes);
 }
 
 static str
-do_batstr_str(bat *ret, bat *l, const char *name, str (*func)(str *, str *))
+do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -262,7 +253,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_conststr_str(bat *ret, bat *l, str *s2, const char *name, str (*func)(str *, str *, str *))
+do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, str (*func)(str *, const str *, const str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -309,7 +300,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batstr_str(bat *ret, bat *l, bat *l2, const char *name, str (*func)(str *, str *, str *))
+do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, str (*func)(str *, const str *, const str *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
@@ -362,7 +353,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_str(bat *ret, bat *l, int *n, const char *name, str (*func)(str *, str *, int *))
+do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, str (*func)(str *, const str *, const int *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -409,7 +400,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_str(bat *ret, bat *l, bat *n, const char *name, str (*func)(str *, str *, int *))
+do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str (*func)(str *, const str *, const int *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
@@ -462,7 +453,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_conststr_str(bat *ret, bat *l, int *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
+do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str *s2, const char *name, str (*func)(str *, const str *, const int *, const str *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -509,7 +500,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_conststr_str(bat *ret, bat *l, bat *n, str *s2, const char *name, str (*func)(str *, str *, int *, str *))
+do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s2, const char *name, str (*func)(str *, const str *, const int *, const str *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
@@ -562,7 +553,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_batstr_str(bat *ret, bat *l, int *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
+do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l2, const char *name, str (*func)(str *, const str *, const int *, const str *))
 {
 	BATiter bi, bi2;
 	BAT *bn, *b, *b2;
@@ -615,7 +606,7 @@ bunins_failed1:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_batstr_str(bat *ret, bat *l, bat *n, bat *l2, const char *name, str (*func)(str *, str *, int *, str *))
+do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2, const char *name, str (*func)(str *, const str *, const int *, const str *))
 {
 	BATiter bi, bi2, bi3;
 	BAT *bn, *b, *b2, *b3;
@@ -672,139 +663,139 @@ bunins_failed1:
 }
 
 str
-STRbatLower(bat *ret, bat *l)
+STRbatLower(bat *ret, const bat *l)
 {
 	return do_batstr_str(ret, l, "batstr.Lower", STRLower);
 }
 
 str
-STRbatUpper(bat *ret, bat *l)
+STRbatUpper(bat *ret, const bat *l)
 {
 	return do_batstr_str(ret, l, "batstr.Upper", STRUpper);
 }
 
 str
-STRbatStrip(bat *ret, bat *l)
+STRbatStrip(bat *ret, const bat *l)
 {
 	return do_batstr_str(ret, l, "batstr.Strip", STRStrip);
 }
 
 str
-STRbatLtrim(bat *ret, bat *l)
+STRbatLtrim(bat *ret, const bat *l)
 {
 	return do_batstr_str(ret, l, "batstr.Ltrim", STRLtrim);
 }
 
 str
-STRbatRtrim(bat *ret, bat *l)
+STRbatRtrim(bat *ret, const bat *l)
 {
 	return do_batstr_str(ret, l, "batstr.Rtrim", STRRtrim);
 }
 
 str
-STRbatStrip2_const(bat *ret, bat *l, str *s2)
+STRbatStrip2_const(bat *ret, const bat *l, const str *s2)
 {
 	return do_batstr_conststr_str(ret, l, s2, "batstr.Strip", STRStrip2);
 }
 
 str
-STRbatLtrim2_const(bat *ret, bat *l, str *s2)
+STRbatLtrim2_const(bat *ret, const bat *l, const str *s2)
 {
 	return do_batstr_conststr_str(ret, l, s2, "batstr.Ltrim", STRLtrim2);
 }
 
 str
-STRbatRtrim2_const(bat *ret, bat *l, str *s2)
+STRbatRtrim2_const(bat *ret, const bat *l, const str *s2)
 {
 	return do_batstr_conststr_str(ret, l, s2, "batstr.Rtrim", STRRtrim2);
 }
 
 str
-STRbatStrip2_bat(bat *ret, bat *l, bat *l2)
+STRbatStrip2_bat(bat *ret, const bat *l, const bat *l2)
 {
 	return do_batstr_batstr_str(ret, l, l2, "batstr.Strip", STRStrip2);
 }
 
 str
-STRbatLtrim2_bat(bat *ret, bat *l, bat *l2)
+STRbatLtrim2_bat(bat *ret, const bat *l, const bat *l2)
 {
 	return do_batstr_batstr_str(ret, l, l2, "batstr.Ltrim", STRLtrim2);
 }
 
 str
-STRbatRtrim2_bat(bat *ret, bat *l, bat *l2)
+STRbatRtrim2_bat(bat *ret, const bat *l, const bat *l2)
 {
 	return do_batstr_batstr_str(ret, l, l2, "batstr.Rtrim", STRRtrim2);
 }
 
 str
-STRbatLpad_const(bat *ret, bat *l, int *n)
+STRbatLpad_const(bat *ret, const bat *l, const int *n)
 {
 	return do_batstr_constint_str(ret, l, n, "batstr.Lpad", STRLpad);
 }
 
 str
-STRbatRpad_const(bat *ret, bat *l, int *n)
+STRbatRpad_const(bat *ret, const bat *l, const int *n)
 {
 	return do_batstr_constint_str(ret, l, n, "batstr.Rpad", STRRpad);
 }
 
 str
-STRbatLpad_bat(bat *ret, bat *l, bat *n)
+STRbatLpad_bat(bat *ret, const bat *l, const bat *n)
 {
 	return do_batstr_batint_str(ret, l, n, "batstr.Lpad", STRLpad);
 }
 
 str
-STRbatRpad_bat(bat *ret, bat *l, bat *n)
+STRbatRpad_bat(bat *ret, const bat *l, const bat *n)
 {
 	return do_batstr_batint_str(ret, l, n, "batstr.Rpad", STRRpad);
 }
 
 str
-STRbatLpad2_const_const(bat *ret, bat *l, int *n, str *s2)
+STRbatLpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2)
 {
 	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_const_const(bat *ret, bat *l, int *n, str *s2)
+STRbatRpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2)
 {
 	return do_batstr_constint_conststr_str(ret, l, n, s2, "batstr.Rpad", STRRpad2);
 }
 
 str
-STRbatLpad2_bat_const(bat *ret, bat *l, bat *n, str *s2)
+STRbatLpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2)
 {
 	return do_batstr_batint_conststr_str(ret, l, n, s2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_bat_const(bat *ret, bat *l, bat *n, str *s2)
+STRbatRpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2)
 {
 	return do_batstr_batint_conststr_str(ret, l, n, s2, "batstr.Rpad", STRRpad2);
 }
 
 str
-STRbatLpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
+STRbatLpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2)
 {
 	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_const_bat(bat *ret, bat *l, int *n, bat *l2)
+STRbatRpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2)
 {
 	return do_batstr_constint_batstr_str(ret, l, n, l2, "batstr.Rpad", STRRpad2);
 }
 
 str
-STRbatLpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2)
+STRbatLpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2)
 {
 	return do_batstr_batint_batstr_str(ret, l, n, l2, "batstr.Lpad", STRLpad2);
 }
 
 str
-STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2)
+STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2)
 {
 	return do_batstr_batint_batstr_str(ret, l, n, l2, "batstr.Rpad", STRRpad2);
 }
@@ -815,7 +806,7 @@ STRbatRpad2_bat_bat(bat *ret, bat *l, bat *n, bat *l2)
  * implementation for shifted window arithmetic as well.
  */
 
-str STRbatPrefix(bat *ret, bat *l, bat *r)
+str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -849,7 +840,7 @@ bunins_failed:
 	throw(MAL, "batstr." "prefix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatPrefixcst(bat *ret, bat *l, str *cst)
+str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -877,35 +868,7 @@ bunins_failed:
 	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstPrefixbat(bat *ret, str *cst, bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	bit v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.prefix");
-	prepareResult(bn,right,TYPE_bit,"batstr.prefix");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRPrefix(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatSuffix(bat *ret, bat *l, bat *r)
+str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -939,7 +902,7 @@ bunins_failed:
 	throw(MAL, "batstr." "suffix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatSuffixcst(bat *ret, bat *l, str *cst)
+str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -967,35 +930,7 @@ bunins_failed:
 	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstSuffixbat(bat *ret, str *cst, bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	bit v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.suffix");
-	prepareResult(bn,right,TYPE_bit,"batstr.suffix");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRSuffix(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatstrSearch(bat *ret, bat *l, bat *r)
+str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -1029,7 +964,7 @@ bunins_failed:
 	throw(MAL, "batstr." "search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatstrSearchcst(bat *ret, bat *l, str *cst)
+str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -1057,35 +992,7 @@ bunins_failed:
 	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcststrSearchbat(bat *ret, str *cst, bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	int v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.search");
-	prepareResult(bn,right,TYPE_bit,"batstr.search");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRstrSearch(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatRstrSearch(bat *ret, bat *l, bat *r)
+str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -1119,7 +1026,7 @@ bunins_failed:
 	throw(MAL, "batstr." "r_search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatRstrSearchcst(bat *ret, bat *l, str *cst)
+str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -1147,35 +1054,7 @@ bunins_failed:
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstRstrSearchbat(bat *ret, str *cst, bat *r)
-{
-	BATiter righti;
-	BAT *bn, *right;
-	BUN p,q;
-	int v, *vp= &v;
-
-	prepareOperand(right,r,"batstr.r_search");
-	prepareResult(bn,right,TYPE_bit,"batstr.r_search");
-
-	righti = bat_iterator(right);
-
-	BATloop(right, p, q) {
-		ptr h = BUNhead(righti,p);
-		str tr = (str) BUNtail(righti,p);
-		STRReverseStrSearch(vp, cst, &tr);
-		bunfastins(bn, h, vp);
-	}
-	bn->T->nonil = 0;
-	finalizeResult(ret,bn,right);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
-}
-
-str STRbatTail(bat *ret, bat *l, bat *r)
+str STRbatTail(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -1211,7 +1090,7 @@ bunins_failed:
 	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatTailcst(bat *ret, bat *l, bat *cst)
+str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -1241,7 +1120,7 @@ bunins_failed:
 	throw(MAL, "batstr.string", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatWChrAt(bat *ret, bat *l, bat *r)
+str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -1275,7 +1154,7 @@ bunins_failed:
 	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatWChrAtcst(bat *ret, bat *l, bat *cst)
+str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 {
 	BATiter lefti;
 	BAT *bn, *left;
@@ -1304,7 +1183,7 @@ bunins_failed:
 }
 
 str
-STRbatSubstitutecst(bat *ret, bat *l, str *arg2, str *arg3, bit *rep)
+STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep)
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -1343,7 +1222,7 @@ bunins_failed:
  * The substring functions require slightly different arguments
  */
 str
-STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length)
+STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length)
 {
 	BATiter bi;
 	BAT *b,*bn;
@@ -1390,7 +1269,7 @@ STRbatsubstringcst(bat *ret, bat *bid, int *start, int *length)
 	return msg;
 }
 
-str STRbatsubstring(bat *ret, bat *l, bat *r, bat *t)
+str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 {
 	BATiter lefti, starti, lengthi;
 	BAT *bn, *left, *start, *length;

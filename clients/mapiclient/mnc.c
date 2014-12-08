@@ -179,7 +179,7 @@ main(int argc, char **argv)
 			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
-			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != -1)
+			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
 		}
@@ -209,7 +209,7 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		if (connect(s, serv, sizeof(server)) < 0) {
+		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
 			fprintf(stderr,
 				 "initiating connection on socket failed: %s\n",
 				 strerror(errno));
@@ -242,7 +242,7 @@ main(int argc, char **argv)
 		length = (SOCKLEN) sizeof(server);
 
 		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-		if (bind(sock, (SOCKPTR) &server, length) < 0) {
+		if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
 			fprintf(stderr, "bind to port %d failed: %s\n",
 					port, strerror(errno));
 			exit(1);

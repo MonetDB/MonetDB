@@ -19,7 +19,7 @@ module logger;
 
 atom logger = ptr;
 end;
-command create( debug:int, fn:str, dirname:str, version:ing ):logger
+command create( debug:int, fn:str, dirname:str, version:int ):logger
 address logger_create_wrap
 comment "Create logger, check if recovery is needed. The fn variable names the frontend,this is needed to keep the catalog bat seperate";
 

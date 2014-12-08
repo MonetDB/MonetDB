@@ -49,7 +49,7 @@ mdb_export str MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str CMDmodules(int *bid);
+mdb_export str CMDmodules(bat *bid);
 mdb_export str MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetDebug(int *ret);
@@ -76,5 +76,6 @@ mdb_export str MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrP
 mdb_export str MDBgrapTrappedProcess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 mdb_export str MDBdummy(int *ret);
 #endif /* _MDB_H */

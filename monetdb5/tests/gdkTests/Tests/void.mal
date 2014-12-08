@@ -108,18 +108,20 @@ bat.append(t1,2);
 bat.append(t1,3);
 io.print("<in>");
 v1 := algebra.select(t1, 2,nil:int,false,false);
-v2a := algebra.markT(v1,0@0);
+v2a := algebra.mark(v1,0@0);
 vr := bat.reverse(v2a);
 vj:= algebra.join(vr,t1);
 io.print(vj);
 
 v3 := algebra.select(t1,2, nil:int);
-(i,j):= bat.info(v3); ir:= bat.reverse(i); z2:= algebra.find(ir,"hseqbase"); z22:= algebra.fetch(j,z2); io.print(z22);
+(i,j):= bat.info(v3); ir:= bat.reverse(i); z2:= algebra.find(ir,"hseqbase");
+z22:= algebra.fetch(j,z2); io.print(z22);
 z2:= algebra.find(ir,"hdense"); z22:= algebra.fetch(j,z2); io.print(z22);
 bat.setWriteMode(v3);
 v3r:= bat.reverse(v3);
 z4:= bat.delete(v3r,2);
-(i,j):= bat.info(z4); ir:= bat.reverse(i); z2:= algebra.find(ir,"hseqbase"); z22:= algebra.fetch(j,z2); io.print(z22);
+(i,j):= bat.info(v3); ir:= bat.reverse(i); z2:= algebra.find(ir,"hseqbase");
+z22:= algebra.fetch(j,z2); io.print(z22);
 z2:= algebra.find(ir,"hdense"); z22:= algebra.fetch(j,z2); io.print(z22);
 
 x := bat.new(:oid,:oid);

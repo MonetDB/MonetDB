@@ -133,7 +133,7 @@ int is_commutative(char *fnm)
 }
 
 void
-base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name)
+base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name)
 {
 	b->id = id;
 
@@ -227,7 +227,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 }
 
 int 
-sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale)
+sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale)
 {
 	/* todo add approximate info
 	 * if digits/scale == 0 and no approximate with digits/scale == 0
@@ -1544,14 +1544,14 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func3(sa, "locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
 		sql_create_func(sa, "substring", "str", "substring", *t, INT, *t, INOUT);
 		sql_create_func3(sa, "substring", "str", "substring", *t, INT, INT, *t, INOUT);
-		sql_create_func(sa, "like", "str", "like", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3(sa, "like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
-		sql_create_func(sa, "ilike", "str", "ilike", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3(sa, "ilike", "str", "ilike", *t, *t, *t, BIT, SCALE_NONE);
-		sql_create_func(sa, "not_like", "str", "not_like", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3(sa, "not_like", "str", "not_like", *t, *t, *t, BIT, SCALE_NONE);
-		sql_create_func(sa, "not_ilike", "str", "not_ilike", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3(sa, "not_ilike", "str", "not_ilike", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "like", "algebra", "like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "like", "algebra", "like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "ilike", "algebra", "ilike", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "ilike", "algebra", "ilike", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_like", "algebra", "not_like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_like", "algebra", "not_like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_ilike", "algebra", "not_ilike", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func(sa, "patindex", "pcre", "patindex", *t, *t, INT, SCALE_NONE);
 		sql_create_func(sa, "truncate", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "concat", "calc", "+", *t, *t, *t, DIGITS_ADD);

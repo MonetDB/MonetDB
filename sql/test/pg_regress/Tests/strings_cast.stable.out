@@ -15,23 +15,70 @@ stdout of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module v2.31.0 loaded
 
 Ready.
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
-#Bulk operator required for str.stringleft
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
 
-# 19:52:32 >  
-# 19:52:32 >  "./strings_cast.SQL.sh" "strings_cast"
-# 19:52:32 >  
+# 12:31:34 >  
+# 12:31:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8350" "--port=30241"
+# 12:31:34 >  
 
-
-# 19:52:32 >  
-# 19:52:32 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-15695 --port=36739 -e < /home/niels/data/rc/clean/sql/test/pg_regress/Tests/../monetdb/strings_cast.sql
-# 19:52:32 >  
-
+#CREATE TABLE CHAR_TBL(f1 char(4));
+#INSERT INTO CHAR_TBL (f1) VALUES ('a');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('ab');
+[ 1	]
+#INSERT INTO CHAR_TBL (f1) VALUES ('abcd');
+[ 1	]
+#CREATE TABLE VARCHAR_TBL(f1 varchar(4));
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('a');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('ab');
+[ 1	]
+#INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd');
+[ 1	]
+#CREATE TABLE TEXT_TBL (f1 text);
+#INSERT INTO TEXT_TBL VALUES ('doh!');
+[ 1	]
+#INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
+[ 1	]
+#SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
+% sys.L # table_name
+% text(char) # name
+% clob # type
+% 4 # length
+[ "a"	]
+[ "ab"	]
+[ "abcd"	]
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
 % sys.L # table_name
 % text(varchar) # name
@@ -40,8 +87,15 @@ Ready.
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]
-#SELECT CAST(name 'namefield' AS text) AS "text(name)";
-#-- since this is an explicit cast, it should truncate w/o error:
+[ "a"	]
+[ "ab"	]
+[ "abcd"	]
+#SELECT CAST('namefield' AS text) AS "text(name)";
+% .L # table_name
+% text(name) # name
+% clob # type
+% 9 # length
+[ "namefield"	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
 % sys.L # table_name
 % char(text) # name
@@ -49,7 +103,6 @@ Ready.
 % 10 # length
 [ "doh!"	]
 [ "hi de ho n"	]
-#-- note: implicit-cast case is tested in char.sql
 #SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
 % sys.L # table_name
 % char(text) # name
@@ -65,14 +118,41 @@ Ready.
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]
-#SELECT CAST(name 'namefield' AS char(10)) AS "char(name)";
-#SELECT CAST(f1 AS varchar) AS "varchar(text)" FROM TEXT_TBL;
-#SELECT CAST(f1 AS varchar) AS "varchar(char)" FROM CHAR_TBL;
-#SELECT CAST(name 'namefield' AS varchar) AS "varchar(name)";
+[ "a"	]
+[ "ab"	]
+[ "abcd"	]
+#SELECT CAST('namefield' AS char(10)) AS "char(name)";
+% .L # table_name
+% char(name) # name
+% char # type
+% 10 # length
+[ "namefield"	]
+#SELECT CAST(f1 AS varchar(3)) AS "varchar(text)" FROM TEXT_TBL;
+% sys.L # table_name
+% varchar(text) # name
+% varchar # type
+% 3 # length
+[ "doh"	]
+[ "hi "	]
+#SELECT CAST(f1 AS varchar(3)) AS "varchar(char)" FROM CHAR_TBL;
+% sys.L # table_name
+% varchar(char) # name
+% varchar # type
+% 3 # length
+[ "a"	]
+[ "ab"	]
+[ "abc"	]
+#SELECT CAST('namefield' AS varchar(3)) AS "varchar(name)";
+% .L # table_name
+% varchar(name) # name
+% varchar # type
+% 3 # length
+[ "nam"	]
+#DROP TABLE CHAR_TBL;
+#DROP TABLE VARCHAR_TBL;
+#DROP TABLE TEXT_TBL;
 
-= ! above output needs to be verified (with expected output in sql/test/pg_regress/expected/strings_cast.out) ! =
-
-# 22:34:06 >  
-# 22:34:06 >  Done.
-# 22:34:06 >  
+# 12:37:08 >  
+# 12:37:08 >  "Done."
+# 12:37:08 >  
 

@@ -280,7 +280,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		char nclients[24];
 		char pipeline[512];
 		char *readonly = NULL;
-		char *argv[24];	/* for the exec arguments */
+		char *embeddedr = NULL;
+		char *argv[26];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
 
@@ -322,6 +323,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(ckv, "readonly");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			readonly = "--readonly";
+
+		kv = findConfKey(ckv, "embedr");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+			embeddedr = "embedded_r=true";
 
 		freeConfFile(ckv);
 		free(ckv); /* can make ckv static and reuse it all the time */
@@ -386,6 +391,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
+		}
+		if (embeddedr != NULL) {
+			argv[c++] = "--set"; argv[c++] = embeddedr;
 		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;
@@ -479,22 +487,22 @@ forkMserver(char *database, sabdb** stats, int force)
 				(*stats)->conns->val != NULL &&
 				(*stats)->scens != NULL &&
 				(*stats)->scens->val != NULL)
-				{
-					sablist *scen = (*stats)->scens;
-					do {
-						if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
-							break;
-					} while ((scen = scen->next) != NULL);
-					if (scen == NULL) {
-						/* we don't know what it's doing, but we don't like it
-						 * any case, so kill it */
-						terminateProcess(dp);
-						msab_freeStatus(stats);
-						pthread_mutex_unlock(&fork_lock);
-						return(newErr("database '%s' did not initialise the sql "
-									  "scenario", database));
-					}
-				} else if (dp != NULL) {
+			{
+				sablist *scen = (*stats)->scens;
+				do {
+					if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
+						break;
+				} while ((scen = scen->next) != NULL);
+				if (scen == NULL) {
+					/* we don't know what it's doing, but we don't like it
+					 * any case, so kill it */
+					terminateProcess(dp);
+					msab_freeStatus(stats);
+					pthread_mutex_unlock(&fork_lock);
+					return(newErr("database '%s' did not initialise the sql "
+								  "scenario", database));
+				}
+			} else if (dp != NULL) {
 				terminateProcess(dp);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&fork_lock);
@@ -533,6 +541,13 @@ forkMserver(char *database, sabdb** stats, int force)
 							   "itself down after starting, "
 							   "check monetdbd's logfile for possible "
 							   "hints", database));
+				case SABdbStarting:
+					return(newErr(
+							   "database '%s' has inconsistent state "
+							   "(sabaoth administration reports starting up, "
+							   "but process seems gone), "
+							   "review monetdbd's "
+							   "logfile for any peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)state));
 				}

@@ -117,7 +117,7 @@ GDKenvironment(str dbpath)
 char *
 GDKgetenv(const char *name)
 {
-	BUN b = BUNfnd(BATmirror(GDKkey), (ptr) name);
+	BUN b = BUNfnd(GDKkey, (ptr) name);
 
 	if (b != BUN_NONE) {
 		BATiter GDKenvi = bat_iterator(GDKval);
@@ -1517,11 +1517,7 @@ GDKsyserror(const char *format, ...)
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
 
-#ifdef NATIVE_WIN32
-	DWORD err = GetLastError();
-#else
 	int err = errno;
-#endif
 	va_list ap;
 
 	if (strncmp(format, GDKERROR, len) == 0) {

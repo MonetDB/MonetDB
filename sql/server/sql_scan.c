@@ -200,7 +200,7 @@ scanner_init_keywords(void)
 	keywords_insert("COLUMN", COLUMN);
 	keywords_insert("TABLE", TABLE);
 	keywords_insert("TEMPORARY", TEMPORARY);
-	keywords_insert("TEMP", TEMPORARY);
+	keywords_insert("TEMP", TEMP);
 	keywords_insert("STREAM", STREAM);
 	keywords_insert("REMOTE", REMOTE);
 	keywords_insert("MERGE", MERGE);
@@ -1072,11 +1072,11 @@ valid_ident(char *s, char *dst)
 	
 	if (*s == '%')
 		return 0;
-	/* do unescaping in the loop */
+
 	while (*s && (*s != '"' || escaped)) {
-		if (*s == '"' && s[1] == '"') {
+		if (*s == '\\' && s[1] == '"') {
 			escaped = !escaped;
-			if (!escaped) 
+			if (escaped) 
 				dst[p++] = *s;
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
@@ -1085,8 +1085,6 @@ valid_ident(char *s, char *dst)
 			escaped = 0;
 			dst[p++] = *s;
 		}
-		//if (*s == '\\') 
-			//dst[p++] = *s;
 		s++;
 		if (p >= 1024)
 			return 0;

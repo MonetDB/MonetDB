@@ -294,6 +294,11 @@ terminateProcess(void *p)
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
+		case SABdbStarting:
+			Mfprintf(stderr, "database '%s' appears to be starting up\n",
+					 dbname);
+			/* starting up, so we'll go to the shut down phase */
+			break;
 		default:
 			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
@@ -303,11 +308,13 @@ terminateProcess(void *p)
 
 	if (d->type == MEROFUN) {
 		multiplexDestroy(dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	} else if (d->type != MERODB) {
 		/* barf */
 		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		msab_freeStatus(&stats);
 		free(dbname);
 		return;
 	}
@@ -332,6 +339,7 @@ terminateProcess(void *p)
 		} else {
 			switch (stats->state) {
 				case SABdbRunning:
+				case SABdbStarting:
 					/* ok, try again */
 				break;
 				case SABdbCrashed:
@@ -465,6 +473,8 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "shared");
 	kv->val = strdup("yes");
 	kv = findConfKey(_mero_db_props, "readonly");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -916,8 +926,9 @@ main(int argc, char *argv[])
 		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 			ret = 1;
-			if ((setsockopt(_mero_broadcastsock,
-							SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
+			if (_mero_broadcastsock == -1 ||
+				setsockopt(_mero_broadcastsock,
+						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");

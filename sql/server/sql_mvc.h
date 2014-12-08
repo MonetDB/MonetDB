@@ -153,59 +153,59 @@ extern int mvc_type(mvc *c);
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
 extern void mvc_trans(mvc *c);
-extern int mvc_commit(mvc *c, int chain, char *name);
-extern int mvc_rollback(mvc *c, int chain, char *name);
-extern int mvc_release(mvc *c, char *name);
+extern int mvc_commit(mvc *c, int chain, const char *name);
+extern int mvc_rollback(mvc *c, int chain, const char *name);
+extern int mvc_release(mvc *c, const char *name);
 
-extern sql_type *mvc_bind_type(mvc *sql, char *name);
-extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, char *name);
-extern sql_func *mvc_bind_func(mvc *sql, char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name, int type);
+extern sql_type *mvc_bind_type(mvc *sql, const char *name);
+extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
+extern sql_func *mvc_bind_func(mvc *sql, const char *name);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type);
 
-extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
-extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname);
-extern sql_column *mvc_bind_column(mvc *c, sql_table *t, char *cname);
+extern sql_schema *mvc_bind_schema(mvc *c, const char *sname);
+extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
+extern sql_column *mvc_bind_column(mvc *c, sql_table *t, const char *cname);
 extern sql_column *mvc_first_column(mvc *c, sql_table *t);
-extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, char *iname);
-extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, char *kname);
+extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, const char *iname);
+extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, const char *kname);
 extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
-extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
+extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 
-extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, char *name, list *args, list *res, int type, int lang, char *mod, char *impl, char *query, bit varres, bit vararg);
+extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
 extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
 extern void mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
-extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner);
+extern sql_schema *mvc_create_schema(mvc *m, const char *name, int auth_id, int owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
-extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, int tt, bit system, int persistence, int commit_action, int sz);
-extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, int persistence, char *sql, bit system);
-extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, char *name, int persistence, char *loc);
+extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz);
+extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
+extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern void mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
-extern sql_column *mvc_create_column(mvc *c, sql_table *t, char *name, sql_subtype *type);
-extern sql_column *mvc_create_column_(mvc *c, sql_table *t, char *name, char *type, int digits);
+extern sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
+extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_table * mvc_readonly(mvc *m, sql_table *t, int readonly);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
-extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
+extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
-extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
+extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, const char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
 extern sql_key *mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
 extern sql_fkey *mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);
 
 extern void mvc_drop_key(mvc *c, sql_schema *s, sql_key *key, int drop_action);
 
-extern sql_idx *mvc_create_idx(mvc *m, sql_table *t, char *iname, idx_type it);
+extern sql_idx *mvc_create_idx(mvc *m, sql_table *t, const char *iname, idx_type it);
 extern sql_idx *mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
 extern void mvc_drop_idx(mvc *c, sql_schema *s, sql_idx * i);
 
-extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
+extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
@@ -213,45 +213,45 @@ extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
-extern int mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
-extern int mvc_disconnect_catalog(mvc *m, char *db_alias);
+extern int mvc_connect_catalog(mvc *m, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng);
+extern int mvc_disconnect_catalog(mvc *m, const char *db_alias);
 extern int mvc_disconnect_catalog_ALL(mvc *m);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, char *name, sql_subtype *type);
-extern void stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type);
-extern void stack_push_table(mvc *sql, char *name, sql_rel *var, sql_table *t);
-extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
+extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
+extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
+extern void stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
+extern void stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern void stack_push_frame(mvc *sql, char *name);
+extern void stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
-extern sql_subtype *stack_find_type(mvc *sql, char *name);
-extern sql_table *stack_find_table(mvc *sql, char *name);
-extern sql_rel *stack_find_rel_view(mvc *sql, char *name);
-extern int stack_find_var(mvc *sql, char *name);
-extern sql_rel *stack_find_rel_var(mvc *sql, char *name);
+extern sql_subtype *stack_find_type(mvc *sql, const char *name);
+extern sql_table *stack_find_table(mvc *sql, const char *name);
+extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
+extern int stack_find_var(mvc *sql, const char *name);
+extern sql_rel *stack_find_rel_var(mvc *sql, const char *name);
 /* find var in current frame */
-extern int frame_find_var(mvc *sql, char *name);
+extern int frame_find_var(mvc *sql, const char *name);
 /* find frame holding variable 'name' */
-extern int stack_find_frame(mvc *sql, char *name);
+extern int stack_find_frame(mvc *sql, const char *name);
 /* find frame with given name */
-extern int stack_has_frame(mvc *sql, char *name);
+extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern ValRecord * stack_get_var(mvc *sql, char *name);
-extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
+extern ValRecord * stack_get_var(mvc *sql, const char *name);
+extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
-extern str stack_get_string(mvc *sql, char *name);
-extern void stack_set_string(mvc *sql, char *name, str v);
+extern str stack_get_string(mvc *sql, const char *name);
+extern void stack_set_string(mvc *sql, const char *name, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
-extern hge stack_get_number(mvc *sql, char *name);
-extern void stack_set_number(mvc *sql, char *name, hge v);
+extern hge stack_get_number(mvc *sql, const char *name);
+extern void stack_set_number(mvc *sql, const char *name, hge v);
 #else
 extern lng val_get_number(ValRecord *val);
-extern lng stack_get_number(mvc *sql, char *name);
-extern void stack_set_number(mvc *sql, char *name, lng v);
+extern lng stack_get_number(mvc *sql, const char *name);
+extern void stack_set_number(mvc *sql, const char *name, lng v);
 #endif
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);

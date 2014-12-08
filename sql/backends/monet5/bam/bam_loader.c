@@ -418,11 +418,11 @@ str
 bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* arg 1: path to bam file repository */
-	str bam_repos = *(str *) getArgReference(stk, pci, pci->retc);
+	str bam_repos = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
-	sht dbschema = *(sht *) getArgReference(stk, pci, pci->retc + 1);
+	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
 	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *(sht *) getArgReference(stk, pci, pci->retc + 2);
+	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
 
 	str *filenames = NULL;
 	int nr_files = 0;
@@ -538,11 +538,11 @@ str
 bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* arg 1: path to file containing bam file names separated by \n */
-	str bam_files = *(str *) getArgReference(stk, pci, pci->retc);
+	str bam_files = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
-	sht dbschema = *(sht *) getArgReference(stk, pci, pci->retc + 1);
+	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
 	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *(sht *) getArgReference(stk, pci, pci->retc + 2);
+	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
 
 	str *filenames = NULL;
 	int nr_files = 0;
@@ -670,9 +670,9 @@ str
 bam_loader_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* arg 1: path to bam stream */
-	str bam_file = *(str *) getArgReference(stk, pci, pci->retc);
+	str bam_file = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
-	sht dbschema = *(sht *) getArgReference(stk, pci, pci->retc + 1);
+	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
 
 	(void) stk;
 	(void) pci;
@@ -684,8 +684,8 @@ bam_loader_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng file_id = *(lng *) getArgReference(stk, pci, pci->retc);
-	sht dbschema = *(sht *) getArgReference(stk, pci, pci->retc + 1);
+	lng file_id = *getArgReference_lng(stk, pci, pci->retc);
+	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
 
 	str msg;
 

@@ -104,7 +104,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	struct sockaddr_in server;
 	struct sockaddr *serv;
 	socklen_t servsize;
-	int ssock = INVALID_SOCKET;
+	int ssock = -1;
 	char *port, *t;
 	char *conn;
 	struct stat statbuf;
@@ -134,7 +134,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		return(newErr("unsupported protocol/scheme in redirect: %s", url));
 	}
 
-	if (ssock != INVALID_SOCKET) {
+	if (ssock != -1) {
 		/* UNIX socket connect, don't proxy, but pass socket fd */
 		struct sockaddr_un server;
 		struct msghdr msg;
@@ -144,13 +144,15 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		char buf[1];
 		int *c_d;
 
-		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
-			return(newErr("cannot open socket: %s", strerror(errno)));
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
-		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
+			return(newErr("cannot open socket: %s", strerror(errno)));
+		}
+		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
+			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}
 
@@ -180,17 +182,17 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
 		if (sendmsg(ssock, &msg, 0) < 0) {
-			close(ssock);
+			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
 		}
 		/* block until the server acknowledges that it has psock
 		 * connected with itself */
-		if (recv(ssock, buf, 1, 0) < 0) {
-			close(ssock);
+		if (recv(ssock, buf, 1, 0) == -1) {
+			closesocket(ssock);
 			return(newErr("could not receive initial byte: %s", strerror(errno)));
 		}
-		close(ssock);
-		close(psock);
+		closesocket(ssock);
+		closesocket(psock);
 		close_stream(cfdin);
 		close_stream(cfout);
 		return(NO_ERR);
@@ -212,11 +214,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		servsize = sizeof(server);
 
 		ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
-		if (ssock == INVALID_SOCKET) {
+		if (ssock == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
 
-		if (connect(ssock, serv, servsize) < 0) {
+		if (connect(ssock, serv, servsize) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}

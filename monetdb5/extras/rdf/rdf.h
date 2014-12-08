@@ -46,12 +46,10 @@ rdf_export str
 RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 
 rdf_export str 
-RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
-rdf_export str 
-RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
+RDFleftfetchjoin_sorted(bat *result, const bat* lid, const bat *rid);
 
 rdf_export str 
-TKNZRrdf2str (bat *res, bat *bid, bat *map);
+TKNZRrdf2str (bat *res, const bat *bid, const bat *map);
 
 #define RDF_MIN_LITERAL (((oid) 1) << ((sizeof(oid)==8)?62:30))
 

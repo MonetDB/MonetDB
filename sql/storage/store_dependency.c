@@ -63,6 +63,25 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	table_funcs.rids_destroy(rs);
 }
 
+/*Function to drop the dependency between object and target, ie obj_id/depend_id*/
+void
+sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, short depend_type)
+{
+	oid rid;
+	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_table* deps = find_sql_table(s, "dependencies");
+	sql_column *dep_obj_id = find_sql_column(deps, "id");
+	sql_column *dep_dep_id = find_sql_column(deps, "depend_id");
+	sql_column *dep_dep_type = find_sql_column(deps, "depend_type");
+	rids *rs;
+	
+	rs = table_funcs.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &depend_type, &depend_type, NULL);
+	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+		table_funcs.table_delete(tr, deps, rid);
+	table_funcs.rids_destroy(rs);
+}
+
+
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
 sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * ignore_ids)

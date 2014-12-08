@@ -60,7 +60,7 @@ typedef struct MDBSTATE{
 
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
 static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
-static void printBATelm(stream *f, int i, BUN cnt, BUN first);
+static void printBATelm(stream *f, bat i, BUN cnt, BUN first);
 static void printBatDetails(stream *f, int bid);
 static void printBatInfo(stream *f, VarPtr n, ValPtr v);
 static void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
@@ -1049,11 +1049,11 @@ static MalBlkPtr trapped_mb;
 static MalStkPtr trapped_stk;
 static int trapped_pc;
 
-str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	InstrPtr p;
 	int cnt = 20;   /* total 10 sec delay */
-	p = getInstrPtr(mb, pc);
+	int pc = getPC(mb,p);
+
 	mnstr_printf(mal_clients[0].fdout, "#trapped %s.%s[%d]\n",
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
 	printInstruction(mal_clients[0].fdout, mb, stk, p, LIST_MAL_DEBUG);
@@ -1097,7 +1097,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		cntxt->mdb = &state;
 		mnstr_printf(mal_clients[0].fdout, "#Process %d put to sleep\n", (int) (cntxt - mal_clients));
 		cntxt->itrace = 'W';
-		mdbTrap(cntxt, mb, stk, pc);
+		mdbTrap(cntxt, mb, stk, state.p);
 		while (cntxt->itrace == 'W')
 			MT_sleep_ms(300);
 		mnstr_printf(mal_clients[0].fdout, "#Process %d woke up\n", (int) (cntxt - mal_clients));
@@ -1108,7 +1108,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* a trapped call leads to process suspension */
 	/* then the console can be used to attach a debugger */
 	if (mb->trap) {
-		mdbTrap(cntxt, mb, stk, pc);
+		mdbTrap(cntxt, mb, stk, getInstrPtr(mb,pc));
 		return;
 	}
 	p = getInstrPtr(mb, pc);
@@ -1193,7 +1193,7 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1)
 str
 mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int id = *(int *) getArgReference(stk, p, 1);
+	int id = *getArgReference_int(stk, p, 1);
 	Client c;
 
 	(void) cntxt;
@@ -1245,7 +1245,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 }
 
 static void
-printBATelm(stream *f, int i, BUN cnt, BUN first)
+printBATelm(stream *f, bat i, BUN cnt, BUN first)
 {
 	BAT *b, *bs;
 	str tpe;
@@ -1346,10 +1346,10 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.ival) {
+	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.bval != bat_nil) {
 		BAT *b, *bs;
 
-		b = BATdescriptor(v->val.ival);
+		b = BATdescriptor(v->val.bval);
 		if (b == NULL) {
 			mnstr_printf(f, "Could not access descriptor\n");
 			return;
@@ -1372,10 +1372,10 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 }
 
 static void
-printBatDetails(stream *f, int bid)
+printBatDetails(stream *f, bat bid)
 {
 	BAT *b[2];
-	int ret,ret2;
+	bat ret,ret2;
 	MALfcn fcn;
 
 	/* at this level we don't know bat kernel primitives */
@@ -1387,8 +1387,10 @@ printBatDetails(stream *f, int bid)
 		if (b[0] == NULL)
 			return;
 		b[1] = BATdescriptor(ret2);
-		if (b[1] == NULL)
+		if (b[1] == NULL) {
+			BBPunfix(b[0]->batCacheid);
 			return;
+		}
 		BATmultiprintf(f, 3, b, TRUE, 0, TRUE);
 		BBPunfix(b[0]->batCacheid);
 		BBPunfix(b[1]->batCacheid);
@@ -1406,8 +1408,8 @@ static void
 printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 {
 	if (isaBatType(n->type) && v->val.ival) {
-		int bid;
-		int ret,ret2;
+		bat bid;
+		bat ret,ret2;
 		MALfcn fcn;
 		BUN p;
 
@@ -1429,9 +1431,13 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 			b[1] = BATdescriptor(ret2);
 			if (b[0] == NULL || b[1] == NULL) {
 				mnstr_printf(f, "Could not access descriptor\n");
+				if (b[0])
+					BBPunfix(b[0]->batCacheid);
+				if (b[1])
+					BBPunfix(b[1]->batCacheid);
 				return;
 			}
-			p = BUNfnd(b[0], props);
+			p = BUNfnd(BATmirror(b[0]), props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
@@ -1453,7 +1459,7 @@ static str
 memProfileVector(stream *out, int cells)
 {
 	str v;
-	int i;
+	bat i;
 
 	if (cells <= 0)
 		return GDKstrdup("");

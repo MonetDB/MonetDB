@@ -25,10 +25,10 @@ io.printf("#source:%s\n",datafile);
 idxbat := tablet.load(namebat, sepbat, typebat, datafile, len);
 #io.print(idxbat);
 
-b1:bat[:oid,:str] := algebra.fetch(idxbat,0);
+b1:bat[:oid,:str] := algebra.fetch(idxbat,0@0);
 #b1:bat[:oid,:str] := bbp.bind(i1);
 io.print(b1);
 
-b2:bat[:oid,:str] := algebra.fetch(idxbat,1); 
+b2:bat[:oid,:str] := algebra.fetch(idxbat,1@0); 
 #b2:bat[:oid,:str] := bbp.bind(i2);
 io.print(b2);

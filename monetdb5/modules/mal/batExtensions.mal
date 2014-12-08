@@ -56,17 +56,17 @@ pattern bat.partition(b:bat[:oid,:any_1], pieces:int, n:int):bat[:oid,:any_1]
 address CMDBATpartition2
 comment "Create the n-th slice over the BAT broken into severral pieces.";
 
-command bat.imprints(b:bat[:oid,:bte])
+command bat.imprints(b:bat[:oid,:bte]) :void
 address CMDBATimprints;
-command bat.imprints(b:bat[:oid,:sht])
+command bat.imprints(b:bat[:oid,:sht]) :void
 address CMDBATimprints;
-command bat.imprints(b:bat[:oid,:int])
+command bat.imprints(b:bat[:oid,:int]) :void
 address CMDBATimprints;
-command bat.imprints(b:bat[:oid,:lng])
+command bat.imprints(b:bat[:oid,:lng]) :void
 address CMDBATimprints;
-command bat.imprints(b:bat[:oid,:flt])
+command bat.imprints(b:bat[:oid,:flt]) :void
 address CMDBATimprints;
-command bat.imprints(b:bat[:oid,:dbl])
+command bat.imprints(b:bat[:oid,:dbl]) :void
 address CMDBATimprints
 comment "Check/create an imprint index on the BAT";
 

@@ -17,13 +17,16 @@
  * All Rights Reserved.
  */
 
-#ifndef _OPT_GEOSPATIAL_
-#define _OPT_GEOSPATIAL_
-#include "opt_support.h"
-#include "mal_interpreter.h"
+#ifndef _SQL_ASSERT_H_
+#define _SQL_ASSERT_H_
+#include "sql.h"
 
-opt_export int OPTgeospatialImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-#define OPTDEBUGgeospatial  if ( optDebug & (1 <<DEBUG_OPT_GEOSPATIAL) )
-
+sql5_export str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef HAVE_HGE
+sql5_export str SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
+
+#endif /* _SQL_ASSERT_H_ */

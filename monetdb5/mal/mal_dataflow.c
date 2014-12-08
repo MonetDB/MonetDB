@@ -735,7 +735,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	DataFlow flow = NULL;
 	str msg = MAL_SUCCEED;
 	int size;
-	int *ret;
+	bit *ret;
 	int i;
 
 #ifdef DEBUG_FLOW
@@ -746,7 +746,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");
-	ret = (int*) getArgReference(stk,getInstrPtr(mb,startpc),0);
+	ret = getArgReference_bit(stk,getInstrPtr(mb,startpc),0);
 	*ret = FALSE;
 	if (stk->cmd) {
 		*ret = TRUE;
@@ -763,7 +763,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			*ret = TRUE;
 			return MAL_SUCCEED;
 		}
-		i = THREADS;			/* we didn't create an extra thread */
 	}
 	assert(todo);
 	/* in addition, create one more worker that will only execute
@@ -886,13 +885,12 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	MT_lock_destroy(&flow->flowlock);
 	GDKfree(flow);
 
-	if (i != THREADS) {
-		/* we created one worker, now tell one worker to exit again */
-		MT_lock_set(&todo->l, "runMALdataflow");
-		todo->exitcount++;
-		MT_lock_unset(&todo->l, "runMALdataflow");
-		MT_sema_up(&todo->s, "runMALdataflow");
-	}
+	/* we created one worker, now tell one worker to exit again */
+	MT_lock_set(&todo->l, "runMALdataflow");
+	todo->exitcount++;
+	MT_lock_unset(&todo->l, "runMALdataflow");
+	MT_sema_up(&todo->s, "runMALdataflow");
+
 	return msg;
 }
 

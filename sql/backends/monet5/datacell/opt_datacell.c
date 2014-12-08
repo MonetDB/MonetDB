@@ -313,3 +313,59 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		GDKfree(tables[j]);
 	return actions;
 }
+
+str
+OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str modnme;
+	str fcnnme;
+	str msg= MAL_SUCCEED;
+	Symbol s= NULL;
+	lng t,clk= GDKusec();
+	int actions = 0;
+
+	if( p )
+		removeInstruction(mb, p);
+	OPTDEBUGdatacell mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER datacell\n");
+	if( p && p->argc > 1 ){
+		if( getArgType(mb,p,1) != TYPE_str ||
+			getArgType(mb,p,2) != TYPE_str ||
+			!isVarConstant(mb,getArg(p,1)) ||
+			!isVarConstant(mb,getArg(p,2))
+		) {
+			throw(MAL, "optimizer.datacell", ILLARG_CONSTANTS);
+		}
+		if( stk != 0){
+			modnme= *getArgReference_str(stk,p,1);
+			fcnnme= *getArgReference_str(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
+			throw(MAL, "optimizer.datacell", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+		}
+		mb = s->def;
+		stk= 0;
+	}
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,"datacell");
+		return MAL_SUCCEED;
+	}
+	actions= OPTdatacellImplementation(cntxt, mb,stk,p);
+	msg= optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	OPTDEBUGdatacell {
+		mnstr_printf(cntxt->fdout,"=FINISHED datacell %d\n",actions);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+	QOTupdateStatistics("datacell",actions,t);
+	addtoMalBlkHistory(mb,"datacell");
+	return msg;
+}

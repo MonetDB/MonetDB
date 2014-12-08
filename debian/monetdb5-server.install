@@ -26,7 +26,6 @@ debian/tmp/usr/lib/monetdb5/p*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/q*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/r*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sa*.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/se*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sr*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/st*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sy*.mal usr/lib/monetdb5

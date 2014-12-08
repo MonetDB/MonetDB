@@ -40,3 +40,14 @@ orderby_on_constant.Bug-3554
 div_by_zero_in_return.Bug-3555
 round-sorted.Bug-3562
 locate-offset.Bug-3563
+aggr-with-limit.Bug-3498
+sign-sorted.Bug-3594
+nil_2dec_lng.Bug-3592
+manifold.Bug-3556
+duplicate_primary_keys.Bug-3474
+copy_decimal_into.Bug-3596
+insert_into_temp_table.Bug-3600
+queueError.Bug-3604
+querylog.Bug-3607
+fk-property-assert.Bug-3612
+coalesce.Bug-3616

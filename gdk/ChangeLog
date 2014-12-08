@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Oct 28 2014 Sjoerd Mullender <sjoerd@acm.org>
+- Changed a bunch of hash-related functions to work on the tail column.
+  The functions that have been changed to work on the tail column are:
+  BAThash, BATprepareHash, HASHgonebad, HASHins, and HASHremove.
+

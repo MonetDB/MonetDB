@@ -39,104 +39,11 @@
 #define FUN(a,b,c,d) CONCAT_4(a,b,c,d)
 
 
-str
-FUN(,TP1,_2_,TP2) (TP2 *res, TP1 *v)
-{
-	dbl val = *v;
-
-	/* shortcut nil */
-	if (*v == NIL(TP1)) {
-		*res = NIL(TP2);
-		return (MAL_SUCCEED);
-	}
-
-	/* see if the number fits in the data type */
-	if ((dbl) (TP2) val > (dbl) GDKmin(TP2) && val > (dbl) GDKmin(TP2) && val <= (dbl) GDKmax(TP2)) {
-		*res = (TP2) val;
-		return (MAL_SUCCEED);
-	} else {
-		throw(SQL, "convert", "22003!value (" "%f" ") exceeds limits of type "STRNG(TP2), val);
-	}
-}
-
-str
-FUN(bat,TP1,_2_,TP2) (int *res, int *bid)
-{
-	BAT *b, *bn;
-	TP1 *p, *q;
-	char *msg = NULL;
-	TP2 *o;
-	dbl val;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_2_,TP2)), "Cannot access descriptor");
-	}
-	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_2_,TP2)), MAL_MALLOC_FAIL);
-	}
-	BATseqbase(bn, b->hseqbase);
-	bn->H->nonil = 1;
-	bn->T->nonil = 1;
-	o = (TP2 *) Tloc(bn, BUNfirst(bn));
-	p = (TP1 *) Tloc(b, BUNfirst(b));
-	q = (TP1 *) Tloc(b, BUNlast(b));
-	if (b->T->nonil) {
-		for (; p < q; p++, o++) {
-			val = *p;
-			/* see if the number fits in the data type */
-			if ((dbl) (TP2) val > (dbl) GDKmin(TP2) && val > (dbl) GDKmin(TP2) && val <= (dbl) GDKmax(TP2)) {
-				*o = (TP2) val;
-			} else {
-				msg = createException(SQL, "convert", "22003!value (" "%f" ") exceeds limits of type "STRNG(TP2), val);
-				break;
-			}
-		}
-	} else {
-		for (; p < q; p++, o++) {
-			if (*p == NIL(TP1)) {
-				*o = NIL(TP2);
-				bn->T->nonil = FALSE;
-			} else {
-				val = *p;
-				/* see if the number fits in the data type */
-				if ((dbl) (TP2) val > (dbl) GDKmin(TP2) && val > (dbl) GDKmin(TP2) && val <= (dbl) GDKmax(TP2)) {
-					*o = (TP2) val;
-				} else {
-					msg = createException(SQL, "convert", "22003!value (" "%f" ") exceeds limits of type "STRNG(TP2), val);
-					break;
-				}
-			}
-		}
-	}
-	BATsetcount(bn, BATcount(b));
-	bn->hrevsorted = bn->batCount <= 1;
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
-	BATkey(BATmirror(bn), FALSE);
-
-	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
-
-	if (b->htype != bn->htype) {
-		BAT *r = VIEWcreate(b, bn);
-
-		BBPkeepref(*res = r->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		return msg;
-	}
-	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return msg;
-}
-
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
 */
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
+FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	int p = *d2, inlen = 1, scale = *s2;
 	TP1 r;
@@ -167,7 +74,7 @@ FUN(,TP1,_num2dec_,TP2) (TP2 *res, TP1 *v, int *d2, int *s2)
 }
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (int *res, int *bid, int *d2, int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
 	BATiter bi;

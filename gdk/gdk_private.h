@@ -76,6 +76,10 @@ void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
+BAT *BATmaterialize(BAT *b)
+	__attribute__((__visibility__("hidden")));
+BAT *BATmaterializeh(BAT *b)
+	__attribute__((__visibility__("hidden")));
 BAT *BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)
@@ -148,6 +152,8 @@ int HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
+int HEAPfree(Heap *h, int remove)
+	__attribute__((__visibility__("hidden")));
 int HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__visibility__("hidden")));
 int HEAPsave(Heap *h, const char *nme, const char *ext)
@@ -158,7 +164,7 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, char *bins, const void *v)
+int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)
@@ -193,6 +199,8 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+BAT *VIEWhead(BAT *b)
+	__attribute__((__visibility__("hidden")));
 BAT *VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
@@ -210,11 +218,12 @@ struct PROPrec {
 struct Imprints {
 	bte bits;		/* how many bits in imprints */
 	Heap *imprints;
-	void *bins;		/* pointer into imprints heap */
-	void *imps;		/* pointer into imprints heap */
-	void *dict;		/* pointer into imprints heap */
-	BUN impcnt;		/* counter for imprints*/
-	BUN dictcnt;		/* counter for cache dictionary */
+	void *bins;		/* pointer into imprints heap (bins borders)  */
+	BUN *stats;		/* pointer into imprints heap (stats per bin) */
+	void *imps;		/* pointer into imprints heap (bit vectors)   */
+	void *dict;		/* pointer into imprints heap (dictionary)    */
+	BUN impcnt;		/* counter for imprints                       */
+	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
 typedef struct {

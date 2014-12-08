@@ -1,4 +1,6 @@
-load
+# IMPORTANT: export environment variable LC_ALL="en_US.UTF-8"  before running these tests.
+
+#ToDo load
 
 # pgregress set; in order as given by
 # http://git.postgresql.org/gitweb/?p=postgresql.git;a=blob_plain;f=src/test/regress/serial_schedule;hb=HEAD
@@ -27,12 +29,12 @@ float8
 numeric
 strings
 numerology
-HAVE_GEOM?point
-HAVE_GEOM?lseg
-HAVE_GEOM?box
-HAVE_GEOM?path
-HAVE_GEOM?polygon
-HAVE_GEOM?circle
+#ToDo HAVE_GEOM?point
+#ToDo HAVE_GEOM?lseg
+#ToDo HAVE_GEOM?box
+#ToDo HAVE_GEOM?path
+#ToDo HAVE_GEOM?polygon
+#ToDo HAVE_GEOM?circle
 date
 time
 timetz
@@ -44,69 +46,70 @@ reltime
 # tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
 inet
 comments
-HAVE_GEOM?geometry
-horology
-oidjoins
-type_sanity
-opr_sanity
+#ToDo HAVE_GEOM?geometry
+#ToDo horology
+#ToDo oidjoins
+#ToDo type_sanity
+#ToDo opr_sanity
 insert
-create_type
+#ToDo create_type
 create_table
 create_misc
 create_operator
-create_index
-create_view
+#ToDo create_index
+#ToDo create_view
 create_aggregate
-triggers
-inherit
+#ToDo triggers
+#ToDo inherit
 vacuum
-sanity_check
-errors
-select
+#ToDo sanity_check
+#ToDo errors
+#ToDo select
 select_into
-select_distinct
-select_distinct_on
-select_implicit
-select_having
-subselect
-union
-case
-join
-aggregates
-transactions
-random
-portals
+#ToDo select_distinct
+#ToDo select_distinct_on
+#ToDo select_implicit
+#ToDo select_having
+#ToDo subselect
+#ToDo union
+case		#[MK] interactive behavior is inconsistent with script run, see bugreport
+#ToDo join
+#ToDo aggregates
+#ToDo transactions
+random	#[MK] causes an non-displayed error and lost of information in the result
+#portals [MK] MonetDB does not support SQL cursor/fetch operations
 arrays
-btree_index
-hash_index
-update
-namespace
-privileges
-rules
-select_views
-portals_p2
-foreign_key
-cluster
-limit
-plpgsql
-copy2
-temp
-domain
-rangefuncs
-prepare
+#btree_index	[MK]MonetDB does not support construction of btrees
+#hash_index		[MK]MonetDB does not support hash index management by the user
+#ToDo update
+#ToDo namespace
+#ToDo privileges
+#ToDo rules
+#ToDo select_views
+#ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
+#ToDo foreign_key
+#cluster	[MK]MonetDB does not support clustering of tables
+loadwisconsin #[MK] copied from benchmarks
+limit	#[MK] handles
+#ToDo plpgsql
+#ToDo copy2
+#ToDo temp
+#domain [MK] MonetDB does not support type/domain/object system
+#ToDo rangefuncs
+#prepare [MK] seems like a useful feature
 without_oid
-conversion
-truncate
+#ToDo conversion
+#truncate [MK] a combination of a DROP TABLE followed by its CREATE table, feature request?
 alter_table
-sequence
-polymorphism
-rowtypes
-stats
+#ToDo sequence
+#ToDo polymorphism
+#rowtypes [MK] MonetDB does not support object type definitions 
+#ToDo stats
 
 # these four were in a 2005 pgregress set, but are no longer
 # in the 2014 v9.3.4 pgregress set; not sure when/where they
 # should be run; keep them for last for now
 drop
-mule_internal
+#ToDo mule_internal
 numeric_big
-sql_ascii
+#ToDo sql_ascii

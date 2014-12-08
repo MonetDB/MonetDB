@@ -604,7 +604,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
 		char *msg = "";
 
 		switch (s->token) {
@@ -1007,6 +1007,9 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_error(sql, 02, "42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		return NULL;
 	}
+	if (!name) 
+		name = auth;
+	assert(name);
 	if (mvc_bind_schema(sql, name)) {
 		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
 		return NULL;
@@ -1016,9 +1019,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret;
 
-		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, 
-			   dlist_get_schema_name(auth_name),
-			   schema_auth(auth_name), 0);
+		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;
@@ -1053,6 +1054,42 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 	return sname;
 }
 
+static int
+rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt)
+{
+	node *n, *m;
+
+	if (cs_size(&nt->columns) != cs_size(&nnt->columns)) {
+		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
+		return -1;
+	}
+	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
+		sql_column *nc = n->data;
+		sql_column *mc = m->data;
+
+		if (subtype_cmp(&nc->type, &mc->type) != 0) {
+			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+			return -2;
+		}
+	}
+	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs)) {
+		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+		return -1;
+	}
+	if (cs_size(&nt->idxs))
+	for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
+		sql_idx *ni = n->data;
+		sql_idx *mi = m->data;
+
+		/* todo check def */
+		if (ni->type != mi->type) {
+			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+			return -2;
+		}
+	}
+	return 0;
+}
+
 static sql_rel *
 rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 {
@@ -1069,7 +1106,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s'", tname);
+		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
+			return sql_error(sql, 02, "42S02!ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
@@ -1096,6 +1135,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			if (t->s && !nt->s)
 				nt->s = t->s;
 
+			if (nt->type == tt_merge_table)
+				return sql_error(sql, 02, "42S02!ALTER TABLE: read only MERGE TABLES are not supported");
+
 			if (state == tr_readonly) {
 				nt = mvc_readonly(sql, nt, 1);
 			} else {
@@ -1117,8 +1159,12 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			char *ntname = te->data.lval->h->data.sval;
 			sql_table *nnt = mvc_bind_table(sql, s, ntname);
 
-			if (nnt)
+			/* check tables */
+			if (nnt) {
+				if (rel_check_tables(sql, t, nnt) < 0)
+					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
+			}
 		}
 		/* table drop table */
 		if (te->token == SQL_DROP_TABLE) {
@@ -1133,6 +1179,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 				cs_del(&nt->tables, n, ntt->base.flag); 
 			}
 		}
+
+		if (!isTable(nt))
+			return res;
 
 		/* new columns need update with default values */
 		updates = table_update_array(sql, nt);

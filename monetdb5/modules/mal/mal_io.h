@@ -53,9 +53,9 @@ io_export str IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOexport(bit *ret, int *bid, str *fnme);
+io_export str IOexport(bit *ret, bat *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
-io_export str IOimport(int *ret, int *bid, str *fnme);
+io_export str IOimport(bat *ret, bat *bid, str *fnme);
 io_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

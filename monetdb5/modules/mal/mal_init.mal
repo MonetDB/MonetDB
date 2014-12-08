@@ -88,7 +88,6 @@ include mat; 	# experimental
 include inspect;
 include manual;
 include language;
-include mal_mapi;
 
 include profiler;
 include querylog;
@@ -111,6 +110,8 @@ include run_isolate;
 include run_memo;
 include run_octopus;
 include srvpool;
+
+include mal_mapi;
 
 # Any extensions (MAL scripts) that should be automatically loaded upon
 # startup can be placed in the autoload directory.  One typically finds

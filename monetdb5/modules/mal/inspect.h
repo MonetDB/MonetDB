@@ -41,8 +41,6 @@
 #define inspect_export extern
 #endif
 
-inspect_export str INSPECTgetFunction(int *ret);
-inspect_export str INSPECTgetModule(int *ret);
 inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -55,11 +53,11 @@ inspect_export str INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 inspect_export str INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTgetEnvironment(int *ret, int *ret2);
+inspect_export str INSPECTgetEnvironment(bat *ret, bat *ret2);
 inspect_export str INSPECTgetEnvironmentKey(str *ret, str *key);
-inspect_export str INSPECTatom_names(int *ret);
-inspect_export str INSPECTatom_sup_names(int *ret);
-inspect_export str INSPECTatom_sizes(int *ret);
+inspect_export str INSPECTatom_names(bat *ret);
+inspect_export str INSPECTatom_sup_names(bat *ret);
+inspect_export str INSPECTatom_sizes(bat *ret);
 inspect_export str INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

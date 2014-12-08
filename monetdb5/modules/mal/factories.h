@@ -37,12 +37,10 @@
 #define factories_export extern
 #endif
 
-factories_export str FCTgetPlants(int *ret, int *ret2);
+factories_export str FCTgetPlants(bat *ret, bat *ret2);
 factories_export str FCTgetCaller(int *ret);
-factories_export str FCTgetOwners(int *ret);
-factories_export str FCTgetArrival(int *ret);
-factories_export str FCTgetDeparture(int *ret);
-factories_export str FCTsetLocation(int *ret, str *loc);
-factories_export str FCTgetLocations(int *ret);
+factories_export str FCTgetOwners(bat *ret);
+factories_export str FCTgetArrival(bat *ret);
+factories_export str FCTgetDeparture(bat *ret);
 factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _FACTORIES_H */

@@ -25,9 +25,9 @@
 #include <msabaoth.h>
 mal_export str SABAOTHgetDBfarm(str *ret);
 mal_export str SABAOTHgetDBname(str *ret);
-mal_export str SABAOTHmarchScenario(int *ret, str *lang);
-mal_export str SABAOTHretreatScenario(int *ret, str *lang);
-mal_export str SABAOTHmarchConnection(int *ret, str *host, int *port);
+mal_export str SABAOTHmarchScenario(void *ret, str *lang);
+mal_export str SABAOTHretreatScenario(void *ret, str *lang);
+mal_export str SABAOTHmarchConnection(void *ret, str *host, int *port);
 mal_export str SABAOTHgetLocalConnection(str *ret);
 mal_export str SABAOTHgetMyStatus(sabdb** ret);
 mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);

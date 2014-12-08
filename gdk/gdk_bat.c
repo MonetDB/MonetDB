@@ -152,20 +152,20 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (ht) {
-			bn->H->heap.filename = GDKfilepath(-1, NULL, nme, "head");
+			bn->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, "head");
 			if (bn->H->heap.filename == NULL)
 				goto bailout;
 		}
 
 		if (tt) {
-			bn->T->heap.filename = GDKfilepath(-1, NULL, nme, "tail");
+			bn->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
 			if (bn->T->heap.filename == NULL)
 				goto bailout;
 		}
 
 		if (ATOMneedheap(ht)) {
 			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->H->vheap->filename = GDKfilepath(-1, NULL, nme, "hheap")) == NULL)
+			    (bn->H->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "hheap")) == NULL)
 				goto bailout;
 			bn->H->vheap->parentid = bn->batCacheid;
 			bn->H->vheap->farmid = BBPselectfarm(role, bn->htype, varheap);
@@ -173,7 +173,7 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->T->vheap->filename = GDKfilepath(-1, NULL, nme, "theap")) == NULL)
+			    (bn->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
 				goto bailout;
 			bn->T->vheap->parentid = bn->batCacheid;
 			bn->T->vheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
@@ -183,15 +183,15 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	return bs;
       bailout:
 	if (ht)
-		HEAPfree(&bn->H->heap);
+		HEAPfree(&bn->H->heap, 1);
 	if (tt)
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 	if (bn->H->vheap) {
-		HEAPfree(bn->H->vheap);
+		HEAPfree(bn->H->vheap, 1);
 		GDKfree(bn->H->vheap);
 	}
 	if (bn->T->vheap) {
-		HEAPfree(bn->T->vheap);
+		HEAPfree(bn->T->vheap, 1);
 		GDKfree(bn->T->vheap);
 	}
 	GDKfree(bs);
@@ -265,15 +265,15 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	}
 	if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		return NULL;
 	}
 
 	if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		if (tt)
-			HEAPfree(&bn->T->heap);
+			HEAPfree(&bn->T->heap, 1);
 		GDKfree(bn->H->vheap);
 		if (bn->T->vheap)
 			GDKfree(bn->T->vheap);
@@ -281,11 +281,11 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	}
 	if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
 		if (ht)
-			HEAPfree(&bn->H->heap);
+			HEAPfree(&bn->H->heap, 1);
 		if (tt)
-			HEAPfree(&bn->T->heap);
+			HEAPfree(&bn->T->heap, 1);
 		if (bn->H->vheap) {
-			HEAPfree(bn->H->vheap);
+			HEAPfree(bn->H->vheap, 1);
 			GDKfree(bn->H->vheap);
 		}
 		GDKfree(bn->T->vheap);
@@ -360,9 +360,9 @@ BATattach(int tt, const char *heapfile, int role)
 	path = GDKfilepath(bn->T->heap.farmid, BATDIR, bn->T->heap.filename, "new");
 	GDKcreatedir(path);
 	if (rename(heapfile, path) < 0) {
-		GDKfree(path);
 		GDKsyserror("BATattach: cannot rename heapfile\n");
-		HEAPfree(&bn->T->heap);
+		GDKfree(path);
+		HEAPfree(&bn->T->heap, 1);
 		GDKfree(bs);
 		return NULL;
 	}
@@ -381,7 +381,7 @@ BATattach(int tt, const char *heapfile, int role)
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
 	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
-		HEAPfree(&bn->T->heap);
+		HEAPfree(&bn->T->heap, 1);
 		GDKfree(bs);
 		return NULL;
 	}
@@ -534,21 +534,21 @@ BATclear(BAT *b, int force)
 
 	/* kill all search accelerators */
 	if (b->H->hash) {
-		HASHremove(b);
+		HASHremove(bm);
 	}
 	if (b->T->hash) {
-		HASHremove(bm);
+		HASHremove(b);
 	}
 	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
-	if (b->batDeleted == b->batInserted &&
+	if ((b->batDeleted == b->batInserted || force) &&
 	    BATatoms[b->htype].atomDel == NULL &&
 	    BATatoms[b->ttype].atomDel == NULL) {
 		Heap hh, th;
 
 		/* no stable elements: we do a quick heap clean */
-		/* need to clean heap which keep data even though the
+		/* need to clean heap which keeps data even though the
 		   BUNs got removed. This means reinitialize when
 		   free > 0
 		*/
@@ -568,20 +568,20 @@ BATclear(BAT *b, int force)
 			if (b->T->vheap->free > 0 &&
 			    ATOMheap(b->ttype, &th, cap) < 0) {
 				if (b->H->vheap && b->H->vheap->free > 0)
-					HEAPfree(&hh);
+					HEAPfree(&hh, 1);
 				return NULL;
 			}
 		}
 		assert(b->H->vheap == NULL || b->H->vheap->parentid == abs(b->batCacheid));
 		if (b->H->vheap && b->H->vheap->free > 0) {
 			hh.parentid = b->H->vheap->parentid;
-			HEAPfree(b->H->vheap);
+			HEAPfree(b->H->vheap, 0);
 			*b->H->vheap = hh;
 		}
 		assert(b->T->vheap == NULL || b->T->vheap->parentid == abs(b->batCacheid));
 		if (b->T->vheap && b->T->vheap->free > 0) {
 			th.parentid = b->T->vheap->parentid;
-			HEAPfree(b->T->vheap);
+			HEAPfree(b->T->vheap, 0);
 			*b->T->vheap = th;
 		}
 	} else {
@@ -609,6 +609,8 @@ BATclear(BAT *b, int force)
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
+	BATseqbase(b, 0);
+	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
 	return b;
@@ -638,20 +640,20 @@ BATfree(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	if (b->htype)
-		HEAPfree(&b->H->heap);
+		HEAPfree(&b->H->heap, 0);
 	else
 		assert(!b->H->heap.base);
 	if (b->ttype)
-		HEAPfree(&b->T->heap);
+		HEAPfree(&b->T->heap, 0);
 	else
 		assert(!b->T->heap.base);
 	if (b->H->vheap) {
 		assert(b->H->vheap->parentid == b->batCacheid);
-		HEAPfree(b->H->vheap);
+		HEAPfree(b->H->vheap, 0);
 	}
 	if (b->T->vheap) {
 		assert(b->T->vheap->parentid == b->batCacheid);
-		HEAPfree(b->T->vheap);
+		HEAPfree(b->T->vheap, 0);
 	}
 
 	b = BBP_cache(-b->batCacheid);
@@ -721,20 +723,20 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 	if (src->filename && src->newstorage != STORE_MEM) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
-		if ((dst->filename = GDKfilepath(-1, NULL, nme, ext)) == NULL)
+		if ((dst->filename = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL)
 			return -1;
 	}
 	return HEAPcopy(dst, src);
 }
 
 static void
-heapfree(Heap *dst, Heap *src)
+heapmove(Heap *dst, Heap *src)
 {
 	if (src->filename == NULL) {
 		src->filename = dst->filename;
 		dst->filename = NULL;
 	}
-	HEAPfree(dst);
+	HEAPfree(dst, 0);
 	*dst = *src;
 }
 
@@ -878,23 +880,23 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) < 0) ||
 			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) < 0) ||
 			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap) < 0)) {
-				HEAPfree(&thp);
-				HEAPfree(&hhp);
-				HEAPfree(&bthp);
-				HEAPfree(&bhhp);
+				HEAPfree(&thp, 1);
+				HEAPfree(&hhp, 1);
+				HEAPfree(&bthp, 1);
+				HEAPfree(&bhhp, 1);
 				BBPreclaim(bn);
 				return NULL;
 			}
 			/* succeeded; replace dummy small heaps by the
 			 * real ones */
-			heapfree(&bn->H->heap, &bhhp);
-			heapfree(&bn->T->heap, &bthp);
+			heapmove(&bn->H->heap, &bhhp);
+			heapmove(&bn->T->heap, &bthp);
 			hhp.parentid = bn->batCacheid;
 			thp.parentid = bn->batCacheid;
 			if (bn->H->vheap)
-				heapfree(bn->H->vheap, &hhp);
+				heapmove(bn->H->vheap, &hhp);
 			if (bn->T->vheap)
-				heapfree(bn->T->vheap, &thp);
+				heapmove(bn->T->vheap, &thp);
 
 			/* make sure we use the correct capacity */
 			hcap = (BUN) (bn->htype ? bn->H->heap.size >> bn->H->shift : 0);
@@ -957,7 +959,8 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	/* set properties (note that types may have changed in the copy) */
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
-	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
+	} else if (ATOMstorage(ht) == ATOMstorage(b->htype) &&
+		   BATatoms[ht].atomCmp == BATatoms[b->htype].atomCmp) {
 		bn->hsorted = b->hsorted;
 		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
@@ -970,7 +973,8 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
-	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
+	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
+		   BATatoms[tt].atomCmp == BATatoms[b->ttype].atomCmp) {
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
@@ -1203,10 +1207,10 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 	void_materialize(b, h);
 	void_materialize(b, t);
 
-	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h)) != BUN_NONE) {
+	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(bm, h)) != BUN_NONE) {
 		if (BUNinplace(b, p, h, t, force) == NULL)
 			return NULL;
-	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(bm, t)) != BUN_NONE) {
+	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(b, t)) != BUN_NONE) {
 		if (BUNinplace(bm, p, t, h, force) == NULL)
 			return NULL;
 	} else {
@@ -1235,12 +1239,12 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 
 		if (b->H->hash) {
-			HASHins(b, p, h);
+			HASHins(bm, p, h);
 			if (hsize && hsize != b->H->vheap->size)
 				HEAPwarm(b->H->vheap);
 		}
 		if (b->T->hash) {
-			HASHins(bm, p, t);
+			HASHins(b, p, t);
 
 			if (tsize && tsize != b->T->vheap->size)
 				HEAPwarm(b->T->vheap);
@@ -1298,8 +1302,8 @@ BUNappend(BAT *b, const void *t, bit force)
 	}
 
 	assert(!isVIEW(b));
-	bm = BBP_cache(-b->batCacheid);
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t) != BUN_NONE) {
+	bm = BATmirror(b);
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
 		return b;
 	}
 
@@ -1340,12 +1344,12 @@ BUNappend(BAT *b, const void *t, bit force)
 	 * REASON: some accelerator updates (qsignature) use the hashes!
 	 */
 	if (b->H->hash && h) {
-		HASHins(b, i, h);
+		HASHins(bm, i, h);
 		if (hsize && hsize != b->H->vheap->size)
 			HEAPwarm(b->H->vheap);
 	}
 	if (b->T->hash) {
-		HASHins(bm, i, t);
+		HASHins(b, i, t);
 
 		if (tsize && tsize != b->T->vheap->size)
 			HEAPwarm(b->T->vheap);
@@ -1572,17 +1576,19 @@ BAT *
 BUNdelHead(BAT *b, const void *x, bit force)
 {
 	BUN p;
+	BAT *bm;
 
 	BATcheck(b, "BUNdelHead");
 
+	bm = BATmirror(b);
 	if (x == NULL) {
 		x = ATOMnilptr(b->htype);
 	}
-	if ((p = BUNfnd(b, x)) != BUN_NONE) {
+	if ((p = BUNfnd(bm, x)) != BUN_NONE) {
 		ALIGNdel(b, "BUNdelHead", force);	/* zap alignment info */
 		do {
 			BUNdelete(b, p, force);
-		} while ((p = BUNfnd(b, x)) != BUN_NONE);
+		} while ((p = BUNfnd(bm, x)) != BUN_NONE);
 	}
 	return b;
 }
@@ -1692,10 +1698,10 @@ BUNreplace(BAT *b, const void *h, const void *t, bit force)
 	BATcheck(h, "BUNreplace: head value is nil");
 	BATcheck(t, "BUNreplace: tail value is nil");
 
-	if ((p = BUNfnd(b, h)) == BUN_NONE)
+	if ((p = BUNfnd(BATmirror(b), h)) == BUN_NONE)
 		return b;
 
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(BATmirror(b), t) != BUN_NONE) {
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
 		return b;
 	}
 	if (b->ttype == TYPE_void) {
@@ -1720,14 +1726,14 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	int res = GDK_SUCCEED;
 	BUN p = BUN_NONE;
 	BUN oldInserted = b->batInserted;
-	BATiter bi = bat_iterator(b);
+	BAT *bm = BATmirror(b);
 
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
 	assert(b->batCount > (id -b->hseqbase));
 
 	b->batInserted = 0;
-	BUNfndVOID(p, bi, (ptr) &id);
+	p = BUNfndVOID(bm, &id);
 
 	assert(force || p >= b->batInserted);	/* we don't want delete/ins */
 	assert(force || !b->batRestricted);
@@ -1772,10 +1778,10 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = BATatoms[b->htype].atomCmp;
+	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
 
 	BATloop(b, p, q) {
-		if ((*cmp)(v, BUNhead(bi, p)) == 0)
+		if ((*cmp)(v, BUNtail(bi, p)) == 0)
 			return p;
 	}
 	return BUN_NONE;
@@ -1785,20 +1791,19 @@ BUN
 BUNfnd(BAT *b, const void *v)
 {
 	BUN r = BUN_NONE;
-	BATiter bi = bat_iterator(b);
+	BATiter bi;
 
 	BATcheck(b, "BUNfnd");
 	if (!v)
 		return r;
-	if (BAThvoid(b)) {
-		BUNfndVOID(r, bi, v);
-		return r;
+	if (BATtvoid(b))
+		return BUNfndVOID(b, v);
+	if (!b->T->hash) {
+		if (BATtordered(b) || BATtrevordered(b))
+			return SORTfnd(b, v);
 	}
-	if (!b->H->hash) {
-		if (BAThordered(b) || BAThrevordered(b))
-			return SORTfnd(BATmirror(b), v);
-	}
-	switch (ATOMstorage(b->htype)) {
+	bi = bat_iterator(b);
+	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		HASHfnd_bte(r, bi, v);
 		break;
@@ -1882,7 +1887,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	    (BATtordered(b) &&
 	     (*tcmp) (y, BUNtail(bi, p)) == 0 &&
 	     (*tcmp) (y, BUNtail(bi, q - 1)) == 0)) {
-		return BUNfnd(b, x);
+		return BUNfnd(BATmirror(b), x);
 	}
 
 	/* positional lookup is always the best choice */
@@ -1934,9 +1939,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			 * BUNlocate). Other threads might then crash.
 			 */
 			if (dohash(v->H))
-				(void) BATprepareHash(v);
-			if (dohash(v->T))
 				(void) BATprepareHash(BATmirror(v));
+			if (dohash(v->T))
+				(void) BATprepareHash(v);
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -1950,7 +1955,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 					v = BATmirror(v);
 				}
 				/* remove the least selective hash table */
-				HASHremove(BATmirror(v));
+				HASHremove(v);
 			}
 			if (v->H->hash == NULL) {
 				usemirror();
@@ -2045,25 +2050,26 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	if (b->H->hash) {
 		BUN h;
 
+		bi = bat_iterator(BATmirror(b)); /* HASHloop works on tail */
 		if (hint && tint) {
 			HASHloop_int(bi, b->H->hash, h, x)
-			    if (*(int *) y == *(int *) BUNtloc(bi, h))
+			    if (*(int *) y == *(int *) BUNhloc(bi, h))
 				return h;
 		} else if (hint && tlng) {
 			HASHloop_int(bi, b->H->hash, h, x)
-			    if (*(lng *) y == *(lng *) BUNtloc(bi, h))
+			    if (*(lng *) y == *(lng *) BUNhloc(bi, h))
 				return h;
 		} else if (hlng && tint) {
 			HASHloop_lng(bi, b->H->hash, h, x)
-			    if (*(int *) y == *(int *) BUNtloc(bi, h))
+			    if (*(int *) y == *(int *) BUNhloc(bi, h))
 				return h;
 		} else if (hlng && tlng) {
 			HASHloop_lng(bi, b->H->hash, h, x)
-			    if (*(lng *) y == *(lng *) BUNtloc(bi, h))
+			    if (*(lng *) y == *(lng *) BUNhloc(bi, h))
 				return h;
 		} else {
 			HASHloop(bi, b->H->hash, h, x)
-			    if ((*tcmp) (y, BUNtail(bi, h)) == 0)
+			    if ((*tcmp) (y, BUNhead(bi, h)) == 0)
 				return h;
 		}
 		return BUN_NONE;
@@ -2130,6 +2136,10 @@ BATsetcount(BAT *b, BUN cnt)
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
+	if (cnt <= 1) {
+		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
+		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+	}
 	assert(b->batCapacity >= cnt);
 }
 
@@ -2749,7 +2759,10 @@ BATmode(BAT *b, int mode)
 		BBPdirty(1);
 
 		if (mode == PERSISTENT && isVIEW(b)) {
-			VIEWreset(b);
+			if (VIEWreset(b) == NULL) {
+				GDKerror("BATmode: cannot allocate memory.\n");
+				return NULL;
+			}
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
@@ -2978,10 +2991,7 @@ BATassertHeadProps(BAT *b)
 				if (cmp == 0)
 					seennil = 1;
 			}
-			if (hp->storage == STORE_MEM)
-				HEAPfree(hp);
-			else
-				HEAPdelete(hp, nme, ext);
+			HEAPfree(hp, 1);
 			GDKfree(hp);
 			GDKfree(hs);
 			GDKfree(ext);
@@ -3234,10 +3244,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 		}
 	}
 	if (hs) {
-		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
-		else
-			HEAPdelete(hp, nme, ext);
+		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);

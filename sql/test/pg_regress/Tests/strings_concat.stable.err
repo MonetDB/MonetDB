@@ -69,19 +69,12 @@ stderr of test 'strings_concat` in directory 'sql/test/pg_regress` itself:
 # 22:00:36 >  ./strings_concat.SQL.sh strings_concat 
 # 22:00:36 >  
 
-
-# 22:00:36 >  
-# 22:00:36 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=38905  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/strings_concat.sql
-# 22:00:36 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
 QUERY = SELECT 'first line'
         ' - next line' /* this comment is not allowed here */
         ' - third line'
         	AS "Illegal 
 ERROR = !unexpected end of input
-
-= ! above error messages need to be verified (with expected output in sql/test/pg_regress/expected/strings_concat.out) ! =
 
 # 22:00:37 >  
 # 22:00:37 >  Done.

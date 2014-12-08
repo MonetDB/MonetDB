@@ -742,8 +742,9 @@ getFileSize(stream *s)
        if (s->read == file_read) {
                struct stat stb;
 
-               fstat(fileno((FILE *) s->stream_data.p), &stb);
-               return (size_t) stb.st_size;
+               if (fstat(fileno((FILE *) s->stream_data.p), &stb) == 0)
+		       return (size_t) stb.st_size;
+	       /* we shouldn't get here... */
        }
        return 0;               /* unknown */
 }
@@ -1645,19 +1646,38 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #endif
 		|| (nr < 0 &&	/* syscall failed */
 		    s->timeout > 0 && /* potentially timeout */
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEWOULDBLOCK &&
+#else
 		    (errno == EAGAIN || errno == EWOULDBLOCK) && /* it was! */
+#endif
 		    s->timeout_func != NULL && /* callback function exists */
 		    !(*s->timeout_func)())     /* callback says don't stop */
-		|| (nr < 0 && errno == EINTR)) /* interrupted */
+		|| (nr < 0 &&
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEINTR
+#else
+		    errno == EINTR
+#endif
+			)) /* interrupted */
 		) {
 		errno = 0;
+#ifdef _MSC_VER
+		WSASetLastError(0);
+#endif
 		if (nr > 0)
 			res += nr;
 	}
 	if ((size_t) res >= elmsize)
 		return (ssize_t) (res / elmsize);
 	if (nr < 0) {
-		if (s->timeout > 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		if (s->timeout > 0 &&
+#ifdef _MSC_VER
+		    WSAGetLastError() == WSAEWOULDBLOCK
+#else
+		    (errno == EAGAIN || errno == EWOULDBLOCK)
+#endif
+			)
 			s->errnr = MNSTR_TIMEOUT;
 		else
 			s->errnr = MNSTR_WRITE_ERROR;
@@ -1671,11 +1691,11 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t nr = 0, size = (ssize_t) (elmsize * cnt);
 
-	if (s->errnr || size == 0)
+	if (s->errnr)
 		return -1;
-
 	if (size == 0)
 		return 0;
+
 #ifdef _MSC_VER
 	/* recv only takes an int parameter, and read does not accept
 	 * sockets */
@@ -1689,6 +1709,9 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 			int ret;
 
 			errno = 0;
+#ifdef _MSC_VER
+			WSASetLastError(0);
+#endif
 			FD_ZERO(&fds);
 			FD_SET(s->stream_data.s, &fds);
 			tv.tv_sec = s->timeout / 1000;
@@ -1704,7 +1727,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 				s->errnr = MNSTR_TIMEOUT;
 				return -1;
 			}
-			if (ret == -1) {
+			if (ret == SOCKET_ERROR) {
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
@@ -1715,13 +1738,17 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		}
 #ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
+		if (nr == SOCKET_ERROR) {
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
 #else
 		nr = read(s->stream_data.s, buf, size);
-#endif
 		if (nr == -1) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
+#endif
 		break;
 	}
 	if (nr == 0)
@@ -1806,10 +1833,13 @@ socket_open(SOCKET sock, const char *name)
 	s->update_timeout = socket_update_timeout;
 
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 #if defined(SO_DOMAIN)
 	{
 		socklen_t len = (socklen_t) sizeof(domain);
-		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) < 0)
+		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) == SOCKET_ERROR)
 			domain = AF_INET; /* give it a value if call fails */
 	}
 #endif
@@ -1938,6 +1968,9 @@ udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return (ssize_t) cnt;
 	addrlen = sizeof(udp->addr);
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	if ((res = sendto(udp->s, buf,
 #ifdef NATIVE_WIN32
 			  (int)	/* on Windows, the length is an int... */
@@ -1966,6 +1999,9 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (size == 0)
 		return 0;
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	if ((res = recvfrom(udp->s, buf,
 #ifdef NATIVE_WIN32
 			    (int)	/* on Windows, the length is an int... */
@@ -2019,6 +2055,9 @@ udp_create(const char *name)
 	s->stream_data.p = udp;
 
 	errno = 0;
+#ifdef _MSC_VER
+	WSASetLastError(0);
+#endif
 	return s;
 }
 
@@ -2045,7 +2084,7 @@ udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return -1;
-	if (!write && bind(udp->s, serv, servsize) < 0)
+	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
 		return -1;
 	return 0;
 }
@@ -3576,7 +3615,7 @@ bstream_destroy(bstream *s)
 typedef struct {
 	stream *s;
 	size_t len, pos;
-	char buf[1];		/* NOTE: buf extends beyond array for wbs->len bytes */
+	char buf[];		/* NOTE: buf extends beyond array for wbs->len bytes */
 } wbs_stream;
 
 static int
@@ -3678,7 +3717,7 @@ wbstream(stream *s, size_t buflen)
 	ns = create_stream(s->name);
 	if (ns == NULL)
 		return NULL;
-	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen - 1);
+	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen);
 	if (wbs == NULL) {
 		destroy(ns);
 		return NULL;

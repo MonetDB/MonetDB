@@ -67,7 +67,7 @@ MRcleanCloud(void)
 }
 
 str
-MRgetCloud(int *ret, str *mrcluster)
+MRgetCloud(bat *ret, str *mrcluster)
 {
 	str msg;
 	BAT *cloud;
@@ -273,12 +273,6 @@ MRdistributework(
 			q = getArg(p, 0);
 		}
 
-		if (isaBatType(lcol->type)) {
-			/* markH all result bats such that further operations don't get
-			 * confused by possible duplicate ids */
-			p = newFcnCall(reduce, algebraRef, markHRef);
-			p = pushArgument(reduce, p, q);
-		}
 		lcol->mapbat = getArg(p, 0);
 
 		/* We must deliver here the variables (reduceid) that the rest

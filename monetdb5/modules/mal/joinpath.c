@@ -278,8 +278,9 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 str
 ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,*bid,top=0;
-	int *r = (int*) getArgReference(stk, pci, 0);
+	int i,top=0;
+	bat *bid;
+	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	int error = 0;
 	str joinPathRef = putName("joinPath",8);
@@ -290,7 +291,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
-		bid = (int *) getArgReference(stk, pci, i);
+		bid = getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(*bid);
 		if (  b && top ) {
 			if ( !(joins[top-1]->ttype == b->htype) &&

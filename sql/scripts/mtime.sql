@@ -115,3 +115,11 @@ create function dayofmonth( date ) returns integer
 	external name mtime.dayofmonth;
 create function week( date ) returns integer
 	external name mtime.weekofyear;
+
+create function epoch(t timestamp) returns int 
+	external name timestamp.epoch;
+create function epoch(t int) returns timestamp 
+	external name timestamp.epoch;
+create function epoch(t bigint) returns timestamp 
+	external name calc.timestamp;
+

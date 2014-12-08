@@ -1,7 +1,17 @@
+0.9.6
+- Fixed non-ASCII character handling (thanks, Roman!)
+- Fully removed C-based socket code
+- support for dplyr verbs sample_n() and sample_frac()
+
 0.9.5
-- Fixed package date (Thanks, Dimitar)
+- Removed package date (Thanks, Dimitar)
 - Added sys. schema name to internal queries, so SET SCHEMA xx would not break things (Thanks again, Dimitar)
 - Fixed monetdb:// URL handling on newer R versions (Thanks, Alex)
+- DBI 0.3 compatibility (isValid etc.)
+- deprecated dbTransaction() (DBI has standardized dbBegin())
+- Back to R socket code for peace of mind
+- Code cleanup
+- dplyr integration moved to MonetDB.R package
 
 0.9.4
 - dbWriteTable overhaul (thanks, Anthony)

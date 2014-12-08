@@ -310,11 +310,11 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	if ( p->token == NOOPsymbol )
 		return 1;
 /*	if ( strncmp (getFunctionId(p), "exec", 4) == 0 )
-		dburi = *(str*)getArgReference(s, p,2);
-	else dburi = *(str*)getArgReference(s, p,1);
+		dburi = *getArgReference_str(s, p,2);
+	else dburi = *getArgReference_str(s, p,1);
 */
 	/* peer uri is the first argument */
-	dburi = *(str*)getArgReference(s, p,p->retc);
+	dburi = *getArgReference_str(s, p,p->retc);
 
 	MT_lock_set(&s->stklock,"serialConn");
 	i = OCTOPUSfindPeer(dburi);
@@ -359,9 +359,9 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 		return 0;
 
 /*	if ( strncmp (getFunctionId(p), "exec", 4) == 0 )
-		dburi = *(str*)getArgReference(s, p,2);
-	else dburi = *(str*)getArgReference(s, p,1); */
-	dburi = *(str*)getArgReference(s, p,p->retc);
+		dburi = *getArgReference_str(s, p,2);
+	else dburi = *getArgReference_str(s, p,1); */
+	dburi = *getArgReference_str(s, p,p->retc);
 	i = OCTOPUSfindPeer(dburi);
 
 	MT_lock_set(&s->stklock,"serialConn");
@@ -385,7 +385,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 str
 OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *res = (bit*) getArgReference(stk,pci,0);
+	bit *res = getArgReference_bit(stk,pci,0);
 	int j, start, stop, k, found, v, pr;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
@@ -453,7 +453,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	dburi = *(str*)getArgReference(stk,pci,1);
+	dburi = *getArgReference_str(stk,pci,1);
 
 #ifdef DEBUG_RUN_OCTOPUS
 		mnstr_printf(GDKout,"connect to  uri %s\n", dburi);
@@ -466,7 +466,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	i =	OCTOPUSgetPeer(dburi);
 
 	for (k = 2;	k < pci->argc; k++) {
-		fname = *(str*)getArgReference(stk,pci,k);
+		fname = *getArgReference_str(stk,pci,k);
 
 		if( !OCTOPUSfind(i, fname) ){
 			msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
@@ -494,7 +494,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *res = (bit*) getArgReference(stk,pci,0);
+	bit *res = getArgReference_bit(stk,pci,0);
 	int j, start, k, i;
 	InstrPtr p;
 	lng bid;
@@ -515,12 +515,12 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( octopusLocal ) { /* skip bidding for local execution */
 		for (k = start + 1; k < j ; k++){
 	    	p = getInstrPtr(mb,k);
-			wname = (str*) getArgReference(stk,p,p->retc);
+			wname = getArgReference_str(stk,p,p->retc);
 			if ( strcmp(*wname, "NOTworker") == 0 )
         		bid = -1;
 			else bid = 0;
 			for ( i = 0; i < p->retc; i++)
-				*(lng*)getArgReference(stk,p,i) = bid;
+				*getArgReference_lng(stk,p,i) = bid;
 		}
 	}
     else { 	/* distributed execution */
@@ -599,7 +599,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	tcnt = *(int*) getArgReference(stk,pci,pci->retc);
+	tcnt = *getArgReference_int(stk,pci,pci->retc);
 	if ( pci->argc != tcnt*tcnt + tcnt + 1 )
 		return "Wrong argument number of makeSchedule";
 	offset = tcnt + 1;
@@ -613,7 +613,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( i = offset; i < pci->argc; i++) {
 		j = (int) (i-offset) / tcnt;
 		k = (int) (i-offset) % tcnt;
-		bid[j][k] = *(lng*) getArgReference(stk,pci,i);
+		bid[j][k] = *getArgReference_lng(stk,pci,i);
 	}
 
 	for ( j = 0; j < tcnt; j++){
@@ -667,7 +667,7 @@ OCTOPUSdisconnect(Client cntxt)
 str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *res = (bit*) getArgReference(stk,pci,0);
+	bit *res = getArgReference_bit(stk,pci,0);
 	int j, start;
 	InstrPtr p;
 	str msg, msg2 = MAL_SUCCEED;

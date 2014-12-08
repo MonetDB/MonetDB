@@ -88,8 +88,8 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	pc = getPC(mb,p);
-	total = *(int*) getArgReference(stk,p,1);
-	batch = *(int*) getArgReference(stk,p,2);
+	total = *getArgReference_int(stk,p,1);
+	batch = *getArgReference_int(stk,p,2);
 	if (total == 0) return MAL_SUCCEED;
 
 	old = mb->stmt;
@@ -110,7 +110,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		adder_addval(mb, stk, getArg(q,2));
 	}
 	total -= batch;
-	*(int*) getArgReference(stk,p,1) = total;
+	*getArgReference_int(stk,p,1) = total;
 	mb->var[getArg(p,1)]->value.val.ival = total; /* also set in symbol table */
 	if (total > 0) {
 		q = copyInstruction(p);

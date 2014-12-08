@@ -1020,3 +1020,143 @@ str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 	//call the bulk version of wkbCoordinateFromMBR
 	return wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
 }
+
+str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i;
+
+	//get the BATs
+	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
+		if(aBAT)
+			BBPreleaseref(aBAT->batCacheid);	
+		if(bBAT)
+			BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
+	}
+
+	//check if the BATs are dense and aligned
+	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.MakeLine", "BATs must have dense heads");
+	}
+	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.MakeLine", "BATs must be aligned");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.MakeLine", "Error creating new BAT");
+	}
+
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL, msg = NULL;
+		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
+
+		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbMakeLine(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+			BBPreleaseref(aBAT->batCacheid);	
+			BBPreleaseref(bBAT->batCacheid);	
+
+			msg = createException(MAL, "batgeom.MakeLine", "%s", err);
+			GDKfree(err);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outWKB,TRUE); //add the result to the outBAT
+		GDKfree(outWKB);
+		outWKB = NULL;
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	BBPreleaseref(aBAT->batCacheid);	
+	BBPreleaseref(bBAT->batCacheid);	
+
+	return MAL_SUCCEED;
+}
+
+str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i;
+
+	//get the BATs
+	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
+		if(aBAT)
+			BBPreleaseref(aBAT->batCacheid);	
+		if(bBAT)
+			BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.Union", "Problem retrieving BATs");
+	}
+
+	//check if the BATs are dense and aligned
+	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.Union", "BATs must have dense heads");
+	}
+	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.Union", "BATs must be aligned");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(aBAT->batCacheid);	
+		BBPreleaseref(bBAT->batCacheid);	
+		return createException(MAL, "batgeom.Union", "Error creating new BAT");
+	}
+
+	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL, msg = NULL;
+		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
+
+		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbUnion(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+			BBPreleaseref(outBAT->batCacheid);	
+			BBPreleaseref(aBAT->batCacheid);	
+			BBPreleaseref(bBAT->batCacheid);	
+
+			msg = createException(MAL, "batgeom.Union", "%s", err);
+			GDKfree(err);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outWKB,TRUE); //add the result to the outBAT
+		GDKfree(outWKB);
+		outWKB = NULL;
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	BBPreleaseref(aBAT->batCacheid);	
+	BBPreleaseref(bBAT->batCacheid);	
+
+	return MAL_SUCCEED;
+}
+
+

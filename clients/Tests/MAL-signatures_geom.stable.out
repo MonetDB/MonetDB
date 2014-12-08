@@ -2275,10 +2275,6 @@ command algebra.bandjoin(outer:bat[:oid,:any_2],inner:bat[:oid,:any_2],minus:any
 address ALGbandjoin2;
 comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
 
-command algebra.crossproduct(left:bat[:any_1,:any_2],right:bat[:any_3,:any_4]):bat[:any_1,:any_4] 
-address ALGcross;
-comment Returns the cross product
-
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
@@ -2315,14 +2311,10 @@ pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oi
 address ALGfirstn;
 comment Calculate first N values of B
 
-command algebra.fetch(b:bat[:any_2,:any_1],x:int):any_1 
-address ALGfetchint;
-comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
-
-command algebra.fetch(b:bat[:any_2,:any_1],x:lng):any_1 
-address ALGfetch;
 command algebra.fetch(b:bat[:any_2,:any_1],x:oid):any_1 
 address ALGfetchoid;
+comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
+
 command algebra.find(b:bat[:any_1,:any_2],h:any_1):any_2 
 address ALGfind;
 comment Returns the tail value 't' for which some [h,t] BUN 	exists in b.  If no such BUN exists, an error occurs.
@@ -2331,14 +2323,13 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+function algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ILIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
 
-command algebra.ilikesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCREilike_join_pcre;
+function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
 function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
-function algebra.ilikesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid];
 command algebra.ilike(s:str,pat:str):bit 
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
@@ -2387,24 +2378,16 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],esc:str) (X_6:bat[:oid,:oid],X_7:bat[:oid,:oid]) 
+function algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address LIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
-command algebra.likesubselect(s:bat[:oid,:str],pat:bat[:oid,:str],esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address PCRElike_join_pcre;
+function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
 function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
-command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
-address PCRElikesubselect3;
-comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
-
 command algebra.likesubselect(b:bat[:oid,:str],s:bat[:oid,:oid],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
 address PCRElikesubselect2;
 comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
-
-command algebra.likesubselect(b:bat[:oid,:str],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
-address PCRElikesubselect1;
-comment Select all head values for which the tail value is "like"	the given (SQL-style) pattern.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
 command algebra.like(s:str,pat:str):bit 
 address PCRElike2;
@@ -2422,10 +2405,6 @@ command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str]
 address ALGlike;
 comment Selects all elements that have 'substr' as in the tail.
 
-command algebra.materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address ALGmaterialize;
-comment Materialize the void column
-
 command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
 address ALGmark_grp_2;
 comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequense of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The third argument (s) gives the base value for the new OID sequence of each group.
@@ -2434,27 +2413,15 @@ command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:oid]):bat[:any_1,:oid]
 address ALGmark_grp_1;
 comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequence of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The tail of g gives for each group the base value for the new OID sequence.
 
-command algebra.markH(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:oid,:any_2] 
-address ALGhmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in 	the head that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
-
-command algebra.markH(b:bat[:any_1,:any_2],base:oid):bat[:oid,:any_2] 
-address ALGmarkHead;
-comment Produces a new BAT with fresh unique dense sequense of OIDs in 		the head that starts at base (i.e. [base,..base+b.count()-1] ).
-
-command algebra.markH(b:bat[:any_1,:any_2]):bat[:oid,:any_2] 
-address ALGmarkHead_default;
-comment Produces a BAT with fresh OIDs in the head starting at 0@0.
-
-command algebra.markT(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
 comment Produces a BAT with fresh unique dense sequense of OIDs in 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
 
-command algebra.markT(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
 address ALGtmark_default;
 comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
 
-command algebra.markT(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
+command algebra.mark(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
 address ALGtmark;
 comment Produces a BAT with fresh unique dense sequense of OIDs in 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 
@@ -2480,10 +2447,6 @@ command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat
 address ALGouterjoin;
 comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
 
-command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1]) (c:bat[:oid,:oid],d:bat[:oid,:any_1]) 
-address ALGprejoin;
-comment Recluster the table to reduce random access behavior.
-
 pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant, e.g. [0~b]
@@ -2508,6 +2471,15 @@ pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
+command algebra.subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid,:oid],X_10:bat[:oid,:oid]) 
+address ALGsubrangejoin;
+comment Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2
+
+command algebra.subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (X_10:bat[:oid,:oid],X_11:bat[:oid,:oid]) 
+address ALGsubbandjoin;
+comment Band join: values in l and r match if r - c1 <[=] l <[=] r + c2
+
+function algebra.subantijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
 command algebra.subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ALGsubthetajoin;
 comment Theta join with candidate lists
@@ -2762,6 +2734,10 @@ command batsql.dec_round(v:bat[:oid,:lng],r:lng):bat[:oid,:lng]
 address lng_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command batsql.dec_round(v:bat[:oid,:wrd],r:wrd):bat[:oid,:wrd] 
+address wrd_bat_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command batsql.dec_round(v:bat[:oid,:int],r:int):bat[:oid,:int] 
 address int_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -2790,6 +2766,10 @@ command batsql.round(v:bat[:oid,:lng],d:int,s:int,r:bte):bat[:oid,:lng]
 address lng_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command batsql.round(v:bat[:oid,:wrd],d:int,s:int,r:bte):bat[:oid,:wrd] 
+address wrd_bat_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
 command batsql.round(v:bat[:oid,:int],d:int,s:int,r:bte):bat[:oid,:int] 
 address int_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
@@ -2815,7 +2795,7 @@ address BATPCRElike2;
 command batalgebra.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCRElike;
 command batalgebra.not_ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotliike2;
+address BATPCREnotilike2;
 command batalgebra.not_ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
 address BATPCREnotilike;
 command batalgebra.not_like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
@@ -2886,6 +2866,10 @@ command batcolor.value(c:bat[:oid,:color]):bat[:oid,:int]
 address CLRbatValueInt;
 comment Extracts value component from a color atom
 
+command batcolor.ycc(y:bat[:oid,:flt],cr:bat[:oid,:flt],cb:bat[:oid,:flt]):bat[:oid,:color] 
+address CLRbatycc;
+comment Converts an YCC triplets to a color atom
+
 command batstr.endsWith(s:bat[:oid,:str],suffix:str):bat[:oid,:bit] 
 address STRbatSuffixcst;
 comment Suffix check.
@@ -2894,14 +2878,6 @@ command batstr.endsWith(s:bat[:oid,:str],suffix:bat[:oid,:str]):bat[:oid,:bit]
 address STRbatSuffix;
 comment Suffix check.
 
-command batstr.ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREilike2;
-command batstr.ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREilike;
-command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCRElike2;
-command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCRElike;
 command batstr.lpad(s:bat[:oid,:str],n:bat[:oid,:int],s2:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatLpad2_bat_bat;
 comment Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.
@@ -2942,14 +2918,6 @@ command batstr.length(s:bat[:oid,:str]):bat[:oid,:int]
 address STRbatLength;
 comment Return the length of a string.
 
-command batstr.not_ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotilike2;
-command batstr.not_ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREnotilike;
-command batstr.not_like(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
-address BATPCREnotlike2;
-command batstr.not_like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 
-address BATPCREnotlike;
 command batstr.nbytes(s:bat[:oid,:str]):bat[:oid,:int] 
 address STRbatBytes;
 comment Return the string length in bytes.
@@ -3102,9 +3070,9 @@ command batmmath.exp(x:bat[:oid,:flt]):bat[:oid,:flt]
 address CMDscience_bat_flt_exp;
 command batmmath.exp(x:bat[:oid,:dbl]):bat[:oid,:dbl] 
 address CMDscience_bat_dbl_exp;
-command batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+pattern batmmath.fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 address CMDbatMODsignal;
-command batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+pattern batmmath.fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
 address CMDbatMODsignal;
 command batmmath.floor(x:bat[:oid,:flt]):bat[:oid,:flt] 
 address CMDscience_bat_flt_floor;
@@ -31075,6 +31043,22 @@ command batcalc.wrd(v:bat[:oid,:flt],digits:int,scale:int):bat[:oid,:wrd]
 address batflt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
 
+command batcalc.wrd(v:bat[:oid,:str],digits:int,scale:int):bat[:oid,:wrd] 
+address batstr_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:str],digits:int):bat[:oid,:wrd] 
+address batstr_2num_wrd;
+comment cast to wrd and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int,scale:int):bat[:oid,:wrd] 
+address batnil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command batcalc.wrd(v:bat[:oid,:oid],digits:int):bat[:oid,:wrd] 
+address batnil_2num_wrd;
+comment cast to wrd and check for overflow
+
 pattern batcalc.wrd_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
 comment cast from str to wrd with candidates list
@@ -31421,6 +31405,10 @@ command batmtime.seconds(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 command batmtime.year(d:bat[:oid,:date]):bat[:oid,:int] 
 address MTIMEdate_extract_year_bulk;
+command batmkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
+address MKEYbathash;
+comment calculate a hash value
+
 command bat.append(i:bat[:any_1,:any_2],u:any_2,force:bit):bat[:any_1,:any_2] 
 address BKCappend_val_force_wrap;
 comment append the value u to i
@@ -31453,10 +31441,6 @@ command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-command bat.deleteHead(b:bat[:any_1,:any_2],src:bat[:any_1,:any]):void 
-address BKCdelete_bat;
-comment Delete from the first BAT all BUNs with a corresponding head          in the second.
-
 command bat.delete(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address BKCdelete_all;
 comment Delete all BUNs in a BAT.
@@ -31469,7 +31453,7 @@ command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2]
 address BKCdelete_bun;
 comment Delete one specific BUN.
 
-command bat.densebat(size:wrd):bat[:void,:void] 
+command bat.densebat(size:wrd):bat[:oid,:oid] 
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'size'.
 
@@ -31593,7 +31577,7 @@ command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2],force:bit):bat[:an
 address BKCbat_inplace_force;
 comment inplace replace values on the given locations
 
-command bat.inplace(o:bat[:any_1,:any_2],id:any_1,t:any_2,force:bit):bat[:any_1,:any_2] 
+command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2,force:bit):bat[:oid,:any_2] 
 address BKCbun_inplace_force;
 comment inplace replace values on the given locations
 
@@ -31601,7 +31585,7 @@ command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2]):bat[:any_1,:any_2
 address BKCbat_inplace;
 comment inplace replace values on the given locations
 
-command bat.inplace(o:bat[:any_1,:any_2],id:any_1,t:any_2):bat[:any_1,:any_2] 
+command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2):bat[:oid,:any_2] 
 address BKCbun_inplace;
 comment inplace replace values on the given locations
 
@@ -31737,7 +31721,11 @@ command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT;
 comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
-command bat.setHash(b:bat[:oid,:any_2],prop:bit):bit 
+command bat.setImprints(b:bat[:oid,:any_2]):bit 
+address BKCsetImprints;
+comment Create n imprints structure on the column
+
+command bat.setHash(b:bat[:oid,:any_2]):bit 
 address BKCsetHash;
 comment Create a hash structure on the column
 
@@ -37444,7 +37432,7 @@ command calc.ptr(v:ptr):ptr
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
 
-command calc.rowid(v:any_1,schema:str,table:str):oid 
+pattern calc.rowid(v:any_1,schema:str,table:str):oid 
 address sql_rowid;
 comment return the next rowid
 
@@ -37689,6 +37677,10 @@ comment cast to sht and check for overflow
 command calc.second_interval(sc:int,v:lng,ek:int,sk:int):lng 
 address lng_dec2second_interval;
 comment cast lng decimal to a second_interval
+
+command calc.second_interval(sc:int,v:wrd,ek:int,sk:int):lng 
+address wrd_dec2second_interval;
+comment cast wrd decimal to a second_interval
 
 command calc.second_interval(sc:int,v:int,ek:int,sk:int):lng 
 address int_dec2second_interval;
@@ -38072,7 +38064,7 @@ address URLnoop;
 comment Create an URL from a string literal
 
 command calc.url(s:str):url 
-address URLnoop;
+address URLnew;
 comment Create an URL from a string literal
 
 pattern calc.void(v:str):void 
@@ -38186,6 +38178,22 @@ comment cast number to decimal(wrd) and check for overflow
 command calc.wrd(v:flt,digits:int,scale:int):wrd 
 address flt_num2dec_wrd;
 comment cast number to decimal(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int,scale:int):wrd 
+address str_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:str,digits:int):wrd 
+address str_2num_wrd;
+comment cast to wrd and check for overflow
+
+command calc.wrd(v:void,digits:int,scale:int):wrd 
+address nil_2dec_wrd;
+comment cast to dec(wrd) and check for overflow
+
+command calc.wrd(v:void,digits:int):wrd 
+address nil_2num_wrd;
+comment cast to wrd and check for overflow
 
 command calc.wkb(v:wkb):wkb 
 address wkbFromWKB;
@@ -39451,13 +39459,21 @@ command lsst.ptinsphbox(ra:dbl,dec:dbl,ra_min:dbl,dec_min:dbl,ra_max:dbl,dec_max
 address qserv_ptInSphBox;
 comment Returns 1 if the given spherical longitude/latitude box contains the given position
 
-command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int) (lr:bat[:oid,:oid],rr:bat[:oid,:oid]) 
+command lsst.xmatchsubjoin(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (lr:bat[:oid,:oid],rr:bat[:oid,:oid]) 
+address LSSTxmatchsubjoin;
+comment Return the HtmID pairs that lie within the same triangle at level depth
+
+command lsst.xmatchsubselect(l:bat[:oid,:lng],cand:bat[:oid,:oid],r:lng,depth:int,anti:bit):bat[:oid,:oid] 
+address LSSTxmatchsubselect;
+comment Return the HtmID's that lie within the same triangle as r at level depth
+
+command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,anti:bit):bit 
 address LSSTxmatch;
 comment Return the HtmID pairs that lie within the same triangle at level depth
 
-command mapreduce.getCloud(nme:str):bat[:oid,:str] 
-address MRgetCloud;
-comment Localize the elements of a named cloud
+command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit 
+address LSSTxmatch;
+comment Return true when the HtmID pairs that lie within the same triangle at level depth
 
 pattern mapi.bind(key:int,remoteName:str):bat[:oid,:any_2] 
 address SERVERbindBAT;
@@ -39615,7 +39631,7 @@ command mapi.query(mid:int,qry:str):int
 address SERVERquery;
 comment Send the query for execution
 
-command mapi.rpc(key:int,qry:str):void 
+command mapi.rpc(key:int,qry:str):int 
 address SERVERquery;
 comment Send a simple query for execution.
 
@@ -39645,7 +39661,7 @@ command mapi.resume():void
 address SERVERresume;
 comment Resume connection listeners.
 
-command mapi.setAlias(dbalias:str):void 
+command mapi.setAlias(key:int,dbalias:str):void 
 address SERVERsetAlias;
 comment Give the channel a logical name.
 
@@ -39660,6 +39676,10 @@ comment Terminate connection listeners.
 command mapi.trace(mid:int,flag:int):void 
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
+
+command mapreduce.getCloud(nme:str):bat[:oid,:str] 
+address MRgetCloud;
+comment Localize the elements of a named cloud
 
 pattern manual.completion(pat:str):void 
 address MANUALcompletion;
@@ -39935,31 +39955,45 @@ pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
-address MKEYbathash;
+pattern mkey.hash(v:str):wrd 
+address MKEYhash;
 comment calculate a hash value
 
-command mkey.hash(v:str):wrd 
-address MKEYhash_str;
-command mkey.hash(v:lng):wrd 
-address MKEYhash_lng;
-command mkey.hash(v:dbl):wrd 
-address MKEYhash_dbl;
-command mkey.hash(v:wrd):wrd 
-address MKEYhash_wrd;
-command mkey.hash(v:flt):wrd 
-address MKEYhash_flt;
-command mkey.hash(v:int):wrd 
-address MKEYhash_int;
-command mkey.hash(v:sht):wrd 
-address MKEYhash_sht;
-command mkey.hash(v:bte):wrd 
-address MKEYhash_bte;
-command mkey.hash(v:bit):wrd 
-address MKEYhash_bte;
+pattern mkey.hash(v:lng):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:dbl):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:wrd):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:flt):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:int):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:sht):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:bte):wrd 
+address MKEYhash;
+comment calculate a hash value
+
+pattern mkey.hash(v:bit):wrd 
+address MKEYhash;
+comment calculate a hash value
+
 pattern mkey.hash(v:any):wrd 
 address MKEYhash;
-comment compute a hash int number from any value
+comment calculate a hash value
 
 command mkey.rotate(v:wrd,nbits:int):wrd 
 address MKEYrotate;
@@ -40076,7 +40110,7 @@ comment The pow(x,y) function  returns the value of x raised to the power of y.
 command mmath.pow(x:flt,y:flt):flt 
 address MATHbinary_POWflt;
 command mmath.rand{unsafe}(v:int):int 
-address MATHrandint;
+address MATHrandintarg;
 comment return a random number
 
 command mmath.rand{unsafe}():int 
@@ -40388,7 +40422,7 @@ address MTIMEtzone_create_dst;
 comment create a timezone as an hour difference	from GMT and a DST.
 
 command mtime.timezone(s:lng):timezone 
-address MTIMEtzone_create;
+address MTIMEtzone_create_lng;
 comment Convert the int to a timezone.
 
 command mtime.timezone(s:int):timezone 
@@ -40429,9 +40463,17 @@ comment Subtract seconds from a time
 
 command mtime.timestamp(t:timestamp):timestamp 
 address MTIMEtimestamp2timestamp;
+command mtime.timestamp_add_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_add_month_interval_lng_wrap;
+comment Add months to a timestamp
+
 command mtime.timestamp_add_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_add_month_interval_wrap;
 comment Add months to a timestamp
+
+command mtime.timestamp_sub_month_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_sub_month_interval_lng_wrap;
+comment Subtract months from a timestamp
 
 command mtime.timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_sub_month_interval_wrap;
@@ -40806,7 +40848,7 @@ command pcre.match(s:str,pat:str):bit
 address PCREmatch;
 comment Perl Compatible Regular Expression pattern matching against a string
 
-pattern pcre.prelude():void 
+command pcre.prelude():void 
 address pcre_init;
 comment Initialize pcre
 
@@ -41074,15 +41116,11 @@ pattern recycle.setCache(clines:int):void
 address RECYCLEsetCache;
 comment Set recycler cache line parameter
 
-command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
-address SAMPLEuniform;
-comment Returns the oids of a uniform sample of size s
-
-command sample.uniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],p:dbl):bat[:oid,:oid] 
 address SAMPLEuniform_dbl;
 comment Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0
 
-command sample.uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
+command sample.subuniform(b:bat[:oid,:any],s:wrd):bat[:oid,:oid] 
 address SAMPLEuniform;
 comment Returns the oids of a uniform sample of size s
 
@@ -41362,6 +41400,10 @@ command sql.dec_round(v:lng,r:lng):lng
 address lng_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+command sql.dec_round(v:wrd,r:wrd):wrd 
+address wrd_dec_round_wrap;
+comment round off the value v to nearests multiple of r
+
 command sql.dec_round(v:int,r:int):int 
 address int_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -41574,6 +41616,10 @@ command sql.round(v:lng,d:int,s:int,r:bte):lng
 address lng_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command sql.round(v:wrd,d:int,s:int,r:bte):wrd 
+address wrd_round_wrap;
+comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
 command sql.round(v:int,d:int,s:int,r:bte):int 
 address int_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
@@ -41773,10 +41819,6 @@ command str.endsWith(s:str,suffix:str):bit
 address STRSuffix;
 comment Suffix check.
 
-command str.ilike(s:str,pat:str):bit 
-address PCREilike2;
-command str.ilike(s:str,pat:str,esc:str):bit 
-address PCREilike3;
 command str.insert(s:str,start:int,l:int,s2:str):str 
 address STRinsert;
 comment Insert a string into another
@@ -41785,10 +41827,6 @@ command str.iconv(org:str,fromCs:str,toCs:str):str
 address STRIconv;
 comment String codeset conversion
 
-command str.like(s:str,pat:str):bit 
-address PCRElike2;
-command str.like(s:str,pat:str,esc:str):bit 
-address PCRElike3;
 command str.locate(s1:str,s2:str,start:int):int 
 address STRlocate2;
 comment Locate the start position of a string
@@ -41825,14 +41863,6 @@ command str.length(s:str):int
 address STRLength;
 comment Return the length of a string.
 
-command str.not_ilike(s:str,pat:str):bit 
-address PCREnotilike2;
-command str.not_ilike(s:str,pat:str,esc:str):bit 
-address PCREnotilike3;
-command str.not_like(s:str,pat:str):bit 
-address PCREnotlike2;
-command str.not_like(s:str,pat:str,esc:str):bit 
-address PCREnotlike3;
 command str.nbytes(s:str):int 
 address STRBytes;
 comment Return the string length in bytes.
@@ -42059,35 +42089,35 @@ command streams.writeStr{unsafe}(s:streams,data:str):void
 address mnstr_write_stringwrap;
 comment write data on the stream
 
-command sysmon.pause(id:lng):void 
+pattern sysmon.pause(id:lng):void 
 address SYSMONpause;
 comment Temporary suspend a single query
 
-command sysmon.pause(id:int):void 
+pattern sysmon.pause(id:int):void 
 address SYSMONpause;
-command sysmon.pause(id:sht):void 
+pattern sysmon.pause(id:sht):void 
 address SYSMONpause;
 pattern sysmon.queue() (tag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],qrytag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-command sysmon.resume(id:lng):void 
+pattern sysmon.resume(id:lng):void 
 address SYSMONresume;
 comment Resume processing 
 
-command sysmon.resume(id:int):void 
+pattern sysmon.resume(id:int):void 
 address SYSMONresume;
-command sysmon.resume(id:sht):void 
+pattern sysmon.resume(id:sht):void 
 address SYSMONresume;
-command sysmon.stop(id:lng):void 
+pattern sysmon.stop(id:lng):void 
 address SYSMONstop;
 comment Stop a single query a.s.a.p.
 
-command sysmon.stop(id:int):void 
+pattern sysmon.stop(id:int):void 
 address SYSMONstop;
-command sysmon.stop(id:sht):void 
+pattern sysmon.stop(id:sht):void 
 address SYSMONstop;
 command timezone.#fromstr():timezone 
 address tzone_fromstr;
-command timezone.str():str 
+command timezone.str(z:timezone):str 
 address MTIMEtzone_tostr;
 command timezone.timestamp(secs:int):timestamp 
 address MTIMEtimestamp;

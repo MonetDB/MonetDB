@@ -91,7 +91,8 @@ command_help(int argc, char *argv[])
 		printf("  database created with this command makes it available\n");
 		printf("  for use, however in maintenance mode (see monetdb lock).\n");
 		printf("Options:\n");
-		printf("  -m  create a multiplex funnel for pattern.\n");
+		printf("  -m       create a multiplex funnel for pattern.\n");
+		printf("  -p pass  create database with given password for database user.\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database [database ...]\n");
 		printf("  Removes the given database, including all its data and\n");
@@ -824,7 +825,7 @@ command_status(int argc, char *argv[])
 		         = 8 chars
 		*/
 
-		len = dbwidth < 4 ? 4 : dbwidth + 2 + 5 + 2 + 8 + 2 + uriwidth;
+		len = (dbwidth < 4 ? 4 : dbwidth) + 2 + 5 + 2 + 8 + 2 + uriwidth;
 		if (twidth > 0 && len > twidth) {
 			if (len - twidth < 10) {
 				uriwidth -= len - twidth;

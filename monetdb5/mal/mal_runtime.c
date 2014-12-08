@@ -187,12 +187,12 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	assert(pci);
 	assert(prof);
 	/* always collect the MAL instruction execution time */
-	pci->ticks += GDKusec() - prof->ticks;
+	pci->ticks = GDKusec() - prof->ticks;
 	pci->calls++;
 
 	if (getProfileCounter(PROFfootprint) ){
 		for (i = 0; i < pci->retc; i++)
-			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval){
+			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval != bat_nil){
 				/* avoid simple alias operations */
 				fnd= 0;
 				for ( j= pci->retc; j< pci->argc; j++)
@@ -271,7 +271,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
     BAT *b;
 	BUN cnt;
     lng total = 0;
-	int bid;
+	bat bid;
 
 	if ( !mb || !stk)
 		return ;

@@ -14,11 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2014 MonetDB B.V.
 # All Rights Reserved.
-
-# @
+# 
 # We split between selections that return one value, and selections
 # that return a BAT.
-# @+ Value Selections
 module algebra;
 
 command exist(b:bat[:oid,:any_1], val:any_1):bit
@@ -31,17 +29,10 @@ comment "Returns the tail value 't' for which some [h,t] BUN
 	exists in b.  If no such BUN exists, an error occurs." ;
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
-address ALGfetchoid;
-command fetch(b:bat[:any_2,:any_1], x:lng) :any_1
-address ALGfetch;
-command fetch(b:bat[:any_2,:any_1], x:int) :any_1
-address ALGfetchint
+address ALGfetchoid
 comment "Returns the tail value of the BUN at x-th position
 	with 0 <= x < b.count";
 
-# @+ BAT Selections
-# A simple sampling operation is also provided.
-# @- Range selection
 # The range selections are targeted at the tail of the BAT.
 command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address ALGsubselect1
@@ -163,21 +154,21 @@ address ALGuselect1
 comment "Value select, but returning only the
 	head values. SEE ALSO:select(bat,val)";
 
-# @- Pattern matching
+# Pattern matching
 command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
-# @- Sampling
+# Sampling
 command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
 address ALGsample
 comment "Returns the oids of a random selection of size 'num' from the input BAT.";
 
-# @+ BAT copying
+# BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGcopy
 comment "Returns physical copy of a BAT.";
-# @- Sorted copy
+# Sorted copy
 command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
@@ -424,11 +415,6 @@ command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li
 address ALGrangejoin2;
 
 # Note that joins over void columns are handled as if they are oids.
-command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
-	:bat[:any_1,:any_4]
-address ALGcross
-comment "Returns the cross product";
-
 command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
 	:bat[:any_1,:any_4]
 address ALGantijoin
@@ -492,8 +478,7 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 address ALGouterjoinestimate;
 
 # @- Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 		just the same as join(). All other options do merge algorithms.
@@ -501,8 +486,7 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 	right on head), or by using/creating binary search trees on the
 		join columns. ";
 
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		opname:int,estimate:lng) :bat[:any_1,:any_3]
+command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
 address ALGthetajoinEstimate;
 # @- Band Join (approximate match)
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
@@ -541,6 +525,20 @@ command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 
+function subantijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
+	 # JOIN_NE == -3
+	(r1,r2) := subthetajoin(l,r,sl,sr,-3:int,nil_matches,estimate);
+	return (r1,r2);
+end subantijoin;
+
+command subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubbandjoin
+comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
+
+command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ALGsubrangejoin
+comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
+
 # @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
@@ -575,39 +573,21 @@ comment "Calculate first N values of B with candidate list S";
 # @+ OID Introducing Commands
 # For relational processing, some operators are necessary to produce newly
 # initiated OID columns, for representing n-ary (intermediary) relations.
-command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command markT( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
+command mark( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
 address ALGtmarkp
 comment "Produces a BAT with fresh unique dense sequense of OIDs in
 	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
 	The base is uniquely defined by the part_nr (ie we set the highest
 	bits based on the part_nr/nr_parts) ";
-
-
-command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2]
-address ALGmarkHead_default
-comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2]
-address ALGmarkHead
-comment "Produces a new BAT with fresh unique dense sequense of OIDs in
-		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:oid,:any_2]
-address ALGhmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-	the head that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
 
 command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
 address ALGmark_grp_1
@@ -626,15 +606,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  represents the group extent, i.e., the head is the unique list of group IDs
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
-
-# @+ BAT fragmentation commands
-# Various operations for splitting BATs into useful fragments.
-#
-# @- Variable management
-# It is sometimes needed to cast a type at runtime
-command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address ALGmaterialize
-comment "Materialize the void column";
 
 command reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGreuse

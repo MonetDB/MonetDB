@@ -50,22 +50,19 @@
 
 bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
-bbp_export str CMDbbpDiskReads(lng *ret);
-bbp_export str CMDbbpDiskWrites(lng *ret);
 bbp_export str CMDgetPageSize(int *ret);
-bbp_export str CMDbbpNames(int *ret);
-bbp_export str CMDbbpName(str *ret, int *bid);
-bbp_export str CMDbbpRNames(int *ret);
-bbp_export str CMDbbpCount(int *ret);
-bbp_export str CMDbbpLocation(int *ret);
-bbp_export str CMDbbpHeat(int *ret);
-bbp_export str CMDbbpDirty(int *ret);
-bbp_export str CMDbbpStatus(int *ret);
-bbp_export str CMDbbpKind(int *ret);
-bbp_export str CMDbbpRefCount(int *ret);
-bbp_export str CMDbbpLRefCount(int *ret);
-bbp_export str CMDbbpgetIndex(int *res, int *bid);
-bbp_export str CMDgetBATrefcnt(int *res, int *bid);
-bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
+bbp_export str CMDbbpNames(bat *ret);
+bbp_export str CMDbbpName(str *ret, bat *bid);
+bbp_export str CMDbbpCount(bat *ret);
+bbp_export str CMDbbpLocation(bat *ret);
+bbp_export str CMDbbpHeat(bat *ret);
+bbp_export str CMDbbpDirty(bat *ret);
+bbp_export str CMDbbpStatus(bat *ret);
+bbp_export str CMDbbpKind(bat *ret);
+bbp_export str CMDbbpRefCount(bat *ret);
+bbp_export str CMDbbpLRefCount(bat *ret);
+bbp_export str CMDbbpgetIndex(int *res, bat *bid);
+bbp_export str CMDgetBATrefcnt(int *res, bat *bid);
+bbp_export str CMDgetBATlrefcnt(int *res, bat *bid);
 bbp_export str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
 #endif /* _BBP_H_*/
