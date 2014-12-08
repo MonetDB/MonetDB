@@ -87,6 +87,7 @@ typedef struct mvc {
 	struct scanner scanner;
 
 	list *params;
+	sql_func *forward;	/* forward definitions for recursive functions */
 	sql_var *vars; 		/* stack of variables, frames are simply a
 				   NULL in the var stack 
 					(sometimes with name (label) ) */

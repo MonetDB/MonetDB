@@ -64,7 +64,7 @@ Ready.
 #    WHEN 1 < 2 THEN 3
 #  END AS "Simple WHEN";
 % .L,	.L # table_name
-% One,	Simple WHEN # name
+% One,	"Simple WHEN" # name
 % char,	tinyint # type
 % 1,	1 # length
 [ "3",	3	]
@@ -73,7 +73,7 @@ Ready.
 #    WHEN 1 > 2 THEN 3
 #  END AS "Simple default";
 % .L,	.L # table_name
-% One,	Simple default # name
+% One,	"Simple default" # name
 % char,	tinyint # type
 % 6,	4 # length
 [ "<NULL>",	NULL	]
@@ -83,7 +83,7 @@ Ready.
 #    ELSE 4
 #  END AS "Simple ELSE";
 % .L,	.L # table_name
-% One,	Simple ELSE # name
+% One,	"Simple ELSE" # name
 % char,	tinyint # type
 % 1,	1 # length
 [ "3",	3	]
@@ -93,7 +93,7 @@ Ready.
 #    ELSE 4
 #  END AS "ELSE default";
 % .L,	.L # table_name
-% One,	ELSE default # name
+% One,	"ELSE default" # name
 % char,	tinyint # type
 % 1,	1 # length
 [ "4",	4	]
@@ -104,7 +104,7 @@ Ready.
 #    ELSE 7
 #  END AS "Two WHEN with default";
 % .L,	.L # table_name
-% One,	Two WHEN with default # name
+% One,	"Two WHEN with default" # name
 % char,	tinyint # type
 % 1,	1 # length
 [ "6",	6	]
@@ -114,7 +114,7 @@ Ready.
 #  END AS ">= 3 or Null"
 #  FROM CASE_TBL;
 % .L,	sys.L # table_name
-% Five,	>= 3 or Null # name
+% Five,	">= 3 or Null" # name
 % char,	int # type
 % 0,	1 # length
 [ "",	NULL	]
@@ -128,7 +128,7 @@ Ready.
 #  END AS "Simplest Math"
 #  FROM CASE_TBL;
 % .L,	sys.L # table_name
-% Five,	Simplest Math # name
+% Five,	"Simplest Math" # name
 % char,	bigint # type
 % 0,	1 # length
 [ "",	1 ]
@@ -233,7 +233,7 @@ Ready.
 #  NULLIF(b.i, 4) AS "NULLIF(b.i,4)"
 #  FROM CASE_TBL a, CASE2_TBL b;
 % .L,	sys.L,	sys.L # table_name
-% five,	NULLIF(a.i,b.i),	NULLIF(b.i,4) # name
+% five,	"NULLIF(a.i,b.i)",	"NULLIF(b.i,4)" # name
 % char,	int,	int # type
 % 0,	1,	1 # length
 [ "",	NULL,	1	]

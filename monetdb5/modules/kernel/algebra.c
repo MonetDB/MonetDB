@@ -2165,28 +2165,6 @@ str ALGreuse(bat *ret, const bat *bid)
 }
 
 /*
- * The avg aggregate only works for int and float fields.
- */
-str
-ALGavg(dbl *res, const bat *bid)
-{
-	BAT *b;
-	int ret;
-	BUN cnt;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
-	ret = BATcalcavg(b, NULL, res, &cnt);
-	BBPreleaseref(b->batCacheid);
-	if (ret == GDK_FAIL)
-		throw(MAL, "aggr.avg", SEMANTIC_TYPE_MISMATCH);
-	/* backward compatibility: return nil if there are nils in the input */
-	if (cnt < BATcount(b))
-		*res = dbl_nil;
-	return MAL_SUCCEED;
-}
-
-/*
  * BAT standard deviation
  */
 str
@@ -2199,7 +2177,7 @@ ALGstdev(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2215,7 +2193,7 @@ ALGstdevp(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2234,7 +2212,7 @@ ALGvariance(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
@@ -2250,7 +2228,7 @@ ALGvariancep(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_population(NULL, b);
 	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;

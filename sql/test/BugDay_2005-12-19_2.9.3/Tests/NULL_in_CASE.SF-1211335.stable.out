@@ -37,25 +37,25 @@ Ready.
 % 4 # length
 [ NULL	]
 #select CASE WHEN 2=2 THEN 2 else cast(null as char) end;
-% .L # table_name
+% .L1 # table_name
 % isnull_=_single_value # name
-% tinyint # type
-% 1 # length
-[ 2	]
+% char # type
+% 3 # length
+[ "2"	]
 #select CASE WHEN 2=0 THEN 2 else cast(null as char) end;
-% .L # table_name
+% .L1 # table_name
 % isnull_=_single_value # name
-% tinyint # type
-% 4 # length
+% char # type
+% 3 # length
 [ NULL	]
 #select CASE WHEN 3=3 THEN 3 else cast(null as int) end;
-% .L # table_name
+% .L1 # table_name
 % isnull_=_single_value # name
 % int # type
 % 1 # length
 [ 3	]
 #select CASE WHEN 3=0 THEN 3 else cast(null as int) end;
-% .L # table_name
+% .L1 # table_name
 % isnull_=_single_value # name
 % int # type
 % 11 # length

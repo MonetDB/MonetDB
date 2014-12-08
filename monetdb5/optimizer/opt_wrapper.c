@@ -173,10 +173,10 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 
 	for ( i=0; codes[i].nme; i++)
-	if ( strcmp(codes[i].nme, optimizer)== 0 ){
-		actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
-		break;	
-	}
+		if ( strcmp(codes[i].nme, optimizer)== 0 ){
+			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
+			break;	
+		}
 	if ( codes[i].nme == 0){
 		freeInstruction(q);
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);

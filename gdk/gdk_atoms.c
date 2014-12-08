@@ -862,6 +862,10 @@ dblFromStr(const char *src, int *len, dbl **dst)
 atomtostr(dbl, "%.17g", (double))
 atom_io(dbl, Lng, lng)
 
+#ifdef _MSC_VER
+/* don't warn about overflow in INFINITY and NAN */
+#pragma warning(disable : 4756)
+#endif
 int
 fltFromStr(const char *src, int *len, flt **dst)
 {
@@ -1049,10 +1053,6 @@ strHash(const char *s)
 	GDK_STRHASH(s, res);
 	return res;
 }
-
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 void
 strCleanHash(Heap *h, int rebuild)

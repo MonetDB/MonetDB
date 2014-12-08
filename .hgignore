@@ -22,6 +22,7 @@ Makefile.msc
 aclocal.m4
 acout.in
 autom4te.cache
+buildtools/conf/compile
 buildtools/conf/config.guess
 buildtools/conf/config.sub
 buildtools/conf/install-sh

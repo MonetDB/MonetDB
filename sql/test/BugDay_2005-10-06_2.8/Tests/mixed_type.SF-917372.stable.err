@@ -79,10 +79,10 @@ stderr of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2
 # 19:21:06 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33392 
 # 19:21:06 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-10022/.s.monetdb.31381
 QUERY = select 'a'+1;
-ERROR = !conversion of string 'a' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !daytime (a) has incorrect format
+MAPI  = (monetdb) /var/tmp/mtest-10022/.s.monetdb.31381
 QUERY = select 1-'a';
 ERROR = !conversion of string 'a' to type bte failed.
 

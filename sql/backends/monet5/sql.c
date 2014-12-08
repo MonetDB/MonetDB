@@ -2391,10 +2391,10 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len;
 	int *res_id = getArgReference_int(stk, pci, 0);
 	int *nr_cols = getArgReference_int(stk, pci, 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, 5);
 	int mtype = getArgType(mb, pci, 6);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2782,10 +2782,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str filename, cs;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
 	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
@@ -2901,10 +2901,10 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t len = 0;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);

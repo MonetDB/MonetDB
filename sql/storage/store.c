@@ -4320,12 +4320,8 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 		sql_schema *sys = find_sql_schema(tr, "sys");
 		sql_table *stats = find_sql_table(sys, "statistics");
 		if (stats) {
-			sql_column *stats_schema = find_sql_column(stats, "schema");
-			sql_column *stats_table = find_sql_column(stats, "table");
-			sql_column *stats_column = find_sql_column(stats, "column");
-			oid rid = table_funcs.column_find_row(tr, stats_column, col->base.name, NULL,
-							stats_table, col->t->base.name, NULL,
-							stats_schema, col->t->s->base.name, NULL, NULL);
+			sql_column *stats_column_id = find_sql_column(stats, "column_id");
+			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (rid != oid_nil) {
 				sql_column *stats_unique = find_sql_column(stats, "unique");
 				void *v = table_funcs.column_find_value(tr, stats_unique, rid);
@@ -4347,12 +4343,8 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 		sql_schema *sys = find_sql_schema(tr, "sys");
 		sql_table *stats = find_sql_table(sys, "statistics");
 		if (stats) {
-			sql_column *stats_schema = find_sql_column(stats, "schema");
-			sql_column *stats_table = find_sql_column(stats, "table");
-			sql_column *stats_column = find_sql_column(stats, "column");
-			oid rid = table_funcs.column_find_row(tr, stats_column, col->base.name, NULL,
-							stats_table, col->t->base.name, NULL,
-							stats_schema, col->t->s->base.name, NULL, NULL);
+			sql_column *stats_column_id = find_sql_column(stats, "column_id");
+			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (rid != oid_nil) {
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");

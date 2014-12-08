@@ -40,9 +40,6 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
-#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
 
@@ -54,9 +51,6 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
-#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
 
@@ -68,9 +62,6 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
-#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val REAL) returns DOUBLE external name \"aggr\".\"variance\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"variance\";\n");
 
@@ -82,9 +73,6 @@ sql_update_feb2013(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
-#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val REAL) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
 
@@ -113,10 +101,8 @@ sql_update_feb2013_sp1(Client c)
 	/* sys.stddev functions */
 	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"like\"(string, string, string);\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"ilike\"(string, string, string);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name algebra.\"like\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string) external name algebra.\"like\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string) external name algebra.\"ilike\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name algebra.likesubselect;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.ilikesubselect;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage;\n");
 
@@ -430,9 +416,6 @@ external name sql.sysmon_stop;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val WRD, q DOUBLE) returns WRD external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT external name \"aggr\".\"quantile\";\n");
-#ifdef HAVE_HGE
-	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT external name \"aggr\".\"quantile\";\n");
-#endif
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val REAL, q DOUBLE) returns REAL external name \"aggr\".\"quantile\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE external name \"aggr\".\"quantile\";\n");
@@ -503,9 +486,9 @@ external name sql.analyze;\n");
 
 	/* 17_compress script has been removed */
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcompress;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcdeompress;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzctruncate;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzcexpand;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzdecompress;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gztruncate;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure gzexpand;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -648,6 +631,7 @@ sql_update_oct2014_2(Client c)
 				SQLautocommit(c, sql);
 			SQLtrans(sql);
 		}
+		GDKfree(buf);
 	}
 
 	if (iresult) {
@@ -694,6 +678,7 @@ sql_update_oct2014_2(Client c)
 				SQLautocommit(c, sql);
 			SQLtrans(sql);
 		}
+		GDKfree(buf);
 	}
 
 
@@ -768,6 +753,10 @@ sql_update_oct2014(Client c)
 	/* recreate views depending on union funcs */
 	pos += snprintf(buf + pos, bufsize - pos, "create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\
+	update _tables set system = true where name in ('tables', 'columns', 'users', 'querylog_catalog', 'querylog_calls', 'querylog_history', 'tracelog', 'sessions', 'optimizers', 'environment', 'queue', 'storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from schemas where name = 'sys');\n\
+	insert into systemfunctions (select id from functions where name in ('bbp', 'db_users', 'dependencies_columns_on_functions', 'dependencies_columns_on_indexes', 'dependencies_columns_on_keys', 'dependencies_columns_on_triggers', 'dependencies_columns_on_views', 'dependencies_functions_on_functions', 'dependencies_functions_os_triggers', 'dependencies_keys_on_foreignkeys', 'dependencies_owners_on_schemas', 'dependencies_schemas_on_users', 'dependencies_tables_on_foreignkeys', 'dependencies_tables_on_functions', 'dependencies_tables_on_indexes', 'dependencies_tables_on_triggers', 'dependencies_tables_on_views', 'dependencies_views_on_functions', 'dependencies_views_on_triggers', 'env', 'environment', 'generate_series', 'optimizers', 'optimizer_stats', 'querycache', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'storage', 'storagemodel', 'tojsonarray', 'tracelog', 'var') and schema_id = (select id from schemas where name = 'sys') and id not in (select function_id from systemfunctions));\n\
+	delete from systemfunctions where function_id not in (select id from functions);\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function create_view_upgrade_oct2014;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "drop table upgradeOct2014_views;\n");
@@ -972,16 +961,84 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 		return sql_update_oct2014_2(c);
 	return err;		/* usually MAL_SUCCEED */
 }
+
+static str
+sql_update_oct2014_sp1(Client c)
+{
+	size_t bufsize = 8192*2, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n\
+	create table upgradeOct2014_views as (select s.name, t.query from tables t, schemas s where s.id = t.schema_id and t.id in (select d.depend_id from dependencies d where d.id in (select f.id from functions f where f.func ilike '%%returns table%%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0) and d.depend_type = 5)) with data;\n\
+	create table upgradeOct2014 as select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.func ilike '%%returns table%%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0 order by f.id with data;\n\
+	create table upgradeOct2014_changes (c bigint);\n\
+	\n\
+	create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;\n\
+	drop function drop_func_upgrade_oct2014;\n\
+	\n\
+	create function create_func_upgrade_oct2014( sname string, f string ) returns int external name sql.create_func_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select create_func_upgrade_oct2014(name, func) from upgradeOct2014;\n\
+	drop function create_func_upgrade_oct2014;\n\
+	\n\
+	create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;\n\
+	insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;\n\
+	update _tables set system = true where name in ('tables', 'columns', 'users', 'querylog_catalog', 'querylog_calls', 'querylog_history', 'tracelog', 'sessions', 'optimizers', 'environment', 'queue', 'storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from schemas where name = 'sys');\n\
+	insert into systemfunctions (select id from functions where name in ('bbp', 'db_users', 'dependencies_columns_on_functions', 'dependencies_columns_on_indexes', 'dependencies_columns_on_keys', 'dependencies_columns_on_triggers', 'dependencies_columns_on_views', 'dependencies_functions_on_functions', 'dependencies_functions_os_triggers', 'dependencies_keys_on_foreignkeys', 'dependencies_owners_on_schemas', 'dependencies_schemas_on_users', 'dependencies_tables_on_foreignkeys', 'dependencies_tables_on_functions', 'dependencies_tables_on_indexes', 'dependencies_tables_on_triggers', 'dependencies_tables_on_views', 'dependencies_views_on_functions', 'dependencies_views_on_triggers', 'env', 'environment', 'generate_series', 'optimizers', 'optimizer_stats', 'querycache', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'storage', 'storagemodel', 'tojsonarray', 'tracelog', 'var') and schema_id = (select id from schemas where name = 'sys') and id not in (select function_id from systemfunctions));\n\
+	delete from systemfunctions where function_id not in (select id from functions);\n\
+	drop function create_view_upgrade_oct2014;\n\
+						\n\
+	drop table upgradeOct2014_views;\n\
+	drop table upgradeOct2014_changes;\n\
+	drop table upgradeOct2014;\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 static str
 sql_update_feb2015(Client c)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t int) returns timestamp external name timestamp.epoch;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t timestamp) returns int external name timestamp.epoch;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function epoch(t bigint) returns timestamp external name calc.timestamp;\n");
+
+#ifdef HAVE_HGE
+       pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+       pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+       pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val HUGEINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+       pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val HUGEINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+#endif
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
@@ -1036,6 +1093,14 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
 		if ((err = sql_update_oct2014(c)) !=NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+	/* if table returning function sys.environment() does not exist, we need to
+	 * update from oct2014->sp1 */
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "environment", NULL, NULL, F_UNION)) {
+		if ((err = sql_update_oct2014_sp1(c)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}

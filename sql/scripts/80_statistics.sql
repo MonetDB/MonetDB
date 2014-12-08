@@ -21,9 +21,7 @@
 
 
 CREATE TABLE sys.statistics(
-	"schema" string, 
-	"table" string, 
-	"column" string, 
+	"column_id" integer,
 	"type" string, 
 	width integer,
 	stamp timestamp, 

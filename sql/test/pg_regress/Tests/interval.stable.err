@@ -1,9 +1,9 @@
 stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:18 >  
-# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:18 >  
+# 12:56:39 >  
+# 12:56:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31190" "--set" "mapi_usock=/var/tmp/mtest-27974/.s.monetdb.31190" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:56:39 >  
 
 # builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,39 +17,37 @@ stderr of test 'interval` in directory 'sql/test/pg_regress` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38959
-# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	mapi_port = 31190
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27974/.s.monetdb.31190
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
 # cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:37:48 >  
-# 17:37:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"
-# 17:37:48 >  
+# 12:56:39 >  
+# 12:56:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27974" "--port=31190"
+# 12:56:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
 QUERY = select avg(f1) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
 QUERY = select avg(cast(f1 as double)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
 QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and decimal(18,3) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
 QUERY = select avg(cast(f1 as decimal(9,3))) from interval_tbl;
 ERROR = !types sec_interval(13,0) and decimal(9,3) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-23104/.s.monetdb.32343
+MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
 QUERY = select sum(f1) from interval_tbl;
-ERROR = !overflow in conversion of 6000 to bte.
+ERROR = !overflow in conversion of 1000 to bte.
 
 
-
-
-
-# 17:37:49 >  
-# 17:37:49 >  "Done."
-# 17:37:49 >  
+# 12:56:40 >  
+# 12:56:40 >  "Done."
+# 12:56:40 >  
 

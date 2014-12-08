@@ -48,6 +48,7 @@ end main;
 % int # type
 % 3 # length
 [ 123	]
+!SQLException:sql.exportValue:failed
 
 
 # 23:37:35 >  

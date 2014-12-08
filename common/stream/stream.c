@@ -2064,6 +2064,38 @@ udp_create(const char *name)
 static int
 udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 {
+#ifdef HAVE_GETADDRINFO
+	struct addrinfo hints, *res, *rp;
+	char sport[32];
+
+	snprintf(sport, sizeof(sport), "%d", port);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC; /* IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = IPPROTO_UDP;
+	if (getaddrinfo(hostname, sport, &hints, &res))
+		return -1;
+	memset(&udp->addr, 0, sizeof(udp->addr));
+	for (rp = res; rp; rp = rp->ai_next) {
+		udp->s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (udp->s == INVALID_SOCKET)
+			continue;
+		if (!write &&
+		    bind(udp->s, rp->ai_addr, 
+#ifdef _MSC_VER
+			 (int)	/* Windows got the interface wrong... */
+#endif
+			 rp->ai_addrlen) == SOCKET_ERROR) {
+			closesocket(udp->s);
+			continue;
+		}
+		memcpy(&udp->addr, rp->ai_addr, rp->ai_addrlen);
+		freeaddrinfo(res);
+		return 0;
+	}
+	return -1;
+#else
 	struct sockaddr *serv;
 	socklen_t servsize;
 	struct hostent *hp;
@@ -2087,6 +2119,7 @@ udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
 		return -1;
 	return 0;
+#endif
 }
 
 stream *

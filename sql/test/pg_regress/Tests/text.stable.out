@@ -49,13 +49,13 @@ Ready.
 # 17:59:44 >  
 
 #SELECT cast ('this is a text string' AS text) = cast('this is a text string' AS text) AS "true";
-% .L # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast ('this is a text string' AS text) = cast('this is a text strin' AS text) AS "false";
-% .L # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length

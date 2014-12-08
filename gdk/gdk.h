@@ -1253,7 +1253,7 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMputFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+			ATOMputFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
 #define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
@@ -1301,7 +1301,7 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMreplaceFIX((b)->HT->type, (b)->HT->vheap, (p), v); \
+			ATOMreplaceFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
 #define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)

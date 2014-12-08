@@ -4157,36 +4157,65 @@ literal:
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
 		  char * hexa = $1;
 	 	  sql_subtype t;
-		  long res = 0;
-
-		  while (i<len)
-		  {
-			res <<= 4;
-			if ('0'<= hexa[i] && hexa[i] <= '9')
-				res = res + (hexa[i] - '0');
-			else if ('A' <= hexa[i] && hexa[i] <= 'F')
-				res = res + (hexa[i] - 'A' + 10);
-			else if ('a' <= hexa[i] && hexa[i] <= 'f')
-				res = res + (hexa[i] - 'a' + 10);
-			else
-				err = 1; 
-		  	i++;
-		  }
-		
-		  if ( i >= 2 && i <= 6)
-		  	sql_find_subtype(&t, "smallint", 16, 0);
-		  else if ( i > 6 && i <= 10)
-		  	sql_find_subtype(&t, "int", 32, 0);
-		  else if ( i > 10 && i <= 18)
-		  	sql_find_subtype(&t, "bigint", 64, 0);
 #ifdef HAVE_HGE
-		  else if ( i > 18 && i <= 34)
-		  	sql_find_subtype(&t, "hugeint", 128, 0);
+		  hge res = 0;
+#else
+		  lng res = 0;
 #endif
+		  /* skip leading '0' */
+		  while (i < len && hexa[i] == '0')
+		  	i++;
+
+#ifdef HAVE_HGE
+		  /* we only support positive values that fit in a signed 128-bit type,
+		   * i.e., max. 127 bit => < 2^127 => < 0x80000000000000000000000000000000
+		   * (leading sign (-0x...) is handled separately elsewhere)
+		   */
+		  if (len - i < 32 || (len - i == 32 && hexa[i] < '8'))
+#else
+		  /* we only support positive values that fit in a signed 64-bit type,
+		   * i.e., max. 63 bit => < 2^63 => < 0x8000000000000000
+		   * (leading sign (-0x...) is handled separately elsewhere)
+		   */
+		  if (len - i < 16 || (len - i == 16 && hexa[i] < '8'))
+#endif
+		  	while (err == 0 && i < len)
+		  	{
+				res <<= 4;
+				if ('0'<= hexa[i] && hexa[i] <= '9')
+					res = res + (hexa[i] - '0');
+				else if ('A' <= hexa[i] && hexa[i] <= 'F')
+					res = res + (hexa[i] - 'A' + 10);
+				else if ('a' <= hexa[i] && hexa[i] <= 'f')
+					res = res + (hexa[i] - 'a' + 10);
+				else
+					err = 1;
+		  		i++;
+			}
 		  else
 			err = 1;
-		  
-		  if (err) {
+
+		  if (err == 0) {
+		  	assert(res >= 0);
+
+		  	/* use smallest type that can accommodate the given value */
+			if (res <= GDK_bte_max)
+				sql_find_subtype(&t, "tinyint", 8, 0 );
+			else if (res <= GDK_sht_max)
+				sql_find_subtype(&t, "smallint", 16, 0 );
+		  	else if (res <= GDK_int_max)
+				sql_find_subtype(&t, "int", 32, 0 );
+			else if (res <= GDK_lng_max)
+				sql_find_subtype(&t, "bigint", 64, 0 );
+#ifdef HAVE_HGE
+			else if (res <= GDK_hge_max)
+				sql_find_subtype(&t, "hugeint", 128, 0 );
+#endif
+			else
+				err = 1;
+		  }
+
+		  if (err != 0) {
 			char *msg = sql_message("\b22003!invalid hexadecimal number or hexadecimal too large (%s)", $1);
 
 			yyerror(m, msg);

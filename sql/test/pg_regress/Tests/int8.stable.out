@@ -121,8 +121,8 @@ Ready.
 [ "",	4567890123456789,	4567890123456789,	1 ]
 [ "",	4567890123456789,	-4567890123456789,	-1 ]
 #SELECT '' AS five, q1, cast(q1 as double) FROM INT8_TBL;
-% .L,	sys.int8_tbl,	sys.int8_tbl # table_name
-% five,	q1,	q1 # name
+% .L,	sys.int8_tbl,	sys.L1 # table_name
+% five,	q1,	L1 # name
 % char,	bigint,	double # type
 % 0,	16,	24 # length
 [ "",	123,	123	]
@@ -131,8 +131,8 @@ Ready.
 [ "",	4567890123456789,	4.567890123e+15	]
 [ "",	4567890123456789,	4.567890123e+15	]
 #SELECT '' AS five, q2, cast(q2 as double) FROM INT8_TBL;
-% .L,	sys.int8_tbl,	sys.int8_tbl # table_name
-% five,	q2,	q2 # name
+% .L,	sys.int8_tbl,	sys.L1 # table_name
+% five,	q2,	L1 # name
 % char,	bigint,	double # type
 % 0,	17,	24 # length
 [ "",	456,	456	]
@@ -142,7 +142,7 @@ Ready.
 [ "",	-4567890123456789,	-4.567890123e+15	]
 #SELECT '' AS five, 2 * q1 AS "twice integer" FROM INT8_TBL;
 % .L,	.L # table_name
-% five,	twice integer # name
+% five,	"twice integer" # name
 % char,	hugeint # type
 % 0,	16 # length
 [ "",	246	]
@@ -153,7 +153,7 @@ Ready.
 
 #SELECT '' AS five, q1 * 2 AS "twice integer" FROM INT8_TBL;
 % .L,	sys.L # table_name
-% five,	twice integer # name
+% five,	"twice integer" # name
 % char,	hugeint # type
 % 0,	16 # length
 [ "",	246	]

@@ -2981,6 +2981,7 @@ AC_CHECK_FUNCS([\
 				lockf \
 				madvise \
 				mremap \
+				nextafterf \
 				nl_langinfo \
 				_NSGetExecutablePath \
 				pipe \

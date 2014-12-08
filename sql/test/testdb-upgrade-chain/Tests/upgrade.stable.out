@@ -20,9 +20,9 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 
 Ready.
 
-# 11:20:43 >  
-# 11:20:43 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 11:20:43 >  
+# 09:43:35 >  
+# 09:43:35 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 09:43:35 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

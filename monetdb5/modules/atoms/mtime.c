@@ -1153,22 +1153,22 @@ daytime_add(daytime *ret, const daytime *v, const lng *msec)
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
 str
-MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msecs)
+MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec)
 {
-	if (!ts_isnil(*v) && *msecs != lng_nil) {
-		int days = (int) (*msecs / (24 * 60 * 60 * 1000));
+	if (!ts_isnil(*v) && *msec != lng_nil) {
+		int day = (int) (*msec / (24 * 60 * 60 * 1000));
 
-		ret->msecs = (int) (v->msecs + (*msecs - ((lng) days) * (24 * 60 * 60 * 1000)));
+		ret->msecs = (int) (v->msecs + (*msec - ((lng) day) * (24 * 60 * 60 * 1000)));
 		ret->days = v->days;
 		if (ret->msecs >= (24 * 60 * 60 * 1000)) {
-			days++;
+			day++;
 			ret->msecs -= (24 * 60 * 60 * 1000);
 		} else if (ret->msecs < 0) {
-			days--;
+			day--;
 			ret->msecs += (24 * 60 * 60 * 1000);
 		}
-		if (days) {
-			MTIMEdate_adddays(&ret->days, &ret->days, &days);
+		if (day) {
+			MTIMEdate_adddays(&ret->days, &ret->days, &day);
 			if (ret->days == int_nil) {
 				*ret = *timestamp_nil;
 			}
@@ -2272,49 +2272,69 @@ MTIMEtzone_extract_minutes(int *ret, const tzone *t)
 str
 MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
-	if (*sec > 0) {
-		int delta = -(*sec / 86400);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*sec == int_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*sec >= 0)
+		delta = -(int) (*sec / 86400);
+	else
+		delta = (int) (-*sec / 86400);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_sub_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
-	if (*msec > 0) {
-		int delta = (int) -(*msec / 86400000);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*msec == lng_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*msec > 0)
+		delta = -(int) (*msec / 86400000);
+	else
+		delta = (int) (-*msec / 86400000);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_add_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
-	if (*sec > 0) {
-		int delta = *sec / 86400;
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*sec == int_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*sec >= 0)
+		delta = (int) (*sec / 86400);
+	else
+		delta = -(int) (-*sec / 86400);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
 MTIMEdate_add_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
-	if (*msec > 0) {
-		int delta = (int) (*msec / 86400000);
+	int delta;
 
-		return MTIMEdate_adddays(ret, t, &delta);
+	if (*msec == lng_nil || *t == date_nil) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
 	}
+	if (*msec > 0)
+		delta = (int) (*msec / 86400000);
+	else
+		delta = -(int) (-*msec / 86400000);
 
-	return MAL_SUCCEED;
+	return MTIMEdate_adddays(ret, t, &delta);
 }
 
 str
@@ -3442,6 +3462,6 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
-	throw(MAL, "mtime.str_to_date", "strptime support missing");
+	throw(MAL, "mtime.str_to_date", "strftime support missing");
 #endif
 }

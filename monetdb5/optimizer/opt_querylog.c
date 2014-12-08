@@ -52,7 +52,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	limit= mb->stop;
 	slimit= mb->ssize;
-	if ( newMalBlkStmt(mb, 2 * mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0; 
 
 	pushInstruction(mb, old[0]);

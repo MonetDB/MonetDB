@@ -170,6 +170,8 @@ int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
 void IMPSprint(BAT *b)
 	__attribute__((__visibility__("hidden")));
 #endif
+gdk_return unshare_string_heap(BAT *b)
+	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 void MT_global_exit(int status)
@@ -304,6 +306,11 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
+
+/* extra space in front of strings in string heaps when hashash is set
+ * if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* see comment in gdk.h */

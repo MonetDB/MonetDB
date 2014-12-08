@@ -83,7 +83,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_metadata_id;
 		break;
 	case SQL_ATTR_ODBC_CURSORS:
-		*(SQLUINTEGER *) ValuePtr = SQL_CUR_USE_IF_NEEDED;
+		*(SQLUINTEGER *) ValuePtr = SQL_CUR_USE_DRIVER;
 		break;
 	case SQL_ATTR_TRACE:
 		*(SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
