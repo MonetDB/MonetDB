@@ -899,7 +899,7 @@ open_gzstream(const char *filename, const char *flags)
 	return s;
 }
 
-stream *
+static stream *
 open_gzrstream(const char *filename)
 {
 	stream *s;
@@ -917,7 +917,7 @@ open_gzrstream(const char *filename)
 }
 
 static stream *
-open_gzwstream_(const char *filename, const char *mode)
+open_gzwstream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -934,13 +934,7 @@ open_gzwstream_(const char *filename, const char *mode)
 	return s;
 }
 
-stream *
-open_gzwstream(const char *filename)
-{
-	return open_gzwstream_(filename, "wb");
-}
-
-stream *
+static stream *
 open_gzrastream(const char *filename)
 {
 	stream *s;
@@ -952,7 +946,7 @@ open_gzrastream(const char *filename)
 }
 
 static stream *
-open_gzwastream_(const char *filename, const char *mode)
+open_gzwastream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -962,31 +956,11 @@ open_gzwastream_(const char *filename, const char *mode)
 	s->type = ST_ASCII;
 	return s;
 }
-
-stream *
-open_gzwastream(const char *filename)
-{
-	return open_gzwastream_(filename, "wb");
-}
 #else
-stream *open_gzrstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_gzwstream_(filename, mode)		NULL
-stream *open_gzwstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-stream *open_gzrastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_gzwastream_(filename, mode)	NULL
-stream *open_gzwastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
+#define open_gzrstream(filename)	NULL
+#define open_gzwstream(filename, mode)	NULL
+#define open_gzrastream(filename)	NULL
+#define open_gzwastream(filename, mode)	NULL
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -1136,7 +1110,7 @@ open_bzstream(const char *filename, const char *flags)
 	return s;
 }
 
-stream *
+static stream *
 open_bzrstream(const char *filename)
 {
 	stream *s;
@@ -1154,7 +1128,7 @@ open_bzrstream(const char *filename)
 }
 
 static stream *
-open_bzwstream_(const char *filename, const char *mode)
+open_bzwstream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -1171,13 +1145,7 @@ open_bzwstream_(const char *filename, const char *mode)
 	return s;
 }
 
-stream *
-open_bzwstream(const char *filename)
-{
-	return open_bzwstream_(filename, "wb");
-}
-
-stream *
+static stream *
 open_bzrastream(const char *filename)
 {
 	stream *s;
@@ -1189,7 +1157,7 @@ open_bzrastream(const char *filename)
 }
 
 static stream *
-open_bzwastream_(const char *filename, const char *mode)
+open_bzwastream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -1199,31 +1167,11 @@ open_bzwastream_(const char *filename, const char *mode)
 	s->type = ST_ASCII;
 	return s;
 }
-
-stream *
-open_bzwastream(const char *filename)
-{
-	return open_bzwastream_(filename, "wb");
-}
 #else
-stream *open_bzrstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_bzwstream_(filename, mode)		NULL
-stream *open_bzwstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-stream *open_bzrastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_bzwastream_(filename, mode)	NULL
-stream *open_bzwastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
+#define open_bzrstream(filename)	NULL
+#define open_bzwstream(filename, mode)	NULL
+#define open_bzrastream(filename)	NULL
+#define open_bzwastream(filename, mode)	NULL
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -1276,9 +1224,9 @@ open_wstream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwstream_(filename, mode);
+		return open_gzwstream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwstream_(filename, mode);
+		return open_bzwstream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
@@ -1345,9 +1293,9 @@ open_wastream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwastream_(filename, mode);
+		return open_gzwastream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwastream_(filename, mode);
+		return open_bzwastream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
