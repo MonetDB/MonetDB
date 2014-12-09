@@ -29,13 +29,13 @@ stderr of test 'gsl01` in directory 'sql/backends/monet5/gsl` itself:
 # 15:57:56 >  
 
 MAPI  = (monetdb) /var/tmp/mtest-28608/.s.monetdb.36472
-QUERY = SELECT gsl.chi2prob(20.0, NULL);
+QUERY = SELECT sys.chi2prob(20.0, NULL);
 ERROR = !Wrong value for datapoints
 MAPI  = (monetdb) /var/tmp/mtest-28608/.s.monetdb.36472
-QUERY = SELECT gsl.chi2prob(NULL, 5.0);
+QUERY = SELECT sys.chi2prob(NULL, 5.0);
 ERROR = !Wrong value for chi2
 MAPI  = (monetdb) /var/tmp/mtest-28608/.s.monetdb.36472
-QUERY = SELECT gsl.chi2prob(-1, 5.0);
+QUERY = SELECT sys.chi2prob(-1, 5.0);
 ERROR = !Wrong value for chi2
 MAPI  = (monetdb) /var/tmp/mtest-28608/.s.monetdb.36472
 QUERY = SELECT chi2prob(a, b) FROM chi2;
