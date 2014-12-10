@@ -34,7 +34,6 @@
 
 #include "merovingian.h"
 #include "argvcmds.h"
-#include "discoveryrunner.h"
 
 int
 command_help(int argc, char *argv[])
@@ -44,7 +43,7 @@ command_help(int argc, char *argv[])
 	if (argc < 2) {
 		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
 		printf("  where command is one of:\n");
-		printf("    create, start, stop, get, set, add, version or help\n");
+		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
 		printf("  The dbfarm to operate on must always be given to\n");
 		printf("  monetdbd explicitly.\n");
@@ -68,10 +67,6 @@ command_help(int argc, char *argv[])
 		printf("usage: monetdbd get <\"all\" | property,...> <dbfarm>\n");
 		printf("  Gets value for property for the given dbfarm, or\n");
 		printf("  retrieves all properties.\n");
-	} else if (strcmp(argv[1], "add") == 0) {
-		printf("usage: monetdbd add <dbname> <connection> [<tt>]\n");
-		printf("  Connects to a (remote) monetdbd instance and database.\n");
-		printf("  Useful when auto-discovery does not work.\n");
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 		exitcode = 1;
@@ -513,54 +508,6 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "unable to shut down monetdbd[%d]: %s\n",
 				(int)daemon, strerror(errno));
 		return(1);
-	}
-
-	return(0);
-}
-
-int
-command_add(confkeyval *ckv, int argc, char *argv[])
-{
-	char *dbname;
-	char *conn;
-	char *ttl;
-	(void)ckv;
-
-	// we need at 3 values: add <dbnam> <conn>, ttl is optional
-	if (argc < 3) {
-		command_help(2, &argv[-1]);
-		return(1);
-	}
-
-	dbname = argv[1];
-	conn = argv[2];
-	if (argc > 3) {
-		ttl = argv[3];
-	} else {
-		// default t o 600 seconds... as a string, we will convert it to int later
-		//
-		ttl = "600";
-	}
-
-	if (dbname == NULL) {
-		fprintf(stderr, "incorrect dbname monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
-		return(1);
-	}
-	if (conn == NULL) {
-		fprintf(stderr, "incorrect conn monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
-		return(1);
-	}
-	if (ttl == NULL) {
-		fprintf(stderr, "incorrect ttl monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
-		return(1);
-	}
-
-	if (addRemoteDB(dbname, conn, atoi(ttl)) == 1) {
-		if (strcmp(dbname, "*") == 0) {
-			Mfprintf(_mero_discout, "registered neighbour %s\n", conn);
-		} else {
-			Mfprintf(_mero_discout, "new database %s%s (ttl=%ss)\n", conn, dbname, ttl);
-		}
 	}
 
 	return(0);

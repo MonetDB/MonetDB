@@ -106,7 +106,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 	return(hadmatch);
 }
 
-int
+static int
 addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 	remotedb rdb;
 	remotedb prv;
