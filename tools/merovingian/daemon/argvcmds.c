@@ -542,15 +542,15 @@ command_add(confkeyval *ckv, int argc, char *argv[])
 	}
 
 	if (dbname == NULL) {
-		fprintf(stderr, "incorrect dbname monetdbd: %s\n", strerror(errno));
+		fprintf(stderr, "incorrect dbname monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
 		return(1);
 	}
 	if (connection == NULL) {
-		fprintf(stderr, "incorrect connection monetdbd: %s\n", strerror(errno));
+		fprintf(stderr, "incorrect connection monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
 		return(1);
 	}
 	if (ttl == NULL) {
-		fprintf(stderr, "incorrect ttl monetdbd: %s\n", strerror(errno));
+		fprintf(stderr, "incorrect ttl monetdbd[%d]: %s\n", (int)daemon, strerror(errno));
 		return(1);
 	}
 
@@ -561,7 +561,7 @@ command_add(confkeyval *ckv, int argc, char *argv[])
 			fprintf(stdout, "new database %s %s (ttl=%ss)\n", connection, dbname, ttl);
 		}
 	} else {
-		fprintf(stderr, "unable to add database %s %s\n", connection, dbname);
+		fprintf(stdout, "unable to add database %s %s\n", connection, dbname);
 		return(1);
 	}
 
