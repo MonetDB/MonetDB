@@ -35,7 +35,7 @@ Ready.
 #-- fixed-length by value
 #-- internally passed by value if <= 4 bytes in storage
 #SELECT cast('c' as char) = cast('c' as char) AS "true";
-% .L # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length

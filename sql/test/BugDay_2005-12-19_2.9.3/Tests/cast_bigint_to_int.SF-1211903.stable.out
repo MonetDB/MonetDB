@@ -15,20 +15,20 @@ Ready.
 
 
 #select cast(1117422000 as integer);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 10 # length
 [ 1117422000	]
 #select cast('1117422000' as integer);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 10 # length
 [ 1117422000	]
 #select cast(cast(1117422000 as bigint) as integer);
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 10 # length
 [ 1117422000	]

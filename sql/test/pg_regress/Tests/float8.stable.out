@@ -39,57 +39,57 @@ Ready.
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 [ 1 ]
 #SELECT cast('10e-400' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0	]
 #SELECT cast('-10e-400' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ -0	]
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('     ');
 [ 1	]
 #SELECT cast('NaN' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast('nan' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast('   NAN  ' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast('infinity' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ inf	]
 #SELECT cast('          -INFINiTY   ' as double);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ -inf	]
 #SELECT cast('Infinity' as double) / cast('Infinity' as double);
-% .L # table_name
+% .L2 # table_name
 % sql_div_single_value # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast('nan' as double) / cast('nan' as double);
-% .L # table_name
+% .L2 # table_name
 % sql_div_single_value # name
 % double # type
 % 24 # length
@@ -270,7 +270,7 @@ Ready.
 [ 1 ]
 [ NULL	]
 #SELECT sqrt(cast('64' as double)) AS eight;
-% .L # table_name
+% .L1 # table_name
 % eight # name
 % double # type
 % 24 # length
@@ -286,7 +286,7 @@ Ready.
 [ "",	1.23456789e+200,	1.111111106e+100	]
 [ "",	1.23456789e-200,	1.111111106e-100	]
 #SELECT power(cast('144' as double), cast('0.5' as double));
-% .L # table_name
+% .L2 # table_name
 % power_single_value # name
 % double # type
 % 24 # length

@@ -48,8 +48,8 @@ Ready.
 % 24 # length
 [ 1	]
 #SELECT avg(cast (NULL as int));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -60,8 +60,8 @@ Ready.
 % 1 # length
 [ 1	]
 #SELECT sum(cast (NULL as int));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 20 # length
 [ NULL	]
@@ -72,8 +72,8 @@ Ready.
 % 1 # length
 [ 1	]
 #SELECT max(cast (NULL as int));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 11 # length
 [ NULL	]
@@ -84,8 +84,8 @@ Ready.
 % 1 # length
 [ 1	]
 #SELECT min(cast (NULL as int));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 11 # length
 [ NULL	]
