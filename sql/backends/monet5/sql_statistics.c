@@ -103,7 +103,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						if (col && strcmp(bc->name, col))
 							continue;
-						snprintf(dquery, 8192, "delete from sys.statistics where \"schema\" ='%s' and \"table\"='%s' and \"column\"='%s';", b->name, bt->name, bc->name);
+						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) 25000);
 						} else
@@ -147,8 +147,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							snprintf(maxval, 4, "nil");
 							snprintf(minval, 4, "nil");
 						}
-						snprintf(query, 8192, "insert into sys.statistics values('%s','%s','%s','%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s);", b->name, bt->name, bc->name, c->type.type->sqlname, width,
-							 (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false");
+						snprintf(query, 8192, "insert into sys.statistics values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false");
 #ifdef DEBUG_SQL_STATISTICS
 						mnstr_printf(cntxt->fdout, "%s\n", dquery);
 						mnstr_printf(cntxt->fdout, "%s\n", query);

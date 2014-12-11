@@ -46,7 +46,7 @@ Ready.
 #,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 #       END
 #FROM   test456 ;
-% sys.L # table_name
+% sys.L1 # table_name
 % isnull_not_isnull_col1 # name
 % date # type
 % 10 # length
@@ -59,8 +59,8 @@ Ready.
 #,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 #FROM   test456
 #WHERE  col1 IS NOT NULL ;
-% sys.L # table_name
-% concat_substring_col1 # name
+% sys.L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 2008-01-01	]

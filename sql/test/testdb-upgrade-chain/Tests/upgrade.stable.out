@@ -19,62 +19,10 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-Running database upgrade commands:
-set schema "sys";
 
-	create table upgradeOct2014_views as (select s.name, t.query from tables t, schemas s where s.id = t.schema_id and t.id in (select d.depend_id from dependencies d where d.id in (select f.id from functions f where f.func ilike '%returns table%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0) and d.depend_type = 5)) with data;
-	create table upgradeOct2014 as select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.func ilike '%returns table%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0 order by f.id with data;
-	create table upgradeOct2014_changes (c bigint);
-	
-	create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;
-	insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;
-	drop function drop_func_upgrade_oct2014;
-	
-	create function create_func_upgrade_oct2014( sname string, f string ) returns int external name sql.create_func_upgrade_oct2014;
-	insert into upgradeOct2014_changes select create_func_upgrade_oct2014(name, func) from upgradeOct2014;
-	drop function create_func_upgrade_oct2014;
-	
-	create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;
-	insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;
-	update _tables set system = true where name in ('tables', 'columns', 'users', 'querylog_catalog', 'querylog_calls', 'querylog_history', 'tracelog', 'sessions', 'optimizers', 'environment', 'queue', 'storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from schemas where name = 'sys');
-	insert into systemfunctions (select id from functions where name in ('bbp', 'db_users', 'dependencies_columns_on_functions', 'dependencies_columns_on_indexes', 'dependencies_columns_on_keys', 'dependencies_columns_on_triggers', 'dependencies_columns_on_views', 'dependencies_functions_on_functions', 'dependencies_functions_os_triggers', 'dependencies_keys_on_foreignkeys', 'dependencies_owners_on_schemas', 'dependencies_schemas_on_users', 'dependencies_tables_on_foreignkeys', 'dependencies_tables_on_functions', 'dependencies_tables_on_indexes', 'dependencies_tables_on_triggers', 'dependencies_tables_on_views', 'dependencies_views_on_functions', 'dependencies_views_on_triggers', 'env', 'environment', 'generate_series', 'optimizers', 'optimizer_stats', 'querycache', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'storage', 'storagemodel', 'tojsonarray', 'tracelog', 'var') and schema_id = (select id from schemas where name = 'sys') and id not in (select function_id from systemfunctions));
-	delete from systemfunctions where function_id not in (select id from functions);
-	drop function create_view_upgrade_oct2014;
-						
-	drop table upgradeOct2014_views;
-	drop table upgradeOct2014_changes;
-	drop table upgradeOct2014;
-set schema "testschema";
-
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#Interpreting bte as bit.
-
-# 09:48:08 >  
-# 09:48:08 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 09:48:08 >  
+# 09:43:35 >  
+# 09:43:35 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 09:43:35 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

@@ -21,8 +21,8 @@ Ready.
 % 0 # length
 [ 60.000	]
 #select cast(interval '60' second as time);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 8 # length
 [ 00:01:00	]

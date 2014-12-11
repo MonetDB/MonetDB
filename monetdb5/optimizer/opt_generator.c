@@ -78,11 +78,11 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) pci;
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
-    old= mb->stmt;
-    limit = mb->stop;
-    if ( newMalBlkStmt(mb,2 * mb->ssize) < 0) {
+    	old = mb->stmt;
+    	limit = mb->stop;
+    	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
-        return 0;
+        	return 0;
 	}
 
 	for( i=0; i < limit; i++){
@@ -157,9 +157,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 	}
 	for (i++; i < limit; i++)
-        pushInstruction(mb, old[i]);
-    GDKfree(old);
-    GDKfree(series);
+        	pushInstruction(mb, old[i]);
+    	GDKfree(old);
+    	GDKfree(series);
 
 #ifdef VLT_DEBUG
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);

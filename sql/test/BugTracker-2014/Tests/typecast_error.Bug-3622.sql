@@ -22,7 +22,7 @@ CREATE TABLE "bam"."alignments_2" (
 );
 ALTER TABLE bam.alignments_2 SET READ ONLY;
 
-EXPLAIN SELECT s.value AS refpos, COUNT(*) AS cnt
+SELECT s.value AS refpos, COUNT(*) AS cnt
 FROM 
     generate_series(128, 18960) AS s
     JOIN (

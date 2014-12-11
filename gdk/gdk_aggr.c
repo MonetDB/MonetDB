@@ -2634,7 +2634,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	} while (0)
 
 static dbl
-calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
+calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample, const char *func)
 {
 	BUN n = 0, i;
 	dbl mean = 0;
@@ -2674,6 +2674,8 @@ calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 		AGGR_STDEV_SINGLE(dbl);
 		break;
 	default:
+		GDKerror("%s: type (%s) not supported.\n",
+			 func, ATOMname(tp));
 		return dbl_nil;
 	}
 	if (n <= (BUN) issample) {
@@ -2690,7 +2692,8 @@ dbl
 BATcalcstdev_population(dbl *avgp, BAT *b)
 {
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			     BATcount(b), b->ttype, 0);
+			     BATcount(b), b->ttype, 0,
+			     "BATcalcstdev_population");
 	return v == dbl_nil ? dbl_nil : sqrt(v);
 }
 
@@ -2698,7 +2701,8 @@ dbl
 BATcalcstdev_sample(dbl *avgp, BAT *b)
 {
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			     BATcount(b), b->ttype, 1);
+			     BATcount(b), b->ttype, 1,
+			     "BATcalcstdev_sample");
 	return v == dbl_nil ? dbl_nil : sqrt(v);
 }
 
@@ -2706,14 +2710,16 @@ dbl
 BATcalcvariance_population(dbl *avgp, BAT *b)
 {
 	return calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			    BATcount(b), b->ttype, 0);
+			    BATcount(b), b->ttype, 0,
+			    "BATcalcvariance_population");
 }
 
 dbl
 BATcalcvariance_sample(dbl *avgp, BAT *b)
 {
 	return calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			    BATcount(b), b->ttype, 1);
+			    BATcount(b), b->ttype, 1,
+			    "BATcalcvariance_sample");
 }
 
 #define AGGR_STDEV(TYPE)						\

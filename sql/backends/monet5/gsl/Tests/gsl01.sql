@@ -1,12 +1,12 @@
-SELECT gsl.chi2prob(20.0, 5.0);
+SELECT sys.chi2prob(20.0, 5.0);
 
-SELECT gsl.chi2prob(20.0, NULL);
+SELECT sys.chi2prob(20.0, NULL);
 
-SELECT gsl.chi2prob(NULL, 5.0);
+SELECT sys.chi2prob(NULL, 5.0);
 
-SELECT gsl.chi2prob(-1, 5.0);
+SELECT sys.chi2prob(-1, 5.0);
 
-SELECT gsl.chi2prob(20.0, 1.0);
+SELECT sys.chi2prob(20.0, 1.0);
 
 CREATE TABLE chi2(a double, b double);
 

@@ -58,7 +58,9 @@ typedef int int32_t;
 #define LITTLE_ENDIAN	1234
 #define BYTE_ORDER	LITTLE_ENDIAN
 
+#ifndef HAVE_NEXTAFTERF
 #include "s_nextafterf.c"
+#endif
 
 #include <stdio.h>
 
@@ -302,7 +304,6 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
 	int ret = 1, fd = -1;
 	OVERLAPPED ov;
-	OSVERSIONINFO os;
 	HANDLE fh;
 	static struct lockedfiles {
 		struct lockedfiles *next;
@@ -311,8 +312,6 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	} *lockedfiles;
 	struct lockedfiles **fpp, *fp;
 
-	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&os);
 	memset(&ov, 0, sizeof(ov));
 #if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
 	ov.u.s.Offset = (unsigned int) off;
