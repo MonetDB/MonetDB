@@ -169,16 +169,6 @@ stream_export stream *open_wastream(const char *filename);
 /* append to ascii stream */
 stream_export stream *append_wastream(const char *filename);
 
-stream_export stream *open_gzrstream(const char *filename);
-stream_export stream *open_gzwstream(const char *filename);
-stream_export stream *open_gzrastream(const char *filename);
-stream_export stream *open_gzwastream(const char *filename);
-
-stream_export stream *open_bzrstream(const char *filename);
-stream_export stream *open_bzwstream(const char *filename);
-stream_export stream *open_bzrastream(const char *filename);
-stream_export stream *open_bzwastream(const char *filename);
-
 stream_export void close_stream(stream *s);
 
 stream_export stream *open_urlstream(const char *url);

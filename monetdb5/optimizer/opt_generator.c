@@ -80,7 +80,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
     	old = mb->stmt;
     	limit = mb->stop;
-    	if (newMalBlkStmt(mb, 2 * limit) < 0) {
+    	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
         	return 0;
 	}

@@ -36,50 +36,50 @@ Ready.
 % tinyint # type
 % 1 # length
 [ 1 ]
-#SELECT true AS "true";
-% .L # table_name
+#SELECT cast('true' AS boolean) AS "true";
+% .L1 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
-#SELECT false AS "false";
-% .L # table_name
+#SELECT cast('false' AS boolean) AS "false";
+% .L1 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT true or false AS "true";
-% .L # table_name
+#SELECT cast('true' AS boolean) or cast('false' AS boolean) AS "true";
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
-#SELECT true and false AS "false";
-% .L # table_name
+#SELECT cast('true' AS boolean) and cast('false' AS boolean) AS "false";
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT not true AS "true";
-% .L # table_name
+#SELECT not cast('false' AS boolean) AS "true";
+% .L1 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT not cast('true' AS boolean) AS "false";
-% .L # table_name
+% .L1 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT true = false AS "false";
-% .L # table_name
+#SELECT cast('true' AS boolean) = cast('false' AS boolean) AS "false";
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT true <> false AS "true";
-% .L # table_name
+#SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS "true";
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
@@ -104,8 +104,8 @@ Ready.
 [ "",	true	]
 #SELECT '' AS t_3, BOOLTBL1.*
 #   FROM BOOLTBL1
-#   WHERE f1 = true;
-% .L,	sys.booltbl1 # table_name
+#   WHERE f1 = cast('true' AS boolean);
+% .L1,	sys.booltbl1 # table_name
 % t_3,	f1 # name
 % char,	boolean # type
 % 0,	5 # length
@@ -115,8 +115,8 @@ Ready.
 [ "",	true	]
 #SELECT '' AS t_3, BOOLTBL1.* 
 #   FROM BOOLTBL1
-#   WHERE f1 <> false;
-% .L,	sys.booltbl1 # table_name
+#   WHERE f1 <> cast('false' AS boolean);
+% .L1,	sys.booltbl1 # table_name
 % t_3,	f1 # name
 % char,	boolean # type
 % 0,	5 # length
@@ -128,8 +128,8 @@ Ready.
 [ 1 ]
 #SELECT '' AS f_1, BOOLTBL1.* 
 #   FROM BOOLTBL1
-#   WHERE f1 = false;
-% .L,	sys.booltbl1 # table_name
+#   WHERE f1 = cast('false' AS boolean);
+% .L1,	sys.booltbl1 # table_name
 % f_1,	f1 # name
 % char,	boolean # type
 % 0,	5 # length
@@ -183,8 +183,8 @@ Ready.
 [ "",	true,	false	]
 #SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
 #   FROM BOOLTBL1, BOOLTBL2
-#   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = 'false';
-% .L,	sys.booltbl1,	sys.booltbl2 # table_name
+#   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = cast('false' AS boolean);
+% .L1,	sys.booltbl1,	sys.booltbl2 # table_name
 % ff_4,	f1,	f1 # name
 % char,	boolean,	boolean # type
 % 0,	5,	5 # length
@@ -196,7 +196,7 @@ Ready.
 #SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
 #   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = bool 'true'
 #   ORDER BY BOOLTBL1.f1, BOOLTBL2.f1;
-% .L,	sys.booltbl1,	sys.booltbl2 # table_name
+% .L1,	sys.booltbl1,	sys.booltbl2 # table_name
 % tf_12_ff_4,	f1,	f1 # name
 % char,	boolean,	boolean # type
 % 0,	5,	5 # length
