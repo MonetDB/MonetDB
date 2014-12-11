@@ -97,6 +97,16 @@ function user.main():void;
     io.print(s);
     xs := mosaic.subselect(x,c,nil:int,nil:int,false,false,true);
     io.print(xs);
+    bstr := bat.new(:oid,:str);
+    bat.append(bstr,"the");
+    bat.append(bstr,"big");
+    bat.append(bstr,"brown");
+    bat.append(bstr,"fox");
+    ystr := mosaic.compress(bstr,"literal");
+    tstr := algebra.subselect(bstr,"big","fox",true,true,false);
+    io.print(tstr);
+    tstr := mosaic.subselect(ystr,"big","fox",true,true,false);
+    io.print(tstr);
 end main;
 #--------------------------#
 # h	t  # name
@@ -317,6 +327,20 @@ end main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
+#--------------------------#
+# h	t  # name
+# void	void  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	void  # type
+#--------------------------#
+[ 0@0,	1@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
 
 # 17:19:36 >  
 # 17:19:36 >  "Done."

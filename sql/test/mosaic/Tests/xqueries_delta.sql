@@ -103,6 +103,8 @@ alter table tmp3 alter column i set storage 'delta';
 alter table tmp3 alter column b set storage 'delta';
 alter table tmp3 alter column f set storage 'delta';
 
+select count(*) from tmp3;
+
 explain select count(*) from tmp3 where i <4;
 select count(*) from tmp3 where i <4;
 explain select count(*) from tmp3 where i = 7;

@@ -229,7 +229,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TYPE*)task->src)[i] = val;\
-	hdr->checksum2.sum##TYPE += i * val;\
+	hdr->checksum2.sum##TYPE += (TYPE)(i * val);\
 	task->src += i * sizeof(TYPE);\
 }
 
@@ -260,7 +260,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++)
 				((int*)task->src)[i] = val;
-			hdr->checksum2.sumint += i * val;
+			hdr->checksum2.sumint += (int) (i * val);
 			task->src += i * sizeof(int);
 		}
 		break;

@@ -37,7 +37,11 @@ io.print(jl,jr);
 (ml,mr):= mosaic.join(x,d);
 io.print(ml,mr);
 
-(jl,jr):= algebra.join(d,base);
-io.print(jl,jr);
-(ml,mr):= mosaic.join(d,x);
-io.print(ml,mr);
+(kl,kr):= algebra.join(d,base);
+io.print(kl);
+io.print(kr);
+io.print(kl,kr);
+(nl,nr):= mosaic.join(d,x);
+io.print(nl);
+io.print(nr);
+io.print(nl,nr);
