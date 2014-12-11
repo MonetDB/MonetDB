@@ -69,7 +69,7 @@ opt_export  str countRef;
 opt_export  str subcountRef;
 opt_export  str copyRef;
 opt_export  str copy_fromRef;
-opt_export  str copy_intoRef;
+opt_export  str export_tableRef;
 opt_export  str count_no_nilRef;
 opt_export  str crossRef;
 opt_export  str createRef;

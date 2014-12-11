@@ -40,16 +40,16 @@ Ready.
 % clob # type
 % 94 # length
 function user.s5_1{autoCommit=true}():void;
-    X_41 := bat.new(nil:oid,nil:str);
-    X_50 := bat.append(X_41,"sys.L1");
-    X_44 := bat.new(nil:oid,nil:str);
-    X_52 := bat.append(X_44,"L1");
+    X_42 := bat.new(nil:oid,nil:str);
+    X_50 := bat.append(X_42,"sys.L1");
     X_45 := bat.new(nil:oid,nil:str);
-    X_54 := bat.append(X_45,"wrd");
-    X_46 := bat.new(nil:oid,nil:int);
-    X_56 := bat.append(X_46,64);
-    X_48 := bat.new(nil:oid,nil:int);
-    X_58 := bat.append(X_48,0);
+    X_52 := bat.append(X_45,"L1");
+    X_46 := bat.new(nil:oid,nil:str);
+    X_54 := bat.append(X_46,"wrd");
+    X_47 := bat.new(nil:oid,nil:int);
+    X_56 := bat.append(X_47,64);
+    X_49 := bat.new(nil:oid,nil:int);
+    X_58 := bat.append(X_49,0);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","t2564");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c3",0);

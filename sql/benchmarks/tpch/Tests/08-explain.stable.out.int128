@@ -59,20 +59,20 @@ Ready.
 % clob # type
 % 942 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
-    X_204 := bat.new(nil:oid,nil:str);
-    X_213 := bat.append(X_204,"sys.all_nations");
+    X_205 := bat.new(nil:oid,nil:str);
+    X_213 := bat.append(X_205,"sys.all_nations");
     X_223 := bat.append(X_213,"sys.L3");
-    X_207 := bat.new(nil:oid,nil:str);
-    X_215 := bat.append(X_207,"o_year");
-    X_225 := bat.append(X_215,"mkt_share");
     X_208 := bat.new(nil:oid,nil:str);
-    X_217 := bat.append(X_208,"int");
+    X_215 := bat.append(X_208,"o_year");
+    X_225 := bat.append(X_215,"mkt_share");
+    X_209 := bat.new(nil:oid,nil:str);
+    X_217 := bat.append(X_209,"int");
     X_227 := bat.append(X_217,"decimal");
-    X_209 := bat.new(nil:oid,nil:int);
-    X_219 := bat.append(X_209,32);
+    X_210 := bat.new(nil:oid,nil:int);
+    X_219 := bat.append(X_210,32);
     X_229 := bat.append(X_219,37);
-    X_211 := bat.new(nil:oid,nil:int);
-    X_221 := bat.append(X_211,0);
+    X_212 := bat.new(nil:oid,nil:int);
+    X_221 := bat.append(X_212,0);
     X_230 := bat.append(X_221,4);
     X_9 := sql.mvc();
     X_10:bat[:oid,:oid]  := sql.tid(X_9,"sys","lineitem");

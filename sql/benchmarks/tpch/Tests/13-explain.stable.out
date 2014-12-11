@@ -51,20 +51,20 @@ Ready.
 % clob # type
 % 430 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
-    X_88 := bat.new(nil:oid,nil:str);
-    X_96 := bat.append(X_88,".c_orders");
+    X_89 := bat.new(nil:oid,nil:str);
+    X_96 := bat.append(X_89,".c_orders");
     X_106 := bat.append(X_96,".L2");
-    X_90 := bat.new(nil:oid,nil:str);
-    X_98 := bat.append(X_90,"c_count");
-    X_108 := bat.append(X_98,"custdist");
     X_91 := bat.new(nil:oid,nil:str);
-    X_100 := bat.append(X_91,"wrd");
+    X_98 := bat.append(X_91,"c_count");
+    X_108 := bat.append(X_98,"custdist");
+    X_92 := bat.new(nil:oid,nil:str);
+    X_100 := bat.append(X_92,"wrd");
     X_110 := bat.append(X_100,"wrd");
-    X_92 := bat.new(nil:oid,nil:int);
-    X_102 := bat.append(X_92,64);
+    X_93 := bat.new(nil:oid,nil:int);
+    X_102 := bat.append(X_93,64);
     X_111 := bat.append(X_102,64);
-    X_94 := bat.new(nil:oid,nil:int);
-    X_104 := bat.append(X_94,0);
+    X_95 := bat.new(nil:oid,nil:int);
+    X_104 := bat.append(X_95,0);
     X_112 := bat.append(X_104,0);
     X_4:bat[:oid,:int]  := bat.new(nil:oid,nil:int);
     X_3 := sql.mvc();

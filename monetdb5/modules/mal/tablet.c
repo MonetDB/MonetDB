@@ -227,7 +227,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 BAT **
 TABLETcollect(Tablet *as)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs + 4);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);
@@ -257,7 +257,7 @@ TABLETcollect(Tablet *as)
 BAT **
 TABLETcollect_parts(Tablet *as, BUN offset)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs +4);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);

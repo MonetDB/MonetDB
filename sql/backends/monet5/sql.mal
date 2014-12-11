@@ -274,40 +274,27 @@ pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
 comment "delete from table";
 
-pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
-address mvc_result_file_wrap
-comment "Prepare a file result set";
-pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
-address mvc_result_file_wrap
-comment "Prepare a file result set";
-pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:any_1 ) :int 
-address mvc_result_row_wrap
-comment "Prepare a row result set";
-pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
-address mvc_result_table_wrap
-comment "Prepare a table result set";
+#pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
+#address mvc_table_result_wrap
+#comment "Prepare a table result set";
 pattern resultSet{unsafe}(tbl:str, attr:str, tpe:str, len:int,scale:int, val:any) :int 
 address mvc_scalar_value_wrap
 comment "Prepare a table result set";
 
-pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
-address mvc_result_value_wrap
-comment "Add the value to the row query result";
-pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
-address mvc_result_column_wrap
-comment "Add the column to the table query result";
-
 pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
-address mvc_row_value_wrap
+address mvc_row_result_wrap
 comment "Prepare a table result set";
 
 pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
-address mvc_result_table_wrap
-comment "Prepare a table result set";
+address mvc_table_result_wrap
+comment "Prepare a table result set for the client in default CSV format";
 
-pattern copy_into{unsafe}(fname:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
-address mvc_copy_into_wrap
-comment "Prepare a table result set for the COPY INTO";
+pattern export_table{unsafe}(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+address mvc_export_row_wrap
+comment "Prepare a table result set for the COPY INTO stream";
+pattern export_table{unsafe}(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+address mvc_export_table_wrap
+comment "Prepare a table result set for the COPY INTO stream";
 
 pattern declaredTable{unsafe}( name:str ) :int 
 address mvc_declared_table_wrap
