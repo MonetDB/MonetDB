@@ -291,7 +291,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--host=%s' % host)
     if verbose:
-        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
+        sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
@@ -333,7 +333,8 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
 def server(args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
-           dbinit = None, bufsize = 0, log = False, notrace = False):
+           dbinit = None, bufsize = 0, log = False, notrace = False,
+           notimeout = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -341,6 +342,8 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
+    if notimeout and 'Mtimeout' in cmd[0]:
+        del cmd[0:3]            # Mtimeout -timeout 60
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
     if dbinit is not None:
@@ -376,7 +379,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
     if dbpath is not None:
         cmd.append('--dbpath=%s' % dbpath)
     if verbose:
-        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
+        sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     for i in range(len(args)):
         if args[i] == '--set' and i+1 < len(args):

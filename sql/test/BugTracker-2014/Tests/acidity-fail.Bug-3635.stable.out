@@ -1,0 +1,15 @@
+stdout of test 'acidity-fail.Bug-3635` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 15:25:29 >  
+# 15:25:29 >  "/usr/bin/python2" "acidity-fail.Bug-3635.py" "acidity-fail.Bug-3635"
+# 15:25:29 >  
+
+[(1,), (2,), (3,)]
+[(4,), (5,), (6,)]
+[(4,), (5,), (6,)]
+
+# 15:26:10 >  
+# 15:26:10 >  "Done."
+# 15:26:10 >  
+
