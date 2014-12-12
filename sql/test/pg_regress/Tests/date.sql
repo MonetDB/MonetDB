@@ -28,14 +28,30 @@ SELECT f1 AS "Nine" FROM DATE_TBL WHERE f1 < '2000-01-01';
 SELECT f1 AS "Three" FROM DATE_TBL
   WHERE f1 BETWEEN '2000-01-01' AND '2001-01-01';
 
+INSERT INTO DATE_TBL VALUES (null);
+
 -- test MonetDB date functions
 -- select distinct name, func, mod, language, type, schema_id from sys.functions where id in (select func_id from sys.args where number in (0, 1) and name in ('res_0', 'arg_1') and type = 'date') order by name, func, schema_id
 -- select curdate();
+-- select current_date();
 -- select current_date;
 
 SELECT f1, day(f1) FROM DATE_TBL;
 SELECT f1, month(f1) FROM DATE_TBL;
 SELECT f1, year(f1) FROM DATE_TBL;
+SELECT f1, century(f1) FROM DATE_TBL;
+SELECT f1, millenium(f1) FROM DATE_TBL;
+SELECT f1, epoch(f1) FROM DATE_TBL;
+
+SELECT f1, extract(day from f1) FROM DATE_TBL;
+SELECT f1, extract(week from f1) FROM DATE_TBL;
+SELECT f1, extract(month from f1) FROM DATE_TBL;
+SELECT f1, extract(quarter from f1) FROM DATE_TBL;
+SELECT f1, extract(halfyear from f1) FROM DATE_TBL;
+SELECT f1, extract(year from f1) FROM DATE_TBL;
+SELECT f1, extract(century from f1) FROM DATE_TBL;
+SELECT f1, extract(millenium from f1) FROM DATE_TBL;
+SELECT f1, extract(epoch from f1) FROM DATE_TBL;
 
 SELECT f1, week(f1) FROM DATE_TBL;
 SELECT f1, weekofyear(f1) FROM DATE_TBL;
@@ -44,18 +60,35 @@ SELECT f1, dayofmonth(f1) FROM DATE_TBL;
 SELECT f1, dayofweek(f1) FROM DATE_TBL;
 SELECT f1, dayofyear(f1) FROM DATE_TBL;
 
+SELECT f1, hour(f1) FROM DATE_TBL;
+SELECT f1, minute(f1) FROM DATE_TBL;
+SELECT f1, second(f1) FROM DATE_TBL;
+SELECT f1, extract(hour from f1) FROM DATE_TBL;
+SELECT f1, extract(minute from f1) FROM DATE_TBL;
+SELECT f1, extract(second from f1) FROM DATE_TBL;
+-- we need to cast the date into a timestamp
 SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
 SELECT f1, hour(cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, minute(cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, second(cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, extract(hour from cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, extract(minute from cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, extract(second from cast(f1 as timestamp)) FROM DATE_TBL;
 
-SELECT f1, sql_add(f1, cast(12 as interval month)) FROM DATE_TBL;
 SELECT f1, sql_add(f1, 365*24*60*60.0) FROM DATE_TBL;
 SELECT f1, sql_add(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
 
-SELECT f1, sql_sub(f1, cast(12 as interval month)) FROM DATE_TBL;
+SELECT f1, sql_add(f1, cast(12 as interval month)) FROM DATE_TBL;
+SELECT f1, sql_add(f1, cast(-18 as interval month)) FROM DATE_TBL;
+
 SELECT f1, sql_sub(f1, 365*24*60*60.0) FROM DATE_TBL;
 SELECT f1, sql_sub(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
+
+SELECT f1, sql_sub(f1, cast(12 as interval month)) FROM DATE_TBL;
+SELECT f1, sql_sub(f1, cast(-18 as interval month)) FROM DATE_TBL;
+
+SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
+SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
 
 --
 -- Check all the documented input formats
