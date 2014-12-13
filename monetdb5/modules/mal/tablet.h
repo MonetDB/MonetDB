@@ -91,6 +91,7 @@ typedef struct Table_t {
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
 	BAT *complaints;			/* lines that did not match the required input */
+	BAT *error_file;			/* copy file */
 	BAT *error_row;				/* line number */
 	BAT *error_fld;				/* field with error */
 	BAT *error_msg;				/* reason */

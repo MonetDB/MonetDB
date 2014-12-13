@@ -732,6 +732,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		as.error = NULL;
 		as.tryall = 0;
 		as.complaints = NULL;
+		as.error_file = BATnew(TYPE_void, TYPE_str,0,TRANSIENT);
 		as.error_row = BATnew(TYPE_void, TYPE_lng,0,TRANSIENT);
 		as.error_fld = BATnew(TYPE_void, TYPE_lng,0,TRANSIENT);
 		as.error_msg = BATnew(TYPE_void, TYPE_str,0,TRANSIENT);

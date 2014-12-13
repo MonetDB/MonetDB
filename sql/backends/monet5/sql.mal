@@ -348,7 +348,7 @@ comment "export the number of affected rows by the current query";
 #comment "export a single value onto the stream s";
 
 pattern copy_from{unsafe}( sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int) (:bat[:oid,:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -358,6 +358,10 @@ pattern copyfrom{unsafe}( sname:str, tname:str,
 address mvc_import_table_stdin
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
+
+#command copy_errors() (efile:bat[:oid,:str], erow:bat[:oid,:int], efld:bat[:oid,:int], emsg:bat[:oid,:str], einp:bat[:oid,:str])
+#address mvc_import_errors
+#comment "Summary of the failed tuple imports";
 
 function single(x:any_2):bat[:oid,:any_2];
 	b := bat.new(0:oid, x);

@@ -57,6 +57,12 @@
 
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
+#define tablet_error(T,MSG, FCN){\
+MT_lock_set(&errorlock, FCN);\
+if (T->error == NULL && (MSG == NULL || (T->error = GDKstrdup(MSG)) == NULL))\
+	T->error = M5OutOfMemory;\
+MT_lock_unset(&errorlock, FCN); }
+
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
@@ -214,10 +220,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			snprintf(errbuf, sizeof(errbuf), "Failed to create bat of size " BUNFMT "\n", as->nr);
-			MT_lock_set(&errorlock, "TABLETcreate_bats");
-			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
-				as->error = M5OutOfMemory;
-			MT_lock_unset(&errorlock, "TABLETcreate_bats");
+			tablet_error(as, errbuf, "TABLETcreate_bats");
 			return -1;
 		}
 	}
@@ -227,7 +230,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 BAT **
 TABLETcollect(Tablet *as)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs + 4);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);
@@ -235,6 +238,7 @@ TABLETcollect(Tablet *as)
 
 	if (bats == NULL)
 		return NULL;
+
 	for (i = 0; i < as->nr_attrs; i++) {
 		bats[i] = fmt[i].c;
 		BBPincref(bats[i]->batCacheid, FALSE);
@@ -243,10 +247,7 @@ TABLETcollect(Tablet *as)
 
 		if (cnt != BATcount(fmt[i].c)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c), cnt);
-			MT_lock_set(&errorlock, "TABLETcollect");
-			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
-				as->error = M5OutOfMemory;
-			MT_lock_unset(&errorlock, "TABLETcollect");
+			tablet_error(as,errbuf,"TABLETcollect");
 			GDKfree(bats);
 			return NULL;
 		}
@@ -257,7 +258,7 @@ TABLETcollect(Tablet *as)
 BAT **
 TABLETcollect_parts(Tablet *as, BUN offset)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs +4);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c);
@@ -291,10 +292,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		}
 		if (cnt != BATcount(b)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
-			MT_lock_set(&errorlock, "TABLETcollect_parts");
-			if (as->error == NULL && (as->error = GDKstrdup(errbuf)) == NULL)
-				as->error = M5OutOfMemory;
-			MT_lock_unset(&errorlock, "TABLETcollect_parts");
+			tablet_error(as,errbuf, "TABLETcollect_parts");
 			GDKfree(bats);
 			return NULL;
 		}
@@ -731,10 +729,7 @@ SQLload_error(READERtask *task, int idx)
 
 	line = (str) GDKmalloc(sz + task->rseplen + 1);
 	if (line == 0) {
-		MT_lock_set(&errorlock, "SQLload_error");
-		if (task->as->error == NULL)
-			task->as->error = M5OutOfMemory;
-		MT_lock_unset(&errorlock, "SQLload_error");
+		tablet_error(task->as, "SQLload malloc error","SQLload_error");
 		return 0;
 	}
 	line[0] = 0;
@@ -835,12 +830,8 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == NULL) {
-			MT_lock_set(&errorlock, "SQLworker_column");
-			if (task->as->error == NULL)
-				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full\n");
-			MT_lock_unset(&errorlock, "SQLworker_column");
+			tablet_error(task->as,"Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
-			mnstr_printf(GDKout, "Failed to extend the BAT, perhaps disk full");
 			return -1;
 		}
 	}
@@ -853,10 +844,7 @@ SQLworker_column(READERtask *task, int col)
 				MT_lock_set(&mal_copyLock, "tablet insert value");
 				if (!task->as->tryall) {
 					/* watch out for concurrent threads */
-					MT_lock_set(&errorlock, "SQLworker_column");
-					if (task->as->error == NULL)
-						task->as->error = err;	/* restore for upper layers */
-					MT_lock_unset(&errorlock, "SQLworker_column");
+					tablet_error(task->as,err,"SQLworker_column");
 				} else
 					BUNins(task->as->complaints, NULL, err, TRUE);
 				MT_lock_unset(&mal_copyLock, "tablet insert value");
@@ -867,10 +855,7 @@ SQLworker_column(READERtask *task, int col)
 	if (err) {
 		/* watch out for concurrent threads */
 		MT_lock_set(&mal_copyLock, "tablet insert value");
-		MT_lock_set(&errorlock, "SQLworker_column");
-		if (task->as->error == NULL)
-			task->as->error = err;	/* restore for upper layers */
-		MT_lock_unset(&errorlock, "SQLworker_column");
+		tablet_error(task->as, err, "SQLworker_column");
 		MT_lock_unset(&mal_copyLock, "tablet insert value");
 	}
 	return err ? -1 : 0;
@@ -880,6 +865,7 @@ SQLworker_column(READERtask *task, int col)
  * The lines are broken on the column separator. Any error is shown and reflected with
  * setting the reference of the offending row fields to NULL.
  * This allows the loading to continue, skipping the minimal number of rows.
+ * The details about the locations can be inspected from the error table.
  */
 static int
 SQLload_file_line(READERtask *task, int idx)
@@ -1038,10 +1024,7 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 	}
 	loc = (lng *) GDKzalloc(sizeof(lng) * threads);
 	if (loc == 0) {
-		MT_lock_set(&errorlock, "SQLworkdivider");
-		if (task->as->error == NULL)
-			task->as->error = M5OutOfMemory;
-		MT_lock_unset(&errorlock, "SQLworkdivider");
+		tablet_error(task->as,NULL,"SQLworkdivider");
 		return;
 	}
 	/* use of load directives */
@@ -1125,10 +1108,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[i].cols = 0;
 
 	if (task == 0) {
-		MT_lock_set(&errorlock, "SQLload_file");
-		if (as->error == NULL)
-			as->error = M5OutOfMemory;
-		MT_lock_unset(&errorlock, "SQLload_file");
+		tablet_error(as,NULL,"SQLload_file");
 		return BUN_NONE;
 	}
 
@@ -1147,10 +1127,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->basesize = b->size + 2;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
-		MT_lock_set(&errorlock, "SQLload_file");
-		if (task->as->error == NULL)
-			as->error = M5OutOfMemory;
-		MT_lock_unset(&errorlock, "SQLload_file");
+		tablet_error(task->as, NULL, "SQLload_file");
 		goto bailout;
 	}
 
@@ -1209,10 +1186,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			MT_lock_set(&errorlock, "SQLload_file");
-			if (task->as->error == NULL)
-				as->error = M5OutOfMemory;
-			MT_lock_unset(&errorlock, "SQLload_file");
+			tablet_error(task->as,NULL,"SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1255,14 +1229,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(cntxt, msg);
 			if (msg) {
-				MT_lock_set(&errorlock, "SQLload_file");
-				if (as->error == NULL)
-					as->error = msg;
-				else {
-					showException(task->out, MAL, "copy_from", "%s", msg);
-					GDKfree(msg);
-				}
-				MT_lock_unset(&errorlock, "SQLload_file");
+				tablet_error(as,msg,"SQLload_file");
 				goto bailout;
 			}
 		}
@@ -1482,14 +1449,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
-		MT_lock_set(&errorlock, "SQLload_file");
-		if (as->error == NULL)
-			as->error = GDKstrdup("Incomplete record at end of file.\n");
-		else
-			showException(task->out, MAL, "copy_from", "Incomplete record at end of file.\n");
-		MT_lock_unset(&errorlock, "SQLload_file");
-		/* indicate that we did read everything (even if we couldn't
-		 * deal with it */
+		tablet_error(as, "Incomplete record at end of file","SQLload_file");
+		/* indicate that we did read everything (even if we couldn't deal with it */
 		task->b->pos = task->b->len;
 		res = -1;
 	}
