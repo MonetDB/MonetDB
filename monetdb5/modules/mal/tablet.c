@@ -57,7 +57,7 @@
 
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
-#define tablet_error(T,MSG, FCN){\
+#define tablet_error(ROW,COL,T,MSG, FCN){\
 MT_lock_set(&errorlock, FCN);\
 if (T->error == NULL && (MSG == NULL || (T->error = GDKstrdup(MSG)) == NULL))\
 	T->error = M5OutOfMemory;\
@@ -220,7 +220,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			snprintf(errbuf, sizeof(errbuf), "Failed to create bat of size " BUNFMT "\n", as->nr);
-			tablet_error(as, errbuf, "TABLETcreate_bats");
+			tablet_error(-1,i, as, errbuf, "TABLETcreate_bats");
 			return -1;
 		}
 	}
@@ -247,7 +247,7 @@ TABLETcollect(Tablet *as)
 
 		if (cnt != BATcount(fmt[i].c)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c), cnt);
-			tablet_error(as,errbuf,"TABLETcollect");
+			tablet_error(-1,i,as,errbuf,"TABLETcollect");
 			GDKfree(bats);
 			return NULL;
 		}
@@ -292,7 +292,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		}
 		if (cnt != BATcount(b)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
-			tablet_error(as,errbuf, "TABLETcollect_parts");
+			tablet_error(-1,i,as,errbuf, "TABLETcollect_parts");
 			GDKfree(bats);
 			return NULL;
 		}
@@ -729,7 +729,7 @@ SQLload_error(READERtask *task, int idx)
 
 	line = (str) GDKmalloc(sz + task->rseplen + 1);
 	if (line == 0) {
-		tablet_error(task->as, "SQLload malloc error","SQLload_error");
+		tablet_error(idx,-1,task->as, "SQLload malloc error","SQLload_error");
 		return 0;
 	}
 	line[0] = 0;
@@ -830,7 +830,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == NULL) {
-			tablet_error(task->as,"Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
+			tablet_error(-1,col,task->as,"Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
 			return -1;
 		}
@@ -844,7 +844,7 @@ SQLworker_column(READERtask *task, int col)
 				MT_lock_set(&mal_copyLock, "tablet insert value");
 				if (!task->as->tryall) {
 					/* watch out for concurrent threads */
-					tablet_error(task->as,err,"SQLworker_column");
+					tablet_error(i,col,task->as,err,"SQLworker_column");
 				} else
 					BUNins(task->as->complaints, NULL, err, TRUE);
 				MT_lock_unset(&mal_copyLock, "tablet insert value");
@@ -855,7 +855,7 @@ SQLworker_column(READERtask *task, int col)
 	if (err) {
 		/* watch out for concurrent threads */
 		MT_lock_set(&mal_copyLock, "tablet insert value");
-		tablet_error(task->as, err, "SQLworker_column");
+		tablet_error(-1,col,task->as, err, "SQLworker_column");
 		MT_lock_unset(&mal_copyLock, "tablet insert value");
 	}
 	return err ? -1 : 0;
@@ -1024,7 +1024,7 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 	}
 	loc = (lng *) GDKzalloc(sizeof(lng) * threads);
 	if (loc == 0) {
-		tablet_error(task->as,NULL,"SQLworkdivider");
+		tablet_error(-1,-1,task->as,NULL,"SQLworkdivider");
 		return;
 	}
 	/* use of load directives */
@@ -1108,7 +1108,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[i].cols = 0;
 
 	if (task == 0) {
-		tablet_error(as,NULL,"SQLload_file");
+		tablet_error(-1,-1,as,NULL,"SQLload_file");
 		return BUN_NONE;
 	}
 
@@ -1127,7 +1127,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->basesize = b->size + 2;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
-		tablet_error(task->as, NULL, "SQLload_file");
+		tablet_error(-1,-1,task->as, NULL, "SQLload_file");
 		goto bailout;
 	}
 
@@ -1186,7 +1186,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			tablet_error(task->as,NULL,"SQLload_file");
+			tablet_error(-1,-1,task->as,NULL,"SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1229,7 +1229,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(cntxt, msg);
 			if (msg) {
-				tablet_error(as,msg,"SQLload_file");
+				tablet_error(-1,-1,as,msg,"SQLload_file");
 				goto bailout;
 			}
 		}
@@ -1449,13 +1449,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
-		tablet_error(as, "Incomplete record at end of file","SQLload_file");
+		tablet_error(-1,-1,as, "Incomplete record at end of file","SQLload_file");
 		/* indicate that we did read everything (even if we couldn't deal with it */
 		task->b->pos = task->b->len;
 		res = -1;
 	}
 
-	if (GDKdebug & GRPalgorithms) {
+	if (GDKdebug & GRPalgorithms) 
+	{
 		if (cnt < (BUN) maxrow)
 			/* providing a precise count is not always easy, instead
 			 * consider maxrow as an upper bound */
