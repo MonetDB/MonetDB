@@ -744,7 +744,7 @@ static str translatePoint(GEOSGeometry** outGeometry, const GEOSGeometry* geosGe
 	int coordinatesNum = 0;
 	const GEOSCoordSequence* gcs_old;	
 	GEOSCoordSeq gcs_new;
-	str ret = MAL_SUCCEED;
+	str err;
 
 	/* get the number of coordinates the geometry has */
 	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
@@ -760,10 +760,11 @@ static str translatePoint(GEOSGeometry** outGeometry, const GEOSGeometry* geosGe
 	gcs_new = GEOSCoordSeq_create(1, coordinatesNum);
 
 	/* create the translated coordinates */
-	ret = translateCoordSeq(0, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new);
-	if(ret != MAL_SUCCEED) {
+	if((err = translateCoordSeq(0, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.Translate", "%s", err); 
 		*outGeometry = NULL;
-		return ret;
+		GDKfree(err);
+		return msg;
 	}
 	
 	/* create the geometry from the coordinates sequence */
@@ -777,7 +778,7 @@ static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	const GEOSCoordSequence* gcs_old;	
 	GEOSCoordSeq gcs_new;	
 	unsigned int pointsNum =0, i=0;
-	str ret = MAL_SUCCEED;	
+	str err
 
 	/* get the number of coordinates the geometry has */
 	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
@@ -795,10 +796,11 @@ static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	
 	/* create the translated coordinates */
 	for(i=0; i<pointsNum; i++) {
-		ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new);
-		if(ret != MAL_SUCCEED) {
+		if((ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.Translate", "%s", err); 
 			GEOSCoordSeq_destroy(gcs_new);
-			return ret;
+			GDKfree(err);
+			return msg;
 		}
 	}
 
@@ -808,12 +810,51 @@ static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	return MAL_SUCCEED;
 }
 
+//Necessary for composing a polygon from rings
+static str translateLinearRing(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;	
+	unsigned int pointsNum =0, i=0;
+	str err;
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL)
+		return createException(MAL, "geom.Translate", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
+	
+	/* create the translated coordinates */
+	for(i=0; i<pointsNum; i++) {
+		if((ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.Translate", "%s", err); 
+			GEOSCoordSeq_destroy(gcs_new);
+			GDKfree(err);
+			return msg;
+		}
+	}
+
+	//create the geometry from the translated coordinates sequence
+	*outGeometry = GEOSGeom_createLinearRing(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+
 static str translatePolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
 	const GEOSGeometry* exteriorRingGeometry;
 	GEOSGeometry* transformedExteriorRingGeometry = NULL;
 	GEOSGeometry** transformedInteriorRingGeometries = NULL;
 	int numInteriorRings=0, i=0;
-	str ret = MAL_SUCCEED;
+	str err;
 
 	/* get the exterior ring of the polygon */
 	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
@@ -822,9 +863,11 @@ static str translatePolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geos
 		return createException(MAL, "geom.Translate","GEOSGetExteriorRing failed");
 	}	
 
-	if((ret = translateLineString(&transformedExteriorRingGeometry, exteriorRingGeometry, dx, dy, dz)) != MAL_SUCCEED) {
+	if((err = translateLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, dx, dy, dz)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.Translate", "%s", err);
 		*outGeometry = NULL;
-		return ret;
+		GDKfree(err);
+		return msg;
 	}
 
 	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
@@ -837,10 +880,12 @@ static str translatePolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geos
 	/* iterate over the interiorRing and translate each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings*sizeof(GEOSGeometry*));
 	for(i=0; i<numInteriorRings; i++) {
-		if((ret = translateLineString(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+		if((err = translateLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.Translate", "%s", err); 
 			GDKfree(*transformedInteriorRingGeometries);
 			*outGeometry = NULL;
-			return ret;
+			GDKfree(err);
+			return msg;
 		}
 	}
 
