@@ -559,6 +559,11 @@ address SYSMONstop;
 pattern sysmon_stop(tag:lng)
 address SYSMONstop;
 
+pattern copy_rejects() (rowid:bat[:oid,:lng], fldid:bat[:oid,:int], msg:bat[:oid,:str], inp:bat[:oid,:str])
+address COPYrejects;
+pattern copy_rejects_clear()
+address COPYrejects_clear;
+
 pattern calc.hash( v:bte ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:bte] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:sht ) :wrd address MKEYhash; 

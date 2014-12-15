@@ -16,24 +16,34 @@ copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 2,two,NULL
 
-Select * from null_as_string;
+select * from null_as_string;
 delete from null_as_string;
+select * from sys.rejects;
+call sys.clearrejects();
 
 -- treat empty values as errors for the default NULL value 
 copy 1 records into null_as_string from stdin delimiters ',','\n';
 ,,
+select * from sys.rejects;
+call sys.clearrejects();
 
 copy 1 records into null_as_string from stdin delimiters ',','\n';
 ,zero,0
+select * from sys.rejects;
+call sys.clearrejects();
 
 -- shouldn't fail because empty strings are just fine
 copy 1 records into null_as_string from stdin delimiters ',','\n';
 1,,1
+select * from sys.rejects;
+call sys.clearrejects();
 
 copy 1 records into null_as_string from stdin delimiters ',','\n';
 2,two,
 
-Select * from null_as_string;
+select * from null_as_string;
 delete from null_as_string;
+select * from sys.rejects;
+call sys.clearrejects();
 
 drop table null_as_string;

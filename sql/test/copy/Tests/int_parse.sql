@@ -15,17 +15,26 @@ copy 2 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
 3.00
 -4.0000
 
+select * from t_int;
+select * from sys.rejects;
+call sys.clearrejects();
+
 copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
 5.1
 
 select * from t_int;
+select * from sys.rejects;
+call sys.clearrejects();
 
-copy 4 records into t_int from stdin delimiters ',','\n' NULL as '';
+copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
 1
 nil
+
 null
 abc
 
 select * from t_int;
+select * from sys.rejects;
+call sys.clearrejects();
 
 drop table t_int;
