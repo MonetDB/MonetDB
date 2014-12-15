@@ -319,6 +319,19 @@ comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 
+command Translate3D(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb address wkbTranslate
+comment "Moves all points of the geometry by dx, dy, dz";
+
+function Translate(g:wkb, dx:dbl, dy:dbl) :wkb;
+	x := Translate3D(g,dx,dy,0:dbl);
+	return x;
+end Translate;
+
+function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
+	x := Translate3D(g,dx,dy,dz);
+	return x;
+end Translate;
+
 function NumPoints(w:wkb) :int;
 	x := PointsNum(w, 1);
 	return x;

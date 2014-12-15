@@ -4292,7 +4292,9 @@ BEGIN
 	END IF;
 END;
 
---CREATE FUNCTION ST_Translate RETURNS EXTERNAL NAME
+--Translate moves all points of a geometry dx, dy, dz
+CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double) RETURNS Geometry EXTERNAL NAME geom."Translate";
+CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double, dz double) RETURNS Geometry EXTERNAL NAME geom."Translate";
 --CREATE FUNCTION ST_TransScale RETURNS EXTERNAL NAME
 
 -------------------------------------------------------------------------

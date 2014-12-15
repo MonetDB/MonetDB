@@ -199,6 +199,7 @@ geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum);
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
+geom_export str wkbTranslate(wkb**, wkb**, double*, double*, double*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, double*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
 

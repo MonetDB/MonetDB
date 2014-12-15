@@ -434,6 +434,250 @@ return createException(MAL, "geom.Transform", "Function Not Implemented");
 #endif
 }
 
+//gets a coord seq and moves it dx, dy, dz
+static str translateCoordSeq(int idx, int coordinatesNum, double dx, double dy, double dz, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
+	double x=0, y=0, z=0;
+
+	//get the coordinates
+	if(!GEOSCoordSeq_getX(gcs_old, idx, &x))
+		return createException(MAL, "geom.Translate", "GEOSCoordSeq_getX failed");
+	if(!GEOSCoordSeq_getY(gcs_old, idx, &y))
+		return createException(MAL, "geom.Translate", "GEOSCoordSeq_getY failed");
+	if(coordinatesNum > 2) 
+		if(!GEOSCoordSeq_getZ(gcs_old, idx, &z))
+			return createException(MAL, "geom.Translate", "GEOSCoordSeq_getZ failed");
+
+	//create new coordinates moved by dx, dy, dz
+	if(!GEOSCoordSeq_setX(*gcs_new, idx, (x+dx)))
+		return createException(MAL, "geom.Translate", "GEOSCoordSeq_setX failed");
+	if(!GEOSCoordSeq_setY(*gcs_new, idx, (y+dy)))
+		return createException(MAL, "geom.Translate", "GEOSCoordSeq_setY failed");
+	if(coordinatesNum > 2) 
+		if(!GEOSCoordSeq_setZ(*gcs_new, idx, (z+dz)))
+			return createException(MAL, "geom.Translate", "GEOSCoordSeq_setZ failed");
+
+	return MAL_SUCCEED;
+}
+
+static str translatePoint(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;
+	str ret = MAL_SUCCEED;
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Translate", "GEOSGeom_getCoordSeq failed");
+	}
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(1, coordinatesNum);
+
+	/* create the translated coordinates */
+	ret = translateCoordSeq(0, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new);
+	if(ret != MAL_SUCCEED) {
+		*outGeometry = NULL;
+		return ret;
+	}
+	
+	/* create the geometry from the coordinates sequence */
+	*outGeometry = GEOSGeom_createPoint(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;	
+	unsigned int pointsNum =0, i=0;
+	str ret = MAL_SUCCEED;	
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL)
+		return createException(MAL, "geom.Translate", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(pointsNum, coordinatesNum);
+	
+	/* create the translated coordinates */
+	for(i=0; i<pointsNum; i++) {
+		ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new);
+		if(ret != MAL_SUCCEED) {
+			GEOSCoordSeq_destroy(gcs_new);
+			return ret;
+		}
+	}
+
+	//create the geometry from the translated coordinates sequence
+	*outGeometry = GEOSGeom_createLineString(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str translatePolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	const GEOSGeometry* exteriorRingGeometry;
+	GEOSGeometry* transformedExteriorRingGeometry = NULL;
+	GEOSGeometry** transformedInteriorRingGeometries = NULL;
+	int numInteriorRings=0, i=0;
+	str ret = MAL_SUCCEED;
+
+	/* get the exterior ring of the polygon */
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	if(!exteriorRingGeometry) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Translate","GEOSGetExteriorRing failed");
+	}	
+
+	if((ret = translateLineString(&transformedExteriorRingGeometry, exteriorRingGeometry, dx, dy, dz)) != MAL_SUCCEED) {
+		*outGeometry = NULL;
+		return ret;
+	}
+
+	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
+	if (numInteriorRings == -1 ) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		return createException(MAL, "geom.Translate", "GEOSGetInteriorRingN failed.");
+	}
+
+	/* iterate over the interiorRing and translate each one of them */
+	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings*sizeof(GEOSGeometry*));
+	for(i=0; i<numInteriorRings; i++) {
+		if((ret = translateLineString(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+			GDKfree(*transformedInteriorRingGeometries);
+			*outGeometry = NULL;
+			return ret;
+		}
+	}
+
+	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+	return MAL_SUCCEED;
+}
+
+static str translateGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz);
+static str translateMultiGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	int geometriesNum, i;
+	GEOSGeometry** transformedMultiGeometries = NULL;
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	transformedMultiGeometries = GDKmalloc(geometriesNum*sizeof(GEOSGeometry*));
+
+	//In order to have the geometries in the output in the same order as in the input
+	//we should read them and put them in the area in reverse order
+	for(i=geometriesNum-1; i>=0; i--) {
+		str err;
+		const GEOSGeometry* multiGeometry = GEOSGetGeometryN(geosGeometry, i);
+
+		if((err = translateGeometry(&(transformedMultiGeometries[i]), multiGeometry, dx, dy, dz)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.Translate", "%s", err);
+			GDKfree(err);
+			GDKfree(*transformedMultiGeometries);
+			*outGeometry = NULL;
+			
+			return msg;
+		}
+	}
+	
+	*outGeometry = GEOSGeom_createCollection(GEOSGeomTypeId(geosGeometry), transformedMultiGeometries, geometriesNum);
+
+	return MAL_SUCCEED;
+}
+
+static str translateGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double dx, double dy, double dz) {
+	str err;
+	int geometryType = GEOSGeomTypeId(geosGeometry)+1;
+
+	//check the type of the geometry
+	switch(geometryType) {
+		case wkbPoint:
+			if((err = translatePoint(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Translate", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbLineString:
+		case wkbLinearRing:
+			if((err = translateLineString(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Translate", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbPolygon:
+			if((err = translatePolygon(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Translate", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break; 
+		case wkbMultiPoint:
+		case wkbMultiLineString:
+		case wkbMultiPolygon:
+		case  wkbGeometryCollection:
+			if((err = translateMultiGeometry(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Translate", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		default:
+			return createException(MAL, "geom.Translate", "%s Unknown geometry type", geom_type2str(geometryType,0));
+	}
+
+	return MAL_SUCCEED;
+}
+
+
+
+str wkbTranslate(wkb** outWKB, wkb** geomWKB, double* dx, double* dy, double* dz) {
+	GEOSGeometry* outGeometry;
+	GEOSGeom geosGeometry;
+	str err;
+
+	if(wkb_isnil(*geomWKB)){
+		*outWKB = wkb_nil;
+		return MAL_SUCCEED;
+	}
+	
+	geosGeometry = wkb2geos(*geomWKB);
+	if(!geosGeometry) {
+		*outWKB = wkb_nil;
+		return createException(MAL, "geom.Translate", "wkb2geos failed");
+	}
+
+	if((err = translateGeometry(&outGeometry, geosGeometry, *dx, *dy, *dz)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.Translate", "%s", err);
+		GEOSGeom_destroy(geosGeometry);
+		*outWKB = wkb_nil;
+
+		GDKfree(err);
+		return msg;
+	}
+
+	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+
+	*outWKB = geos2wkb(outGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(outGeometry);
+	
+	return MAL_SUCCEED;
+}
+
 //It creates a Delaunay triangulation
 //flag = 0 => returns a collection of polygons
 //flag = 1 => returns a multilinestring
@@ -451,6 +695,7 @@ str wkbDelaunayTriangles(wkb** outWKB, wkb** geomWKB, double* tolerance, int* fl
 	GEOSGeom_destroy(geosGeometry);
 
 	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
 
 	return MAL_SUCCEED;	
 }
@@ -752,8 +997,6 @@ static str dumpPointsGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geos
 
 	return MAL_SUCCEED;
 }
-
-
 
 str wkbDumpPoints(int* idBAT_id, int* geomBAT_id, wkb** geomWKB) {
 	BAT *idBAT = NULL, *geomBAT = NULL;
