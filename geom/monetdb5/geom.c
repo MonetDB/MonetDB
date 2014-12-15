@@ -434,6 +434,287 @@ return createException(MAL, "geom.Transform", "Function Not Implemented");
 #endif
 }
 
+//gets a coord seq and forces it to have dim dimensions adding or removing extra dimensions
+static str forceDimCoordSeq(int idx, int coordinatesNum, int dim, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
+	double x=0, y=0, z=0;
+
+	//get the coordinates
+	if(!GEOSCoordSeq_getX(gcs_old, idx, &x))
+		return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_getX failed");
+	if(!GEOSCoordSeq_getY(gcs_old, idx, &y))
+		return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_getY failed");
+	if(coordinatesNum > 2 && dim > 2) //read it only if needed (dim >2) 
+		if(!GEOSCoordSeq_getZ(gcs_old, idx, &z))
+			return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_getZ failed");
+
+	//create the new coordinates
+	if(!GEOSCoordSeq_setX(*gcs_new, idx, x))
+		return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_setX failed");
+	if(!GEOSCoordSeq_setY(*gcs_new, idx, y))
+		return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_setY failed");
+	if(dim > 2) 
+		if(!GEOSCoordSeq_setZ(*gcs_new, idx, z))
+			return createException(MAL, "geom.ForceDim", "GEOSCoordSeq_setZ failed");
+
+	return MAL_SUCCEED;
+}
+
+static str forceDimPoint(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;
+	str ret = MAL_SUCCEED;
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.ForceDim", "GEOSGeom_getCoordSeq failed");
+	}
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(1, dim);
+
+	/* create the translated coordinates */
+	ret = forceDimCoordSeq(0, coordinatesNum, dim, gcs_old, &gcs_new);
+	if(ret != MAL_SUCCEED) {
+		*outGeometry = NULL;
+		return ret;
+	}
+	
+	/* create the geometry from the coordinates sequence */
+	*outGeometry = GEOSGeom_createPoint(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str forceDimLineString(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;	
+	unsigned int pointsNum =0, i=0;
+	str ret = MAL_SUCCEED;	
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL)
+		return createException(MAL, "geom.ForceDim", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(pointsNum, dim);
+	
+	/* create the translated coordinates */
+	for(i=0; i<pointsNum; i++) {
+		ret = forceDimCoordSeq(i, coordinatesNum, dim, gcs_old, &gcs_new);
+		if(ret != MAL_SUCCEED) {
+			GEOSCoordSeq_destroy(gcs_new);
+			return ret;
+		}
+	}
+
+	//create the geometry from the translated coordinates sequence
+	*outGeometry = GEOSGeom_createLineString(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+//Although linestring and linearRing are essentially the same we need to distinguish that when creting polygon from the rings
+static str forceDimLinearRing(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;	
+	unsigned int pointsNum =0, i=0;
+	str ret = MAL_SUCCEED;	
+
+	/* get the number of coordinates the geometry has */
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	/* get the coordinates of the points comprising the geometry */
+	gcs_old = GEOSGeom_getCoordSeq(geosGeometry);
+	
+	if(gcs_old == NULL)
+		return createException(MAL, "geom.ForceDim", "GEOSGeom_getCoordSeq failed");
+	
+	/* get the number of points in the geometry */
+	GEOSCoordSeq_getSize(gcs_old, &pointsNum);
+
+	/* create the coordinates sequence for the translated geometry */
+	gcs_new = GEOSCoordSeq_create(pointsNum, dim);
+	
+	/* create the translated coordinates */
+	for(i=0; i<pointsNum; i++) {
+		ret = forceDimCoordSeq(i, coordinatesNum, dim, gcs_old, &gcs_new);
+		if(ret != MAL_SUCCEED) {
+			GEOSCoordSeq_destroy(gcs_new);
+			return ret;
+		}
+	}
+
+	//create the geometry from the translated coordinates sequence
+	*outGeometry = GEOSGeom_createLinearRing(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str forceDimPolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	const GEOSGeometry* exteriorRingGeometry;
+	GEOSGeometry* transformedExteriorRingGeometry = NULL;
+	GEOSGeometry** transformedInteriorRingGeometries = NULL;
+	int numInteriorRings=0, i=0;
+	str ret = MAL_SUCCEED;
+
+	/* get the exterior ring of the polygon */
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	if(!exteriorRingGeometry) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.ForceDim","GEOSGetExteriorRing failed");
+	}	
+
+	if((ret = forceDimLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, dim)) != MAL_SUCCEED) {
+		*outGeometry = NULL;
+		return ret;
+	}
+
+	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
+	if (numInteriorRings == -1 ) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		return createException(MAL, "geom.ForceDim", "GEOSGetInteriorRingN failed.");
+	}
+
+	/* iterate over the interiorRing and translate each one of them */
+	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings*sizeof(GEOSGeometry*));
+	for(i=0; i<numInteriorRings; i++) {
+		if((ret = forceDimLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
+			GDKfree(*transformedInteriorRingGeometries);
+			*outGeometry = NULL;
+			return ret;
+		}
+	}
+
+	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+	return MAL_SUCCEED;
+}
+
+static str forceDimGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim);
+static str forceDimMultiGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	int geometriesNum, i;
+	GEOSGeometry** transformedMultiGeometries = NULL;
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	transformedMultiGeometries = GDKmalloc(geometriesNum*sizeof(GEOSGeometry*));
+
+	//In order to have the geometries in the output in the same order as in the input
+	//we should read them and put them in the area in reverse order
+	for(i=geometriesNum-1; i>=0; i--) {
+		str err;
+		const GEOSGeometry* multiGeometry = GEOSGetGeometryN(geosGeometry, i);
+
+		if((err = forceDimGeometry(&(transformedMultiGeometries[i]), multiGeometry, dim)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.ForceDim", "%s", err);
+			GDKfree(err);
+			GDKfree(*transformedMultiGeometries);
+			*outGeometry = NULL;
+			
+			return msg;
+		}
+	}
+	
+	*outGeometry = GEOSGeom_createCollection(GEOSGeomTypeId(geosGeometry), transformedMultiGeometries, geometriesNum);
+
+	return MAL_SUCCEED;
+}
+
+static str forceDimGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, int dim) {
+	str err;
+	int geometryType = GEOSGeomTypeId(geosGeometry)+1;
+
+	//check the type of the geometry
+	switch(geometryType) {
+		case wkbPoint:
+			if((err = forceDimPoint(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.ForceDim", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbLineString:
+		case wkbLinearRing:
+			if((err = forceDimLineString(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.ForceDim", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbPolygon:
+			if((err = forceDimPolygon(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.ForceDim", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break; 
+		case wkbMultiPoint:
+		case wkbMultiLineString:
+		case wkbMultiPolygon:
+		case  wkbGeometryCollection:
+			if((err = forceDimMultiGeometry(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.ForceDim", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		default:
+			return createException(MAL, "geom.ForceDim", "%s Unknown geometry type", geom_type2str(geometryType,0));
+	}
+
+	return MAL_SUCCEED;
+}
+
+str wkbForceDim(wkb** outWKB, wkb** geomWKB, int *dim) {
+	GEOSGeometry* outGeometry;
+	GEOSGeom geosGeometry;
+	str err;
+
+	if(wkb_isnil(*geomWKB)){
+		*outWKB = wkb_nil;
+		return MAL_SUCCEED;
+	}
+	
+	geosGeometry = wkb2geos(*geomWKB);
+	if(!geosGeometry) {
+		*outWKB = wkb_nil;
+		return createException(MAL, "geom.ForceDim", "wkb2geos failed");
+	}
+
+	if((err = forceDimGeometry(&outGeometry, geosGeometry, *dim)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.ForceDim", "%s", err);
+		GEOSGeom_destroy(geosGeometry);
+		*outWKB = wkb_nil;
+
+		GDKfree(err);
+		return msg;
+	}
+
+	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+
+	*outWKB = geos2wkb(outGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(outGeometry);
+	
+	return MAL_SUCCEED;
+}
+
+
+
 //gets a coord seq and moves it dx, dy, dz
 static str translateCoordSeq(int idx, int coordinatesNum, double dx, double dy, double dz, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
 	double x=0, y=0, z=0;

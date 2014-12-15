@@ -319,6 +319,20 @@ comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 
+command ForceDimensions(g:wkb, d:int) :wkb address wkbForceDim
+comment "Removes or Adds additional coordinates in the geometry to make it d dimensions";
+
+function Force2D(g:wkb) :wkb;
+	x := ForceDimensions(g, 2);
+	return x;
+end Force2D;
+
+function Force3D(g:wkb) :wkb;
+	x := ForceDimensions(g, 3);
+	return x;
+end Force3D;
+
+
 command Translate3D(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb address wkbTranslate
 comment "Moves all points of the geometry by dx, dy, dz";
 
