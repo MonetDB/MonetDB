@@ -778,7 +778,7 @@ static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	const GEOSCoordSequence* gcs_old;	
 	GEOSCoordSeq gcs_new;	
 	unsigned int pointsNum =0, i=0;
-	str err
+	str err;
 
 	/* get the number of coordinates the geometry has */
 	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
@@ -796,7 +796,7 @@ static str translateLineString(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	
 	/* create the translated coordinates */
 	for(i=0; i<pointsNum; i++) {
-		if((ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
+		if((err = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.Translate", "%s", err); 
 			GEOSCoordSeq_destroy(gcs_new);
 			GDKfree(err);
@@ -834,7 +834,7 @@ static str translateLinearRing(GEOSGeometry** outGeometry, const GEOSGeometry* g
 	
 	/* create the translated coordinates */
 	for(i=0; i<pointsNum; i++) {
-		if((ret = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
+		if((err = translateCoordSeq(i, coordinatesNum, dx, dy, dz, gcs_old, &gcs_new)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.Translate", "%s", err); 
 			GEOSCoordSeq_destroy(gcs_new);
 			GDKfree(err);
