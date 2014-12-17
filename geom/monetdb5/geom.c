@@ -1269,6 +1269,7 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 		strcpy(newPath, path);
 		strcpy(newPath+strlen(path), lvlStr);
 		strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+		GDKfree(lvlStr);
 
 		//*secondLevel = 0;
 		if((err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath)) != MAL_SUCCEED) {
