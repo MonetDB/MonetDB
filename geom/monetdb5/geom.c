@@ -49,6 +49,7 @@ static void radians2degrees(double *x, double *y, double *z) {
 
 static int numDigits(int num) {
 	int digits =0;
+
 	while(num > 0) {
 		num/=10;
 		digits++;
@@ -57,7 +58,7 @@ static int numDigits(int num) {
 	return digits;
 }
 
-static str int2str(int num) {
+static char* int2str(int num) {
 	int digitsNum = numDigits(num);
 	str numStr = GDKmalloc(digitsNum+1);
 			
@@ -360,7 +361,7 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_dst, char** proj4_src_str, char** proj4_dst_str) {
 #ifndef HAVE_PROJ 
 *transformedWKB = NULL;
-geomWKB = geomWKB;
+(void)**geomWKB;
 (void)*srid_src;
 (void)*srid_dst;
 (void)**proj4_src_str;
@@ -1138,6 +1139,7 @@ static str dumpPointsPoint(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeo
 	BUNappend(idBAT,newPath,TRUE);
 	BUNappend(geomBAT,pointWKB,TRUE);
 	GDKfree(pointWKB);
+	GDKfree(lvlStr);
 
 	return MAL_SUCCEED;
 }
@@ -1202,6 +1204,8 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	strcpy(newPath, path);
 	strcpy(newPath+strlen(path), lvlStr);
 	strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+	GDKfree(lvlStr);
+
 
 	//get the points in the exterior ring
 	if((err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, newPath)) != MAL_SUCCEED) {
@@ -1228,6 +1232,7 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 		strcpy(newPath, path);
 		strcpy(newPath+strlen(path), lvlStr);
 		strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+		GDKfree(lvlStr);
 
 		if((err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.DumpPoints", "%s", err);
