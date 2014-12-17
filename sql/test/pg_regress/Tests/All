@@ -47,7 +47,7 @@ reltime
 inet
 comments
 #ToDo HAVE_GEOM?geometry
-#ToDo horology
+horology
 #ToDo oidjoins
 #ToDo type_sanity
 #ToDo opr_sanity

@@ -262,6 +262,11 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
 	} else {
+		if (!n || *n) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Interval type miss match '%s'\n"), (!n)?"":n);
+			return -1;
+		}
 		return type;
 	}
 }
