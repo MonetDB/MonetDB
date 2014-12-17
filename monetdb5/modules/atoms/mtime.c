@@ -1963,6 +1963,13 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 	return MAL_SUCCEED;
 }
 
+str
+MTIMEdate_submonths(date *ret, const date *v, const int *delta)
+{
+	int mindelta = -(*delta);
+	return MTIMEdate_addmonths(ret, v, &mindelta);
+}
+
 /* returns the number of days between 'val1' and 'val2'. */
 str
 MTIMEdate_diff(int *ret, const date *v1, const date *v2)

@@ -1045,7 +1045,6 @@ GDKinit(opt *set, int setlen)
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
 #endif
-	(void) ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKinit");
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
 		MT_lock_init(&GDKbatLock[i].hash, "GDKhashLock");
@@ -1342,10 +1341,6 @@ GDKlockHome(void)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
-	/*
-	 * In shared mode, we allow more parties to join. Release the lock.
-	 */
-	ATOMIC_CLEAR(GDKstopped, GDKstoppedLock, "");
 }
 
 static void
