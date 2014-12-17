@@ -203,6 +203,7 @@ geom_export str wkbTranslate(wkb**, wkb**, double*, double*, double*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, double*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
 geom_export str wkbForceDim(wkb**, wkb**, int*);
+geom_export str wkbSegmentize(wkb**, wkb**, double*);
 
 geom_export str wkbDump(int* idBAT_id, int* geomBAT_id, wkb**);
 geom_export str wkbDumpPoints(int* idBAT_id, int* geomBAT_id, wkb**);

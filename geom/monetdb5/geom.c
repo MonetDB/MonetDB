@@ -714,6 +714,338 @@ str wkbForceDim(wkb** outWKB, wkb** geomWKB, int *dim) {
 	return MAL_SUCCEED;
 }
 
+static str segmentizePoint(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz) {
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;
+
+	(void)sz;
+
+	//nothing much to do. Just create a copy of the point
+	//get the coordinates
+	if(!(gcs_old = GEOSGeom_getCoordSeq(geosGeometry))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "GEOSGeom_getCoordSeq failed");
+	}
+	//create a copy of it
+	if(!(gcs_new = GEOSCoordSeq_clone(gcs_old))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_clone failed");
+	}
+	
+	//create the geometry from the coordinates sequence
+	*outGeometry = GEOSGeom_createPoint(gcs_new);
+
+	return MAL_SUCCEED;
+}
+
+static str segmentizeLineString(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz, int isRing) {
+	int coordinatesNum = 0;
+	const GEOSCoordSequence* gcs_old;	
+	GEOSCoordSeq gcs_new;	
+	unsigned int pointsNum=0, additionalPoints=0, i=0, j=0;
+	double xl=0.0, yl=0.0, zl=0.0;
+	double *xCoords_org, *yCoords_org, *zCoords_org;
+
+	//get the number of coordinates the geometry has
+	coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
+	//get the coordinates of the points comprising the geometry
+	if(!(gcs_old = GEOSGeom_getCoordSeq(geosGeometry))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "GEOSGeom_getCoordSeq failed");
+	}
+
+	//get the number of points in the geometry
+	if(!(GEOSCoordSeq_getSize(gcs_old, &pointsNum))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getSize failed");
+	}
+
+	//store the points so that I do not have to read them multiple times using geos
+	if(!(xCoords_org = GDKmalloc(pointsNum*sizeof(double)))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+	}
+	if(!(yCoords_org = GDKmalloc(pointsNum*sizeof(double)))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+	}
+	if(!(zCoords_org = GDKmalloc(pointsNum*sizeof(double)))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+	}
+
+	if(!GEOSCoordSeq_getX(gcs_old, 0, &xCoords_org[0]))
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getX failed");
+	if(!GEOSCoordSeq_getY(gcs_old, 0, &yCoords_org[0]))
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getY failed");
+	if(coordinatesNum > 2) 
+		if(!GEOSCoordSeq_getZ(gcs_old, 0, &zCoords_org[0]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getZ failed");
+
+	xl=xCoords_org[0];
+	yl=yCoords_org[0];
+	zl=zCoords_org[0];
+	
+	//check how many new points should be added
+	for(i=1; i<pointsNum; i++) {
+		double dist = 0.0;
+
+		if(!GEOSCoordSeq_getX(gcs_old, i, &xCoords_org[i]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getX failed");
+		if(!GEOSCoordSeq_getY(gcs_old, i, &yCoords_org[i]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getY failed");
+		if(coordinatesNum > 2) 
+			if(!GEOSCoordSeq_getZ(gcs_old, i, &zCoords_org[i]))
+				return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_getZ failed");
+
+		//compute the distance of the current point to the last added one
+		dist = sqrt(pow(xl-xCoords_org[i],2) + pow(yl-yCoords_org[i],2) + pow(zl-zCoords_org[i],2));
+		
+//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+		while(dist > sz) {
+			additionalPoints++;
+			//compute the point
+			xl = xl + (xCoords_org[i]-xl)*sz/dist; 
+			yl = yl + (yCoords_org[i]-yl)*sz/dist; 
+			zl = zl + (zCoords_org[i]-zl)*sz/dist; 
+
+			dist = sqrt(pow(xl-xCoords_org[i],2) + pow(yl-yCoords_org[i],2) + pow(zl-zCoords_org[i],2));
+//fprintf(stderr, "%d : (%f, %f, %f) vs (%f, %f, %f) = %f\n", additionalPoints, xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+		}
+
+		xl = xCoords_org[i];
+		yl = yCoords_org[i];	
+		zl = zCoords_org[i];
+
+	}
+//fprintf(stderr, "Adding %d\n", additionalPoints);
+	//create the coordinates sequence for the translated geometry
+	if(!(gcs_new = GEOSCoordSeq_create(pointsNum+additionalPoints, coordinatesNum))) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_create failed");
+	}
+	
+	//add the first point
+	if(!GEOSCoordSeq_setX(gcs_new, 0, xCoords_org[0]))
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setX failed");
+	if(!GEOSCoordSeq_setY(gcs_new, 0, yCoords_org[0]))
+		return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setY failed");
+	if(coordinatesNum > 2) 
+		if(!GEOSCoordSeq_setZ(gcs_new, 0, zCoords_org[0]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setZ failed");	
+
+	xl = xCoords_org[0];
+	yl = yCoords_org[0];	
+	zl = zCoords_org[0];
+	
+	//check and add the rest of the points
+	for(i=1; i<pointsNum; i++) {
+		//compute the distance of the current point to the last added one
+		double dist = sqrt(pow(xl-xCoords_org[i],2) + pow(yl-yCoords_org[i],2) + pow(zl-zCoords_org[i],2));
+//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+		while(dist > sz) {
+			assert(j<additionalPoints);
+	
+			//compute intermediate point
+			xl = xl + (xCoords_org[i]-xl)*sz/dist; 
+			yl = yl + (yCoords_org[i]-yl)*sz/dist; 
+			zl = zl + (zCoords_org[i]-zl)*sz/dist; 
+
+			//add the original point
+			if(!GEOSCoordSeq_setX(gcs_new, i+j, xl))
+				return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setX failed");
+			if(!GEOSCoordSeq_setY(gcs_new, i+j, yl))
+				return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setY failed");
+			if(coordinatesNum > 2) 
+				if(!GEOSCoordSeq_setZ(gcs_new, i+j, zl))
+					return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setZ failed");	
+			
+			j++;
+			dist = sqrt(pow(xl-xCoords_org[i],2) + pow(yl-yCoords_org[i],2) + pow(zl-zCoords_org[i],2));
+//fprintf(stderr, "%d : (%f, %f, %f) vs (%f, %f, %f) = %f\n", j, xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+
+		}
+
+		//addd the orinnal point
+		if(!GEOSCoordSeq_setX(gcs_new, i+j, xCoords_org[i]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setX failed");
+		if(!GEOSCoordSeq_setY(gcs_new, i+j, yCoords_org[i]))
+			return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setY failed");
+		if(coordinatesNum > 2) 
+			if(!GEOSCoordSeq_setZ(gcs_new, i+j, zCoords_org[i]))
+				return createException(MAL, "geom.Segmentize", "GEOSCoordSeq_setZ failed");	
+
+		xl = xCoords_org[i];
+		yl = yCoords_org[i];	
+		zl = zCoords_org[i];
+
+	}
+
+	//create the geometry from the translated coordinates sequence
+	if(isRing)
+		*outGeometry = GEOSGeom_createLinearRing(gcs_new);
+	else
+		*outGeometry = GEOSGeom_createLineString(gcs_new);
+
+	GDKfree(xCoords_org);
+	GDKfree(yCoords_org);
+	GDKfree(zCoords_org);
+
+	return MAL_SUCCEED;
+}
+
+static str segmentizePolygon(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz) {
+	const GEOSGeometry* exteriorRingGeometry;
+	GEOSGeometry* transformedExteriorRingGeometry = NULL;
+	GEOSGeometry** transformedInteriorRingGeometries = NULL;
+	int numInteriorRings=0, i=0;
+	str err;
+
+	/* get the exterior ring of the polygon */
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	if(!exteriorRingGeometry) {
+		*outGeometry = NULL;
+		return createException(MAL, "geom.Segmentize","GEOSGetExteriorRing failed");
+	}	
+
+	if((err = segmentizeLineString(&transformedExteriorRingGeometry, exteriorRingGeometry, sz, 1)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.Segmentize", "%s", err);
+		*outGeometry = NULL;
+		GDKfree(err);
+		return msg;
+	}
+
+	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
+	if (numInteriorRings == -1 ) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		return createException(MAL, "geom.Segmentize", "GEOSGetInteriorRingN failed.");
+	}
+
+	//iterate over the interiorRing and segmentize each one of them
+	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings*sizeof(GEOSGeometry*));
+	for(i=0; i<numInteriorRings; i++) {
+		if((err = segmentizeLineString(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.Segmentize", "%s", err);
+			GDKfree(*transformedInteriorRingGeometries);
+			*outGeometry = NULL;
+			GDKfree(err);
+			return msg;
+		}
+	}
+
+	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+	return MAL_SUCCEED;
+}
+
+static str segmentizeGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz);
+static str segmentizeMultiGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz) {
+	int geometriesNum, i;
+	GEOSGeometry** transformedMultiGeometries = NULL;
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	transformedMultiGeometries = GDKmalloc(geometriesNum*sizeof(GEOSGeometry*));
+
+	//In order to have the geometries in the output in the same order as in the input
+	//we should read them and put them in the area in reverse order
+	for(i=geometriesNum-1; i>=0; i--) {
+		str err;
+		const GEOSGeometry* multiGeometry = GEOSGetGeometryN(geosGeometry, i);
+
+		if((err = segmentizeGeometry(&(transformedMultiGeometries[i]), multiGeometry, sz)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.ForceDim", "%s", err);
+			GDKfree(err);
+			GDKfree(*transformedMultiGeometries);
+			*outGeometry = NULL;
+			
+			return msg;
+		}
+	}
+	
+	*outGeometry = GEOSGeom_createCollection(GEOSGeomTypeId(geosGeometry), transformedMultiGeometries, geometriesNum);
+
+	return MAL_SUCCEED;
+}
+
+static str segmentizeGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geosGeometry, double sz) {
+	str err;
+	int geometryType = GEOSGeomTypeId(geosGeometry)+1;
+
+	//check the type of the geometry
+	switch(geometryType) {
+		case wkbPoint:
+			if((err = segmentizePoint(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Segmentize", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbLineString:
+		case wkbLinearRing:
+			if((err = segmentizeLineString(outGeometry, geosGeometry, sz, 0)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Segmentize", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		case wkbPolygon:
+			if((err = segmentizePolygon(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Segmentize", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break; 
+		case wkbMultiPoint:
+		case wkbMultiLineString:
+		case wkbMultiPolygon:
+		case  wkbGeometryCollection:
+			if((err = segmentizeMultiGeometry(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
+				str msg = createException(MAL, "geom.Segmentize", "%s",err);
+				GDKfree(err);	
+				return msg;
+			}
+			break;
+		default:
+			return createException(MAL, "geom.Segmentize", "%s Unknown geometry type", geom_type2str(geometryType,0));
+	}
+
+	return MAL_SUCCEED;
+}
+
+str wkbSegmentize(wkb** outWKB, wkb** geomWKB, double *sz) {
+	GEOSGeometry* outGeometry;
+	GEOSGeom geosGeometry;
+	str err;
+
+	if(wkb_isnil(*geomWKB)){
+		*outWKB = wkb_nil;
+		return MAL_SUCCEED;
+	}
+	
+	geosGeometry = wkb2geos(*geomWKB);
+	if(!geosGeometry) {
+		*outWKB = wkb_nil;
+		return createException(MAL, "geom.Segmentize", "wkb2geos failed");
+	}
+
+	if((err = segmentizeGeometry(&outGeometry, geosGeometry, *sz)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.Segmentize", "%s", err);
+		GEOSGeom_destroy(geosGeometry);
+		*outWKB = wkb_nil;
+
+		GDKfree(err);
+		return msg;
+	}
+
+	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+
+	*outWKB = geos2wkb(outGeometry);
+
+	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy(outGeometry);
+	
+	return MAL_SUCCEED;
+}
 
 
 //gets a coord seq and moves it dx, dy, dz

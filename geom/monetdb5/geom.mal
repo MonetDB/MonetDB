@@ -319,6 +319,8 @@ comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 
+command Segmentize(g:wkb, sz:dbl) :wkb address wkbSegmentize
+comment "It creates a new geometry with all segments on it smaller or equal to sz";
 command ForceDimensions(g:wkb, d:int) :wkb address wkbForceDim
 comment "Removes or Adds additional coordinates in the geometry to make it d dimensions";
 
