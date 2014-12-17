@@ -1488,16 +1488,16 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		list *lje = sa_list(sql->sa);
 		list *rje = sa_list(sql->sa);
 
-		/* get equi-joins first */
+		/* get equi-joins/filters first */
 		if (list_length(rel->exps) > 1) {
 			for( en = rel->exps->h; en; en = en->next ) {
 				sql_exp *e = en->data;
-				if (e->type == e_cmp && e->flag == cmp_equal)
+				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter))
 					append(jexps, e);
 			}
 			for( en = rel->exps->h; en; en = en->next ) {
 				sql_exp *e = en->data;
-				if (e->type != e_cmp || e->flag != cmp_equal)
+				if (e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter))
 					append(jexps, e);
 			}
 			rel->exps = jexps;
@@ -1511,7 +1511,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */		
-			if (exp_has_func(e)) {
+			if (exp_has_func(e) && e->flag != cmp_filter) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(sql->sa, left);
 					stmt *r = bin_first_column(sql->sa, right);
@@ -1519,7 +1519,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				}
 				break;
 			}
-			if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
+			if (list_length(lje) && (idx || e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter) ||
+			   (join && e->flag == cmp_filter)))
 				break;
 
 			/* handle possible index lookups */
