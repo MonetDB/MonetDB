@@ -1375,7 +1375,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	BAT *vars;
 	str msg;
-	int *res = getArgReference_int(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
