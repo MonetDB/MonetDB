@@ -1203,6 +1203,8 @@ if test "x$have_perl" != xno; then
 				AC_MSG_ERROR([Must specify --with-perl-libdir when cross compiling])
 			fi
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+			# On Darwin this starts with a slash, remove it
+			PERL_LIBDIR="${PERL_LIBDIR#/}"
 			;;
 		no)	;;
 		*)
