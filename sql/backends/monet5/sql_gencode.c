@@ -331,6 +331,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;
 	stmt *s;
+	int old_argc = be->mvc->argc;
 
 	r = rel_optimizer(m, rel);
 	s = rel_bin(m, r);
@@ -365,7 +366,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = op->op3->op4.aval->data.val.sval;
+			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -374,8 +375,10 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
+	be->mvc->argc = 0;
 	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
 		return -1;
+	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	addQueryToCache(c);
@@ -431,7 +434,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = op->op3->op4.aval->data.val.sval;
+			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
