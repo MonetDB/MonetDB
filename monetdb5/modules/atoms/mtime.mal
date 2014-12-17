@@ -424,6 +424,10 @@ command date_add_month_interval(t:date,s:int):date
 address MTIMEdate_addmonths
 comment "Add months to a date";
 
+command date_sub_month_interval(t:date,s:int):date
+address MTIMEdate_submonths
+comment "Subtract months from a date";
+
 # @-
 # #command int(d:date):int = MTIMEdate_2int;
 # #command int(d:daytime):int = MTIMEdaytime_2int;
