@@ -454,6 +454,7 @@ int yydebug=1;
 	opt_chain
 	opt_distinct
 	opt_locked
+	opt_best_effort
 	opt_constraint
 	set_distinct
 	opt_with_check_option
@@ -482,7 +483,7 @@ int yydebug=1;
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
 
-%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
+%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE 
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
@@ -2492,7 +2493,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $6);
@@ -2501,8 +2502,9 @@ copyfrom_stmt:
 	  append_string(l, $8);
 	  append_int(l, $9);
 	  append_int(l, $10);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, NULL);
@@ -2511,6 +2513,7 @@ copyfrom_stmt:
 	  append_string(l, $8);
 	  append_int(l, $9);
 	  append_int(l, $10);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -2585,6 +2588,11 @@ opt_null_string:
 opt_locked:
 	/* empty */	{ $$ = FALSE; }
  |  	LOCKED		{ $$ = TRUE; }
+ ;
+
+opt_best_effort:
+	/* empty */	{ $$ = FALSE; }
+ |  	BEST EFFORT	{ $$ = TRUE; }
  ;
 
 opt_constraint:

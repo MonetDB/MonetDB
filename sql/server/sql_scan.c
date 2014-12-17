@@ -63,6 +63,8 @@ scanner_init_keywords(void)
 	keywords_insert("PERCENT_RANK", RANK);
 	keywords_insert("CUME_DIST", RANK);
 	keywords_insert("ROW_NUMBER", RANK);
+	keywords_insert("BEST", BEST);
+	keywords_insert("EFFORT", EFFORT);
 
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);

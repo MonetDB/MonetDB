@@ -36,7 +36,6 @@ headers_sql = {
 	24_zorder.sql \
 	25_debug.sql \
 	26_sysmon.sql \
-	27_copy_rejects.sql \
 	39_analytics.sql \
 	40_json.sql \
 	41_jsonstore.sql \
