@@ -21,7 +21,7 @@ def query(conn, sql):
     return r
 
 # no timeout since we need to kill mserver5, not the inbetween Mtimeout
-s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE, notimeout = True)
+s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 # boring setup and schema creation stuff:
 c1 = connect(True)
@@ -55,9 +55,8 @@ c1.execute('insert into bar select * from generate_series(cast(0 as int),1500)')
 time.sleep(31)
 print query(c1, 'select * from foo')
 
-os.kill(s.pid, 9)
+s.communicate()
 
-time.sleep(10)
 t = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 c3 = connect(True)
