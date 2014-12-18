@@ -1946,6 +1946,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	MapiMsg rc = MOK;
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
+	enum hmyesno hasschemsys = UNKNOWN;
 	FILE *fp;
 	char *prompt = NULL;
 	int prepno = 0;
@@ -2301,6 +2302,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 						if (hassysfuncs == UNKNOWN)
 							hassysfuncs = has_systemfunctions(mid) ? YES : NO;
+						if (hasschemsys == UNKNOWN)
+							hasschemsys = has_schemas_system(mid) ? YES : NO;
 
 						if (!*line) {
 							line = "%";
@@ -2398,14 +2401,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							       "%s "
 							       "UNION "
 							       "SELECT NULL AS name, "
-								      "(CASE WHEN o.name LIKE 'sys' "
-									    "THEN 'SYSTEM ' "
-									    "ELSE '' "
-								       "END "
-								       "|| 'SCHEMA') AS type, "
-								      "CASE WHEN o.name LIKE 'sys' "
-									   "THEN true "
-									   "ELSE false END AS system, "
+								      "(CASE WHEN %s THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
+								      "%s AS system, "
 								      "o.name AS sname, "
 								      "%d AS ntype "
 							       "FROM sys.schemas o "
@@ -2418,6 +2415,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,
+							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
+							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
 							 MD_SCHEMA,
 							 line, x,
 							 (wantsSystem ?
