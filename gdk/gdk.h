@@ -2221,12 +2221,19 @@ gdk_export int	GDK_vm_trim;		/* allow trimming */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 
-gdk_export void *GDKmalloc(size_t size);
-gdk_export void *GDKzalloc(size_t size);
-gdk_export void *GDKrealloc(void *pold, size_t size);
+gdk_export void *GDKmalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__ ((__warn_unused_result__));
+gdk_export void *GDKzalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__ ((__warn_unused_result__));
+gdk_export void *GDKrealloc(void *pold, size_t size)
+	__attribute__ ((__warn_unused_result__));
 gdk_export void GDKfree(void *blk);
-gdk_export str GDKstrdup(const char *s);
-gdk_export str GDKstrndup(const char *s, size_t n);
+gdk_export str GDKstrdup(const char *s)
+	__attribute__ ((__warn_unused_result__));
+gdk_export str GDKstrndup(const char *s, size_t n)
+	__attribute__ ((__warn_unused_result__));
 
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* In debugging mode, replace GDKmalloc and other functions with a

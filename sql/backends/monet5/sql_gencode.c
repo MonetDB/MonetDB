@@ -1438,6 +1438,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, algebraRef, "subselect");
 				q = pushArgument(mb, q, k);
+				if (sub > 0)
+					q = pushArgument(mb, q, sub);
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
