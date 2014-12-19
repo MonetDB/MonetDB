@@ -987,6 +987,14 @@
 #endif
 #endif
 
+/* Define to `__restrict__' or `__restrict' if that's what the C compiler
+   calls it, or to nothing if 'restrict' is not supported under any name.  */
+#ifndef __cplusplus
+#ifndef restrict
+#define restrict __restrict
+#endif
+#endif
+
 /* Define to `long int' if <sys/types.h> does not define. */
 /* #undef off_t */
 
