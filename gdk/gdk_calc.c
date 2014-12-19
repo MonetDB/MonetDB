@@ -11711,16 +11711,12 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
 			if (src[i] == bit_nil) {			\
-				if (hd)					\
-					*hd++ = (oid) i + off;		\
-				((TYPE *) dst)[j++] = * (TYPE *) nil;	\
+				((TYPE *) dst)[i] = * (TYPE *) nil;	\
 				nils++;					\
 			} else if (src[i]) {				\
-				if (hd)					\
-					*hd++ = (oid) i + off;		\
-				((TYPE *) dst)[j++] = ((TYPE *) col1)[k]; \
-			} else if (col2) {				\
-				((TYPE *) dst)[j++] = ((TYPE *) col2)[l]; \
+				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
+			} else {					\
+				((TYPE *) dst)[i] = ((TYPE *) col2)[l]; \
 			}						\
 			k += incr1;					\
 			l += incr2;					\
@@ -11737,18 +11733,16 @@ BATcalcifthenelse_intern(BAT *b,
 {
 	BAT *bn;
 	void *dst;
-	oid *hd;
-	BUN i, j, k, l;
+	BUN i, k, l;
 	BUN nils = 0;
 	const void *nil;
 	const void *p;
 	const bit *src;
-	oid off = BAThdense(b) ? b->H->seq : 0;
 	BUN cnt = b->batCount;
 
-	assert(col2 != NULL || incr2 == 0);
+	assert(col2 != NULL);
 
-	bn = BATnew(col2 || off == oid_nil ? TYPE_void : TYPE_oid, tpe, cnt, TRANSIENT);
+	bn = BATnew(TYPE_void, tpe, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11756,8 +11750,7 @@ BATcalcifthenelse_intern(BAT *b,
 
 	nil = ATOMnilptr(tpe);
 	dst = (void *) Tloc(bn, bn->batFirst);
-	hd = col2 || off == oid_nil ? NULL : (oid *) Hloc(bn, bn->batFirst);
-	j = k = l = 0;
+	k = l = 0;
 	if (bn->T->varsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
@@ -11770,20 +11763,13 @@ BATcalcifthenelse_intern(BAT *b,
 					p = heap1 + VarHeapVal(col1, k, width1);
 				else
 					p = col1;
-			} else if (col2) {
+			} else {
 				if (heap2)
 					p = heap2 + VarHeapVal(col2, l, width2);
 				else
 					p = col2;
-			} else {
-				p = NULL;
 			}
-			if (p) {
-				tfastins_nocheck(bn, j, p, Tsize(bn));
-				if (hd)
-					*hd++ = (oid) i + off;
-				j++;
-			}
+			tfastins_nocheck(bn, i, p, Tsize(bn));
 			k += incr1;
 			l += incr2;
 		}
@@ -11815,40 +11801,25 @@ BATcalcifthenelse_intern(BAT *b,
 					nils++;
 				} else if (src[i]) {
 					p = ((const char *) col1) + k * width1;
-				} else if (col2) {
-					p = ((const char *) col2) + l * width2;
 				} else {
-					p = NULL;
+					p = ((const char *) col2) + l * width2;
 				}
-				if (p) {
-					memcpy(dst, p, bn->T->width);
-					if (hd)
-						*hd++ = (oid) i + off;
-					j++;
-					dst = (void *) ((char *) dst + bn->T->width);
-				}
+				memcpy(dst, p, bn->T->width);
+				dst = (void *) ((char *) dst + bn->T->width);
 				k += incr1;
 				l += incr2;
 			}
 		}
 	}
 
-	BATsetcount(bn, j);
+	BATsetcount(bn, cnt);
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0 && nonil1 && (col2 == NULL || nonil2);
-
-	if (hd) {
-		bn->H->sorted = 1;
-		bn->H->revsorted = cnt <= 1;
-		bn->H->key = 1;
-		bn->H->nil = 0;
-		bn->H->nonil = 1;
-	}
+	bn->T->nonil = nils == 0 && nonil1 && nonil2;
 
 	return bn;
   bunins_failed:
@@ -11861,20 +11832,19 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 {
 	BATcheck(b, "BATcalcifthenelse");
 	BATcheck(b1, "BATcalcifthenelse");
-	/* b2 may be NULL */
+	BATcheck(b2, "BATcalcifthenelse");
 
 	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b2 && checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b->T->type != TYPE_bit ||
-	    (b2 != NULL && b1->T->type != b2->T->type)) {
+	if (b->T->type != TYPE_bit || b1->T->type != b2->T->type) {
 		GDKerror("BATcalcifthenelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
 					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
 					b1->T->type);
 }
 
@@ -11902,18 +11872,17 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 {
 	BATcheck(b, "BATcalcifthenelsecst");
 	BATcheck(c1, "BATcalcifthenelsecst");
-	/* b2 may be NULL */
+	BATcheck(b2, "BATcalcifthenelsecst");
 
 	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b->T->type != TYPE_bit ||
-	    (b2 != NULL && b2->T->type != c1->vtype)) {
+	if (b->T->type != TYPE_bit || b2->T->type != c1->vtype) {
 		GDKerror("BATcalcifthencstelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
 					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
 					c1->vtype);
 }
 
