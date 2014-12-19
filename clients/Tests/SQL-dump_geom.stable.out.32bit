@@ -50,10 +50,9 @@ Ready.
 # 03:59:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-38510" "--port=35201"
 # 03:59:59 >  
 
-SCHEMA  json
-SCHEMA  tmp
-SCHEMA         json
-SCHEMA         tmp
+SYSTEM SCHEMA  json
+SYSTEM SCHEMA  sys
+SYSTEM SCHEMA  tmp
 SYSTEM SCHEMA  sys
 SYSTEM TABLE  sys._columns
 SYSTEM TABLE  sys._tables

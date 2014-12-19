@@ -50,17 +50,14 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 15:01:36 >  
-# 15:01:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13451" "--port=34237"
-# 15:01:36 >  
+# 15:19:38 >  
+# 15:19:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-517" "--port=32251"
+# 15:19:38 >  
 
-SCHEMA  bam
-SCHEMA  json
-SCHEMA  tmp
-SCHEMA         bam
-SCHEMA         json
-SCHEMA         tmp
+SYSTEM SCHEMA  bam
+SYSTEM SCHEMA  json
 SYSTEM SCHEMA  sys
+SYSTEM SCHEMA  tmp
 SYSTEM TABLE  sys._columns
 SYSTEM TABLE  sys._tables
 SYSTEM TABLE  sys.args

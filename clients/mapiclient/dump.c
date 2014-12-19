@@ -142,7 +142,7 @@ has_systemfunctions(Mapi mid)
 }
 
 /* return TRUE if the sys.schemas table has a column named system */
-static int
+int
 has_schemas_system(Mapi mid)
 {
 	MapiHdl hdl;
