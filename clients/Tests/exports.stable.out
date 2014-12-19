@@ -1591,6 +1591,7 @@ str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
 str MTIMEdate_fromstr(date *ret, const char *const *s);
 str MTIMEdate_sub_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec);
 str MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec);
+str MTIMEdate_submonths(date *ret, const date *v, const int *delta);
 str MTIMEday_from_str(int *ret, const char *const *day);
 str MTIMEday_to_str(str *ret, const int *day);
 str MTIMEdaytime1(daytime *ret, const int *h);

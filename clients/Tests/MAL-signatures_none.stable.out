@@ -40207,6 +40207,10 @@ command mtime.date(X_1:date):date
 address MTIMEdate2date;
 comment generate the nil date
 
+command mtime.date_sub_month_interval(t:date,s:int):date 
+address MTIMEdate_submonths;
+comment Subtract months from a date
+
 command mtime.date_add_month_interval(t:date,s:int):date 
 address MTIMEdate_addmonths;
 comment Add months to a date
