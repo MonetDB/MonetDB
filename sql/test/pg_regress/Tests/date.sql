@@ -37,11 +37,11 @@ INSERT INTO DATE_TBL VALUES (null);
 -- select current_date;
 
 SELECT f1, day(f1) FROM DATE_TBL;
+SELECT f1, "day"(f1) FROM DATE_TBL;
 SELECT f1, month(f1) FROM DATE_TBL;
+SELECT f1, "month"(f1) FROM DATE_TBL;
 SELECT f1, year(f1) FROM DATE_TBL;
-SELECT f1, century(f1) FROM DATE_TBL;
-SELECT f1, millenium(f1) FROM DATE_TBL;
-SELECT f1, epoch(f1) FROM DATE_TBL;
+SELECT f1, "year"(f1) FROM DATE_TBL;
 
 SELECT f1, extract(day from f1) FROM DATE_TBL;
 SELECT f1, extract(week from f1) FROM DATE_TBL;
@@ -61,16 +61,22 @@ SELECT f1, dayofweek(f1) FROM DATE_TBL;
 SELECT f1, dayofyear(f1) FROM DATE_TBL;
 
 SELECT f1, hour(f1) FROM DATE_TBL;
+SELECT f1, "hour"(f1) FROM DATE_TBL;
 SELECT f1, minute(f1) FROM DATE_TBL;
+SELECT f1, "minute"(f1) FROM DATE_TBL;
 SELECT f1, second(f1) FROM DATE_TBL;
+SELECT f1, "second"(f1) FROM DATE_TBL;
 SELECT f1, extract(hour from f1) FROM DATE_TBL;
 SELECT f1, extract(minute from f1) FROM DATE_TBL;
 SELECT f1, extract(second from f1) FROM DATE_TBL;
 -- we need to cast the date into a timestamp
 SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
 SELECT f1, hour(cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, "hour"(cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, minute(cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, "minute"(cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, second(cast(f1 as timestamp)) FROM DATE_TBL;
+SELECT f1, "second"(cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, extract(hour from cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, extract(minute from cast(f1 as timestamp)) FROM DATE_TBL;
 SELECT f1, extract(second from cast(f1 as timestamp)) FROM DATE_TBL;

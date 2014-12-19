@@ -29,24 +29,24 @@ stderr of test 'select_into` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21634/.s.monetdb.30139
+MAPI  = (monetdb) /var/tmp/mtest-26307/.s.monetdb.38565
 QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek
            WHERE onek.unique1 < 2;
 ERROR = !syntax error, unexpected TABLE in: "select *
         !   into table"
-MAPI  = (monetdb) /var/tmp/mtest-21634/.s.monetdb.30139
+MAPI  = (monetdb) /var/tmp/mtest-26307/.s.monetdb.38565
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'
-MAPI  = (monetdb) /var/tmp/mtest-21634/.s.monetdb.30139
+MAPI  = (monetdb) /var/tmp/mtest-26307/.s.monetdb.38565
 QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek2
            WHERE onek2.unique1 < 2;
 ERROR = !syntax error, unexpected TABLE in: "select *
         !   into table"
-MAPI  = (monetdb) /var/tmp/mtest-21634/.s.monetdb.30139
+MAPI  = (monetdb) /var/tmp/mtest-26307/.s.monetdb.38565
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'
 
