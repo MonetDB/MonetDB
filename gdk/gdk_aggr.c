@@ -1871,7 +1871,12 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	} while (0)
 
 static BAT *
-BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error, BUN (*minmax)(oid *, BAT *, const oid *, BUN, oid, oid, BUN, BUN, const oid *, const oid *, BUN, int, int), const char *name)
+BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
+	       int abort_on_error, 
+	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			     oid, oid, BUN, BUN, const oid *restrict,
+			     const oid *, BUN, int, int),
+	       const char *name)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1933,8 +1938,9 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 
 static void *
 BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *, BAT *, const oid *, BUN, oid, oid, BUN, BUN,
-			const oid *, const oid *, BUN, int, int))
+	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			oid, oid, BUN, BUN, const oid *restrict,
+			const oid *, BUN, int, int))
 {
 	oid pos;
 	void *res;
