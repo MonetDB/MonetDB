@@ -1542,9 +1542,9 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 			node *n, *m;
 			list *nexps;
 
-			if (sf->func->vararg) 
+			if (sf->func->vararg) {
 				e = exp_op(sql->sa, exps, sf);
-			else {
+			} else {
 	       			nexps = new_exp_list(sql->sa);
 				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;

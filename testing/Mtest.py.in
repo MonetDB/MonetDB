@@ -2600,8 +2600,8 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     t.start()
 
     if TestInput:
-        proc.stdin.write(TestInput)
         try:
+            proc.stdin.write(TestInput)
             proc.stdin.flush()
         except IOError, (IOerrNo, IOerrStr):
             Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))

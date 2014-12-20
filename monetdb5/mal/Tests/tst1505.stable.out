@@ -104,10 +104,8 @@ function user.main():void;
     xorx := batcalc.or(x,A);
     io.print(x,xorx);
     io.print("ifthen group");
-    xif0 := batcalc.ifthen(x,x);
-    io.print(x,xif0);
-    xif1 := batcalc.ifthen(x,false);
-    io.print(x,xif1);
+#	xif0:= batcalc.ifthen(x,x);io.print(x,xif0); 
+#	xif1:= batcalc.ifthen(x,false);io.print(x,xif1); 
     xif2 := batcalc.ifthenelse(x,x,xn);
     io.print(x,x,xn,xif2);
     xif3 := batcalc.ifthenelse(x,x,true);
@@ -182,22 +180,10 @@ end main;
 [ 2@0,	  true,	  true	  ]
 [ 3@0,	  false,  false	  ]
 [ "ifthen group" ]
-#-------------------------#
-# h	tmp_6	tmp_11	  # name
-# oid	bit	bit	  # type
-#-------------------------#
-[ 0@0,	  true,	  true	  ]
-[ 2@0,	  true,	  true	  ]
-#-------------------------#
-# h	tmp_6	tmp_12	  # name
-# oid	bit	bit	  # type
-#-------------------------#
-[ 0@0,	  true,	  false	  ]
-[ 2@0,	  true,	  false	  ]
-#-----------------------------------------#
-# h	tmp_6	tmp_6	tmp_8	tmp_13	  # name
-# oid	bit	bit	bit	bit	  # type
-#-----------------------------------------#
+#--------------------------#
+# h	t	t	t	t  # name
+# void	bit	bit	bit	bit  # type
+#--------------------------#
 [ 0@0,	  true,	  true,	  false,  true	  ]
 [ 1@0,	  false,  false,  true,	  true	  ]
 [ 2@0,	  true,	  true,	  false,  true	  ]

@@ -25,162 +25,30 @@ Ready.
 # 12:56:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27974" "--port=31190"
 # 12:56:39 >  
 
-#SELECT cast('01:00' as interval second) AS "One hour";
-% .L1 # table_name
-% One hour # name
-% sec_interval # type
-% 0 # length
-[ 1.000	]
-#SELECT cast('+02:00' as interval second) AS "Two hours";
-% .L1 # table_name
-% Two hours # name
-% sec_interval # type
-% 0 # length
-[ 2.000	]
-#SELECT cast('-08:00' as interval second) AS "Eight hours";
-% .L1 # table_name
-% Eight hours # name
-% sec_interval # type
-% 0 # length
-[ -8.000	]
 #SELECT cast('-05' as interval second) AS "Five hours";
 % .L1 # table_name
 % Five hours # name
 % sec_interval # type
 % 0 # length
 [ -5.000	]
-#SELECT cast('-1 +02:03' as interval second) AS "22 hours ago...";
-% .L1 # table_name
-% 22 hours ago... # name
-% sec_interval # type
-% 0 # length
-[ -1.000	]
-#SELECT cast('-1 days +02:03' as interval second) AS "22 hours ago...";
-% .L1 # table_name
-% 22 hours ago... # name
-% sec_interval # type
-% 0 # length
-[ -1.000	]
-#SELECT cast('10 years -11 month -12 days +13:14' as interval second) AS "9 years...";
-% .L1 # table_name
-% 9 years... # name
-% sec_interval # type
-% 0 # length
-[ 10.000	]
 #CREATE TABLE INTERVAL_TBL (f1 interval second);
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 1 minute');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 5 hour');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 10 day');
+#INSERT INTO INTERVAL_TBL (f1) VALUES (60 * 60 * 24 * 365 * 2014);
 [ 1	]
 #INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 34 year');
 [ 1	]
 #INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 3 months');
 [ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 14 seconds ago');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('1 day 2 hours 3 minutes 4 seconds');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('6 years');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months 12 hours');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('badly formatted interval');
-[ 1	]
-#INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 30 eons ago');
+#INSERT INTO INTERVAL_TBL (f1) VALUES ('12345678901234567890');
 [ 1	]
 #SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL;
 % .L,	sys.interval_tbl # table_name
 % ten,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	1.000	]
-[ "",	6.000	]
-[ "",	5.000	]
-[ "",	5.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 <> cast('@ 10 days' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% nine,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	1.000	]
-[ "",	6.000	]
-[ "",	5.000	]
-[ "",	5.000	]
-#SELECT '' AS three, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 <= cast('@ 5 hours' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% three,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS three, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 < cast('@ 1 day' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% three,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-#SELECT '' AS one, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 = cast('@ 34 years' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% one,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS five, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 >= cast('@ 1 month' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% five,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	1.000	]
-[ "",	6.000	]
-[ "",	5.000	]
-[ "",	5.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
-#   WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second);
-% .L1,	sys.interval_tbl # table_name
-% nine,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	1.000	]
-[ "",	6.000	]
-[ "",	5.000	]
-[ "",	5.000	]
+[ "",	63513504000.000	]
+[ "",	-5670419503621183.312	]
+[ "",	-1363962815083169.272	]
+[ "",	-1.000	]
 #SELECT '' AS fortyfive, r1.*, r2.*
 #   FROM INTERVAL_TBL r1, INTERVAL_TBL r2
 #   WHERE r1.f1 > r2.f1
@@ -189,90 +57,39 @@ Ready.
 % fortyfive,	f1,	f1 # name
 % char,	sec_interval,	sec_interval # type
 % 0,	0,	0 # length
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	1.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	0.000	]
-[ "",	5.000,	1.000	]
-[ "",	5.000,	1.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	0.000	]
-[ "",	6.000,	1.000	]
-[ "",	6.000,	5.000	]
-[ "",	6.000,	5.000	]
+[ "",	-1363962815083169.272,	-5670419503621183.312	]
+[ "",	-1.000,	-5670419503621183.312	]
+[ "",	-1.000,	-1363962815083169.272	]
+[ "",	63513504000.000,	-5670419503621183.312	]
+[ "",	63513504000.000,	-1363962815083169.272	]
+[ "",	63513504000.000,	-1.000	]
 #SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc;
 % .L,	sys.interval_tbl # table_name
 % ten,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
-[ "",	6.000	]
-[ "",	5.000	]
-[ "",	5.000	]
-[ "",	1.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#select avg(cast(f1 as integer)) from interval_tbl;
-% sys.L2 # table_name
-% L2 # name
-% double # type
-% 24 # length
-[ 1416.666667	]
+[ "",	63513504000.000	]
+[ "",	-1.000	]
+[ "",	-1363962815083169.272	]
+[ "",	-5670419503621183.312	]
 #select min(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
 % sec_interval # type
 % 0 # length
-[ 0.000	]
+[ -5670419503621183.312	]
 #select max(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
 % sec_interval # type
 % 0 # length
-[ 6.000	]
-#select sum(cast(f1 as integer)) from interval_tbl;
-% sys.L2 # table_name
-% L2 # name
-% hugeint # type
-% 5 # length
-[ 17000	]
+[ 63513504000.000	]
 #select count(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 12	]
+% 1 # length
+[ 4	]
 #select count(distinct f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name

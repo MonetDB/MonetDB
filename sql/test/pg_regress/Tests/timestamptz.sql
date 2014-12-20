@@ -238,4 +238,63 @@ SELECT '' AS to_timestamp_16, to_timestamp('200401', 'YYYYWW');
 
 /* SET DateStyle TO DEFAULT; */
 
+INSERT INTO TIMESTAMPTZ_TBL VALUES (null);
+
+-- test MonetDB date functions
+-- select distinct name, func, mod, language, type, schema_id from sys.functions where id in (select func_id from sys.args where number in (0, 1) and name in ('res_0', 'arg_1') and type = 'timestamptz') order by name, func, schema_id
+-- select current_timestamp();  -- retuns timestamptz
+-- select localtimestamp();     -- retuns timestamp
+-- select current_timestamp;  -- retuns timestamptz
+-- select localtimestamp;     -- retuns timestamp
+
+SELECT d1, day(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "day"(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, month(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "month"(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, year(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "year"(d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, extract(day from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(week from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(month from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(quarter from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(halfyear from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(year from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(century from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(millenium from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(epoch from d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, week(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, weekofyear(d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, dayofmonth(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, dayofweek(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, dayofyear(d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, hour(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "hour"(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, minute(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "minute"(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, second(d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, "second"(d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, extract(hour from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(minute from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(second from d1) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMPTZ_TBL;
+SELECT d1, sql_add(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, sql_add(d1, cast(12 as interval month)) FROM TIMESTAMPTZ_TBL;
+SELECT d1, sql_add(d1, cast(-18 as interval month)) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, sql_sub(d1, 365*24*60*60.0) FROM TIMESTAMPTZ_TBL;
+SELECT d1, sql_sub(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, sql_sub(d1, cast(12 as interval month)) FROM TIMESTAMPTZ_TBL;
+SELECT d1, sql_sub(d1, cast(-18 as interval month)) FROM TIMESTAMPTZ_TBL;
+
+SELECT d1, sql_sub(d1, cast('2001-12-12 23:22:21' as timestamptz)) FROM TIMESTAMPTZ_TBL;
+SELECT d1, sql_sub(cast('2001-12-12 23:22:21' as timestamptz), d1) FROM TIMESTAMPTZ_TBL;
+
 DROP TABLE TIMESTAMPTZ_TBL;

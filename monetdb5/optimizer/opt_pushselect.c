@@ -190,6 +190,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	
 					if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
 						tid = getArg(q, 1);
+					if (s->argc == 2 && s->retc == 1) {
+						int i1 = getArg(s, 1);
+						InstrPtr s = old[vars[i1]];
+						if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
+							tid = getArg(q, 1);
+					}
 					break;
 				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
 					int i1 = getArg(q, 1);
