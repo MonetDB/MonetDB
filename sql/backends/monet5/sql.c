@@ -3044,6 +3044,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
+	int *besteffort = getArgReference_int(stk, pci, pci->retc + 10);
 	bstream *s;
 	stream *ss;
 	str utf8 = "UTF-8";
@@ -3126,7 +3127,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fix_windows_newline(ssep);
 #endif
 	if (s != NULL) {
-		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 		bstream_destroy(s);
 	}
 	GDKfree(filename);
@@ -3162,6 +3163,7 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
+	int *best = getArgReference_int(stk, pci, pci->retc + 9);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3198,7 +3200,7 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKstrFromStr(ns, *N, len);
 	len = 0;
-	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *best);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if (ssep)

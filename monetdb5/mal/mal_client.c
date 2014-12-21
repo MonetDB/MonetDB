@@ -253,6 +253,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->totaltime = 0;
 	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
+	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -387,6 +388,13 @@ freeClient(Client c)
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;
+	if( c->error_row){
+		BBPdecref(c->error_row->batCacheid,TRUE);
+		BBPdecref(c->error_fld->batCacheid,TRUE);
+		BBPdecref(c->error_msg->batCacheid,TRUE);
+		BBPdecref(c->error_input->batCacheid,TRUE);
+		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	}
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);

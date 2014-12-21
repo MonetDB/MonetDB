@@ -681,7 +681,7 @@ has_whitespace(const char *s)
 }
 
 BAT **
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0;
 	sql_schema *s = mvc_bind_schema(m, sname);
@@ -691,6 +691,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	Column *fmt;
 	BUN cnt = 0;
 	BAT **bats = NULL;
+	str msg = MAL_SUCCEED;
 
 	if (!t) {
 		sql_error(m, 500, "table %s not found", tname);
@@ -793,12 +794,13 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				fmt[i].ci = bat_iterator(fmt[i].c);
 			}
 		}
-		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz) != BUN_NONE && !as.error) {
+		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  &&
+				(bats = (BAT**) GDKmalloc(sizeof(BAT *) * as.nr_attrs)) ){
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && !as.error) {
 				if (locked)
-					bats = TABLETcollect_parts(&as, cnt);
+					msg = TABLETcollect_parts(bats,&as, cnt);
 				else
-					bats = TABLETcollect(&as);
+					msg = TABLETcollect(bats,&as);
 			} else if (locked) {	/* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
@@ -808,6 +810,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				}
 			}
 		}
+		(void) msg;
 		if (locked) {	/* fix delta structures and transaction */
 			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 				sql_column *c = n->data;
