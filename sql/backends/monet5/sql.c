@@ -2342,7 +2342,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk,pci,6);
 	b = BATdescriptor(bid);
 	if ( b == NULL)
-		throw(MAL,"sql.resultset","failed to access order column");
+		throw(MAL,"sql.resultset","Failed to access order column");
 	res = *res_id = mvc_result_table(m, pci->argc - (pci->retc + 5), 1, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", "failed");
@@ -2369,7 +2369,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtail(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset","failed to access result column");
+			msg= createException(MAL,"sql.resultset","Failed to access result column");
 		else
 		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
@@ -2428,7 +2428,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk,pci,12);
 	order = BATdescriptor(bid);
 	if ( order == NULL)
-		throw(MAL,"sql.resultset","failed to access order column");
+		throw(MAL,"sql.resultset","Failed to access order column");
 	res = *res_id = mvc_result_table(m, pci->argc - (pci->retc + 11), 1, order);
 	t = m->results;
 	if (res < 0){
@@ -2473,7 +2473,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtail(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset","failed to access result column");
+			msg= createException(MAL,"sql.resultset","Failed to access result column");
 		else
 		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
@@ -3137,9 +3137,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(ssep);
 	GDKfree(ns);
 	if (s == NULL)
-		throw(IO, "bstreams.create", "failed to create block stream");
+		throw(IO, "bstreams.create", "Failed to create block stream");
 	if (b == NULL)
-		throw(SQL, "importTable", "%sfailed to import table", be->mvc->errstr);
+		throw(SQL, "importTable", "%s Failed to import table", be->mvc->errstr);
 	bat2return(stk, pci, b);
 	GDKfree(b);
 	return MAL_SUCCEED;
@@ -3207,7 +3207,7 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(ssep);
 	GDKfree(ns);
 	if (!b)
-		throw(SQL, "importTable", "%sfailed to import table", m->errstr);
+		throw(SQL, "importTable", "%s. Failed to import table", m->errstr);
 	bat2return(stk, pci, b);
 	GDKfree(b);
 	return MAL_SUCCEED;
@@ -3252,10 +3252,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		sql_column *col = n->data;
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
-			throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
+			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 		f = fopen(*getArgReference_str(stk, pci, i), "r");
 		if (f == NULL)
-			throw(SQL, "sql", "failed to open file %s", *getArgReference_str(stk, pci, i));
+			throw(SQL, "sql", "Failed to open file %s", *getArgReference_str(stk, pci, i));
 		fclose(f);
 	}
 
@@ -3268,7 +3268,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), TRANSIENT);
 			if (c == NULL)
-				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
+				throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
 			BATderiveProps(c, 0);
 		} else if (tpe == TYPE_str) {
@@ -3280,12 +3280,12 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*getArgReference_str(stk, pci, i), "r");
 			if (f == NULL)
-				throw(SQL, "sql", "failed to re-open file %s", *getArgReference_str(stk, pci, i));
+				throw(SQL, "sql", "Failed to re-open file %s", *getArgReference_str(stk, pci, i));
 
 			buf = GDKmalloc(bufsiz);
 			if (!buf) {
 				fclose(f);
-				throw(SQL, "sql", "failed to create buffer");
+				throw(SQL, "sql", "Failed to create buffer");
 			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
@@ -3296,7 +3296,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			fclose(f);
 			GDKfree(buf);
 		} else {
-			throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
+			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 		}
 		if (i != (pci->retc + 2) && cnt != BATcount(c))
 			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);

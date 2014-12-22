@@ -794,9 +794,13 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				fmt[i].ci = bat_iterator(fmt[i].c);
 			}
 		}
-		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  &&
-				(bats = (BAT**) GDKmalloc(sizeof(BAT *) * as.nr_attrs)) ){
+		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
 			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && !as.error) {
+				bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+				if ( bats == NULL){
+					TABLETdestroy_format(&as);
+					return NULL;
+				}
 				if (locked)
 					msg = TABLETcollect_parts(bats,&as, cnt);
 				else

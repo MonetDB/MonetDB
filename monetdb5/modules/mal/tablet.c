@@ -748,7 +748,7 @@ SQLload_error(READERtask *task, lng idx)
  * If the string starts with the quote identified from SQL, we locate the tail
  * and interpret the body.
  */
-static inline void
+static inline int
 SQLinsert_val(READERtask *task, int col, lng idx)
 {
 	Column *fmt = task->as->format+col;
@@ -759,6 +759,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 	char quote = task->quote;
 	ptr key = 0;
 	char *err;
+	int ret  =0;
 
 	/* include testing on the terminating null byte !! */
 	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length + 1) == 0) {
@@ -786,18 +787,24 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 
 	if (adt == NULL) {
 		BUN row = BATcount(fmt->c);
-		snprintf(buf, BUFSIZ, "'%s' expected ", fmt->type);
+		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
 		err = SQLload_error(task,idx);
 		if( task->rowerror){
 			MT_lock_set(&errorlock, "insert_val");
+			row++; 
+			col++;
 			BUNappend(task->cntxt->error_row, &row, FALSE);
 			BUNappend(task->cntxt->error_fld, &col, FALSE);
 			BUNappend(task->cntxt->error_msg, buf, FALSE);
 			BUNappend(task->cntxt->error_input, err, FALSE);
+			snprintf(buf, BUFSIZ, "line "BUNFMT" field %d '%s' expected in '%s'",row, col, fmt->type, s);
+			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
+				task->as->error = M5OutOfMemory;
 			task->rowerror[(int)row]++;
 			task->errorcnt++;
 			MT_lock_unset(&errorlock, "insert_val");
 		}
+		ret = -1 * (task->besteffort ==0);
 		GDKfree(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
@@ -805,7 +812,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 	}
 	/* key may be NULL but that's not a problem, as long as we have void */
 	bunfastins(fmt->c, key, adt);
-	return ;
+	return ret;
   bunins_failed:
 	if( task->rowerror){
 		BUN row = BATcount(fmt->c);
@@ -818,6 +825,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 		task->errorcnt++;
 		MT_lock_unset(&errorlock, "insert_val");
 	}
+	return -1;
 }
 
 static int
@@ -839,9 +847,8 @@ SQLworker_column(READERtask *task, int col)
 
 	for (i = 0; i < task->next; i++){
 		if (task->fields[col][i]) 
-			SQLinsert_val(task, col, i);
-		if( task->errorcnt && task->besteffort == 0)
-			break;
+			if( SQLinsert_val(task, col, i) < 0)
+				return -1;
 	}
 
 	return 0;
@@ -1065,7 +1072,7 @@ BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best)
 {
 	char *s, *e, *end;
-	BUN cnt = 0;
+	BUN cnt = 0, cntstart=0;
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
 	BUN i;
@@ -1089,7 +1096,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	/* create the reject tables */
 	MT_lock_set(&mal_contextLock, "copy.initialization");
 	if( task->cntxt->error_row == NULL){
-        task->cntxt->error_row = BATnew(TYPE_void, TYPE_oid,0,TRANSIENT);
+        task->cntxt->error_row = BATnew(TYPE_void, TYPE_lng,0,TRANSIENT);
 		BATseqbase(task->cntxt->error_row,0);
         task->cntxt->error_fld = BATnew(TYPE_void, TYPE_int,0,TRANSIENT);
 		BATseqbase(task->cntxt->error_fld,0);
@@ -1231,6 +1238,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 	while ((task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
+		// track how many elements are in the aggregated BATs
+		cntstart = BATcount(task->as->format[0].c);
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(cntxt, msg);
 			if (msg) {
@@ -1434,6 +1443,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		}
 
 		/* trim the BATs discarding error tuples */
+		if ( task->errorcnt && task->as->error == NULL && best == 0){
+			task->as->error = M5OutOfMemory;
+			res = -1;
+			goto bailout;
+		}
 /*
 		for( attr=0; attr < task->nr_attrs; attr++)
 		switch(){
@@ -1477,7 +1491,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		res = -1;
 	}
 	// check for a possible vacuum of error rows
-	if( task->errorcnt ){
+	if( res >= 0 && task->errorcnt ){
+		(void) cntstart;
 		// compress all columns
 	}
 
