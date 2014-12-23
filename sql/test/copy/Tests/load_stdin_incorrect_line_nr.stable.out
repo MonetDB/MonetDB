@@ -31,24 +31,18 @@ Ready.
 #CREATE TABLE "sys"."number" (
 #        "isanumber" int
 #);
-#COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', '\n';
-#1
-#bla
-[ 2	]
 #select * from "number";
 % sys.number # table_name
 % isanumber # name
 % int # type
 % 1 # length
-[ 1	]
-[ NULL	]
 #drop table "number";
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	15,	4 # length
-[ 1@0,	0,	"'int' expected ",	"bla\n"	]
+% 1,	1,	14,	4 # length
+[ 2,	1,	"'int' expected",	"bla\n"	]
 
 # 08:32:32 >  
 # 08:32:32 >  "Done."

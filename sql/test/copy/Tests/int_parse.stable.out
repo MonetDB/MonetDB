@@ -43,9 +43,6 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	0,	0 # length
-#copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
-#5.1
-[ 1	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
@@ -54,20 +51,12 @@ Ready.
 [ NULL	]
 [ 3	]
 [ -4	]
-[ NULL	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	15,	4 # length
-[ 0@0,	0,	"'int' expected ",	"5.1\n"	]
-#copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
-#1
-#nil
-#
-#null
-#abc
-[ 5	]
+% 1,	1,	14,	4 # length
+[ 1,	1,	"'int' expected",	"5.1\n"	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
@@ -76,19 +65,13 @@ Ready.
 [ NULL	]
 [ 3	]
 [ -4	]
-[ NULL	]
-[ 1	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	15,	5 # length
-[ 3@0,	0,	"'int' expected ",	"null\n"	]
-[ 4@0,	0,	"'int' expected ",	"abc\n"	]
+% 1,	1,	14,	5 # length
+[ 4,	1,	"'int' expected",	"null\n"	]
+[ 5,	1,	"'int' expected",	"abc\n"	]
 #drop table t_int;
 
 # 08:29:21 >  
