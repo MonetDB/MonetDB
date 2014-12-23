@@ -3075,24 +3075,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKstrFromStr(ssep, *S, len);
 		len = 0;
 	}
-
-	/* convert UTF-8 encoded file name to the character set of our
-	 * own locale before passing it on to the system call */
-	if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		return msg;
-	}
-	msg = STRIconv(&filename, fname, &utf8, &cs);
-	GDKfree(cs);
-	if (msg != MAL_SUCCEED) {
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		return msg;
-	}
-
 	len = strlen((char *) (*N));
 	if ((ns = GDKmalloc(len + 1)) == NULL) {
 		GDKfree(tsep);
@@ -3103,111 +3085,69 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKstrFromStr(ns, *N, len);
 	len = 0;
-	ss = open_rastream(filename);
-	if (!ss || mnstr_errnr(ss)) {
-		int errnr = mnstr_errnr(ss);
-		if (ss)
-			mnstr_destroy(ss);
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		GDKfree(ns);
-		msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
-		GDKfree(filename);
-		return msg;
-	}
-#if SIZEOF_VOID_P == 4
-	s = bstream_create(ss, 0x20000);
-#else
-	s = bstream_create(ss, 0x2000000);
-#endif
-#ifdef WIN32
-	fix_windows_newline(tsep);
-	fix_windows_newline(rsep);
-	fix_windows_newline(ssep);
-#endif
-	if (s != NULL) {
-		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
-		bstream_destroy(s);
-	}
-	GDKfree(filename);
-	GDKfree(tsep);
-	GDKfree(rsep);
-	if (ssep)
-		GDKfree(ssep);
-	GDKfree(ns);
-	if (s == NULL)
-		throw(IO, "bstreams.create", "Failed to create block stream");
-	if (b == NULL)
-		throw(SQL, "importTable", "%s Failed to import table", be->mvc->errstr);
-	bat2return(stk, pci, b);
-	GDKfree(b);
-	return MAL_SUCCEED;
-}
 
-/* str mvc_import_table_stdin(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, lng *sz, lng *offset); */
-str
-mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT **b = NULL;
-	mvc *m = NULL;
-	str msg;
-	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
-	ssize_t len = 0;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
-	int *best = getArgReference_int(stk, pci, pci->retc + 9);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	len = strlen((char *) (*T));
-	if ((tsep = GDKmalloc(len + 1)) == NULL)
-		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
-	GDKstrFromStr(tsep, *T, len);
-	len = 0;
-	len = strlen((char *) (*R));
-	if ((rsep = GDKmalloc(len + 1)) == NULL) {
-		GDKfree(tsep);
-		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
-	}
-	GDKstrFromStr(rsep, *R, len);
-	len = 0;
-	if (*S && strcmp(str_nil, *(char **) S)) {
-		len = strlen((char *) (*S));
-		if ((ssep = GDKmalloc(len + 1)) == NULL) {
+	if (!*fname || strcmp(str_nil, *(char **) fname) == 0) 
+		fname = NULL;
+	if (!fname) {
+		b = mvc_import_table(cntxt, be->mvc, be->mvc->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+	} else {
+		/* convert UTF-8 encoded file name to the character set of our
+	 	 * own locale before passing it on to the system call */
+		if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
 			GDKfree(tsep);
 			GDKfree(rsep);
-			throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
+			GDKfree(ssep);
+			GDKfree(ns);
+			return msg;
 		}
-		GDKstrFromStr(ssep, *S, len);
-		len = 0;
+		msg = STRIconv(&filename, fname, &utf8, &cs);
+		GDKfree(cs);
+		if (msg != MAL_SUCCEED) {
+			GDKfree(tsep);
+			GDKfree(rsep);
+			GDKfree(ssep);
+			GDKfree(ns);
+			return msg;
+		}
+
+		ss = open_rastream(filename);
+		if (!ss || mnstr_errnr(ss)) {
+			int errnr = mnstr_errnr(ss);
+			if (ss)
+				mnstr_destroy(ss);
+			GDKfree(tsep);
+			GDKfree(rsep);
+			GDKfree(ssep);
+			GDKfree(ns);
+			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+			GDKfree(filename);
+			return msg;
+		}
+#if SIZEOF_VOID_P == 4
+		s = bstream_create(ss, 0x20000);
+#else
+		s = bstream_create(ss, 0x2000000);
+#endif
+#ifdef WIN32
+		fix_windows_newline(tsep);
+		fix_windows_newline(rsep);
+		fix_windows_newline(ssep);
+#endif
+		if (s != NULL) {
+			b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+			bstream_destroy(s);
+		}
+		GDKfree(filename);
 	}
-	len = strlen((char *) (*N));
-	if ((ns = GDKmalloc(len + 1)) == NULL) {
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		throw(MAL, "sql.copyfrom", MAL_MALLOC_FAIL);
-	}
-	GDKstrFromStr(ns, *N, len);
-	len = 0;
-	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *best);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if (ssep)
 		GDKfree(ssep);
 	GDKfree(ns);
-	if (!b)
-		throw(SQL, "importTable", "%s. Failed to import table", m->errstr);
+	if (fname && s == NULL)
+		throw(IO, "bstreams.create", "Failed to create block stream");
+	if (b == NULL)
+		throw(SQL, "importTable", "%s. Failed to import table", be->mvc->errstr);
 	bat2return(stk, pci, b);
 	GDKfree(b);
 	return MAL_SUCCEED;

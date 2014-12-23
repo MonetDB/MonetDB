@@ -353,12 +353,6 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern copyfrom{unsafe}( sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int, best:int)(:bat[:oid,:any]...)
-address mvc_import_table_stdin
-comment "Import a table from bstream s with the 
-	given tuple and seperators (sep/rsep)";
-
 #command copy_errors() (efile:bat[:oid,:str], erow:bat[:oid,:int], efld:bat[:oid,:int], emsg:bat[:oid,:str], einp:bat[:oid,:str])
 #address mvc_import_errors
 #comment "Summary of the failed tuple imports";

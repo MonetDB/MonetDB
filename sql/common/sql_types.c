@@ -1573,18 +1573,6 @@ sqltypeinit( sql_allocator *sa)
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
 	f->varres = 1;
 
-	/* copyfrom stdin */
-	f = sql_create_func_(sa, "copyfrom", "sql", "copyfrom",
-	 	list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
-	f->varres = 1;
-
 	/* bincopyfrom */
 	f = sql_create_func_(sa, "copyfrom", "sql", "importTable",
 	 	list_append(list_append(sa_list(sa), 
