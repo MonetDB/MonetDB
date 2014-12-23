@@ -62,3 +62,4 @@ ifthenelse.Bug-3629
 order_by_incorrect_error.Bug-3630
 incorrect_floating_point_cast.Bug-3633
 acidity-fail.Bug-3635
+BOM-in-string.Bug-3641

@@ -557,19 +557,6 @@ scanner_getc(struct scanner *lc)
 		goto error;
 	}
 
-	/* if we find a BOM interpret it as a "zero-width non-breaking
-	 * space" by just skipping it */
-	if (c == 0xFEFF) {
-		/* shift stuff so we won't "see" this BOM when it's in the
-		 * middle of some word */
-		memmove(b->buf + b->pos + 3, b->buf + b->pos, lc->yycur - 3);
-		for (n = 0; n < 3; n++) {
-			b->buf[b->pos++] = ' ';
-			lc->yycur--;
-		}
-		return(scanner_getc(lc));
-	}
-
 	return c;
 
 error:
