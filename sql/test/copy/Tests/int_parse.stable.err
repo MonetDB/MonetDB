@@ -79,13 +79,13 @@ stderr of test 'int_parse` in directory 'sql/test/copy` itself:
 # 19:40:24 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37659 
 # 19:40:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4363/.s.monetdb.38666
+MAPI  = (monetdb) /var/tmp/mtest-2818/.s.monetdb.35617
 QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
         0
         5.1
         9
-
-MAPI  = (monetdb) /var/tmp/mtest-4363/.s.monetdb.38666
+ERROR = !line 2 field 1 'int' expected in '5.1'. Failed to import table
+MAPI  = (monetdb) /var/tmp/mtest-2818/.s.monetdb.35617
 QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil

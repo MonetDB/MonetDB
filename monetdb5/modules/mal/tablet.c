@@ -1461,7 +1461,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for(j = 0; j < (int) limit; j++, src++){\
 		if ( task->rowerror[j]){\
 			leftover--;\
-			cnt--;\
 			continue;\
 		}\
 		*dst++ = *src;\
@@ -1484,7 +1483,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 						for(j = 0; j < (int) limit; j++, src++){
 							if ( task->rowerror[j]){
 								leftover--;
-								cnt--;
 								continue;
 							}
 							*dst++ = *src;
@@ -1517,6 +1515,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			res = -1;
 	}
 
+	cnt= BATcount(task->as->format[0].c);
 	if (GDKdebug & GRPalgorithms) 
 	{
 		if (cnt < (BUN) maxrow)

@@ -827,7 +827,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			}
 		}
 		if (as.error) {
-			sql_error(m, 500, "%s", as.error);
+			if( !best) sql_error(m, 500, "%s", as.error);
 			if (as.error != M5OutOfMemory)
 				GDKfree(as.error);
 			as.error = NULL;
