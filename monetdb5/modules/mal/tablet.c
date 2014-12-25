@@ -757,7 +757,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 	char *s = task->fields[col][idx];
 	char quote = task->quote;
 	ptr key = 0;
-	char *err;
+	char *err = NULL;
 	int ret  =0;
 
 	/* include testing on the terminating null byte !! */
@@ -819,7 +819,9 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
 		BUNappend(task->cntxt->error_msg, "insert failed", FALSE);
+		err = SQLload_error(task,idx);
 		BUNappend(task->cntxt->error_input, err, FALSE);
+		GDKfree(err);
 		task->rowerror[(int)row -1]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock, "insert_val");
@@ -905,7 +907,7 @@ SQLload_file_line(READERtask *task, int idx)
 		if (i < as->nr_attrs - 1) {
 			errline = SQLload_error(task,task->next);
 			snprintf(errmsg, BUFSIZ, "Separator missing '%s' ", fmt->sep);
-			tablet_error(task,idx,i,errmsg,errline);
+			tablet_error(task,idx, (int) i,errmsg,errline);
 			GDKfree(errline);
 			error++;
 		  errors:

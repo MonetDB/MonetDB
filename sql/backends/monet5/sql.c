@@ -3033,7 +3033,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **b = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str filename, cs;
+	str filename = NULL, cs;
 	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
 	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
 	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
@@ -3080,7 +3080,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
-		GDKfree(filename);
 		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 	}
 	GDKstrFromStr(ns, *N, len);
