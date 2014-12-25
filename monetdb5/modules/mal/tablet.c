@@ -699,10 +699,9 @@ tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
 		BUNappend(task->cntxt->error_input, fcn, FALSE);
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
 			task->as->error = M5OutOfMemory;
-		if ( row != lng_nil){
-			task->rowerror[row]++;
-			task->errorcnt++;
-		}
+		if ( row != lng_nil)
+			task->rowerror[row-1]++;
+		task->errorcnt++;
 		MT_lock_unset(&errorlock, "tablet_error");
 	}
 }
@@ -800,7 +799,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 			snprintf(buf, BUFSIZ, "line "BUNFMT" field %d '%s' expected in '%s'",row, col, fmt->type, s);
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
-			task->rowerror[(int)row]++;
+			task->rowerror[(int)row-1]++;
 			task->errorcnt++;
 			MT_lock_unset(&errorlock, "insert_val");
 		}
@@ -821,7 +820,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
 		BUNappend(task->cntxt->error_msg, "insert failed", FALSE);
 		BUNappend(task->cntxt->error_input, err, FALSE);
-		task->rowerror[(int)row]++;
+		task->rowerror[(int)row -1]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock, "insert_val");
 	}
@@ -1075,7 +1074,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	BUN cnt = 0, cntstart=0;
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
-	BUN i;
+	BUN i, attr;
 	size_t rseplen;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
@@ -1441,26 +1440,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				}
 			}
 		}
-
-		/* trim the BATs discarding error tuples */
-		if ( task->errorcnt && task->as->error == NULL && best == 0){
-			task->as->error = M5OutOfMemory;
-			res = -1;
-			goto bailout;
-		}
-/*
-		for( attr=0; attr < task->nr_attrs; attr++)
-		switch(){
-		case 4:
-		{
-			for(j = 0; j < task->limit; j++){
-				if ( task->rowerror[j]){
-					continue;
-				}
-			}
-		}
-		}
-*/
 		/* shuffle remainder and continue reading */
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "shuffle %d:%s\n", (int) strlen(s), s);
@@ -1468,11 +1447,57 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		tio = GDKusec();
 		tio = t1 - tio;
 
-		if (res == 0 && task->next) {
-			/* await completion of the BAT updates */
+		/* await completion of the BAT updates */
+		if (res == 0 && task->next) 
 			for (j = 0; j < threads; j++)
 				MT_sema_down(&ptask[j].reply, "SQLload_file");
+
+		/* trim the BATs discarding error tuples */
+#define trimerrors(TYPE) \
+{	unsigned long *src, *dst;\
+	BUN leftover= BATcount(task->as->format[attr].c);\
+	limit = leftover - cntstart;\
+	dst =src= (unsigned long *) BUNtloc(task->as->format[attr].ci,cntstart);\
+	for(j = 0; j < (int) limit; j++, src++){\
+		if ( task->rowerror[j]){\
+			leftover--;\
+			cnt--;\
+			continue;\
+		}\
+		*dst++ = *src;\
+	}\
+	BATsetcount(task->as->format[attr].c, leftover );\
+}
+		if( best && BATcount(as->format[0].c)) {
+			BUN limit;
+			for( attr=0; attr < as->nr_attrs; attr++){
+				switch(ATOMsize(as->format[attr].c->ttype)){
+				case 1: trimerrors(unsigned bte); break;
+				case 2: trimerrors(unsigned short); break;
+				case 4:
+					{	unsigned int *src, *dst;
+						BUN leftover= BATcount(task->as->format[attr].c);
+						limit = leftover - cntstart;
+						dst =src= (unsigned int *) BUNtloc(task->as->format[attr].ci,cntstart);
+						mnstr_printf(GDKout,"#trim "BUNFMT" to "BUNFMT" ",cntstart, leftover);
+						for(j = 0; j < (int) limit; j++) mnstr_printf(GDKout,"%d",task->rowerror[j]);
+						for(j = 0; j < (int) limit; j++, src++){
+							if ( task->rowerror[j]){
+								leftover--;
+								cnt--;
+								continue;
+							}
+							*dst++ = *src;
+						}
+						mnstr_printf(GDKout," "BUNFMT"\n", leftover);
+						BATsetcount(task->as->format[attr].c, leftover );
+					}
+					break;
+				case 8: trimerrors(unsigned long);
+				}
+			}
 		}
+
 		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow) {
 #ifdef SQLLOADTHREAD
 			MT_sema_down(&task->consumer, "SQLload_file");
@@ -1488,12 +1513,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		tablet_error(task, lng_nil, int_nil, "Incomplete record at end of file","SQLload_file");
 		/* indicate that we did read everything (even if we couldn't deal with it */
 		task->b->pos = task->b->len;
-		res = -1;
-	}
-	// check for a possible vacuum of error rows
-	if( res >= 0 && task->errorcnt ){
-		(void) cntstart;
-		// compress all columns
+		if( best == 0)
+			res = -1;
 	}
 
 	if (GDKdebug & GRPalgorithms) 
