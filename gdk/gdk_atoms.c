@@ -590,7 +590,23 @@ batWrite(const bat *a, stream *s, size_t cnt)
  * returning the number of characters read.  Both overflow and
  * incorrect syntax (not a number) result in the function returning 0
  * and setting the destination to nil.
+ * Assume that only valid sizes of the number is passed.
  */
+#define maxmod10 7 /* max value % 10 */
+
+#define parseNum(LIMIT)\
+do {\
+	if (base > LIMIT ||\
+		(base == LIMIT && base10(*p) > maxmod10)) {\
+		/* overflow */\
+		memcpy(*dst, ATOMnilptr(tp), sz);\
+		return 0;\
+	}\
+	base = 10 * base + base10(*p);\
+	p++;\
+} while (num10(*p));\
+base *= sign;
+
 static int
 numFromStr(const char *src, int *len, void **dst, int tp)
 {
@@ -598,92 +614,66 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
-	hge maxdiv10 = 0;	/* max value / 10 */
 #else
 	lng base = 0;
-	lng maxdiv10 = 0;	/* max value / 10 */
 #endif
-	int maxmod10 = 7;	/* max value % 10 */
 	int sign = 1;
 
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	memcpy(*dst, ATOMnilptr(tp), sz);
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		p += 3;
-		return (int) (p - src);
-	}
-	if (*p == '-') {
-		sign = -1;
-		p++;
-	} else if (*p == '+') {
-		p++;
-	}
 	if (!num10(*p)) {
-		/* not a number */
-		return 0;
-	}
-	switch (sz) {
-	case 1:
-		maxdiv10 = 12/*7*/;
-		break;
-	case 2:
-		maxdiv10 = 3276/*7*/;
-		break;
-	case 4:
-		maxdiv10 = 214748364/*7*/;
-		break;
-	case 8:
-		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
-		break;
-#ifdef HAVE_HGE
-	case 16:
-		maxdiv10 = GDK_hge_max / 10;
-		//         17014118346046923173168730371588410572/*7*/;
-		break;
-#endif
-	}
-	do {
-		if (base > maxdiv10 ||
-		    (base == maxdiv10 && base10(*p) > maxmod10)) {
-			/* overflow */
+		if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			p += 3;
+			return (int) (p - src);
+		}
+		if (*p == '-') {
+			sign = -1;
+			p++;
+		} else if (*p == '+') {
+			p++;
+		} else {
+			/* not a number */
+			memcpy(*dst, ATOMnilptr(tp), sz);
 			return 0;
 		}
-		base = 10 * base + base10(*p);
-		p++;
-	} while (num10(*p));
-	base *= sign;
+	}
 	switch (sz) {
-	case 1: {
+	case 1:{
 		bte **dstbte = (bte **) dst;
+		parseNum(12 /*7*/)
 		**dstbte = (bte) base;
 		break;
 	}
-	case 2: {
+	case 2:{
 		sht **dstsht = (sht **) dst;
+		parseNum(3276 /*7*/)
 		**dstsht = (sht) base;
 		break;
 	}
-	case 4: {
+	case 4:{
 		int **dstint = (int **) dst;
+		parseNum(214748364 /*7*/)
 		**dstint = (int) base;
 		break;
 	}
-	case 8: {
+	case 8:{
 		lng **dstlng = (lng **) dst;
+		parseNum(LL_CONSTANT(922337203685477580) /*7*/)
 		**dstlng = (lng) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
 		break;
 	}
 #ifdef HAVE_HGE
-	case 16: {
+	case 16:{
 		hge **dsthge = (hge **) dst;
+		//         17014118346046923173168730371588410572/*7*/;
+		parseNum(GDK_hge_max/10)
 		**dsthge = (hge) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
-		break;
 	}
 #endif
 	}
@@ -692,32 +682,32 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	return (int) (p - src);
 }
 
-int
+inline int
 bteFromStr(const char *src, int *len, bte **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_bte);
 }
 
-int
+inline int
 shtFromStr(const char *src, int *len, sht **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_sht);
 }
 
-int
+inline int
 intFromStr(const char *src, int *len, int **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_int);
 }
 
-int
+inline int
 lngFromStr(const char *src, int *len, lng **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_lng);
 }
 
 #ifdef HAVE_HGE
-int
+inline int
 hgeFromStr(const char *src, int *len, hge **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_hge);
@@ -1014,7 +1004,7 @@ strCmp(const char *l, const char *r)
 	return GDK_STRCMP(l, r);
 }
 
-int
+inline int
 strCmpNoNil(const unsigned char *l, const unsigned char *r)
 {
 	while (*l == *r) {
