@@ -2388,6 +2388,12 @@ wrapup_result_set:
 	return msg;
 }
 
+
+
+
+
+
+
 /* Copy the result set into a CSV file */
 str
 mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2415,7 +2421,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe;
 	mvc *m = NULL;
-	BAT *order, *b, *tbl, *atr, *tpe,*len,*scale;
+	BAT *order = NULL, *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 
 	(void) format;
@@ -2433,7 +2439,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = m->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", "failed");
-		goto wrapup_result_set;
+		goto wrapup_result_set1;
 	}
 
     l = strlen((char *) (*T));
@@ -2458,7 +2464,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
 	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
-		goto wrapup_result_set;
+		goto wrapup_result_set1;
 	// mimick the old rsColumn approach;
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
@@ -2490,13 +2496,13 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
             mnstr_destroy(s);
         msg=  createException(IO, "streams.open", "could not open file '%s': %s",
                 filename?filename:"stdout", strerror(errnr));
-		goto wrapup_result_set;
+		goto wrapup_result_set1;
     } 
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
 		msg = createException(SQL, "sql.resultset", "failed");
 	if( s != cntxt->fdout)
 		mnstr_close(s);
-wrapup_result_set:
+wrapup_result_set1:
 	BBPunfix(order->batCacheid);
 	if( tbl) BBPreleaseref(tblId);
 	if( atr) BBPreleaseref(atrId);
@@ -2603,7 +2609,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res_table *t = NULL;
 	ptr v;
 	int mtype;
-	BAT  *tbl, *atr, *tpe,*len,*scale;
+	BAT  *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 
 	(void) format;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
