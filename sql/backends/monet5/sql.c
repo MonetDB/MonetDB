@@ -3051,7 +3051,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
 	int *besteffort = getArgReference_int(stk, pci, pci->retc + 10);
-	bstream *s;
+	bstream *s = NULL;
 	stream *ss;
 	str utf8 = "UTF-8";
 

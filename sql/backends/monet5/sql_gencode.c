@@ -166,8 +166,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	int ret = -1;
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
-	InstrPtr p, list;
-	(void) p;
+	InstrPtr p = NULL, list;
 
 	list = newInstruction(mb,ASSIGNsymbol);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
@@ -233,8 +232,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 	int ret = -1;
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
-	InstrPtr p, list;
-	(void) p;
+	InstrPtr p= NULL, list;
 
 	list = newInstruction(mb,ASSIGNsymbol);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
