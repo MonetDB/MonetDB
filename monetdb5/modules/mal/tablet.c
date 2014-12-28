@@ -276,26 +276,24 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 	return MAL_SUCCEED;
 }
 
-static char *
+// the starting quote character has already been skipped
+static inline char *
 tablet_skip_string(char *s, char quote)
 {
-	while (*s) {
-		if (*s == '\\' && s[1] != '\0')
-			s++;
-		else if (*s == quote) {
+	do{
+		if (*s == quote) {
 			if (s[1] == quote)
 				*s++ = '\\';	/* sneakily replace "" with \" */
 			else
-				break;
-		}
-		s++;
-	}
-	assert(*s == quote || *s == '\0');
-	if (*s)
-		s++;
-	else
-		return NULL;
-	return s;
+				return s+1;
+		} else 
+		if (*s == '\\'){
+			s++;
+			s += (*s != 0);
+		} else
+			s += (*s != 0);
+	}while(*s);
+	return NULL;
 }
 
 static int
@@ -878,30 +876,61 @@ SQLload_file_line(READERtask *task, int idx)
 	mnstr_printf(GDKout, "SQL break line id %d  state %d\n%s", task->id, idx, task->fields[0][idx]);
 #endif
 
-	for (i = 0; i < as->nr_attrs; i++) {
-		task->fields[i][idx] = line;
-		/* recognize fields starting with a quote, keep them */
-		if (task->quote && *line == task->quote) {
-			line = tablet_skip_string(line + 1, task->quote);
-			if (!line) {
-				str errline = SQLload_error(task, task->next);
-				snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
-				tablet_error(task,idx,i,errmsg,errline);
+	if( task->quote || task->seplen != 1){
+		for (i = 0; i < as->nr_attrs; i++) {
+			task->fields[i][idx] = line;
+			/* recognize fields starting with a quote, keep them */
+			if (*line == task->quote) {
+				line = tablet_skip_string(line + 1, task->quote);
+				if (!line) {
+					str errline = SQLload_error(task, task->next);
+					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
+					tablet_error(task,idx, (int)i,errmsg,errline);
+					GDKfree(errline);
+					error++;
+					goto errors1;
+				}
+			}
+
+			/* eat away the column separator */
+			for (; *line; line++)
+				if (*line == '\\') {
+					if (line[1])
+						line++;
+				} else if (*line == ch && (task->seplen == 1 || strncmp(line, task->csep, task->seplen) == 0)) {
+					*line = 0;
+					line += task->seplen;
+					goto endoffield1;
+				}
+			/* not enough fields */
+			if (i < as->nr_attrs - 1) {
+				errline = SQLload_error(task,task->next);
+				snprintf(errmsg, BUFSIZ, "Separator missing '%s' ", fmt->sep);
+				tablet_error(task,idx, (int) i,errmsg,errline);
 				GDKfree(errline);
 				error++;
-				goto errors;
+			  errors1:
+				/* we save all errors detected */
+				for (; i < as->nr_attrs; i++)
+					task->fields[i][idx] = NULL;
 			}
+		  endoffield1:;
 		}
-
+		return error ? -1 : 0;
+	}
+	assert( !task->quote );
+	assert( task->seplen == 1);
+	for (i = 0; i < as->nr_attrs; i++) {
+		task->fields[i][idx] = line;
 		/* eat away the column separator */
 		for (; *line; line++)
 			if (*line == '\\') {
 				if (line[1])
 					line++;
-			} else if (*line == ch && (task->seplen == 1 || strncmp(line, task->csep, task->seplen) == 0)) {
+			} else if (*line == ch ){
 				*line = 0;
-				line += task->seplen;
-				goto endoffield;
+				line ++;
+				goto endoffield2;
 			}
 		/* not enough fields */
 		if (i < as->nr_attrs - 1) {
@@ -910,13 +939,11 @@ SQLload_file_line(READERtask *task, int idx)
 			tablet_error(task,idx, (int) i,errmsg,errline);
 			GDKfree(errline);
 			error++;
-		  errors:
 			/* we save all errors detected */
-			for (i = 0; i < as->nr_attrs; i++)
+			for (; i < as->nr_attrs; i++)
 				task->fields[i][idx] = NULL;
-			break;
 		}
-	  endoffield:;
+	  endoffield2:;
 	}
 	return error ? -1 : 0;
 }
@@ -1080,7 +1107,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	size_t rseplen;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads : MAXWORKERS) : 1;
+	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS ? GDKnr_threads : MAXWORKERS) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	int vmtrim = GDK_vm_trim;
 	str msg = MAL_SUCCEED;
