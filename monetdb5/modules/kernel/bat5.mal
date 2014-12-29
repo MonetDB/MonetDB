@@ -50,24 +50,14 @@ comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the
 
 command info ( b:bat[:oid,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
 address BKCinfo
-comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
+comment "Produce a table containing information about a BAT in [attribute,value] format. 
         It contains all properties of the BAT record. See the BAT documentation 
         in GDK for more information.";
 
-command getSize ( b:bat[:oid,:any_2]) :lng
-address BKCbatsize
-comment "Calculate the size of the BAT descriptor, heaps and indices in bytes.";
-
-command getMemorySize ( b:bat[:oid,:any_2]) :lng
-address BKCbatvmsize
-comment "Calculate the size of the BAT heaps and indices in bytes
-rounded to the memory page size (see bbp.getPageSize()).";
-
-command getDiskSize ( b:bat[:oid,:any_2]) :lng
-address BKCbatdisksize
-comment "Approximate size of the (persistent) BAT heaps as stored on disk 
-in pages of 512 bytes. Indices are not included, as they only live temporarily
-in virtual memory.";
+command getSize ( b:bat[:oid,:any_1]) :lng
+address BKCgetSize
+comment "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes
+         rounded to the memory page size (see bbp.getPageSize()).";
 
 command getCapacity(b:bat[:oid,:any_2]):lng 
 address BKCgetCapacity
@@ -115,20 +105,12 @@ command getSequenceBase( b:bat[:oid,:any_1]):oid
 address BKCgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
 
-command isSorted(b:bat[:oid,:any_2]) :bit 
+command isSorted(b:bat[:oid,:any_1]) :bit 
 address BKCisSorted
-comment "Returns whether a BAT is ordered on head or not.";
-command isSortedReverse(b:bat[:oid,:any_2]) :bit 
+comment "Returns true if BAT values are ordered.";
+command isSortedReverse(b:bat[:oid,:any_1]) :bit 
 address BKCisSortedReverse
-comment "Returns whether a BAT is ordered on head or not.";
-
-command getStorageSize(b:bat[:any_1,:any_2]) :lng 
-address BKCgetStorageSize
-comment "Determine the total space (in bytes) reserved for a BAT.";
-
-command getSpaceUsed(b:bat[:any_1,:any_2]) :lng 
-address BKCgetSpaceUsed
-comment "Determine the total space (in bytes) occupied by a BAT.";
+comment "Returns true if BAT values are reversely ordered.";
 
 command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BKCinsert_bat

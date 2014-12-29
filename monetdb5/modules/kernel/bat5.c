@@ -343,73 +343,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	return GDK_SUCCEED;
 }
 
-#define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
-
-static int
-CMDbatdisksize(lng *tot, BAT *b)
-{
-	size_t blksize = 512;
-	size_t size = 0;
-
-	if (!isVIEW(b)) {
-		size += ROUND_UP(b->H->heap.free, blksize);
-		size += ROUND_UP(b->T->heap.free, blksize);
-		if (b->H->vheap)
-			size += ROUND_UP(b->H->vheap->free, blksize);
-		if (b->T->vheap)
-			size += ROUND_UP(b->T->vheap->free, blksize);
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
-static int
-CMDbatvmsize(lng *tot, BAT *b)
-{
-	size_t blksize = MT_pagesize();
-	size_t size = 0;
-
-	if (!isVIEW(b)) {
-		BUN cnt = BATcapacity(b);
-
-		size += ROUND_UP(b->H->heap.size, blksize);
-		size += ROUND_UP(b->T->heap.size, blksize);
-		if (b->H->vheap)
-			size += ROUND_UP(b->H->vheap->size, blksize);
-		if (b->T->vheap)
-			size += ROUND_UP(b->T->vheap->size, blksize);
-		if (b->H->hash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		if (b->T->hash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
-static int
-CMDbatsize(lng *tot, BAT *b, int force)
-{
-	size_t size = 0;
-
-	if ( force || !isVIEW(b)) {
-		BUN cnt = BATcapacity(b);
-
-		size += b->H->heap.size;
-		size += b->T->heap.size;
-		if (b->H->vheap)
-			size += b->H->vheap->size;
-		if (b->T->vheap)
-			size += b->T->vheap->size;
-		if (b->H->hash)
-			size += sizeof(BUN) * cnt;
-		if (b->T->hash)
-			size += sizeof(BUN) * cnt;
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
 /*
  * BBP Management, IO
  */
@@ -1262,7 +1195,7 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(b);
+	*res = BATordered(BATmirror(b));
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1275,7 +1208,7 @@ BKCisSortedReverse(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered_rev(b);
+	*res = BATordered_rev(BATmirror(b));
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1442,86 +1375,36 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	throw(MAL, "BKCinfo", GDK_EXCEPTION);
 }
 
-str
-BKCbatdisksize(lng *tot, const bat *bid){
-	BAT *b;
-	if ((b = BATdescriptor(abs(*bid))) == NULL)
-		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
-	CMDbatdisksize(tot,b);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
+// get the actual size of all constituents, also for views
+#define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 str
-BKCbatvmsize(lng *tot, const bat *bid){
+BKCgetSize(lng *tot, const bat *bid){
 	BAT *b;
+	lng size = 0;
+	lng blksize = (lng) MT_pagesize();
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	}
-	CMDbatvmsize(tot,b);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
 
-str
-BKCbatsize(lng *tot, const bat *bid){
-	BAT *b;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
-	}
-	CMDbatsize(tot,b, FALSE);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCgetStorageSize(lng *tot, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
-	CMDbatsize(tot,b,TRUE);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-str
-BKCgetSpaceUsed(lng *tot, const bat *bid)
-{
-	BAT *b;
-	size_t size = BATSTORESIZE;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getSpaceUsed", RUNTIME_OBJECT_MISSING);
-
-	if (!isVIEW(b)) {
-		BUN cnt = BATcount(b);
-
-		size += headsize(b, cnt);
-		size += tailsize(b, cnt);
-		/* the upperbound is used for the heaps */
+	size = sizeof (bat);
+	if ( !isVIEW(b)) {
+		BUN cnt = BATcapacity(b);
+		size += ROUND_UP(b->H->heap.free, blksize);
+		size += ROUND_UP(b->T->heap.free, blksize);
 		if (b->H->vheap)
-			size += b->H->vheap->size;
+			size += ROUND_UP(b->H->vheap->free, blksize);
 		if (b->T->vheap)
-			size += b->T->vheap->size;
+			size += ROUND_UP(b->T->vheap->free, blksize);
 		if (b->H->hash)
-			size += sizeof(BUN) * cnt;
+			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		if (b->T->hash)
-			size += sizeof(BUN) * cnt;
-	}
+			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
+		size += IMPSimprintsize(b);
+	} 
 	*tot = size;
-	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(*bid);
 	return MAL_SUCCEED;
-}
-
-str
-BKCgetStorageSize_str(lng *tot, str batname)
-{
-	int bid = BBPindex(batname);
-
-	if (bid == 0)
-		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
-	return BKCgetStorageSize(tot, &bid);
 }
 
 /*
