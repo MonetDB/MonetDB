@@ -666,7 +666,7 @@ exit lf_a;
 # Skipped due to coercion implication 
     kh_a:bat[:oid,:timestamp]  := mal.manifold("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
     timestamp_bat := kh_a;
-    bat.setWriteMode(kh_a);
+    bat.setAccess(kh_a,"w");
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE); 
 ## KILL 
 end main;
