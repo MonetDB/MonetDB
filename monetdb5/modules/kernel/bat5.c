@@ -1248,7 +1248,7 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setKey", RUNTIME_OBJECT_MISSING);
 	}
-	BATkey(b, *param ? BOUND2BTRUE :FALSE);
+	BATkey(BATmirror(b), *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1291,21 +1291,15 @@ BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
-	}
-	/* we must take care of the special case of a nil column
-	 * (TYPE_void,seqbase=nil): such nil columns never set hkey (and
-	 * BUNins will never invalidate it if set) yet a nil column of a
-	 * BAT with <= 1 entries does not contain doubles => return TRUE.
-	 */
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
 	} else {
-		if (!b->hkey) {
-			BATderiveHeadProps(b, 1);
+		if (!b->tkey) {
+			BATderiveHeadProps(BATmirror(b), 1);
 		}
-		*ret = b->hkey ? TRUE : FALSE;
+		*ret = b->tkey ? TRUE : FALSE;
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1364,81 +1358,6 @@ BKCisTransient(bit *res, const bat *bid)
 		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
 	}
 	*res = b->batPersistence == TRANSIENT;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetWriteMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.setWriteMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasWriteMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_WRITE;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetReadMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_READ)) == NULL)
-		throw(MAL, "bat.setReadMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasReadMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_READ;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetAppendMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_APPEND)) == NULL)
-		throw(MAL, "bat.setAppendMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasAppendMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_APPEND;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

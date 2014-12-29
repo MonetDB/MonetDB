@@ -27,7 +27,7 @@ stdout of test 'tst2510` in directory 'monetdb5/mal` itself:
 #end tryme;
 factory user.tryme():bit;
     b := bat.new(:oid,:int);
-    bat.setWriteMode(b);
+    bat.setAccess(b,"w");
 barrier always := true;
     yield tryme := always;
     redo always;

@@ -109,14 +109,6 @@ bat5_export str BKCshrinkBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBATmap(bat *ret, const bat *bid, const bat *did);
-
-bat5_export str BKCsetWriteMode(bat *res, const bat *bid) ;
-bat5_export str BKChasWriteMode(bit *res, const bat *bid);
-bat5_export str BKCsetReadMode(bat *res, const bat *bid) ;
-bat5_export str BKChasReadMode(bit *res, const bat *bid);
-bat5_export str BKCsetAppendMode(bat *res, const bat *bid) ;
-bat5_export str BKChasAppendMode(bit *res, const bat *bid);
-
 bat5_export str BKCmergecand(bat *ret, const bat *aid, const bat *bid);
 bat5_export str BKCintersectcand(bat *ret, const bat *aid, const bat *bid);
 #endif /*_BAT_H_*/

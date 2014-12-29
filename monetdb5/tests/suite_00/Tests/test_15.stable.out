@@ -37,7 +37,7 @@ function user.main():void;
     ta_a := io.print(t);
 #	io.print("c.access(BAT_WRITE);"); 
     BAT_WRITE := 0;
-    ua_a := bat.setWriteMode(c);
+    ua_a := bat.setAccess(c,"w");
     va_a := bat.append(c,t);
     wa_a := io.print(c);
     z := bat.new(nil:oid,nil:int);
