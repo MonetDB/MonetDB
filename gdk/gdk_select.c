@@ -95,7 +95,7 @@ static BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
-	oid *p;
+	oid * restrict p;
 
 	assert(l1 <= h1);
 	assert(l2 <= h2);
@@ -131,7 +131,7 @@ static BAT *
 doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BAT *bn;
-	oid *p;
+	oid * restrict p;
 	const oid *o;
 
 	assert(l1 <= h1);
@@ -167,7 +167,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
-	oid o, *dst;
+	oid o, * restrict dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
@@ -260,7 +260,7 @@ do {							\
 #define impsloop(CAND,TEST,ADD)						\
 do {									\
 	BUN dcnt, icnt, limit, i, l, e;					\
-	cchdc_t *d = (cchdc_t *) imprints->dict;			\
+	cchdc_t * restrict d = (cchdc_t *) imprints->dict;		\
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		\
 	CAND;								\
 	for (i = 0, dcnt = 0, icnt = 0;					\
@@ -477,7 +477,7 @@ do {									\
 static BUN								\
 NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	       int li, int hi, int equi, int anti, int lval, int hval,	\
-	       BUN r, BUN q, BUN cnt, wrd off, oid *dst,		\
+	       BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,	\
 	       const oid *candlist, BUN maximum, int use_imprints)	\
 {									\
 	TYPE vl = *(const TYPE *) tl;					\
@@ -533,7 +533,7 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 static BUN
 candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	      int li, int hi, int equi, int anti, int lval, int hval,
-	      BUN r, BUN q, BUN cnt, wrd off, oid *dst,
+	      BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,
 	      const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
@@ -613,7 +613,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 static BUN
 fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	     int li, int hi, int equi, int anti, int lval, int hval,
-	     BUN r, BUN q, BUN cnt, wrd off, oid *dst,
+	     BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,
 	     const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
@@ -724,7 +724,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #endif
 	int t;
 	BUN p, q, cnt;
-	oid o, *dst;
+	oid o, * restrict dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with

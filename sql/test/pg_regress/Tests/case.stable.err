@@ -29,24 +29,24 @@ stderr of test 'case` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
+MAPI  = (monetdb) /var/tmp/mtest-22788/.s.monetdb.35759
 QUERY = SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 COMMIT;
 ERROR = !syntax error, unexpected COMMIT, expecting END in: "select case 'a' when 'a' then 1 else 2 commit"
-MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
+MAPI  = (monetdb) /var/tmp/mtest-22788/.s.monetdb.35759
 QUERY = UPDATE CASE_TBL
           SET i = CASE WHEN i >= 3 THEN (- i)
                         ELSE (2 * i) COMMIT;
 ERROR = !syntax error, unexpected COMMIT, expecting END in: "update case_tbl
         !  set i = case when i >= 3 then (- i)
         !                else (2 * "
-MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
+MAPI  = (monetdb) /var/tmp/mtest-22788/.s.monetdb.35759
 QUERY = UPDATE CASE_TBL
           SET i = CASE WHEN i >= 2 THEN (2 * i)
                         ELSE (3 * i) COMMIT;
 ERROR = !syntax error, unexpected COMMIT, expecting END in: "update case_tbl
         !  set i = case when i >= 2 then (2 * i)
         !                else (3 "
-MAPI  = (monetdb) /var/tmp/mtest-26924/.s.monetdb.33500
+MAPI  = (monetdb) /var/tmp/mtest-22788/.s.monetdb.35759
 QUERY = UPDATE CASE_TBL
           SET i = CASE WHEN b.i >= 2 THEN (2 * j)
                         ELSE (3 * j) END

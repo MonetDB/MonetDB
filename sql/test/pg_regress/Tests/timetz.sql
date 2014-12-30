@@ -36,4 +36,53 @@ SELECT f1 AS "Ten" FROM TIMETZ_TBL WHERE f1 >= '00:00-07';
 
 SELECT f1, f1 + time with time zone '00:01' AS "Illegal" FROM TIMETZ_TBL;
 
+
+INSERT INTO TIMETZ_TBL VALUES (null);
+
+-- test MonetDB date functions
+-- select distinct name, func, mod, language, type, schema_id from sys.functions where id in (select func_id from sys.args where number in (0, 1) and name in ('res_0', 'arg_1') and type = 'timetz') order by name, func, schema_id
+-- select current_time();  -- retuns timestz
+-- select localtime();     -- retuns time
+-- select current_time;  -- retuns timetz
+-- select localtime;     -- retuns time
+
+SELECT f1, day(f1) FROM TIMETZ_TBL;
+SELECT f1, "day"(f1) FROM TIMETZ_TBL;
+SELECT f1, hour(f1) FROM TIMETZ_TBL;
+SELECT f1, "hour"(f1) FROM TIMETZ_TBL;
+SELECT f1, minute(f1) FROM TIMETZ_TBL;
+SELECT f1, "minute"(f1) FROM TIMETZ_TBL;
+SELECT f1, second(f1) FROM TIMETZ_TBL;
+SELECT f1, "second"(f1) FROM TIMETZ_TBL;
+
+SELECT f1, extract(day from f1) FROM TIMETZ_TBL;
+SELECT f1, extract(hour from f1) FROM TIMETZ_TBL;
+SELECT f1, extract(minute from f1) FROM TIMETZ_TBL;
+SELECT f1, extract(second from f1) FROM TIMETZ_TBL;
+
+SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
+SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
+SELECT f1, sql_add(f1, cast('2:44:59' as time)) FROM TIMETZ_TBL;
+SELECT f1, sql_add(f1, cast('2:44:59 CET' as timetz)) FROM TIMETZ_TBL;
+
+SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
+SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
+
+SELECT f1, sql_sub(f1, cast('23:22:21' as timetz)) FROM TIMETZ_TBL;
+SELECT f1, sql_sub(cast('23:22:21' as timetz), f1) FROM TIMETZ_TBL;
+
+-- next should give error
+SELECT f1, month(f1) FROM TIMETZ_TBL;
+SELECT f1, "month"(f1) FROM TIMETZ_TBL;
+SELECT f1, year(f1) FROM TIMETZ_TBL;
+SELECT f1, "year"(f1) FROM TIMETZ_TBL;
+SELECT f1, extract(week from f1) FROM TIMETZ_TBL;
+SELECT f1, extract(month from f1) FROM TIMETZ_TBL;
+SELECT f1, extract(year from f1) FROM TIMETZ_TBL;
+SELECT f1, week(f1) FROM TIMETZ_TBL;
+SELECT f1, weekofyear(f1) FROM TIMETZ_TBL;
+SELECT f1, dayofmonth(f1) FROM TIMETZ_TBL;
+SELECT f1, dayofweek(f1) FROM TIMETZ_TBL;
+SELECT f1, dayofyear(f1) FROM TIMETZ_TBL;
+
 DROP TABLE TIMETZ_TBL;

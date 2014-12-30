@@ -81,6 +81,8 @@ sed -r \
 	-e 's/\binterval ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/\b(f1 reltime)/(f1 interval second)/Ig' \
 	-e 's/\breltime ''*''/cast('\1' as interval second)/Ig' \
+	-e 's/\b(f1 box)/(f1 mbr)/Ig' \
+	-e 's/\bbox ''*,*,*,*''/mbr(''linestring('\1' '\2', '\3' '\4')'')/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \

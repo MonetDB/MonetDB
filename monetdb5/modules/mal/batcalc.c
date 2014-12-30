@@ -1414,7 +1414,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = getArgReference_bat(stk, pci, 0);
 	b = BATdescriptor(* getArgReference_bat(stk, pci, 1));
 	if (b == NULL)
-		throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	if (!BAThdense(b)) {
 		map = BATmark(b, 0); /* [head,dense] */
 		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
@@ -1431,7 +1431,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(b->batCacheid);
 			if (map)
 				BBPreleaseref(map->batCacheid);
-			throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 		}
 		if (!BAThdense(b1)) {
 			/* we ignore the head column of b1 */
@@ -1448,7 +1448,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPreleaseref(b1->batCacheid);
 					if (map)
 						BBPreleaseref(map->batCacheid);
-					throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+					throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 				}
 				if (!BAThdense(b2)) {
 					/* we ignore the head column of b2 */
@@ -1462,7 +1462,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATcalcifthenelsecst(b, b1, &stk->stk[getArg(pci, 3)]);
 			}
 		} else {
-			bn = BATcalcifthenelse(b, b1, NULL);
+			throw(MAL, "batcalc.ifthen", "Operation not supported.");
 		}
 		BBPreleaseref(b1->batCacheid);
 	} else {
@@ -1474,7 +1474,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPreleaseref(b->batCacheid);
 					if (map)
 						BBPreleaseref(map->batCacheid);
-					throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+					throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 				}
 				if (!BAThdense(b2)) {
 					/* we ignore the head column of b2 */
@@ -1488,14 +1488,14 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
 			}
 		} else {
-			bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], NULL);
+			throw(MAL, "batcalc.ifthen", "Operation not supported.");
 		}
 	}
 	BBPreleaseref(b->batCacheid);
 	if (bn == NULL) {
 		if (map)
 			BBPreleaseref(map->batCacheid);
-		return mythrow(MAL, "batcalc.ifthen(else)", OPERATION_FAILED);
+		return mythrow(MAL, "batcalc.ifthenelse", OPERATION_FAILED);
 	}
 	if (map) {
 		t = BATleftjoin(map, bn, BATcount(bn));

@@ -1203,6 +1203,8 @@ if test "x$have_perl" != xno; then
 				AC_MSG_ERROR([Must specify --with-perl-libdir when cross compiling])
 			fi
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+			# On Darwin this starts with a slash, remove it
+			PERL_LIBDIR="${PERL_LIBDIR#/}"
 			;;
 		no)	;;
 		*)
@@ -2845,6 +2847,7 @@ dnl     checks for structures
 dnl     checks for compiler characteristics
 AC_C_CONST
 AC_C_INLINE
+AC_C_RESTRICT
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }])],
 	AC_DEFINE(HAVE_RESTRICT, 1,
 		[Define if the compiler supports the restrict keyword]),
