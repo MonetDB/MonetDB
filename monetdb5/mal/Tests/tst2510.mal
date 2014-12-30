@@ -2,7 +2,7 @@
 
 factory tryme():bit;
 	b:= bat.new(:oid,:int);
-    bat.setWriteMode(b);
+    bat.setAccess(b,"w");
 barrier always:= true;
     yield always;
     redo always;

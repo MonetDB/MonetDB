@@ -17,33 +17,41 @@
 
 module alarm;
 
-command sleep(secs:int):void
+command alarm.sleep{unsafe}(secs:int):void
 address ALARMsleep
-comment "sleep X secs";
-command alarm(secs:int, action:str):void
-address ALARMsetalarm
-comment "execute action in X secs";
-command timers{unsafe}() :bat[:str,:str]
-address ALARMtimers
-comment "give a list of all active timers";
-command usec{unsafe}() :lng
+comment "Sleep a few seconds";
+
+#command alarm.action(secs:int, action:str):void
+#address ALARMsetalarm
+#comment "Execute a MAL action after a few secs. NYI";
+
+#command alarm.timers{unsafe}() (time:bat[:oid,:str],action:bat[:oid,:str])
+#address ALARMtimers
+#comment "Give the list of all active timers. NYI";
+
+command alarm.usec{unsafe}() :lng
 address ALARMusec
-comment "return cpu microseconds info";
-command time{unsafe}() :int
+comment "Return time in microseconds.";
+
+command alarm.time{unsafe}() :int
 address ALARMtime
-comment "time in millisecs";
-command epoch{unsafe}() :int
+comment "Return time in milliseconds.";
+
+command alarm.epoch{unsafe}() :int
 address ALARMepoch
-comment "current time as unix epoch";
-command ctime{unsafe}() :str
+comment "Return the current time as UNIX epoch.";
+
+command alarm.ctime{unsafe}() :str
 address ALARMctime
-comment "current time as a string";
-command prelude():void
+comment "Return the current time as a C-time string.";
+
+command alarm.prelude():void
 address ALARMprelude
-comment "Initialize alarm module";
-command epilogue():void
+comment "Initialize alarm module.";
+
+command alarm.epilogue():void
 address ALARMepilogue
-comment "Finalize alarm module";
+comment "Finalize alarm module.";
 
 alarm.prelude();
 

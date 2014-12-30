@@ -4,13 +4,13 @@
 	A:= bat.new(:oid,:oid);
 	bat.append(A,1@0);
 	B:= algebra.copy(A);
-	bat.setWriteMode(B);
+	bat.setAccess(B,"w");
 	bat.append(B,2@0);
 	C:= algebra.copy(B);
-	bat.setWriteMode(C);
+	bat.setAccess(C,"w");
 	bat.append(C,3@0);
 	D:= algebra.copy(C);
-	bat.setWriteMode(D);
+	bat.setAccess(D,"w");
 	bat.append(D,3@0);
 
 	scheduler.choice();
