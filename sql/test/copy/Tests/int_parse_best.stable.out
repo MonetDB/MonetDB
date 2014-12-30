@@ -93,7 +93,7 @@ Ready.
 #0
 #5.1
 #9
-[ 3	]
+[ 2	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
@@ -115,7 +115,7 @@ Ready.
 #
 #null
 #abc
-[ 5	]
+[ 3	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
@@ -123,16 +123,16 @@ Ready.
 % 1 # length
 [ 1 ]
 [ NULL ]
+[ NULL	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	14,	5 # length
-[ 2,	1,	"'int' expected",	"nil\n"	]
 [ 4,	1,	"'int' expected",	"null\n"	]
 [ 5,	1,	"'int' expected",	"abc\n"	]
 #delete from t_int;
-[ 0	]
+[ 3	]
 #drop table t_int;
 
 # 20:58:16 >  

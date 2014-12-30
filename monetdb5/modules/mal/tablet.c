@@ -660,6 +660,7 @@ typedef struct {
 	int error;					/* error during line break */
 	int next;
 	int limit;
+	int cnt;					/* first row in file chunk. */
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
 	MT_Id tid;
@@ -746,7 +747,7 @@ SQLload_error(READERtask *task, lng idx)
  * and interpret the body.
  */
 static inline int
-SQLinsert_val(READERtask *task, int col, lng idx)
+SQLinsert_val(READERtask *task, int col, int idx)
 {
 	Column *fmt = task->as->format+col;
 	const void *adt;
@@ -783,12 +784,11 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 	}
 
 	if (adt == NULL) {
-		BUN row = BATcount(fmt->c);
+		BUN row = task->cnt + idx+1;
 		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
 		err = SQLload_error(task,idx);
 		if( task->rowerror){
 			MT_lock_set(&errorlock, "insert_val");
-			row++; 
 			col++;
 			BUNappend(task->cntxt->error_row, &row, FALSE);
 			BUNappend(task->cntxt->error_fld, &col, FALSE);
@@ -797,7 +797,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 			snprintf(buf, BUFSIZ, "line "BUNFMT" field %d '%s' expected in '%s'",row, col, fmt->type, s);
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
-			task->rowerror[(int)row-1]++;
+			task->rowerror[(int)idx]++;
 			task->errorcnt++;
 			MT_lock_unset(&errorlock, "insert_val");
 		}
@@ -830,7 +830,7 @@ SQLinsert_val(READERtask *task, int col, lng idx)
 static int
 SQLworker_column(READERtask *task, int col)
 {
-	lng i;
+	int i;
 	Column *fmt = task->as->format;
 
 	/* watch out for concurrent threads */
@@ -1272,6 +1272,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			msg = catchKernelException(cntxt, msg);
 			if (msg) {
 				tablet_error(task, lng_nil, int_nil, msg, "SQLload_file");
+#ifdef _DEBUG_TABLET_
+				mnstr_printf(GDKout,"#bailout on SQLload %s\n",msg);
+#endif
 				goto bailout;
 			}
 		}
@@ -1301,6 +1304,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		/* now we fill the copy buffer with pointers to the record */
 		/* skipping tuples as needed */
 		task->next = 0;
+		for (j = 0; j < threads; j++) 
+			ptask[j].cnt = cnt; // how many rows we handled so far
 
 		end = task->input + task->b->len;
 		s = task->input + task->b->pos;
@@ -1432,9 +1437,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "fill the BATs %d  " BUNFMT " cap " BUNFMT "\n", task->next, cnt, BATcapacity(as->format[0].c));
 #endif
-		// initialize the error vector;
-		memset(task->rowerror, 0,task->limit);
-		task->errorcnt =0;
 		t1 = GDKusec();
 		if (task->next) {
 			/* activate the workers to break lines */
@@ -1496,6 +1498,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}\
 	BATsetcount(task->as->format[attr].c, leftover );\
 }
+#ifdef _DEBUG_TABLET_
+	mnstr_printf(GDKout,"#best %d " BUNFMT" rowbase %d "BUNFMT"\n", best,BATcount(as->format[0].c),task->cnt,cnt);
+#endif
 		if( best && BATcount(as->format[0].c)) {
 			BUN limit;
 			for( attr=0; attr < as->nr_attrs; attr++){
@@ -1507,8 +1512,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 						BUN leftover= BATcount(task->as->format[attr].c);
 						limit = leftover - cntstart;
 						dst =src= (unsigned int *) BUNtloc(task->as->format[attr].ci,cntstart);
-						mnstr_printf(GDKout,"#trim "BUNFMT" to "BUNFMT" ",cntstart, leftover);
+#ifdef _DEBUG_TABLET_
+						mnstr_printf(GDKout,"#trim "BUNFMT" to "BUNFMT" limit" BUNFMT " ",cntstart, leftover, limit);
 						for(j = 0; j < (int) limit; j++) mnstr_printf(GDKout,"%d",task->rowerror[j]);
+#endif
 						for(j = 0; j < (int) limit; j++, src++){
 							if ( task->rowerror[j]){
 								leftover--;
@@ -1516,13 +1523,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 							}
 							*dst++ = *src;
 						}
+#ifdef _DEBUG_TABLET_
 						mnstr_printf(GDKout," "BUNFMT"\n", leftover);
+#endif
 						BATsetcount(task->as->format[attr].c, leftover );
 					}
 					break;
 				case 8: trimerrors(unsigned long);
 				}
 			}
+			// re-initialize the error vector;
+			memset(task->rowerror, 0,task->limit);
+			task->errorcnt =0;
 		}
 
 		if ((e == NULL || s >= end || e >= end) && cnt < (BUN) maxrow) {
