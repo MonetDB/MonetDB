@@ -651,6 +651,7 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 
 #define BREAKLINE 1
 #define UPDATEBAT 2
+#define SYNCBAT 3
 
 typedef struct {
 	Client cntxt;
@@ -1001,6 +1002,17 @@ SQLworker(void *arg)
 					task->time[i] += t0;
 					task->wtime += t0;
 				}
+/* EXPERIMENT
+		else if (task->state == SYNCBAT)
+			for (i = 0; i < task->as->nr_attrs; i++)
+				if (task->cols[i]) {
+					t0 = GDKusec();
+					BATsync(task->as->format[task->cols[i]].c);
+					t0 = GDKusec() - t0;
+					task->time[i] += t0;
+					task->wtime += t0;
+				}
+*/
 		task->state = 0;
 		MT_sema_up(&task->reply, "SQLworker");
 	}
@@ -1574,6 +1586,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	task->ateof = 1;
+/* EXPERIMENT
+	// activate the workers to sync the BATs to disk
+	for (j = 0; j < threads; j++) {
+		// stage two, update the BATs 
+		ptask[j].state = SYNCBAT;
+		MT_sema_up(&ptask[j].sema, "SQLload_file");
+	}
+	// await completion of the BAT syncs 
+	if (res == 0 && task->next) 
+		for (j = 0; j < threads; j++)
+			MT_sema_down(&ptask[j].reply, "SQLload_file");
+*/
 #ifdef SQLLOADTHREAD
 	MT_sema_up(&task->producer, "SQLload_file");
 #endif
