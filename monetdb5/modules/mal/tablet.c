@@ -661,7 +661,7 @@ typedef struct {
 	int error;					/* error during line break */
 	int next;
 	int limit;
-	int cnt;					/* first row in file chunk. */
+	BUN cnt;					/* first row in file chunk. */
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
 	MT_Id tid;
@@ -1002,12 +1002,19 @@ SQLworker(void *arg)
 					task->time[i] += t0;
 					task->wtime += t0;
 				}
-/* EXPERIMENT
+/*
 		else if (task->state == SYNCBAT)
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
+					BAT *b = task->as->format[task->cols[i]].c;
+					int merr = 0;
+					if( b == NULL)
+						continue;
+					if ( b->T->heap.storage == STORE_MMAP)
+						merr = MT_msync(b->T->heap.base,  (b->T->heap.size / MT_pagesize() +1) * MS_pagesize(), MMAP_SYNC);
+					mnstr_printf(GDKout,"#experiment msync %d is %d\n", tasks->cols[i], merr);
 					t0 = GDKusec();
-					BATsync(task->as->format[task->cols[i]].c);
+					//BATsync(task->as->format[task->cols[i]].c);
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;
@@ -1026,7 +1033,6 @@ SQLworker(void *arg)
 	GDKsetbuf(0);
 	THRdel(thr);
 }
-
 static void
 SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 {
