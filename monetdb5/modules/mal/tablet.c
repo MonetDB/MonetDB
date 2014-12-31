@@ -53,6 +53,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAXWORKERS	64
 /* #define SQLLOADTHREAD */		/* define to get separate reader thread */
 
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
@@ -652,6 +653,7 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 #define BREAKLINE 1
 #define UPDATEBAT 2
 #define SYNCBAT 3
+#define ENDOFCOPY 4
 
 typedef struct {
 	Client cntxt;
@@ -968,16 +970,10 @@ SQLworker(void *arg)
 	while (task->next >= 0) {
 		MT_sema_down(&task->sema, "SQLworker");
 
-		if (task->next < 0) {
-			MT_sema_up(&task->reply, "SQLworker");
-#ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "SQLworker terminated\n");
-#endif
-			goto do_return;
-		}
 
 		/* stage one, break the lines spread the worker over the workers */
-		if (task->state == BREAKLINE) {
+		switch (task->state) {
+		case BREAKLINE:
 			t0 = GDKusec();
 			piece = (task->next + task->workers) / task->workers;
 #ifdef _DEBUG_TABLET_
@@ -992,7 +988,8 @@ SQLworker(void *arg)
 						break;
 					}
 			task->wtime = GDKusec() - t0;
-		} else if (task->state == UPDATEBAT)
+			break;
+		case UPDATEBAT:
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
@@ -1002,31 +999,40 @@ SQLworker(void *arg)
 					task->time[i] += t0;
 					task->wtime += t0;
 				}
-/*
-		else if (task->state == SYNCBAT)
+				break;
+/* EXPERIMENT */
+		case SYNCBAT:
 			for (i = 0; i < task->as->nr_attrs; i++)
-				if (task->cols[i]) {
-					BAT *b = task->as->format[task->cols[i]].c;
+				if (task->cols[i] ){
+					BAT *b = task->as->format[task->cols[i]-1].c;
 					int merr = 0;
 					if( b == NULL)
 						continue;
-					if ( b->T->heap.storage == STORE_MMAP)
-						merr = MT_msync(b->T->heap.base,  (b->T->heap.size / MT_pagesize() +1) * MS_pagesize(), MMAP_SYNC);
-					mnstr_printf(GDKout,"#experiment msync %d is %d\n", tasks->cols[i], merr);
 					t0 = GDKusec();
-					//BATsync(task->as->format[task->cols[i]].c);
+					merr = BATsync(b);
+#ifdef _DEBUG_TABLET_
+					mnstr_printf(GDKout,"#experiment worker %d msync %d is %d\n", task->id, task->cols[i], merr);
+#else
+					(void) merr;
+#endif
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;
 				}
-*/
-		task->state = 0;
+				break;
+		case ENDOFCOPY:
+			MT_sema_up(&task->reply, "SQLworker");
+#ifdef _DEBUG_TABLET_
+			mnstr_printf(GDKout, "SQLworker terminated\n");
+#endif
+			goto do_return;
+		}
 		MT_sema_up(&task->reply, "SQLworker");
 	}
-	MT_sema_up(&task->reply, "SQLworker");
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "SQLworker exits\n");
 #endif
+	MT_sema_up(&task->reply, "SQLworker");
 
   do_return:
 	GDKfree(GDKerrbuf);
@@ -1037,7 +1043,7 @@ static void
 SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 {
 	int i, j, mi;
-	lng *loc, t;
+	lng loc[MAXWORKERS];
 
 	/* after a few rounds we stick to the work assignment */
 	if (task->rounds > 8)
@@ -1048,27 +1054,11 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 			ptask[j % threads].cols[i] = task->cols[i];
 		return;
 	}
-	loc = (lng *) GDKzalloc(sizeof(lng) * threads);
-	if (loc == 0) {
-		tablet_error(task,lng_nil, int_nil, NULL,"SQLworkdivider");
-		return;
-	}
+	memset((char*)loc, 0, sizeof(lng)*MAXWORKERS);
 	/* use of load directives */
 	for (i = 0; i < nr_attrs; i++)
 		for (j = 0; j < threads; j++)
 			ptask[j].cols[i] = 0;
-
-	/* sort the attributes based on their total time cost */
-	for (i = 0; i < nr_attrs; i++)
-		for (j = i + 1; j < nr_attrs; j++)
-			if (task->time[i] < task->time[j]) {
-				mi = task->cols[i];
-				t = task->time[i];
-				task->cols[i] = task->cols[j];
-				task->cols[j] = mi;
-				task->time[i] = task->time[j];
-				task->time[j] = t;
-			}
 
 	/* now allocate the work to the threads */
 	for (i = 0; i < nr_attrs; i++, j++) {
@@ -1083,7 +1073,6 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 	/* reset the timer */
 	for (i = 0; i < nr_attrs; i++, j++)
 		task->time[i] = 0;
-	GDKfree(loc);
 }
 
 #ifdef SQLLOADTHREAD
@@ -1112,7 +1101,6 @@ SQLloader(void *p)
 }
 #endif
 
-#define MAXWORKERS	64
 
 BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best)
@@ -1130,8 +1118,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	int vmtrim = GDK_vm_trim;
 	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < MAXWORKERS; i++)
-		ptask[i].cols = 0;
+	memset((char*)ptask, 0, MAXWORKERS * sizeof(READERtask));
 
 	if (task == 0) {
 		//SQLload file error
@@ -1592,23 +1579,20 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	task->ateof = 1;
-/* EXPERIMENT
 	// activate the workers to sync the BATs to disk
 	for (j = 0; j < threads; j++) {
-		// stage two, update the BATs 
+		// stage three, update the BATs 
 		ptask[j].state = SYNCBAT;
 		MT_sema_up(&ptask[j].sema, "SQLload_file");
 	}
 	// await completion of the BAT syncs 
-	if (res == 0 && task->next) 
-		for (j = 0; j < threads; j++)
-			MT_sema_down(&ptask[j].reply, "SQLload_file");
-*/
+	for (j = 0; j < threads; j++)
+		MT_sema_down(&ptask[j].reply, "SQLload_file");
 #ifdef SQLLOADTHREAD
 	MT_sema_up(&task->producer, "SQLload_file");
 #endif
 	for (j = 0; j < threads; j++) {
-		ptask[j].next = -1;
+		ptask[j].state = ENDOFCOPY;
 		MT_sema_up(&ptask[j].sema, "SQLload_file");
 	}
 	/* wait for their death */

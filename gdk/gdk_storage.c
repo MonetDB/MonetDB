@@ -588,6 +588,18 @@ DESCclean(BAT *b)
 		b->T->vheap->dirty = 0;
 }
 
+int
+BATsync( BAT *b){
+	char *adr = b->T->heap.base;
+	lng offset =  ((lng)adr % (lng)MT_pagesize());
+	size_t len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - adr)/MT_pagesize()));
+
+	if( offset )
+		adr -= (MT_pagesize() - offset);
+
+	return MT_msync(adr,  len, MMAP_SYNC);
+}
+
 BAT *
 BATsave(BAT *bd)
 {
