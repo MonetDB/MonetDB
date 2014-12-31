@@ -593,11 +593,25 @@ BATsync( BAT *b){
 	char *adr = b->T->heap.base;
 	lng offset =  ((lng)adr % (lng)MT_pagesize());
 	size_t len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - adr)/MT_pagesize()));
+	int err = 0;
 
 	if( offset )
 		adr -= (MT_pagesize() - offset);
 
-	return MT_msync(adr,  len, MMAP_SYNC);
+	err = MT_msync(adr,  len, MMAP_SYNC);
+	if ( err) return err;
+	
+	adr = b->T->vheap->base;
+	if( adr){
+		offset =  ((lng)adr % (lng)MT_pagesize());
+		len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - adr)/MT_pagesize()));
+
+		if( offset )
+			adr -= (MT_pagesize() - offset);
+
+		err = MT_msync(adr,  len, MMAP_SYNC);
+	}
+	return err;
 }
 
 BAT *
