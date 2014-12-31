@@ -601,8 +601,8 @@ BATsync( BAT *b){
 	err = MT_msync(adr,  len, MMAP_SYNC);
 	if ( err) return err;
 	
-	adr = b->T->vheap->base;
-	if( adr){
+	if( b->T->vheap){
+		adr = b->T->vheap->base;
 		offset =  ((lng)adr % (lng)MT_pagesize());
 		len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - adr)/MT_pagesize()));
 
