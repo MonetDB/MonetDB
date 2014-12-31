@@ -1846,11 +1846,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		oc->null = cc->null;
 		oc->unique = cc->unique;
-		if ((cc->storage_type && (!oc->storage_type || (strcmp(cc->storage_type, oc->storage_type) != 0))) || (!cc->storage_type && oc->storage_type))
-			oc->storage_type = (cc->storage_type)?sa_strdup(tr->sa, cc->storage_type):NULL;
+		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
+			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
 		if (!cc->storage_type)
 			oc->storage_type = NULL;
-		if (cc->def && (!cc->def || strcmp(cc->def, oc->def) != 0))
+		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
 			oc->def = sa_strdup(tr->sa, cc->def);
 		if (!cc->def)
 			oc->def = NULL;
