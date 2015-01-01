@@ -1000,21 +1000,14 @@ SQLworker(void *arg)
 					task->wtime += t0;
 				}
 				break;
-/* EXPERIMENT */
 		case SYNCBAT:
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i] ){
 					BAT *b = task->as->format[task->cols[i]-1].c;
-					int merr = 0;
 					if( b == NULL)
 						continue;
 					t0 = GDKusec();
-					merr = BATsync(b);
-#ifdef _DEBUG_TABLET_
-					mnstr_printf(GDKout,"#experiment worker %d msync %d is %d\n", task->id, task->cols[i], merr);
-#else
-					(void) merr;
-#endif
+					BATmsync(b);
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;

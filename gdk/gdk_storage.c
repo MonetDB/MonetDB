@@ -588,8 +588,8 @@ DESCclean(BAT *b)
 		b->T->vheap->dirty = 0;
 }
 
-int
-BATsync( BAT *b){
+static int
+BATmsyncImplementation( BAT *b){
 	char *adr = b->T->heap.base;
 	lng offset =  ((lng)adr % (lng)MT_pagesize());
 	size_t len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - adr)/MT_pagesize()));
@@ -612,6 +612,20 @@ BATsync( BAT *b){
 		err = MT_msync(adr,  len, MMAP_SYNC);
 	}
 	return err;
+}
+
+static void
+BATmsyncThread(void *p)
+{
+    BAT *b = (BAT*) p;
+    BATmsyncImplementation(b);
+}
+
+void
+BATmsync(BAT *b)
+{
+	MT_Id tid;
+	MT_create_thread(&tid, BATmsyncThread, (void *) b, MT_THR_JOINABLE);
 }
 
 BAT *

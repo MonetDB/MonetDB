@@ -1633,7 +1633,7 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
-gdk_export int BATsync(BAT *b);
+gdk_export void BATmsync(BAT *b);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
