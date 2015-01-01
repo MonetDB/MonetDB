@@ -1796,6 +1796,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+	BAT *b = 0;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1808,12 +1809,16 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.append", "Cannot access descriptor");
 	if (ATOMextern(tpe))
 		ins = *(ptr *) ins;
+	if ( tpe == TYPE_bat)
+		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
 		throw(SQL, "sql.append", "Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.append", "Table missing");
+	if( b && BATcount(b) > 4096)
+		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
 	} else if (cname[0] == '%') {
@@ -1874,6 +1879,10 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", "Table missing");
 	}
+	if( upd && BATcount(upd) > 4096)
+		BATmsync(upd);
+	if( tids && BATcount(tids) > 4096)
+		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
 	} else if (cname[0] == '%') {
@@ -1945,6 +1954,8 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.delete", "42S02!Table missing");
+	if( b && BATcount(b) > 4096)
+		BATmsync(b);
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (tpe == TYPE_bat)
 		BBPunfix(((BAT *) ins)->batCacheid);

@@ -1007,6 +1007,8 @@ SQLworker(void *arg)
 					if( b == NULL)
 						continue;
 					t0 = GDKusec();
+					if( b->batPersistence != PERSISTENT)
+						continue;
 					BATmsync(b);
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
