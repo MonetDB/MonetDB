@@ -11,7 +11,7 @@ stdout of test 'check3_nogeom` in directory 'sql/test/leaks` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:30577/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27819/.s.monetdb.30577
@@ -41,10 +41,10 @@ Ready.
 [ "oid",	"bit",	41	]
 [ "oid",	"bit",	41	]
 [ "oid",	"bit",	288	]
-[ "oid",	"bit",	1280	]
-[ "oid",	"bit",	1280	]
-[ "oid",	"bit",	1280	]
-[ "oid",	"bte",	3593	]
+[ "oid",	"bit",	1285	]
+[ "oid",	"bit",	1285	]
+[ "oid",	"bit",	1285	]
+[ "oid",	"bte",	3605	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
@@ -98,16 +98,16 @@ Ready.
 [ "oid",	"int",	288	]
 [ "oid",	"int",	288	]
 [ "oid",	"int",	288	]
-[ "oid",	"int",	1280	]
-[ "oid",	"int",	1280	]
-[ "oid",	"int",	1280	]
-[ "oid",	"int",	1280	]
-[ "oid",	"int",	1280	]
-[ "oid",	"int",	3593	]
-[ "oid",	"int",	3593	]
-[ "oid",	"int",	3593	]
-[ "oid",	"int",	3593	]
-[ "oid",	"int",	3593	]
+[ "oid",	"int",	1285	]
+[ "oid",	"int",	1285	]
+[ "oid",	"int",	1285	]
+[ "oid",	"int",	1285	]
+[ "oid",	"int",	1285	]
+[ "oid",	"int",	3605	]
+[ "oid",	"int",	3605	]
+[ "oid",	"int",	3605	]
+[ "oid",	"int",	3605	]
+[ "oid",	"int",	3605	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
@@ -188,11 +188,11 @@ Ready.
 [ "oid",	"str",	288	]
 [ "oid",	"str",	288	]
 [ "oid",	"str",	288	]
-[ "oid",	"str",	1280	]
-[ "oid",	"str",	1280	]
-[ "oid",	"str",	1280	]
-[ "oid",	"str",	3593	]
-[ "oid",	"str",	3593	]
+[ "oid",	"str",	1285	]
+[ "oid",	"str",	1285	]
+[ "oid",	"str",	1285	]
+[ "oid",	"str",	3605	]
+[ "oid",	"str",	3605	]
 [ "oid",	"timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.L2 # table_name
