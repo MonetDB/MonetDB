@@ -142,7 +142,8 @@ INETfromString(str src, int *len, inet **retval)
 		goto error;
 	}
 
-	return(i);
+	return (int) (endptr - src);
+
 error: /* catch exception: return NULL */
 	in_setnil(*retval);
 	*len = 0;	/* signal INETnew something went wrong */
