@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -560,19 +560,6 @@ scanner_getc(struct scanner *lc)
 		/* incorrect UTF-8 sequence: not shortest possible */
 		lc->errstr = "!not shortest possible UTF-8 sequence";
 		goto error;
-	}
-
-	/* if we find a BOM interpret it as a "zero-width non-breaking
-	 * space" by just skipping it */
-	if (c == 0xFEFF) {
-		/* shift stuff so we won't "see" this BOM when it's in the
-		 * middle of some word */
-		memmove(b->buf + b->pos + 3, b->buf + b->pos, lc->yycur - 3);
-		for (n = 0; n < 3; n++) {
-			b->buf[b->pos++] = ' ';
-			lc->yycur--;
-		}
-		return(scanner_getc(lc));
 	}
 
 	return c;
