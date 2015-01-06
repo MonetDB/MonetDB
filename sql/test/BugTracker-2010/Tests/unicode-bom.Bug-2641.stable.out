@@ -30,18 +30,6 @@ Ready.
 % tinyint # type
 % 1 # length
 [ 1	]
-#SEL﻿ECT 1;
-% .L # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
-[ 1	]
-#SE﻿LE﻿CT﻿ 1﻿;﻿
-% .L # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
-[ 1	]
 
 # 11:21:04 >  
 # 11:21:04 >  Done.

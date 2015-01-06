@@ -1,6 +1,6 @@
-﻿-- The Unicode BOM (Byte Order Marker) can exist not only at the start
--- of the file (where mclient strips it for xquery), but anywhere.
--- When that happens the BOM should be ignored.
+﻿-- The Unicode BOM (Byte Order Marker) is only a BOM when at the start
+-- of a file.  Anywhere else it's a ZERO WIDTH NO-BREAK SPACE which we
+-- shouldn't ignore.
 ﻿
 -- the line above has nothing but the BOM, the line below starts with one
 ﻿SELECT 1;
