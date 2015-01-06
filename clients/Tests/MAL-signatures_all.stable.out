@@ -2661,41 +2661,33 @@ command algebra.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit)
 address ALGuselectInclusive;
 comment See select() but limited to head values
 
-command alarm.alarm(secs:int,action:str):void 
-address ALARMsetalarm;
-comment execute action in X secs
-
 command alarm.ctime{unsafe}():str 
 address ALARMctime;
-comment current time as a string
+comment Return the current time as a C-time string.
 
 command alarm.epilogue():void 
 address ALARMepilogue;
-comment Finalize alarm module
+comment Finalize alarm module.
 
 command alarm.epoch{unsafe}():int 
 address ALARMepoch;
-comment current time as unix epoch
+comment Return the current time as UNIX epoch.
 
 command alarm.prelude():void 
 address ALARMprelude;
-comment Initialize alarm module
+comment Initialize alarm module.
 
-command alarm.sleep(secs:int):void 
+command alarm.sleep{unsafe}(secs:int):void 
 address ALARMsleep;
-comment sleep X secs
+comment Sleep a few seconds
 
 command alarm.time{unsafe}():int 
 address ALARMtime;
-comment time in millisecs
-
-command alarm.timers{unsafe}():bat[:str,:str] 
-address ALARMtimers;
-comment give a list of all active timers
+comment Return time in milliseconds.
 
 command alarm.usec{unsafe}():lng 
 address ALARMusec;
-comment return cpu microseconds info
+comment Return time in microseconds.
 
 command batbam.bam_flag(flags:bat[:oid,:sht],name:str):bat[:oid,:bit] 
 address bam_flag_bat;
@@ -31504,7 +31496,7 @@ command bat.append(i:bat[:any_1,:any_2],u:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BKCappend_wrap;
 comment append the content of u to i
 
-command bat.attach(tt:int,heapfile:str):bat[:void,:any_1] 
+command bat.attach(tt:int,heapfile:str):bat[:oid,:any_1] 
 address BKCattach;
 comment Returns a new BAT with dense head and tail of the given type and uses        the given file to initialize the tail. The file will be owned by the        server.
 
@@ -31524,9 +31516,9 @@ command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2]
 address BKCdelete_bun;
 comment Delete one specific BUN.
 
-command bat.densebat(size:wrd):bat[:oid,:oid] 
+command bat.densebat(sz:wrd):bat[:oid,:oid] 
 address BKCdensebat;
-comment Creates a new [void,void] BAT of size 'size'.
+comment Creates a new [void,void] BAT of size 'sz'.
 
 command bat.getHeat(b:bat[:oid,:any_2]):lng 
 address BKCheat;
@@ -31544,21 +31536,13 @@ command bat.getAlpha(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BKCgetAlpha;
 comment Obtain the list of BUNs added
 
-command bat.getSpaceUsed(b:bat[:any_1,:any_2]):lng 
-address BKCgetSpaceUsed;
-comment Determine the total space (in bytes) occupied by a BAT.
-
-command bat.getStorageSize(b:bat[:any_1,:any_2]):lng 
-address BKCgetStorageSize;
-comment Determine the total space (in bytes) reserved for a BAT.
-
 command bat.getSequenceBase(b:bat[:oid,:any_1]):oid 
 address BKCgetSequenceBase;
 comment Get the sequence base for the void column of a BAT.
 
-command bat.getAccess(b:bat[:any_1,:any_2]):str 
+command bat.getAccess(b:bat[:oid,:any_1]):str 
 address BKCgetAccess;
-comment return the access mode attached to this BAT as a character.
+comment Return the access mode attached to this BAT as a character.
 
 command bat.getRole(bid:bat[:oid,:any_2]):str 
 address BKCgetRole;
@@ -31576,33 +31560,13 @@ command bat.getCapacity(b:bat[:oid,:any_2]):lng
 address BKCgetCapacity;
 comment Returns the current allocation size (in max number of elements) of a BAT.
 
-command bat.getDiskSize(b:bat[:oid,:any_2]):lng 
-address BKCbatdisksize;
-comment Approximate size of the (persistent) BAT heaps as stored on disk in pages of 512 bytes. Indices are not included, as they only live temporarilyin virtual memory.
-
-command bat.getMemorySize(b:bat[:oid,:any_2]):lng 
-address BKCbatvmsize;
-comment Calculate the size of the BAT heaps and indices in bytesrounded to the memory page size (see bbp.getPageSize()).
-
-command bat.getSize(b:bat[:oid,:any_2]):lng 
-address BKCbatsize;
-comment Calculate the size of the BAT descriptor, heaps and indices in bytes.
-
-command bat.hasReadMode(b:bat[:any_1,:any_2]):bit 
-address BKChasReadMode;
-comment return true if to this BAT is read only.
-
-command bat.hasWriteMode(b:bat[:any_1,:any_2]):bit 
-address BKChasWriteMode;
-comment return true if to this BAT is read and write.
-
-command bat.hasAppendMode(b:bat[:any_1,:any_2]):bit 
-address BKChasAppendMode;
-comment return true if to this BAT is append only.
+command bat.getSize(b:bat[:oid,:any_1]):lng 
+address BKCgetSize;
+comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
 
 command bat.imprintsize(b:bat[:oid,:dbl]):lng 
 address CMDBATimprintsize;
-comment Return the size of the imprints
+comment Return the storage size of the imprints index structure.
 
 command bat.imprintsize(b:bat[:oid,:flt]):lng 
 address CMDBATimprintsize;
@@ -31616,7 +31580,7 @@ command bat.imprintsize(b:bat[:oid,:bte]):lng
 address CMDBATimprintsize;
 command bat.imprints(b:bat[:oid,:dbl]):void 
 address CMDBATimprints;
-comment Check/create an imprint index on the BAT
+comment Check for existence or create an imprint index on the BAT.
 
 command bat.imprints(b:bat[:oid,:flt]):void 
 address CMDBATimprints;
@@ -31676,21 +31640,21 @@ command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_
 address BKCinsert_bat;
 comment Insert all BUNs of the second BAT into the first.
 
-command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit 
+command bat.isSortedReverse(b:bat[:oid,:any_1]):bit 
 address BKCisSortedReverse;
-comment Returns whether a BAT is ordered on head or not.
+comment Returns true if BAT values are reversely ordered.
 
-command bat.isSorted(b:bat[:any_1,:any_2]):bit 
+command bat.isSorted(b:bat[:oid,:any_1]):bit 
 address BKCisSorted;
-comment Returns whether a BAT is ordered on head or not.
+comment Returns true if BAT values are ordered.
 
-command bat.isaKey(b:bat[:any_1,:any_2]):bit 
+command bat.isaKey(b:bat[:oid,:any_1]):bit 
 address BKCgetKey;
-comment return whether the head column of a BAT is unique (key).
+comment Return whether the column tail values are unique (key).
 
 command bat.info(b:bat[:oid,:any_2]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
 address BKCinfo;
-comment Produce a BAT containing info about a BAT in [attribute,value] format.         It contains all properties of the BAT record. See the BAT documentation         in GDK for more information.
+comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. See the BAT documentation         in GDK for more information.
 
 command bat.load(name:str):bat[:oid,:any_2] 
 address BKCload;
@@ -31706,10 +31670,12 @@ comment Returns the head-mirror image of a BAT (two head columns).
 
 command bat.new(nme:str):bat[:oid,:any_1] 
 address CMDBATderivedByName;
-comment Localize a bat by name and produce a clone.
+comment Localize a BAT by name and produce a clone.
 
 pattern bat.new(b:bat[:oid,:any_1],size:lng):bat[:oid,:any_1] 
 address CMDBATnewDerived;
+comment Create a new BAT using the inherited structure
+
 pattern bat.new(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address CMDBATnewDerived;
 pattern bat.new_persistent(ht:oid,tt:any_1,size:lng):bat[:oid,:any_1] 
@@ -31718,20 +31684,16 @@ comment Creates a new BAT in the persistent farm and allocate space.
 
 pattern bat.new_persistent(ht:oid,tt:any_1,size:int):bat[:oid,:any_1] 
 address CMDBATnew_persistent;
-comment Creates a new BAT in the persistent farm with sufficient space.
-
 pattern bat.new_persistent(ht:oid,tt:any_1):bat[:oid,:any_1] 
 address CMDBATnew_persistent;
 comment Creates a new empty transient BAT in the persistent farm, with head- and tail-types as indicated.
 
 pattern bat.new(ht:oid,tt:any_1,size:lng):bat[:oid,:any_1] 
 address CMDBATnew;
-comment Creates a new BAT and allocate space.
+comment Creates a new BAT with sufficient space.
 
 pattern bat.new(ht:oid,tt:any_1,size:int):bat[:oid,:any_1] 
 address CMDBATnew;
-comment Creates a new BAT with sufficient space.
-
 pattern bat.new(ht:oid,tt:any_1):bat[:oid,:any_1] 
 address CMDBATnew;
 comment Creates a new empty transient BAT, with head- and tail-types as indicated.
@@ -31746,7 +31708,7 @@ comment Sorts the BAT itself on the head, in place.
 
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
 address CMDBATpartition2;
-comment Create the n-th slice over the BAT broken into severral pieces.
+comment Create the n-th slice over the BAT broken into several pieces.
 
 pattern bat.partition(b:bat[:oid,:any_1]):bat[:oid,:any_1]... 
 address CMDBATpartition;
@@ -31850,25 +31812,13 @@ command bat.setName(b:bat[:oid,:any_2],s:str):void
 address BKCsetName;
 comment Give a logical name to a BAT. 
 
-command bat.setWriteMode(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCsetWriteMode;
-comment Change access privilige of BAT to read and write
-
-command bat.setReadMode(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCsetReadMode;
-comment Change access privilige of BAT to read only
-
-command bat.setAppendMode(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCsetAppendMode;
-comment Change access privilige of BAT to append only
-
-command bat.setAccess(b:bat[:any_1,:any_2],mode:str):bat[:any_1,:any_2] 
+command bat.setAccess(b:bat[:oid,:any_1],mode:str):bat[:oid,:any_1] 
 address BKCsetAccess;
-comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-only]      - allow only read access.	 a[append-only]   - allow reads and update.	 w[riteable]      - allow all operations.	BATs are updatable by default. On making a BAT read-only,         all subsequent updates fail with an error message.Returns         the BAT itself.
+comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-only]      - allow only read access.	 a[append-only]   - allow reads and update.	 w[riteable]      - allow all operations.	 BATs are updatable by default. On making a BAT read-only,      all subsequent updates fail with an error message.	 Returns the BAT itself.
 
-command bat.setKey(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] 
+command bat.setKey(b:bat[:oid,:any_2],mode:bit):bat[:oid,:any_2] 
 address BKCsetkey;
-comment Sets the 'key' property of the head column to 'mode'. In 'key' mode,         the kernel will silently block insertions that cause a duplicate         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 	function does not automatically eliminate duplicates.         Use b := b.kunique;
+comment Sets the 'key' property of the tail column to 'mode'. In 'key' mode,         the kernel will silently block insertions that cause a duplicate         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 		function does not automatically eliminate duplicates. 
 
 command bat.unload(name:str):bit 
 address BKCunload;
