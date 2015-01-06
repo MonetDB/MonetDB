@@ -890,6 +890,15 @@ open_gzstream(const char *filename, const char *flags)
 	s->close = stream_gzclose;
 	s->flush = stream_gzflush;
 	s->stream_data.p = (void *) fp;
+	if (flags[0] == 'r') {
+		char buf[UTF8BOMLENGTH];
+		if (gzread(fp, buf, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+			s->isutf8 = 1;
+		} else {
+			gzrewind(fp);
+		}
+	}
 	return s;
 }
 
@@ -1112,11 +1121,23 @@ open_bzstream(const char *filename, const char *flags)
 	s->flush = NULL;
 	s->stream_data.p = (void *) bzp;
 	if (strchr(flags, 'r') != NULL) {
-		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		s->access = ST_READ;
+		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		if (err == BZ_STREAM_END) {
 			BZ2_bzReadClose(&err, bzp->b);
 			bzp->b = NULL;
+		} else {
+			char buf[UTF8BOMLENGTH];
+
+			if (stream_bzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+				s->isutf8 = 1;
+			} else if (s->stream_data.p) {
+				bzp = s->stream_data.p;
+				BZ2_bzReadClose(&err, bzp->b);
+				rewind(bzp->f);
+				bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
+			}
 		}
 	} else {
 		bzp->b = BZ2_bzWriteOpen(&err, bzp->f, 9, 0, 30);

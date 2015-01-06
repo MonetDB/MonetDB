@@ -1795,9 +1795,9 @@ doFileBulk(Mapi mid, FILE *fp)
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
-	int bufsize = 0;
+	size_t bufsize = 0;
 	int first = 1;		/* first line processing */
-	size_t skip;
+	char *input_encoding = encoding;
 
 	bufsize = BLOCK - 1;
 	buf = malloc(bufsize + 1);
@@ -1820,8 +1820,51 @@ doFileBulk(Mapi mid, FILE *fp)
 			if (hdl == NULL)
 				break;	/* nothing more to do */
 		} else {
+			if (first &&
+			    length >= UTF8BOMLENGTH &&
+			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+				input_encoding = NULL;
+				memmove(buf, buf + UTF8BOMLENGTH,
+					length -= UTF8BOMLENGTH);
+			}
+			first = 0;
+			if (input_encoding != NULL && cd_in != (iconv_t) -1) {
+				ICONV_CONST char *from;
+				size_t fromlen;
+				char *to, *nbuf;
+				size_t tolen = length * 4 + 1;
+
+				if (tolen <= bufsize)
+					tolen = bufsize + 1;
+			  retry:
+				from = buf;
+				fromlen = length;
+				nbuf = to = malloc(tolen);
+				if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
+					switch (errno) {
+					case EILSEQ:
+						free(nbuf);
+						free(buf);
+						fprintf(stderr, "Illegal input sequence\n");
+						return 1;
+					case E2BIG:
+						tolen *= 2;
+						free(nbuf);
+						goto retry;
+					case EINVAL:
+					default:
+						/* shouldn't happen */
+						free(nbuf);
+						free(buf);
+						return 1;
+					}
+				}
+				length = tolen;
+				free(buf);
+				buf = nbuf;
+			}
 			buf[length] = 0;
-			if (strchr(buf, '\0') < buf + length) {
+			if (strlen(buf) < length) {
 				fprintf(stderr, "NULL byte in input\n");
 				errseen = 1;
 				break;
@@ -1834,23 +1877,14 @@ doFileBulk(Mapi mid, FILE *fp)
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
-		if (first &&
-		    length >= UTF8BOMLENGTH &&
-		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
-			skip = UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
-		else
-			skip = 0;
-		first = 0;
-		if (length > skip) {
-			assert(hdl != NULL);
+		assert(hdl != NULL);
 
-			mapi_query_part(hdl, buf + skip, length - skip);
-			CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
+		mapi_query_part(hdl, buf, length);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
-			/*  make sure there is a newline in the buffer */
-			if (strchr(buf + skip, '\n') == NULL)
-				continue;
-		}
+		/*  make sure there is a newline in the buffer */
+		if (strchr(buf, '\n') == NULL)
+			continue;
 
 		assert(hdl != NULL);
 		/* If the server wants more but we're at the end of
@@ -1864,14 +1898,14 @@ doFileBulk(Mapi mid, FILE *fp)
 				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf + skip, continue, buf);
+		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -1950,6 +1984,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	FILE *fp;
 	char *prompt = NULL;
 	int prepno = 0;
+#ifdef HAVE_ICONV
+	char *input_encoding = encoding;
+#endif
 
 	(void) save_history;	/* not used if no readline */
 	if (strcmp(file, "-") == 0) {
@@ -2058,11 +2095,27 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 			else {
 				*line = 0;
 				line = buf;
+				/* if we successfully read a line, and
+				 * it was the first one, look whether
+				 * it starts with the UTF-8 encoding
+				 * of the Unicode BOM, and if so, skip
+				 * the BOM and make sure we treat the
+				 * rest of the file as UTF-8, no
+				 * matter what encoding the user has
+				 * specified */
+				if (lineno == 1 &&
+				    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0) {
+					line += UTF8BOMLENGTH;
+#ifdef HAVE_ICONV
+					input_encoding = NULL;
+#endif
+				}
 			}
 		}
 #ifdef HAVE_ICONV
-		if (line != NULL && fp == stdin &&
-		    encoding != NULL && cd_in != (iconv_t) -1) {
+		if (line != NULL &&
+		    input_encoding != NULL &&
+		    cd_in != (iconv_t) -1) {
 			ICONV_CONST char *from = line;
 			size_t fromlen = strlen(from);
 			int factor = 4;
@@ -2103,15 +2156,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 			if (oldbuf == NULL)
 				free(buf);
 			buf = line;
-		} else
+		}
 #endif
-		if (line != NULL &&
-#ifdef HAVE_ICONV
-		    encoding == NULL &&
-#endif
-		    lineno == 1 &&
-		    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
-			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		lineno++;
 		if (line == NULL) {
 			/* end of file */
