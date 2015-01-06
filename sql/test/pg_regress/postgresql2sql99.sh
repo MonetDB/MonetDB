@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 # converts PostgreSQL specific SQL into SQL99 equivalent (if possible)
@@ -81,6 +81,8 @@ sed -r \
 	-e 's/\binterval ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/\b(f1 reltime)/(f1 interval second)/Ig' \
 	-e 's/\breltime ''*''/cast('\1' as interval second)/Ig' \
+	-e 's/\b(f1 box)/(f1 mbr)/Ig' \
+	-e 's/\bbox ''*,*,*,*''/mbr(''linestring('\1' '\2', '\3' '\4')'')/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \

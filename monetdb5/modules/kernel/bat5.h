@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -81,12 +81,7 @@ bat5_export str BKCisTransient(bit *res, const bat *bid);
 bat5_export str BKCsetAccess(bat *res, const bat *bid, const char * const *param);
 bat5_export str BKCgetAccess(str *res, const bat *bid);
 bat5_export str BKCinfo(bat *ret1, bat *ret2, const bat *bid);
-bat5_export str BKCbatsize(lng *tot, const bat *bid);
-bat5_export str BKCbatvmsize(lng *tot, const bat *bid);
-bat5_export str BKCbatdisksize(lng *tot, const bat *bid);
-bat5_export str BKCgetStorageSize(lng *tot, const bat *bid);
-bat5_export str BKCgetSpaceUsed(lng *tot, const bat *bid);
-bat5_export str BKCgetStorageSize_str(lng *tot, str batname);
+bat5_export str BKCgetSize(lng *tot, const bat *bid);
 bat5_export str BKCisSynced(bit *ret, const bat *bid1, const bat *bid2);
 bat5_export str BKCsetColumn(void *r, const bat *bid, const char * const *tname);
 bat5_export str BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname);
@@ -109,14 +104,6 @@ bat5_export str BKCshrinkBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBATmap(bat *ret, const bat *bid, const bat *did);
-
-bat5_export str BKCsetWriteMode(bat *res, const bat *bid) ;
-bat5_export str BKChasWriteMode(bit *res, const bat *bid);
-bat5_export str BKCsetReadMode(bat *res, const bat *bid) ;
-bat5_export str BKChasReadMode(bit *res, const bat *bid);
-bat5_export str BKCsetAppendMode(bat *res, const bat *bid) ;
-bat5_export str BKChasAppendMode(bit *res, const bat *bid);
-
 bat5_export str BKCmergecand(bat *ret, const bat *aid, const bat *bid);
 bat5_export str BKCintersectcand(bat *ret, const bat *aid, const bat *bid);
 #endif /*_BAT_H_*/

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1961,6 +1961,13 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 		}
 	}
 	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_submonths(date *ret, const date *v, const int *delta)
+{
+	int mindelta = -(*delta);
+	return MTIMEdate_addmonths(ret, v, &mindelta);
 }
 
 /* returns the number of days between 'val1' and 'val2'. */

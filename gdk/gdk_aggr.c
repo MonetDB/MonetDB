@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -156,7 +156,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
 		TYPE1 x;						\
-		const TYPE1 *vals = (const TYPE1 *) values;		\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		if (ngrp == 1 && cand == NULL) {			\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
@@ -305,16 +305,16 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	} while (0)
 
 static BUN
-dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
-      void *results, BUN ngrp, int tp1, int tp2,
-      const oid *cand, const oid *candend, const oid *gids,
+dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
+      void *restrict results, BUN ngrp, int tp1, int tp2,
+      const oid *restrict cand, const oid *candend, const oid *restrict gids,
       oid min, oid max, int skip_nils, int abort_on_error,
       int nil_if_empty, const char *func)
 {
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *seen;	/* bitmask for groups that we've seen */
+	unsigned int *restrict seen; /* bitmask for groups that we've seen */
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -325,7 +325,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 
 	switch (tp2) {
 	case TYPE_bte: {
-		bte *sums = (bte *) results;
+		bte *restrict sums = (bte *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, bte);
@@ -336,7 +336,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		break;
 	}
 	case TYPE_sht: {
-		sht *sums = (sht *) results;
+		sht *restrict sums = (sht *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, sht);
@@ -353,7 +353,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	case TYPE_wrd:
 #endif
 	case TYPE_int: {
-		int *sums = (int *) results;
+		int *restrict sums = (int *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, int);
@@ -376,7 +376,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	case TYPE_wrd:
 #endif
 	case TYPE_lng: {
-		lng *sums = (lng *) results;
+		lng *restrict sums = (lng *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, lng);
@@ -427,7 +427,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 	}
 #endif
 	case TYPE_flt: {
-		flt *sums = (flt *) results;
+		flt *restrict sums = (flt *) results;
 		switch (tp1) {
 		case TYPE_flt:
 			AGGR_SUM(flt, flt);
@@ -438,7 +438,7 @@ dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
 		break;
 	}
 	case TYPE_dbl: {
-		dbl *sums = (dbl *) results;
+		dbl *restrict sums = (dbl *) results;
 		switch (tp1) {
 		case TYPE_flt:
 			AGGR_SUM(flt, dbl);
@@ -682,7 +682,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 
 #define AGGR_PROD(TYPE1, TYPE2, TYPE3)					\
 	do {								\
-		const TYPE1 *vals = (const TYPE1 *) values;		\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		assert(gidincr == 0 || gidincr == 1);			\
 		gid = 0;	/* doesn't change if gidincr == 0 */	\
 		for (;;) {						\
@@ -777,7 +777,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 #else
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) values;		\
+		const TYPE *restrict vals = (const TYPE *) values;	\
 		assert(gidincr == 0 || gidincr == 1);			\
 		gid = 0;	/* doesn't change if gidincr == 0 */	\
 		for (;;) {						\
@@ -826,7 +826,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 
 #define AGGR_PROD_FLOAT(TYPE1, TYPE2)					\
 	do {								\
-		const TYPE1 *vals = (const TYPE1 *) values;		\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		assert(gidincr == 0 || gidincr == 1);			\
 		gid = 0;	/* doesn't change if gidincr == 0 */	\
 		for (;;) {						\
@@ -877,15 +877,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	} while (0)
 
 static BUN
-doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
-       BUN ngrp, int tp1, int tp2, const oid *cand, const oid *candend,
-       const oid *gids, int gidincr, oid min, oid max,
+doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict results,
+       BUN ngrp, int tp1, int tp2, const oid *restrict cand, const oid *candend,
+       const oid *restrict gids, int gidincr, oid min, oid max,
        int skip_nils, int abort_on_error, int nil_if_empty, const char *func)
 {
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *seen;	/* bitmask for groups that we've seen */
+	unsigned int *restrict seen; /* bitmask for groups that we've seen */
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -896,7 +896,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 
 	switch (tp2) {
 	case TYPE_bte: {
-		bte *prods = (bte *) results;
+		bte *restrict prods = (bte *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, bte, sht);
@@ -907,7 +907,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		break;
 	}
 	case TYPE_sht: {
-		sht *prods = (sht *) results;
+		sht *restrict prods = (sht *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, sht, int);
@@ -924,7 +924,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	case TYPE_wrd:
 #endif
 	case TYPE_int: {
-		int *prods = (int *) results;
+		int *restrict prods = (int *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, int, lng);
@@ -1007,7 +1007,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	case TYPE_wrd:
 #endif
 	case TYPE_lng: {
-		lng *prods = (lng *) results;
+		lng *restrict prods = (lng *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_LNG(bte);
@@ -1034,7 +1034,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 	}
 #endif
 	case TYPE_flt: {
-		flt *prods = (flt *) results;
+		flt *restrict prods = (flt *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, flt);
@@ -1068,7 +1068,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 		break;
 	}
 	case TYPE_dbl: {
-		dbl *prods = (dbl *) results;
+		dbl *restrict prods = (dbl *) results;
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, dbl);
@@ -1142,7 +1142,7 @@ doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
 BAT *
 BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
@@ -1332,8 +1332,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 
 #define AGGR_AVG(TYPE)							\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
-		TYPE *avgs = GDKzalloc(ngrp * sizeof(TYPE));		\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto alloc_fail;				\
 		for (;;) {						\
@@ -1379,7 +1379,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 
 #define AGGR_AVG_FLOAT(TYPE)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
 		for (;;) {						\
@@ -1423,14 +1423,14 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 gdk_return
 BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
 	BUN nils = 0;
-	BUN *rems = NULL;
-	wrd *cnts = NULL;
-	dbl *dbls;
+	BUN *restrict rems = NULL;
+	wrd *restrict cnts = NULL;
+	dbl *restrict dbls;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
@@ -1716,7 +1716,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 #endif
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
-	const void *src;
+	const void *restrict src;
 	/* these two needed for ADD_WITH_CHECK macro */
 	int abort_on_error = 1;
 	BUN nils = 0;
@@ -1764,7 +1764,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 #define AGGR_COUNT(TYPE)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (;;) {						\
 			if (cand) {					\
 				if (cand == candend)			\
@@ -1794,11 +1794,11 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 BAT *
 BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
-	wrd *cnts;
+	wrd *restrict cnts;
 	BAT *bn = NULL;
 	int t;
 	const void *nil;
@@ -1918,11 +1918,11 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 BAT *
 BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid min, max;
 	BUN i, ngrp;
-	const bit *bits;
-	wrd *cnts;
+	const bit *restrict bits;
+	wrd *restrict cnts;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
@@ -1999,7 +1999,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		if (ngrp == cnt) {					\
 			/* single element groups */			\
 			if (cand) {					\
@@ -2055,12 +2055,17 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	} while (0)
 
 static BAT *
-BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error, BUN (*minmax)(oid *, BAT *, const oid *, BUN, oid, oid, BUN, BUN, const oid *, const oid *, BUN, int, int), const char *name)
+BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
+	       int abort_on_error, 
+	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			     oid, oid, BUN, BUN, const oid *restrict,
+			     const oid *, BUN, int, int),
+	       const char *name)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid min, max;
 	BUN ngrp;
-	oid *oids;
+	oid *restrict oids;
 	BAT *bn = NULL;
 	BUN nils;
 	BUN start, end, cnt;
@@ -2117,8 +2122,9 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 
 static void *
 BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *, BAT *, const oid *, BUN, oid, oid, BUN, BUN,
-			const oid *, const oid *, BUN, int, int))
+	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			oid, oid, BUN, BUN, const oid *restrict,
+			const oid *, BUN, int, int))
 {
 	oid pos;
 	void *res;
@@ -2157,8 +2163,8 @@ BATminmax(BAT *b, void *aggr,
  * note that this functions returns *positions* of where the minimum
  * values occur */
 static BUN
-do_groupmin(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
-	    BUN start, BUN end, const oid *cand, const oid *candend, BUN cnt,
+do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid min, oid max,
+	    BUN start, BUN end, const oid *restrict cand, const oid *candend, BUN cnt,
 	    int skip_nils, int gdense)
 {
 	oid gid;
@@ -2299,8 +2305,8 @@ BATmin(BAT *b, void *aggr)
  * note that this functions returns *positions* of where the maximum
  * values occur */
 static BUN
-do_groupmax(oid *oids, BAT *b, const oid *gids, BUN ngrp, oid min, oid max,
-	    BUN start, BUN end, const oid *cand, const oid *candend, BUN cnt,
+do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid min, oid max,
+	    BUN start, BUN end, const oid *restrict cand, const oid *candend, BUN cnt,
 	    int skip_nils, int gdense)
 {
 	oid gid;
@@ -2634,7 +2640,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	} while (0)
 
 static dbl
-calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample, const char *func)
+calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, int issample, const char *func)
 {
 	BUN n = 0, i;
 	dbl mean = 0;
@@ -2724,7 +2730,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 
 #define AGGR_STDEV(TYPE)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (;;) {						\
 			if (cand) {					\
 				if (cand == candend)			\
@@ -2782,13 +2788,13 @@ static BAT *
 dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	     int skip_nils, int issample, int variance, const char *func)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
 	BUN nils = 0, nils2 = 0;
-	BUN *cnts = NULL;
-	dbl *dbls, *mean, *delta, *m2;
+	BUN *restrict cnts = NULL;
+	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;

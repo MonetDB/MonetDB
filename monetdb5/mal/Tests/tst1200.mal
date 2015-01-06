@@ -511,7 +511,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 ## create timestamps in bulk from the above bats with dates, daytimes and tzones
 # Skipped due to coercion implication
 	kh_a:bat[:oid,:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
-	timestamp_bat:=kh_a; bat.setWriteMode(kh_a);
+	timestamp_bat:=kh_a; bat.setAccess(kh_a,"w");
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);
 ## KILL
 ## var timestamp_now := timestamp(epoch());

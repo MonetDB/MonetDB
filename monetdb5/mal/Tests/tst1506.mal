@@ -26,18 +26,18 @@
 	io.print(Asr);
 
 io.print("ifthen group");
-	xif0:= batcalc.ifthen(x,Ai);io.print(x,xif0);
-	xif0:= batcalc.ifthen(x,888);io.print(x,xif0);
+#	xif0:= batcalc.ifthen(x,Ai);io.print(x,xif0);
+#	xif0:= batcalc.ifthen(x,888);io.print(x,xif0);
 	xif2:= batcalc.ifthenelse(x,Ai,Air);io.print(x,xif2);
 	xif2:= batcalc.ifthenelse(x,Ai,-999);io.print(x,xif2);
 	xif2:= batcalc.ifthenelse(x,999,Air);io.print(x,xif2);
 
-	sif0:= batcalc.ifthen(x,As);io.print(x,sif0);
-	sif0:= batcalc.ifthen(x,"moon");io.print(x,sif0);
+#	sif0:= batcalc.ifthen(x,As);io.print(x,sif0);
+#	sif0:= batcalc.ifthen(x,"moon");io.print(x,sif0);
 	sif2:= batcalc.ifthenelse(x,As,Asr);io.print(x,sif2);
 	sif2:= batcalc.ifthenelse(x,As,"unknown");io.print(x,sif2);
 	sif2:= batcalc.ifthenelse(x,"unknown",Asr);io.print(x,sif2);
 
-	xif1:= batcalc.ifthen(x,false);io.print(x,xif1);
+#	xif1:= batcalc.ifthen(x,false);io.print(x,xif1);
 	xif3:= batcalc.ifthenelse(x,x,true);io.print(x,x,xif3);
 	xif4:= batcalc.ifthenelse(x,1,2);io.print(x,xif4);

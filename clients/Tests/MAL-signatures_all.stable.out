@@ -11,7 +11,7 @@ stdout of test 'MAL-signatures_all` in directory 'clients` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.734 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://gaai.mullender.nl:35607/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19610/.s.monetdb.35607
@@ -24804,10 +24804,6 @@ pattern batcalc.ifthenelse(b:bat[:oid,:bit],b1:bat[:oid,:any_1],b2:bat[:oid,:any
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
-pattern batcalc.ifthen(b:bat[:oid,:bit],b1:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CMDifthen;
-comment If-then operation to assemble a conditional result
-
 pattern batcalc.ifthenelse(b:bat[:oid,:bit],v1:any_1,b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
@@ -24819,10 +24815,6 @@ comment If-then-else operation to assemble a conditional result
 pattern batcalc.ifthenelse(b:bat[:oid,:bit],v1:any_1,v2:any_1):bat[:oid,:any_1] 
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthen(b:bat[:oid,:bit],v1:any_1):bat[:oid,:any_1] 
-address CMDifthen;
-comment If-then operation to assemble a conditional result
 
 pattern batcalc.int_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:int] 
 address CMDconvert_int;
@@ -40413,6 +40405,10 @@ comment generate the nil date
 command mtime.date(X_1:date):date 
 address MTIMEdate2date;
 comment generate the nil date
+
+command mtime.date_sub_month_interval(t:date,s:int):date 
+address MTIMEdate_submonths;
+comment Subtract months from a date
 
 command mtime.date_add_month_interval(t:date,s:int):date 
 address MTIMEdate_addmonths;

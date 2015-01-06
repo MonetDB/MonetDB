@@ -11,7 +11,7 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
@@ -113,6 +113,248 @@ Ready.
 [ 23:59:00.00,	nil	]
 [ 11:59:59.99,	12:00:59.990000	]
 [ 11:59:59.99,	12:00:59.990000	]
+#INSERT INTO TIME_TBL VALUES (null);
+[ 1	]
+#SELECT f1, "day"(f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	day_f1 # name
+% time,	bigint # type
+% 11,	1 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	0	]
+[ 02:03:00.00,	0	]
+[ 11:59:00.00,	0	]
+[ 12:00:00.00,	0	]
+[ 12:01:00.00,	0	]
+[ 23:59:00.00,	0	]
+[ 11:59:59.99,	0	]
+[ 11:59:59.99,	0	]
+[ NULL,	NULL	]
+#SELECT f1, "hour"(f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	hour_f1 # name
+% time,	int # type
+% 11,	2 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	1	]
+[ 02:03:00.00,	2	]
+[ 11:59:00.00,	11	]
+[ 12:00:00.00,	12	]
+[ 12:01:00.00,	12	]
+[ 23:59:00.00,	23	]
+[ 11:59:59.99,	11	]
+[ 11:59:59.99,	11	]
+[ NULL,	NULL	]
+#SELECT f1, "minute"(f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	minute_f1 # name
+% time,	int # type
+% 11,	2 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	0	]
+[ 02:03:00.00,	3	]
+[ 11:59:00.00,	59	]
+[ 12:00:00.00,	0	]
+[ 12:01:00.00,	1	]
+[ 23:59:00.00,	59	]
+[ 11:59:59.99,	59	]
+[ 11:59:59.99,	59	]
+[ NULL,	NULL	]
+#SELECT f1, "second"(f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	second_f1 # name
+% time,	decimal # type
+% 11,	11 # length
+[ 00:00:00.00,	0.000	]
+[ 01:00:00.00,	0.000	]
+[ 02:03:00.00,	0.000	]
+[ 11:59:00.00,	0.000	]
+[ 12:00:00.00,	0.000	]
+[ 12:01:00.00,	0.000	]
+[ 23:59:00.00,	0.000	]
+[ 11:59:59.99,	59.990	]
+[ 11:59:59.99,	59.990	]
+[ NULL,	NULL	]
+#SELECT f1, extract(day from f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	day_f1 # name
+% time,	bigint # type
+% 11,	1 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	0	]
+[ 02:03:00.00,	0	]
+[ 11:59:00.00,	0	]
+[ 12:00:00.00,	0	]
+[ 12:01:00.00,	0	]
+[ 23:59:00.00,	0	]
+[ 11:59:59.99,	0	]
+[ 11:59:59.99,	0	]
+[ NULL,	NULL	]
+#SELECT f1, extract(hour from f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	hour_f1 # name
+% time,	int # type
+% 11,	2 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	1	]
+[ 02:03:00.00,	2	]
+[ 11:59:00.00,	11	]
+[ 12:00:00.00,	12	]
+[ 12:01:00.00,	12	]
+[ 23:59:00.00,	23	]
+[ 11:59:59.99,	11	]
+[ 11:59:59.99,	11	]
+[ NULL,	NULL	]
+#SELECT f1, extract(minute from f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	minute_f1 # name
+% time,	int # type
+% 11,	2 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	0	]
+[ 02:03:00.00,	3	]
+[ 11:59:00.00,	59	]
+[ 12:00:00.00,	0	]
+[ 12:01:00.00,	1	]
+[ 23:59:00.00,	59	]
+[ 11:59:59.99,	59	]
+[ 11:59:59.99,	59	]
+[ NULL,	NULL	]
+#SELECT f1, extract(second from f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	second_f1 # name
+% time,	decimal # type
+% 11,	11 # length
+[ 00:00:00.00,	0.000	]
+[ 01:00:00.00,	0.000	]
+[ 02:03:00.00,	0.000	]
+[ 11:59:00.00,	0.000	]
+[ 12:00:00.00,	0.000	]
+[ 12:01:00.00,	0.000	]
+[ 23:59:00.00,	0.000	]
+[ 11:59:59.99,	59.990	]
+[ 11:59:59.99,	59.990	]
+[ NULL,	NULL	]
+#SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	sql_add_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	12:01:06.000000	]
+[ 01:00:00.00,	13:01:06.000000	]
+[ 02:03:00.00,	14:04:06.000000	]
+[ 11:59:00.00,	00:00:06.000000	]
+[ 12:00:00.00,	00:01:06.000000	]
+[ 12:01:00.00,	00:02:06.000000	]
+[ 23:59:00.00,	12:00:06.000000	]
+[ 11:59:59.99,	00:01:05.990000	]
+[ 11:59:59.99,	00:01:05.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	sql_add_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	02:00:00.000000	]
+[ 01:00:00.00,	03:00:00.000000	]
+[ 02:03:00.00,	04:03:00.000000	]
+[ 11:59:00.00,	13:59:00.000000	]
+[ 12:00:00.00,	14:00:00.000000	]
+[ 12:01:00.00,	14:01:00.000000	]
+[ 23:59:00.00,	01:59:00.000000	]
+[ 11:59:59.99,	13:59:59.990000	]
+[ 11:59:59.99,	13:59:59.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_add(f1, cast('2:44:59' as time)) FROM TIME_TBL;
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	sql_add_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	02:44:59.000000	]
+[ 01:00:00.00,	03:44:59.000000	]
+[ 02:03:00.00,	04:47:59.000000	]
+[ 11:59:00.00,	14:43:59.000000	]
+[ 12:00:00.00,	14:44:59.000000	]
+[ 12:01:00.00,	14:45:59.000000	]
+[ 23:59:00.00,	02:43:59.000000	]
+[ 11:59:59.99,	14:44:58.990000	]
+[ 11:59:59.99,	14:44:58.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_add(f1, cast('2:44:59 CET' as timetz)) FROM TIME_TBL;
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	sql_add_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	02:44:59.000000	]
+[ 01:00:00.00,	03:44:59.000000	]
+[ 02:03:00.00,	04:47:59.000000	]
+[ 11:59:00.00,	14:43:59.000000	]
+[ 12:00:00.00,	14:44:59.000000	]
+[ 12:01:00.00,	14:45:59.000000	]
+[ 23:59:00.00,	02:43:59.000000	]
+[ 11:59:59.99,	14:44:58.990000	]
+[ 11:59:59.99,	14:44:58.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIME_TBL;
+% sys.time_tbl,	sys.L # table_name
+% f1,	sql_sub_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	11:58:54.000000	]
+[ 01:00:00.00,	12:58:54.000000	]
+[ 02:03:00.00,	14:01:54.000000	]
+[ 11:59:00.00,	23:57:54.000000	]
+[ 12:00:00.00,	23:58:54.000000	]
+[ 12:01:00.00,	23:59:54.000000	]
+[ 23:59:00.00,	11:57:54.000000	]
+[ 11:59:59.99,	23:58:53.990000	]
+[ 11:59:59.99,	23:58:53.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	sql_sub_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	22:00:00.000000	]
+[ 01:00:00.00,	23:00:00.000000	]
+[ 02:03:00.00,	00:03:00.000000	]
+[ 11:59:00.00,	09:59:00.000000	]
+[ 12:00:00.00,	10:00:00.000000	]
+[ 12:01:00.00,	10:01:00.000000	]
+[ 23:59:00.00,	21:59:00.000000	]
+[ 11:59:59.99,	09:59:59.990000	]
+[ 11:59:59.99,	09:59:59.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL;
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	sql_sub_f1 # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	00:37:39.000000	]
+[ 01:00:00.00,	01:37:39.000000	]
+[ 02:03:00.00,	02:40:39.000000	]
+[ 11:59:00.00,	12:36:39.000000	]
+[ 12:00:00.00,	12:37:39.000000	]
+[ 12:01:00.00,	12:38:39.000000	]
+[ 23:59:00.00,	00:36:39.000000	]
+[ 11:59:59.99,	12:37:38.990000	]
+[ 11:59:59.99,	12:37:38.990000	]
+[ NULL,	NULL	]
+#SELECT f1, sql_sub(cast('23:22:21' as time), f1) FROM TIME_TBL;
+% sys.time_tbl,	.L1 # table_name
+% f1,	sql_sub_single_value # name
+% time,	time # type
+% 11,	15 # length
+[ 00:00:00.00,	23:22:21.000000	]
+[ 01:00:00.00,	22:22:21.000000	]
+[ 02:03:00.00,	21:19:21.000000	]
+[ 11:59:00.00,	11:23:21.000000	]
+[ 12:00:00.00,	11:22:21.000000	]
+[ 12:01:00.00,	11:21:21.000000	]
+[ 23:59:00.00,	23:23:21.000000	]
+[ 11:59:59.99,	11:22:21.010000	]
+[ 11:59:59.99,	11:22:21.010000	]
+[ NULL,	23:22:21.000000	]
 #DROP TABLE TIME_TBL;
 
 # 12:39:42 >  

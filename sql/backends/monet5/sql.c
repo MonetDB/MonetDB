@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1379,7 +1379,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	BAT *vars;
 	str msg;
-	int *res = getArgReference_int(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3014,7 +3014,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (c == NULL)
 				throw(SQL, "sql", "failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
-			BATderiveProps(c, 1);
+			BATderiveProps(c, 0);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void, TYPE_str, 0, PERSISTENT);

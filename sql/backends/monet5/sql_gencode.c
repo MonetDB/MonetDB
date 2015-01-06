@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -331,6 +331,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;
 	stmt *s;
+	int old_argc = be->mvc->argc;
 
 	r = rel_optimizer(m, rel);
 	s = rel_bin(m, r);
@@ -365,7 +366,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = op->op3->op4.aval->data.val.sval;
+			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -374,8 +375,10 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 		}
 	}
 
+	be->mvc->argc = 0;
 	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
 		return -1;
+	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	addQueryToCache(c);
@@ -431,7 +434,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = op->op3->op4.aval->data.val.sval;
+			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1435,6 +1438,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, algebraRef, "subselect");
 				q = pushArgument(mb, q, k);
+				if (sub > 0)
+					q = pushArgument(mb, q, sub);
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
