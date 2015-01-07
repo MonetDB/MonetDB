@@ -588,44 +588,50 @@ DESCclean(BAT *b)
 		b->T->vheap->dirty = 0;
 }
 
-static int
-BATmsyncImplementation( BAT *b){
-	char *adr = b->T->heap.base;
-	lng offset =  ((lng)adr % (lng)MT_pagesize());
-	size_t len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - adr)/MT_pagesize()));
-	int err = 0;
+/* spawning the background msync should be done carefully 
+ * because there is a (small) chance that the BAT has been
+ * deleted by the time you issue the msync.
+ * This leaves you with possibly deadbeef BAT descriptors.
+ */
 
-	if( offset )
-		adr -= (MT_pagesize() - offset);
-
-	err = MT_msync(adr,  len, MMAP_SYNC);
-	if ( err) return err;
-	
-	if( b->T->vheap){
-		adr = b->T->vheap->base;
-		offset =  ((lng)adr % (lng)MT_pagesize());
-		len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - adr)/MT_pagesize()));
-
-		if( offset )
-			adr -= (MT_pagesize() - offset);
-
-		err = MT_msync(adr,  len, MMAP_SYNC);
-	}
-	return err;
-}
+typedef struct{
+	char *adr;
+	size_t len;
+} Msyncjob;
 
 static void
-BATmsyncThread(void *p)
-{
-    BAT *b = (BAT*) p;
-    BATmsyncImplementation(b);
+BATmsyncImplementation( void *arg){
+	Msyncjob job =  *(Msyncjob*) arg;
+	(void) MT_msync(job.adr,  job.len, MMAP_SYNC);
 }
 
 void
 BATmsync(BAT *b)
 {
 	MT_Id tid;
-	MT_create_thread(&tid, BATmsyncThread, (void *) b, MT_THR_JOINABLE);
+	
+	Msyncjob job;
+	Msyncjob jobv;
+	lng offset;
+
+	job.adr = b->T->heap.base;
+	offset =  ((lng)job.adr % (lng)MT_pagesize());
+	job.len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - job.adr)/MT_pagesize()));
+	if( offset )
+		job.adr -= (MT_pagesize() - offset);
+	if( job.len)
+		MT_create_thread(&tid, BATmsyncImplementation, (void *) &job, MT_THR_JOINABLE);
+	
+	if( b->T->vheap){
+		jobv.adr = b->T->vheap->base;
+		offset =  ((lng)jobv.adr % (lng)MT_pagesize());
+		jobv.len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - jobv.adr)/MT_pagesize()));
+
+		if( offset )
+			jobv.adr -= (MT_pagesize() - offset);
+		if( jobv.len)
+			MT_create_thread(&tid, BATmsyncImplementation, (void *) &jobv, MT_THR_JOINABLE);
+	}
 }
 
 BAT *
