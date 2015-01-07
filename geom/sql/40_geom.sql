@@ -4058,7 +4058,7 @@ CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pa
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
-CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Differnce";
+CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Difference";
 CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
 CREATE AGGREGATE ST_Union(geom Geometry) RETURNS Geometry external name geom."Union";
 CREATE FUNCTION ST_SymDifference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."SymDifference";
