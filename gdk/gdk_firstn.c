@@ -113,7 +113,7 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		heapify(OP##fix, SWAP1);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -136,7 +136,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	oid *oids;
+	oid *restrict oids;
 	BUN i, cnt, start, end;
 	const oid *cand, *candend;
 	int tpe = b->ttype;
@@ -357,7 +357,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 
 #define shuffle_unique_with_groups(TYPE, OP)				\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
 		heapify(OP##fixgrp, SWAP2);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -378,8 +378,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	oid *oids, *goids;
-	const oid *gv;
+	oid *restrict oids, *restrict goids;
+	const oid *restrict gv;
 	BUN i, cnt, start, end, ci;
 	const oid *cand, *candend;
 	int tpe = b->ttype;
@@ -601,14 +601,14 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 
 #define shuffle_grouped1(TYPE, OPER)					\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		shuffle_grouped1_body(OPER(v[i], v[groups[j].bun]),	\
 				      v[i] == v[groups[j].bun]);	\
 	} while (0)
 
 #define shuffle_grouped2(TYPE)						\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		TYPE lastval = v[groups[top - 1].bun];			\
 		for (i = cand ? *cand++ - b->hseqbase : start;		\
 		     i < end;						\
@@ -631,7 +631,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
-	oid *bp, *gp;
+	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end;
 	const oid *cand, *candend, *oldcand;
 	int tpe = b->ttype;
@@ -641,7 +641,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	struct group {
 		BUN bun;
 		BUN cnt;
-	} *groups;
+	} *restrict groups;
 
 	assert(topn);
 
@@ -898,14 +898,14 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 
 #define shuffle_grouped_with_groups1(TYPE, OPER)			\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		shuffle_grouped_with_groups1_body(OPER(v[i], v[groups[j].bun]),	\
 						  v[i] == v[groups[j].bun]); \
 	} while (0)
 
 #define shuffle_grouped_with_groups2(TYPE)				\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;	\
 		     i < end;						\
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
@@ -926,9 +926,9 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
-	oid *bp, *gp;
+	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end, ci;
-	const oid *cand, *candend, *oldcand, *gv;
+	const oid *cand, *candend, *oldcand, *restrict gv;
 	int tpe = b->ttype;
 	int c;
 	int (*cmp)(const void *, const void *);
@@ -937,7 +937,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		BUN bun;
 		BUN cnt;
 		oid grp;
-	} *groups;
+	} *restrict groups;
 
 	assert(topn);
 
