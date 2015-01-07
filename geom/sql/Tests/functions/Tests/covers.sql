@@ -1,0 +1,1 @@
+SELECT ST_Covers(smallc,smallc) As small_covers_small, ST_Covers(smallc, bigc) As small_covers_big, ST_Covers(bigc, ST_ExteriorRing(bigc)) As big_covers_exterior, ST_Contains(bigc, ST_ExteriorRing(bigc)) As big_contains_exterior FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo;
