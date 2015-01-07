@@ -1379,6 +1379,9 @@ str wkbPointOnSurface(wkb** resWKB, wkb** geomWKB) {
 		*resWKB = wkb_nil;
 		throw(MAL, "geom.PointOnSurface", "GEOSPointOnSurface failed");
 	}
+	
+	//set the srid of the point the same as the srid of the input geometry
+	GEOSSetSRID(resGeosGeometry, GEOSGetSRID(geosGeometry));
 
 	*resWKB = geos2wkb(resGeosGeometry);
 
