@@ -1,0 +1,677 @@
+stdout of test 'regression_load` in directory 'geom/sql/Tests/pg_regression` itself:
+
+
+# 15:38:36 >  
+# 15:38:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33183" "--set" "mapi_usock=/var/tmp/mtest-5054/.s.monetdb.33183" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 15:38:36 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_pg_regression', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:33183/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5054/.s.monetdb.33183
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 15:38:36 >  
+# 15:38:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5054" "--port=33183"
+# 15:38:36 >  
+
+#CREATE TABLE "point" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(POINT));
+#INSERT INTO "point" VALUES(1, ST_PointFromText('POINT (0.0 1.0)'));
+[ 1	]
+#INSERT INTO "point" VALUES(2, ST_PointFromText('POINT (9.0 -1.0)'));
+[ 1	]
+#INSERT INTO "point" VALUES(3, ST_PointFromText('POINT (9.0 -1.0)'));
+[ 1	]
+#CREATE TABLE "pointz" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(POINTZ));
+#INSERT INTO "pointz" VALUES(1, ST_PointFromText('POINT (0.0 1.0 3.0)'));
+[ 1	]
+#INSERT INTO "pointz" VALUES(2, ST_PointFromText('POINT (9.0 -1.0 -123.0)'));
+[ 1	]
+#INSERT INTO "pointz" VALUES(3, ST_PointFromText('POINT (9.0 -1.0 -3.0)'));
+[ 1	]
+#CREATE TABLE "multipoint" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINT));
+#INSERT INTO "multipoint" VALUES(1, ST_MPointFromText('MULTIPOINT (0.0 1.0, 9.0 -1.0, 9.0 -1.0)'));
+[ 1	]
+#CREATE TABLE "multipointz" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINTZ));
+#INSERT INTO "multipointz" VALUES(1, ST_MPointFromText('MULTIPOINT(0.0 1.0 3.0,9.0 -1.0 -3.0,9.0 -1.0 -123.0)'));
+[ 1	]
+#CREATE TABLE "arc" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTILINESTRING));
+#INSERT INTO "arc" VALUES(1, ST_MLineFromText('MULTILINESTRING ((0.0 0.0, 1.0 1.0), (3.0 3.0, 4.0 4.0))'));
+[ 1	]
+#INSERT INTO "arc" VALUES(2, ST_MLineFromText('MULTILINESTRING ((0.0 0.0, 1.0 1.0), (3.0 3.0, 4.0 4.0), (10.0 10.0, 5.0 5.0, 3.0 3.0))'));
+[ 1	]
+#CREATE TABLE "arcz" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTILINESTRINGZ));
+#INSERT INTO "arcz" VALUES(1, ST_MLineFromText('MULTILINESTRING((0.0 0.0 1.0,1.0 1.0 2.0),(3.0 3.0 3.0,4.0 4.0 4.0),(10.0 10.0 5.0,5.0 5.0 6.0,3.0 3.0 7.0))'));
+[ 1	]
+#CREATE TABLE "polygon" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOLYGON));
+#INSERT INTO "polygon" VALUES(1, ST_MPolyFromText('MULTIPOLYGON (((0.0 0.0, 0.0 10.0, 10.0 10.0, 10.0 0.0, 0.0 0.0), (5.0 5.0, 8.0 5.0, 8.0 8.0, 5.0 8.0, 5.0 5.0)), ((-1.0 -1.0, -1.0 -10.0, -10.0 -10.0, -10.0 -1.0, -1.0 -1.0), (-5.0 -5.0, -8.0 -5.0, -8.0 -8.0, -5.0 -8.0, -5.0 -5.0)))'));
+[ 1	]
+#CREATE TABLE "polygonz" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOLYGONZ));
+#INSERT INTO "polygonz" VALUES(1, ST_MPolyFromText('MULTIPOLYGON(((0.0 0.0 1.0,0.0 10.0 7.0,10.0 10.0 5.0,10.0 0.0 3.0,0.0 0.0 1.0),(5.0 5.0 9.0,8.0 5.0 15.0,8.0 8.0 13.0,5.0 8.0 11.0,5.0 5.0 9.0)),((-1.0 -1.0 -1.0,-1.0 -10.0 -7.0,-10.0 -10.0 -5.0,-10.0 -1.0 -3.0,-1.0 -1.0 -1.0),(-5.0 -5.0 -9.0,-8.0 -5.0 -15.0,-8.0 -8.0 -13.0,-5.0 -8.0 -11.0,-5.0 -5.0 -9.0)))'));
+[ 1	]
+#CREATE TABLE "tstpolygon" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOLYGON));
+#INSERT INTO "tstpolygon" VALUES(1, ST_MPolyFromText('MULTIPOLYGON (((0.0 0.0, 0.0 10.0, 10.0 10.0, 10.0 0.0, 0.0 0.0), (5.0 5.0, 8.0 5.0, 8.0 8.0, 5.0 8.0, 5.0 5.0)), ((-1.0 -1.0, -1.0 -10.0, -10.0 -10.0, -10.0 -1.0, -1.0 -1.0), (-5.0 -5.0, -8.0 -5.0, -8.0 -8.0, -5.0 -8.0, -5.0 -5.0)))'));
+[ 1	]
+#CREATE TABLE "tsipolygon" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOLYGON));
+#INSERT INTO "tsipolygon" VALUES(1, ST_MPolyFromText('MULTIPOLYGON (((0.0 0.0, 0.0 10.0, 10.0 10.0, 10.0 0.0, 0.0 0.0), (5.0 5.0, 8.0 5.0, 8.0 8.0, 5.0 8.0, 5.0 5.0)), ((-1.0 -1.0, -1.0 -10.0, -10.0 -10.0, -10.0 -1.0, -1.0 -1.0), (-5.0 -5.0, -8.0 -5.0, -8.0 -8.0, -5.0 -8.0, -5.0 -5.0)))'));
+[ 1	]
+#CREATE TABLE "tstipolygon" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOLYGON));
+#INSERT INTO "tstipolygon" VALUES(1, ST_MPolyFromText('MULTIPOLYGON (((0.0 0.0, 0.0 10.0, 10.0 10.0, 10.0 0.0, 0.0 0.0), (5.0 5.0, 8.0 5.0, 8.0 8.0, 5.0 8.0, 5.0 5.0)), ((-1.0 -1.0, -1.0 -10.0, -10.0 -10.0, -10.0 -1.0, -1.0 -1.0), (-5.0 -5.0, -8.0 -5.0, -8.0 -8.0, -5.0 -8.0, -5.0 -5.0)))'));
+[ 1	]
+#CREATE TABLE "notranspoint" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(POINT));
+#INSERT INTO "notranspoint" VALUES(1, ST_PointFromText('POINT (0.0 1.0)'));
+[ 1	]
+#INSERT INTO "notranspoint" VALUES(2, ST_PointFromText('POINT (9.0 -1.0)'));
+[ 1	]
+#INSERT INTO "notranspoint" VALUES(3, ST_PointFromText('POINT (9.0 -1.0)'));
+[ 1	]
+#CREATE TABLE "notreallymultipoint" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINT));
+#INSERT INTO "notreallymultipoint" VALUES(1, ST_MPointFromText('MULTIPOINT(580936.14282 819465.26182)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(2, ST_MPointFromText('MULTIPOINT(506358.89382 607539.2573)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(3, ST_MPointFromText('MULTIPOINT(630565.96358 527840.45893)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(4, ST_MPointFromText('MULTIPOINT(315456.49222 345306.81409)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(5, ST_MPointFromText('MULTIPOINT(471022.70077 736736.49304)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(6, ST_MPointFromText('MULTIPOINT(500018.60921 615679.27508)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(7, ST_MPointFromText('MULTIPOINT(219498.72249 315980.37513)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(8, ST_MPointFromText('MULTIPOINT(319224.66926 318928.06245)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(9, ST_MPointFromText('MULTIPOINT(568650.77442 460462.13034)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(10, ST_MPointFromText('MULTIPOINT(556409.11354 729253.3099)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(11, ST_MPointFromText('MULTIPOINT(513863.46763 702618.74217)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(12, ST_MPointFromText('MULTIPOINT(578737.93901 752848.93601)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(13, ST_MPointFromText('MULTIPOINT(574438.60845 769113.19633)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(14, ST_MPointFromText('MULTIPOINT(542424.35101 668316.88013)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(15, ST_MPointFromText('MULTIPOINT(400265.83533 734407.0336)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(16, ST_MPointFromText('MULTIPOINT(451759.863 412686.10072)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(17, ST_MPointFromText('MULTIPOINT(569910.58361 459856.20941)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(18, ST_MPointFromText('MULTIPOINT(463382.92261 699974.01989)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(19, ST_MPointFromText('MULTIPOINT(604477.02181 740527.99913)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(20, ST_MPointFromText('MULTIPOINT(507899.65188 708318.27556)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(21, ST_MPointFromText('MULTIPOINT(417174.24178 505305.09095)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(22, ST_MPointFromText('MULTIPOINT(577806.69953 694316.9334)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(23, ST_MPointFromText('MULTIPOINT(576210.38329 714992.28805)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(24, ST_MPointFromText('MULTIPOINT(577656.9425 695830.7359)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(25, ST_MPointFromText('MULTIPOINT(581803.77911 693852.46425)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(26, ST_MPointFromText('MULTIPOINT(483239.07014 239264.86823)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(27, ST_MPointFromText('MULTIPOINT(584627.38842 693322.92413)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(28, ST_MPointFromText('MULTIPOINT(531622.19236 716647.0409)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(29, ST_MPointFromText('MULTIPOINT(581975.3656 694284.04885)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(30, ST_MPointFromText('MULTIPOINT(446160.13588 550892.86503)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(31, ST_MPointFromText('MULTIPOINT(529311.59037 610942.50619)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(32, ST_MPointFromText('MULTIPOINT(581808.72699 695841.70311)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(33, ST_MPointFromText('MULTIPOINT(504782.46851 615893.18621)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(34, ST_MPointFromText('MULTIPOINT(622500.15625 752230.03026)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(35, ST_MPointFromText('MULTIPOINT(349366.22234 363016.92123)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(36, ST_MPointFromText('MULTIPOINT(594903.33074 545923.43693)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(37, ST_MPointFromText('MULTIPOINT(441308.57019 229022.74901)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(38, ST_MPointFromText('MULTIPOINT(605633.26966 771823.45975)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(39, ST_MPointFromText('MULTIPOINT(318054.39683 406677.96877)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(40, ST_MPointFromText('MULTIPOINT(606814.49094 683559.83739)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(41, ST_MPointFromText('MULTIPOINT(427202.24558 526355.92112)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(42, ST_MPointFromText('MULTIPOINT(585605.65458 428734.29996)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(43, ST_MPointFromText('MULTIPOINT(348498.22029 696622.25466)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(44, ST_MPointFromText('MULTIPOINT(447753.88823 552268.21802)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(45, ST_MPointFromText('MULTIPOINT(562081.95051 696159.34758)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(46, ST_MPointFromText('MULTIPOINT(449917.46153 516567.92252)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(47, ST_MPointFromText('MULTIPOINT(509151.60704 594632.16326)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(48, ST_MPointFromText('MULTIPOINT(565466.43528 673573.12364)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(49, ST_MPointFromText('MULTIPOINT(492421.36236 719117.79927)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(50, ST_MPointFromText('MULTIPOINT(613346.49996 691449.74754)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(51, ST_MPointFromText('MULTIPOINT(341505.39323 347633.86011)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(52, ST_MPointFromText('MULTIPOINT(335130.10922 221738.45857)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(53, ST_MPointFromText('MULTIPOINT(520476.8592 607380.89342)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(54, ST_MPointFromText('MULTIPOINT(610931.06529 690104.94336)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(55, ST_MPointFromText('MULTIPOINT(577692.98162 695342.84069)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(56, ST_MPointFromText('MULTIPOINT(623744.42521 697297.79934)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(57, ST_MPointFromText('MULTIPOINT(439667.9941 646984.2557)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(58, ST_MPointFromText('MULTIPOINT(507141.1403 606418.24612)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(59, ST_MPointFromText('MULTIPOINT(575383.92723 737533.32187)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(60, ST_MPointFromText('MULTIPOINT(413215.49525 523736.83631)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(61, ST_MPointFromText('MULTIPOINT(561887.18089 504214.42238)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(62, ST_MPointFromText('MULTIPOINT(583428.22076 759656.92773)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(63, ST_MPointFromText('MULTIPOINT(421018.92505 813910.21541)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(64, ST_MPointFromText('MULTIPOINT(621373.92981 690044.79287)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(65, ST_MPointFromText('MULTIPOINT(470983.15933 620692.73333)'));
+[ 1	]
+#INSERT INTO "notreallymultipoint" VALUES(66, ST_MPointFromText('MULTIPOINT(508947.75836 706720.50714)'));
+[ 1	]
+#CREATE TABLE "multitosinglepoint" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINT));
+#INSERT INTO "multitosinglepoint" VALUES(1, ST_MPointFromText('MULTIPOINT(580936.14282 819465.26182)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(2, ST_MPointFromText('MULTIPOINT(506358.89382 607539.2573)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(3, ST_MPointFromText('MULTIPOINT(630565.96358 527840.45893)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(4, ST_MPointFromText('MULTIPOINT(315456.49222 345306.81409)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(5, ST_MPointFromText('MULTIPOINT(471022.70077 736736.49304)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(6, ST_MPointFromText('MULTIPOINT(500018.60921 615679.27508)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(7, ST_MPointFromText('MULTIPOINT(219498.72249 315980.37513)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(8, ST_MPointFromText('MULTIPOINT(319224.66926 318928.06245)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(9, ST_MPointFromText('MULTIPOINT(568650.77442 460462.13034)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(10, ST_MPointFromText('MULTIPOINT(556409.11354 729253.3099)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(11, ST_MPointFromText('MULTIPOINT(513863.46763 702618.74217)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(12, ST_MPointFromText('MULTIPOINT(578737.93901 752848.93601)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(13, ST_MPointFromText('MULTIPOINT(574438.60845 769113.19633)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(14, ST_MPointFromText('MULTIPOINT(542424.35101 668316.88013)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(15, ST_MPointFromText('MULTIPOINT(400265.83533 734407.0336)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(16, ST_MPointFromText('MULTIPOINT(451759.863 412686.10072)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(17, ST_MPointFromText('MULTIPOINT(569910.58361 459856.20941)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(18, ST_MPointFromText('MULTIPOINT(463382.92261 699974.01989)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(19, ST_MPointFromText('MULTIPOINT(604477.02181 740527.99913)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(20, ST_MPointFromText('MULTIPOINT(507899.65188 708318.27556)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(21, ST_MPointFromText('MULTIPOINT(417174.24178 505305.09095)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(22, ST_MPointFromText('MULTIPOINT(577806.69953 694316.9334)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(23, ST_MPointFromText('MULTIPOINT(576210.38329 714992.28805)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(24, ST_MPointFromText('MULTIPOINT(577656.9425 695830.7359)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(25, ST_MPointFromText('MULTIPOINT(581803.77911 693852.46425)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(26, ST_MPointFromText('MULTIPOINT(483239.07014 239264.86823)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(27, ST_MPointFromText('MULTIPOINT(584627.38842 693322.92413)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(28, ST_MPointFromText('MULTIPOINT(531622.19236 716647.0409)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(29, ST_MPointFromText('MULTIPOINT(581975.3656 694284.04885)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(30, ST_MPointFromText('MULTIPOINT(446160.13588 550892.86503)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(31, ST_MPointFromText('MULTIPOINT(529311.59037 610942.50619)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(32, ST_MPointFromText('MULTIPOINT(581808.72699 695841.70311)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(33, ST_MPointFromText('MULTIPOINT(504782.46851 615893.18621)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(34, ST_MPointFromText('MULTIPOINT(622500.15625 752230.03026)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(35, ST_MPointFromText('MULTIPOINT(349366.22234 363016.92123)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(36, ST_MPointFromText('MULTIPOINT(594903.33074 545923.43693)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(37, ST_MPointFromText('MULTIPOINT(441308.57019 229022.74901)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(38, ST_MPointFromText('MULTIPOINT(605633.26966 771823.45975)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(39, ST_MPointFromText('MULTIPOINT(318054.39683 406677.96877)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(40, ST_MPointFromText('MULTIPOINT(606814.49094 683559.83739)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(41, ST_MPointFromText('MULTIPOINT(427202.24558 526355.92112)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(42, ST_MPointFromText('MULTIPOINT(585605.65458 428734.29996)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(43, ST_MPointFromText('MULTIPOINT(348498.22029 696622.25466)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(44, ST_MPointFromText('MULTIPOINT(447753.88823 552268.21802)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(45, ST_MPointFromText('MULTIPOINT(562081.95051 696159.34758)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(46, ST_MPointFromText('MULTIPOINT(449917.46153 516567.92252)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(47, ST_MPointFromText('MULTIPOINT(509151.60704 594632.16326)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(48, ST_MPointFromText('MULTIPOINT(565466.43528 673573.12364)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(49, ST_MPointFromText('MULTIPOINT(492421.36236 719117.79927)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(50, ST_MPointFromText('MULTIPOINT(613346.49996 691449.74754)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(51, ST_MPointFromText('MULTIPOINT(341505.39323 347633.86011)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(52, ST_MPointFromText('MULTIPOINT(335130.10922 221738.45857)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(53, ST_MPointFromText('MULTIPOINT(520476.8592 607380.89342)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(54, ST_MPointFromText('MULTIPOINT(610931.06529 690104.94336)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(55, ST_MPointFromText('MULTIPOINT(577692.98162 695342.84069)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(56, ST_MPointFromText('MULTIPOINT(623744.42521 697297.79934)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(57, ST_MPointFromText('MULTIPOINT(439667.9941 646984.2557)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(58, ST_MPointFromText('MULTIPOINT(507141.1403 606418.24612)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(59, ST_MPointFromText('MULTIPOINT(575383.92723 737533.32187)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(60, ST_MPointFromText('MULTIPOINT(413215.49525 523736.83631)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(61, ST_MPointFromText('MULTIPOINT(561887.18089 504214.42238)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(62, ST_MPointFromText('MULTIPOINT(583428.22076 759656.92773)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(63, ST_MPointFromText('MULTIPOINT(421018.92505 813910.21541)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(64, ST_MPointFromText('MULTIPOINT(621373.92981 690044.79287)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(65, ST_MPointFromText('MULTIPOINT(470983.15933 620692.73333)'));
+[ 1	]
+#INSERT INTO "multitosinglepoint" VALUES(66, ST_MPointFromText('MULTIPOINT(508947.75836 706720.50714)'));
+[ 1	]
+#CREATE TABLE "reprojectpts" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINT));
+#INSERT INTO "reprojectpts" VALUES(1, ST_MPointFromText('MULTIPOINT(580936.14282 819465.26182)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(2, ST_MPointFromText('MULTIPOINT(506358.89382 607539.2573)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(3, ST_MPointFromText('MULTIPOINT(630565.96358 527840.45893)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(4, ST_MPointFromText('MULTIPOINT(315456.49222 345306.81409)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(5, ST_MPointFromText('MULTIPOINT(471022.70077 736736.49304)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(6, ST_MPointFromText('MULTIPOINT(500018.60921 615679.27508)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(7, ST_MPointFromText('MULTIPOINT(219498.72249 315980.37513)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(8, ST_MPointFromText('MULTIPOINT(319224.66926 318928.06245)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(9, ST_MPointFromText('MULTIPOINT(568650.77442 460462.13034)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(10, ST_MPointFromText('MULTIPOINT(556409.11354 729253.3099)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(11, ST_MPointFromText('MULTIPOINT(513863.46763 702618.74217)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(12, ST_MPointFromText('MULTIPOINT(578737.93901 752848.93601)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(13, ST_MPointFromText('MULTIPOINT(574438.60845 769113.19633)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(14, ST_MPointFromText('MULTIPOINT(542424.35101 668316.88013)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(15, ST_MPointFromText('MULTIPOINT(400265.83533 734407.0336)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(16, ST_MPointFromText('MULTIPOINT(451759.863 412686.10072)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(17, ST_MPointFromText('MULTIPOINT(569910.58361 459856.20941)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(18, ST_MPointFromText('MULTIPOINT(463382.92261 699974.01989)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(19, ST_MPointFromText('MULTIPOINT(604477.02181 740527.99913)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(20, ST_MPointFromText('MULTIPOINT(507899.65188 708318.27556)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(21, ST_MPointFromText('MULTIPOINT(417174.24178 505305.09095)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(22, ST_MPointFromText('MULTIPOINT(577806.69953 694316.9334)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(23, ST_MPointFromText('MULTIPOINT(576210.38329 714992.28805)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(24, ST_MPointFromText('MULTIPOINT(577656.9425 695830.7359)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(25, ST_MPointFromText('MULTIPOINT(581803.77911 693852.46425)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(26, ST_MPointFromText('MULTIPOINT(483239.07014 239264.86823)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(27, ST_MPointFromText('MULTIPOINT(584627.38842 693322.92413)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(28, ST_MPointFromText('MULTIPOINT(531622.19236 716647.0409)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(29, ST_MPointFromText('MULTIPOINT(581975.3656 694284.04885)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(30, ST_MPointFromText('MULTIPOINT(446160.13588 550892.86503)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(31, ST_MPointFromText('MULTIPOINT(529311.59037 610942.50619)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(32, ST_MPointFromText('MULTIPOINT(581808.72699 695841.70311)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(33, ST_MPointFromText('MULTIPOINT(504782.46851 615893.18621)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(34, ST_MPointFromText('MULTIPOINT(622500.15625 752230.03026)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(35, ST_MPointFromText('MULTIPOINT(349366.22234 363016.92123)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(36, ST_MPointFromText('MULTIPOINT(594903.33074 545923.43693)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(37, ST_MPointFromText('MULTIPOINT(441308.57019 229022.74901)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(38, ST_MPointFromText('MULTIPOINT(605633.26966 771823.45975)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(39, ST_MPointFromText('MULTIPOINT(318054.39683 406677.96877)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(40, ST_MPointFromText('MULTIPOINT(606814.49094 683559.83739)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(41, ST_MPointFromText('MULTIPOINT(427202.24558 526355.92112)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(42, ST_MPointFromText('MULTIPOINT(585605.65458 428734.29996)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(43, ST_MPointFromText('MULTIPOINT(348498.22029 696622.25466)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(44, ST_MPointFromText('MULTIPOINT(447753.88823 552268.21802)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(45, ST_MPointFromText('MULTIPOINT(562081.95051 696159.34758)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(46, ST_MPointFromText('MULTIPOINT(449917.46153 516567.92252)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(47, ST_MPointFromText('MULTIPOINT(509151.60704 594632.16326)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(48, ST_MPointFromText('MULTIPOINT(565466.43528 673573.12364)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(49, ST_MPointFromText('MULTIPOINT(492421.36236 719117.79927)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(50, ST_MPointFromText('MULTIPOINT(613346.49996 691449.74754)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(51, ST_MPointFromText('MULTIPOINT(341505.39323 347633.86011)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(52, ST_MPointFromText('MULTIPOINT(335130.10922 221738.45857)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(53, ST_MPointFromText('MULTIPOINT(520476.8592 607380.89342)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(54, ST_MPointFromText('MULTIPOINT(610931.06529 690104.94336)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(55, ST_MPointFromText('MULTIPOINT(577692.98162 695342.84069)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(56, ST_MPointFromText('MULTIPOINT(623744.42521 697297.79934)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(57, ST_MPointFromText('MULTIPOINT(439667.9941 646984.2557)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(58, ST_MPointFromText('MULTIPOINT(507141.1403 606418.24612)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(59, ST_MPointFromText('MULTIPOINT(575383.92723 737533.32187)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(60, ST_MPointFromText('MULTIPOINT(413215.49525 523736.83631)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(61, ST_MPointFromText('MULTIPOINT(561887.18089 504214.42238)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(62, ST_MPointFromText('MULTIPOINT(583428.22076 759656.92773)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(63, ST_MPointFromText('MULTIPOINT(421018.92505 813910.21541)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(64, ST_MPointFromText('MULTIPOINT(621373.92981 690044.79287)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(65, ST_MPointFromText('MULTIPOINT(470983.15933 620692.73333)'));
+[ 1	]
+#INSERT INTO "reprojectpts" VALUES(66, ST_MPointFromText('MULTIPOINT(508947.75836 706720.50714)'));
+[ 1	]
+#CREATE TABLE "reprojectptsgeog" (
+#	gid INTEGER NOT NULL PRIMARY KEY,
+#	geom GEOMETRY(MULTIPOINT));
+#INSERT INTO "reprojectptsgeog" VALUES(1, ST_MPointFromText('MULTIPOINT(580936.14282 819465.26182)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(2, ST_MPointFromText('MULTIPOINT(506358.89382 607539.2573)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(3, ST_MPointFromText('MULTIPOINT(630565.96358 527840.45893)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(4, ST_MPointFromText('MULTIPOINT(315456.49222 345306.81409)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(5, ST_MPointFromText('MULTIPOINT(471022.70077 736736.49304)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(6, ST_MPointFromText('MULTIPOINT(500018.60921 615679.27508)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(7, ST_MPointFromText('MULTIPOINT(219498.72249 315980.37513)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(8, ST_MPointFromText('MULTIPOINT(319224.66926 318928.06245)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(9, ST_MPointFromText('MULTIPOINT(568650.77442 460462.13034)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(10, ST_MPointFromText('MULTIPOINT(556409.11354 729253.3099)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(11, ST_MPointFromText('MULTIPOINT(513863.46763 702618.74217)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(12, ST_MPointFromText('MULTIPOINT(578737.93901 752848.93601)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(13, ST_MPointFromText('MULTIPOINT(574438.60845 769113.19633)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(14, ST_MPointFromText('MULTIPOINT(542424.35101 668316.88013)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(15, ST_MPointFromText('MULTIPOINT(400265.83533 734407.0336)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(16, ST_MPointFromText('MULTIPOINT(451759.863 412686.10072)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(17, ST_MPointFromText('MULTIPOINT(569910.58361 459856.20941)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(18, ST_MPointFromText('MULTIPOINT(463382.92261 699974.01989)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(19, ST_MPointFromText('MULTIPOINT(604477.02181 740527.99913)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(20, ST_MPointFromText('MULTIPOINT(507899.65188 708318.27556)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(21, ST_MPointFromText('MULTIPOINT(417174.24178 505305.09095)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(22, ST_MPointFromText('MULTIPOINT(577806.69953 694316.9334)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(23, ST_MPointFromText('MULTIPOINT(576210.38329 714992.28805)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(24, ST_MPointFromText('MULTIPOINT(577656.9425 695830.7359)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(25, ST_MPointFromText('MULTIPOINT(581803.77911 693852.46425)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(26, ST_MPointFromText('MULTIPOINT(483239.07014 239264.86823)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(27, ST_MPointFromText('MULTIPOINT(584627.38842 693322.92413)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(28, ST_MPointFromText('MULTIPOINT(531622.19236 716647.0409)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(29, ST_MPointFromText('MULTIPOINT(581975.3656 694284.04885)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(30, ST_MPointFromText('MULTIPOINT(446160.13588 550892.86503)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(31, ST_MPointFromText('MULTIPOINT(529311.59037 610942.50619)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(32, ST_MPointFromText('MULTIPOINT(581808.72699 695841.70311)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(33, ST_MPointFromText('MULTIPOINT(504782.46851 615893.18621)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(34, ST_MPointFromText('MULTIPOINT(622500.15625 752230.03026)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(35, ST_MPointFromText('MULTIPOINT(349366.22234 363016.92123)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(36, ST_MPointFromText('MULTIPOINT(594903.33074 545923.43693)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(37, ST_MPointFromText('MULTIPOINT(441308.57019 229022.74901)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(38, ST_MPointFromText('MULTIPOINT(605633.26966 771823.45975)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(39, ST_MPointFromText('MULTIPOINT(318054.39683 406677.96877)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(40, ST_MPointFromText('MULTIPOINT(606814.49094 683559.83739)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(41, ST_MPointFromText('MULTIPOINT(427202.24558 526355.92112)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(42, ST_MPointFromText('MULTIPOINT(585605.65458 428734.29996)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(43, ST_MPointFromText('MULTIPOINT(348498.22029 696622.25466)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(44, ST_MPointFromText('MULTIPOINT(447753.88823 552268.21802)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(45, ST_MPointFromText('MULTIPOINT(562081.95051 696159.34758)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(46, ST_MPointFromText('MULTIPOINT(449917.46153 516567.92252)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(47, ST_MPointFromText('MULTIPOINT(509151.60704 594632.16326)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(48, ST_MPointFromText('MULTIPOINT(565466.43528 673573.12364)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(49, ST_MPointFromText('MULTIPOINT(492421.36236 719117.79927)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(50, ST_MPointFromText('MULTIPOINT(613346.49996 691449.74754)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(51, ST_MPointFromText('MULTIPOINT(341505.39323 347633.86011)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(52, ST_MPointFromText('MULTIPOINT(335130.10922 221738.45857)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(53, ST_MPointFromText('MULTIPOINT(520476.8592 607380.89342)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(54, ST_MPointFromText('MULTIPOINT(610931.06529 690104.94336)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(55, ST_MPointFromText('MULTIPOINT(577692.98162 695342.84069)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(56, ST_MPointFromText('MULTIPOINT(623744.42521 697297.79934)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(57, ST_MPointFromText('MULTIPOINT(439667.9941 646984.2557)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(58, ST_MPointFromText('MULTIPOINT(507141.1403 606418.24612)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(59, ST_MPointFromText('MULTIPOINT(575383.92723 737533.32187)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(60, ST_MPointFromText('MULTIPOINT(413215.49525 523736.83631)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(61, ST_MPointFromText('MULTIPOINT(561887.18089 504214.42238)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(62, ST_MPointFromText('MULTIPOINT(583428.22076 759656.92773)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(63, ST_MPointFromText('MULTIPOINT(421018.92505 813910.21541)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(64, ST_MPointFromText('MULTIPOINT(621373.92981 690044.79287)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(65, ST_MPointFromText('MULTIPOINT(470983.15933 620692.73333)'));
+[ 1	]
+#INSERT INTO "reprojectptsgeog" VALUES(66, ST_MPointFromText('MULTIPOINT(508947.75836 706720.50714)'));
+[ 1	]
+
+# 15:38:43 >  
+# 15:38:43 >  "Done."
+# 15:38:43 >  
+
