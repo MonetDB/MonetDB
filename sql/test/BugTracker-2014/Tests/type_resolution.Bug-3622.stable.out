@@ -11,7 +11,7 @@ stdout of test 'type_resolution.Bug-3622` in directory 'sql/test/BugTracker-2014
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.333 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.nes.nl:35697/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18664/.s.monetdb.35697
@@ -30,7 +30,7 @@ Ready.
 #BEGIN
 #	RETURN 1;
 #END;
-#CREATE TABLE "bam"."alignments_2" (
+#CREATE TABLE "alignments_2" (
 #	"virtual_offset" BIGINT        NOT NULL,
 #	"qname"          CHARACTER LARGE OBJECT NOT NULL,
 #	"flag"           SMALLINT      NOT NULL,
@@ -42,12 +42,12 @@ Ready.
 #	"rnext"          CHARACTER LARGE OBJECT NOT NULL,
 #	"pnext"          INTEGER       NOT NULL,
 #	"tlen"           INTEGER       NOT NULL,
-#ALTER TABLE bam.alignments_2 SET READ ONLY;
+#ALTER TABLE alignments_2 SET READ ONLY;
 #SELECT s.value AS refpos, COUNT(*) AS cnt
 #	FROM 
 #	    generate_series(128, 18960) AS s
 #	JOIN (
-#	    SELECT epos, pos, seq, cigar FROM bam.alignments_2 WHERE pos > 0 ) AS al 
+#	    SELECT epos, pos, seq, cigar FROM alignments_2 WHERE pos > 0 ) AS al 
 #	ON (
 #		s.value >= al.pos AND s.value <= al."epos"
 #		AND seq_char(s.value, al.seq, al.pos, al.cigar) IS NOT NULL
@@ -59,7 +59,7 @@ Ready.
 % refpos,	cnt # name
 % smallint,	wrd # type
 % 1,	1 # length
-#DROP TABLE bam.alignments_2;
+#DROP TABLE alignments_2;
 #DROP FUNCTION seq_char;
 
 # 13:40:30 >  
