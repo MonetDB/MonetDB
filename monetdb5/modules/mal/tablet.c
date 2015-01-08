@@ -1101,6 +1101,9 @@ SQLproducer(void *p)
 	size_t rseplen = strlen(rsep), parsed =0;
 	char quote = task->quote;
 	int stdinput = 0;
+	Thread thr;
+
+	thr = THRnew("SQLproducer");
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#SQLproducer started size %d len %d\n", (int)task->b->size,  (int)task->b->len);
@@ -1121,9 +1124,14 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#read %d bytes pos = %d eof=%d offset="LLFMT" \n", (int) task->b->len, (int) task->b->pos, task->b->eof, (lng)( s - task->input[task->cur]));
 #endif
-		// we may be reading from standard input and may have to skip valid record
-		if (task->ateof && (s == end || (stdinput && parsed)))
-			break;
+		// we may be reading from standard input and may be out of input
+		// warn the consumers
+		if (task->ateof && (s == end || (stdinput && parsed))){
+			tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
+			task->as->error = GDKstrdup("Incomplete record at end of file.\n");
+			task->b->pos += parsed;
+			goto reportlackofinput;
+		}
 
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(task->cntxt, msg);
@@ -1286,6 +1294,7 @@ parseSTDIN:
 		}
 
 		if( cnt <= task->maxrow){
+reportlackofinput:
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout, "#SQL producer got buffer filled with %d records \n", task->top[task->cur]);
 #endif
@@ -1295,19 +1304,32 @@ parseSTDIN:
 			mnstr_printf(GDKout,"#Contiue producer state %d ateof %d\n", task->state, task->ateof);
 #endif
 		}
-		if (cnt == task->maxrow)
-			break;
+		/* we have seen all tuples requested? */
+		if (cnt == task->maxrow){
+#ifdef _DEBUG_TABLET_
+			mnstr_printf(GDKout,"#Producer delivered\n");
+#endif
+			THRdel(thr);
+			return;
+		}
+		/* we ran out of input? */
+		if ( task->ateof){
+#ifdef _DEBUG_TABLET_
+			mnstr_printf(GDKout,"#Producer encountered eof\n");
+#endif
+			return;
+		}
+		/* consumers ask us to stop? */
+		if (task->state == ENDOFCOPY ){
+#ifdef _DEBUG_TABLET_
+			{char msg[64]={0};
+			 snprintf(msg,63,"%s", task->b->buf+ task->b->pos);
+			 mnstr_printf(GDKout, "#SQL producer early exit %s\n", msg);
+			}
+#endif
+			return;
+		}
 		task->cnt = cnt;
-//		if (task->state == ENDOFCOPY || task->ateof ){
-//		/* if we have seen all tuples, there may be valid data available still to be skipped */
-//#ifdef _DEBUG_TABLET_
-//			{char msg[64]={0};
-//			 snprintf(msg,63,"%s", task->b->buf+ task->b->pos);
-//			 mnstr_printf(GDKout, "#SQL producer early exit %s\n", msg);
-//			}
-//#endif
-//			return;
-//		}
 #ifdef _DEBUG_TABLET_
 		{char msg[64]={0};
 		 snprintf(msg,63,"%s", s);
@@ -1329,14 +1351,6 @@ parseSTDIN:
 		task->as->error = GDKstrdup("Incomplete record at end of file.\n");
 		task->b->pos += parsed;
 	}
-	MT_sema_up(&task->consumer, "SQLconsumer");
-	MT_sema_down(&task->producer, "SQLproducer");
-#ifdef _DEBUG_TABLET_
-	{char msg[64]={0};
-	 snprintf(msg,63,"%s", task->b->buf+ task->b->pos);
-	 mnstr_printf(GDKout, "#SQL producer leftover:%s\n", msg);
-	}
-#endif
 }
 
 BUN
@@ -1346,7 +1360,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
 	BUN i, attr;
-	size_t rseplen;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS ? GDKnr_threads : MAXWORKERS) : 1;
@@ -1409,7 +1422,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->besteffort= best;
 
 	if (maxrow < 0)
-		maxrow = (lng) BUN_MAX;
+		maxrow = BUN_MAX;
 	task->maxrow = maxrow;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
@@ -1423,7 +1436,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->csep = csep;
 	task->seplen = strlen(csep);
 	task->rsep = rsep;
-	task->rseplen = rseplen = strlen(rsep);
+	task->rseplen = strlen(rsep);
 	task->errbuf = cntxt->errbuf;
 	task->input[task->cur] = task->base[task->cur] + 1;	/* wrap the buffer with null bytes */
 	task->base[task->cur][b->size + 1] = 0;
@@ -1615,8 +1628,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		}
 
 		MT_sema_up(&task->producer, "SQLload_file");
-		if (task->ateof)
-			break;
 	}
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"#Enf of block stream eof=%d res=%d\n",task->ateof,res);
@@ -1669,13 +1680,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		MT_sema_destroy(&ptask[j].sema);
 		MT_sema_destroy(&ptask[j].reply);
 	}
+	if( !task->ateof || cnt <task->maxrow){
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"#Shut down reader\n");
 #endif
-	task->state = ENDOFCOPY;
-	MT_sema_up(&task->producer, "SQLload_file");
+		task->state = ENDOFCOPY;
+		MT_sema_up(&task->producer, "SQLload_file");
+		MT_join_thread(task->tid);
+	}
 
-	MT_join_thread(task->tid);
 	MT_sema_destroy(&ptask[j].producer);
 	MT_sema_destroy(&ptask[j].consumer);
 
