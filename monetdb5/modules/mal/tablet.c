@@ -278,23 +278,27 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 }
 
 // the starting quote character has already been skipped
-static inline char *
+
+static char *
 tablet_skip_string(char *s, char quote)
 {
-	do{
-		if (*s == quote) {
-			if (s[1] == quote)
-				*s++ = '\\';	/* sneakily replace "" with \" */
-			else
-				return s+1;
-		} else 
-		if (*s == '\\'){
-			s++;
-			s += (*s != 0);
-		} else
-			s += (*s != 0);
-	}while(*s);
-	return NULL;
+    while (*s) {
+        if (*s == '\\' && s[1] != '\0')
+            s++;
+        else if (*s == quote) {
+            if (s[1] == quote)
+                *s++ = '\\';    /* sneakily replace "" with \" */
+            else
+                break;
+        }
+        s++;
+    }
+    assert(*s == quote || *s == '\0');
+    if (*s)
+        s++;
+    else
+        return NULL;
+    return s;
 }
 
 static int
@@ -874,24 +878,35 @@ SQLload_file_line(READERtask *task, int idx)
 	BUN i;
 	char errmsg[BUFSIZ];
 	char ch = *task->csep;
-	char *line = task->lines[task->cur][idx];
+	char  *line = task->lines[task->cur][idx];
 	Tablet *as = task->as;
 	Column *fmt = as->format;
 	int error =0;
 	str errline = 0;
 
-	assert(idx < task->top[task->cur]);
-	errmsg[0] = 0;
 #ifdef _DEBUG_TABLET_
+	char *s;
 	//mnstr_printf(GDKout, "#SQL break line id %d  state %d\n%s", task->id, idx, line);
 #endif
+	assert(idx < task->top[task->cur]);
+	errmsg[0] = 0;
 
 	if( task->quote || task->seplen != 1){
 		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line == task->quote) {
+#ifdef _DEBUG_TABLET_
+	MT_lock_set(&errorlock, "insert_val");
+	mnstr_printf(GDKout,"before #1 %s\n", s=line);
+	//MT_lock_unset(&errorlock, "insert_val");
+#endif
 				line = tablet_skip_string(line + 1, task->quote);
+#ifdef _DEBUG_TABLET_
+	//MT_lock_set(&errorlock, "insert_val");
+	mnstr_printf(GDKout,"after #1 %s\n",s);
+	MT_lock_unset(&errorlock, "insert_val");
+#endif
 				if (!line) {
 					str errline = SQLload_error(task, task->top[task->cur]);
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
@@ -936,6 +951,11 @@ SQLload_file_line(READERtask *task, int idx)
 	assert( task->seplen == 1);
 	for (i = 0; i < as->nr_attrs; i++) {
 		task->fields[i][idx] = line;
+#ifdef _DEBUG_TABLET_
+	MT_lock_set(&errorlock, "insert_val");
+	mnstr_printf(GDKout,"before #2 %s\n",line);
+	//MT_lock_unset(&errorlock, "insert_val");
+#endif
 		/* eat away the column separator */
 		for (; *line; line++)
 			if (*line == '\\') {
@@ -946,6 +966,11 @@ SQLload_file_line(READERtask *task, int idx)
 				line ++;
 				goto endoffield2;
 			}
+#ifdef _DEBUG_TABLET_
+	//MT_lock_set(&errorlock, "insert_val");
+	mnstr_printf(GDKout,"#after #23 %s\n",line);
+	MT_lock_unset(&errorlock, "insert_val");
+#endif
 		/* not enough fields */
 		if (i < as->nr_attrs - 1) {
 			errline = SQLload_error(task,task->top[task->cur]);
@@ -1126,12 +1151,14 @@ SQLproducer(void *p)
 #endif
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
-		if (task->ateof && (s == end || (stdinput && parsed))){
+		if (task->ateof && stdinput && parsed){
 			tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 			task->as->error = GDKstrdup("Incomplete record at end of file.\n");
 			task->b->pos += parsed;
 			goto reportlackofinput;
-		}
+		} else
+		if (task->ateof && s == end )
+			goto reportlackofinput;
 
 		if (task->errbuf && task->errbuf[0]) {
 			msg = catchKernelException(task->cntxt, msg);
@@ -1647,6 +1674,12 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	task->ateof = 1;
+#ifdef _DEBUG_TABLET_
+	for(i=0; i < as->nr_attrs; i++){
+		mnstr_printf(GDKout,"column "BUNFMT"\n",i);
+		BATprint(task->as->format[i].c);
+	}
+#endif
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"#Activate sync on disk \n");
 #endif
