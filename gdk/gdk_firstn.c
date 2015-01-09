@@ -138,7 +138,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	BATiter bi = bat_iterator(b);
 	oid *restrict oids;
 	BUN i, cnt, start, end;
-	const oid *cand, *candend;
+	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	/* variables used in heapify/siftup macros */
@@ -371,7 +371,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	oid *restrict oids, *restrict goids;
 	const oid *restrict gv;
 	BUN i, cnt, start, end, ci;
-	const oid *cand, *candend;
+	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	/* variables used in heapify/siftup macros */
@@ -613,7 +613,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	BATiter bi = bat_iterator(b);
 	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end;
-	const oid *cand, *candend, *oldcand;
+	const oid *restrict cand, *candend, *oldcand;
 	int tpe = b->ttype;
 	int c;
 	int (*cmp)(const void *, const void *);
@@ -893,7 +893,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	BATiter bi = bat_iterator(b);
 	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end, ci;
-	const oid *cand, *candend, *oldcand, *restrict gv;
+	const oid *restrict cand, *candend, *oldcand, *restrict gv;
 	int tpe = b->ttype;
 	int c;
 	int (*cmp)(const void *, const void *);

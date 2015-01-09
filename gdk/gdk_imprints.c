@@ -411,9 +411,9 @@
 #define IMPS_CREATE(TYPE,B)						\
 do {									\
 	uint##B##_t mask, prvmask;					\
-	uint##B##_t *im = (uint##B##_t *) imps;				\
-	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
-	TYPE *bins = (TYPE *) inbins;					\
+	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
+	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);	\
+	const TYPE *restrict bins = (TYPE *) inbins;			\
 	TYPE nil = TYPE##_nil;						\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
@@ -500,9 +500,9 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 {
 	BUN i;
 	BUN dcnt, icnt, new;
-	BUN *min_bins = stats;
-	BUN *max_bins = min_bins + 64;
-	BUN *cnt_bins = max_bins + 64;
+	BUN *restrict min_bins = stats;
+	BUN *restrict max_bins = min_bins + 64;
+	BUN *restrict cnt_bins = max_bins + 64;
 	bte bin = 0;
 	dcnt = icnt = 0;
 	for (i = 0; i < 64; i++)
@@ -541,8 +541,8 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #define FILL_HISTOGRAM(TYPE)						\
 do {									\
 	BUN k;								\
-	TYPE *s = (TYPE *) Tloc(smp, smp->batFirst);			\
-	TYPE *h = imprints->bins;					\
+	TYPE *restrict s = (TYPE *) Tloc(smp, smp->batFirst);		\
+	TYPE *restrict h = imprints->bins;				\
 	if (cnt < 64-1) {						\
 		TYPE max = GDK_##TYPE##_max;				\
 		for (k = 0; k < cnt; k++)				\
@@ -838,44 +838,44 @@ BATimprints(BAT *b)
 #define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
 
 int
-IMPSgetbin(int tpe, bte bits, const char *inbins, const void *v)
+IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict v)
 {
 	int ret = -1;
 
 	switch (tpe) {
 	case TYPE_bte:
 	{
-		const bte *bins = (bte *) inbins;
+		const bte *restrict bins = (bte *) inbins;
 		BINSIZE(bits, getbin, bte);
 	}
 		break;
 	case TYPE_sht:
 	{
-		const sht *bins = (sht *) inbins;
+		const sht *restrict bins = (sht *) inbins;
 		BINSIZE(bits, getbin, sht);
 	}
 		break;
 	case TYPE_int:
 	{
-		const int *bins = (int *) inbins;
+		const int *restrict bins = (int *) inbins;
 		BINSIZE(bits, getbin, int);
 	}
 		break;
 	case TYPE_lng:
 	{
-		const lng *bins = (lng *) inbins;
+		const lng *restrict bins = (lng *) inbins;
 		BINSIZE(bits, getbin, lng);
 	}
 		break;
 	case TYPE_flt:
 	{
-		const flt *bins = (flt *) inbins;
+		const flt *restrict bins = (flt *) inbins;
 		BINSIZE(bits, getbin, flt);
 	}
 		break;
 	case TYPE_dbl:
 	{
-		const dbl *bins = (dbl *) inbins;
+		const dbl *restrict bins = (dbl *) inbins;
 		BINSIZE(bits, getbin, dbl);
 	}
 		break;
@@ -945,7 +945,7 @@ IMPSdestroy(BAT *b)
 
 #define IMPSPRNTMASK(T, B)						\
 	do {								\
-		uint##B##_t *im = (uint##B##_t *) imprints->imps;	\
+		uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		for (j = 0; j < imprints->bits; j++)			\
 			s[j] = IMPSisSet(B, im[icnt], j) ? 'x' : '.';	\
 		s[j] = '\0';						\
@@ -955,11 +955,11 @@ void
 IMPSprint(BAT *b)
 {
 	Imprints *imprints;
-	cchdc_t *d;
+	cchdc_t *restrict d;
 	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
-	BUN *min_bins, *max_bins;
-	BUN *cnt_bins;
+	BUN *restrict min_bins, *restrict max_bins;
+	BUN *restrict cnt_bins;
 	bte j;
 	int i;
 

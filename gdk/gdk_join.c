@@ -2745,7 +2745,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 {									\
 	oid lo, hi;							\
 	const TYPE *rt;							\
-	TYPE *bt;							\
+	TYPE *restrict bt;						\
 	TYPE v, prev = 0;						\
 	const oid *o;							\
 									\
@@ -2811,7 +2811,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 {
 	oid lo, hi;
 	oid v = oid_nil, prev = oid_nil;
-	oid *bt;
+	oid *restrict bt;
 	const oid *o;
 
 	assert(r->tseqbase != oid_nil);

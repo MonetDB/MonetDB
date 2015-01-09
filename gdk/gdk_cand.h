@@ -42,7 +42,7 @@
 					} else {			\
 						assert(cand < candend);	\
 						start = *cand;		\
-						end = candend[-1] + 1;	\
+						end = cand[end-start-1] + 1; \
 					}				\
 				}					\
 				assert(start <= end);			\
