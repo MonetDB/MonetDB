@@ -436,8 +436,8 @@ scanner_error(mvc *lc, int cur)
 		(void) sql_error(lc, 1, "unexpected end of input");
 		return -1;	/* EOF needs -1 result */
 	default:
-		/* on Windows at least, U+FEFF returns TRUE for
-		 * iswcntrl, but we just want consistent error
+		/* on Windows at least, iswcntrl returns TRUE for
+		 * U+FEFF, but we just want consistent error
 		 * messages */
 		(void) sql_error(lc, 1, "unexpected%s character (U+%04X)", iswcntrl(cur) && cur != 0xFEFF ? " control" : "", cur);
 	}
@@ -942,8 +942,8 @@ tokenize(mvc * c, int cur)
 	struct scanner *lc = &c->scanner;
 	while (1) {
 		if (cur == 0xFEFF) {
-			/* on Linux at least, U+FEFF returns TRUE for
-			 * iswpunct, but we don't want that, we just
+			/* on Linux at least, iswpunct returns TRUE
+			 * for U+FEFF, but we don't want that, we just
 			 * want to go to the scanner_error case
 			 * below */
 			;
