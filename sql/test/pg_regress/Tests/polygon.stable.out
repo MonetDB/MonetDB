@@ -94,12 +94,48 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT equals(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
 #SELECT overlaps(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
 % .L # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
+#SELECT Crosses(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT Disjoint(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT Distance(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "0";
+% .L # table_name
+% 0 # name
+% double # type
+% 24 # length
+[ 0	]
+#SELECT Touches(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT Within(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+% .L # table_name
+% false # name
+% boolean # type
+% 5 # length
+[ false	]
 #DROP VIEW POLYGON_TBL_VW;
 
 # 17:35:18 >  

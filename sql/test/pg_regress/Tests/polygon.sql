@@ -150,15 +150,24 @@ SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' @  polygon 'polyg
 -- contains 
 --SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-SELECT contains(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+SELECT Contains(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
 
 -- same 
 --SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' ~= polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "false";
 SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~=  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
+SELECT Equals(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
 
 -- overlap 
 --SELECT polygon '(2.0,0.0),(2.0,4.0),(0.0,0.0)' && polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)' AS "true";
 SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &&  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "true";
-SELECT overlaps(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
+SELECT Overlaps(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
+
+-- test some more functions
+SELECT Crosses(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+SELECT Disjoint(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+SELECT Distance(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "0";
+SELECT Intersects(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+SELECT Touches(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
+SELECT Within(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
 
 DROP VIEW POLYGON_TBL_VW;
