@@ -83,6 +83,8 @@ sed -r \
 	-e 's/\breltime ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/\b(f1 box)/(f1 mbr)/Ig' \
 	-e 's/\bbox ''*,*,*,*''/mbr(''linestring('\1' '\2', '\3' '\4')'')/Ig' \
+	-e 's/\b''(2.0,0.0),(2.0,4.0),(0.0,0.0)''/''polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))''/Ig' \
+	-e 's/\b''(3.0,1.0),(3.0,3.0),(1.0,0.0)''/''polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))''/Ig' \
 	-e 's/LOG(numeric '10',/LOG10(/Ig' \
 	-e 's/LOG(/LOG10(/Ig' \
 	-e 's/LN(/LOG(/Ig' \

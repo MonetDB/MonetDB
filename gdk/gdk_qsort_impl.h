@@ -61,7 +61,7 @@
  */
 
 static void
-GDKqsort_impl(struct qsort_t *buf, char *h, char *t, size_t n)
+GDKqsort_impl(struct qsort_t *buf, char *restrict h, char *restrict t, size_t n)
 {
 	size_t a, b, c, d;
 	size_t r;

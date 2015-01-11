@@ -46,25 +46,25 @@ QUERY = SELECT f1, month(f1) FROM TIME_TBL;
 ERROR = !syntax error, unexpected MONTH in: "select f1, month"
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, "month"(f1) FROM TIME_TBL;
-
+ERROR = !TypeException:user.s27_1[56]:'calc.month_interval' undefined in: _158:any := calc.month_interval(_156:daytime, _13:int, _6:int)
         !program contains errors
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, year(f1) FROM TIME_TBL;
 ERROR = !syntax error, unexpected YEAR in: "select f1, year"
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, "year"(f1) FROM TIME_TBL;
-
+ERROR = !TypeException:user.s28_1[56]:'calc.month_interval' undefined in: _158:any := calc.month_interval(_156:daytime, _13:int, _6:int)
         !program contains errors
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, extract(week from f1) FROM TIME_TBL;
 ERROR = !syntax error, unexpected IDENT in: "select f1, extract(week"
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, extract(month from f1) FROM TIME_TBL;
-
+ERROR = !TypeException:user.s29_1[56]:'calc.month_interval' undefined in: _158:any := calc.month_interval(_156:daytime, _13:int, _6:int)
         !program contains errors
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, extract(year from f1) FROM TIME_TBL;
-
+ERROR = !TypeException:user.s30_1[56]:'calc.month_interval' undefined in: _158:any := calc.month_interval(_156:daytime, _13:int, _6:int)
         !program contains errors
 MAPI  = (monetdb) /var/tmp/mtest-14316/.s.monetdb.39188
 QUERY = SELECT f1, week(f1) FROM TIME_TBL;

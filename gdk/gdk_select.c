@@ -95,7 +95,7 @@ static BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
-	oid * restrict p;
+	oid *restrict p;
 
 	assert(l1 <= h1);
 	assert(l2 <= h2);
@@ -131,8 +131,8 @@ static BAT *
 doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BAT *bn;
-	oid * restrict p;
-	const oid *o;
+	oid *restrict p;
+	const oid *restrict o;
 
 	assert(l1 <= h1);
 	assert(l2 <= h2);
@@ -167,7 +167,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
-	oid o, * restrict dst;
+	oid o, *restrict dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
@@ -209,7 +209,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->tkey = 1;
 	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
-		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+		bn->tseqbase = *dst;
 	/* temporarily set head to nil so that BATorder doesn't materialize */
 	BATseqbase(bn, oid_nil);
 	bn = BATmirror(BATorder(BATmirror(bn)));
@@ -260,7 +260,7 @@ do {							\
 #define impsloop(CAND,TEST,ADD)						\
 do {									\
 	BUN dcnt, icnt, limit, i, l, e;					\
-	cchdc_t * restrict d = (cchdc_t *) imprints->dict;		\
+	cchdc_t *restrict d = (cchdc_t *) imprints->dict;		\
 	bte rpp    = ATOMelmshift(IMPS_PAGE >> b->T->shift);		\
 	CAND;								\
 	for (i = 0, dcnt = 0, icnt = 0;					\
@@ -304,7 +304,7 @@ do {									\
 /* construct the mask */
 #define impsmask(CAND,TEST,B)						\
 do {									\
-	uint##B##_t *im = (uint##B##_t *) imprints->imps;		\
+	uint##B##_t *restrict im = (uint##B##_t *) imprints->imps;	\
 	uint##B##_t mask = 0, innermask;				\
 	int lbin, hbin;							\
 	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
@@ -343,7 +343,7 @@ do {									\
 #define checkMINMAX(B)							\
 do {									\
 	int ii;								\
-	BUN *imp_cnt = imprints->stats + 128;				\
+	BUN *restrict imp_cnt = imprints->stats + 128;			\
 	imp_min = imp_max = nil;					\
 	for (ii = 0; ii < B; ii++) {					\
 		if ((imp_min == nil) && (imp_cnt[ii])) {		\
@@ -477,7 +477,7 @@ do {									\
 static BUN								\
 NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	       int li, int hi, int equi, int anti, int lval, int hval,	\
-	       BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,	\
+	       BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,	\
 	       const oid *candlist, BUN maximum, int use_imprints)	\
 {									\
 	TYPE vl = *(const TYPE *) tl;					\
@@ -533,7 +533,7 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 static BUN
 candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	      int li, int hi, int equi, int anti, int lval, int hval,
-	      BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,
+	      BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
 	      const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
@@ -613,11 +613,11 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 static BUN
 fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	     int li, int hi, int equi, int anti, int lval, int hval,
-	     BUN r, BUN q, BUN cnt, wrd off, oid * restrict dst,
+	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
 	     const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
-	const void *nil = ATOMnilptr(b->ttype);
+	const void *restrict nil = ATOMnilptr(b->ttype);
 	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
 	BATiter bi = bat_iterator(b);
 	oid o;
@@ -724,7 +724,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #endif
 	int t;
 	BUN p, q, cnt;
-	oid o, * restrict dst;
+	oid o, *restrict dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
