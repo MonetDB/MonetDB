@@ -67,8 +67,8 @@ Ready.
 % sys.foo # table_name
 % s # name
 % clob # type
-% 30 # length
-[ "quote: \" another: \"\" third: \"\""	]
+% 28 # length
+[ "quote: \" another: \" third: \""	]
 #drop table foo;
 
 # 15:50:36 >  
