@@ -1123,9 +1123,8 @@ SQLproducer(void *p)
 	str msg = 0;
 	char *end, *e,*s, *base;
 	char *rsep= task->rsep;
-	size_t rseplen = strlen(rsep), parsed =0;
+	size_t rseplen = strlen(rsep), partial =0;
 	char quote = task->quote;
-	int stdinput = 0;
 	Thread thr;
 
 	thr = THRnew("SQLproducer");
@@ -1135,15 +1134,8 @@ SQLproducer(void *p)
 #endif
 	base = end = s = task->input[task->cur];
 	*s = 0;
-	if ((task->b->pos == task->b->len ||  !task->b->eof) && task->maxrow > 0) {
-		/* special case:
-		 * mclient -s 'COPY INTO table FROM STDIN' - < file
-		 * Part of the file is already in the buffer, including the records
-		 */
-		stdinput  =1;
+	if (task->b == task->cntxt->fdin)
 		goto parseSTDIN;
-	}
-	(void) stdinput;
 	while (cnt < task->maxrow ) {
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size) == EOF;
 #ifdef _DEBUG_TABLET_
@@ -1151,13 +1143,13 @@ SQLproducer(void *p)
 #endif
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
-		if (task->ateof && stdinput && parsed){
+		if (task->ateof && partial){
 			tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 			task->as->error = GDKstrdup("Incomplete record at end of file.\n");
-			task->b->pos += parsed;
+			task->b->pos += partial;
 			goto reportlackofinput;
-		} else
-		if (task->ateof && s == end )
+		} 
+		if (task->ateof )
 			goto reportlackofinput;
 
 		if (task->errbuf && task->errbuf[0]) {
@@ -1180,6 +1172,7 @@ parseSTDIN:
 		}
 #endif
 		/* copy the stream buffer into the double sized input buffer */
+		partial = 0;
 		base = end;
 		memcpy(end , task->b->buf + task->b->pos, task->b->len - task->b->pos);
 		end = end + task->b->len - task->b->pos;
@@ -1243,7 +1236,7 @@ parseSTDIN:
 					}
 				}
 				if (*e == 0) {
-					parsed = e-s;
+					partial = e-s;
 					e = 0;      /* nonterminated record, we need more */
 				}
 			} else 
@@ -1261,7 +1254,7 @@ parseSTDIN:
 						break;
 				}
 				if (*e == 0) {
-					parsed = e-s;
+					partial = e-s;
 					e = 0;      /* nonterminated record, we need more */
 				}
 				break;
@@ -1278,7 +1271,7 @@ parseSTDIN:
 						break;
 				}
 				if (*e == 0) {
-					parsed = e-s;
+					partial = e-s;
 					e = 0;      /* nonterminated record, we need more */
 				}
 				break;
@@ -1295,7 +1288,7 @@ parseSTDIN:
 						break;
 				}
 				if (*e == 0) {
-					parsed = e-s;
+					partial = e-s;
 					e = 0;      /* nonterminated record, we need more */
 				}
 			}
@@ -1344,6 +1337,7 @@ reportlackofinput:
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout,"#Producer encountered eof\n");
 #endif
+			THRdel(thr);
 			return;
 		}
 		/* consumers ask us to stop? */
@@ -1354,6 +1348,7 @@ reportlackofinput:
 			 mnstr_printf(GDKout, "#SQL producer early exit %s\n", msg);
 			}
 #endif
+			THRdel(thr);
 			return;
 		}
 		task->cnt = cnt;
@@ -1365,7 +1360,7 @@ reportlackofinput:
 #endif
 		/* move the non-parsed correct row data to the head of the buffer */
 		s= task->input[task->cur];
-		if( parsed == 0 || cnt >= task->maxrow){
+		if( partial == 0 || cnt >= task->maxrow){
 			memcpy(s, task->b->buf + task->b->pos, task->b->len - task->b->pos);
 			end = s + task->b->len - task->b->pos;
 		} else {
@@ -1373,10 +1368,10 @@ reportlackofinput:
 		}
 		*end = '\0';			/* this is safe, as the stream ensures an extra byte */
 	}
-	if(cnt < task->maxrow && parsed ){
+	if(cnt < task->maxrow && task->maxrow != BUN_NONE ){
 		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
-		task->as->error = GDKstrdup("Incomplete record at end of file.\n");
-		task->b->pos += parsed;
+		task->as->error = GDKstrdup("EOF:Incomplete record at end of file.\n");
+		task->b->pos += partial;
 	}
 }
 
