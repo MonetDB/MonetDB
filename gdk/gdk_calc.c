@@ -2121,7 +2121,7 @@ static BAT *
 BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
-				      const oid *, const oid *, oid, int,
+				      const oid *restrict, const oid *, oid, int,
 				      const char *),
 		const char *func)
 {
