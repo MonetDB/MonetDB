@@ -239,6 +239,9 @@ comment "unix-time (epoch) support: seconds since epoch";
 command epoch(t:int):timestamp
 address MTIMEtimestamp
 comment "convert seconds since epoch into a timestamp";
+command epoch(t:lng):timestamp
+address MTIMEtimestamplng
+comment "convert seconds since epoch into a timestamp";
 
 
 pattern ==(v:timestamp,w:timestamp):bit

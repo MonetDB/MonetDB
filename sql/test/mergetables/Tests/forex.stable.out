@@ -128,8 +128,8 @@ Ready.
 % 24,	14 # length
 [ 42.33074767,	1269.922430	]
 #SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
-% .forex,	.L1,	.L2 # table_name
-% currency,	L1,	L2 # name
+% .forex,	.L2,	.L3 # table_name
+% currency,	L2,	L3 # name
 % clob,	decimal,	decimal # type
 % 7,	14,	14 # length
 [ "EUR/USD",	1.271833,	3.815500	]

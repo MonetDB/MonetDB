@@ -48,7 +48,7 @@ ALTER TABLE day2 SET READ ONLY;
 
 CREATE TABLE day3 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 
-CREATE MERGE TABLE forex ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+CREATE MERGE TABLE forex ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 
 ALTER TABLE forex ADD TABLE day1;
 ALTER TABLE forex ADD TABLE day2;

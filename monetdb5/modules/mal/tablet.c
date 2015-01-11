@@ -1121,8 +1121,9 @@ SQLproducer(void *p)
 	READERtask *task = (READERtask *) p;
 	BUN cnt = 0;
 	str msg = 0;
+	int cur = 0; // buffer being filled
 	char *end, *e,*s, *base;
-	char *rsep= task->rsep;
+	const char *rsep= task->rsep;
 	size_t rseplen = strlen(rsep), partial =0;
 	char quote = task->quote;
 	Thread thr;
@@ -1132,14 +1133,15 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#SQLproducer started size %d len %d\n", (int)task->b->size,  (int)task->b->len);
 #endif
-	base = end = s = task->input[task->cur];
+	cur = task->cur;
+	base = end = s = task->input[cur];
 	*s = 0;
 	if (task->b == task->cntxt->fdin)
 		goto parseSTDIN;
 	while (cnt < task->maxrow ) {
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size) == EOF;
 #ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#read %d bytes pos = %d eof=%d offset="LLFMT" \n", (int) task->b->len, (int) task->b->pos, task->b->eof, (lng)( s - task->input[task->cur]));
+		mnstr_printf(GDKout, "#read %d bytes pos = %d eof=%d offset="LLFMT" \n", (int) task->b->len, (int) task->b->pos, task->b->eof, (lng)( s - task->input[cur]));
 #endif
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
@@ -1177,8 +1179,8 @@ parseSTDIN:
 		memcpy(end , task->b->buf + task->b->pos, task->b->len - task->b->pos);
 		end = end + task->b->len - task->b->pos;
 		*end = '\0';			/* this is safe, as the stream ensures an extra byte */
-		task->top[task->cur] = 0;
-		s= task->input[task->cur];
+		task->top[cur] = 0;
+		s= task->input[cur];
 		/* Note that we rescan from the start of a record (the last
 		 * partial buffer from the previous iteration), even if in the
 		 * previous iteration we have already established that there
@@ -1296,7 +1298,7 @@ parseSTDIN:
 			if (e) {
 				/* found a complete record, do we need to skip it? */
 				if (--task->skip < 0 && cnt <task->maxrow) {
-					task->lines[task->cur][task->top[task->cur]++] = s;
+					task->lines[cur][task->top[cur]++] = s;
 					cnt++;
 				}
 				*e = '\0';
@@ -1304,7 +1306,7 @@ parseSTDIN:
 				e = s;
 				task->b->pos += (size_t) (e -  base);
 				base = e;
-				if ( task->top[task->cur] == task->limit)
+				if ( task->top[cur] == task->limit)
 					break;
 			} else {
 				/* found an incomplete record, saved for next round */
@@ -1316,7 +1318,7 @@ parseSTDIN:
 		if( cnt <= task->maxrow){
 reportlackofinput:
 #ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "#SQL producer got buffer filled with %d records \n", task->top[task->cur]);
+			mnstr_printf(GDKout, "#SQL producer got buffer filled with %d records \n", task->top[cur]);
 #endif
 			MT_sema_up(&task->consumer, "SQLconsumer");
 			MT_sema_down(&task->producer, "SQLproducer");
@@ -1358,8 +1360,8 @@ reportlackofinput:
 		 mnstr_printf(GDKout, "#shuffle %d: %s\n", (int) strlen(s),  msg);
 		}
 #endif
-		/* move the non-parsed correct row data to the head of the buffer */
-		s= task->input[task->cur];
+		/* move the non-parsed correct row data to the head of the next buffer */
+		s= task->input[cur];
 		if( partial == 0 || cnt >= task->maxrow){
 			memcpy(s, task->b->buf + task->b->pos, task->b->len - task->b->pos);
 			end = s + task->b->len - task->b->pos;
