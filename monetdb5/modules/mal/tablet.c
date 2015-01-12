@@ -53,8 +53,10 @@
 #include <string.h>
 #include <ctype.h>
 
+/* #define _DEBUG_TABLET_*/
+
 #define MAXWORKERS	64
-#define MAXLINEBUFFERS 1
+#define MAXBUFFERS 2
 
 static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 
@@ -651,7 +653,6 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
  * observed time spending so far.
  */
 
-/* #define _DEBUG_TABLET_*/
 /* #define MLOCK_TST did not make a difference on sf10 */
 
 #define BREAKLINE 1
@@ -685,9 +686,9 @@ typedef struct {
 	size_t seplen, rseplen;
 	char quote;
 
-	char *base[MAXLINEBUFFERS], *input[MAXLINEBUFFERS];	/* buffers for line splitter and tokenizer */
-	char **lines[MAXLINEBUFFERS];
-	int top[MAXLINEBUFFERS];				/* number of lines in this buffer */
+	char *base[MAXBUFFERS], *input[MAXBUFFERS];	/* buffers for line splitter and tokenizer */
+	char **lines[MAXBUFFERS];
+	int top[MAXBUFFERS];				/* number of lines in this buffer */
 	int cur;					/* current buffer used by splitter and update threads */
 
 	int *cols;					/* columns to handle */
@@ -1133,7 +1134,6 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#SQLproducer started size %d len %d\n", (int)task->b->size,  (int)task->b->len);
 #endif
-	cur = task->cur;
 	base = end = s = task->input[cur];
 	*s = 0;
 	if (task->b == task->cntxt->fdin)
@@ -1320,10 +1320,12 @@ reportlackofinput:
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout, "#SQL producer got buffer filled with %d records \n", task->top[cur]);
 #endif
+			task->cur = cur;
 			MT_sema_up(&task->consumer, "SQLconsumer");
 			MT_sema_down(&task->producer, "SQLproducer");
+			cur = (cur+1) % MAXBUFFERS;
+			mnstr_printf(GDKout,"#Contiue producer state %d ateof %d buffer %d\n", task->state, task->ateof,cur);
 #ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout,"#Contiue producer state %d ateof %d\n", task->state, task->ateof);
 #endif
 		}
 		/* we have seen all tuples requested? */
@@ -1442,7 +1444,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	task->cur = 0;
-	task->base[task->cur] = GDKzalloc(2 * b->size + 2);
+	for(i=0; i< MAXBUFFERS; i++){
+		task->base[i] = GDKzalloc(2 * b->size + 2);
+		if ( task->base[i] == 0){
+			tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
+			goto bailout;
+		}
+		task->base[i][b->size + 1] = 0;
+		task->input[i] = task->base[i] + 1;	/* wrap the buffer with null bytes */
+	}
 	task->besteffort= best;
 
 	if (maxrow < 0)
@@ -1462,8 +1472,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->rsep = rsep;
 	task->rseplen = strlen(rsep);
 	task->errbuf = cntxt->errbuf;
-	task->input[task->cur] = task->base[task->cur] + 1;	/* wrap the buffer with null bytes */
-	task->base[task->cur][b->size + 1] = 0;
 
 	MT_sema_init(&task->producer, 0, "task->producer");
 	MT_sema_init(&task->consumer, 0, "task->consumer");
@@ -1475,7 +1483,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mlock(task->fields, as->nr_attrs * sizeof(char *));
 	mlock(task->cols, as->nr_attrs * sizeof(int));
 	mlock(task->time, as->nr_attrs * sizeof(lng));
-	mlock(task->base[task->cur], b->size + 2);
+	for(i=0; i< MAXBUFFERS; i++)
+		mlock(task->base[i], b->size + 2);
 #endif
 	as->error = NULL;
 
@@ -1498,7 +1507,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #endif
 		task->cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
 	}
-	task->lines[task->cur] = GDKzalloc(sizeof(char *) * task->limit);
+	for(i=0; i< MAXBUFFERS; i++) {
+		task->lines[i] = GDKzalloc(sizeof(char *) * task->limit);
+		if( task->lines[i] == NULL){
+			tablet_error(task, lng_nil, int_nil, NULL,"SQLload_file:failed to alloc buffers");
+			goto bailout;
+		}
+	}
 	task->rowerror = (bte*) GDKzalloc(sizeof(bte) * task->limit);
 
 	MT_create_thread(&task->tid, SQLproducer, (void *) task, MT_THR_JOINABLE);
@@ -1512,7 +1527,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			tablet_error(task, lng_nil, int_nil, NULL,"SQLload_file");
+			tablet_error(task, lng_nil, int_nil, NULL,"SQLload_file:failed to alloc task descriptors");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
