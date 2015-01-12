@@ -1,9 +1,9 @@
 stdout of test 'regression_load2D` in directory 'geom/sql/Tests/pg_regression` itself:
 
 
-# 12:45:15 >  
-# 12:45:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32451" "--set" "mapi_usock=/var/tmp/mtest-11776/.s.monetdb.32451" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
-# 12:45:15 >  
+# 17:08:57 >  
+# 17:08:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35954" "--set" "mapi_usock=/var/tmp/mtest-8630/.s.monetdb.35954" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 17:08:57 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'regression_load2D` in directory 'geom/sql/Tests/pg_regression` i
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32451/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11776/.s.monetdb.32451
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:35954/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8630/.s.monetdb.35954
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
@@ -52,9 +52,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 12:45:16 >  
-# 12:45:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11776" "--port=32451"
-# 12:45:16 >  
+# 17:08:57 >  
+# 17:08:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8630" "--port=35954"
+# 17:08:57 >  
 
 #CREATE TABLE "point" (
 #	gid SERIAL,
@@ -647,7 +647,7 @@ Ready.
 #INSERT INTO "reprojectptsgeog"(geom) VALUES ('0104000000010000000101000000C99D8E084F101F41FD01A80341912541');
 [ 1	]
 
-# 12:45:25 >  
-# 12:45:25 >  "Done."
-# 12:45:25 >  
+# 17:09:06 >  
+# 17:09:06 >  "Done."
+# 17:09:06 >  
 
