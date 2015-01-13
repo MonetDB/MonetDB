@@ -2016,6 +2016,7 @@ str wkbFromBinary(wkb** geomWKB, char **inStr) {
 	
 	wkbLength = strLength/2;
 	assert(wkbLength <= GDK_int_max);
+//fprintf(stderr, "wkb length = %zd\n", wkbLength);
 
 	s = (char*)GDKmalloc(wkbLength);
 
@@ -2024,15 +2025,15 @@ str wkbFromBinary(wkb** geomWKB, char **inStr) {
 		char firstHalf = (decit((*inStr)[i]) << 4) & 0xf0; //make sure that only the four most significant bits may be 1
 		char secondHalf = decit((*inStr)[i+1]) & 0xf; //make sure that only the four least significant bits may be 1
 		s[i/2] = firstHalf | secondHalf; //concatenate the two halfs to create the final byte 
-//fprintf(stderr, "%zd First: %c - Second: %c ==> Final: %c (%d)\n", i, (*inStr)[i], (*inStr)[i+1], s[i/2], (int)s[i/2]);
+//fprintf(stderr, "(%zd, %zd) First: %c - Second: %c ==> Final: %c (%d)\n", i, i/2, (*inStr)[i], (*inStr)[i+1], s[i/2], (int)s[i/2]);
 	}
+//fprintf(stderr, "wkb size = %zd\n", wkb_size(wkbLength));
 
 	*geomWKB = GDKmalloc(wkb_size(wkbLength));
 	(*geomWKB)->len = (int) wkbLength;
 	(*geomWKB)->srid = 0;
 	memcpy(&(*geomWKB)->data, s, wkbLength);
 	GDKfree(s);
-
 
 	return MAL_SUCCEED;
 }
