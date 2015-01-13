@@ -1324,8 +1324,8 @@ reportlackofinput:
 			MT_sema_up(&task->consumer, "SQLconsumer");
 			MT_sema_down(&task->producer, "SQLproducer");
 			cur = (cur+1) % MAXBUFFERS;
-			mnstr_printf(GDKout,"#Contiue producer state %d ateof %d buffer %d\n", task->state, task->ateof,cur);
 #ifdef _DEBUG_TABLET_
+			mnstr_printf(GDKout,"#Contiue producer state %d ateof %d buffer %d\n", task->state, task->ateof,cur);
 #endif
 		}
 		/* we have seen all tuples requested? */
