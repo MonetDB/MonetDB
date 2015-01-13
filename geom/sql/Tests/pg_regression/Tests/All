@@ -1,4 +1,10 @@
-regression_load2D
-regression_load3D
-regression_load4D
-regression_drop
+#regression_load2D
+#regression_load3D
+#regression_load4D
+#regression_drop
+
+#binary #Many Commands are not recognised
+#regress #Some functions in this test are not recognised 
+
+#regress_index #gist index is not supported
+#regress_selectivity #generate_series does not work and other postGIS specific functions
