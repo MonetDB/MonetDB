@@ -36,5 +36,7 @@
 		#ST_NumGeometries(empty), ST_NRings(empty), ST_Geometry(N(empty, 1) => PostGIS:(0,0,empty) - MonetDB(1,1,null) => Both incosistent (no geometry but then returns and One return but then it does not return)
 		#MBR(empty) => segmentation fault
 
+#measures #Unknown Functions: st_perimeter2d, st_3dperimeter, st_3dlength, st_shortestline, st_maxdistance, st_3ddistance, st_length_spheroid
+
 
 removeTmpFiles
