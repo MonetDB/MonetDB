@@ -3154,6 +3154,9 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 	const GEOSGeometry* interiorRingGeometry;
 	int rN = -1;
 
+	//initialise to NULL
+	*interiorRingWKB = NULL;
+
 	geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) { 
@@ -3179,7 +3182,8 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 	if(rN < *ringNum || *ringNum<=0) {
 		*interiorRingWKB = wkb_nil;
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
+		//NOT AN ERROR throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
+		return MAL_SUCCEED;
 	}
 
 	/* get the interior ring of the geometry */	
