@@ -59,7 +59,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
 		closesocket(sock);
-		return newerr("setsockopt unexpectedly failed: %s",
+		return newErr("setsockopt unexpectedly failed: %s",
 					  strerror(errno));
 	}
 
