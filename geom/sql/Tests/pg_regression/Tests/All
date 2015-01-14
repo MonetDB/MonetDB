@@ -38,5 +38,6 @@
 
 #measures #Unknown Functions: st_perimeter2d, st_3dperimeter, st_3dlength, st_shortestline, st_maxdistance, st_3ddistance, st_length_spheroid
 
+#legacy #It is PostGIS specific to make sure that it is compatible with oldre PostGIS versions
 
 removeTmpFiles
