@@ -1306,6 +1306,7 @@ str INET_inet(inet *d, inet *s);
 str INET_isnil(bit *retval, inet *val);
 str INETabbrev(str *retval, inet *val);
 str INETbroadcast(inet *retval, inet *val);
+int INETcompare(inet *l, inet *r);
 int INETfromString(str src, int *len, inet **retval);
 str INEThost(str *retval, inet *val);
 str INEThostmask(inet *retval, inet *val);

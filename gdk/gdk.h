@@ -961,7 +961,8 @@ typedef struct {
 #define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
 #define GDKLIBRARY_CHR		061024	/* version that still had chr type */
 #define GDKLIBRARY_SORTED_BYTE	061025	/* version that still had byte-sized sorted flag */
-#define GDKLIBRARY		061026
+#define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
+#define GDKLIBRARY		061027
 
 typedef struct BAT {
 	/* static bat properties */

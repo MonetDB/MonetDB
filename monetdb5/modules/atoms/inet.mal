@@ -17,6 +17,8 @@
 
 atom inet:lng;
 
+command cmp() :int
+address INETcompare;
 command fromstr()
 address INETfromString
 comment "Convert a string to an inet";
