@@ -15,4 +15,6 @@
 
 #regress_lrs #Unknown Functions: st_locatealong, st_locatebetween, ST_LineLocatePoint, st_geomfromewkt, st_linesubstring, st_lineinterpolatepoint
 
+#removepoint #Unknown Functions: st_removepoint
+
 removeTmpFiles
