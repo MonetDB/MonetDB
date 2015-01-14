@@ -40,4 +40,10 @@
 
 #legacy #It is PostGIS specific to make sure that it is compatible with oldre PostGIS versions
 
+#long_xact #Tests PostGIS transactions
+
+#ctors #Unknown Functions: st_3dmakebox
+	#ST_MakeLine gives different results compared to PostGIS
+
+
 removeTmpFiles
