@@ -35,7 +35,7 @@ data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
 ERROR REPORTED: DBD::monetdb::st execute failed: SyntaxException:parseError:( xyz 1);
-SyntaxException:parseError:     ^<identifier> expected at /ufs/sjoerd/Monet-candidate/lib64/perl5/vendor_perl/MonetDB/CLI/MapiPP.pm line 125.
+SyntaxException:parseError:     ^<identifier> expected at /ufs/sjoerd/Monet-stable/lib64/perl5/vendor_perl/MonetDB/CLI/MapiPP.pm line 123.
 bun: 0@0, one
 bun: 1@0, two
 bun: 2@0, three

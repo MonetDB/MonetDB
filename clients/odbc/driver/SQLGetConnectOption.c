@@ -40,7 +40,7 @@
 #ifdef _MSC_VER
 /* can't call them by their real name with Visual Studio 12.0 since we
  * would then get a warning which we translate to an error during
- * compilation (also see ODBS.syms) */
+ * compilation (also see ODBC.syms) */
 #define SQLGetConnectOption	SQLGetConnectOption_deprecated
 #define SQLGetConnectOptionA	SQLGetConnectOptionA_deprecated
 #define SQLGetConnectOptionW	SQLGetConnectOptionW_deprecated
