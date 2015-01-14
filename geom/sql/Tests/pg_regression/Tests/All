@@ -19,4 +19,6 @@
 
 #setpoint #Unknown Functions: st_setpoint
 
+#simplify #Unknown FUnctions: st_simplify
+
 removeTmpFiles
