@@ -542,8 +542,8 @@ int yydebug=1;
 %left <operation> '/' '%'
 %left <operation> '~'
 
-%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE, GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
-%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW, GEOM_ABOVE GEOM_DIST
+%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST
 
 /*
 %left <geom_operation> "&&" "&<" "&<|" "&>" "<<" "<<|" ">>" "@" "|&>" "|>>" "~=" "<->"
