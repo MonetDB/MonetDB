@@ -45,5 +45,13 @@
 #ctors #Unknown Functions: st_3dmakebox
 	#ST_MakeLine gives different results compared to PostGIS
 
+#sql-mm-serialize #Uses types that are not recognised. Additionaly, the EWKT in binary is not recognised (segmentation fault)
+#sql-mm-circularstring #Unknown Types: CIRCULARSTRING - Unknown Functions: st_ndims, box2d, st_curvetoline
+#sql-mm-compoundcurve #UnknownTypes: COMPOUNDCURVE - Uknown Functions: st_ndims, st_asbinary(geometry,char), decode(char,char)
+#sql-mm-curvepoly #UnknownTypes: CURVEPOLYGON - Uknown Functions: st_ndims, st_asbinary(geometry,char), decode(char,char)
+#sql-mm-general #Unknown Functions: st_hasarc, st_linetocurve
+#sql-mm-multicurve #Unknown Type: MULTICURVE - Uknown Functions: st_ndims
+#sql-mm-multisurface #Unknown Type: MULTISURFACE - Uknown Functions: st_ndims
+
 
 removeTmpFiles
