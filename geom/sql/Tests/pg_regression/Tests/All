@@ -17,4 +17,6 @@
 
 #removepoint #Unknown Functions: st_removepoint
 
+#setpoint #Unknown Functions: st_setpoint
+
 removeTmpFiles
