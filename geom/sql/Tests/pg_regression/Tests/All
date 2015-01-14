@@ -53,5 +53,23 @@
 #sql-mm-multicurve #Unknown Type: MULTICURVE - Uknown Functions: st_ndims
 #sql-mm-multisurface #Unknown Type: MULTISURFACE - Uknown Functions: st_ndims
 
+#polyhedralsurface #Unknown Type: POLYHEDRALSURFACE
+
+#polygonize #Unknown Function: st_polygonize
+
+#geography #At the moment, MonetDB does not handle geographies 
+
+#out_geometry #Unknown Functions:  st_asgml, st_askml, st_assvg, st_asgeojson
+
+#out_geography #At the moment, MonetDB does not handle geographies
+
+#in_geohash #Unknown Functions: st_box2dfromgeohash, st_geomfromgeohash, st_pointfromgeohash 
+
+#in_gml #Unknown Functions: st_geomfromgml, st_asgml
+
+#in_kml #Unknown Functions: st_geomfromkml, st_askml
+
+#iscollection #Uknown Functions: st_iscollection 
+
 
 removeTmpFiles
