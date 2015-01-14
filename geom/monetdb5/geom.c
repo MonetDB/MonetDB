@@ -2071,20 +2071,25 @@ str wkbFromWKB(wkb **w, wkb **src) {
  * same with the type of the geometry created from the wkt representation */
 str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	size_t len=0; 
-	int te = *tpe;
-	char *errbuf;
+	int te = 0;
+	char *errbuf = NULL;
 	str ex;
+
+	if(*tpe > 2)
+		te=1;
 
 	*geomWKB = NULL;
 	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) &&
-	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = *((*geomWKB)->data + 1) & 0x0f) == *tpe)) {
+	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te += *((*geomWKB)->data + 1) & 0x0f) == *tpe)) {
 		return MAL_SUCCEED;
 	}
+
 	if (*geomWKB == NULL) {
 		*geomWKB = wkb_nil;
-	}
+	}	
+	
 	if (*tpe > 0 && te != *tpe)
-		throw(MAL, "wkb.FromText", "Geometry not type '%s' but '%s' instead", geom_type2str(*tpe,0), geom_type2str(te,0));
+		throw(MAL, "wkb.FromText", "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe,0), te, geom_type2str(te,0));
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -2097,7 +2102,6 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 	if (GDKerrbuf)
 		GDKerrbuf[0] = '\0';
-
 	return ex;
 }
 
@@ -2166,18 +2170,25 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	//make wkb from wkt
 	ret = wkbFromText(&inputWKB, geomWKT, srid, &type);
 	if(ret != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
+
 		*geomWKB = wkb_nil;
+		GDKfree(ret);
 
 		if(inputWKB)
 			GDKfree(inputWKB);
-		return ret;
+		return msg;
 	}
 	
 	//read the number of linestrings in the input
 	ret = wkbNumGeometries(&itemsNum, &inputWKB);
 	if(ret != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
+
 		*geomWKB = wkb_nil;
-		return ret;
+		GDKfree(ret);
+
+		return msg;
 	}
 
 	linestringsWKB = (wkb**)GDKmalloc(itemsNum*sizeof(wkb*));
@@ -2189,7 +2200,10 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 
 		ret = wkbGeometryN(&linestringsWKB[i-1], &inputWKB, &i);	
 		if(ret != MAL_SUCCEED || !linestringsWKB[i-1]) {
-			*geomWKB = wkb_nil;
+			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
+
+			*geomWKB = wkb_nil; 
+			GDKfree(ret);
 
 			GDKfree(inputWKB);
 			for(;i>0; i--)
@@ -2197,33 +2211,40 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 					GDKfree(linestringsWKB[i-1]);
 			GDKfree(linestringsWKB);
 			
-			return ret;
+			return msg;
 		}
 
 		ret = wkbMakePolygon(&polygonWKB, &linestringsWKB[i-1], &batId, srid);
 		if(ret != MAL_SUCCEED) {
-			*geomWKB = wkb_nil;
-			
+			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
+
+			*geomWKB = wkb_nil; 
+			GDKfree(ret);
+	
 			GDKfree(inputWKB);
 			for(;i>0; i--)
 				if(linestringsWKB[i-1])
 					GDKfree(linestringsWKB[i-1]);
 			GDKfree(linestringsWKB);
 			
-			throw(MAL, "geom.MLineStringToPolygon", "All linestring should be closed");
+			//throw(MAL, "geom.MLineStringToPolygon", "All linestring should be closed");
+			return msg;
 		}
 
 		ret = wkbArea(&linestringsArea[i-1], &polygonWKB);
 		if(ret != MAL_SUCCEED) {
-			*geomWKB = wkb_nil;
-			
+			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
+
+			*geomWKB = wkb_nil; 
+			GDKfree(ret);
+	
 			GDKfree(inputWKB);
 			for(;i>0; i--)
 				if(linestringsWKB[i-1])
 					GDKfree(linestringsWKB[i-1]);
 			GDKfree(linestringsWKB);
 			
-			return ret;
+			return msg;
 		}
 
 		GDKfree(polygonWKB);
@@ -3154,7 +3175,7 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
 	const GEOSGeometry* interiorRingGeometry;
 	int rN = -1;
 
-	//initialise to NULL
+	//iniitialise to NULL
 	*interiorRingWKB = NULL;
 
 	geosGeometry = wkb2geos(*geom);
