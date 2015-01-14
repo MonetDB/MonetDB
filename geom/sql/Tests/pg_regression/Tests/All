@@ -4,12 +4,15 @@
 #regression_drop
 
 #binary #Unknown Types: CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, MULTICURVE, MULTISURFACE, TRIANGLE, TIN - Unknown Functions: st_force3dz, st_force3dm, st_force4d, st_orderingequals - It cannot handle EMPTY geometris in COPY INTO table FROM file commands
+
 #regress #Uknown Types: POINTM, CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, TRIANGLE, TIN, MULTISURFACE, MULTICURVE - Unknown Operators: <<, >> - Uknown Functions: box3d, geometry, postgis_dropbbox, st_m, st_multi, st_force_3dm, st_force_3dz, st_force_4d, st_force_collection, st_asbinary(geometry,char), st_collectionextract 
 
 #regress_index #gist index is not supported
+#
 #regress_selectivity #generate_series does not work and other postGIS specific functions
 
 #lwgeom_regress #Unknown Fnctions: ST_extent, ST_NDims, ST_mem_size, ST_Force2d, ST_Force3dz, ST_Force4d, ST_Force3dm, ST_force3dz
 
+#regress_lrs #Unknown Functions: st_locatealong, st_locatebetween, ST_LineLocatePoint, st_geomfromewkt, st_linesubstring, st_lineinterpolatepoint
 
 removeTmpFiles
