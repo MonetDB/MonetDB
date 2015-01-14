@@ -25,4 +25,8 @@
 
 #summary #Unknown Functions: st_summary
 
+#affine #Unknown Functions: ST_snapToGrid, st_scale, st_rotate, st_rotatez, st_rotatey, st_rotatex, st_transscale, box2d
+
+
+
 removeTmpFiles
