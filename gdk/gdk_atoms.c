@@ -591,6 +591,19 @@ batWrite(const bat *a, stream *s, size_t cnt)
  * incorrect syntax (not a number) result in the function returning 0
  * and setting the destination to nil.
  */
+#define parseNum() \
+	do {\
+		if (base > maxdiv10 ||\
+		    (base == maxdiv10 && base10(*p) > maxmod10)) {\
+			/* overflow */\
+			memcpy(*dst, ATOMnilptr(tp), sz);\
+			return 0;\
+		}\
+		base = 10 * base + base10(*p);\
+		p++;\
+	} while (num10(*p));\
+	base *= sign;
+
 static int
 numFromStr(const char *src, int *len, void **dst, int tp)
 {
@@ -609,69 +622,59 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	memcpy(*dst, ATOMnilptr(tp), sz);
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		p += 3;
-		return (int) (p - src);
-	}
-	if (*p == '-') {
-		sign = -1;
-		p++;
-	} else if (*p == '+') {
-		p++;
-	}
 	if (!num10(*p)) {
+		if (*p == '-') {
+			sign = -1;
+			p++;
+			if (!num10(*p)) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
+			goto parsenum;
+		} 
+		if (*p == '+') {
+			p++;
+			if (!num10(*p)) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
+			goto parsenum;
+		}
+		memcpy(*dst, ATOMnilptr(tp), sz);
+		if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+			p += 3;
+			return (int) (p - src);
+		}
 		/* not a number */
 		return 0;
 	}
-	switch (sz) {
-	case 1:
-		maxdiv10 = 12/*7*/;
-		break;
-	case 2:
-		maxdiv10 = 3276/*7*/;
-		break;
-	case 4:
-		maxdiv10 = 214748364/*7*/;
-		break;
-	case 8:
-		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
-		break;
-#ifdef HAVE_HGE
-	case 16:
-		maxdiv10 = GDK_hge_max / 10;
-		//         17014118346046923173168730371588410572/*7*/;
-		break;
-#endif
-	}
-	do {
-		if (base > maxdiv10 ||
-		    (base == maxdiv10 && base10(*p) > maxmod10)) {
-			/* overflow */
-			return 0;
-		}
-		base = 10 * base + base10(*p);
-		p++;
-	} while (num10(*p));
-	base *= sign;
+parsenum:
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
+		maxdiv10 = 12/*7*/;
+		parseNum();
 		**dstbte = (bte) base;
 		break;
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
+		maxdiv10 = 3276/*7*/;
+		parseNum();
 		**dstsht = (sht) base;
 		break;
 	}
 	case 4: {
 		int **dstint = (int **) dst;
+		maxdiv10 = 214748364/*7*/;
+		parseNum();
 		**dstint = (int) base;
 		break;
 	}
 	case 8: {
 		lng **dstlng = (lng **) dst;
+		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
+		parseNum();
 		**dstlng = (lng) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
@@ -680,12 +683,18 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 #ifdef HAVE_HGE
 	case 16: {
 		hge **dsthge = (hge **) dst;
+		maxdiv10 = GDK_hge_max / 10;
+		//         17014118346046923173168730371588410572/*7*/;
+		parseNum();
 		**dsthge = (hge) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
 		break;
 	}
 #endif
+	default:
+		memcpy(*dst, ATOMnilptr(tp), sz);
+		parseNum();
 	}
 	while (GDKisspace(*p))
 		p++;
