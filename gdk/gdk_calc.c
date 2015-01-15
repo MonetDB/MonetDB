@@ -2726,7 +2726,7 @@ static BAT *
 BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
-				      const oid *, const oid *, oid, int,
+				      const oid *restrict, const oid *, oid, int,
 				      const char *),
 		const char *func)
 {
@@ -6168,7 +6168,7 @@ static BAT *
 BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 		 BUN (*typeswitchloop)(const void *, int, int, const void *,
 				       int, int, void *, int, BUN, BUN, BUN,
-				       const oid *, const oid *, oid, int,
+				       const oid *restrict, const oid *, oid, int,
 				       const char *),
 		 const char *func)
 {

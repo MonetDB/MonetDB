@@ -586,19 +586,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t len)
 {
-	int ret = msync(p, len,
-			(mode & MMAP_SYNC) ? MS_SYNC :
-			((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
+	int ret = msync(p, len, MS_SYNC);
 
 #ifdef MMAP_DEBUG
 	fprintf(stderr,
-		     "#msync(" PTRFMT "," SZFMT ",%s) = %d\n",
-		     PTRFMTCAST p, len,
-		     (mode & MMAP_SYNC) ? "MS_SYNC" :
-		     ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
-		     ret);
+		     "#msync(" PTRFMT "," SZFMT ",MS_SYNC) = %d\n",
+		     PTRFMTCAST p, len, ret);
 #endif
 	return ret;
 }
@@ -811,11 +806,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t len)
 {
 	int ret;
 
-	(void) mode;
 	/*       Windows' FlushViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = FlushViewOfFile(p, len);

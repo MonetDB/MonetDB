@@ -1,6 +1,7 @@
 package MonetDB::CLI::MapiPP;
 
 use Text::ParseWords();
+use Encode ();
 use Mapi;
 use strict;
 use warnings;
@@ -12,18 +13,14 @@ my %unescape = ( n => "\n", t => "\t", r => "\r", f => "\f");
 
 sub unquote
 {
-  my ($class, $v) = @_;
+  if (!defined($_) || $_ eq 'NULL' || $_ eq 'nil') { $_ = undef; return; }
 
-  return undef if !defined($v) || $v eq 'NULL' || $v eq 'nil';
-
-  if ( $v =~ /^["']/) {
-    $v =~ s/^["']//;
-    $v =~ s/["']$//;
-    $v =~ s/\\(.)/$unescape{$1}||$1/eg;
+  if ( /^["']/) {
+    s/^["']//;
+    s/["']$//;
+    s/\\([0-7]{3}|.)/length($1) == 3 ? chr(oct($1)) : ($unescape{$1} || $1)/eg;
   }
-  return $v;
 }
-
 
 sub connect
 {
@@ -106,14 +103,15 @@ sub query
       # TODO: table_name
     }
     # we must pre-fetch if this is not an SQL result-set
-    if (!$h->{count}) {
+    if (!defined $h->{count}) {
       do {
+        utf8::decode($self->{h}->{row});
         my @cols = split(/,\t */, $h->{row});
         my $i = -1;
-        while (++$i < @cols) {
-          $cols[$i] =~ s/^\[ //;
-          $cols[$i] =~ s/[ \t]+\]$//;
-          $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+        for (@cols) {
+          s/^\[ //;
+          s/[ \t]+\]$//;
+          MonetDB::CLI::MapiPP::unquote();
         }
         push(@{$self->{rows}}, [@cols]);
       } while (($tpe = $h->getReply()) > 0);
@@ -185,12 +183,13 @@ sub fetch
   return if ++$self->{i} >= $self->{affrows};
   
   if ($self->{id}) {
+    utf8::decode($self->{h}->{row});
     my @cols = split(/,\t */, $self->{h}->{row});
     my $i = -1;
-    while (++$i < @cols) {
-      $cols[$i] =~ s/^\[ //;
-      $cols[$i] =~ s/[ \t]+\]$//;
-      $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+    $cols[0] =~ s/^\[ //;
+    $cols[-1] =~ s/[ \t]+\]$//;
+    for (@cols) {
+      MonetDB::CLI::MapiPP::unquote();
     }
     $self->{currow} = [@cols];
     $self->{h}->getReply();

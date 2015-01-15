@@ -187,34 +187,36 @@ control_authorise(
 	return 1;
 }
 
-#define send_client(P)							\
-	do {										\
-		if (fout != NULL) {						\
-			mnstr_printf(fout, P "%s", buf2);	\
-			mnstr_flush(fout);					\
-		} else {								\
-			send(msgsock, buf2, len, 0);		\
-		}										\
+#define send_client(P)								\
+	do {											\
+		if (fout != NULL) {							\
+			mnstr_printf(fout, P "%s", buf2);		\
+			mnstr_flush(fout);						\
+		} else {									\
+			if (send(msgsock, buf2, len, 0) < 0)	\
+				senderror = errno;					\
+		}											\
 	} while (0)
 
-#define send_list()									\
-	do {											\
-		len = snprintf(buf2, sizeof(buf2), "OK\n"); \
-		if (fout == NULL) {							\
-			send(msgsock, buf2, strlen(buf2), 0);	\
-			send(msgsock, pbuf, strlen(pbuf), 0);	\
-		} else {									\
-			char *p, *q = pbuf;						\
-			mnstr_printf(fout, "=OK\n");			\
-			while ((p = strchr(q, '\n')) != NULL) { \
-				*p++ = '\0';						\
-				mnstr_printf(fout, "=%s\n", q);		\
-				q = p;								\
-			}										\
-			if (*q != '\0')							\
-				mnstr_printf(fout, "=%s\n", q);		\
-			mnstr_flush(fout);						\
-		}											\
+#define send_list()											\
+	do {													\
+		len = snprintf(buf2, sizeof(buf2), "OK\n");			\
+		if (fout == NULL) {									\
+			if (send(msgsock, buf2, strlen(buf2), 0) < 0 ||	\
+				send(msgsock, pbuf, strlen(pbuf), 0) < 0)	\
+				senderror = errno;							\
+		} else {											\
+			char *p, *q = pbuf;								\
+			mnstr_printf(fout, "=OK\n");					\
+			while ((p = strchr(q, '\n')) != NULL) {			\
+				*p++ = '\0';								\
+				mnstr_printf(fout, "=%s\n", q);				\
+				q = p;										\
+			}												\
+			if (*q != '\0')									\
+				mnstr_printf(fout, "=%s\n", q);				\
+			mnstr_flush(fout);								\
+		}													\
 	} while (0)
 
 static void ctl_handle_client(
@@ -235,8 +237,9 @@ static void ctl_handle_client(
 	int pos = 0;
 	size_t len;
 	err e;
+	int senderror = 0;
 
-	while (_mero_keep_listening) {
+	while (_mero_keep_listening && !senderror) {
 		if (pos == 0) {
 			if ((pos = recvWithTimeout(msgsock, fdin, buf, sizeof(buf))) == 0) {
 				/* EOF */
@@ -848,7 +851,8 @@ static void ctl_handle_client(
 
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				if (fout == NULL) {
-					send(msgsock, buf2, len, 0);
+					if (send(msgsock, buf2, len, 0) < 0)
+						senderror = errno;
 				} else {
 					mnstr_printf(fout, "=%s", buf2);
 				}
@@ -862,7 +866,8 @@ static void ctl_handle_client(
 					stats->uri = NULL;
 					len = snprintf(buf2, sizeof(buf2), "%s\n", sdb);
 					if (fout == NULL) {
-						send(msgsock, buf2, len, 0);
+						if (send(msgsock, buf2, len, 0) < 0)
+							senderror = errno;
 					} else {
 						mnstr_printf(fout, "=%s", buf2);
 					}
@@ -903,18 +908,20 @@ static void ctl_handle_client(
 				/* this never fails */
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				if (fout == NULL) {
-					send(msgsock, buf2, len, 0);
+					if (send(msgsock, buf2, len, 0) < 0)
+						senderror = errno;
 				} else {
 					mnstr_printf(fout, "=%s", buf2);
 				}
 
 				rdb = _mero_remotedbs;
-				while (rdb != NULL) {
+				while (rdb != NULL && !senderror) {
 					len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
 							rdb->fullname,
 							rdb->conn);
 					if (fout == NULL) {
-						send(msgsock, buf2, len, 0);
+						if (send(msgsock, buf2, len, 0) < 0)
+							senderror = errno;
 					} else {
 						mnstr_printf(fout, "=%s", buf2);
 					}
@@ -939,6 +946,9 @@ static void ctl_handle_client(
 			}
 		}
 	}
+	if (senderror)
+		Mfprintf(_mero_ctlerr, "%s: error sending to control "
+				 "channel: %s\n", origin, strerror(senderror));
 }
 
 void

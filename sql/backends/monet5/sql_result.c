@@ -1675,7 +1675,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (strchr(c->name, ',') || strchr(c->name, ' ') || strchr(c->name , '\t')) {
+		if (strchr(c->name, ',') || strchr(c->name, ' ') || strchr(c->name , '\t') || strchr(c->name, '#')) {
 			if (mnstr_write(s, "\"", 1, 1) != 1)
 				return -1;
 			if (strchr(c->name, '"')) {
