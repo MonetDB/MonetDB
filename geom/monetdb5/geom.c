@@ -4108,11 +4108,12 @@ str wkbBox2D(mbr** box, wkb** point1, wkb** point2) {
 
 	}
 
+	//Assign the coordinates. Ensure that they are in correct order
 	*box = (mbr*) GDKmalloc(sizeof(mbr));
-	(*box)->xmin = (float) xmin;
-	(*box)->ymin = (float) ymin;
-	(*box)->xmax = (float) xmax;
-	(*box)->ymax = (float) ymax;
+	(*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
+	(*box)->ymin = (float) (ymin < ymax ? ymin : ymax);
+	(*box)->xmax = (float) (xmax > xmin ? xmax : xmin);
+	(*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
 
 	return MAL_SUCCEED;
 } 
