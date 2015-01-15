@@ -90,6 +90,22 @@ dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types c
 
 boundary #Uknown Types: TRIANGLE (queries for these types commented out)
 
+#wmsservers #Not applicable to MonetDB (?)
+
+#wkt #Unknown Functions: st_orderingequals
+
+#wkb #Unknown Functions: st_asbinary(char,char), encode, st_orderingequals
+
+#tickets #Unknown Functions: st_locate_along_measure, round, st_asgml, ST_Shift_Longitude, st_linetocurve, st_forcecollection, st_multi, st_curvetoline, st_snaptogrid, st_asewkb(geometry,char), ST_AsSVG, st_linecrossingdirection, ST_GeographyFromText, geography, ...
+	#Unknown Types: CIRCULARSTRING, COMPOUNDCURVE
+
+#typmod #Unknwown Types: circularstring, compoundcurve, curvepolygon, geography, multicurve, multisurface, polyhedralsurface, tin, triangle
+
+#remove_repeated_points #Unknown Functions: #st_removerepeatedpoints
+
+#split #Unknown Functions: #st_split
+
+#relate  #Unknown Functions: st_relate(char,char)
 
 
 removeTmpFiles
