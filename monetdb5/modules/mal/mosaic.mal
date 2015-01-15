@@ -225,6 +225,9 @@ address MOSleftfetchjoin;
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
 address MOSleftfetchjoin;
 
+pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
+address MOSleftfetchjoin;
+
 pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:oid]) :bat[:oid,:oid]
 address MOSleftfetchjoin;
 

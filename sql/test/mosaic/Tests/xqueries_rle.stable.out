@@ -49,7 +49,7 @@ Ready.
 % 84 # length
 function user.s6_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.thetasubselect(X_10,X_4,A0,"<");
@@ -71,7 +71,7 @@ end s6_1;
 % 85 # length
 function user.s7_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.subselect(X_10,X_4,A0,A0,true,true,false);
@@ -108,7 +108,7 @@ end s7_1;
 % 84 # length
 function user.s13_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.thetasubselect(X_10,X_4,A0,"<");
@@ -130,7 +130,7 @@ end s13_1;
 % 85 # length
 function user.s14_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.subselect(X_10,X_4,A0,A0,true,true,false);
@@ -167,7 +167,7 @@ end s14_1;
 % 84 # length
 function user.s20_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.thetasubselect(X_10,X_4,A0,"<");
@@ -189,7 +189,7 @@ end s20_1;
 % 85 # length
 function user.s21_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
-    X_7 := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
     X_11 := mosaic.subselect(X_10,X_4,A0,A0,true,true,false);
@@ -209,7 +209,7 @@ end s21_1;
 % L1 # name
 % wrd # type
 % 2 # length
-[ 86	]
+[ 42	]
 #select count(*) from tmp3 where b = true;
 % sys.L1 # table_name
 % L1 # name

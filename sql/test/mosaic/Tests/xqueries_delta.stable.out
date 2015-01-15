@@ -101,12 +101,18 @@ end s7_1;
 #alter table tmp3 alter column i set storage 'delta';
 #alter table tmp3 alter column b set storage 'delta';
 #alter table tmp3 alter column f set storage 'delta';
+#select count(*) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 86	]
 #explain select count(*) from tmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 84 # length
-function user.s13_1{autoCommit=true}(A0:int):void;
+function user.s14_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -115,7 +121,7 @@ function user.s13_1{autoCommit=true}(A0:int):void;
     X_13 := mosaic.leftfetchjoin(X_11,X_10);
     X_14 := aggr.count(X_13);
     sql.exportValue(1,"sys.L1","L1","wrd",64,0,6,X_14,"");
-end s13_1;
+end s14_1;
 # querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe")
 #select count(*) from tmp3 where i <4;
 % sys.L1 # table_name
@@ -128,7 +134,7 @@ end s13_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s14_1{autoCommit=true}(A0:int):void;
+function user.s15_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -137,7 +143,7 @@ function user.s14_1{autoCommit=true}(A0:int):void;
     X_13 := mosaic.leftfetchjoin(X_11,X_10);
     X_14 := aggr.count(X_13);
     sql.exportValue(1,"sys.L1","L1","wrd",64,0,6,X_14,"");
-end s14_1;
+end s15_1;
 # querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe")
 #select count(*) from tmp3 where i = 7;
 % sys.L1 # table_name
@@ -165,7 +171,7 @@ end s14_1;
 % mal # name
 % clob # type
 % 84 # length
-function user.s20_1{autoCommit=true}(A0:int):void;
+function user.s21_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -174,7 +180,7 @@ function user.s20_1{autoCommit=true}(A0:int):void;
     X_13 := mosaic.leftfetchjoin(X_11,X_10);
     X_14 := aggr.count(X_13);
     sql.exportValue(1,"sys.L1","L1","wrd",64,0,6,X_14,"");
-end s20_1;
+end s21_1;
 # querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe")
 #select count(*) from tmp3 where i <4;
 % sys.L1 # table_name
@@ -187,7 +193,7 @@ end s20_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s21_1{autoCommit=true}(A0:int):void;
+function user.s22_1{autoCommit=true}(A0:int):void;
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -196,7 +202,7 @@ function user.s21_1{autoCommit=true}(A0:int):void;
     X_13 := mosaic.leftfetchjoin(X_11,X_10);
     X_14 := aggr.count(X_13);
     sql.exportValue(1,"sys.L1","L1","wrd",64,0,6,X_14,"");
-end s21_1;
+end s22_1;
 # querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe")
 #select count(*) from tmp3 where i = 7;
 % sys.L1 # table_name
