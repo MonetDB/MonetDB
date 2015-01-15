@@ -612,10 +612,10 @@ BATmsync(BAT *b)
 	
 	Msyncjob job;
 	Msyncjob jobv;
-	lng offset;
+	size_t offset;
 
 	job.adr = b->T->heap.base;
-	offset =  ((lng)job.adr % (lng)MT_pagesize());
+	offset =  ((size_t)job.adr % (size_t)MT_pagesize());
 	job.len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - job.adr)/MT_pagesize()));
 	if( offset )
 		job.adr -= (MT_pagesize() - offset);
@@ -624,7 +624,7 @@ BATmsync(BAT *b)
 	
 	if( b->T->vheap){
 		jobv.adr = b->T->vheap->base;
-		offset =  ((lng)jobv.adr % (lng)MT_pagesize());
+		offset =  ((size_t)jobv.adr % (size_t)MT_pagesize());
 		jobv.len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - jobv.adr)/MT_pagesize()));
 
 		if( offset )
