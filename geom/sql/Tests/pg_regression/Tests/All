@@ -71,5 +71,17 @@
 
 #iscollection #Uknown Functions: st_iscollection 
 
+#regress_ogc #Unknown Functions: st_buffer(geometry, int, int), st_snaptogrid, st_relate(geometry, geometry), box3d, st_polygonize, st_linemerge
+			#segmentation fault at select 'ST_NumGeometries', ST_NumGeometries(ST_GeomFromText('LINESTRING(0 0, 1 1)'));
+
+regress_ogc_cover
+
+#regress_ogc_prep #Unknown Functions: st_containsproperly
+
+#regress_bdpoly #Unknown Functions: st_buildarea, ST_BdMPolyFromText
+
+#regress_proj #Unknown Functions: st_snaptogrid
+
+#regress_management #Functions not applicable in MOnetDB
 
 removeTmpFiles
