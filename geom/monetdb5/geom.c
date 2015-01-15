@@ -2075,19 +2075,19 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	char *errbuf = NULL;
 	str ex;
 
-	if(*tpe > 2)
-		te=1;
-
 	*geomWKB = NULL;
-	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) &&
-	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te += *((*geomWKB)->data + 1) & 0x0f) == *tpe)) {
+	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) && 
+			(wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = ((*((*geomWKB)->data + 1) & 0x0f)+(*tpe>2))) == *tpe)) {
 		return MAL_SUCCEED;
 	}
 
 	if (*geomWKB == NULL) {
 		*geomWKB = wkb_nil;
 	}	
-	
+
+	//get back the correct value for geos 
+	te-= (te<4); 	
+
 	if (*tpe > 0 && te != *tpe)
 		throw(MAL, "wkb.FromText", "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe,0), te, geom_type2str(te,0));
 	errbuf = GDKerrbuf;
@@ -2278,7 +2278,6 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		char* toStr = NULL;
 		size_t len = 0;
 		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
-		fprintf(stderr, "%f %s\n", linestringsArea[i], toStr);
 		GDKfree(toStr);
 	}
 
@@ -2342,7 +2341,8 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		GEOSGeom_destroy(finalGeometry); 
 		GDKfree(internalGeometries); 
 	} else if(*flag == 1) {
-		
+		*geomWKB = wkb_nil;
+		throw(MAL, "geom.MLineStringToPolygon", "Multipolygon from string has not been defined");
 	} else {
 		*geomWKB = wkb_nil;
 		throw(MAL, "geom.MLineStringToPolygon", "Uknown flag");
