@@ -968,8 +968,9 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_64_BIT_INT	061026	/* version that had no 128-bit integer option, yet */
-#define GDKLIBRARY		061027
+#define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
+#define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
+#define GDKLIBRARY		061030
 
 typedef struct BAT {
 	/* static bat properties */

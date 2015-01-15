@@ -2063,6 +2063,7 @@ udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 		freeaddrinfo(res);
 		return 0;
 	}
+	freeaddrinfo(res);
 	return -1;
 #else
 	struct sockaddr *serv;
