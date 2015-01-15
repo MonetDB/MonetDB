@@ -251,7 +251,7 @@ registerMessageTap(int fd)
 	disc_message_tap h;
 	/* make sure we never block in the main loop below because we can't
 	 * write to the pipe */
-	fcntl(fd, F_SETFD, O_NONBLOCK);
+	(void) fcntl(fd, F_SETFD, O_NONBLOCK);
 	pthread_mutex_lock(&_mero_remotedb_lock);
 	h = _mero_disc_msg_taps;
 	if (h == NULL) {

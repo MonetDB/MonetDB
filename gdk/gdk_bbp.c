@@ -725,7 +725,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		   &n) < 13)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
-	if (properties & ~0x1F81)
+	if (properties & ~0x0F81)
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
@@ -778,6 +778,11 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
+	if (bbpversion <= GDKLIBRARY_INET_COMPARE && strcmp(type, "inet") == 0) {
+		/* don't trust ordering information on inet columns */
+		col->sorted = 0;
+		col->revsorted = 0;
+	}
 	return n;
 }
 
@@ -960,7 +965,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_NOCOMPRESS &&
+	    bbpversion != GDKLIBRARY_INET_COMPARE &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
@@ -1236,7 +1241,7 @@ heap_entry(stream *s, COLrec *col)
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
 			  col->width,
 			  col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
-			 (unsigned short) col->sorted | ((unsigned short) col->revsorted << 7) | (((unsigned short) col->key & 0x01) << 8) | ((unsigned short) col->dense << 9) | ((unsigned short) col->nonil << 10) | ((unsigned short) col->nil << 11) | ((unsigned short) col->heap.compressed << 12),
+			 (unsigned short) col->sorted | ((unsigned short) col->revsorted << 7) | (((unsigned short) col->key & 0x01) << 8) | ((unsigned short) col->dense << 9) | ((unsigned short) col->nonil << 10) | ((unsigned short) col->nil << 11),
 			  col->nokey[0],
 			  col->nokey[1],
 			  col->nosorted,

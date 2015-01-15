@@ -1,8 +1,8 @@
 package DBD::monetdb;
 
 use strict;
-use sigtrap;
 use DBI();
+use Encode();
 use MonetDB::CLI();
 
 our $VERSION = '0.10';
@@ -99,11 +99,11 @@ sub quote {
     return $dbh->{monetdb_language} eq 'sql' ? 'NULL' : 'nil'
         unless defined $value;
 
+    $value = Encode::encode_utf8($value);
+
     for ($value) {
-      s/	/\\t/g;
       s/\\/\\\\/g;
       s/\n/\\n/g;
-      s/\r/\\r/g;
       s/"/\\"/g;
       s/'/''/g;
     }
@@ -122,22 +122,15 @@ sub quote {
 
 
 sub _count_param {
-    my @statement = split //, shift;
+    my $statement = shift;
     my $num = 0;
 
-    while (defined(my $c = shift @statement)) {
-        if ($c eq '"' || $c eq "'") {
-            my $end = $c;
-            while (defined(my $c = shift @statement)) {
-                last if $c eq $end;
-                @statement = splice @statement, 2 if $c eq '\\';
-            }
-        }
-        elsif ($c eq '?') {
-            $num++;
-        }
-    }
-    return $num;
+    $statement =~ s{
+        ' (?: \\. | [^\\']++ )*+ ' |
+        " (?: \\. | [^\\"]++ )*+ '
+    }{}gx;
+
+    return $statement =~ tr/?/?/;
 }
 
 
@@ -614,7 +607,7 @@ sub fetch {
         $sth->set_err(-1, $@) if $@;
         return;
     }
-    my @row = map $hdl->field($_), 0 .. $field_count-1;
+    my @row = map $hdl->{currow}[$_], 0 .. $field_count-1; # encapsulation break but saves a microsecond per cell
     map { s/\s+$// } @row if $sth->FETCH('ChopBlanks');
 
     $sth->{monetdb_rows}++;

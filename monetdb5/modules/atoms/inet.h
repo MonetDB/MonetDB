@@ -53,6 +53,7 @@ typedef struct _inet {
 
 inet_export int INETfromString(str src, int *len, inet **retval);
 inet_export int INETtoString(str *retval, int *len, inet *handle);
+inet_export int INETcompare(inet *l, inet *r);
 inet_export str INETnew(inet * retval, str *in);
 inet_export str INET_isnil(bit *retval, inet * val);
 inet_export str INET_comp_EQ(bit *retval, inet * val1, inet *val2);

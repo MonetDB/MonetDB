@@ -57,7 +57,11 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
 
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
+		closesocket(sock);
+		return newErr("setsockopt unexpectedly failed: %s",
+					  strerror(errno));
+	}
 
 	server.sin_family = AF_INET;
 #ifdef CONTROL_BINDADDR

@@ -77,7 +77,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 {
 	oid min, max;
 	BUN i, ngrp;
-	const oid *gids;
+	const oid *restrict gids;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
@@ -489,7 +489,7 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 BAT *
 BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
-	const oid *gids;
+	const oid *restrict gids;
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
@@ -2548,7 +2548,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	atomcmp = BATatoms[b->ttype].atomCmp;
 
 	if (g) { /* we have to do this by group */
-		const oid *grps;
+		const oid *restrict grps;
 		oid prev;
 		BUN p, q, r;
 

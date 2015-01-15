@@ -96,7 +96,8 @@ sub new {
         PeerPort => $port,
         Proto    => 'tcp'
   ) || die "!ERROR can't connect to $host:$port $!";
-  $self->{piggyback} = "";
+  $self->{piggyback} = [];
+  $self->{skip_in} = 0;
 
   #binmode($self->{socket},":utf8");
 
@@ -236,7 +237,7 @@ sub propertyTest {
 sub getRow {
   my ($self)= @_;
   my $row = $self->{lines}[$self->{next}++];
-  my @chars = split(//, $row);
+  my @chars = split(//, $row,3);
 
   if ($chars[0] eq '!') { 
     $self->error($row);
@@ -278,6 +279,11 @@ sub getBlock {
   my $block = $self->getblock();
   @{$self->{lines}} = split(/\n/, $block);
 
+  # skip diagnostic messages before the header
+  shift @{$self->{lines}} while @{$self->{lines}} && $self->{lines}[0] =~ /\A#/;
+
+  die "implausible return from MonetDB: $self->{lines}[0]\n" if $self->{lines}[0] =~ /\A[^ -~]/;
+
   my $header = $self->{lines}[0];
   my @chars = split(//, $header);
 
@@ -309,7 +315,7 @@ sub getBlock {
       }
       # for now skip table header information
       my $i = 1;
-      while ($self->{lines}[$i] =~ '%') {
+      while ($self->{lines}[$i] =~ /\A%/) {
         $self->{hdrs}[$i - 1] = $self->{lines}[$i];
         $i++;
       }
@@ -365,8 +371,10 @@ sub getReply {
     return $self->getBlock();
   } else {
     # close large results, but only send on next query
-    $self->{piggyback} .= "Xclose $self->{id}" 
-      if ($self->{id} > 0 && $self->{count} != $self->{replysize});
+    if ($self->{id} > 0 && $self->{count} != $self->{replysize}) {
+      push @{$self->{piggyback}}, "Xclose $self->{id}";
+      $self->{skip_in}++;
+    }
     $self->{active} = 0;
   } 
   return $self->{active};
@@ -414,33 +422,45 @@ sub getblock {
       print "getblock: $data\n" if ($self->{trace});
     }
   } while ( !$last_block );
+  print "IN:\n$result\n" if $ENV{MAPI_TRACE};
+
+  if ($self->{skip_in}) {
+    $self->{skip_in}--;
+    goto &getblock;
+  }
+
   return $result;
 }
 
 sub putblock {
-  my ($self,$blk) = @_;
-
-  my $pos        = 0;
-  my $last_block = 0;
-  my $blocksize  = 0xffff >> 1;       # max len per block
-  my $data;
+  my $self = shift;
 
   # there maybe something in the piggyback buffer
-  $blk = $self->{piggyback} . $blk if ($self->{piggyback} ne "");
-  $self->{piggyback} = "";
+  my @blocks = (\(@{ $self->{piggyback} }), \(@_));
+  @{ $self->{piggyback} } = ();
 
   # create blocks of data with max 0xffff length,
   # then loop over the data and send it.
-  while ( $data = substr( $blk, $pos, $blocksize ) ) {
-    my $len = length($data);
-    # set last-block-flag
-    $last_block = 1 if ( $len < $blocksize );    
-    my $flag = pack( 'v', ( $len << 1 ) + $last_block );
-    print "putblock: $last_block ".$data."\n" if ($self->{trace});
-    $self->{socket}->syswrite($flag);  # len<<1 + last-block-flag
-    $self->{socket}->syswrite($data);  # send it
-    $pos += $len;    # next block
+  my $out = '';
+  for my $blk (@blocks) {
+    print "OUT:\n$$blk\n" if $ENV{MAPI_TRACE};
+    utf8::downgrade($$blk); # deny wide chars
+    my $pos        = 0;
+    my $last_block = 0;
+    my $blocksize  = 0x7fff >> 1;       # max len per block
+    my $data;
+
+    while ( !$last_block ) {
+      my $data = substr($$blk, 0, $blocksize, "");
+      my $len = length($data);
+      # set last-block-flag
+      $last_block = 1 if !length $$blk;
+      my $flag = pack( 'v', ( $len << 1 ) + $last_block );
+      print "putblock: $last_block ".$data."\n" if ($self->{trace});
+      $out .= $flag . $data;
+    }
   }
+  $self->{socket}->syswrite($out); #send it
 }
 
 1;

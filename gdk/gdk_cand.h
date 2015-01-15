@@ -41,8 +41,8 @@
 						start = end = 0;	\
 					} else {			\
 						assert(cand < candend);	\
+						end = cand[end-start-1] + 1; \
 						start = *cand;		\
-						end = candend[-1] + 1;	\
 					}				\
 				}					\
 				assert(start <= end);			\
