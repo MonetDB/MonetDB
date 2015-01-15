@@ -84,4 +84,12 @@ regress_ogc_cover
 
 #regress_management #Functions not applicable in MOnetDB
 
+#dump #ST_Dump works only for multipolygons - Unknown Types: TRIANGLE, TIN
+
+dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
+
+boundary #Uknown Types: TRIANGLE (queries for these types commented out)
+
+
+
 removeTmpFiles
