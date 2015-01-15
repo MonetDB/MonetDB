@@ -1162,8 +1162,10 @@ SQLproducer(void *p)
 		// warn the consumers
 		if (ateof[cur] && partial){
 			if( partial){
+				char msg[256]={0};
+				snprintf(msg,255,"incomplete record at end of file:%s\n", s);
 				tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
-				task->as->error = GDKstrdup("Incomplete record at end of file.\n");
+				task->as->error = GDKstrdup(msg);
 				task->b->pos += partial;
 			}
 			goto reportlackofinput;
@@ -1437,8 +1439,10 @@ reportlackofinput:
 		*end = '\0';			/* this is safe, as the stream ensures an extra byte */
 	}
 	if(cnt < task->maxrow && task->maxrow != BUN_NONE ){
+		char msg[256]={0};
+		snprintf(msg,255,"incomplete record at end of file:%s\n", s);
+		task->as->error = GDKstrdup(msg);
 		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
-		task->as->error = GDKstrdup("EOF:Incomplete record at end of file.\n");
 		task->b->pos += partial;
 	}
 }
