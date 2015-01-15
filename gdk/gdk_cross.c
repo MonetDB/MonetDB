@@ -26,7 +26,7 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 {
 	BAT *bn1, *bn2;
 	BUN i, j;
-	oid *p1, *p2;
+	oid *restrict p1, *restrict p2;
 
 	assert(BAThdense(l));
 	assert(BAThdense(r));

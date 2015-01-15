@@ -361,14 +361,14 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	if (mode == STORE_MMAP) {
 		if (size)
-			err = MT_msync(buf, size, MMAP_SYNC);
+			err = MT_msync(buf, size);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
 				    "mode=%d\n", nme, ext ? ext : "",
 				    (int) mode);
 		IODEBUG THRprintf(GDKstdout,
 				  "#MT_msync(buf " PTRFMT ", size " SZFMT
-				  ", MMAP_SYNC) = %d\n",
+				  ") = %d\n",
 				  PTRFMTCAST buf, size, err);
 	} else {
 		int fd;

@@ -166,7 +166,7 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
+int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)
@@ -183,7 +183,7 @@ void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
-int MT_msync(void *p, size_t len, int mode)
+int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 int OIDdirty(void)
 	__attribute__((__visibility__("hidden")));

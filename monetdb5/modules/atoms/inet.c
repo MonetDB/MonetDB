@@ -194,6 +194,22 @@ INETnew(inet *retval, str *in)
 	return (MAL_SUCCEED);
 }
 
+int
+INETcompare(inet *l, inet *r)
+{
+	bit res = 0;
+	if (in_isnil(l))
+		return in_isnil(r) ? 0 : -1;
+	if (in_isnil(r))
+		return 1;
+	INET_comp_EQ(&res, l, r);
+	if (res)
+		return 0;
+	INET_comp_LT(&res, l, r);
+	if (res)
+		return -1;
+	return 1;
+}
 
 /* === Operators === */
 /**
