@@ -3142,7 +3142,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
 #else
-		s = bstream_create(ss, 0x2000000);
+		s = bstream_create(ss, 0x200000);
 #endif
 #ifdef WIN32
 		fix_windows_newline(tsep);
