@@ -35,6 +35,7 @@ HAVE_GEOM?box     # box is not supported in MonetDB but it can be replaced with 
 HAVE_GEOM?path    # path is not supported in MonetDB but it can be replaced with linestring
 HAVE_GEOM?polygon
 #HAVE_GEOM?circle # circle is NOT supported in MonetDB. It is also not part of OpenGIS standard so exclude this test
+#HAVE_GEOM?geometry  # tables CIRCLE_TBL and LSEG_TBL do not exist as they have been disabled above. All queries fail
 date
 time
 timetz
@@ -46,7 +47,6 @@ reltime
 # tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
 inet
 comments
-#ToDo HAVE_GEOM?geometry
 horology
 #ToDo oidjoins
 #ToDo type_sanity
