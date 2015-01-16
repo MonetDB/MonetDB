@@ -48,16 +48,16 @@ reltime
 inet
 comments
 horology
-#ToDo oidjoins
-#ToDo type_sanity
-#ToDo opr_sanity
+# oidjoins    # All queries reference pg_catalog.pg_* specific schema and table names which do not exist in MonetDB. skipping this test
+# type_sanity # All queries reference pg_type, pg_proc, pg_class or pg_attribute table names which do not exist in MonetDB. skipping this test
+# opr_sanity  # All queries reference pg_proc, pg_cast, pg_operator, pg_opclass, pg_amop, pg_am, pg_amproc or pg_aggregate table names which do not exist in MonetDB. skipping this test
 insert
-#ToDo create_type
+# create_type # pg specific (not SQL compliant) syntax of CREATE TYPE is not supported in MonetDB
 loadwisconsin #[MK] copied from benchmarks
 create_table
 create_misc
 create_operator
-#ToDo create_index
+# create_index  # pg specific index syntax (USING btree() or rtree() or hash() and functional and conditional indexes) are not supported in MonetDB. skipping this test
 #ToDo create_view
 create_aggregate
 #ToDo triggers
