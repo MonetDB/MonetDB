@@ -5,7 +5,7 @@
 
 #binary #Unknown Types: CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, MULTICURVE, MULTISURFACE, TRIANGLE, TIN
 		#Unknown Functions: st_force3dz, st_force3dm, st_force4d, st_orderingequals
-		#It cannot handle EMPTY geometris in COPY INTO table FROM file commands
+		#It cannot handle EMPTY geometries in COPY INTO table FROM file commands
 
 #regress #Uknown Types: POINTM, CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, TRIANGLE, TIN, MULTISURFACE, MULTICURVE
 		#Unknown Operators: <<, >>
@@ -84,7 +84,7 @@ regress_ogc_cover
 
 #regress_management #Functions not applicable in MOnetDB
 
-#dump #ST_Dump works only for multipolygons - Unknown Types: TRIANGLE, TIN
+dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
 
 dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
 
