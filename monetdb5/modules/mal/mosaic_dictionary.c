@@ -951,7 +951,17 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 			limit= MOSgetCnt(task->blk);
 			for( o=0, n= task->elm; n-- > 0; o++,w++ ){
 				for(oo = task->start,i=0; i < limit; i++,oo++){
-					dictdecompress(i);
+					//dictdecompress(i);
+					cid = (i * hdr->bits)/64;
+					lshift= 63 -((i * hdr->bits) % 64) ;
+					if ( lshift >= hdr->bits){
+						j = (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask);
+					  }else{ 
+						rshift= 63 -  ((i+1) * hdr->bits) % 64;
+						m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));
+						m2 = base[cid+1] >>rshift;
+						j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;
+					  }
 					if ( *w == dict[j]){
 						BUNappend(task->lbat, &oo, FALSE);
 						BUNappend(task->rbat, &o, FALSE);
