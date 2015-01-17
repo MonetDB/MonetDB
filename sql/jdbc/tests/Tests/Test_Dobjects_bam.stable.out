@@ -110,6 +110,7 @@ select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	queue	SYSTEM VIEW	create view sys.queue as select * from sys.queue();	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	rejects	SYSTEM VIEW	create view sys.rejects as select * from sys.rejects();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	sessions	SYSTEM VIEW	create view sys.sessions as select * from sys.sessions();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storage	SYSTEM VIEW	create view sys.storage as select * from sys.storage();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storagemodel	SYSTEM VIEW	create view sys.storagemodel as select * from sys.storagemodel();	null	null	null	rowid	SYSTEM	

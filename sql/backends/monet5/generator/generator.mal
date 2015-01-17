@@ -17,6 +17,9 @@
 
 module generator;
 
+pattern series(first:any_1,last:any_1):bat[:oid,:any_1]
+address VLTgenerator_table;
+
 pattern series(first:bte,last:bte):bat[:oid,:bte]
 address VLTgenerator_table;
 
@@ -32,7 +35,13 @@ address VLTgenerator_table;
 pattern series(first:flt,last:flt):bat[:oid,:flt]
 address VLTgenerator_table;
 
+pattern series(first:timestamp,last:timestamp):bat[:oid,:timestamp]
+address VLTgenerator_table;
+
 pattern series(first:dbl,last:dbl):bat[:oid,:dbl]
+address VLTgenerator_table;
+
+pattern series(first:any_1,last:any_1,step:any_1):bat[:oid,:any_1]
 address VLTgenerator_table;
 
 pattern series(first:bte,last:bte,step:bte):bat[:oid,:bte]

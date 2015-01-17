@@ -29,26 +29,42 @@ stderr of test 'generator04` in directory 'sql/backends/monet5/generator` itself
 # 21:38:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14305" "--port=36294"
 # 21:38:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series('a','a','c');
-ERROR = !unsupported type / unknown data type
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+ERROR = !timestamp (a) has incorrect format
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series(false,true,false) ;
-ERROR = !unsupported type / unknown data type
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+ERROR = !types boolean(1,0) and timestamp(7,0) are not equal for column 'L1'
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
+QUERY = select * from generate_series(null,10) ;
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
+QUERY = select * from generate_series(10,null) ;
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
+QUERY = select * from generate_series(null,-1) ;
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
+QUERY = select * from generate_series(-1,null) ;
+ERROR = !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series(null,null,1);
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series(10,null,1);
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series(null,10,1);
+ERROR = !types tinyint(8,0) and timestamp(7,0) are not equal for column 'L2'
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
+QUERY = select * from generate_series(0,10,-2) as v
+        where value <7 and value >3;
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-5993/.s.monetdb.36135
+MAPI  = (monetdb) /var/tmp/mtest-2974/.s.monetdb.36607
 QUERY = select * from generate_series(
         	timestamp '2008-03-01 00:00',
         	timestamp '2008-03-04 12:00');
-ERROR = !Timestamp step missing
+ERROR = !types timestamp(7,0) and bigint(64,0) are not equal for column 'L1'
 
 # 21:38:52 >  
 # 21:38:52 >  "Done."

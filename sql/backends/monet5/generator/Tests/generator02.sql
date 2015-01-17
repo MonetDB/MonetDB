@@ -29,5 +29,5 @@ where value <5.0e0;
 select * from generate_series(0.2e0,10.0e0,1.9e0) as v
 where value <7.0e0 and value >3.0e0;
 
-select * from generate_series(0.2e0,10.0e0,1.9e0) as v
+select * from generate_series(0.3e0,10.0e0,1.9e0) as v
 where value > 0.0 and value <7.0e0 and value >3.0e0;
