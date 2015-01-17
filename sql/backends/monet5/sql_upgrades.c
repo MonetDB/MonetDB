@@ -1010,6 +1010,113 @@ sql_update_oct2014_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+#ifdef HAVE_HGE
+static str
+sql_update_hugeint(Client c)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.fuse(one bigint, two bigint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns hugeint\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name udf.fuse;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.generate_series(first hugeint, last hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns table (value hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name generator.series;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns table (value hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name generator.series;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_samp(val hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns double\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.stdev;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.stddev_pop(val hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns double\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.stdevp;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_samp(val hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns double\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.variance;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.var_pop(val hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns double\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.variancep;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.median(val hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns hugeint\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.median;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.quantile(val hugeint, q double)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns hugeint\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.quantile;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create aggregate sys.corr(e1 hugeint, e2 hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns hugeint\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name aggr.corr;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "create function json.filter(js json, name hugeint)\n");
+	pos += snprintf(buf + pos, bufsize - pos, "returns json\n");
+	pos += snprintf(buf + pos, bufsize - pos, "external name json.filter;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.tablestoragemodel;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.tablestoragemodel\n");
+	pos += snprintf(buf + pos, bufsize - pos, "as select \"schema\",\"table\",max(count) as \"count\",\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(columnsize) as columnsize,\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(heapsize) as heapsize,\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(hashes) as hashes,\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(imprints) as imprints,\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\n");
+	pos += snprintf(buf + pos, bufsize - pos, "from sys.storagemodel() group by \"schema\",\"table\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values(%d, 'hge', 'hugeint', 128, 1, 2, 6, 0);\n", store_next_oid());
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values(%d, 'hge', 'decimal', 39, 1, 10, 8, 0);\n", store_next_oid());
+	pos += snprintf(buf + pos, bufsize - pos, "update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';\n");
+
+	{
+		char *msg;
+		mvc *sql = NULL;
+
+		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
+			GDKfree(msg);
+		} else {
+			sql_schema *s;
+
+			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+				sql_table *t;
+
+				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+					t->system = 0;
+			}
+		}
+	}
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif
+
 static str
 sql_update_feb2015(Client c)
 {
@@ -1105,6 +1212,17 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(err);
 		}
 	}
+
+#ifdef HAVE_HGE
+	sql_find_subtype(&tp, "hugeint", 0, 0);
+	if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
+		if ((err = sql_update_hugeint(c)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+#endif
+
 	/* add missing features needed beyond Oct 2014 */
 	sql_find_subtype(&tp, "timestamp", 0, 0);
 	if ( 0 &&  !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC) ){

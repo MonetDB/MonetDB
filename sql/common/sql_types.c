@@ -1110,8 +1110,7 @@ many of the function signatures can be obtained from the underlying
 database kernel, we have chosen for this explicit scheme for one
 simple reason. The SQL standard dictates the types and we have to
 check their availability in the kernel only. The kernel itself could
-include manyfunctions for which their is no standard.
-lead to unexpected
+include many functions for which there is no standard.
 */
 
 static void

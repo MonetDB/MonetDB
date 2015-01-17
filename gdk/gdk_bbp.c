@@ -987,7 +987,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 			 "expected pointer size %d, got %d, expected OID size %d, got %d.",
 			 SIZEOF_SIZE_T, ptrsize, SIZEOF_OID, oidsize);
 	}
-	if (intsize != SIZEOF_MAX_INT) {
+	if (intsize > SIZEOF_MAX_INT) {
 		GDKfatal("BBPinit: database created with incompatible server:\n"
 			 "expected max. integer size %d, got %d.",
 			 SIZEOF_MAX_INT, intsize);
