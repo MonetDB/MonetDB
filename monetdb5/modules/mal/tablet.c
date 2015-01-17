@@ -1525,8 +1525,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->besteffort= best;
 
 	if (maxrow < 0)
-		maxrow = (lng) BUN_MAX;
-	task->maxrow = maxrow;
+		task->maxrow =  BUN_MAX;
+	else
+		task->maxrow  = (BUN) maxrow;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
 		tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
