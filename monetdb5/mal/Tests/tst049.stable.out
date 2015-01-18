@@ -123,7 +123,7 @@ function user.main():void;
     io.print(i);
     i := str.like("trx","t_");
     io.print(i);
-    z := batstr.like(b,"t_");
+    z := batalgebra.like(b,"t_");
     io.print(z);
     z := mal.manifold("str","like",b,"%math%");
     io.print(z);

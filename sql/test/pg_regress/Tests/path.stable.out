@@ -1,4 +1,4 @@
-stdout of test 'string` in directory 'sql/test/pg_regress` itself:
+stdout of test 'path` in directory 'sql/test/pg_regress` itself:
 
 
 # 17:11:18 >  
@@ -20,102 +20,36 @@ stdout of test 'string` in directory 'sql/test/pg_regress` itself:
 
 Ready.
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- string
-#--
-#--DROP TABLE PATH_TBL;
 #CREATE TABLE PATH_TBL (f1 string);
 #INSERT INTO PATH_TBL VALUES ('[(1,2),(3,4)]');
 [ 1 ]
 #INSERT INTO PATH_TBL VALUES ('((1,2),(3,4))');
 [ 1 ]
-#INSERT INTO PATH_TBL VALUES ('[(0,0),(3,0),(4,5),(1,6)]');
-[ 1 ]
-#INSERT INTO PATH_TBL VALUES ('((1,2),(3,4))');
-[ 1 ]
-#INSERT INTO PATH_TBL VALUES ('1,2 ,3,4');
-[ 1 ]
-#INSERT INTO PATH_TBL VALUES ('[1,2,3, 4]');
-[ 1 ]
-#INSERT INTO PATH_TBL VALUES ('[11,12,13,14]');
-[ 1 ]
-#INSERT INTO PATH_TBL VALUES ('(11,12,13,14)');
-[ 1 ]
-#-- bad values for parser testing
-#
-#
 #SELECT f1 FROM PATH_TBL;
-% sys.L0 # table_name
+% sys.path_tbl # table_name
 % f1 # name
-% ? # type
-% ? # length
-[ "[(1,2),(3,4)]" ]
-[ "((1,2),(3,4))" ]
-[ "[(0,0),(3,0),(4,5),(1,6)]" ]
-[ "((1,2),(3,4))" ]
-[ "((1,2),(3,4))" ]
-[ "[(1,2),(3,4)]" ]
-[ "[(11,12),(13,14)]" ]
-[ "((11,12),(13,14))" ]
+% linestring # type
+% 0 # length
+[ "LINESTRING (1 2, 3 4)"	]
+[ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)"	]
+#CREATE VIEW PATH_TBL_VW AS SELECT f1, cast(f1 as string) as txt FROM PATH_TBL;
+#SELECT * FROM PATH_TBL_VW;
+% sys.path_tbl_vw,	sys.path_tbl_vw # table_name
+% f1,	txt # name
+% linestring,	clob # type
+% 0,	173 # length
+[ "LINESTRING (1 2, 3 4)",	"\"LINESTRING (1.0000000000000000 2.0000000000000000, 3.0000000000000000 4.0000000000000000)\""	]
+[ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1.0000000000000000 -1.0000000000000000, 2.0000000000000000 -2.0000000000000000, 3.0000000000000000 -3.0000000000000000, 4.0000000000000000 -4.0000000000000000)\""	]
+#SELECT Length(f1), * FROM PATH_TBL_VW;
+% sys.L2,	sys.path_tbl_vw,	sys.path_tbl_vw # table_name
+% L2,	f1,	txt # name
+% double,	linestring,	clob # type
+% 24,	0,	173 # length
+[ 2.828427125,	"LINESTRING (1 2, 3 4)",	"\"LINESTRING (1.0000000000000000 2.0000000000000000, 3.0000000000000000 4.0000000000000000)\""	]
+[ 4.242640687,	"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1.0000000000000000 -1.0000000000000000, 2.0000000000000000 -2.0000000000000000, 3.0000000000000000 -3.0000000000000000, 4.0000000000000000 -4.0000000000000000)\""	]
+#DROP VIEW PATH_TBL_VW;
 
-#SELECT '' AS count, f1 AS open_path FROM PATH_TBL WHERE isopen(f1);
-% sys.L0,	sys.L0 # table_name
-% count,	open_path # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(0,0),(3,0),(4,5),(1,6)]" ]
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(11,12),(13,14)]" ]
-
-#SELECT '' AS count, f1 AS closed_path FROM PATH_TBL WHERE isclosed(f1);
-% sys.L0,	sys.L0 # table_name
-% count,	closed_path # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((11,12),(13,14))" ]
-
-#SELECT '' AS count, pclose(f1) AS closed_path FROM PATH_TBL;
-% sys.L0,	sys.L0 # table_name
-% count,	closed_path # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((0,0),(3,0),(4,5),(1,6))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((1,2),(3,4))" ]
-[ "",	"((11,12),(13,14))" ]
-[ "",	"((11,12),(13,14))" ]
-
-#SELECT '' AS count, popen(f1) AS open_path FROM PATH_TBL;
-% sys.L0,	sys.L0 # table_name
-% count,	open_path # name
-% ?,	? # type
-% ?,	? # length
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(0,0),(3,0),(4,5),(1,6)]" ]
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(1,2),(3,4)]" ]
-[ "",	"[(11,12),(13,14)]" ]
-[ "",	"[(11,12),(13,14)]" ]
-
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 15:27:51 >  
+# 15:27:51 >  "Done."
+# 15:27:51 >  
 

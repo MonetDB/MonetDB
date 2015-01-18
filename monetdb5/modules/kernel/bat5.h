@@ -88,11 +88,9 @@ bat5_export str BKCsetColumns(void *r, const bat *bid, const char * const *hname
 bat5_export str BKCsetName(void *r, const bat *bid, const char * const *s);
 bat5_export str BKCgetBBPname(str *ret, const bat *bid);
 bat5_export str BKCunload(bit *res, const char * const *input);
-bat5_export str BKCisCached(bit *res, const bat *bid);
 bat5_export str BKCload(bat *res, const char * const *input);
-bat5_export str BKCcoldBAT(void *res, const bat *bid);
-bat5_export str BKCheat(lng *res, const bat *bid);
-bat5_export str BKChotBAT(void *res, const bat *bid);
+bat5_export str BKCsetColdBAT(void *res, const bat *bid);
+bat5_export str BKCsetHotBAT(void *res, const bat *bid);
 bat5_export str BKCsave(bit *res, const char * const *input);
 bat5_export str BKCsave2(void *r, const bat *bid);
 bat5_export str BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *hhp, const int *thp);

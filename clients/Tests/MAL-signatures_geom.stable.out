@@ -39049,6 +39049,8 @@ command inet.broadcast(X_1:inet):inet
 address INETbroadcast;
 comment Returns the broadcast address for network
 
+command inet.#cmp():int 
+address INETcompare;
 command inet.#fromstr():void 
 address INETfromString;
 comment Convert a string to an inet
