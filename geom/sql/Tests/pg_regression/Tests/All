@@ -105,7 +105,22 @@ boundary #Uknown Types: TRIANGLE (queries for these types commented out)
 
 #split #Unknown Functions: #st_split
 
-#relate  #Unknown Functions: st_relate(char,char)
+#relate #Unknown Functions: st_relate(char,char)
 
+#bestsrid #Unknown Functions: _st_bestsrid
+
+#concave_hull #Unknown Functions: st_concavehull
+
+#hausdorff #Unknown Functions: st_hausdorffdistance
+
+#regress_buffer_params #Unknown Functions: ST_SnapToGrid, st_buffer(geometry, dbl, ...);
+
+#offsetcurve #Unknown Functions: ST_OffsetCurve, ST_SnapToGrid
+
+#relatematch #Unknown Functions: st_relatematch
+
+#isvaliddetail #Unknown Functions: st_isvaliddetail 
+
+#sharedpaths #Unknown Functions: st_sharedpaths
 
 removeTmpFiles
