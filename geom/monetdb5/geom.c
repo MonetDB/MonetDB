@@ -32,21 +32,6 @@ const double pi=3.14159265358979323846;
 
 /* the first argument in the functions is the return variable */
 
-#ifdef HAVE_PROJ
-/** convert degrees to radians */
-static void degrees2radians(double *x, double *y, double *z) {
-	(*x) *= pi/180.0;
-	(*y) *= pi/180.0;
-	(*z) *= pi/180.0;
-}
-
-/** convert radians to degrees */
-static void radians2degrees(double *x, double *y, double *z) {
-	(*x) *= 180.0/pi;
-	(*y) *= 180.0/pi;
-	(*z) *= 180.0/pi;
-}
-
 static int numDigits(unsigned int num) {
 	int digits =1;
 
@@ -64,13 +49,27 @@ static char* int2str(unsigned int num) {
 
 	if(numStr == NULL)
 		throw(MAL, "geom.int2str", MAL_MALLOC_FAIL);
-	
+
 	sprintf(numStr, "%d", num);
 
 	return numStr;
 }
 
+#ifdef HAVE_PROJ
 
+/** convert degrees to radians */
+static void degrees2radians(double *x, double *y, double *z) {
+	(*x) *= pi/180.0;
+	(*y) *= pi/180.0;
+	(*z) *= pi/180.0;
+}
+
+/** convert radians to degrees */
+static void radians2degrees(double *x, double *y, double *z) {
+	(*x) *= 180.0/pi;
+	(*y) *= 180.0/pi;
+	(*z) *= 180.0/pi;
+}
 
 static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
 	double x=0, y=0, z=0;
