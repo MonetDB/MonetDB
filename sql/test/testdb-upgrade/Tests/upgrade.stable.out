@@ -16,10 +16,24 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');
+set schema "testschema";
 
-# 15:08:13 >  
-# 15:08:13 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 15:08:13 >  
+
+# 17:31:24 >  
+# 17:31:24 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 17:31:24 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

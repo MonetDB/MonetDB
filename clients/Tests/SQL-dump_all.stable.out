@@ -429,7 +429,7 @@ create view sys.storage as select * from sys.storage();
 create view sys.storagemodel as select * from sys.storagemodel();
 SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
 -- A summary of the table storage requirement is is available as a table view.
--- The auxillary column denotes the maximum space if all non-sorted columns
+-- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
 create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
@@ -437,7 +437,7 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 create view sys.tracelog as select * from sys.tracelog();
 SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;
@@ -1828,7 +1828,7 @@ COPY 329 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6451	"heapsize"	"bigint"	64	0	6455	NULL	true	4	NULL
 6452	"hashes"	"bigint"	64	0	6455	NULL	true	5	NULL
 6453	"imprints"	"bigint"	64	0	6455	NULL	true	6	NULL
-6454	"auxillary"	"bigint"	53	0	6455	NULL	true	7	NULL
+6454	"auxiliary"	"bigint"	53	0	6455	NULL	true	7	NULL
 6457	"schema"	"clob"	0	0	6470	NULL	true	0	NULL
 6458	"table"	"clob"	0	0	6470	NULL	true	1	NULL
 6459	"column"	"clob"	0	0	6470	NULL	true	2	NULL
@@ -1936,7 +1936,7 @@ COPY 45 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 6385	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
 6397	"storagemodelinput"	2000	NULL	0	true	0	false
 6445	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
-6455	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
+6455	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
 6470	"statistics"	2000	NULL	0	true	0	false
 6573	"files"	6522	NULL	0	true	0	false
 6586	"sq"	6522	NULL	0	true	0	false

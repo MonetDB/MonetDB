@@ -576,7 +576,7 @@ as select \"schema\",\"table\",max(count) as \"count\",\n\
 	sum(columnsize) as columnsize,\n\
 	sum(heapsize) as heapsize,\n\
 	sum(indices) as indices,\n\
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary\n\
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n\
 from sys.storagemodel() group by \"schema\",\"table\";\n\
 update sys._tables\n\
 	set system = true\n\
@@ -926,17 +926,17 @@ sql_update_oct2014_2(Client c)
 				pos += snprintf(buf + pos, bufsize - pos, "%s\"%s\"", sep, kc->c->base.name);
 				sep = ", ";
 			}
-			pos += snprintf(buf + pos, bufsize - pos, ") "); 
+			pos += snprintf(buf + pos, bufsize - pos, ") ");
 			if (on_delete != 2)
-				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_delete==0?"NO ACTION":on_delete==1?"CASCADE":on_delete==3?"SET NULL":"SET DEFAULT")); 
-				
+				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_delete==0?"NO ACTION":on_delete==1?"CASCADE":on_delete==3?"SET NULL":"SET DEFAULT"));
+
 			if (on_update != 2)
-				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_update==0?"NO ACTION":on_update==1?"CASCADE":on_update==3?"SET NULL":"SET DEFAULT")); 
-			pos += snprintf(buf + pos, bufsize - pos, ";\n"); 
+				pos += snprintf(buf + pos, bufsize - pos, "%s", (on_update==0?"NO ACTION":on_update==1?"CASCADE":on_update==3?"SET NULL":"SET DEFAULT"));
+			pos += snprintf(buf + pos, bufsize - pos, ";\n");
 			assert(pos < bufsize);
 
 			/* drop foreign key */
-			mvc_drop_key(sql, s, k, 0 /* drop_action?? */); 
+			mvc_drop_key(sql, s, k, 0 /* drop_action?? */);
 		}
 		if (pos) {
 			SQLautocommit(c, sql);
@@ -976,7 +976,7 @@ sql_update_oct2014_2(Client c)
 			assert(pos < bufsize);
 
 			/* drop primary/unique key */
-			mvc_drop_key(sql, s, k, 0 /* drop_action?? */); 
+			mvc_drop_key(sql, s, k, 0 /* drop_action?? */);
 		}
 		if (pos) {
 			SQLautocommit(c, sql);
@@ -1023,7 +1023,7 @@ sql_update_oct2014_2(Client c)
 			assert(pos < bufsize);
 
 			/* drop index */
-			mvc_drop_idx(sql, s, k); 
+			mvc_drop_idx(sql, s, k);
 		}
 		if (pos) {
 			SQLautocommit(c, sql);
@@ -1100,7 +1100,7 @@ sql_update_oct2014(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014 as (select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.type = 5 and f.language <> 0) with data;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create table upgradeOct2014_changes (c bigint);\n");
 
-	pos += snprintf(buf + pos, bufsize - pos, "create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n"); 
+	pos += snprintf(buf + pos, bufsize - pos, "create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "drop function drop_func_upgrade_oct2014;\n");
 
@@ -1251,7 +1251,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 "    sum(heapsize) as heapsize,"
 "    sum(hashes) as hashes,"
 "    sum(imprints) as imprints,"
-"    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
+"    sum(case when sorted = false then 8 * count else 0 end) as auxiliary"
 " from sys.storagemodel() group by \"schema\",\"table\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
@@ -1361,6 +1361,60 @@ sql_update_oct2014_sp1(Client c)
 		free(schema);
 	}
 	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_oct2014_sp2(Client c)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n\
+drop view sys.tablestoragemodel;\n\
+create view sys.tablestoragemodel\n\
+as select \"schema\",\"table\",max(count) as \"count\",\n\
+	sum(columnsize) as columnsize,\n\
+	sum(heapsize) as heapsize,\n\
+	sum(hashes) as hashes,\n\
+	sum(imprints) as imprints,\n\
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n\
+from sys.storagemodel() group by \"schema\",\"table\";\n\
+update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	{
+		char *msg;
+		mvc *sql = NULL;
+
+		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
+			GDKfree(msg);
+		} else {
+			sql_schema *s;
+
+			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+				sql_table *t;
+
+				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+					t->system = 0;
+			}
+		}
+	}
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
@@ -1504,7 +1558,7 @@ SQLinitClient(Client c)
 		}
 		/* if function sys.storagemodel() does not exist, we
 		 * need to update */
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC) && 
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_FUNC) &&
 		    !sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storagemodel", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_feb2013_sp1(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
@@ -1538,10 +1592,18 @@ SQLinitClient(Client c)
 				GDKfree(err);
 			}
 		}
-		/* if table returning function sys.environment() does not exist, we need to
-		 * update from oct2014->sp1 */
+		/* if table returning function sys.environment() does
+		 * not exist, we need to update from oct2014->sp1 */
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "environment", NULL, NULL, F_UNION)) {
 			if ((err = sql_update_oct2014_sp1(c)) !=NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
+		}
+		/* if sys.tablestoragemodel.auxillary exists, we need
+		 * to update (note, the proper spelling is auxiliary) */
+		if (mvc_bind_column(m, mvc_bind_table(m, mvc_bind_schema(m, "sys"), "tablestoragemodel"), "auxillary")) {
+			if ((err = sql_update_oct2014_sp2(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
