@@ -313,36 +313,36 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 	char *params[1024];  // one for each parameter
 	char *loc;
 	char *str;
-	projPJ result = NULL;
+	size_t slen;
+	projPJ result;
 
 
 	if (projStr == NULL) return NULL;
 
-	if (projStr[0] == 0) return NULL;
+	slen = strlen(projStr);
 
-	str = GDKstrdup(projStr);
-	if (str == NULL) return NULL;
+	if (slen == 0) return NULL;
+
+	str = GDKmalloc(slen+1);
+	strcpy(str, projStr);
 
 	// first we split the string into a bunch of smaller strings,
 	// based on the " " separator
 
-	t = 0;
-	params[t++] = str; // 1st param, we'll null terminate at the " " soon
+	params[0] = str; // 1st param, we'll null terminate at the " " soon
 
 	loc = str;
-	while  (loc != NULL && *loc != 0 && t < 1024)
+	t = 1;
+	while  ((loc != NULL) && (*loc != 0) )
 	{
 		loc = strchr(loc, ' ');
 		if (loc != NULL)
 		{
 			*loc = 0; // null terminate
-			params[t++] = ++loc;
+			params[t] = loc+1;
+			loc++; // next char
+			t++; //next param
 		}
-	}
-	if (loc != NULL && *loc != 0) {
-		// more than 1024 parameters!?
-		GDKfree(str);
-		return NULL;
 	}
 
 	if (!(result=pj_init(t, params)))

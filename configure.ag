@@ -2422,8 +2422,7 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 #proj only used in geom module
-org_have_proj="auto" 
-have_proj=$org_have_proj
+have_proj="auto" 
 PROJ_INCS=''
 PROJ_LIBS=''
 AC_ARG_WITH(proj,
@@ -3577,7 +3576,6 @@ for comp in \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
-	'proj         ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \
