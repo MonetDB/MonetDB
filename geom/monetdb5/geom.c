@@ -48,9 +48,9 @@ static void radians2degrees(double *x, double *y, double *z) {
 }
 
 static int numDigits(unsigned int num) {
-	int digits =0;
+	int digits =1;
 
-	while(num > 0) {
+	while(num > 9) {
 		num/=10;
 		digits++;
 	}
