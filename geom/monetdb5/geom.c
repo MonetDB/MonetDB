@@ -50,6 +50,9 @@ static void radians2degrees(double *x, double *y, double *z) {
 static int numDigits(int num) {
 	int digits =0;
 
+	if(num < 0)
+		return -1;
+
 	while(num > 0) {
 		num/=10;
 		digits++;
@@ -59,12 +62,17 @@ static int numDigits(int num) {
 }
 
 static char* int2str(int num) {
-	int digitsNum = numDigits(num);
-	str numStr = GDKmalloc(digitsNum+1);
+	int digitsNum;
+	str numStr;
+
+	if(num < 0)
+		throw(MAL, "geom.int2str", "Input should be a positive number");
+	
+	digitsNum = numDigits(num);
+	numStr = GDKmalloc(digitsNum+1);
 			
-	if(numStr == NULL) {
-			throw(MAL, "geom.int2str", MAL_MALLOC_FAIL);
-	}
+	if(numStr == NULL)
+		throw(MAL, "geom.int2str", MAL_MALLOC_FAIL);
 	
 	sprintf(numStr, "%d", num);
 
@@ -2233,6 +2241,8 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
 			int digitsNum = numDigits(tmp);
+			if(digitsNum < 0)
+				throw(MAL, "geom.wkbAsText", "Error in numDigits");
 
 			sridIntToString = GDKmalloc(digitsNum+1);
 			if(sridIntToString == NULL) {
