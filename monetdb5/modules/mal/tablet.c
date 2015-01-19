@@ -1756,6 +1756,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	task->ateof = 1;
+	task->state = ENDOFCOPY;
 #ifdef _DEBUG_TABLET_
 	for(i=0; i < as->nr_attrs; i++){
 		mnstr_printf(GDKout,"column "BUNFMT"\n",i);
@@ -1799,7 +1800,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"#Shut down reader\n");
 #endif
-		task->state = ENDOFCOPY;
 		MT_sema_up(&task->producer, "SQLload_file");
 		MT_join_thread(task->tid);
 	}
