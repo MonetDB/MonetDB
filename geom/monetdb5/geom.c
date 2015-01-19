@@ -47,11 +47,8 @@ static void radians2degrees(double *x, double *y, double *z) {
 	(*z) *= 180.0/pi;
 }
 
-static int numDigits(int num) {
+static int numDigits(unsigned int num) {
 	int digits =0;
-
-	if(num < 0)
-		return -1;
 
 	while(num > 0) {
 		num/=10;
@@ -61,16 +58,10 @@ static int numDigits(int num) {
 	return digits;
 }
 
-static char* int2str(int num) {
-	int digitsNum;
-	str numStr;
+static char* int2str(unsigned int num) {
+	int digitsNum = numDigits(num);
+	str numStr = GDKmalloc(digitsNum+1);
 
-	if(num < 0)
-		throw(MAL, "geom.int2str", "Input should be a positive number");
-	
-	digitsNum = numDigits(num);
-	numStr = GDKmalloc(digitsNum+1);
-			
 	if(numStr == NULL)
 		throw(MAL, "geom.int2str", MAL_MALLOC_FAIL);
 	
@@ -2237,12 +2228,13 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			char* sridTxt = "SRID:";
 			char* sridIntToString = NULL;
 			size_t len2 = 0;
+			int digitsNum = 0;
 
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
-			int digitsNum = numDigits(tmp);
-			if(digitsNum < 0)
-				throw(MAL, "geom.wkbAsText", "Error in numDigits");
+			if(tmp < 0)
+				throw(MAL, "geom.wkbAsText", "Negative SRID");
+			digitsNum = numDigits((unsigned int)tmp);
 
 			sridIntToString = GDKmalloc(digitsNum+1);
 			if(sridIntToString == NULL) {
