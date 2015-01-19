@@ -1,21 +1,76 @@
-stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
+stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 
 
-# 21:49:40 >  
-# 21:49:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30515" "--set" "mapi_usock=/var/tmp/mtest-14642/.s.monetdb.30515" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_testdb-upgrade" "--set" "mal_listing=0"
-# 21:49:40 >  
+# 15:17:06 >  
+# 15:17:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36250" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade-chain" "--set" "mal_listing=0"
+# 15:17:06 >  
 
-# MonetDB 5 server v11.16.0 (hg id: fd9db07674cf+)
+# MonetDB 5 server v11.11.8 (hg id: 34fcf4e7226d+)
 # This is an unreleased version
-# Serving database 'mTests_sql_test_testdb-upgrade', using 8 threads
+# Serving database 'mTests_test_testdb-upgrade-chain', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.591 GiB available main-memory.
+# Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36250/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+create function sys.fuse(one bigint, two bigint)
+returns hugeint
+external name udf.fuse;
+create function sys.generate_series(first hugeint, last hugeint)
+returns table (value hugeint)
+external name generator.series;
+create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
+returns table (value hugeint)
+external name generator.series;
+create aggregate sys.stddev_samp(val hugeint)
+returns double
+external name aggr.stdev;
+create aggregate sys.stddev_pop(val hugeint)
+returns double
+external name aggr.stdevp;
+create aggregate sys.var_samp(val hugeint)
+returns double
+external name aggr.variance;
+create aggregate sys.var_pop(val hugeint)
+returns double
+external name aggr.variancep;
+create aggregate sys.median(val hugeint)
+returns hugeint
+external name aggr.median;
+create aggregate sys.quantile(val hugeint, q double)
+returns hugeint
+external name aggr.quantile;
+create aggregate sys.corr(e1 hugeint, e2 hugeint)
+returns hugeint
+external name aggr.corr;
+create function json.filter(js json, name hugeint)
+returns json
+external name json.filter;
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+from sys.storagemodel() group by "schema","table";
+insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.types values(7233, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(7234, 'hge', 'decimal', 39, 1, 10, 8, 0);
+update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
+set schema "testschema";
+
 Running database upgrade commands:
 set schema "sys";
 drop filter function sys."like";
@@ -116,10 +171,11 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('li
 update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "testschema";
 
+#Interpreting bte as bit.
 
-# 12:53:58 >  
-# 12:53:58 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 12:53:58 >  
+# 12:48:11 >  
+# 12:48:11 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 12:48:11 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name
@@ -128,7 +184,7 @@ set schema "testschema";
 % 2 # length
 [ 66	]
 
-# 21:49:42 >  
-# 21:49:42 >  "Done."
-# 21:49:42 >  
+# 15:17:06 >  
+# 15:17:06 >  "Done."
+# 15:17:06 >  
 

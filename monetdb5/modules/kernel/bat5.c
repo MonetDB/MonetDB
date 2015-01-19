@@ -1534,19 +1534,6 @@ BKCunload(bit *res, const char * const *input)
 }
 
 str
-BKCisCached(bit *res, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
-	}
-	*res = 0;
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.isCached", PROGRAM_NYI);
-}
-
-str
 BKCload(bat *res, const char * const *input)
 {
 	bat bid = BBPindex(*input);
@@ -1560,7 +1547,7 @@ BKCload(bat *res, const char * const *input)
 }
 
 str
-BKCcoldBAT(void *res, const bat *bid)
+BKCsetColdBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1574,17 +1561,7 @@ BKCcoldBAT(void *res, const bat *bid)
 }
 
 str
-BKCheat(lng *res, const bat *bid)
-{
-	bat b = BBPcheck(*bid, "BKCheat");
-	if (b) {
-		*res = BBPLASTUSED(BBP_lastused(b));
-	}
-	throw(MAL, "bat", PROGRAM_NYI);
-}
-
-str
-BKChotBAT(void *res, const bat *bid)
+BKCsetHotBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
