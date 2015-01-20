@@ -1373,6 +1373,10 @@ reportlackofinput:
 				mnstr_printf(GDKout,"#wait for consumers to finish buffer %d\n", (cur+1) % MAXBUFFERS);
 #endif
 				MT_sema_down(&task->producer, "SQLproducer");
+				if ( task->state == ENDOFCOPY || task->ateof){
+					THRdel(thr);
+					return;
+				}
 				blocked[(cur+1)% MAXBUFFERS ] = 0;
 				blocked [cur] = 1;
 				task->cur = cur;
@@ -1757,6 +1761,17 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
 	task->ateof = 1;
 	task->state = ENDOFCOPY;
+	if( !task->ateof || cnt <task->maxrow){
+#ifdef _DEBUG_TABLET_
+		mnstr_printf(GDKout,"#Shut down reader\n");
+#endif
+		MT_sema_up(&task->producer, "SQLload_file");
+		MT_join_thread(task->tid);
+	}
+
+	MT_sema_destroy(&ptask[j].producer);
+	MT_sema_destroy(&ptask[j].consumer);
+
 #ifdef _DEBUG_TABLET_
 	for(i=0; i < as->nr_attrs; i++){
 		mnstr_printf(GDKout,"column "BUNFMT"\n",i);
@@ -1796,16 +1811,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		MT_sema_destroy(&ptask[j].sema);
 		MT_sema_destroy(&ptask[j].reply);
 	}
-	if( !task->ateof || cnt <task->maxrow){
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout,"#Shut down reader\n");
-#endif
-		MT_sema_up(&task->producer, "SQLload_file");
-		MT_join_thread(task->tid);
-	}
-
-	MT_sema_destroy(&ptask[j].producer);
-	MT_sema_destroy(&ptask[j].consumer);
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Found " BUNFMT " tuples\n", cnt);
