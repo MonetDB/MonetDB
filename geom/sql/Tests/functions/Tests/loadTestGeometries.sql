@@ -1,0 +1,17 @@
+CREATE TABLE geometries(id serial, geom geometry);
+
+--simple geometries
+--1
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POINT(10 20)'));
+--2
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20, 30 40, 50 60)'));
+--3
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
+--4
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOINT(10 20, 30 40)'));
+--5
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((10 20, 30 40), (40 50, 60 70))'));
+--6
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOLYGON(((10 10, 10 20, 20 20, 20 10, 10 10),(30 30, 30 40, 40 40, 40 30, 30 30)))'));
+--7
+INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('GEOMETRYCOLLECTION(POINT(10 20),LINESTRING(10 20, 30 40),POLYGON((10 10, 10 20, 20 20, 20 10, 10 10)))'));
