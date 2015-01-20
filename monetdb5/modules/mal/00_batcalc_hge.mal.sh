@@ -533,7 +533,7 @@ EOF
 done
 
 for tp1 in $alltypes; do
-    for tp2 in void $alltypes; do
+    for tp2 in $alltypes; do
 	case $tp1$tp2 in
 	*hge*) ;;
 	*) continue;;
