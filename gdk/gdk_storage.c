@@ -594,6 +594,8 @@ DESCclean(BAT *b)
  * This leaves you with possibly deadbeef BAT descriptors.
  */
 
+#define MSYNC_BACKGROUND
+
 typedef struct{
 	char *adr;
 	size_t len;
@@ -608,7 +610,9 @@ BATmsyncImplementation( void *arg){
 void
 BATmsync(BAT *b)
 {
+#ifdef MSYNC_BACKGROUND
 	MT_Id tid;
+#endif
 	
 	Msyncjob job;
 	Msyncjob jobv;
@@ -620,7 +624,11 @@ BATmsync(BAT *b)
 	if( offset )
 		job.adr -= (MT_pagesize() - offset);
 	if( job.len)
-		MT_create_thread(&tid, BATmsyncImplementation, (void *) &job, MT_THR_JOINABLE);
+#ifdef MSYNC_BACKGROUND
+		MT_create_thread(&tid, BATmsyncImplementation, (void *) &job, MT_THR_DETACHED);
+#else
+		BATmsyncImplementation((void*) &job);
+#endif
 	
 	if( b->T->vheap){
 		jobv.adr = b->T->vheap->base;
@@ -630,7 +638,11 @@ BATmsync(BAT *b)
 		if( offset )
 			jobv.adr -= (MT_pagesize() - offset);
 		if( jobv.len)
-			MT_create_thread(&tid, BATmsyncImplementation, (void *) &jobv, MT_THR_JOINABLE);
+#ifdef MSYNC_BACKGROUND
+			MT_create_thread(&tid, BATmsyncImplementation, (void *) &jobv, MT_THR_DETACHED);
+#else
+			BATmsyncImplementation((void*) &job);
+#endif
 	}
 }
 
