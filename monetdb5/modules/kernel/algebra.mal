@@ -302,7 +302,7 @@ comment "Returns a BAT copy with buns in reverse order";
 #
 # The t-@emph{operand} series are cast into a k-@emph{operand}
 # expression enclosing it with a BATmirror.
-# @- unique elements
+# unique elements
 command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGsubunique2
 comment "Select all unique values from the tail of the first input.
@@ -318,7 +318,7 @@ comment "Select all unique values from the tail of the input.
 	in the tail the head value of the input BAT that was selected.
 	The output BAT is sorted on the tail value.";
 
-# @- Head-intersecting elements (a.k.a. semijoin)
+# Head-intersecting elements (a.k.a. semijoin)
 command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
 address ALGsemijoin
@@ -342,7 +342,7 @@ address ALGtintersect;
 command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtinter;
 
-# @- Head-differing elements
+# Head-differing elements
 command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
 address ALGkdiff
@@ -357,7 +357,7 @@ command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 address ALGtdifference;
 command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtdiff;
-# @- Union on head
+# Union on head
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2]
 address ALGkunion
@@ -386,7 +386,7 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
 
-# @- Theta Join
+# Theta Join
 command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGthetajoin2
@@ -448,12 +448,7 @@ command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] )
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
-command indexjoin ( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3]
-address ALGindexjoin
-comment "Hook directly into the index implementation of the join.";
 
-# @- Outer Join
 command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3]
 address ALGouterjoin
@@ -477,7 +472,7 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3]
 address ALGouterjoinestimate;
 
-# @- Theta Join
+# Theta Join
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
@@ -488,7 +483,7 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
 address ALGthetajoinEstimate;
-# @- Band Join (approximate match)
+# Band Join (approximate match)
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3]
 address ALGbandjoin_default
@@ -616,7 +611,7 @@ comment "Reuse a temporary BAT if you can. Otherwise,
 # @+ Common BAT Aggregates
 # These operations examine a BAT, and compute some simple aggregate result
 # over it.
-# @- BAT size
+#  BAT size
 module aggr;
 
 command count( b:bat[:any_1,:any] ) :wrd
@@ -631,7 +626,7 @@ address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
 
-# @- Default Min and Max
+#  Default Min and Max
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{min()} and @emph{max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
@@ -725,7 +720,7 @@ module algebra;
 # 	TRUE if the BAT contains no duplicate BUNs, else FALSE.
 # @end table
 #
-# @- Property Propagation Rules
+#  Property Propagation Rules
 # At database creation time, the properties of the BATs in the database
 # can be derived directly from the database schema.
 #
