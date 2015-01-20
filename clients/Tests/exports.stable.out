@@ -742,7 +742,6 @@ str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 str ALGhsort(bat *result, const bat *bid);
 str ALGhsort_rev(bat *result, const bat *bid);
 str ALGhtsort(bat *result, const bat *lid);
-str ALGindexjoin(bat *result, const bat *lid, const bat *rid);
 str ALGjoin(bat *result, const bat *lid, const bat *rid);
 str ALGjoin2(bat *l, bat *r, const bat *lid, const bat *rid);
 str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
