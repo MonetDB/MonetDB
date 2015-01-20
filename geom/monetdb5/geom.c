@@ -32,17 +32,6 @@ const double pi=3.14159265358979323846;
 
 /* the first argument in the functions is the return variable */
 
-static int numDigits(unsigned int num) {
-	int digits =1;
-
-	while(num > 9) {
-		num/=10;
-		digits++;
-	}
-
-	return digits;
-}
-
 #ifdef HAVE_PROJ
 
 /** convert degrees to radians */
@@ -1384,10 +1373,9 @@ static str dumpGeometriesSingle(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* ge
 
 	//change the path only if it is empty
 	if(strlen(path) == 0) {
-		int lvlDigitsNum = 0;
+		int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 
 		(*lvl)++;
-		lvlDigitsNum = numDigits(*lvl);
 
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 		strcpy(newPath, path);
@@ -1420,15 +1408,14 @@ static str dumpGeometriesMulti(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geo
 
 	for(i=0; i<geometriesNum; i++) {
 		str err;
-		int lvlDigitsNum = 0;
+		int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
-		lvlDigitsNum = numDigits(lvl);		
 
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		sprintf(newPath+pathLength, "%d", lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%d", lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 
 		//*secondLevel = 0;
@@ -1554,10 +1541,9 @@ static str dumpPointsPoint(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeo
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
 	wkb* pointWKB = geos2wkb(geosGeometry);	
-	int lvlDigitsNum;
+	int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 
 	(*lvl)++;
-	lvlDigitsNum = numDigits(*lvl);
 
 	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 	strcpy(newPath, path);
@@ -1612,7 +1598,7 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	int numInteriorRings=0, i=0;
 	str err;
 	char* lvlStr = NULL;
-	int lvlDigitsNum;
+	int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
@@ -1628,11 +1614,10 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	}
 
 	(*lvl)++;
-	lvlDigitsNum = numDigits(*lvl);
 
 	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 	strcpy(newPath, path);
-	sprintf(newPath+pathLength, "%d", *lvl);
+	lvlDigitsNum = sprintf(newPath+pathLength, "%d", *lvl);
 	strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 	GDKfree(lvlStr);
 
@@ -1656,11 +1641,12 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	// iterate over the interiorRing and transform each one of them
 	for(i=0; i<numInteriorRings; i++) {
 		(*lvl)++;
-		lvlDigitsNum = numDigits(*lvl);
+		lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
+
 	
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		sprintf(newPath+pathLength, "%d", *lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%d", *lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
@@ -1683,7 +1669,6 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 	str err;
 	unsigned int lvl = 0;
 	char* lvlStr = NULL;
-	int lvlDigitsNum;
 	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
@@ -1692,13 +1677,14 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 	geometriesNum = GEOSGetNumGeometries(geosGeometry);
 
 	for(i=0; i<geometriesNum; i++) {
+		int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
+
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
-		lvlDigitsNum = numDigits(lvl);	
 	
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		sprintf(newPath+pathLength, "%d", lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%d", lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
@@ -2218,20 +2204,20 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 			char* sridTxt = "SRID:";
 			char* sridIntToString = NULL;
 			size_t len2 = 0;
-			int digitsNum = 0;
+			int digitsNum = 10; //MAX_INT = 2,147,483,647
+
 
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
 			if(tmp < 0)
 				throw(MAL, "geom.wkbAsText", "Negative SRID");
-			digitsNum = numDigits((unsigned int)tmp);
 
 			sridIntToString = GDKmalloc(digitsNum+1);
 			if(sridIntToString == NULL) {
 				GDKfree(wkt);
 				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
 			}
-			sprintf(sridIntToString, "%d", (*geomWKB)->srid);
+			digitsNum = sprintf(sridIntToString, "%d", (*geomWKB)->srid);
 
 			len2 = strlen(wkt)+strlen(sridIntToString)+strlen(sridTxt)+2;
 			*txt = GDKmalloc(len2);
@@ -2253,7 +2239,7 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 		GDKfree(wkt);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
+	throw(MAL, "geom.wkbAsText", "Failed to create Text from Well Known Format");
 }
 
 str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
