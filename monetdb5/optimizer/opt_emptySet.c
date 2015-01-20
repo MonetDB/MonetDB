@@ -52,7 +52,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	int i, j, actions = 0;
 	InstrPtr p;
 	str existRef = putName("exist", 5);
-	str kintersectRef = putName("kintersect", 10);
 	str fragmentRef = putName("fragment", 8);
 	int *alias;
 	int runonce= FALSE;
@@ -159,27 +158,16 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 					     f == sortHTRef  || 
 					     f == sortTHRef  || 
 					     f == semijoinRef ||
-					     f == kintersectRef  ||
 					     f == fragmentRef ){
 
 						/* result is empty */
 						propagate(1);
 						break;
 					} 
-					if ( f == differenceRef || 
-					     f == kdifferenceRef ) {
+					if ( f == differenceRef ) {
 						propagate(1);
 						break;
 					}
-					if ( f == kunionRef) {
-						/* copy non-empty argument */
-						if( j == 1) {
-							propagate(2);
-						} else {
-							propagate(1);
-						}
-						break;
-					} 
 				}
 				if (getModuleId(p)== batRef) {
 					if ( f == reverseRef || f == mirrorRef ){
