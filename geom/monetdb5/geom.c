@@ -43,18 +43,6 @@ static int numDigits(unsigned int num) {
 	return digits;
 }
 
-static char* int2str(unsigned int num) {
-	int digitsNum = numDigits(num);
-	str numStr = GDKmalloc(digitsNum+1);
-
-	if(numStr == NULL)
-		throw(MAL, "geom.int2str", MAL_MALLOC_FAIL);
-
-	sprintf(numStr, "%d", num);
-
-	return numStr;
-}
-
 #ifdef HAVE_PROJ
 
 /** convert degrees to radians */
@@ -1390,24 +1378,23 @@ str wkbPointOnSurface(wkb** resWKB, wkb** geomWKB) {
 }
 
 static str dumpGeometriesSingle(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeometry, unsigned int *lvl, char* path) {
-	char* newPath = NULL, *lvlStr;
-	size_t pathLength;
+	char* newPath = NULL;
+	size_t pathLength = strlen(path);
 	wkb* singleWKB = geos2wkb(geosGeometry);
 
 	//change the path only if it is empty
 	if(strlen(path) == 0) {
+		int lvlDigitsNum = 0;
+
 		(*lvl)++;
+		lvlDigitsNum = numDigits(*lvl);
 
-		lvlStr = int2str(*lvl);
-		pathLength = strlen(path)+strlen(lvlStr);
-		newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 		strcpy(newPath, path);
-		strcpy(newPath+strlen(path), lvlStr); 
-
-		GDKfree(lvlStr);
+		sprintf(newPath+pathLength, "%d", *lvl);
 	} else {
 		//remove the comma at the end of the path
-		pathLength = strlen(path)-1;
+		pathLength--;
 		newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
 		strncpy(newPath, path, pathLength);
 		newPath[pathLength] = '\0';
@@ -1423,27 +1410,27 @@ static str dumpGeometriesGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* 
 static str dumpGeometriesMulti(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeometry, char* path) {
 	int i;
 	const GEOSGeometry* multiGeometry = NULL;
-	str err;
 	unsigned int lvl = 0;
-	char* lvlStr = NULL;
-	size_t pathLength = 0;
+	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
+	int extraLength = 1; //just a comma
 
 	int geometriesNum = GEOSGetNumGeometries(geosGeometry);
-//fprintf(stderr, "Geometries Num = %d\n", geometriesNum);
+
 	for(i=0; i<geometriesNum; i++) {
+		str err;
+		int lvlDigitsNum = 0;
+
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
-		
-		lvlStr = int2str(lvl);
-		pathLength = strlen(path)+strlen(extraStr)+strlen(lvlStr);
-		newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+		lvlDigitsNum = numDigits(lvl);		
+
+		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		strcpy(newPath+strlen(path), lvlStr);
-		strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
-		GDKfree(lvlStr);
-//fprintf(stderr, "\t%s\n", newPath);
+		sprintf(newPath+pathLength, "%d", lvl);
+		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
+
 		//*secondLevel = 0;
 		if((err = dumpGeometriesGeometry(idBAT, geomBAT, multiGeometry, newPath)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.Dump", "%s", err);
@@ -1564,22 +1551,21 @@ str wkbDump(int* idBAT_id, int* geomBAT_id, wkb** geomWKB) {
 }
 
 static str dumpPointsPoint(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeometry, unsigned int *lvl, char* path) {
-	char* newPath = NULL, *lvlStr;
-	size_t pathLength;
+	char *newPath = NULL;
+	size_t pathLength = strlen(path);
 	wkb* pointWKB = geos2wkb(geosGeometry);	
+	int lvlDigitsNum;
 
 	(*lvl)++;
+	lvlDigitsNum = numDigits(*lvl);
 
-	lvlStr = int2str(*lvl);
-	pathLength = strlen(path)+strlen(lvlStr);
-	newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 	strcpy(newPath, path);
-	strcpy(newPath+strlen(path), lvlStr); 
+	sprintf(newPath+pathLength, "%d", *lvl);
 
 	BUNappend(idBAT,newPath,TRUE);
 	BUNappend(geomBAT,pointWKB,TRUE);
 	GDKfree(pointWKB);
-	GDKfree(lvlStr);
 
 	return MAL_SUCCEED;
 }
@@ -1626,9 +1612,12 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	int numInteriorRings=0, i=0;
 	str err;
 	char* lvlStr = NULL;
-	size_t pathLength = 0;
+	int lvlDigitsNum;
+	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
+	int extraLength = 1;
+
 
 	//get the exterior ring of the polygon
 	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
@@ -1637,13 +1626,14 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 		geomBAT = NULL;
 		return createException(MAL, "geom.DumpPoints","GEOSGetExteriorRing failed");
 	}
+
 	(*lvl)++;
-	lvlStr = int2str(*lvl);
-	pathLength = strlen(path)+strlen(extraStr)+strlen(lvlStr);
-	newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+	lvlDigitsNum = numDigits(*lvl);
+
+	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 	strcpy(newPath, path);
-	strcpy(newPath+strlen(path), lvlStr);
-	strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+	sprintf(newPath+pathLength, "%d", *lvl);
+	strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 	GDKfree(lvlStr);
 
 
@@ -1666,12 +1656,12 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	// iterate over the interiorRing and transform each one of them
 	for(i=0; i<numInteriorRings; i++) {
 		(*lvl)++;
-		lvlStr = int2str(*lvl);
-		pathLength = strlen(path)+strlen(extraStr)+strlen(lvlStr);
-		newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+		lvlDigitsNum = numDigits(*lvl);
+	
+		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		strcpy(newPath+strlen(path), lvlStr);
-		strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+		sprintf(newPath+pathLength, "%d", *lvl);
+		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
 		if((err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath)) != MAL_SUCCEED) {
@@ -1693,22 +1683,23 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 	str err;
 	unsigned int lvl = 0;
 	char* lvlStr = NULL;
-	size_t pathLength = 0;
+	int lvlDigitsNum;
+	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
+	int extraLength = 1;
 
 	geometriesNum = GEOSGetNumGeometries(geosGeometry);
 
 	for(i=0; i<geometriesNum; i++) {
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
-		
-		lvlStr = int2str(lvl);
-		pathLength = strlen(path)+strlen(extraStr)+strlen(lvlStr);
-		newPath = (char*)GDKmalloc((pathLength+1)*sizeof(char));
+		lvlDigitsNum = numDigits(lvl);	
+	
+		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		strcpy(newPath+strlen(path), lvlStr);
-		strcpy(newPath+strlen(path)+strlen(lvlStr), extraStr);
+		sprintf(newPath+pathLength, "%d", lvl);
+		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
 		//*secondLevel = 0;
