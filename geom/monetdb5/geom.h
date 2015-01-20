@@ -134,7 +134,8 @@ geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsSimple(bit*, wkb**);
 //Is3D
 //IsMeasured
-geom_export str wkbBoundary(wkb**, wkb**);
+geom_export str wkbBoundary(wkb **outWKB, wkb **inWKB);
+geom_export str wkbBoundary_bat(bat *inBAT_id, bat *outBAT_id);
 
 
 /* Methods for testing spatial relatioships between geometris (OGC) */

@@ -504,6 +504,8 @@ function AsEWKT(w:bat[:oid,:wkb]) :bat[:oid,:str];
 	return x;
 end AsEWKT;
 
+command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat
+comment "Returns the closure of the combinatorial boundary of the input geometries";
 
 command pbsmIndexCreate(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndexCreate_bat;
 command geom.pbsmIndexLoad() address pbsmIndexLoad_bat;

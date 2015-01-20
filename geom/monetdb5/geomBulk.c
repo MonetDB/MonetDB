@@ -23,61 +23,9 @@
 
 #include "geom.h"
 
-/*create textual representation of the wkb */
-str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
-	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
-	BUN p =0, q =0;
-	BATiter inBAT_iter;
-
-	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbAsText", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbAsText", "the arguments must have dense and aligned heads");
-	}
-
-	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbAsText", MAL_MALLOC_FAIL);
-	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
-
-	//iterator over the input BAT	
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) { //iterate over all valid elements
-		str err = NULL;
-		char* outSingle;
-
-		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbAsText(&outSingle, &inWKB, withSRID)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbAsText", "%s", err);
-			GDKfree(err);
-
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			
-			return msg;
-		}
-		BUNappend(outBAT,outSingle,TRUE); //add the point to the new BAT
-		GDKfree(outSingle);
-		outSingle = NULL;
-	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	
-	BBPreleaseref(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	
-	return MAL_SUCCEED;
-}
-
+/*******************************/
+/********** One input **********/
+/*******************************/
 
 str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID) {
 	BAT *outBAT = NULL, *inBAT = NULL;
@@ -133,6 +81,286 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 	return MAL_SUCCEED;
 
 }
+
+/*create textual representation of the wkb */
+str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkbAsText", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbAsText", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbAsText", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the input BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		char* outSingle;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbAsText(&outSingle, &inWKB, withSRID)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "batgeom.wkbAsText", "%s", err);
+			GDKfree(err);
+
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outSingle,TRUE); //add the point to the new BAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+	
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkbBoundary", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbBoundary", "The arguments must have dense and aligned heads");
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbBoundary", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the input BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		wkb* outSingle;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbBoundary(&outSingle, &inWKB)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "batgeom.wkbBoundary", "%s", err);
+			GDKfree(err);
+
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outSingle,TRUE); //add the point to the new BAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+	
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+
+
+/*******************************/
+/********* Two inputs **********/
+/*******************************/
+
+str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i=0;
+	str ret = MAL_SUCCEED;
+
+	//get the BATs
+	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.Contains", "Problem retrieving BATs");
+		goto clean;
+	}
+
+	//check if the BATs are dense and aligned
+	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
+		ret = createException(MAL, "batgeom.Contains", "BATs must have dense heads");
+		goto clean;
+	}
+	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
+		ret = createException(MAL, "batgeom.Contains", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		ret = createException(MAL, "batgeom.Contains", "Error creating new BAT");
+		goto clean;
+	}
+
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL;
+		bit outBIT;
+
+		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			
+			goto clean;
+		}
+		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+clean:
+	if(aBAT)
+		BBPreleaseref(aBAT->batCacheid);
+	if(bBAT)
+		BBPreleaseref(bBAT->batCacheid);
+		
+	return ret;
+}
+
+str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN p=0, q=0;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
+	}
+	
+	if ( !BAThdense(inBAT) ) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
+	}
+	
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BATs	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { 
+		str err = NULL;
+		bit outBIT;
+
+		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
+
+		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+	}
+
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+
+}
+
+str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN p=0, q=0;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
+	}
+	
+	if ( !BAThdense(inBAT) ) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
+	}
+	
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BATs	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { 
+		str err = NULL;
+		bit outBIT;
+
+		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
+
+		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+	}
+
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+
 
 /*
 str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
@@ -526,171 +754,6 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 	
 	return MAL_SUCCEED;
 }
-
-str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
-	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
-	BATiter aBAT_iter, bBAT_iter;
-	BUN i=0;
-	str ret = MAL_SUCCEED;
-
-	//get the BATs
-	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
-		ret = createException(MAL, "batgeom.Contains", "Problem retrieving BATs");
-		goto clean;
-	}
-
-	//check if the BATs are dense and aligned
-	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
-		ret = createException(MAL, "batgeom.Contains", "BATs must have dense heads");
-		goto clean;
-	}
-	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
-		ret = createException(MAL, "batgeom.Contains", "BATs must be aligned");
-		goto clean;
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", "Error creating new BAT");
-		goto clean;
-	}
-
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, aBAT->hseqbase);
-
-	//iterator over the BATs	
-	aBAT_iter = bat_iterator(aBAT);
-	bBAT_iter = bat_iterator(bBAT);
-
-	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL;
-		bit outBIT;
-
-		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
-		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
-
-		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
-			BBPreleaseref(outBAT->batCacheid);	
-
-			ret = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			
-			goto clean;
-		}
-		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-	}
-
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-
-clean:
-	if(aBAT)
-		BBPreleaseref(aBAT->batCacheid);
-	if(bBAT)
-		BBPreleaseref(bBAT->batCacheid);
-		
-	return ret;
-}
-
-str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
-	BAT *outBAT = NULL, *inBAT = NULL;
-	BATiter inBAT_iter;
-	BUN p=0, q=0;
-
-	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
-	}
-	
-	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
-	}
-	
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, inBAT->hseqbase);
-
-	//iterator over the BATs	
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) { 
-		str err = NULL;
-		bit outBIT;
-
-		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
-
-		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-	}
-
-	BBPreleaseref(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	
-	return MAL_SUCCEED;
-
-}
-
-str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
-	BAT *outBAT = NULL, *inBAT = NULL;
-	BATiter inBAT_iter;
-	BUN p=0, q=0;
-
-	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
-	}
-	
-	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
-	}
-	
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, inBAT->hseqbase);
-
-	//iterator over the BATs	
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) { 
-		str err = NULL;
-		bit outBIT;
-
-		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
-
-		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
-	}
-
-	BBPreleaseref(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	
-	return MAL_SUCCEED;
-}
-
-
 
 str wkbDistance_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
