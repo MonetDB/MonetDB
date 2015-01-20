@@ -23,6 +23,62 @@
 
 #include "geom.h"
 
+/*create textual representation of the wkb */
+str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkbAsText", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbAsText", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbAsText", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the input BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		char* outSingle;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbAsText(&outSingle, &inWKB, withSRID)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "batgeom.wkbAsText", "%s", err);
+			GDKfree(err);
+
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outSingle,TRUE); //add the point to the new BAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+	
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+
 str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL, *outWKB = NULL;
