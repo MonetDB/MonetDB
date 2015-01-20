@@ -28,6 +28,7 @@ headers_sql = {
 		14_inet.sql \
 		15_querylog.sql \
 		16_tracelog.sql \
+		17_temporal.sql \
 		19_cluster.sql \
 		20_vacuum.sql \
 		21_dependency_functions.sql \
@@ -56,8 +57,7 @@ headers_moresql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5
 	SOURCES = \
-		cache.sql octopus.sql parts.sql \
-		temporal.sql
+		cache.sql octopus.sql parts.sql 
 }
 
 headers_rdf = {

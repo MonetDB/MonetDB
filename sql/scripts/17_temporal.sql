@@ -15,6 +15,10 @@
 -- Copyright August 2008-2015 MonetDB B.V.
 -- All Rights Reserved.
 
+-- assume milliseconds when converted to TIMESTAMP
+create function "epoch"(sec BIGINT) returns TIMESTAMP
+    external name timestamp."epoch";
+
 create function "epoch"(sec INT) returns TIMESTAMP
 	external name timestamp."epoch";
 
