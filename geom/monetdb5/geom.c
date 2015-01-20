@@ -3855,6 +3855,18 @@ static int wkbspatial(wkb **geomWKB_a, wkb **geomWKB_b, char (*func)(const GEOSG
 	GEOSGeom geosGeometry_a = wkb2geos(*geomWKB_a);
 	GEOSGeom geosGeometry_b = wkb2geos(*geomWKB_b);
 
+/*
+	str strA, strB;
+	int typeA, typeB;
+	int f =0;
+	wkbAsText(&strA, geomWKB_a, &f);
+	wkbAsText(&strB, geomWKB_b, &f);
+	typeA = GEOSGeomTypeId(geosGeometry_a);
+	typeB = GEOSGeomTypeId(geosGeometry_b);
+
+fprintf(stderr, "A: %s\tB: %s\n", strA, strB);
+fprintf(stderr, "A: %s\tB: %s\n", geom_type2str(typeA+(typeA>2), 0), geom_type2str(typeB+(typeB>2), 0));
+*/
 	if (!geosGeometry_a && geosGeometry_b) {
 		GEOSGeom_destroy(geosGeometry_b);
 		return 3;
