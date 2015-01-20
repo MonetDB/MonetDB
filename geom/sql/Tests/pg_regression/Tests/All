@@ -123,4 +123,19 @@ boundary #Uknown Types: TRIANGLE (queries for these types commented out)
 
 #sharedpaths #Unknown Functions: st_sharedpaths
 
+#snap #Unknown Functions: st_snap 
+
+#node #Unknown Functions: st_node 
+
+#unaryunion #Unknown Functions: st_unaryunion 
+
+#clean #Unknown Functions: st_isvaliddetail, st_makevalid
+		#It reads from stdin EWKB kai EWKT which is a format introduced and supported by PostGIS
+
+#relate_bnr #Unknown Functions: ST_Relate(geometry, geometry, int) 
+
+delaunaytriangles #unknown Types : TIN (removed tests that need to output TIN)
+
+#in_geojson #Unknown Functions: st_geomfromgeojson, st_asgeojson
+
 removeTmpFiles
