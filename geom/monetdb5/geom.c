@@ -2701,7 +2701,8 @@ static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeome
 
 	outGeometry = (*func)(geosGeometry);
 	//set the srid equal to the srid of the initial geometry
-	GEOSSetSRID(outGeometry, (*geom)->srid);
+	if((*geom)->srid) //GEOSSetSRID has assertion for srid != 0
+		GEOSSetSRID(outGeometry, (*geom)->srid);
 	
 	*out = geos2wkb(outGeometry);
 	
