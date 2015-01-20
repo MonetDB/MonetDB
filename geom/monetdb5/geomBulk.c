@@ -569,7 +569,7 @@ str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
+		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreleaseref(outBAT->batCacheid);	
 
 			ret = createException(MAL, "batgeom.Contains", "%s", err);
@@ -642,7 +642,52 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 }
 
 str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
-	return wkbContains_geom_bat(outBAT_id, geomWKB, inBAT_id);
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN p=0, q=0;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
+	}
+	
+	if ( !BAThdense(inBAT) ) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
+	}
+	
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BATs	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { 
+		str err = NULL;
+		bit outBIT;
+
+		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
+
+		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.Contains", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
+	}
+
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
 }
 
 

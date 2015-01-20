@@ -3882,6 +3882,7 @@ static int wkbspatial(wkb **geomWKB_a, wkb **geomWKB_b, char (*func)(const GEOSG
 
 str wkbContains(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	int res =  wkbspatial(geomWKB_a, geomWKB_b, GEOSContains);
+
 	*out = bit_nil;
 
 	if(res == 4)
