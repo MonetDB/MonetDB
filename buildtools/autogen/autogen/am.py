@@ -977,7 +977,7 @@ def am_gem(fd, var, gem, am):
         for src in srcs:
             fd.write("\t[ '$(srcdir)' -ef . ] || rm -f '%s'\n" % src)
         for d in sorted(dirs, reverse = True):
-            fd.write("\t[ '$(srcdir)' -ef . ] || rmdir '%s'\n" % d)
+            fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rmdir '%s'\n" % (d, d))
         fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
         fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
         fd.write("\tgem install --local --install-dir $(DESTDIR)'%s' --force --rdoc '%s'\n" % (rd, f[:-4]))
@@ -1026,7 +1026,7 @@ def am_python_generic(fd, var, python, am, PYTHON):
         fd.write("\trm '$(DESTDIR)$(prefix)/$(%s_LIBDIR)'/%s-*.egg-info\n" % (PYTHON, name.replace('-', '_')))
     fd.write('mostlyclean-local:\n')
     for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\t[ '$(srcdir)' -ef . ] || rm -r '%s'\n" % pkgdir)
+        fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rm -r '%s'\n" % (pkgdir, pkgdir))
 
 def am_python2(fd, var, python, am):
     am_python_generic(fd, var, python, am, 'PYTHON2')
