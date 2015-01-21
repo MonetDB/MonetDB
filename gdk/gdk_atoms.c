@@ -1196,7 +1196,10 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 		/* double the heap size until we have enough space */
 		do {
-			newsize <<= 1;
+			if (newsize < 4 * 1024 * 1024)
+				newsize <<= 1;
+			else
+				newsize += 4 * 1024 * 1024;
 		} while (newsize <= h->free + pad + len + extralen);
 
 		assert(newsize);

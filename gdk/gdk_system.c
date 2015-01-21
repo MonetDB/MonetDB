@@ -592,8 +592,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		p->func = f;
 		p->arg = arg;
 		p->exited = 0;
-		p->next = posthreads;
 		pthread_mutex_lock(&posthread_lock);
+		p->next = posthreads;
 		posthreads = p;
 		f = thread_starter;
 		pthread_mutex_unlock(&posthread_lock);
