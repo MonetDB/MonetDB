@@ -492,6 +492,8 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
+		if ( b == 0)
+			return -1;
 		cnt |= BATcount(b) > 0;
 		BBPunfix(b->batCacheid);
 	}
@@ -1651,6 +1653,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind(m, *sname, *tname, *cname, 0);
+				if (c == NULL)
+					throw(SQL,"sql.bind","Cannot access the update column");
+
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1665,6 +1670,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
+			if (uv == NULL)
+				throw(SQL,"sql.bind","Cannot access the update column");
 			BBPkeepref(*bid = b->batCacheid);
 			BBPkeepref(*uvl = uv->batCacheid);
 			return MAL_SUCCEED;
@@ -1675,8 +1682,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BATcount(b)) {
 				BAT *uv = mvc_bind(m, *sname, *tname, *cname, RD_UPD_VAL);
 				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
-				BAT *id = BATproject(b, ui); 
-				BAT *vl = BATproject(b, uv);
+				BAT *id;
+				BAT *vl;
+				if (ui == NULL)
+					throw(SQL,"sql.bind","Cannot access the insert column");
+				if (uv == NULL)
+					throw(SQL,"sql.bind","Cannot access the update column");
+				id = BATproject(b, ui); 
+				vl = BATproject(b, uv);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -1734,6 +1747,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, *sname, *tname, *iname, 0);
+				if ( c == NULL)
+					throw(SQL,"sql.bindidx","can not access index column");
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1747,6 +1762,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (upd) {
 			BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
 			bat *uvl = getArgReference_bat(stk, pci, 1);
+			if ( uv == NULL)
+				throw(SQL,"sql.bindidx","can not access index column");
 			BBPkeepref(*bid = b->batCacheid);
 			BBPkeepref(*uvl = uv->batCacheid);
 			return MAL_SUCCEED;
@@ -1757,8 +1774,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BATcount(b)) {
 				BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
 				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
-				BAT *id = BATproject(b, ui); 
-				BAT *vl = BATproject(b, uv);
+				BAT *id, *vl;
+				if ( ui == NULL)
+					throw(SQL,"sql.bindidx","can not access index column");
+				if ( uv == NULL)
+					throw(SQL,"sql.bindidx","can not access index column");
+				id = BATproject(b, ui); 
+				vl = BATproject(b, uv);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -2315,8 +2337,11 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATkdiff(tids, BATmirror(d));
+		BAT *diff;
+		if( d == NULL)
+			throw(SQL,"sql.tid","Can not bind delete column");
 
+		diff = BATkdiff(tids, BATmirror(d));
 		BBPunfix(tids->batCacheid);
 		tids = BATmirror(BATmark(diff, sb));
 		BBPunfix(diff->batCacheid);
@@ -4078,6 +4103,8 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	c = t->columns.set->h->data;
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
+	if( b == NULL)
+		throw(SQL,"sql.rowid","Can not bind to column");
 	/* UGH (move into storage backends!!) */
 	d = c->data;
 	*rid = d->ibase + BATcount(b);
@@ -4274,6 +4301,8 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (first) {
 			first = 0;
 			b = store_funcs.bind_col(tr, c, RDONLY);
+			if ( b == NULL)
+				throw(SQL,"sql.cluster","Can not access column");
 			msg = CLUSTER_key(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -4289,7 +4318,7 @@ SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
+			throw(SQL, "sql.cluster", "Can not access column");
 		msg = CLUSTER_apply(&bid, b, map);
 		BBPreleaseref(b->batCacheid);
 		if (msg) {
@@ -4354,6 +4383,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int bits = 10, off = 0;
 			first = 0;
 			b = store_funcs.bind_col(tr, c, RDONLY);
+			if (b == NULL)
+				throw(SQL, "sql.cluster", "Can not access column");
 			msg = MKEYbathash(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
@@ -4550,6 +4581,8 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* get the deletions BAT */
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
+	if( del == NULL)
+		throw(SQL, "sql.vacuum", "Can not access deletion column");
 
 	if (BATcount(del) > 0) {
 		/* now decide on the algorithm */
@@ -4726,6 +4759,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BAT *bn = store_funcs.bind_col(tr, c, RDONLY);
 								lng sz;
 
+								if (bn == NULL)
+									throw(SQL, "sql.storage", "Can not access column");
+
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								sch = BUNappend(sch, b->name, FALSE);
 								tab = BUNappend(tab, bt->name, FALSE);
@@ -4791,6 +4827,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
+									if (bn == NULL)
+										throw(SQL, "sql.storage", "Can not access column");
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 									sch = BUNappend(sch, b->name, FALSE);
 									tab = BUNappend(tab, bt->name, FALSE);
