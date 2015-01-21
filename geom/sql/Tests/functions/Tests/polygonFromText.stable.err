@@ -29,34 +29,34 @@ stderr of test 'polygonFromText` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((20 20, 30 30, 40 40, 20 20))', 4326));
 ERROR = !column needs geometry(16, 0) and value is geometry(16, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
 ERROR = !column needs geometry(16, 0) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
 ERROR = !column needs geometry(16, 4326) and value is geometry(16, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((30 30, 40 40, 50 50, 30 30))', 0));
 ERROR = !column needs geometry(16, 4326) and value is geometry(16, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
 ERROR = !column needs geometry(16, 4326) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((20 20 20, 30 30 30, 40 40 40, 20 20 20))', 4326));
 ERROR = !column needs geometry(18, 0) and value is geometry(18, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
 ERROR = !column needs geometry(18, 0) and value is geometry(10, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
 ERROR = !column needs geometry(18, 4326) and value is geometry(18, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_polygonfromtext('polygon((30 30 30, 40 40 40, 50 50 50, 30 30 30))', 0));
 ERROR = !column needs geometry(18, 4326) and value is geometry(18, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)', 4326));
 ERROR = !column needs geometry(18, 4326) and value is geometry(10, 4326)
 

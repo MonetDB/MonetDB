@@ -29,7 +29,7 @@ stderr of test 'makeBox2D` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = select ST_MakeBox2D(ST_PointFromText('POINT(-989502.1875 528439.5625)'), ST_GeomFromText('linestring(-987121.375 529933.1875, 0 0)'));
 ERROR = !Geometries should be points
 

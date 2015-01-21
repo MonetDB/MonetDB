@@ -29,7 +29,7 @@ stderr of test 'srid` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:10 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into geo values(ST_MakePoint(10, 20, 30));
 ERROR = !column needs geometry(6, 4326) and value is geometry(6, 0)
 

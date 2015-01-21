@@ -29,34 +29,34 @@ stderr of test 'mpointFromText` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:01 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(20 20, 30 30)', 4326));
 ERROR = !column needs geometry(20, 0) and value is geometry(20, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
 ERROR = !column needs geometry(20, 0) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(10 10, 20 20)'));
 ERROR = !column needs geometry(20, 4326) and value is geometry(20, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(30 30, 40 40)', 0));
 ERROR = !column needs geometry(20, 4326) and value is geometry(20, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
 ERROR = !column needs geometry(20, 4326) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326));
 ERROR = !column needs geometry(22, 0) and value is geometry(22, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 40)'));
 ERROR = !column needs geometry(22, 0) and value is geometry(10, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(10 10 10, 20 20 20)'));
 ERROR = !column needs geometry(22, 4326) and value is geometry(22, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(30 30 30, 40 40 40)', 0));
 ERROR = !column needs geometry(22, 4326) and value is geometry(22, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)', 4326));
 ERROR = !column needs geometry(22, 4326) and value is geometry(10, 4326)
 

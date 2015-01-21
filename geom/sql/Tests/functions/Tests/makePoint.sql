@@ -26,3 +26,8 @@ insert into points_tbl values (st_point(20, 20));
 select * from points_tbl;
 drop table points_tbl;
 
+create table points_tbl(x double, y double);
+insert into points_tbl values (10.0, 20.0);
+insert into points_tbl values (20.0, 30.0);
+select st_makepoint(x,y) from points_tbl;
+drop table points_tbl;

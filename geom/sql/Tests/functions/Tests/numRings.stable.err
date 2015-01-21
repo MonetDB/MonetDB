@@ -29,10 +29,10 @@ stderr of test 'numRings` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = select st_numInteriorRings(geom) as interior from (select st_linefromtext('linestring(1 2 3, 4 5 6, 7 8 9)')) as foo(geom);
 ERROR = !!ERROR: Argument is not a Polygon
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = select st_nRings(geom) as total from (select st_linefromtext('linestring(1 2 3, 4 5 6, 7 8 9)')) as foo(geom);
 ERROR = !!ERROR: Argument is not a Polygon
 

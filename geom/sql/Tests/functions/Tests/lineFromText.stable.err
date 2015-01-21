@@ -29,34 +29,34 @@ stderr of test 'lineFromText` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
 ERROR = !column needs geometry(8, 0) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_pointfromtext('point(0 0)'));
 ERROR = !column needs geometry(8, 0) and value is geometry(4, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
 ERROR = !column needs geometry(8, 4326) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(30 30, 40 40, 50 50)', 0));
 ERROR = !column needs geometry(8, 4326) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_pointfromtext('point(0 0)', 4326));
 ERROR = !column needs geometry(8, 4326) and value is geometry(4, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
 ERROR = !column needs geometry(10, 0) and value is geometry(10, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_pointfromtext('point(0 0 0)'));
 ERROR = !column needs geometry(10, 0) and value is geometry(6, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
 ERROR = !column needs geometry(10, 4326) and value is geometry(10, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_linefromtext('linestring(30 30 30, 40 40 40, 50 50 50)', 0));
 ERROR = !column needs geometry(10, 4326) and value is geometry(10, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into lines_tbl values (st_pointfromtext('point(0 0 0)', 4326));
 ERROR = !column needs geometry(10, 4326) and value is geometry(6, 4326)
 

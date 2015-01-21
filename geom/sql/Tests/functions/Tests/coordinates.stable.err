@@ -29,7 +29,7 @@ stderr of test 'coordinates` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:10 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo;
 ERROR = !Geometry not a Point
 

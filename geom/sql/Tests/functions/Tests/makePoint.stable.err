@@ -29,19 +29,19 @@ stderr of test 'makePoint` in directory 'geom/sql/Tests/functions` itself:
 # 10:52:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
 # 10:52:03 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_makepoint(10, 10));
 ERROR = !column needs geometry(4, 4326) and value is geometry(4, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_point(20, 20));
 ERROR = !column needs geometry(4, 4326) and value is geometry(4, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_makepoint(10, 10, 10));
 ERROR = !column needs geometry(6, 4326) and value is geometry(6, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_makepoint(10, 10));
 ERROR = !column needs geometry(8, 0) and value is geometry(4, 0)
-MAPI  = (monetdb) /var/tmp/mtest-4010/.s.monetdb.39851
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
 QUERY = insert into points_tbl values (st_point(20, 20));
 ERROR = !column needs geometry(8, 0) and value is geometry(4, 0)
 
