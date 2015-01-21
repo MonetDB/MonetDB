@@ -640,7 +640,7 @@ static str forceDimGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geos
 		case wkbMultiPoint:
 		case wkbMultiLineString:
 		case wkbMultiPolygon:
-		case  wkbGeometryCollection:
+		case wkbGeometryCollection:
 			if((err = forceDimMultiGeometry(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
 				str msg = createException(MAL, "geom.ForceDim", "%s",err);
 				GDKfree(err);	
@@ -973,7 +973,7 @@ static str segmentizeGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* ge
 		case wkbMultiPoint:
 		case wkbMultiLineString:
 		case wkbMultiPolygon:
-		case  wkbGeometryCollection:
+		case wkbGeometryCollection:
 			if((err = segmentizeMultiGeometry(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
 				str msg = createException(MAL, "geom.Segmentize", "%s",err);
 				GDKfree(err);	
@@ -1261,7 +1261,7 @@ static str translateGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geo
 		case wkbMultiPoint:
 		case wkbMultiLineString:
 		case wkbMultiPolygon:
-		case  wkbGeometryCollection:
+		case wkbGeometryCollection:
 			if((err = translateMultiGeometry(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
 				str msg = createException(MAL, "geom.Translate", "%s",err);
 				GDKfree(err);	
@@ -1379,7 +1379,7 @@ static str dumpGeometriesSingle(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* ge
 
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 		strcpy(newPath, path);
-		sprintf(newPath+pathLength, "%d", *lvl);
+		sprintf(newPath+pathLength, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
 		pathLength--;
@@ -1415,7 +1415,7 @@ static str dumpGeometriesMulti(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geo
 
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath+pathLength, "%d", lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%u", lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 
 		//*secondLevel = 0;
@@ -1547,7 +1547,7 @@ static str dumpPointsPoint(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeo
 
 	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+1)*sizeof(char));
 	strcpy(newPath, path);
-	sprintf(newPath+pathLength, "%d", *lvl);
+	sprintf(newPath+pathLength, "%u", *lvl);
 
 	BUNappend(idBAT,newPath,TRUE);
 	BUNappend(geomBAT,pointWKB,TRUE);
@@ -1617,7 +1617,7 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 
 	newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 	strcpy(newPath, path);
-	lvlDigitsNum = sprintf(newPath+pathLength, "%d", *lvl);
+	lvlDigitsNum = sprintf(newPath+pathLength, "%u", *lvl);
 	strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 	GDKfree(lvlStr);
 
@@ -1646,7 +1646,7 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath+pathLength, "%d", *lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%u", *lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
@@ -1684,7 +1684,7 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 	
 		newPath = (char*)GDKmalloc((pathLength+lvlDigitsNum+extraLength+1)*sizeof(char));
 		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath+pathLength, "%d", lvl);
+		lvlDigitsNum = sprintf(newPath+pathLength, "%u", lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
 		GDKfree(lvlStr);
 
