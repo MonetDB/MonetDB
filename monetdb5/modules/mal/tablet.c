@@ -235,7 +235,7 @@ TABLETcollect(BAT **bats, Tablet *as)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		bats[i] = fmt[i].c;
-		BBPincref(bats[i]->batCacheid, FALSE);
+		BBPfix(bats[i]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		BATderiveProps(fmt[i].c, 1);
 

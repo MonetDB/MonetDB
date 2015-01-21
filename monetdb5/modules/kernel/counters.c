@@ -3005,7 +3005,7 @@ counter2bat(BAT **key, BAT **val, counter *c)
 		return GDK_FAIL;
 	*val = BATnew(TYPE_void, TYPE_lng, 8, TRANSIENT);
 	if (*val == NULL){
-		BBPreleaseref((*key)->batCacheid);
+		BBPunfix((*key)->batCacheid);
 		*key = NULL;
 		return GDK_FAIL;
 	}

@@ -1038,7 +1038,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b->htype != TYPE_void && b->hvarsized)
 		throw(ILLARG, "remote.bincopyto", "varsized-headed BATs are not supported");
 
-	BBPincref(bid, FALSE);
+	BBPfix(bid);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
 
@@ -1076,7 +1076,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* flush is done by the calling environment (MAL) */
 
-	BBPdecref(bid, FALSE);
+	BBPunfix(bid);
 
 	return(MAL_SUCCEED);
 }

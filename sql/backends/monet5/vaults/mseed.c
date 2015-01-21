@@ -244,13 +244,13 @@ MseedLoadIntern(BAT **bbtime, BAT **bbdata, str targetfile)
 	BATseqbase(btime,0);
 	bdata = BATnew(TYPE_void,TYPE_int,0, TRANSIENT);
 	if ( bdata == NULL){
-		BBPreleaseref(btime->batCacheid);
+		BBPunfix(btime->batCacheid);
 		throw(MAL,"mseed.load",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bdata,0);
 	if ( btime == NULL || bdata == NULL ){
-		if ( btime) BBPreleaseref(btime->batCacheid);
-		if ( bdata) BBPreleaseref(bdata->batCacheid);
+		if ( btime) BBPunfix(btime->batCacheid);
+		if ( bdata) BBPunfix(bdata->batCacheid);
 		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);
 	}
 	*bbtime = btime;
