@@ -543,7 +543,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
 			goto wrapup;
 		}
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 
 		// install vector into R environment
 		Rf_defineVar(varname, varvalue, env);

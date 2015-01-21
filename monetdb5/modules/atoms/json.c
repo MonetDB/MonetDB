@@ -1173,7 +1173,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	if (od) {
 		bo = BATnew(TYPE_void, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL) {
-			BBPreleaseref(bk->batCacheid);
+			BBPunfix(bk->batCacheid);
 			JSONfree(jt);
 			throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 		}
@@ -1190,8 +1190,8 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	if (bv == NULL) {
 		JSONfree(jt);
 		if (od)
-			BBPreleaseref(bo->batCacheid);
-		BBPreleaseref(bk->batCacheid);
+			BBPunfix(bo->batCacheid);
+		BBPunfix(bk->batCacheid);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bv, 0);
@@ -1526,7 +1526,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	bv = BATdescriptor(*values);
 	if (bv == NULL) {
 		if (bk)
-			BBPreleaseref(bk->batCacheid);
+			BBPunfix(bk->batCacheid);
 		*ret = GDKstrdup(str_nil);
 		throw(MAL, "json.fold", RUNTIME_OBJECT_MISSING);
 	}
@@ -1539,8 +1539,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		bo = BATdescriptor(*id);
 		if (bo == NULL) {
 			if (bk)
-				BBPreleaseref(bk->batCacheid);
-			BBPreleaseref(bv->batCacheid);
+				BBPunfix(bk->batCacheid);
+			BBPunfix(bv->batCacheid);
 			throw(MAL, "json.nest", RUNTIME_OBJECT_MISSING);
 		}
 	}
@@ -1576,10 +1576,10 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 			if (row == NULL) {
 				*ret = GDKstrdup(str_nil);
 				if (bo)
-					BBPreleaseref(bo->batCacheid);
+					BBPunfix(bo->batCacheid);
 				if (bk)
-					BBPreleaseref(bk->batCacheid);
-				BBPreleaseref(bv->batCacheid);
+					BBPunfix(bk->batCacheid);
+				BBPunfix(bv->batCacheid);
 				throw(MAL, "json.fold", MAL_MALLOC_FAIL);
 			}
 			if (strcmp(nme, str_nil)) {
@@ -1603,10 +1603,10 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 
 		if (row == NULL) {
 			if (bo)
-				BBPreleaseref(bo->batCacheid);
+				BBPunfix(bo->batCacheid);
 			if (bk)
-				BBPreleaseref(bk->batCacheid);
-			BBPreleaseref(bv->batCacheid);
+				BBPunfix(bk->batCacheid);
+			BBPunfix(bv->batCacheid);
 			*ret = GDKstrdup(str_nil);
 			throw(MAL, "json.fold", MAL_MALLOC_FAIL);
 		}
@@ -1625,10 +1625,10 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	if (tpe != TYPE_json)
 		GDKfree(val);
 	if (bo)
-		BBPreleaseref(bo->batCacheid);
+		BBPunfix(bo->batCacheid);
 	if (bk)
-		BBPreleaseref(bk->batCacheid);
-	BBPreleaseref(bv->batCacheid);
+		BBPunfix(bk->batCacheid);
+	BBPunfix(bv->batCacheid);
 	*ret = row;
 	return MAL_SUCCEED;
 }
@@ -1774,11 +1774,11 @@ JSONgroupStr(str *ret, const bat *bid)
 	}
 	if (cnt)
 		offset += snprintf(buf + offset, size - offset, " ]");
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
       failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	GDKfree(buf);
 	throw(MAL, "json.agg", "%s", err);
 }
@@ -2126,34 +2126,34 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
 
 		if (b)
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 		if (g)
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 		if (e)
-			BBPreleaseref(e->batCacheid);
+			BBPunfix(e->batCacheid);
 		throw(MAL, "aggr.subjson", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			if (g)
-				BBPreleaseref(g->batCacheid);
+				BBPunfix(g->batCacheid);
 			if (e)
-				BBPreleaseref(e->batCacheid);
+				BBPunfix(e->batCacheid);
 			throw(MAL, "aggr.subjson", RUNTIME_OBJECT_MISSING);
 		}
 	} else {
 		s = NULL;
 	}
 	err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (e)
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (err !=NULL)
 		throw(MAL, "aggr.subjson", "%s", err);
 

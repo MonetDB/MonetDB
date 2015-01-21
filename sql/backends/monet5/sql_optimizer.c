@@ -144,7 +144,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
-						BBPreleaseref(b->batCacheid);
+						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
 				}
@@ -164,7 +164,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
-						BBPreleaseref(b->batCacheid);
+						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
 				}

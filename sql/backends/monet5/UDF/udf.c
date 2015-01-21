@@ -119,7 +119,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		err = UDFreverse_(&tr, t);
 		if (err != MAL_SUCCEED) {
 			/* error -> bail out */
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			return err;
 		}
 
@@ -157,7 +157,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 	msg = UDFBATreverse_ ( &res, src );
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(src->batCacheid);
+	BBPunfix(src->batCacheid);
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */
@@ -265,13 +265,13 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	default:
-		BBPreleaseref(bres->batCacheid);
+		BBPunfix(bres->batCacheid);
 		throw(MAL, "batudf.fuse",
 		      "tails of input BATs must be one of {bte, sht, int}");
 	}
 
 	if (msg != MAL_SUCCEED) {
-		BBPreleaseref(bres->batCacheid);
+		BBPunfix(bres->batCacheid);
 	} else {
 		/* set number of tuples in result BAT */
 		BATsetcount(bres, n);
@@ -324,7 +324,7 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	/* bat-id -> BAT-descriptor */
 	if ((btwo = BATdescriptor(*itwo)) == NULL) {
-		BBPreleaseref(bone->batCacheid);
+		BBPunfix(bone->batCacheid);
 		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
 	}
 
@@ -332,8 +332,8 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 	msg = UDFBATfuse_ ( &bres, bone, btwo );
 
 	/* release input BAT-descriptors */
-	BBPreleaseref(bone->batCacheid);
-	BBPreleaseref(btwo->batCacheid);
+	BBPunfix(bone->batCacheid);
+	BBPunfix(btwo->batCacheid);
 
 	if (msg == MAL_SUCCEED) {
 		/* register result BAT in buffer pool */

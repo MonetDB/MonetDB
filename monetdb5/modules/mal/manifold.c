@@ -357,7 +357,7 @@ wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
 		if ( mat[i].b)
-			BBPreleaseref(mat[i].b->batCacheid);
+			BBPunfix(mat[i].b->batCacheid);
 	}
 	GDKfree(mat);
 	return msg;

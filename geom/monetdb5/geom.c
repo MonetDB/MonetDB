@@ -782,21 +782,21 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
 	}
 	if ((by = BATdescriptor(*iy)) == NULL) {
-		BBPreleaseref(bx->batCacheid);
+		BBPunfix(bx->batCacheid);
 		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
 	}
 	if ( bx->htype != TYPE_void ||
 		 by->htype != TYPE_void ||
 	    bx->hseqbase != by->hseqbase ||
 	    BATcount(bx) != BATcount(by)) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
+		BBPunfix(bx->batCacheid);
+		BBPunfix(by->batCacheid);
 		throw(MAL, "geom.point", "both arguments must have dense and aligned heads");
 	}
 
 	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx), TRANSIENT)) == NULL) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
+		BBPunfix(bx->batCacheid);
+		BBPunfix(by->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bo, bx->hseqbase);
@@ -807,9 +807,9 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 		str err = NULL;
 		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(bx->batCacheid);
-			BBPreleaseref(by->batCacheid);
-			BBPreleaseref(bo->batCacheid);
+			BBPunfix(bx->batCacheid);
+			BBPunfix(by->batCacheid);
+			BBPunfix(bo->batCacheid);
 			msg = createException(MAL, "geom.point", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -822,8 +822,8 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 	BATsetcount(bo, BATcount(bx));
     BATsettrivprop(bo);
     BATderiveProps(bo,FALSE);
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(by->batCacheid);
+	BBPunfix(bx->batCacheid);
+	BBPunfix(by->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
 	return MAL_SUCCEED;
 }

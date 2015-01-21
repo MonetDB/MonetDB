@@ -52,11 +52,11 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 
 	if (b == NULL || g == NULL || e == NULL) {
 		if (b)
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 		if (g)
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 		if (e)
-			BBPreleaseref(e->batCacheid);
+			BBPunfix(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
@@ -65,11 +65,11 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 		/* if b or g don't have a dense head, replace the head with a
 		 * dense sequence */
 		t = BATjoin(BATmirror(b), g, MIN(BATcount(b), BATcount(g)));
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
 		b = BATmirror(BATmark(t, 0));
 		g = BATmirror(BATmark(BATmirror(t), 0));
-		BBPreleaseref(t->batCacheid);
+		BBPunfix(t->batCacheid);
 	}
 	if (b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
 		/* b and g are not aligned: align them by creating a view on
@@ -87,7 +87,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 				min = max = b->hseqbase;
 			t = BATslice(b, BUNfirst(b) + (BUN) (min - b->hseqbase),
 						 BUNfirst(b) + (BUN) (max - b->hseqbase));
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			b = t;
 		}
 		if (g->hseqbase != min || g->hseqbase + BATcount(g) != max) {
@@ -95,7 +95,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 				min = max = g->hseqbase;
 			t = BATslice(g, BUNfirst(g) + (BUN) (min - g->hseqbase),
 						 BUNfirst(g) + (BUN) (max - g->hseqbase));
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 			g = t;
 		}
 	}
@@ -103,10 +103,10 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 		/* if e doesn't have a dense head, renumber the group ids with
 		 * a dense sequence at the cost of some left joins */
 		map = BATmark(e, 0);	/* [gid,newgid(dense)] */
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 		e = BATmirror(map);		/* [newgid(dense),gid] */
 		t = BATleftjoin(g, map, BATcount(g)); /* [oid,newgid] */
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 		g = t;
 	} else {
 		map = NULL;
@@ -128,19 +128,19 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 		bn = NULL;
 	if (bn != NULL && (grpfunc1 == BATgroupmin || grpfunc1 == BATgroupmax)) {
 		t = BATproject(bn, b);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = t;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
 	if (map == NULL)			/* if map!=NULL, e is mirror of map */
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 	if (bn == NULL) {
 		char *errbuf = GDKerrbuf;
 		char *s;
 
 		if (map)
-			BBPreleaseref(map->batCacheid);
+			BBPunfix(map->batCacheid);
 
 		if (errbuf && *errbuf) {
 			if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -159,14 +159,14 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 	}
 	if (map) {
 		t = BATleftjoin(map, bn, BATcount(bn));
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = t;
 		if (cnts) {
 			t = BATleftjoin(map, cnts, BATcount(cnts));
-			BBPreleaseref(cnts->batCacheid);
+			BBPunfix(cnts->batCacheid);
 			cnts = t;
 		}
-		BBPreleaseref(map->batCacheid);
+		BBPunfix(map->batCacheid);
 	}
 	*retval1 = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -206,7 +206,7 @@ AGGRgrouped2(bat *retval1, bat *retval2, const bat *bid, const bat *eid, int tp,
 		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
 	g = BATmirror(BATmark(b, 0)); /* [dense,gid] */
 	e = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,value] */
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	b = e;
 	e = BATdescriptor(*eid);	/* [gid,any] */
 	return AGGRgrouped(retval1, retval2, b, g, e, tp, grpfunc1, grpfunc2, NULL, 0, skip_nils, malfunc);
@@ -649,11 +649,11 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
 		if (b)
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 		if (g)
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 		if (e)
-			BBPreleaseref(e->batCacheid);
+			BBPunfix(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
@@ -662,11 +662,11 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 	if (sid) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			if (g)
-				BBPreleaseref(g->batCacheid);
+				BBPunfix(g->batCacheid);
 			if (e)
-				BBPreleaseref(e->batCacheid);
+				BBPunfix(e->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
 	} else {
@@ -674,7 +674,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			/* XXX backward compatibility code: ignore non-dense head, but
 			 * only if no candidate list */
 			s = BATmirror(BATmark(BATmirror(b), 0));
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			b = s;
 		}
 		s = NULL;
@@ -699,13 +699,13 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) == GDK_FAIL)
 		bn = NULL;
 
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (e)
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (bn == NULL) {
 		char *errbuf = GDKerrbuf;
 		char *s;
@@ -1141,12 +1141,12 @@ AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
 	if( a == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	}
 	r = BATproject(a, b);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
@@ -1169,12 +1169,12 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
 	if( a == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	}
 	r = BATproject(a, b);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
@@ -1197,12 +1197,12 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
 	if( a == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	}
 	r = BATproject(a, b);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
@@ -1225,12 +1225,12 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 		throw(MAL, "aggr.max", RUNTIME_OBJECT_MISSING);
 	a = BATdescriptor(ret);
 	if ( a == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.max", RUNTIME_OBJECT_MISSING);
 	}
 	r = BATproject(a, b);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;

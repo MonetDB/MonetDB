@@ -95,7 +95,7 @@ MKEYbathash(bat *res, const bat *bid)
 	n = BATcount(b);
 	dst = BATnew(TYPE_void, TYPE_wrd, n, TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -179,11 +179,11 @@ MKEYbathash(bat *res, const bat *bid)
 
 	if (dst->htype != b->htype) {
 		BAT *x = VIEWcreate(b, dst);
-		BBPreleaseref(dst->batCacheid);
+		BBPunfix(dst->batCacheid);
 		dst = x;
 	}
 	BBPkeepref(*res = dst->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -241,13 +241,13 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
         throw(MAL, "mkey.rotate_xor_hash", RUNTIME_OBJECT_MISSING);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPreleaseref(hb->batCacheid);
+		BBPunfix(hb->batCacheid);
         throw(MAL, "mkey.rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
     }
 
 	if (!ALIGNsynced(hb, b) && (BATcount(b) || BATcount(hb))) {
-		BBPreleaseref(hb->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(hb->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash",
 			  OPERATION_FAILED ": input bats are not aligned");
 	}
@@ -256,8 +256,8 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 
 	bn = BATnew(TYPE_void, TYPE_wrd, n, TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(hb->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(hb->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, b->hseqbase);
@@ -341,12 +341,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 
 	if (bn->htype != b->htype) {
 		BAT *x = VIEWcreate(b, bn);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = x;
 	}
 	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(hb->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(hb->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -375,7 +375,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 	bn = BATnew(TYPE_void, TYPE_wrd, n, TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(hb->batCacheid);
+		BBPunfix(hb->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, hb->hseqbase);
@@ -424,11 +424,11 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 	if (bn->htype != hb->htype) {
 		BAT *x = VIEWcreate(hb, bn);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = x;
 	}
 	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(hb->batCacheid);
+	BBPunfix(hb->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -449,7 +449,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const wrd *h, const int *nbits, const ba
 
 	bn = BATnew(TYPE_void, TYPE_wrd, n, TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, b->hseqbase);
@@ -526,10 +526,10 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const wrd *h, const int *nbits, const ba
 
 	if (bn->htype != b->htype) {
 		BAT *x = VIEWcreate(b, bn);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = x;
 	}
 	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

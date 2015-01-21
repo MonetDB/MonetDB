@@ -206,7 +206,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(flags->batCacheid);
+	BBPunfix(flags->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -239,7 +239,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_seq(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
+			BBPunfix(result->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -247,7 +247,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(seqs->batCacheid);
+	BBPunfix(seqs->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -280,7 +280,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_qual(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
+			BBPunfix(result->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -288,7 +288,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(quals->batCacheid);
+	BBPunfix(quals->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -322,14 +322,14 @@ seq_length_bat(bat * ret, bat * bid)
 		int r;
 
 		if ((msg = seq_length(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
+			BBPunfix(result->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) &r, FALSE);
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(cigars->batCacheid);
+	BBPunfix(cigars->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 

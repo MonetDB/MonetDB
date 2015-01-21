@@ -56,14 +56,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oids = BATnew(TYPE_void, TYPE_oid, 256, TRANSIENT);
 	query = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
 	if ( tag == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
-		if (tag) BBPreleaseref(tag->batCacheid);
-		if (user) BBPreleaseref(user->batCacheid);
-		if (query) BBPreleaseref(query->batCacheid);
-		if (activity) BBPreleaseref(activity->batCacheid);
-		if (started) BBPreleaseref(started->batCacheid);
-		if (estimate) BBPreleaseref(estimate->batCacheid);
-		if (progress) BBPreleaseref(progress->batCacheid);
-		if (oids) BBPreleaseref(oids->batCacheid);
+		if (tag) BBPunfix(tag->batCacheid);
+		if (user) BBPunfix(user->batCacheid);
+		if (query) BBPunfix(query->batCacheid);
+		if (activity) BBPunfix(activity->batCacheid);
+		if (started) BBPunfix(started->batCacheid);
+		if (estimate) BBPunfix(estimate->batCacheid);
+		if (progress) BBPunfix(progress->batCacheid);
+		if (oids) BBPunfix(oids->batCacheid);
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(tag, 0);
@@ -145,14 +145,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   bailout:
 	MT_lock_unset(&mal_delayLock, "sysmon");
-	BBPreleaseref(tag->batCacheid);
-	BBPreleaseref(user->batCacheid);
-	BBPreleaseref(query->batCacheid);
-	BBPreleaseref(activity->batCacheid);
-	BBPreleaseref(started->batCacheid);
-	BBPreleaseref(estimate->batCacheid);
-	BBPreleaseref(progress->batCacheid);
-	BBPreleaseref(oids->batCacheid);
+	BBPunfix(tag->batCacheid);
+	BBPunfix(user->batCacheid);
+	BBPunfix(query->batCacheid);
+	BBPunfix(activity->batCacheid);
+	BBPunfix(started->batCacheid);
+	BBPunfix(estimate->batCacheid);
+	BBPunfix(progress->batCacheid);
+	BBPunfix(oids->batCacheid);
 	return msg;
 }
 

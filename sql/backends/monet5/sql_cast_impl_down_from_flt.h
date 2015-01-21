@@ -87,7 +87,7 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);

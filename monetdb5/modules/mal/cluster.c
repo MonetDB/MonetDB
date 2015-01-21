@@ -914,7 +914,7 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	pb = BATdescriptor(*psum);
 	if ( pb == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL,"cluster.split", RUNTIME_OBJECT_MISSING);
 	}
 	cnt = (wrd*)Tloc(pb, BUNfirst(pb));
