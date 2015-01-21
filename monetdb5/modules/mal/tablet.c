@@ -667,6 +667,7 @@ typedef struct {
 	Client cntxt;
 	int id;						/* for self reference */
 	int state;					/* line break=1 , 2 = update bat */
+	int msyncadvice;			/* perform the parallel msync */
 	int workers;				/* how many concurrent ones */
 	int error;					/* error during line break */
 	int next;
@@ -1039,8 +1040,12 @@ SQLworker(void *arg)
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
+					BAT *b;
 					t0 = GDKusec();
 					SQLworker_column(task, task->cols[i] - 1);
+					b = task->as->format[task->cols[i]-1].c;
+					if ( task->msyncadvice && b && b->batPersistence != PERSISTENT)
+						BATmsync(b);
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;
@@ -1640,6 +1645,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				/* stage one, break the lines in parallel */
 				ptask[j].error = 0;
 				ptask[j].state = BREAKLINE;
+				ptask[j].msyncadvice = cnt == task->maxrow; //about to read last block
 				ptask[j].next = task->top[task->cur];
 				ptask[j].fields = task->fields;
 				ptask[j].limit = task->limit;
