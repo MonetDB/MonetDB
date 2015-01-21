@@ -730,11 +730,6 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
 
-				if (sz > (lng) BATTINY)
-					b = BATextend(b, (BUN) sz);
-
-				assert(b != NULL);
-
 				HASHdestroy(b);
 
 				fmt[i].c = b;
