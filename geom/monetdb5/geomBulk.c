@@ -256,6 +256,9 @@ str wkbIsSimple_bat(bat *outBAT_id, bat *inBAT_id) {
 str wkbIsRing_bat(bat *outBAT_id, bat *inBAT_id) {
 	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsRing, "batgeom.wkbIsRing");
 }
+str wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id) {
+	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
+}
 
 /*******************************/
 /********* Two inputs **********/

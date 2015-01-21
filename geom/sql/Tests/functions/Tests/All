@@ -16,9 +16,7 @@ ST_AsText
 ST_IsClosed
 ST_IsEmpty
 ST_IsSimple
-
-#isValid
-
+ST_IsValid
 ST_IsRing
 
 #coordinates
