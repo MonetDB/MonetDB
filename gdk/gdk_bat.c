@@ -2318,7 +2318,7 @@ int
 BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 {
 	BATcheck(b, "BATmmap");
-	IODEBUG THRprintf(GDKstdout, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
+	IODEBUG fprintf(stderr, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
 
 	/* Reverse back if required, as this determines which heap is
 	 * saved in the "hheap" file and which in the "theap" file.
@@ -2484,11 +2484,11 @@ backup_new(Heap *hp, int lockbat)
 		/* no backup yet, so move the existing X.new there out
 		 * of the way */
 		ret = rename(batpath, bakpath);
-		IODEBUG THRprintf(GDKstdout, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
+		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
 		ret = unlink(batpath);
-		IODEBUG THRprintf(GDKstdout, "#unlink(%s) = %d\n", batpath, ret);
+		IODEBUG fprintf(stderr, "#unlink(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -2919,9 +2919,9 @@ BATassertHeadProps(BAT *b)
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
 				if (hp)
 					GDKfree(hp);
-				THRprintf(GDKstdout,
-					  "#BATassertProps: cannot allocate "
-					  "hash table\n");
+				fprintf(stderr,
+					"#BATassertProps: cannot allocate "
+					"hash table\n");
 				goto abort_check;
 			}
 			snprintf(hp->filename, nmelen + 30,
@@ -2934,9 +2934,9 @@ BATassertHeadProps(BAT *b)
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
-				THRprintf(GDKstdout,
-					  "#BATassertProps: cannot allocate "
-					  "hash table\n");
+				fprintf(stderr,
+					"#BATassertProps: cannot allocate "
+					"hash table\n");
 				goto abort_check;
 			}
 			BATloop(b, p, q) {
@@ -3147,9 +3147,9 @@ BATderiveHeadProps(BAT *b, int expensive)
 				GDKfree(ext);
 			hp = NULL;
 			ext = NULL;
-			THRprintf(GDKstdout,
-				  "#BATderiveProps: cannot allocate "
-				  "hash table: not doing full check\n");
+			fprintf(stderr,
+				"#BATderiveProps: cannot allocate "
+				"hash table: not doing full check\n");
 		}
 	}
 	for (q = BUNlast(b), p = BUNfirst(b);

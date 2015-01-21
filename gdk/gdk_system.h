@@ -98,7 +98,7 @@ gdk_export unsigned long long MT_clock(void);
 	do {								\
 		int _i = MT_locktrace_hash(s);				\
 		if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
-			printf("MT_locktrace: name collision %s hides %s\n", \
+			fprintf(stderr, "MT_locktrace: name collision %s hides %s\n", \
 			       MT_locktrace_nme[_i], (n));		\
 		} else							\
 			MT_locktrace_nme[_i] = (n);			\

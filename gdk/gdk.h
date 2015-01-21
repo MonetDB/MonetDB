@@ -675,7 +675,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 				ATOMname(t2), ATOMname(t1));		\
 			return 0;					\
 		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(t2), ATOMname(t1));		\
 		}							\
 	} while (0)
@@ -691,12 +691,12 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 		if (BAThtype(P1) != BAThtype(P2) &&			\
 		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
 		}							\
 	} while (0)
@@ -2669,7 +2669,7 @@ BBPcheck(register bat x, register const char *y)
 		register bat z = abs(x);
 
 		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
-			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
+			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

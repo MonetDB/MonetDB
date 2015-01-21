@@ -567,9 +567,9 @@ void
 _rel_print(mvc *sql, sql_rel *rel) 
 {
 	list *refs = sa_list(sql->sa);
-	rel_print_refs(sql, THRdata[0], rel, 0, refs);
-	rel_print_(sql, THRdata[0], rel, 0, refs);
-	mnstr_printf(THRdata[0], "\n");
+	rel_print_refs(sql, GDKstdout, rel, 0, refs);
+	rel_print_(sql, GDKstdout, rel, 0, refs);
+	mnstr_printf(GDKstdout, "\n");
 }
 
 void
