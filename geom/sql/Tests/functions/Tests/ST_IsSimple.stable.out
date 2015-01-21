@@ -1,9 +1,9 @@
-stdout of test 'isSimple` in directory 'geom/sql/Tests/functions` itself:
+stdout of test 'ST_IsSimple` in directory 'geom/sql/Tests/functions` itself:
 
 
-# 10:52:08 >  
-# 10:52:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
-# 10:52:08 >  
+# 14:37:11 >  
+# 14:37:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38572" "--set" "mapi_usock=/var/tmp/mtest-4305/.s.monetdb.38572" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 14:37:11 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,16 +13,16 @@ stdout of test 'isSimple` in directory 'geom/sql/Tests/functions` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:38572/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4305/.s.monetdb.38572
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 10:52:09 >  
-# 10:52:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
-# 10:52:09 >  
+# 14:37:11 >  
+# 14:37:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4305" "--port=38572"
+# 14:37:11 >  
 
 #SELECT ST_IsSimple(ST_GeomFromText('POLYGON((1 2, 3 4, 5 6, 1 2))'));
 % .L # table_name
@@ -59,7 +59,7 @@ Ready.
 #create table geo (g geometry(multipoint, 4326));
 #insert into geo values (st_mpointfromtext('multipoint(10 10, 20 20, 30 30)', 4326));
 [ 1	]
-#insert into geo values (st_mpointfromtext('multipoint(10 10, 20 20, 10 10)', 4326));
+#insert into geo values (st_mpointfromtext('multipoint(10 10, 20 20, 10 5)', 4326));
 [ 1	]
 #select st_isvalid(g) from geo;
 % sys.L # table_name
@@ -69,8 +69,20 @@ Ready.
 [ true	]
 [ true	]
 #drop table geo;
+#SELECT geom AS "GEOMETRY" FROM geometries WHERE id<10 AND ST_IsSimple(geom);
+% sys.L # table_name
+% GEOMETRY # name
+% geometry # type
+% 0 # length
+[ "POINT (10 20)"	]
+[ "LINESTRING (10 20, 30 40, 50 60)"	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))"	]
+[ "MULTIPOINT (10 20, 30 40)"	]
+[ "MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))"	]
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))"	]
+[ "MULTIPOLYGON EMPTY"	]
 
-# 10:52:09 >  
-# 10:52:09 >  "Done."
-# 10:52:09 >  
+# 14:37:12 >  
+# 14:37:12 >  "Done."
+# 14:37:12 >  
 

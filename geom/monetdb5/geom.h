@@ -135,6 +135,7 @@ geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsEmpty_bat(bat *inBAT_id, bat *outBAT_id);
 
 geom_export str wkbIsSimple(bit*, wkb**);
+geom_export str wkbIsSimple_bat(bat *inBAT_id, bat *outBAT_id);
 //Is3D
 //IsMeasured
 geom_export str wkbBoundary(wkb **outWKB, wkb **inWKB);

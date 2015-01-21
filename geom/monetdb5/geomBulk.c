@@ -250,6 +250,9 @@ str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
 str wkbIsEmpty_bat(bat *outBAT_id, bat *inBAT_id) {
 	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
 }
+str wkbIsSimple_bat(bat *outBAT_id, bat *inBAT_id) {
+	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsSimple, "batgeom.wkbIsSimple");
+}
 
 /*******************************/
 /********* Two inputs **********/

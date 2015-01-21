@@ -508,6 +508,7 @@ command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat;
 
 command IsClosed(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsClosed_bat;
 command IsEmpty(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsEmpty_bat;
+command IsSimple(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsSimple_bat;
 
 command pbsmIndexCreate(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndexCreate_bat;
 command geom.pbsmIndexLoad() address pbsmIndexLoad_bat;
