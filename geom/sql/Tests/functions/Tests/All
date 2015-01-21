@@ -13,7 +13,7 @@ loadTestGeometries
 
 ST_AsText
 
-#isClosed
+ST_IsClosed
 #isSimple
 #isValid
 #isRing

@@ -180,7 +180,10 @@ geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
 geom_export str wkbNumRings(int*, wkb**, int*);
 geom_export str wkbInteriorRings(wkba**, wkb**);
+
 geom_export str wkbIsClosed(bit *out, wkb **geom);
+geom_export str wkbIsClosed_bat(bat *inBAT_id, bat *outBAT_id);
+
 geom_export str wkbIsRing(bit *out, wkb **geom);
 geom_export str wkbIsValid(bit *out, wkb **geom);
 geom_export str wkbIsValidReason(char** out, wkb **geom);

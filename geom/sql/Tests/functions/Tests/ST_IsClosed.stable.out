@@ -1,9 +1,9 @@
-stdout of test 'isClosed` in directory 'geom/sql/Tests/functions` itself:
+stdout of test 'ST_IsClosed` in directory 'geom/sql/Tests/functions` itself:
 
 
-# 10:52:08 >  
-# 10:52:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
-# 10:52:08 >  
+# 12:51:38 >  
+# 12:51:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37696" "--set" "mapi_usock=/var/tmp/mtest-27361/.s.monetdb.37696" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 12:51:38 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,16 +13,16 @@ stdout of test 'isClosed` in directory 'geom/sql/Tests/functions` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:37696/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27361/.s.monetdb.37696
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 10:52:08 >  
-# 10:52:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
-# 10:52:08 >  
+# 12:51:38 >  
+# 12:51:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27361" "--port=37696"
+# 12:51:38 >  
 
 #SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20)'));
 % .L # table_name
@@ -42,7 +42,7 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT ST_IsClosed(st_pointfromtext('point(10 10)'));
+#SELECT ST_IsClosed(st_pointfromtext('POINT(10 10)'));
 % .L # table_name
 % st_pointfromtext_single_value # name
 % boolean # type
@@ -54,12 +54,12 @@ Ready.
 % boolean # type
 % 5 # length
 [ true	]
-#SELECT ST_IsClosed(st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
+#SELECT ST_IsClosed(st_polygonfromtext('POLYGON((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
 % .L # table_name
 % st_polygonfromtext_single_value # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10 10, 20 20 20, 10 10 10)'));
 % .L # table_name
 % st_linefromtext_single_value # name
@@ -87,10 +87,25 @@ Ready.
 % st_isclosed_g # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #drop table geo;
+#SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries;
+% sys.L,	sys.L # table_name
+% GEOMETRY,	st_isclosed_geom # name
+% geometry,	boolean # type
+% 0,	5 # length
+[ "POINT (10 20)",	true	]
+[ "LINESTRING (10 20, 30 40, 50 60)",	false	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))",	true	]
+[ "MULTIPOINT (10 20, 30 40)",	true	]
+[ "MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))",	false	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))",	false	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))",	true	]
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))",	true	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))",	false	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40, 10 20), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))",	true	]
 
-# 10:52:08 >  
-# 10:52:08 >  "Done."
-# 10:52:08 >  
+# 12:51:38 >  
+# 12:51:38 >  "Done."
+# 12:51:38 >  
 

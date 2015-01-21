@@ -177,9 +177,61 @@ str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
 			
 			return msg;
 		}
-		BUNappend(outBAT,outSingle,TRUE); //add the point to the new BAT
+		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
 		GDKfree(outSingle);
 		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+	
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.wkbIsClosed", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbIsClosed", "The arguments must have dense and aligned heads");
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.wkbIsClosed", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the input BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		bit outSingle;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = wkbIsClosed(&outSingle, &inWKB)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "batgeom.wkbIsClosed", "%s", err);
+			GDKfree(err);
+
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			
+			return msg;
+		}
+		BUNappend(outBAT,&outSingle,TRUE); //add the result to the new BAT
 	}
 
 	//set the number of elements in the outBAT
