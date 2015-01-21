@@ -14,7 +14,9 @@ loadTestGeometries
 ST_AsText
 
 ST_IsClosed
-#isSimple
+#ST_IsSimple
+ST_IsEmpty
+
 #isValid
 #isRing
 #coordinates

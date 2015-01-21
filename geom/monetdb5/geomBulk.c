@@ -191,7 +191,7 @@ str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
 	return MAL_SUCCEED;
 }
 
-str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
+static str wkbBitOut_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -199,18 +199,18 @@ str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbIsClosed", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbIsClosed", "The arguments must have dense and aligned heads");
+		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbIsClosed", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -222,8 +222,8 @@ str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
 		bit outSingle;
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbIsClosed(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbIsClosed", "%s", err);
+		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
 			BBPreleaseref(inBAT->batCacheid);
@@ -241,9 +241,15 @@ str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
+
 }
 
-
+str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
+	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsClosed, "batgeom.wkbIsClosed");
+}
+str wkbIsEmpty_bat(bat *outBAT_id, bat *inBAT_id) {
+	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
+}
 
 /*******************************/
 /********* Two inputs **********/

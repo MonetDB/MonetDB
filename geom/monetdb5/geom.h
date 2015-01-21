@@ -130,7 +130,10 @@ geom_export str wkbAsText_bat(bat *inBAT_id, bat *outBAT_id, int *withSRID);
 
 geom_export str wkbAsBinary(char**, wkb**);
 geom_export str wkbFromBinary(wkb**, char**);
+
 geom_export str wkbIsEmpty(bit*, wkb**);
+geom_export str wkbIsEmpty_bat(bat *inBAT_id, bat *outBAT_id);
+
 geom_export str wkbIsSimple(bit*, wkb**);
 //Is3D
 //IsMeasured
