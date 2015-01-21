@@ -1597,7 +1597,6 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	const GEOSGeometry* exteriorRingGeometry;
 	int numInteriorRings=0, i=0;
 	str err;
-	char* lvlStr = NULL;
 	int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char* newPath = NULL;
@@ -1619,7 +1618,6 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 	strcpy(newPath, path);
 	lvlDigitsNum = sprintf(newPath+pathLength, "%u", *lvl);
 	strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
-	GDKfree(lvlStr);
 
 
 	//get the points in the exterior ring
@@ -1648,7 +1646,6 @@ static str dumpPointsPolygon(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosG
 		strcpy(newPath, path);
 		lvlDigitsNum = sprintf(newPath+pathLength, "%u", *lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
-		GDKfree(lvlStr);
 
 		if((err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.DumpPoints", "%s", err);
@@ -1668,7 +1665,6 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 	const GEOSGeometry* multiGeometry = NULL;
 	str err;
 	unsigned int lvl = 0;
-	char* lvlStr = NULL;
 	size_t pathLength = strlen(path);
 	char* newPath = NULL;
 	char* extraStr = ",";
@@ -1686,7 +1682,6 @@ static str dumpPointsMultiGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry*
 		strcpy(newPath, path);
 		lvlDigitsNum = sprintf(newPath+pathLength, "%u", lvl);
 		strcpy(newPath+pathLength+lvlDigitsNum, extraStr);
-		GDKfree(lvlStr);
 
 		//*secondLevel = 0;
 		if((err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath)) != MAL_SUCCEED) {
