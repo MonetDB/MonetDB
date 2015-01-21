@@ -61,6 +61,10 @@ Ready.
 [ 1	]
 #INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20, 30 40, 50 60)'));
 [ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20, 30 40, 50 60, 80 60, 60 40, 10 20)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 10, 50 50, 30 80, 25 5)'));
+[ 1	]
 #INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
 [ 1	]
 #INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOINT(10 20, 30 40)'));

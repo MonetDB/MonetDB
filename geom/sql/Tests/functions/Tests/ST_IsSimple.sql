@@ -17,4 +17,4 @@ insert into geo values (st_mpointfromtext('multipoint(10 10, 20 20, 10 5)', 4326
 select st_isvalid(g) from geo;
 drop table geo;
 
-SELECT geom AS "GEOMETRY" FROM geometries WHERE id<10 AND ST_IsSimple(geom);
+SELECT geom AS "GEOMETRY" FROM geometries WHERE id<11 AND ST_IsSimple(geom);
