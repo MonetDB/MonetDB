@@ -210,8 +210,8 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	case TYPE_wrd:
 	case TYPE_flt:
 	case TYPE_dbl:
-		break;
 	case TYPE_str:
+		break;
 	default:
 		// don't compress them
 		BBPkeepref(*ret = bcompress->batCacheid);
@@ -1305,6 +1305,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
+	case TYPE_str:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, task,0,TRUE);
 		if( ret != b->batCacheid) 
@@ -1318,7 +1319,6 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 				BBPdecref(ret, TRUE);
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
-	case TYPE_str:
 		;
 	}
 	GDKfree(type);

@@ -35,3 +35,4 @@ returns table (
 external name sql."compression";
 
 create view sys."compression" as select * from sys."compression"();
+
