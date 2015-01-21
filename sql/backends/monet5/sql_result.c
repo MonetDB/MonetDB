@@ -773,11 +773,14 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+				if (b == NULL)
+					sql_error(m, 500, "failed to bind to table column");
 
 				if (sz > (lng) BATTINY)
 					b = BATextend(b, (BUN) sz);
 
-				assert(b != NULL);
+				if (b == NULL)
+					sql_error(m, 500, "failed to extend space for column");
 
 				HASHdestroy(b);
 
@@ -787,7 +790,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 					if ((fmt[i].c = BATextend(fmt[i].c, (BUN) sz)) == NULL) {
 						for (i--; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
-						sql_error(m, 500, "failed to allocate result table sizes ");
+						sql_error(m, 500, "failed to allocate space for column");
 						return NULL;
 					}
 				}
@@ -795,7 +798,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && (best || !as.error)) {
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+				(best || !as.error)) {
 				bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( bats == NULL){
 					TABLETdestroy_format(&as);
@@ -809,12 +813,15 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
 					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-					BATsetcount(b, cnt);
-					BBPunfix(b->batCacheid);
+					if (b == NULL)
+						sql_error(m, 500, "failed to bind to temporary column");
+					else {
+						BATsetcount(b, cnt);
+						BBPunfix(b->batCacheid);
+					}
 				}
 			}
 		}
-		(void) msg;
 		if (locked) {	/* fix delta structures and transaction */
 			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 				sql_column *c = n->data;
@@ -822,8 +829,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				sql_delta *d = c->data;
 
 				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
-				d->ibase = (oid) (d->cnt = BATcount(b));
-				BBPunfix(b->batCacheid);
+				if ( b == NULL)
+					sql_error(m, 500, "failed to bind to delta column");
+				else {
+					d->ibase = (oid) (d->cnt = BATcount(b));
+					BBPunfix(b->batCacheid);
+				}
 			}
 		}
 		if (as.error) {
