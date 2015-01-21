@@ -321,7 +321,7 @@ void PROPdestroy(PROPrec *p);
 BUN SORTfnd(BAT *b, const void *v);
 BUN SORTfndfirst(BAT *b, const void *v);
 BUN SORTfndlast(BAT *b, const void *v);
-void *THRdata[16];
+void *THRdata[THREADDATA];
 void THRdel(Thread t);
 Thread THRget(int tid);
 void *THRgetdata(int);

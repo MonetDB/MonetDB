@@ -776,12 +776,6 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				if (b == NULL)
 					sql_error(m, 500, "failed to bind to table column");
 
-				if (sz > (lng) BATTINY)
-					b = BATextend(b, (BUN) sz);
-
-				if (b == NULL)
-					sql_error(m, 500, "failed to extend space for column");
-
 				HASHdestroy(b);
 
 				fmt[i].c = b;
