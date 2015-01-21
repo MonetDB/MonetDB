@@ -2646,7 +2646,7 @@ gdk_export int THRhighwater(void);
 gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
-gdk_export void *THRdata[16];
+gdk_export void *THRdata[THREADDATA];
 
 #define GDKstdout	((stream*)THRdata[0])
 #define GDKstdin	((stream*)THRdata[1])
