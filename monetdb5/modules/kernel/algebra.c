@@ -2027,34 +2027,6 @@ ALGfind(ptr ret, const bat *bid, ptr val)
 	return msg;
 }
 
-
-str
-ALGindexjoin(bat *result, const bat *lid, const bat *rid)
-{
-	BAT *left, *right, *bn;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.indexjoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "algebra.indexjoin", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATthetajoin(left, right, JOIN_EQ, BUN_NONE);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	throw(MAL, "algebra.indexjoin", MAL_MALLOC_FAIL);
-}
-
 str
 ALGprojectNIL(bat *ret, const bat *bid)
 {

@@ -44,7 +44,7 @@ reorder00
 #rangePush01
 
 #emptyset00 Optimizer does not deal with subselects
-emptyset01
+#emptyset01 no more kdifference
 
 inline00
 inline01
