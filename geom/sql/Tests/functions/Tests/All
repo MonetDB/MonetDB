@@ -18,7 +18,9 @@ ST_IsEmpty
 ST_IsSimple
 
 #isValid
-#isRing
+
+ST_IsRing
+
 #coordinates
 #srid
 #geometryN

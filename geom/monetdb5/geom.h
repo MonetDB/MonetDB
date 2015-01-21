@@ -189,6 +189,8 @@ geom_export str wkbIsClosed(bit *out, wkb **geom);
 geom_export str wkbIsClosed_bat(bat *inBAT_id, bat *outBAT_id);
 
 geom_export str wkbIsRing(bit *out, wkb **geom);
+geom_export str wkbIsRing_bat(bat *inBAT_id, bat *outBAT_id);
+
 geom_export str wkbIsValid(bit *out, wkb **geom);
 geom_export str wkbIsValidReason(char** out, wkb **geom);
 geom_export str wkbIsValidDetail(char** out, wkb **geom);
