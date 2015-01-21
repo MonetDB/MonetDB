@@ -1,9 +1,9 @@
-stdout of test 'lineFromText` in directory 'geom/sql/Tests/functions` itself:
+stdout of test 'ST_LineFromText` in directory 'geom/sql/Tests/functions` itself:
 
 
-# 10:51:59 >  
-# 10:51:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
-# 10:51:59 >  
+# 15:46:16 >  
+# 15:46:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32350" "--set" "mapi_usock=/var/tmp/mtest-9662/.s.monetdb.32350" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:46:16 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,16 +13,16 @@ stdout of test 'lineFromText` in directory 'geom/sql/Tests/functions` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32350/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9662/.s.monetdb.32350
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 10:52:00 >  
-# 10:52:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
-# 10:52:00 >  
+# 15:46:16 >  
+# 15:46:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
+# 15:46:16 >  
 
 #create table lines_tbl(g geometry(linestring));
 #insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
@@ -70,8 +70,14 @@ Ready.
 % 0 # length
 [ "LINESTRING Z (20 20 20, 30 30 30, 40 40 40)"	]
 #drop table lines_tbl;
+#select st_linefromtext(geom) from geometriesTxt WHERE id=2;
+% sys.L # table_name
+% st_linefromtext_geom # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 20, 30 40, 50 60)"	]
 
-# 10:52:00 >  
-# 10:52:00 >  "Done."
-# 10:52:00 >  
+# 15:46:17 >  
+# 15:46:17 >  "Done."
+# 15:46:17 >  
 

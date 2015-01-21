@@ -189,3 +189,5 @@ insert into polygons_tbl values (st_geomfromtext('multipolygon(((30 30 30, 40 40
 insert into polygons_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40)', 4326));
 select * from polygons_tbl;
 drop table polygons_tbl;
+
+select st_geomfromtext(geom) from geometriesTxt;

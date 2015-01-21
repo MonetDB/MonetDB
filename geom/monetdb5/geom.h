@@ -117,6 +117,8 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
+geom_export str wkbFromText_bat(bat *inBAT_id, bat *outBAT_id, int *srid, int *tpe);
+
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag);
 
 

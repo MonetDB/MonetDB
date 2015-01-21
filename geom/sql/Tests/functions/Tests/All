@@ -1,14 +1,20 @@
+loadTestWKT
+
+ST_PointFromText
+ST_LineFromText
+ST_PolygonFromText
+ST_MPointFromText
+ST_MLineFromText
+ST_MPolygonFromText
+ST_GeomFromText
+
+dropTestWKT
+
+#makePoint
+
 loadTestGeometries
 
 
-#pointFromText
-#lineFromText
-#polygonFromText
-#mpointFromText
-#mlineFromText
-#mpolygonFromText
-#makePoint
-#geomFromText
 #geometryType
 
 ST_AsText

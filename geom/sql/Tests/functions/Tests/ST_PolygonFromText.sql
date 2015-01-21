@@ -29,3 +29,12 @@ insert into polygons_tbl values (st_polygonfromtext('polygon((30 30 30, 40 40 40
 insert into polygons_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)', 4326));
 select * from polygons_tbl;
 drop table polygons_tbl;
+
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=1;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=2;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=3;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=4;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=5;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=6;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=7;
+select st_polygonfromtext(geom) from geometriesTxt WHERE id=8;

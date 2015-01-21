@@ -1,9 +1,9 @@
-stdout of test 'mpointFromText` in directory 'geom/sql/Tests/functions` itself:
+stdout of test 'ST_MPointFromText` in directory 'geom/sql/Tests/functions` itself:
 
 
-# 10:52:01 >  
-# 10:52:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
-# 10:52:01 >  
+# 15:46:17 >  
+# 15:46:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32350" "--set" "mapi_usock=/var/tmp/mtest-9662/.s.monetdb.32350" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:46:17 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,16 +13,16 @@ stdout of test 'mpointFromText` in directory 'geom/sql/Tests/functions` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32350/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9662/.s.monetdb.32350
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 10:52:01 >  
-# 10:52:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
-# 10:52:01 >  
+# 15:46:17 >  
+# 15:46:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
+# 15:46:17 >  
 
 #create table points_tbl(g geometry(multipoint));
 #insert into points_tbl values (st_mpointfromtext('multipoint(10 10, 20 20)'));
@@ -70,8 +70,14 @@ Ready.
 % 0 # length
 [ "MULTIPOINT Z (20 20 20, 30 30 30)"	]
 #drop table points_tbl;
+#select st_mpointfromtext(geom) from geometriesTxt WHERE id=4;
+% sys.L # table_name
+% st_mpointfromtext_geom # name
+% geometry # type
+% 0 # length
+[ "MULTIPOINT (10 20, 30 40)"	]
 
-# 10:52:02 >  
-# 10:52:02 >  "Done."
-# 10:52:02 >  
+# 15:46:18 >  
+# 15:46:18 >  "Done."
+# 15:46:18 >  
 

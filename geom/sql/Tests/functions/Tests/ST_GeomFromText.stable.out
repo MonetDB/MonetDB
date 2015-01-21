@@ -1,9 +1,9 @@
-stdout of test 'geomFromText` in directory 'geom/sql/Tests/functions` itself:
+stdout of test 'ST_GeomFromText` in directory 'geom/sql/Tests/functions` itself:
 
 
-# 10:52:04 >  
-# 10:52:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
-# 10:52:04 >  
+# 15:46:19 >  
+# 15:46:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32350" "--set" "mapi_usock=/var/tmp/mtest-9662/.s.monetdb.32350" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:46:19 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,16 +13,16 @@ stdout of test 'geomFromText` in directory 'geom/sql/Tests/functions` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32350/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9662/.s.monetdb.32350
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 10:52:04 >  
-# 10:52:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
-# 10:52:04 >  
+# 15:46:20 >  
+# 15:46:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
+# 15:46:20 >  
 
 #create table points_tbl(g geometry(point));
 #insert into points_tbl values (st_geomfromtext('point(0 10)'));
@@ -300,8 +300,21 @@ Ready.
 % 0 # length
 [ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
 #drop table polygons_tbl;
+#select st_geomfromtext(geom) from geometriesTxt;
+% sys.L # table_name
+% st_geomfromtext_geom # name
+% geometry # type
+% 0 # length
+[ "POINT (10 20)"	]
+[ "LINESTRING (10 20, 30 40, 50 60)"	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))"	]
+[ "MULTIPOINT (10 20, 30 40)"	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))"	]
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))"	]
+[ "MULTIPOLYGON EMPTY"	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))"	]
 
-# 10:52:06 >  
-# 10:52:06 >  "Done."
-# 10:52:06 >  
+# 15:46:22 >  
+# 15:46:22 >  "Done."
+# 15:46:22 >  
 

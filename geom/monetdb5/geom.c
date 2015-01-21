@@ -2154,7 +2154,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 	*geomWKB = NULL;
 	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) && 
-			(wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || (te = ((*((*geomWKB)->data + 1) & 0x0f)+(*tpe>2))) == *tpe)) {
+			(wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || ((te = ((*((*geomWKB)->data + 1) & 0x0f)))+(*tpe>2)) == *tpe)) {
 		return MAL_SUCCEED;
 	}
 
@@ -2162,11 +2162,9 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 		*geomWKB = wkb_nil;
 	}	
 
-	//get back the correct value for geos 
-	te-= (te<4); 	
-
+	te += (te>2);
 	if (*tpe > 0 && te != *tpe)
-		throw(MAL, "wkb.FromText", "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe,0), te, geom_type2str(te,0));
+		throw(SQL, "wkb.FromText", "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe,0), te, geom_type2str(te,0));
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
