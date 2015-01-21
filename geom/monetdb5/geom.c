@@ -3451,12 +3451,26 @@ static str geosIsClosed(bit *out, const GEOSGeometry *geosGeometry) {
 	return MAL_SUCCEED;
 }
 
-str wkbIsClosed(bit *out, wkb **geom) {
+str wkbIsClosed(bit *out, wkb **geomWKB) {
 	str err;
 
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
 	if (!geosGeometry)
 		throw(MAL, "geom.IsClosed", "wkb2geos failed");
+
+	//if empty geometry return false
+	if((err = wkbIsEmpty(out, geomWKB)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.IsEmpty", "%s", err);
+		GDKfree(err);
+		GEOSGeom_destroy(geosGeometry);
+
+		return msg;
+	}
+	if(*out) {
+		*out = 0;
+		GEOSGeom_destroy(geosGeometry);
+		return MAL_SUCCEED;
+	}
 
 	if((err = geosIsClosed(out, geosGeometry)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.IsClosed", "%s", err);
