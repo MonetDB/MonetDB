@@ -38,11 +38,11 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 		(eid != NULL && e == NULL) ||
 		(hid != NULL && h == NULL)) {
 		if (g)
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 		if (e)
-			BBPreleaseref(e->batCacheid);
+			BBPunfix(e->batCacheid);
 		if (h)
-			BBPreleaseref(h->batCacheid);
+			BBPunfix(h->batCacheid);
 		throw(MAL, "group.subgroup", RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATgroup(&gn, &en, &hn, b, g, e, h)) == GDK_SUCCEED) {
@@ -53,13 +53,13 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 		BBPkeepref(*next);
 		BBPkeepref(*nhis);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (e)
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 	if (h)
-		BBPreleaseref(h->batCacheid);
+		BBPunfix(h->batCacheid);
 	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, "group.subgroup", GDK_EXCEPTION);
 }
 

@@ -788,7 +788,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			bat sid = * getArgReference_bat(stk, pci, 2);
 			if ((s = BATdescriptor(sid)) == NULL) {
-				BBPreleaseref(b->batCacheid);
+				BBPunfix(b->batCacheid);
 				throw(MAL, func, RUNTIME_OBJECT_MISSING);
 			}
 			if (pci->argc >= 4) {
@@ -802,14 +802,14 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		/* XXX backward compatibility code: ignore non-dense head, but
 		 * only if no candidate list */
 		s = BATmirror(BATmark(BATmirror(b), 0));
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		b = s;
 		s = NULL;
 	}
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, 1, 1, nil_if_empty);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (r == GDK_FAIL)
 		return mythrow(MAL, func, OPERATION_FAILED);
 	return MAL_SUCCEED;

@@ -171,7 +171,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(!bn->H->nil || !bn->H->nonil);
 		assert(!bn->T->nil || !bn->T->nonil);
 		BBPkeepref(*ret = bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	} else {
 		/* remaining steps */
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
@@ -186,7 +186,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
 		if( bb) 
-			BBPreleaseref(bb->batCacheid);
+			BBPunfix(bb->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -306,7 +306,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = i1; i <= i2; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if (b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
 		}
 		c = BATcount(b);
@@ -348,7 +348,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	for(i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		cap += BATcount(b);
@@ -360,7 +360,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		BATappend(bn,b,FALSE);

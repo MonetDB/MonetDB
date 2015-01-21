@@ -303,7 +303,7 @@ DCsliceStrict(bat *ret, bat *bid, lng *start, lng *end)
 
 	bn = BATslice(b, (BUN) *start, (BUN) *end + 1);
 
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn != NULL) {
 		if (!(bn->batDirty & 2))
 			bn = BATsetaccess(bn, BAT_READ);
