@@ -667,7 +667,6 @@ typedef struct {
 	Client cntxt;
 	int id;						/* for self reference */
 	int state;					/* line break=1 , 2 = update bat */
-	int msyncadvice;			/* perform the parallel msync */
 	int workers;				/* how many concurrent ones */
 	int error;					/* error during line break */
 	int next;
@@ -1040,12 +1039,8 @@ SQLworker(void *arg)
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
-					BAT *b;
 					t0 = GDKusec();
 					SQLworker_column(task, task->cols[i] - 1);
-					b = task->as->format[task->cols[i]-1].c;
-					if ( task->msyncadvice && b && b->batPersistence != PERSISTENT)
-						BATmsync(b);
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;
@@ -1645,7 +1640,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				/* stage one, break the lines in parallel */
 				ptask[j].error = 0;
 				ptask[j].state = BREAKLINE;
-				ptask[j].msyncadvice = cnt == task->maxrow; //about to read last block
 				ptask[j].next = task->top[task->cur];
 				ptask[j].fields = task->fields;
 				ptask[j].limit = task->limit;
@@ -1767,17 +1761,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
 	task->ateof = 1;
 	task->state = ENDOFCOPY;
-	if( !task->ateof || cnt <task->maxrow){
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout,"#Shut down reader\n");
-#endif
-		MT_sema_up(&task->producer, "SQLload_file");
-		MT_join_thread(task->tid);
-	}
-
-	MT_sema_destroy(&ptask[j].producer);
-	MT_sema_destroy(&ptask[j].consumer);
-
 #ifdef _DEBUG_TABLET_
 	for(i=0; i < as->nr_attrs; i++){
 		mnstr_printf(GDKout,"column "BUNFMT"\n",i);
@@ -1793,6 +1776,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].state = SYNCBAT;
 		MT_sema_up(&ptask[j].sema, "SQLload_file");
 	}
+
+	if( !task->ateof || cnt <task->maxrow){
+#ifdef _DEBUG_TABLET_
+		mnstr_printf(GDKout,"#Shut down reader\n");
+#endif
+		MT_sema_up(&task->producer, "SQLload_file");
+		MT_join_thread(task->tid);
+	}
+
+	MT_sema_destroy(&ptask[j].producer);
+	MT_sema_destroy(&ptask[j].consumer);
+
 	// await completion of the BAT syncs 
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply, "SQLload_file");
