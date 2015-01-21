@@ -3397,39 +3397,77 @@ static int wkbBasicBoolean(wkb **geom, char (*func)(const GEOSGeometry*)) {
 /* the function checks whether the geometry is closed. GEOS works only with
  * linestring geometries but PostGIS returns true in any geometry that is not
  * a linestring. I made it to be like PostGIS */
-str wkbIsClosed(bit *out, wkb **geom) {
-	int res = -1;
-	int geometryType = 0;
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+static str geosIsClosed(bit *out, const GEOSGeometry *geosGeometry) {
+	int geometryType = GEOSGeomTypeId(geosGeometry)+1;
+	int i = 0;
+	str err;
+	int geometriesNum;
 
 	*out = bit_nil;
 
+	switch(geometryType) {
+		case -1:
+			throw(MAL, "geom.IsClosed", "GEOSGeomTypeId failed");
+		case wkbPoint:
+		case wkbPolygon:
+		case wkbMultiPoint:
+		case wkbMultiPolygon:
+			//In all these case it is always true
+			*out = 1;
+			break;
+		case wkbLineString:
+			//check
+			if((i = GEOSisClosed(geosGeometry)) == 2)
+				throw(MAL, "geom.IsClosed", "GEOSisClosed failed");
+			*out = i;
+			break;
+		case wkbMultiLineString:
+		case wkbGeometryCollection:
+			//check each one separately
+			geometriesNum = GEOSGetNumGeometries(geosGeometry);
+			if(geometriesNum < 0)
+				throw(MAL, "geom.IsClosed","GEOSGetNumGeometries failed");
+
+			for(i=0; i<geometriesNum; i++) {
+				const GEOSGeometry *gN = GEOSGetGeometryN(geosGeometry, i);
+				if(!gN)
+					throw(MAL, "geom.IsClosed", "GEOSGetGeometryN failed");
+			
+				if((err = geosIsClosed(out, gN)) != MAL_SUCCEED) {
+					str msg = createException(MAL, "geom.IsClosed", "%s", err);
+					GDKfree(err);
+					return msg;
+				}
+
+				if(!*out) //no reason to check further logical AND will always be 0
+					return MAL_SUCCEED;
+			}
+
+			break;
+		default:
+			throw(MAL, "geom.IsClosed", "Unknown geometry type");
+	}
+
+	return MAL_SUCCEED;
+}
+
+str wkbIsClosed(bit *out, wkb **geom) {
+	str err;
+
+	GEOSGeom geosGeometry = wkb2geos(*geom);
 	if (!geosGeometry)
 		throw(MAL, "geom.IsClosed", "wkb2geos failed");
 
-	geometryType = GEOSGeomTypeId(geosGeometry)+1;
-
-	/* if the geometry is point or multipoint it is always closed */
-	if(geometryType == wkbPoint || geometryType == wkbMultiPoint) {
-		*out = 1;
+	if((err = geosIsClosed(out, geosGeometry)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.IsClosed", "%s", err);
+		GDKfree(err);
 		GEOSGeom_destroy(geosGeometry);
-		return MAL_SUCCEED;	
-	}
 
-	/* if the geometry is not a point, multipoint or linestring, it is always not closed */
-	if(geometryType != wkbLineString) {
-		*out = 0;
-		GEOSGeom_destroy(geosGeometry);
-		return MAL_SUCCEED;	
-	}
+		return msg;
+	}	
 
-	
-	res = GEOSisClosed(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 
-	if(res == 2)
-		throw(MAL, "geom.IsClosed", "GEOSisClosed failed");
-	*out = res;
 	return MAL_SUCCEED;
 }
 
