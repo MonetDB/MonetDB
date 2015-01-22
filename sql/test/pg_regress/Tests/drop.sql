@@ -140,6 +140,16 @@ DROP INDEX bt_txt_index;
 
 DROP INDEX bt_f8_index;
 
+--
+-- VIRTUAL CLASS REMOVAL
+--	(also tests removal of rewrite rules)
+--
+DROP VIEW street;
+
+DROP VIEW iexit;
+
+DROP VIEW toyemp;
+
 
 DROP TABLE  onek;
 
@@ -234,14 +244,3 @@ DROP TABLE  bt_f8_heap;
 -- DROP TABLE  RELTIME_TBL;
 
 -- DROP TABLE  TINTERVAL_TBL;
-
---
--- VIRTUAL CLASS REMOVAL
---	(also tests removal of rewrite rules)
---
-DROP VIEW street;
-
-DROP VIEW iexit;
-
-DROP VIEW toyemp;
-

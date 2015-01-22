@@ -57,8 +57,9 @@ loadwisconsin #[MK] copied from benchmarks
 create_table
 create_misc
 create_operator
-# create_index  # pg specific index syntax (USING btree() or rtree() or hash() and functional and conditional indexes) are not supported in MonetDB. skipping this test
-#ToDo create_view
+# create_index  # pg specific index syntax (USING btree() or rtree() or hash() and functional or partial indexes) are not supported in MonetDB. skipping this test
+create_view
+select_views
 create_aggregate
 #ToDo triggers
 #ToDo inherit
@@ -86,7 +87,6 @@ arrays
 #ToDo namespace
 #ToDo privileges
 #ToDo rules
-#ToDo select_views
 #ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables
