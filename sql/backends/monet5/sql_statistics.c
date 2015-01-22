@@ -133,33 +133,41 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sorted = BATtordered(bn);
 
 						// Gather the min/max value for builtin types
-#define minmax(TYPE,FMT) \
-{\
-	TYPE *val=0;\
-	val= BATmax(bn,0);\
-	if (val == NULL || ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
-		snprintf(maxval,8192,"nil");\
-	else snprintf(maxval,8192,FMT,*val);\
-	GDKfree(val);\
-	val= BATmin(bn,0);\
-	if (val == NULL || ATOMcmp(bn->ttype,val, ATOMnil(bn->ttype))== 0)\
-		snprintf(minval,8192,"nil");\
-	else snprintf(minval,8192,FMT,*val);\
-	GDKfree(val);\
-	break;\
-}
+#define minmax(TYPE,FMT)						\
+	do {								\
+		TYPE *val;						\
+		val = BATmax(bn, NULL);					\
+		if (val == NULL ||					\
+		    ATOMcmp(bn->ttype,val, ATOMnilptr(bn->ttype)) == 0)	\
+			snprintf(maxval, 8192, "nil");			\
+		else							\
+			snprintf(maxval, 8192, FMT, *val);		\
+		GDKfree(val);						\
+		val = BATmin(bn, NULL);					\
+		if (val == NULL ||					\
+		    ATOMcmp(bn->ttype,val, ATOMnilptr(bn->ttype)) == 0)	\
+			snprintf(minval, 8192, "nil");			\
+		else							\
+			snprintf(minval, 8192, FMT, *val);		\
+		GDKfree(val);						\
+	} while (0)
 						width = bn->T->width;
 						switch (bn->ttype) {
 						case TYPE_sht:
 							minmax(sht, "%d");
+							break;
 						case TYPE_int:
 							minmax(int, "%d");
+							break;
 						case TYPE_lng:
 							minmax(lng, LLFMT);
+							break;
 						case TYPE_flt:
 							minmax(flt, "%f");
+							break;
 						case TYPE_dbl:
 							minmax(dbl, "%f");
+							break;
 						case TYPE_str:
 						{
 							BUN p, q;
