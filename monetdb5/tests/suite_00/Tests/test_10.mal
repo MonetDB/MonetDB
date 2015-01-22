@@ -10,7 +10,6 @@
 	ka_a := algebra.sort(s);
 	la_a := io.print(ka_a);
 	ma_a := io.printf("#~EndVariableOutput~#\n");
-	oa_a := io.print(na);
 	s := bat.new(nil:oid,nil:int);
 	pa_a := bat.append(s,1);
 	qa_a := bat.append(s,1);
