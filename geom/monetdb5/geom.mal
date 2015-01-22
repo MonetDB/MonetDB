@@ -67,7 +67,6 @@ command getType{unsafe}(flags:int, format:int) :str address geoGetType
 comment "returns the str representation of the geometry type";
 
 
-command GeometryType{unsafe}(w:wkb, flag:int) :str address wkbGeometryType;
 command NumRings{unsafe}(w:wkb, exterior:int) :int address wkbNumRings
 comment "Returns the number of interior rings+exterior on the first polygon of the geometry";
 command MLineStringToPolygon{unsafe}(wkt:str, srid:int, flag:int) :wkb address wkbMLineStringToPolygon
@@ -196,11 +195,12 @@ command MakePointM{unsafe}(x:dbl, y:dbl, m:dbl) :wkb address geomMakePointM
 comment "creates a point using the coordinates";
 
 #Geometry Accessors
-function GeometryType1{unsafe}(w:wkb) :str;
+command GeometryType(w:wkb, flag:int) :str address wkbGeometryType;
+function GeometryType1(w:wkb) :str;
 	x := GeometryType(w, 0);
 	return x;
 end GeometryType1;
-function GeometryType2{unsafe}(w:wkb) :str;
+function GeometryType2(w:wkb) :str;
 	x := GeometryType(w, 1);
 	return x;
 end GeometryType2;
@@ -560,8 +560,6 @@ function GeomCollFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
 	return x;
 end GeomCollFromText;
 
-
-
 command ToText(w:bat[:oid,:wkb], withSRID:int) :bat[:oid,:str] address wkbAsText_bat;
 function AsText(w:bat[:oid,:wkb]) :bat[:oid,:str];
 	x := ToText(w,0);
@@ -571,6 +569,17 @@ function AsEWKT(w:bat[:oid,:wkb]) :bat[:oid,:str];
 	x := ToText(w,1);
 	return x;
 end AsEWKT;
+
+command GeometryType(w:bat[:oid,:wkb], flag:int) :bat[:oid,:str] address wkbGeometryType_bat;
+function GeometryType1(w:bat[:oid,:wkb]) :bat[:oid,:str];
+	x := GeometryType(w, 0);
+	return x;
+end GeometryType1;
+function GeometryType2(w:bat[:oid,:wkb]) :bat[:oid,:str];
+	x := GeometryType(w, 1);
+	return x;
+end GeometryType2;
+
 
 command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat;
 

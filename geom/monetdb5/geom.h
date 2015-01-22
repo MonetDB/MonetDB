@@ -124,7 +124,10 @@ geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, 
 
 /* Basic Methods on Geometric objects (OGC) */
 geom_export str wkbDimension(int*, wkb**);
+
 geom_export str wkbGeometryType(char**, wkb**, int*);
+geom_export str wkbGeometryType_bat(bat *inBAT_id, bat *outBAT_id, int *flag);
+
 geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
 geom_export str wkbAsText(char **outTXT, wkb **inWKB, int *withSRID);

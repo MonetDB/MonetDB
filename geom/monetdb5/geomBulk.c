@@ -137,8 +137,7 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 	return MAL_SUCCEED;
 }
 
-/*create textual representation of the wkb */
-str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
+static str wkbStrOutWithFlag_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*func)(char**, wkb**, int*), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -146,18 +145,18 @@ str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbAsText", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbAsText", "the arguments must have dense and aligned heads");
+		throw(MAL, name, "the arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbAsText", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -169,8 +168,8 @@ str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
 		char* outSingle;
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbAsText(&outSingle, &inWKB, withSRID)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbAsText", "%s", err);
+		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
 			BBPreleaseref(inBAT->batCacheid);
@@ -190,6 +189,14 @@ str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
+}
+
+/*create textual representation of the wkb */
+str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
+	return wkbStrOutWithFlag_bat(outBAT_id, inBAT_id, withSRID, wkbAsText, "batgeom.wkbAsText");
+}
+str wkbGeometryType_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
+	return wkbStrOutWithFlag_bat(outBAT_id, inBAT_id, flag, wkbGeometryType, "batgeom.wkbGeometryType");
 }
 
 str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {

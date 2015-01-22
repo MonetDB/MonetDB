@@ -15,8 +15,7 @@ dropTestWKT
 loadTestGeometries
 
 
-#geometryType
-
+ST_GeometryType
 ST_AsText
 
 ST_IsClosed
