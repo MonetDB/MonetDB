@@ -2837,7 +2837,7 @@ BBPtrim_select(size_t target, int dirty)
 				PTRFMTCAST(void *)b);
 
 			fprintf(stderr,
-				"#            (cnt=" BUNFMT ", mode=%d, "
+				"#            (cnt=" BUNFMT ", mode=%u, "
 				"refs=%d, wait=%d, parent=%d,%d, "
 				"lastused=%d,%d,%d)\n",
 				bbptrim[cur].cnt,
