@@ -56,7 +56,7 @@ insert
 loadwisconsin #[MK] copied from benchmarks
 create_table
 create_misc
-create_operator
+# create_operator # CREATE OPERATOR (and DROP OPERATOR) syntax not supported by MonetDB
 # create_index  # pg specific index syntax (USING btree() or rtree() or hash() and functional or partial indexes) are not supported in MonetDB. skipping this test
 create_view
 select_views

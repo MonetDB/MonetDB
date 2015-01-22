@@ -9,7 +9,7 @@
 -- directions and run this as "postgres", though...
 --
 UPDATE pg_user
-   SET usesuper = 't'::bool
+   SET usesuper = cast('true' as boolean)
    WHERE usename = 'postgres';
 
 
@@ -43,6 +43,7 @@ DROP FUNCTION oldstyle_length(integer, text);
 --
 -- OPERATOR REMOVAL
 --
+/* MonetDB does not support DROP OPERATOR (or CREATE OPERATOR) commands, so skip these
 DROP OPERATOR ## (string, string);
 
 DROP OPERATOR <% (string, widget);
@@ -55,6 +56,7 @@ DROP OPERATOR #@# (integer, none);
 
 -- right unary 
 DROP OPERATOR #%# (integer, none);	
+*/
 
 
 --
