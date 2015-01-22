@@ -18,11 +18,11 @@ loadTestGeometries
 ST_GeometryType
 ST_AsText
 
-ST_IsClosed
-ST_IsEmpty
-ST_IsSimple
-ST_IsValid
-ST_IsRing
+ST_IsClosed #ignores Z coordinate
+ST_IsEmpty 
+ST_IsSimple #ignores Z coordinate
+ST_IsValid #ignores Z coordinate
+ST_IsRing #ignores Z coordinate
 
 #coordinates
 #srid
@@ -32,13 +32,14 @@ ST_IsRing
 #numRings
 #transform
 
-ST_Contains
+ST_Contains #ignores Z coordinate
 
 #equals
 
 ST_Boundary #Missing geom_bat + bat_geom
 
 ST_Dimension
+ST_CoordDim
 
 ST_AsEWKT
 
