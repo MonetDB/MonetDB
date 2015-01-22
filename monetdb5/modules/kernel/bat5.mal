@@ -16,15 +16,7 @@
 # All Rights Reserved.
 
 module bat;
-command attach(tt:int, heapfile:str) :bat[:oid,:any_1]
-address BKCattach
-comment "Returns a new BAT with dense head and tail of the given type and uses
-        the given file to initialize the tail. The file will be owned by the
-        server.";
-
-command densebat(sz:wrd) :bat[:oid,:oid]
-address BKCdensebat
-comment "Creates a new [void,void] BAT of size 'sz'.";
+#TO BE MADE HEADLESS PLAN
 
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
@@ -48,6 +40,104 @@ address BKCrevert
 comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
         BAT sequence module)";
 
+command getHeadType(b:bat[:any_1,:any_2] ) :str 
+address BKCgetHeadType
+comment "Returns the type of the head column of a BAT, as an integer type number.";
+
+command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address BKCinsert_bat
+comment "Insert all BUNs of the second BAT into the first.";
+
+command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2], force:bit):bat[:any_1,:any_2]
+address BKCinsert_bat_force
+comment "Insert all BUNs of the second BAT into the first.";
+
+command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
+address BKCinsert_bun
+comment "Insert one BUN[h,t] in a BAT.";
+
+command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
+address BKCinsert_bun_force
+comment "Insert one BUN[h,t] in a BAT.";
+
+command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address BKCreplace_bat
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
+address BKCreplace_bat_force
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
+address BKCreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
+address BKCreplace_bun_force
+comment "Replace the tail value of one BUN that has some head value.";
+command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
+address BKCappend_wrap
+comment "append the content of u to i";
+
+command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2], force:bit ) :bat[:any_1,:any_2]
+address BKCappend_force_wrap
+comment "append the content of u to i";
+
+command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
+address BKCappend_val_force_wrap
+comment "append the value u to i";
+
+command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2) :bat[:oid,:any_2]
+address BKCbun_inplace
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address BKCbat_inplace
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2, force:bit) :bat[:oid,:any_2]
+address BKCbun_inplace_force
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
+address BKCbat_inplace_force
+comment "inplace replace values on the given locations";
+
+command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
+address BKCdelete_bun
+comment "Delete one specific BUN.";
+
+command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2]
+address BKCdelete
+comment "Delete all BUNs with a certain head value.";
+
+command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
+address BKCdelete_all
+comment "Delete all BUNs in a BAT.";
+
+command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address BKCdelete_bat_bun
+comment "Delete from the first BAT all BUNs with a corresponding BUN 
+        in the second.";
+
+command getAlpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address BKCgetAlpha
+comment "Obtain the list of BUNs added";
+command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+address BKCgetDelta
+comment "Obtain the list of BUNs deleted";
+
+#END OF HEADLESS PLAN
+
+command attach(tt:int, heapfile:str) :bat[:oid,:any_1]
+address BKCattach
+comment "Returns a new BAT with dense head and tail of the given type and uses
+        the given file to initialize the tail. The file will be owned by the
+        server.";
+
+command densebat(sz:wrd) :bat[:oid,:oid]
+address BKCdensebat
+comment "Creates a new [void,void] BAT of size 'sz'.";
 command info ( b:bat[:oid,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
 address BKCinfo
 comment "Produce a table containing information about a BAT in [attribute,value] format. 
@@ -62,10 +152,6 @@ comment "Calculate the actual size of the BAT descriptor, heaps, hashes and impr
 command getCapacity(b:bat[:oid,:any_2]):lng 
 address BKCgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
-
-command getHeadType(b:bat[:any_1,:any_2] ) :str 
-address BKCgetHeadType
-comment "Returns the type of the head column of a BAT, as an integer type number.";
 
 command getColumnType( b:bat[:oid,:any_2] ) :str 
 address BKCgetColumnType 
@@ -112,100 +198,9 @@ command isSortedReverse(b:bat[:oid,:any_1]) :bit
 address BKCisSortedReverse
 comment "Returns true if BAT values are reversely ordered.";
 
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2], force:bit):bat[:any_1,:any_2]
-address BKCinsert_bat_force
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCinsert_bun_force
-comment "Insert one BUN[h,t] in a BAT.";
-
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bat_force
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bun_force
-comment "Replace the tail value of one BUN that has some head value.";
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address BKCappend_wrap
-comment "append the content of u to i";
-
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2], force:bit ) :bat[:any_1,:any_2]
-address BKCappend_force_wrap
-comment "append the content of u to i";
-
 command append(i:bat[:oid,:any_1], u:any_1):bat[:oid,:any_1]
 address BKCappend_val_wrap
 comment "append the value u to i";
-
-#command append(i:bat[:void,:any_1], u:any_1):bat[:void,:any_1]
-#address BKCappend_val_wrap
-#comment "append the value u to i";
-
-#command append(i:bat[:any_1,:void], u:any_1):bat[:any_1,:void]
-#address BKCappend_reverse_val_wrap
-#comment "append the value u to i";
-
-command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
-address BKCappend_val_force_wrap
-comment "append the value u to i";
-
-command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2) :bat[:oid,:any_2]
-address BKCbun_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCbat_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2, force:bit) :bat[:oid,:any_2]
-address BKCbun_inplace_force
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCbat_inplace_force
-comment "inplace replace values on the given locations";
-
-command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCdelete_bun
-comment "Delete one specific BUN.";
-
-command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2]
-address BKCdelete
-comment "Delete all BUNs with a certain head value.";
-
-command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
-address BKCdelete_all
-comment "Delete all BUNs in a BAT.";
-
-command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN 
-        in the second.";
-
-command getAlpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetAlpha
-comment "Obtain the list of BUNs added";
-command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetDelta
-comment "Obtain the list of BUNs deleted";
 
 command setName ( b:bat[:oid,:any_2] , s:str) :void
 address BKCsetName
