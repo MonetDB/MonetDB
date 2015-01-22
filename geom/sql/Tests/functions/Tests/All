@@ -38,7 +38,7 @@ ST_Contains
 
 ST_Boundary #Missing geom_bat + bat_geom
 
-#dimension
+ST_Dimension
 
 ST_AsEWKT
 

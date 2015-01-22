@@ -591,6 +591,7 @@ command IsValid(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsValid_bat;
 
 command MakeBox2D(p1:bat[:oid,:wkb],p2:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbBox2D_bat;
 
+command Dimension(w:bat[:oid,:wkb]) :bat[:oid,:int] address wkbDimension_bat;
 
 
 
