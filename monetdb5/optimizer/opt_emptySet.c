@@ -155,8 +155,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 					if ( f == likeRef  || 
 					     f == sortRef  || 
 					     f == sortTailRef  ||
-					     f == sortHTRef  || 
-					     f == sortTHRef  || 
 					     f == semijoinRef ||
 					     f == fragmentRef ){
 
