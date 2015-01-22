@@ -10,7 +10,7 @@ ST_GeomFromText
 
 dropTestWKT
 
-#makePoint
+ST_MakePoint
 
 loadTestGeometries
 

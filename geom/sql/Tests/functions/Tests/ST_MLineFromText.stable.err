@@ -29,55 +29,55 @@ stderr of test 'ST_MLineFromText` in directory 'geom/sql/Tests/functions` itself
 # 15:46:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
 # 15:46:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326));
 ERROR = !column needs geometry(24, 0) and value is geometry(24, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('point(0 0)'));
 ERROR = !Geometry not type '6: MULTILINESTRING' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
 ERROR = !column needs geometry(24, 4326) and value is geometry(24, 0)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((30 30, 40 40, 50 50), (60 60, 70 70, 80 80))', 0));
 ERROR = !column needs geometry(24, 4326) and value is geometry(24, 0)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('point(0 0)', 4326));
 ERROR = !Geometry not type '6: MULTILINESTRING' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326));
 ERROR = !column needs geometry(26, 0) and value is geometry(26, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('point(0 0)'));
 ERROR = !Geometry not type '6: MULTILINESTRING' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))'));
 ERROR = !column needs geometry(26, 4326) and value is geometry(26, 0)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('multilinestring((30 30 30, 40 40 40, 50 50 50), (60 60 60, 70 70 70, 80 80 80))', 0));
 ERROR = !column needs geometry(26, 4326) and value is geometry(26, 0)
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = insert into lines_tbl values (st_mlinefromtext('point(0 0)', 4326));
 ERROR = !Geometry not type '6: MULTILINESTRING' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=1;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=2;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '2: LINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=3;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '4: POLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=4;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '5: MULTIPOINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=6;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=7;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
+MAPI  = (monetdb) /var/tmp/mtest-21977/.s.monetdb.34895
 QUERY = select st_mlinefromtext(geom) from geometriesTxt WHERE id=8;
 ERROR = !SQLException:wkb.FromText:Geometry not type '6: MULTILINESTRING' but '8: GEOMETRYCOLLECTION' instead
 

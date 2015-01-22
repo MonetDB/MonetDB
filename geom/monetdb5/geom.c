@@ -2433,22 +2433,8 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	return MAL_SUCCEED;
 }
 
-static str geomMakePoint(wkb **geomWKB, GEOSGeom geosGeometry) {
-	
-	*geomWKB = geos2wkb(geosGeometry);
-	
-	if(wkb_isnil(*geomWKB)) {
-		*geomWKB = wkb_nil;
-		throw(MAL, "geom.MakePoint", "Failed to crete WKB from GEOSGeometry");
-	}
-
-	return MAL_SUCCEED;
-}
-
-/* creates a point using the x, y coordinates */
-str geomMakePoint2D(wkb** out, double* x, double* y) {
+str wkbMakePoint(wkb** out, double *x, double *y, double *z, double *m, int *zmFlag) {
 	GEOSGeom geosGeometry = NULL;
-	str ret = MAL_SUCCEED;
 	GEOSCoordSequence *seq = NULL;
 
 	if (*x == dbl_nil || *y == dbl_nil) {
@@ -2457,109 +2443,48 @@ str geomMakePoint2D(wkb** out, double* x, double* y) {
 	}
 
 	//create the point from the coordinates
-	seq = GEOSCoordSeq_create(1, 2);
-	GEOSCoordSeq_setX(seq, 0, *x);
-	GEOSCoordSeq_setY(seq, 0, *y);
-	geosGeometry = GEOSGeom_createPoint(seq);
-	GEOSSetSRID(geosGeometry, 0);
+	if(*zmFlag == 0)
+		seq = GEOSCoordSeq_create(1, 2);
+	else if(*zmFlag == 10 || *zmFlag == 1)
+		seq = GEOSCoordSeq_create(1, 3);
+	else if(*zmFlag == 11)
+		throw(MAL, "geom.wkbMakePoint", "POINTZM is not supported");
 
-	if(geosGeometry == NULL){
-		*out = wkb_nil;
-		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordiates");
-	}
-
-	ret = geomMakePoint(out, geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	return ret;
-}
-
-/* creates a point using the x, y, z coordinates */
-str geomMakePoint3D(wkb** out, double* x, double* y, double* z) {
-	GEOSGeom geosGeometry = NULL;
-	str ret = MAL_SUCCEED;
-	GEOSCoordSequence *seq = NULL;
-
-	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
-		*out = wkb_nil;
-		return MAL_SUCCEED;
-	}
-
-	//create the point from the coordinates
-	seq = GEOSCoordSeq_create(1, 3);
-	GEOSCoordSeq_setX(seq, 0, *x);
-	GEOSCoordSeq_setY(seq, 0, *y);
-	GEOSCoordSeq_setZ(seq, 0, *z);
-	geosGeometry = GEOSGeom_createPoint(seq);
-
-	if(geosGeometry == NULL){
-		*out = wkb_nil;
-		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordiates");
-	}
-
-	ret = geomMakePoint(out, geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	return ret;
-}
-
-/* creates a point using the x, y, z, m coordinates */
-str geomMakePoint4D(wkb** out, double* x, double* y, double* z, double* m) {
-	GEOSGeom geosGeometry = NULL;
-	str ret = MAL_SUCCEED;
-	GEOSCoordSequence *seq = NULL;
-
-	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil || *m == dbl_nil) {
-		*out = wkb_nil;
-		return MAL_SUCCEED;
-	}
-
-	//create the point from the coordinates
-	seq = GEOSCoordSeq_create(1, 4);
-	GEOSCoordSeq_setX(seq, 0, *x);
-	GEOSCoordSeq_setY(seq, 0, *y);
-	GEOSCoordSeq_setZ(seq, 0, *z);
-	GEOSCoordSeq_setOrdinate(seq, 0, 3, *m);
-	geosGeometry = GEOSGeom_createPoint(seq);
-
-	if(geosGeometry == NULL){
-		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
-	}
-
-	ret = geomMakePoint(out, geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	return ret;
-}
-
-/* creates a point using the x, y, m coordinates */
-str geomMakePointM(wkb** out, double* x, double* y, double* m) {
-	GEOSGeom geosGeometry = NULL;
-	str ret = MAL_SUCCEED;
-	GEOSCoordSequence *seq = NULL;
-
-	if (*x == dbl_nil || *y == dbl_nil || *m == dbl_nil) {
-		*out = wkb_nil;
-		return MAL_SUCCEED;
-	}
-
-	//create the point from the coordinates
-	seq = GEOSCoordSeq_create(1, 3);
 	GEOSCoordSeq_setOrdinate(seq, 0, 0, *x);
 	GEOSCoordSeq_setOrdinate(seq, 0, 1, *y);
-	GEOSCoordSeq_setOrdinate(seq, 0, 2, *m);
-	geosGeometry = GEOSGeom_createPoint(seq);
 
-	if(geosGeometry == NULL){
-		*out = wkb_nil;
-		throw(MAL, "geomMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	if(*zmFlag == 10) {
+		if(*z == dbl_nil) {
+			*out = wkb_nil;
+			GEOSCoordSeq_destroy(seq);
+			return MAL_SUCCEED;
+		}
+
+		GEOSCoordSeq_setOrdinate(seq, 0, 2, *z);
+	} else if(*zmFlag == 1) {
+		if(*m == dbl_nil) {
+			*out = wkb_nil;
+			GEOSCoordSeq_destroy(seq);
+			return MAL_SUCCEED;
+		}
+
+		GEOSCoordSeq_setOrdinate(seq, 0, 2, *m);
 	}
 
-	ret = geomMakePoint(out, geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
+	if(!(geosGeometry = GEOSGeom_createPoint(seq))){
+		*out = wkb_nil;
+		throw(MAL, "geom.wkbMakePoint", "Failed to create GEOSGeometry from the coordiates");
+	}
 
-	return ret;
+	*out = geos2wkb(geosGeometry);
+	
+	if(wkb_isnil(*out)) {
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.wkbMakePoint", "Failed to crete WKB from GEOSGeometry");
+	}
+
+	GEOSGeom_destroy(geosGeometry);
+	return MAL_SUCCEED;
 }
 
 /* common code for functions that return integer */

@@ -167,10 +167,8 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, double*);
 
 //geom_export str wkbFromString(wkb**, str*); 
 
-geom_export str geomMakePoint2D(wkb**, double*, double*);
-geom_export str geomMakePoint3D(wkb**, double*, double*, double*);
-geom_export str geomMakePoint4D(wkb**, double*, double*, double*, double*);
-geom_export str geomMakePointM(wkb**, double*, double*, double*);
+geom_export str wkbMakePoint(wkb**, double*, double*, double*, double*, int*);
+geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);
@@ -280,11 +278,6 @@ geom_export str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWK
 //geom_export str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id);
 geom_export str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id);
 geom_export str wkbFilter_bat_geom(int* BATfiltered_id, int* BAToriginal_id, wkb** geomWKB);
-
-geom_export str geomMakePoint2D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id);
-geom_export str geomMakePoint3D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id);
-geom_export str geomMakePoint4D_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* zBAT_id, int* mBAT_id);
-geom_export str geomMakePointM_bat(int* outBAT_id, int* xBAT_id, int* yBAT_id, int* mBAT_id);
 
 geom_export str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
 geom_export str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id);
