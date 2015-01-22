@@ -2763,11 +2763,12 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	return bn;
 
   alloc_fail:
-	if (avgb && *avgb)
+	if (avgb)
 		BBPreclaim(*avgb);
+	else
+		GDKfree(mean);
 	if (bn)
 		BBPreclaim(bn);
-	GDKfree(mean);
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
