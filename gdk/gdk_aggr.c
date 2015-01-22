@@ -2207,8 +2207,31 @@ BATminmax(BAT *b, void *aggr,
 			return NULL;
 		needdecref = 1;
 	}
-	(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
-			 NULL, NULL, BATcount(b), 1, 0);
+	if (b->T->imprints &&
+	    (VIEWtparent(b) == 0 ||
+	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) {
+		pos = oid_nil;
+		if (minmax == do_groupmin) {
+			/* find first non-empty bin */
+			for (s = 0; s < b->T->imprints->bits; s++) {
+				if (b->T->imprints->stats[s + 128]) {
+					pos = b->T->imprints->stats[s] + b->hseqbase;
+					break;
+				}
+			}
+		} else {
+			/* find last non-empty bin */
+			for (s = b->T->imprints->bits - 1; s >= 0; s--) {
+				if (b->T->imprints->stats[s + 128]) {
+					pos = b->T->imprints->stats[s + 64] + b->hseqbase;
+					break;
+				}
+			}
+		}
+	} else {
+		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
+				 NULL, NULL, BATcount(b), 1, 0);
+	}
 	if (pos == oid_nil) {
 		res = ATOMnilptr(b->ttype);
 	} else {
