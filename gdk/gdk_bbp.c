@@ -2412,19 +2412,6 @@ BBPkeepref(bat i)
 	}
 }
 
-void
-BBPreleaseref(bat i)
-{
-	int lock = locked_by ? MT_getpid() != locked_by : 1;
-
-	if (i == bat_nil)
-		return;
-	if (i < 0)
-		i = -i;
-	assert(BBP_refs(i) > 0);
-	decref(i, FALSE, FALSE, lock);
-}
-
 static inline void
 GDKunshare(bat parent)
 {
