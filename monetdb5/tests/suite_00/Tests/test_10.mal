@@ -10,9 +10,6 @@
 	ka_a := algebra.sort(s);
 	la_a := io.print(ka_a);
 	ma_a := io.printf("#~EndVariableOutput~#\n");
-	na_a := algebra.sortHT(s);
-	oa_a := io.print(na_a);
-	na := algebra.sortHT(s);
 	oa_a := io.print(na);
 	s := bat.new(nil:oid,nil:int);
 	pa_a := bat.append(s,1);
@@ -26,6 +23,3 @@
 	xa_a := algebra.sort(s);
 	ya_a := io.print(xa_a);
 	ab_a := io.printf("#~EndVariableOutput~#\n");
-	bb_a := algebra.sortHT(s);
-	cb_a := io.print(bb_a);
-	db_a := clients.quit();
