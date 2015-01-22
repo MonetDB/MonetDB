@@ -45,7 +45,7 @@ ST_AsEWKT
 #ST_Covers #Look at ST_Covers.sql for more details on the problem
 #ST_CoveredBy #Look at ST_CoveredBy.sql for more details on the problem
 
-#makeBox2D
+ST_MakeBox2D
 #makeEnvelope
 
 #mbr_overlap

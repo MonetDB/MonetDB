@@ -230,7 +230,9 @@ geom_export str wkbDumpPoints(int* idBAT_id, int* geomBAT_id, wkb**);
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
+
 geom_export str wkbBox2D(mbr** box, wkb** point1, wkb** point2);
+geom_export str wkbBox2D_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id);
 
 geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);

@@ -326,6 +326,72 @@ str wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id) {
 /********* Two inputs **********/
 /*******************************/
 
+str wkbBox2D_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+	BUN i=0;
+	str ret = MAL_SUCCEED;
+
+	//get the BATs
+	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
+		ret = createException(MAL, "batgeom.wkbBox2D", "Problem retrieving BATs");
+		goto clean;
+	}
+
+	//check if the BATs are dense and aligned
+	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
+		ret = createException(MAL, "batgeom.wkbBox2D", "BATs must have dense heads");
+		goto clean;
+	}
+	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
+		ret = createException(MAL, "batgeom.wkbBox2D", "BATs must be aligned");
+		goto clean;
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		ret = createException(MAL, "batgeom.wkbBox2D", "Error creating new BAT");
+		goto clean;
+	}
+
+	//set the first idx of the output BAT equal to that of the aBAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs	
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
+		str err = NULL;
+		mbr *outSingle;
+
+		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreleaseref(outBAT->batCacheid);	
+
+			ret = createException(MAL, "batgeom.wkbBox2D", "%s", err);
+			GDKfree(err);
+			
+			goto clean;
+		}
+		BUNappend(outBAT,outSingle,TRUE); //add the result to the outBAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+clean:
+	if(aBAT)
+		BBPreleaseref(aBAT->batCacheid);
+	if(bBAT)
+		BBPreleaseref(bBAT->batCacheid);
+		
+	return ret;
+}
+
 str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
