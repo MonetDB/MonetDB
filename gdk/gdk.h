@@ -820,9 +820,6 @@ typedef struct {
 	int len, vtype;
 } *ValPtr, ValRecord;
 
-/* definition of VALptr lower down in file after include of gdk_atoms.h */
-#define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
-
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, const ValRecord *res);
