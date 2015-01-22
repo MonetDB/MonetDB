@@ -1537,45 +1537,6 @@ ALGthsort(bat *result, const bat *lid)
 	throw(MAL, "algebra.thsort", GDK_EXCEPTION);
 }
 
-str
-ALGssort(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.ssort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATssort(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.ssort", GDK_EXCEPTION);
-}
-
-str
-ALGssort_rev(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.ssort_rev", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATssort_rev(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.ssort_rev", GDK_EXCEPTION);
-}
 
 str
 ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
