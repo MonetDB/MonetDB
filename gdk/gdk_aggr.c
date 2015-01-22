@@ -1875,118 +1875,15 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		}							\
 	} while (0)
 
-static BAT *
-BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
-	       int abort_on_error, 
-	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			     oid, oid, BUN, BUN, const oid *restrict,
-			     const oid *, BUN, int, int),
-	       const char *name)
-{
-	const oid *restrict gids;
-	oid min, max;
-	BUN ngrp;
-	oid *restrict oids;
-	BAT *bn = NULL;
-	BUN nils;
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
-	const char *err;
-
-	assert(tp == TYPE_oid);
-	(void) tp;		/* compatibility (with other BATgroup* */
-	(void) abort_on_error;	/* functions) argument */
-
-	if (!ATOMlinear(b->ttype)) {
-		GDKerror("%s: cannot determine minimum on "
-			 "non-linear type %s\n", name, ATOMname(b->ttype));
-		return NULL;
-	}
-
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
-		GDKerror("%s: %s\n", name, err);
-		return NULL;
-	}
-
-	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no minimums, so return bat aligned with g
-		 * with nil in the tail */
-		bn = BATconstant(TYPE_oid, &oid_nil, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
-	}
-
-	bn = BATnew(TYPE_void, TYPE_oid, ngrp, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	oids = (oid *) Tloc(bn, BUNfirst(bn));
-
-	if (g == NULL || BATtdense(g))
-		gids = NULL;
-	else
-		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
-
-	nils = (*minmax)(oids, b, gids, ngrp, min, max, start, end,
-			 cand, candend, cnt, skip_nils, g && BATtdense(g));
-
-	BATsetcount(bn, ngrp);
-
-	BATseqbase(bn, min);
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
-	return bn;
-}
-
-static void *
-BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			oid, oid, BUN, BUN, const oid *restrict,
-			const oid *, BUN, int, int))
-{
-	oid pos;
-	void *res;
-	int s;
-	int needdecref = 0;
-	BATiter bi;
-
-	if (!BAThdense(b)) {
-		if ((b = BATmirror(BATmark(BATmirror(b), 0))) == NULL)
-			return NULL;
-		needdecref = 1;
-	}
-	(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b), NULL, NULL,
-			 BATcount(b), 1, 0);
-	if (pos == oid_nil) {
-		res = ATOMnilptr(b->ttype);
-	} else {
-		bi = bat_iterator(b);
-		res = BUNtail(bi, pos + BUNfirst(b) - b->hseqbase);
-	}
-	if (aggr == NULL) {
-		s = ATOMlen(b->ttype, res);
-		aggr = GDKmalloc(s);
-	} else {
-		s = ATOMsize(ATOMtype(b->ttype));
-	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
-	if (needdecref)
-		BBPunfix(b->batCacheid);
-	return aggr;
-}
-
 /* calculate group minimums with optional candidates list
  *
  * note that this functions returns *positions* of where the minimum
  * values occur */
 static BUN
-do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid min, oid max,
-	    BUN start, BUN end, const oid *restrict cand, const oid *candend, BUN cnt,
-	    int skip_nils, int gdense)
+do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
+	    oid min, oid max, BUN start, BUN end,
+	    const oid *restrict cand, const oid *candend,
+	    BUN cnt, int skip_nils, int gdense)
 {
 	oid gid;
 	BUN i, nils;
@@ -2102,28 +1999,15 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid 
 	return nils;
 }
 
-BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
-{
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmin, "BATgroupmin");
-}
-
-void *
-BATmin(BAT *b, void *aggr)
-{
-	return BATminmax(b, aggr, do_groupmin);
-}
-
 /* calculate group maximums with optional candidates list
  *
  * note that this functions returns *positions* of where the maximum
  * values occur */
 static BUN
-do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid min, oid max,
-	    BUN start, BUN end, const oid *restrict cand, const oid *candend, BUN cnt,
-	    int skip_nils, int gdense)
+do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
+	    oid min, oid max, BUN start, BUN end,
+	    const oid *restrict cand, const oid *candend,
+	    BUN cnt, int skip_nils, int gdense)
 {
 	oid gid;
 	BUN i, nils;
@@ -2238,6 +2122,124 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp, oid 
 	}
 
 	return nils;
+}
+
+static BAT *
+BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
+	       int abort_on_error, 
+	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			     oid, oid, BUN, BUN, const oid *restrict,
+			     const oid *, BUN, int, int),
+	       const char *name)
+{
+	const oid *restrict gids;
+	oid min, max;
+	BUN ngrp;
+	oid *restrict oids;
+	BAT *bn = NULL;
+	BUN nils;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
+
+	assert(tp == TYPE_oid);
+	(void) tp;		/* compatibility (with other BATgroup* */
+	(void) abort_on_error;	/* functions) argument */
+
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("%s: cannot determine minimum on "
+			 "non-linear type %s\n", name, ATOMname(b->ttype));
+		return NULL;
+	}
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("%s: %s\n", name, err);
+		return NULL;
+	}
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no minimums, so return bat aligned with g
+		 * with nil in the tail */
+		bn = BATconstant(TYPE_oid, &oid_nil, ngrp, TRANSIENT);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	bn = BATnew(TYPE_void, TYPE_oid, ngrp, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	oids = (oid *) Tloc(bn, BUNfirst(bn));
+
+	if (g == NULL || BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	nils = (*minmax)(oids, b, gids, ngrp, min, max, start, end,
+			 cand, candend, cnt, skip_nils, g && BATtdense(g));
+
+	BATsetcount(bn, ngrp);
+
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+}
+
+static void *
+BATminmax(BAT *b, void *aggr,
+	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
+			oid, oid, BUN, BUN, const oid *restrict,
+			const oid *, BUN, int, int))
+{
+	oid pos;
+	void *res;
+	int s;
+	int needdecref = 0;
+	BATiter bi;
+
+	if (!BAThdense(b)) {
+		if ((b = BATmirror(BATmark(BATmirror(b), 0))) == NULL)
+			return NULL;
+		needdecref = 1;
+	}
+	(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
+			 NULL, NULL, BATcount(b), 1, 0);
+	if (pos == oid_nil) {
+		res = ATOMnilptr(b->ttype);
+	} else {
+		bi = bat_iterator(b);
+		res = BUNtail(bi, pos + BUNfirst(b) - b->hseqbase);
+	}
+	if (aggr == NULL) {
+		s = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(s);
+	} else {
+		s = ATOMsize(ATOMtype(b->ttype));
+	}
+	if (aggr != NULL)	/* else: malloc error */
+		memcpy(aggr, res, s);
+	if (needdecref)
+		BBPunfix(b->batCacheid);
+	return aggr;
+}
+
+BAT *
+BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	    int skip_nils, int abort_on_error)
+{
+	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+			      do_groupmin, "BATgroupmin");
+}
+
+void *
+BATmin(BAT *b, void *aggr)
+{
+	return BATminmax(b, aggr, do_groupmin);
 }
 
 BAT *
