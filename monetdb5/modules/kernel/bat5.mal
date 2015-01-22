@@ -16,6 +16,18 @@
 # All Rights Reserved.
 
 module bat;
+
+command order(b:bat[:oid,:any_2]) :bat[:oid,:any_2] 
+address BKCorder
+comment "Sorts the BAT itself on the head, in place. ";
+command orderReverse(b:bat[:oid,:any_2]) :bat[:oid,:any_2] 
+address BKCorder_rev
+comment "Reverse sorts the BAT itself on the head, in place. ";
+
+command getHeadType(b:bat[:oid,:any_2] ) :str 
+address BKCgetHeadType
+comment "Returns the type of the head column of a BAT, as an integer type number.";
+
 #TO BE MADE HEADLESS PLAN
 
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
@@ -28,21 +40,10 @@ command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1]
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
-command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCorder
-comment "Sorts the BAT itself on the head, in place. ";
-command orderReverse(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCorder_rev
-comment "Reverse sorts the BAT itself on the head, in place. ";
-
 command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCrevert
 comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
         BAT sequence module)";
-
-command getHeadType(b:bat[:any_1,:any_2] ) :str 
-address BKCgetHeadType
-comment "Returns the type of the head column of a BAT, as an integer type number.";
 
 command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BKCinsert_bat
