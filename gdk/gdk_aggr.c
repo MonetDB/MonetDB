@@ -1298,10 +1298,15 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		/* trivial: no averages, so return bat aligned with g
 		 * with nil in the tail */
 		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		if (bn == NULL) {
+			GDKerror("BATgroupavg: failed to create BAT\n");
+			return GDK_FAIL;
+		}
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		if (cntsp) {
 			wrd zero = 0;
 			if ((*cntsp = BATconstant(TYPE_wrd, &zero, ngrp, TRANSIENT)) == NULL) {
+				GDKerror("BATgroupavg: failed to create BAT\n");
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
