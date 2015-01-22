@@ -6,5 +6,5 @@ drop table geo;
 
 select ST_IsValid(ST_GeomFromText('POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))'));
 
-SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsValid(geom);
+SELECT geom AS "GEOMETRY" FROM geometries WHERE id<14 AND ST_IsValid(geom);
 

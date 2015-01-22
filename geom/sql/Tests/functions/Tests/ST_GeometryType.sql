@@ -42,4 +42,4 @@ WITH t AS ( SELECT 'GEOMETRYCOLLECTION(POINT(10 20 30),LINESTRING(10 20 30, 30 4
 SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
 
 
-SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM geometries;
+SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM geometries WHERE id<14;

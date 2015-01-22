@@ -29,52 +29,52 @@ stderr of test 'ST_MPolygonFromText` in directory 'geom/sql/Tests/functions` its
 # 15:46:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
 # 15:46:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
 ERROR = !column needs geometry(28, 0) and value is geometry(28, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
 ERROR = !column needs geometry(28, 0) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
 ERROR = !column needs geometry(28, 4326) and value is geometry(28, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30, 40 40, 50 50, 30 30),(300 300, 400 400, 500 500, 300 300)))', 0));
 ERROR = !column needs geometry(28, 4326) and value is geometry(28, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
 ERROR = !column needs geometry(28, 4326) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20 20, 30 30 30, 40 40 40, 20 20 20),(200 200 200, 300 300 300, 400 400 400, 200 200 200)))', 4326));
 ERROR = !column needs geometry(30, 0) and value is geometry(30, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
 ERROR = !column needs geometry(30, 0) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
 ERROR = !column needs geometry(30, 4326) and value is geometry(30, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30 30, 40 40 40, 50 50 50, 30 30 30),(300 300 300, 400 400 400, 500 500 500, 300 300 300)))', 0));
 ERROR = !column needs geometry(30, 4326) and value is geometry(30, 0)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
 ERROR = !column needs geometry(30, 4326) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=1;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=2;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '2: LINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=3;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '4: POLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=4;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '5: MULTIPOINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=5;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '6: MULTILINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-28358/.s.monetdb.37646
+MAPI  = (monetdb) /var/tmp/mtest-6601/.s.monetdb.34457
 QUERY = select st_mpolyfromtext(geom) from geometriesTxt WHERE id=8;
 ERROR = !SQLException:wkb.FromText:Geometry not type '7: MULTIPOLYGON' but '8: GEOMETRYCOLLECTION' instead
 

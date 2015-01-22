@@ -17,4 +17,4 @@ insert into geo values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 3
 select st_isclosed(g) from geo;
 drop table geo;
 
-SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries;
+SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries WHERE id<14;
