@@ -124,11 +124,11 @@ MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if  ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL,"mosaic.dump",INTERNAL_BAT_ACCESS);
 	if ( !b->T->heap.compressed){
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 		return MAL_SUCCEED;
 	}
 	MOSdumpInternal(cntxt,b);
-	BBPreleaseref(bid);
+	BBPunfix(bid);
 	return msg;
 }
 
@@ -214,18 +214,18 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		break;
 	default:
 		// don't compress them
-		BBPkeepref(*ret = bcompress->batCacheid);
+		BBPfix(*ret = bcompress->batCacheid);
 		return msg;
 	}
 
 	if (bcompress->T->heap.compressed) {
-		BBPkeepref(*ret = bcompress->batCacheid);
+		BBPfix(*ret = bcompress->batCacheid);
 		return msg;	// don't compress twice
 	}
 
 	if ( isVIEWCOMBINE(bcompress) || BATcount(bcompress) < MIN_INPUT_COUNT ){
 		/* no need to compress */
-		BBPkeepref(*ret = bcompress->batCacheid);
+		BBPfix(*ret = bcompress->batCacheid);
 		return msg;
 	}
 
@@ -235,7 +235,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
 
 	if (bsrc == NULL) {
-		BBPreleaseref(bcompress->batCacheid);
+		BBPunfix(bcompress->batCacheid);
 		throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bsrc,bcompress->hseqbase);
@@ -245,13 +245,13 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
 		if (BATsetaccess(bcompress, BAT_WRITE) == NULL) {
-			BBPreleaseref(bsrc->batCacheid);
-			BBPreleaseref(bcompress->batCacheid);
+			BBPunfix(bsrc->batCacheid);
+			BBPunfix(bcompress->batCacheid);
 			throw(MAL, "mosaic.compress", GDK_EXCEPTION);
 		}
 		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
 		if( bcompress == NULL){
-			BBPreleaseref(bsrc->batCacheid);
+			BBPunfix(bsrc->batCacheid);
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 		}
 		// initialize the non-compressed read pointer
@@ -269,8 +269,8 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		msg = MCstartMaintenance(cntxt,1,0);
 		if( msg != MAL_SUCCEED){
 			GDKfree(task);
-			BBPreleaseref(bsrc->batCacheid);
-			BBPreleaseref(bcompress->batCacheid);
+			BBPunfix(bsrc->batCacheid);
+			BBPunfix(bcompress->batCacheid);
 			throw(MAL, "mosaic.compress", "Can not claim server");
 		}
 	} else {
@@ -280,7 +280,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// Initialize local compressed copy
 		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
 		if( bsrc == NULL){
-			BBPreleaseref(bcompress->batCacheid);
+			BBPunfix(bcompress->batCacheid);
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 		}
 		task->src = Tloc(bcompress, BUNfirst(bcompress));
@@ -451,8 +451,8 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		bcompress->T->heap.compressed= 1;
 		MCexitMaintenance(cntxt);
 		BATsetaccess(bcompress, BAT_READ);
-		BBPkeepref(*ret = bcompress->batCacheid);
-		BBPreleaseref(bsrc->batCacheid);
+		BBPfix(*ret = bcompress->batCacheid);
+		BBPunfix(bsrc->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(bcompress));
 		// retain the stringwidth
@@ -461,8 +461,8 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		bsrc->T->heap.dirty = 1;
 		bsrc->T->heap.free = (size_t) (task->dst - Tloc(bsrc,BUNfirst(bsrc)) );
 		bsrc->T->heap.compressed= 1;
-		BBPkeepref(*ret = bsrc->batCacheid);
-		BBPreleaseref(bcompress->batCacheid);
+		BBPfix(*ret = bsrc->batCacheid);
+		BBPunfix(bcompress->batCacheid);
 	}
 	task->factor = task->hdr->factor = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 #ifdef _DEBUG_MOSAIC_
@@ -518,30 +518,30 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
 	if (!b->T->heap.compressed) {
-		BBPkeepref(*ret = b->batCacheid);
+		BBPfix(*ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (isVIEWCOMBINE(b)) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.decompress", "cannot decompress VIEWCOMBINE");
 	}
 	if (b->T->heap.compressed && VIEWtparent(b)) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
 	// use a copy to ensure you get the vheap as well
 	bsrc = BATcopy(b,b->htype,b->ttype,TRUE, TRANSIENT);
 	if ( bsrc == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bsrc,b->hseqbase);
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bsrc->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 	if(inplace) {
@@ -549,8 +549,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		msg = MCstartMaintenance(cntxt,1,0);
 		if( msg != MAL_SUCCEED){
 			GDKfree(msg);
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(bsrc->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bsrc->batCacheid);
 			throw(MAL, "mosaic.decompress", "Can not claim server");
 		}
 
@@ -641,8 +641,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		b->T->heap.compressed= 0;
 
 		MCexitMaintenance(cntxt);
-		BBPreleaseref(bsrc->batCacheid);
-		BBPkeepref( *ret = b->batCacheid);
+		BBPunfix(bsrc->batCacheid);
+		BBPfix( *ret = b->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(b));
 		bsrc->batDirty = 1;
@@ -655,8 +655,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
         bsrc->hkey = 1;
         BATderiveProps(bsrc,0);
 
-		BBPreleaseref(b->batCacheid);
-		BBPkeepref( *ret = bsrc->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPfix( *ret = bsrc->batCacheid);
 	}
 	if( task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
@@ -694,7 +694,7 @@ isCompressed(bat bid)
 		return 0;
 	b = BATdescriptor(bid);
 	r = b->T->heap.compressed;
-	BBPreleaseref(bid);
+	BBPunfix(bid);
 	return r;
 }
 
@@ -769,7 +769,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
 
@@ -777,7 +777,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
 		GDKfree(task);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
 	task->lb = (oid*) Tloc(bn,BUNfirst(bn));
@@ -787,8 +787,8 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cid) {
 		cand = BATdescriptor(*cid);
 		if (cand == NULL){
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
 			GDKfree(task);
 			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 		}
@@ -804,7 +804,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
 			*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-			BBPkeepref(bn->batCacheid);
+			BBPfix(bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -858,7 +858,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = 1;
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	GDKfree(task);
-	BBPkeepref(bn->batCacheid);
+	BBPfix(bn->batCacheid);
 	return msg;
 }
 
@@ -901,14 +901,14 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 
 	// accumulator for the oids
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	BATseqbase(bn,0);
@@ -919,8 +919,8 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cid) {
 		cand = BATdescriptor(*cid);
 		if (cand == NULL){
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
 			GDKfree(task);
 			throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
 		}
@@ -935,7 +935,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
-			BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+			BBPfix(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -980,7 +980,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = (BUN)( task->lb - (oid*) Tloc(bn,BUNfirst(bn)));
 	
 	if( cid)
-		BBPreleaseref(*cid);
+		BBPunfix(*cid);
 	if( bn){
 		BATsetcount(bn,cnt);
 		bn->hdense = 1;
@@ -990,7 +990,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn->tsorted = 1;
 		bn->trevsorted = BATcount(bn) <= 1;
 		bn->tkey = 1;
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+		BBPfix(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	GDKfree(task);
 	return msg;
@@ -1023,18 +1023,18 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	br = BATdescriptor(*rid);
 	if( br == NULL){
-		BBPreleaseref(*rid);
+		BBPunfix(*rid);
 		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 	}
 	if (isVIEWCOMBINE(br)){
-		BBPreleaseref(*rid);
+		BBPunfix(*rid);
 		throw(MAL,"mosaic.leftfetchjoin","compressed view");
 	}
 	cnt = BATcount(bl);
 	bn = BATnew(TYPE_void,br->ttype, cnt, TRANSIENT);
 	if ( bn == NULL){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		throw(MAL,"mosaic.leftfetchjoin",MAL_MALLOC_FAIL);
 	}
 
@@ -1047,8 +1047,8 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPreleaseref(bl->batCacheid);
-		BBPreleaseref(br->batCacheid);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
 		GDKfree(task);
 		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -1065,9 +1065,9 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part >= nrofparts){
-			BBPreleaseref(*lid);
-			BBPreleaseref(*rid);
-			BBPkeepref(*ret = bn->batCacheid);
+			BBPunfix(*lid);
+			BBPunfix(*rid);
+			BBPfix(*ret = bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -1113,8 +1113,8 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 	/* adminstrative wrapup of the leftfetchjoin */
-	BBPreleaseref(*lid);
-	BBPreleaseref(*rid);
+	BBPunfix(*lid);
+	BBPunfix(*rid);
 
 	BATsetcount(bn,cnt);
 	bn->hdense = 1;
@@ -1126,7 +1126,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
 	BATderiveProps(bn,0);
-	BBPkeepref(*ret = bn->batCacheid);
+	BBPfix(*ret = bn->batCacheid);
 	GDKfree(task);
 	return msg;
 }
@@ -1159,14 +1159,14 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
 	br = BATdescriptor(*rid);
 	if( br == NULL){
-		BBPreleaseref(bl->batCacheid);
+		BBPunfix(bl->batCacheid);
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
 	}
 
 	// we assume one compressed argument
 	if (bl->T->heap.compressed && br->T->heap.compressed ){
-		BBPreleaseref(bl->batCacheid);
-		BBPreleaseref(br->batCacheid);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
 		throw(MAL,"mosaic.join","Join over generator pairs not supported");
     }
 
@@ -1175,10 +1175,10 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	brn = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( bln == NULL || brn == NULL || task == NULL){
-		if( bln) BBPreleaseref(bln->batCacheid);
-		if( brn) BBPreleaseref(brn->batCacheid);
-		BBPreleaseref(bl->batCacheid);
-		BBPreleaseref(br->batCacheid);
+		if( bln) BBPunfix(bln->batCacheid);
+		if( brn) BBPunfix(brn->batCacheid);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
 		throw(MAL,"mosaic.join",MAL_MALLOC_FAIL);
 	}
 
@@ -1251,11 +1251,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     brn->trevsorted = cnt <= 1;
     BATderiveProps(brn,0);
     if( swapped){
-        BBPkeepref(*ret= brn->batCacheid);
-        BBPkeepref(*ret2= bln->batCacheid);
+        BBPfix(*ret= brn->batCacheid);
+        BBPfix(*ret2= bln->batCacheid);
     } else {
-        BBPkeepref(*ret= bln->batCacheid);
-        BBPkeepref(*ret2= brn->batCacheid);
+        BBPfix(*ret= bln->batCacheid);
+        BBPfix(*ret2= brn->batCacheid);
     }
 	GDKfree(task);
     return msg;
@@ -1277,18 +1277,18 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 		return 0;
 	}
 	if( b->ttype == TYPE_void ||  BATcount(b) < (BUN) threshold){
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 		//mnstr_printf(cntxt->fdout,"#too small %d %s\n",bid, BBP_logical(bid));
 		return 0;
 	}
 	if ( isVIEW(b) || isVIEWCOMBINE(b) || VIEWtparent(b)) {
 		mnstr_printf(cntxt->fdout,"#ignore view %d %s\n",bid, BBP_logical(bid));
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 		return 0;
 	}
 	if ( BATcount(b) < MIN_INPUT_COUNT ){
 		mnstr_printf(cntxt->fdout,"#ignore small %d %s\n",bid, BBP_logical(bid));
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 		return 0;
 	}
 	type = getTypeName(b->ttype);
@@ -1322,7 +1322,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 		;
 	}
 	GDKfree(type);
-	BBPreleaseref(bid);
+	BBPunfix(bid);
 	return 1;
 
 }
@@ -1341,7 +1341,7 @@ MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
 		bats[i] = BATnew(TYPE_void,TYPE_bte, cnt, TRANSIENT);
 		if ( bats[i] == NULL){
 			for( ;i>0; i--)
-				BBPreleaseref(bats[--i]->batCacheid);
+				BBPunfix(bats[--i]->batCacheid);
 			throw(MAL,"mosaic.slice", MAL_MALLOC_FAIL);
 		}
 		slices[i] = bats[i]->batCacheid;
