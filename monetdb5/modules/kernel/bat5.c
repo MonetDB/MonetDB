@@ -1127,23 +1127,6 @@ BKCgetCapacity(lng *res, const bat *bid)
 }
 
 str
-BKCgetHeadType(str *res, const bat *bid)
-{
-	const char *ret = str_nil;
-
-	if (BBPcheck(*bid, "bat.getHeadType")) {
-		BAT *b = lock_desc(*bid);
-
-		if (b) {
-			ret = *bid > 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
-		}
-		unlock_desc(*bid);
-	}
-	*res = GDKstrdup(ret);
-	return MAL_SUCCEED;
-}
-
-str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
