@@ -7,11 +7,7 @@
 	ea_a := io.print(bd);
 	a := transaction.alpha(b);
 	fa_a := io.print(a);
-	bdr:= bat.reverse(bd);
-	ga_a := bat.delete(bdr);
-	ha_a := transaction.commit(b);
-	ia_a := transaction.alpha(b);
-	ja_a := io.print(ia_a);
+
 	ka_a := bat.append(b,5);
 	la_a := bat.delete(b,2@0);
 	ma_a := io.print(b);

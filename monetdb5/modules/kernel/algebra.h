@@ -100,10 +100,6 @@ algebra_export str ALGsample(bat *result, const bat *bid, const int *param);
 
 algebra_export str ALGtsort(bat *result, const bat *bid);
 algebra_export str ALGtsort_rev(bat *result, const bat *bid);
-algebra_export str ALGhsort(bat *result, const bat *bid);
-algebra_export str ALGhsort_rev(bat *result, const bat *bid);
-algebra_export str ALGhtsort(bat *result, const bat *lid);
-algebra_export str ALGthsort(bat *result, const bat *lid);
 algebra_export str ALGssort(bat *result, const bat *bid);
 algebra_export str ALGssort_rev(bat *result, const bat *bid);
 algebra_export str ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);

@@ -34,6 +34,8 @@ sed -r \
 	-e 's/\bIS FALSE/= FALSE/Ig' \
 	-e 's/\bIS NOT TRUE/= NOT TRUE/Ig' \
 	-e 's/\bIS NOT FALSE/= NOT FALSE/Ig' \
+	-e 's/\b'f'::bool\b/cast('false' as boolean)/Ig' \
+	-e 's/\b't'::bool\b/cast('true' as boolean)/Ig' \
 	-e 's/\bbool 'f'\b/cast('false' as boolean)/Ig' \
 	-e 's/\bbool 't'\b/cast('true' as boolean)/Ig' \
 	-e 's/\bbool ''*''\b/cast('\1' as boolean)/Ig' \
@@ -124,6 +126,7 @@ sed -r \
 	-e 's/RESET geqo;/\/* RESET geqo; *\//Ig' \
 	-e 's/ WITH OIDS;/\/* WITH OIDS; *\//Ig' \
 	-e 's/ WITHOUT OIDS;/\/* WITHOUT OIDS; *\//Ig' \
+	-e 's/\s+([^\s]+)::bool\b/ cast(\1 as boolean)/Ig' \
 	-e 's/\s+([^\s]+)::cidr\b/ cast(\1 as inet)/Ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/Ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/Ig' \

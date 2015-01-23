@@ -87,7 +87,6 @@ gdk_export BAT *BBPdescriptor(bat b);
 gdk_export int BBPsync(int cnt, bat *subcommit);
 gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
-gdk_export void BBPreleaseref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 
