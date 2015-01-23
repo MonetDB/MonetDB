@@ -50,35 +50,7 @@ Ready.
 
 #start transaction;
 #create table test3351 (i integer);
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv';
-[ 5	]
-#select * from test3351;
-% sys.test3351 # table_name
-% i # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-#delete from test3351;
-[ 5	]
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv.gz';
-[ 5	]
-#select * from test3351;
-% sys.test3351 # table_name
-% i # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-#delete from test3351;
-[ 5	]
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv.bz2';
+#copy into test3351 from '/net/madrid/export/scratch1/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv';
 [ 5	]
 #select * from test3351;
 % sys.test3351 # table_name

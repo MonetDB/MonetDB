@@ -256,7 +256,7 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret= getArgReference_bat(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -270,7 +270,7 @@ CMDBATimprints(void *ret, bat *bid)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	BATimprints(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str
@@ -282,6 +282,6 @@ CMDBATimprintsize(lng *ret, bat *bid)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	*ret = IMPSimprintsize(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

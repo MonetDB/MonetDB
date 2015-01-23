@@ -1,11 +1,7 @@
 function tst();
     V1 := bat.new(:oid,:oid);
-    V7 := bat.new(:oid,:oid);
-    V10{rows=0} := bat.new(:oid,:oid);
-    V11 := bat.reverse(V10);
-    V12 := algebra.kdifference(V7,V11);
-    V16 := algebra.mark(V12);
-    V17 := algebra.join(V16,V7);
+    V7{rows=0} := bat.new(:oid,:oid);
+    V17 := algebra.join(V1,V7);
     bat.append(V1,V17);
 end tst;
     optimizer.costModel("user","tst");

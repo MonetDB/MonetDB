@@ -450,7 +450,7 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
 	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
  	}
 	BATseqbase(b,0);

@@ -1196,7 +1196,10 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 		/* double the heap size until we have enough space */
 		do {
-			newsize <<= 1;
+			if (newsize < 4 * 1024 * 1024)
+				newsize <<= 1;
+			else
+				newsize += 4 * 1024 * 1024;
 		} while (newsize <= h->free + pad + len + extralen);
 
 		assert(newsize);
@@ -1641,7 +1644,7 @@ strWrite(const char *a, stream *s, size_t cnt)
  * The basic type OID represents unique values. Refinements should be
  * considered to link oids in time order.
  *
- * Values start from the "seqbase" (usually 0@@0). A nil seqbase makes
+ * Values start from the "seqbase" (usually 0@0). A nil seqbase makes
  * the entire column nil.  Monet's BUN access methods
  * BUNhead(b,p)/BUNtail(b,p) instantiate a value on-the-fly by looking
  * at the position p in BAT b.
@@ -1726,7 +1729,7 @@ OIDread(str s)
  * Write the current sequence of OID seeds to a file in string format.
  */
 int
-OIDwrite(stream *s)
+OIDwrite(FILE *f)
 {
 	int ret = 0;
 	ATOMIC_TYPE o;
@@ -1735,9 +1738,7 @@ OIDwrite(stream *s)
 	o = ATOMIC_GET(GDKoid, GDKoidLock, "OIDwrite");
 	if (o) {
 		GDKflushed = (oid) o;
-		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (mnstr_errnr(s) ||
-		    mnstr_write(s, " ", 1, 1) <= 0)
+		if (fprintf(f, OIDFMT "@0", GDKflushed) < 0 || ferror(f))
 			ret = -1;
 	}
 	MT_lock_unset(&MT_system_lock, "OIDwrite");

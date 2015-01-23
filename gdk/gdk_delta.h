@@ -34,7 +34,7 @@
 		(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 0; \
 		(P1)->H->shift = ATOMelmshift(Hsize(P1));		\
 		(P1)->T->shift = ATOMelmshift(Tsize(P1));		\
-		DELTADEBUG printf(					\
+		DELTADEBUG fprintf(stderr,				\
 			"#DELTAinit %s free " SZFMT "," SZFMT " ins " BUNFMT \
 			" del " BUNFMT " first " BUNFMT " base " PTRFMT "," \
 			PTRFMT "\n",					\

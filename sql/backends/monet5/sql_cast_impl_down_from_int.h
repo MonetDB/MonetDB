@@ -124,7 +124,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 	}
 	bn = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), MAL_MALLOC_FAIL);
 	}
 	bn->hsorted = b->hsorted;
@@ -148,8 +148,8 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 				)
 				*o = (TP2) val;
 			else {
-				BBPreleaseref(b->batCacheid);
-				BBPreleaseref(bn->batCacheid);
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), (lng) val);
 			}
 		}
@@ -171,8 +171,8 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 					)
 					*o = (TP2) val;
 				else {
-					BBPreleaseref(b->batCacheid);
-					BBPreleaseref(bn->batCacheid);
+					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
 					throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), (lng) val);
 				}
 			}
@@ -191,12 +191,12 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 		BAT *r = VIEWcreate(b, bn);
 
 		BBPkeepref(*res = r->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(bn->batCacheid);
+		BBPunfix(b->batCacheid);
 		return msg;
 	}
 	BBPkeepref(*res = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -214,7 +214,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (int *res, const int *S1, const int *bid, const int *
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -245,7 +245,7 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);

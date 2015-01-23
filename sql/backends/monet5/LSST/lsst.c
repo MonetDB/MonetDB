@@ -460,17 +460,17 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	if( !bl->tsorted){
-		BBPreleaseref(*lid);
+		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
 	}
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
-		BBPreleaseref(*lid);
+		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	}
 	if( !br->tsorted){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
 	}
 
@@ -481,8 +481,8 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 
 	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xl == NULL){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(xl,0);
@@ -494,9 +494,9 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 
 	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xr == NULL){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
-		BBPreleaseref(xl->batCacheid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(xr,0);
@@ -529,8 +529,8 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 			}
 		}
 	}
-	BBPreleaseref(*lid);
-	BBPreleaseref(*rid);
+	BBPunfix(*lid);
+	BBPunfix(*rid);
 	BBPkeepref(*lres = xl->batCacheid);
 	BBPkeepref(*rres = xr->batCacheid);
 	return MAL_SUCCEED;

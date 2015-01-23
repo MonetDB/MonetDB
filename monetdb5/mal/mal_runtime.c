@@ -288,7 +288,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
 		total += heapinfo(b->T->vheap);
 		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)
 		stk->tmpspace += total/1024/1024; // keep it in MBs
     }

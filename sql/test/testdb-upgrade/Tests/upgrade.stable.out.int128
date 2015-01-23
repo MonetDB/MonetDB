@@ -18,6 +18,20 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
 create function sys.fuse(one bigint, two bigint)
 returns hugeint
 external name udf.fuse;
@@ -58,14 +72,114 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
-insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
-insert into sys.types values(6818, 'hge', 'hugeint', 128, 1, 2, 6, 0);
-insert into sys.types values(6819, 'hge', 'decimal', 39, 1, 10, 8, 0);
+insert into sys.types values(6828, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(6829, 'hge', 'decimal', 39, 1, 10, 8, 0);
 update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+drop filter function sys."like";
+create filter function sys."like"(val string, pat string, esc string) external name algebra."like";
+create filter function sys."like"(val string, pat string) external name algebra."like";
+drop filter function sys."ilike";
+create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
+create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
+drop view sys.storagemodel;
+drop view sys.tablestoragemodel;
+drop function sys.storagemodel;
+drop function sys.imprintsize;
+drop function sys.columnsize;
+create function sys.columnsize(nme string, i bigint, d bigint)
+returns bigint
+begin
+	case
+	when nme = 'boolean' then return i;
+	when nme = 'char' then return 2*i;
+	when nme = 'smallint' then return 2 * i;
+	when nme = 'int' then return 4 * i;
+	when nme = 'bigint' then return 8 * i;
+	when nme = 'hugeint' then return 16 * i;
+	when nme = 'timestamp' then return 8 * i;
+	when  nme = 'varchar' then
+		case
+		when cast(d as bigint) << 8 then return i;
+		when cast(d as bigint) << 16 then return 2 * i;
+		when cast(d as bigint) << 32 then return 4 * i;
+		else return 8 * i;
+		end case;
+	else return 8 * i;
+	end case;
+end;
+create function sys.imprintsize(i bigint, nme string)
+returns bigint
+begin
+	if nme = 'boolean'
+		or nme = 'tinyint'
+		or nme = 'smallint'
+		or nme = 'int'
+		or nme = 'bigint'
+		or nme = 'hugeint'
+		or nme = 'decimal'
+		or nme = 'date'
+		or nme = 'timestamp'
+		or nme = 'real'
+		or nme = 'double'
+	then
+		return cast( i * 0.12 as bigint);
+	end if;
+	return 0;
+end;
+create function sys.storagemodel()
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"count" bigint,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	imprints bigint,
+	sorted boolean)
+begin
+	return select I."schema", I."table", I."column", I."type", I."count",
+	columnsize(I."type", I.count, I."distinct"),
+	heapsize(I."type", I."distinct", I."atomwidth"),
+	hashsize(I."reference", I."count"),
+	imprintsize(I."count",I."type"),
+	I.sorted
+	from sys.storagemodelinput I;
+end;
+create view sys.storagemodel as select * from sys.storagemodel();
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+drop table sys.statistics;
+create table sys.statistics(
+	"column_id" integer,
+	"type" string,
+	width integer,
+	stamp timestamp,
+	"sample" bigint,
+	"count" bigint,
+	"unique" bigint,
+	"nils" bigint,
+	minval string,
+	maxval string,
+	sorted boolean);
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "testschema";
 
 

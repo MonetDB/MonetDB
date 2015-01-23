@@ -197,8 +197,8 @@ CMDbbpLocation(bat *ret)
 				BUNappend(b, buf, FALSE);
 			}
 		}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","location");
 	return MAL_SUCCEED;
 }
@@ -229,8 +229,8 @@ CMDbbpHeat(bat *ret)
 				BUNins(b, &i, &zero, FALSE);
 			}
 		}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpHeat");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","heat");
 	return MAL_SUCCEED;
 }
@@ -257,8 +257,8 @@ CMDbbpDirty(bat *ret)
 
 				BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
@@ -285,8 +285,8 @@ CMDbbpStatus(bat *ret)
 
 				BUNappend(b, loc, FALSE);
 			}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
@@ -315,8 +315,8 @@ CMDbbpKind(bat *ret)
 				if (mode)
 					BUNappend(b, mode, FALSE);
 			}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","kind");
 	return MAL_SUCCEED;
 }
@@ -339,8 +339,8 @@ CMDbbpRefCount(bat *ret)
 
 			BUNappend(b, &refs, FALSE);
 		}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","refcnt");
 	return MAL_SUCCEED;
 }
@@ -363,8 +363,8 @@ CMDbbpLRefCount(bat *ret)
 
 			BUNappend(b, &refs, FALSE);
 		}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","lrefcnt");
 	return MAL_SUCCEED;
 }

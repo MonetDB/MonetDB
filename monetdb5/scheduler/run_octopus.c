@@ -228,7 +228,7 @@ OCTOPUSdiscover(Client cntxt){
 				nrworkers++;
 			}
 		}
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 	}
 
 	if ( !nrworkers && msg == MAL_SUCCEED  ) {
