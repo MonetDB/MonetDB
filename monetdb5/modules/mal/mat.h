@@ -46,8 +46,8 @@ mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 mat_export str MATinfo(bat *ret, str *grp, str *elm);
 mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mat_export str MATsortReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mat_export str MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
 #endif /* _MAT_H */

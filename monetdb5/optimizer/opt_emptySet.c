@@ -153,8 +153,7 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 						break;
 					} 
 					if ( f == likeRef  || 
-					     f == sortRef  || 
-					     f == sortTailRef  ||
+					     f == sortRef  ||
 					     f == semijoinRef ||
 					     f == fragmentRef ){
 

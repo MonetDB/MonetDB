@@ -62,9 +62,9 @@ pattern project(map:bat[:oid,:bte], b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATproject
 comment "project using the map bat (contains which bat to use in scan order)";
 
-pattern sortTail(b:bat[:oid,:any_2]...)
+pattern sort(b:bat[:oid,:any_2]...)
 	(sorted:bat[:oid,:any_2], map:bat[:oid,:bte]) 
-address MATsortTail
+address MATsort
 comment "Returns a BAT copy sorted on the head column.";
 
 pattern sortReverseTail(b:bat[:oid,:any_2]...)
