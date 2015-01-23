@@ -2410,17 +2410,17 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
 		if( b)
-			BBPreleaseref(bid);
+			BBPunfix(bid);
 	}
 	// now sent it to the channel cntxt->fdout
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
 		msg = createException(SQL, "sql.resultset", "failed");
 wrapup_result_set:
-	if( tbl) BBPreleaseref(tblId);
-	if( atr) BBPreleaseref(atrId);
-	if( tpe) BBPreleaseref(tpeId);
-	if( len) BBPreleaseref(lenId);
-	if( scale) BBPreleaseref(scaleId);
+	if( tbl) BBPunfix(tblId);
+	if( atr) BBPunfix(atrId);
+	if( tpe) BBPunfix(tpeId);
+	if( len) BBPunfix(lenId);
+	if( scale) BBPunfix(scaleId);
 	return msg;
 }
 
@@ -2520,7 +2520,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
 		if( b)
-			BBPreleaseref(bid);
+			BBPunfix(bid);
 	}
 	// now select the file channel
     if ( strcmp(filename,"stdout") == 0 )
@@ -2540,11 +2540,11 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_close(s);
 wrapup_result_set1:
 	BBPunfix(order->batCacheid);
-	if( tbl) BBPreleaseref(tblId);
-	if( atr) BBPreleaseref(atrId);
-	if( tpe) BBPreleaseref(tpeId);
-	if( len) BBPreleaseref(lenId);
-	if( scale) BBPreleaseref(scaleId);
+	if( tbl) BBPunfix(tblId);
+	if( atr) BBPunfix(atrId);
+	if( tpe) BBPunfix(tpeId);
+	if( len) BBPunfix(lenId);
+	if( scale) BBPunfix(scaleId);
 	return msg;
 }
 
@@ -2608,11 +2608,11 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
 		msg = createException(SQL, "sql.resultset", "failed");
 wrapup_result_set:
-	if( tbl) BBPreleaseref(tblId);
-	if( atr) BBPreleaseref(atrId);
-	if( tpe) BBPreleaseref(tpeId);
-	if( len) BBPreleaseref(lenId);
-	if( scale) BBPreleaseref(scaleId);
+	if( tbl) BBPunfix(tblId);
+	if( atr) BBPunfix(atrId);
+	if( tpe) BBPunfix(tpeId);
+	if( len) BBPunfix(lenId);
+	if( scale) BBPunfix(scaleId);
 	return msg;
 }
 
@@ -2719,11 +2719,11 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( s != cntxt->fdout)
 		mnstr_close(s);
 wrapup_result_set:
-	if( tbl) BBPreleaseref(tblId);
-	if( atr) BBPreleaseref(atrId);
-	if( tpe) BBPreleaseref(tpeId);
-	if( len) BBPreleaseref(lenId);
-	if( scale) BBPreleaseref(scaleId);
+	if( tbl) BBPunfix(tblId);
+	if( atr) BBPunfix(atrId);
+	if( tpe) BBPunfix(tpeId);
+	if( len) BBPunfix(lenId);
+	if( scale) BBPunfix(scaleId);
 	return msg;
 }
 

@@ -1487,10 +1487,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
         task->cntxt->error_input = BATnew(TYPE_void, TYPE_str,0,TRANSIENT);
 		BATseqbase(task->cntxt->error_input,0);
 		if ( task->cntxt->error_row== NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL){
-			if (task->cntxt->error_row) BBPreleaseref(task->cntxt->error_row->batCacheid);
-			if (task->cntxt->error_fld) BBPreleaseref(task->cntxt->error_fld->batCacheid);
-			if (task->cntxt->error_msg) BBPreleaseref(task->cntxt->error_msg->batCacheid);
-			if (task->cntxt->error_input) BBPreleaseref(task->cntxt->error_input->batCacheid);
+			if (task->cntxt->error_row) BBPunfix(task->cntxt->error_row->batCacheid);
+			if (task->cntxt->error_fld) BBPunfix(task->cntxt->error_fld->batCacheid);
+			if (task->cntxt->error_msg) BBPunfix(task->cntxt->error_msg->batCacheid);
+			if (task->cntxt->error_input) BBPunfix(task->cntxt->error_input->batCacheid);
 		} else {
 			BBPkeepref( task->cntxt->error_row->batCacheid);
 			BBPkeepref( task->cntxt->error_fld->batCacheid);
