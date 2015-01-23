@@ -820,9 +820,6 @@ typedef struct {
 	int len, vtype;
 } *ValPtr, ValRecord;
 
-/* definition of VALptr lower down in file after include of gdk_atoms.h */
-#define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
-
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, const ValRecord *res);
@@ -937,29 +934,29 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;				/* label for head/tail column */
+	str id;			/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
-	bte type;			/* type id. */
-	bte shift;			/* log2 of bunwidth */
+	bte type;		/* type id. */
+	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,				/* duplicates allowed? */
-	 dense:1,			/* OID only: only consecutive values */
-	 nonil:1,			/* nonil isn't propchecked yet */
-	 nil:1,				/* there is a nil in the column */
-	 sorted:1,			/* column is sorted in ascending order */
+	 key:2,			/* duplicates allowed? */
+	 dense:1,		/* OID only: only consecutive values */
+	 nonil:1,		/* nonil isn't propchecked yet */
+	 nil:1,			/* there is a nil in the column */
+	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;			/* OID for sync alignment */
+	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
-	oid seq;			/* start of dense head sequence */
+	oid seq;		/* start of dense head sequence */
 
-	Heap heap;			/* space for the column. */
+	Heap heap;		/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;			/* hash table */
+	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */

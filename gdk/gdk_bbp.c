@@ -1230,7 +1230,7 @@ BBPexit(void)
 static inline int
 heap_entry(FILE *fp, COLrec *col)
 {
-	return fprintf(fp, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
+	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 		       col->type >= 0 ? BATatoms[col->type].name : ATOMunknown_name(col->type),
 		       col->width,
@@ -1284,8 +1284,10 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %s %d %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " %u %u %u %u",	/* BAT info */
-		    (ssize_t) i, BBP_status(i) & BBPPERSISTENT,
+	if (fprintf(fp, SSZFMT " %d %s %s %s %d %d " BUNFMT " " BUNFMT " "
+		    BUNFMT " " BUNFMT " " BUNFMT " %d %d %d %d", /* BAT info */
+		    (ssize_t) i,
+		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_logical(-i) ? BBP_logical(-i) : BBPNONAME,
 		    BBP_physical(i),
@@ -2412,19 +2414,6 @@ BBPkeepref(bat i)
 	}
 }
 
-void
-BBPreleaseref(bat i)
-{
-	int lock = locked_by ? MT_getpid() != locked_by : 1;
-
-	if (i == bat_nil)
-		return;
-	if (i < 0)
-		i = -i;
-	assert(BBP_refs(i) > 0);
-	decref(i, FALSE, FALSE, lock);
-}
-
 static inline void
 GDKunshare(bat parent)
 {
@@ -2849,7 +2838,7 @@ BBPtrim_select(size_t target, int dirty)
 				"refs=%d, wait=%d, parent=%d,%d, "
 				"lastused=%d,%d,%d)\n",
 				bbptrim[cur].cnt,
-				b->batPersistence,
+				(int) b->batPersistence,
 				BBP_refs(b->batCacheid),
 				(BBP_status(b->batCacheid) & BBPWAITING) != 0,
 				VIEWhparent(b),

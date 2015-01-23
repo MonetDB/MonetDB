@@ -5,7 +5,10 @@ b:=bat.new_persistent(:oid,:int);
 bat.append(b,2);
 bat.setName(b,"b");
 bat.setPersistent(b,true);
-transaction.commit();
+sb := bat.new(:oid,:str);
+bs := bat.getName(b);
+bat.append(sb, bs);
+transaction.subcommit(sb);
 
 c:=bat.new_persistent(:oid,:int);
 bat.append(c,4);
@@ -22,4 +25,4 @@ bat.setPersistent(da,false);
 transaction.subcommit(tmp);
 
 bat.setPersistent(b,false);
-transaction.commit();
+transaction.subcommit(sb);

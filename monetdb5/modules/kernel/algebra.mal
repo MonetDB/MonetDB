@@ -19,304 +19,15 @@
 # that return a BAT.
 module algebra;
 
-command exist(b:bat[:oid,:any_1], val:any_1):bit
-address ALGexist
-comment "Returns whether 'val' occurs in b.";
+# TO BE REMOVED OR CHANGED FOR HEADLESS
 
 command find(b:bat[:any_1,:any_2], h:any_1):any_2
 address ALGfind
-comment "Returns the tail value 't' for which some [h,t] BUN
-	exists in b.  If no such BUN exists, an error occurs." ;
+comment "Returns the index position of a value 't'.  If no such BUN exists, an error occurs." ;
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
 address ALGfetchoid
-comment "Returns the tail value of the BUN at x-th position
-	with 0 <= x < b.count";
-
-# The range selections are targeted at the tail of the BAT.
-command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
-address ALGsubselect1
-comment "Select all head values for which the tail value is in range.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the tail value
-	is between the values low and high (inclusive if li respectively
-	hi is set).  The output BAT is sorted on the tail value.  If low
-	or high is nil, the boundary is not considered (effectively - and
-	+ infinity).  If anti is set, the result is the complement.  Nil
-	values in the tail are never matched, unless low=nil, high=nil,
-	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,
-	high=nil, and li, hi are not both 1, or anti=1.
-	Note that the output is suitable as second input for the other
-	version of this function.";
-
-command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
-address ALGsubselect2
-comment "Select all head values of the first input BAT for which the tail value
-	is in range and for which the head value occurs in the tail of the
-	second input BAT.
-	The first input is a dense-headed BAT, the second input is a
-	dense-headed BAT with sorted tail, output is a dense-headed BAT
-	with in the tail the head value of the input BAT for which the
-	tail value is between the values low and high (inclusive if li
-	respectively hi is set).  The output BAT is sorted on the tail
-	value.  If low or high is nil, the boundary is not considered
-	(effectively - and + infinity).  If anti is set, the result is the
-	complement.  Nil values in the tail are never matched, unless
-	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
-	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
-	Note that the output is suitable as second input for this
-	function.";
-
-command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
-address ALGthetasubselect1
-comment "Select all head values for which the tail value obeys the relation
-	value OP VAL.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the
-	relationship holds.  The output BAT is sorted on the tail value.";
-
-command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
-address ALGthetasubselect2
-comment "Select all head values of the first input BAT for which the tail value
-	obeys the relation value OP VAL and for which the head value occurs in
-	the tail of the second input BAT.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the
-	relationship holds.  The output BAT is sorted on the tail value.";
-
-
-command select(b:bat[:oid,:any_2], low:any_2, high:any_2):bat[:oid,:any_2]
-address ALGselect
-comment "Select all BUNs that have tail values: {v| low <= v <= high}.
-	NIL boundary values have a special meaning.
-		+ low  == nil means: no lower bound
-		+ high == nil means: no upper bound.
-		NOTE 1: you should cast the nil to the appropriate type,
-				e.g. int(nil) in order to circumvent type clashes.
-		NOTE 2: as the 'nil' element has no clear place in the
-				ordered domain of values, tuples with 'nil' values
-				are NEVER returned by the range select.";
-
-command select(b:bat[:oid,:any_2], low:any_2, high:any_2, li:bit, hi:bit) :bat[:oid,:any_2]
-address ALGselectInclusive
-comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
-	Boundary inclusion is indicated separately.
-	NIL boundary values have a special meaning.
-	+ low  == nil means: no lower bound
-	+ high == nil means: no upper bound.";
-
-command select(b:bat[:oid,:any_2],value:any_2) :bat[:oid,:any_2]
-address ALGselect1
-comment "Select all BUNs of a BAT with a certain
-	tail value. Selection on NIL is also
-	possible (it should be properly casted,
-	e.g.:int(nil)).";
-
-command selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2]
-address ALGselectNotNil
-comment "Select all not-nil values";
-
-# The second group uses the head to perform the range selection
-
-command slice(b:bat[:any_1,:any_2], x:oid, y:oid) :bat[:any_1,:any_2]
-address ALGslice_oid
-comment "Return the slice based on head oid x till y (exclusive).";
-
-command slice(b:bat[:any_1,:any_2], x:lng, y:lng) :bat[:any_1,:any_2]
-address ALGslice
-comment "Return the slice with the BUNs at position x till y.";
-
-command slice(b:bat[:any_1,:any_2], x:int, y:int) :bat[:any_1,:any_2]
-address ALGslice_int
-comment "Return the slice with the BUNs at position x till y.";
-
-command slice(b:bat[:any_1,:any_2], x:wrd, y:wrd) :bat[:any_1,:any_2]
-address ALGslice_wrd
-comment "Return the slice with the BUNs at position x till y.";
-
-command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid]
-address ALGsubslice_wrd
-comment "Return the oids of the slice with the BUNs at position x till y.";
-
-command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
-address ALGgroupby
-comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
-
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
-		li:bit, hi:bit) :bat[:any_1,:void]
-address ALGuselectInclusive
-comment "See select() but limited to head values";
-
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void]
-address ALGuselect;
-command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
-address ALGuselect1
-comment "Value select, but returning only the
-	head values. SEE ALSO:select(bat,val)";
-
-# Pattern matching
-command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
-address ALGlike
-comment "Selects all elements that have 'substr' as in the tail.";
-
-# Sampling
-command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
-address ALGsample
-comment "Returns the oids of a random selection of size 'num' from the input BAT.";
-
-# BAT copying
-command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGcopy
-comment "Returns physical copy of a BAT.";
-# Sorted copy
-command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGhsort
-comment "Returns a BAT copy sorted on the head column.";
-command sortReverse( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGhsort_rev
-comment "Returns a BAT copy reversely sorted on the head column.";
-
-command sortTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGtsort
-comment "Returns a BAT copy sorted on the tail column.";
-command sortReverseTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGtsort_rev
-comment "Returns a BAT copy reversely sorted on the tail column.";
-
-command sortHT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGhtsort
-comment "Returns a lexicographically sorted copy on head,tail.";
-command sortTH( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGthsort
-comment "Returns a lexicographically sorted copy on tail,head.";
-
-command ssort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGssort
-comment "Returns copy of a BAT with the BUNs sorted on ascending head values.
-         This is a stable sort.";
-command ssort_rev( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGssort_rev
-comment "Returns copy of a BAT with the BUNs sorted on descending head values.
-         This is a stable sort.";
-
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort11
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort12
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort13
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort21
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort22
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort23
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
-address ALGsubsort31
-comment "Returns a copy of the BAT sorted on tail values.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
-address ALGsubsort32
-comment "Returns a copy of the BAT sorted on tail values and a BAT that
-         specifies how the input was reordered.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
-address ALGsubsort33
-comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
-         how the input was reordered, and a BAT with group information.
-         The input and output are (must be) dense headed.
-         The order is descending if the reverse bit is set.
-		 This is a stable sort if the stable bit is set.";
-
-command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGrevert
-comment "Returns a BAT copy with buns in reverse order";
-
-# @+ Set operations
-# Sets in Monet can be viewed in two ways:
-# @itemize
-# @item
-# by looking at both columns of a BAT together (Set-, or s-operators).
-# @item
-# by looking at the head column only (Key- or k-operators).
-# by looking at the tail column only (Tail key- or t-operators).
-# @end itemize
-# For this reason, all standard set operations come in three flavors:
-# k-@emph{operand} series, which look only at the head column,
-# t-@emph{operand} series, which look only at the tail column, and
-# s-@emph{operand} series, that look at the whole BUN.
-#
-# @noindent Operands provided are:
-# @itemize
-# @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat union.
-# @item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat difference.
-# @item [s,k,t]intersection(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-# bat intersection.
-# @end itemize
-# Implementations typically take two forms: if the input relation(s) is/are
-# ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
-# on demand for the hash-based algorithms.
-# The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
-# are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-# The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
-# not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-# The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
-# of @emph{r} that are not in @emph{l}. They do not do double-elimination
-# over the @emph{l} nor @emph{r} BUNs.
-# The kintersect(l,r) is used also as implementation for the
-# @emph{semijoin()}.
-#
-# The t-@emph{operand} series are cast into a k-@emph{operand}
-# expression enclosing it with a BATmirror.
-# unique elements
-command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
-address ALGsubunique2
-comment "Select all unique values from the tail of the first input.
-	Input is a dense-headed BAT, the second input is a
-	dense-headed BAT with sorted tail, output is a dense-headed
-	BAT with in the tail the head value of the input BAT that was
-	selected.  The output BAT is sorted on the tail value.  The
-	second input BAT is a list of candidates.";
-command subunique(b:bat[:oid,:any_1]) :bat[:oid,:oid]
-address ALGsubunique1
-comment "Select all unique values from the tail of the input.
-	Input is a dense-headed BAT, output is a dense-headed BAT with
-	in the tail the head value of the input BAT that was selected.
-	The output BAT is sorted on the tail value.";
+comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
 # Head-intersecting elements (a.k.a. semijoin)
 command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
@@ -328,7 +39,6 @@ comment "Returns the intersection taken over only the *head* columns of
 		If you want this, use: 'kintersect(kunique(left),kunique(right))'
 	or: 'kunique(kintersect(left,right))'.";
 
-# to be removed, still a bridge to far, code is generated/used in SQL
 command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2]
 address ALGsemijoin
@@ -361,62 +71,42 @@ address ALGkunion
 comment "Returns the union of two BATs; looking at head-columns only.
 		Results in all BUNs of 'left' that are  not in 'right', plus
 	all BUNs of 'right'.  *no* double-elimination is done.";
-#end of removal plans
 
-command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtinter;
+command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
+		li:bit, hi:bit) :bat[:any_1,:void]
+address ALGuselectInclusive
+comment "See select() but limited to head values";
 
-command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtdiff;
+command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void]
+address ALGuselect;
+command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
+address ALGuselect1
+comment "Value select, but returning only the
+	head values. SEE ALSO:select(bat,val)";
 
-command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
-address ALGtunion;
+command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGrevert
+comment "Returns a BAT copy with buns in reverse order";
 
-# @+ Join operations
-# The core of every relational engine.
-# The join collection provided by the GDK kernel.
-command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGantijoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
+command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
+address ALGgroupby
+comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
-command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGjoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
 
-# Theta Join
-command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGthetajoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
+# Sorted copy
+command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGhsort
+comment "Returns a BAT copy sorted on the head column.";
+command sortReverse( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGhsort_rev
+comment "Returns a BAT copy reversely sorted on the head column.";
 
-command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGcrossproduct2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
-
-command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit )
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGbandjoin2
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus], depending on (l_in/h_in), the bounds
-		are included. Works only for the builtin numerical types,
-		and their derivates.";
-
-command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGrangejoin2;
+command sortTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGtsort
+comment "Returns a BAT copy sorted on the tail column.";
+command sortReverseTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGtsort_rev
+comment "Returns a BAT copy reversely sorted on the tail column.";
 
 # Note that joins over void columns are handled as if they are oids.
 command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
@@ -507,6 +197,242 @@ comment "This is a join() for which the predicate is that two BUNs match
 
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
 address ALGrangejoin;
+
+#END OF HEADLESS PLANS
+
+# BAT copying
+command copy( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
+address ALGcopy
+comment "Returns physical copy of a BAT.";
+
+command exist(b:bat[:oid,:any_1], val:any_1):bit
+address ALGexist
+comment "Returns whether 'val' occurs in b.";
+
+# The range selections are targeted at the tail of the BAT.
+command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect1
+comment "Select all head values for which the tail value is in range.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the tail value
+	is between the values low and high (inclusive if li respectively
+	hi is set).  The output BAT is sorted on the tail value.  If low
+	or high is nil, the boundary is not considered (effectively - and
+	+ infinity).  If anti is set, the result is the complement.  Nil
+	values in the tail are never matched, unless low=nil, high=nil,
+	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,
+	high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for the other
+	version of this function.";
+
+command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	is in range and for which the head value occurs in the tail of the
+	second input BAT.
+	The first input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed BAT
+	with in the tail the head value of the input BAT for which the
+	tail value is between the values low and high (inclusive if li
+	respectively hi is set).  The output BAT is sorted on the tail
+	value.  If low or high is nil, the boundary is not considered
+	(effectively - and + infinity).  If anti is set, the result is the
+	complement.  Nil values in the tail are never matched, unless
+	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
+	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for this
+	function.";
+
+command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect1
+comment "Select all head values for which the tail value obeys the relation
+	value OP VAL.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	obeys the relation value OP VAL and for which the head value occurs in
+	the tail of the second input BAT.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+
+command select(b:bat[:oid,:any_2], low:any_2, high:any_2):bat[:oid,:any_2]
+address ALGselect
+comment "Select all BUNs that have tail values: {v| low <= v <= high}.
+	NIL boundary values have a special meaning.
+		+ low  == nil means: no lower bound
+		+ high == nil means: no upper bound.
+		NOTE 1: you should cast the nil to the appropriate type,
+				e.g. int(nil) in order to circumvent type clashes.
+		NOTE 2: as the 'nil' element has no clear place in the
+				ordered domain of values, tuples with 'nil' values
+				are NEVER returned by the range select.";
+
+command select(b:bat[:oid,:any_2], low:any_2, high:any_2, li:bit, hi:bit) :bat[:oid,:any_2]
+address ALGselectInclusive
+comment "Select all BUNs that have tail values: {v| low <{=} v <{=} high}.
+	Boundary inclusion is indicated separately.
+	NIL boundary values have a special meaning.
+	+ low  == nil means: no lower bound
+	+ high == nil means: no upper bound.";
+
+command select(b:bat[:oid,:any_2],value:any_2) :bat[:oid,:any_2]
+address ALGselect1
+comment "Select all BUNs of a BAT with a certain
+	tail value. Selection on NIL is also
+	possible (it should be properly casted,
+	e.g.:int(nil)).";
+
+command selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2]
+address ALGselectNotNil
+comment "Select all not-nil values";
+
+# Pattern matching
+command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
+address ALGlike
+comment "Selects all elements that have 'substr' as in the tail.";
+
+# Sampling
+command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
+address ALGsample
+comment "Returns the oids of a random selection of size 'num' from the input BAT.";
+
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort11
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort12
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort13
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort21
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort22
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort23
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort31
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort32
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort33
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort if the stable bit is set.";
+
+command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
+address ALGsubunique2
+comment "Select all unique values from the tail of the first input.
+	Input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed
+	BAT with in the tail the head value of the input BAT that was
+	selected.  The output BAT is sorted on the tail value.  The
+	second input BAT is a list of candidates.";
+command subunique(b:bat[:oid,:any_1]) :bat[:oid,:oid]
+address ALGsubunique1
+comment "Select all unique values from the tail of the input.
+	Input is a dense-headed BAT, output is a dense-headed BAT with
+	in the tail the head value of the input BAT that was selected.
+	The output BAT is sorted on the tail value.";
+
+
+command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
+address ALGtinter;
+
+command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
+address ALGtdiff;
+
+command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
+		:bat[:any_1,:any_2]
+address ALGtunion;
+
+# @+ Join operations
+# The core of every relational engine.
+# The join collection provided by the GDK kernel.
+command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGantijoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids
+	  from 'left' and 'right' for which there are BUNs in 'left'
+	  and 'right' with equal tails";
+
+command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGjoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids
+	  from 'left' and 'right' for which there are BUNs in 'left'
+	  and 'right' with equal tails";
+
+# Theta Join
+command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGthetajoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids
+	  from 'left' and 'right' for which there are BUNs in 'left'
+	  and 'right' with equal tails";
+
+command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGcrossproduct2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids
+	  from 'left' and 'right' for which there are BUNs in 'left'
+	  and 'right' with equal tails";
+
+command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit )
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGbandjoin2
+comment "This is a join() for which the predicate is that two BUNs match
+		if the left-tail value is within the range [right-head - minus,
+		right-head + plus], depending on (l_in/h_in), the bounds
+		are included. Works only for the builtin numerical types,
+		and their derivates.";
+
+command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGrangejoin2;
 
 command subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubjoin
@@ -611,6 +537,26 @@ address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
  	operation (not involving the heap)";
+# The second group uses the head to perform the range selection
+command slice(b:bat[:oid,:any_2], x:oid, y:oid) :bat[:oid,:any_2]
+address ALGslice_oid
+comment "Return the slice based on head oid x till y (exclusive).";
+
+command slice(b:bat[:oid,:any_2], x:lng, y:lng) :bat[:oid,:any_2]
+address ALGslice
+comment "Return the slice with the BUNs at position x till y.";
+
+command slice(b:bat[:oid,:any_2], x:int, y:int) :bat[:oid,:any_2]
+address ALGslice_int
+comment "Return the slice with the BUNs at position x till y.";
+
+command slice(b:bat[:oid,:any_2], x:wrd, y:wrd) :bat[:oid,:any_2]
+address ALGslice_wrd
+comment "Return the slice with the BUNs at position x till y.";
+
+command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid]
+address ALGsubslice_wrd
+comment "Return the oids of the slice with the BUNs at position x till y.";
 
 # @+ Common BAT Aggregates
 # These operations examine a BAT, and compute some simple aggregate result
@@ -643,7 +589,7 @@ comment "Return the cardinality of the BAT tail values.";
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
 
-#JAQL uses variable head types
+#SQL uses variable head types
 command min(b:bat[:any_1,:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -672,70 +618,4 @@ comment "Gives the variance of all tail values";
 command variancep(b:bat[:oid,:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
-
-
-# Exented selection predicates
-# For SQL convenience we provide a serie of interval selectors.
-module algebra;
-# Modeling With Properties
-# The Monet kernel performs run-time optimizations. To choose between
-# alternative algorithms in a sensible way, it maintains knowledge about
-# each BAT, sometimes as a BAT property, sometimes as two
-# column properties for each column (head and tail)
-# of a BAT. An example of the former is size(bat):int
-# (which gives the number of BUNs in a BAT), an example
-# of the latter is ordered(column) :bit, indicating
-# whether the column contains its valued stored in ascending order.
-# The convention is to use a BAT as operand also for the column
-# properties; which then is supposed to be valid for the head
-# column (ordered(BAT)). Tail columns can be described by
-# using the mirror BAT with the minus operator (ordered(-BAT)).
-#
-# Column Properties
-# @table @code
-# @item [ordered(BAT) :bit]
-# 	TRUE if the head column is stored in ascending order, else FALSE.
-# @item [keyed(BAT) :bit]
-# 	TRUE if no duplicates are present in the head column, else FALSE.
-# @item [idx(BAT) :bit]
-# 	TRUE if a binary index tree search accelerator is present on
-# 	the head column of the BAT, else FALSE.
-# @item [hashtab(BAT) :bit]
-# 	presence of hash table on the head column of
-# 	a BAT. TRUE if a bucket-chained hash table search accelerator is
-# 	present on the head column of the BAT, else FALSE.
-# @item [subcol(BAT, BAT) :bit]
-# 	TRUE if the bag of all values in the head column of the left BAT is
-# 	a bag-subset of the bag of all values in the head column of the
-# 	right BAT, else FALSE.
-# @item [sync(BAT) :oid]
-# 	Sync-OID on the head column of a BAT. A sync-OID denotes some unique
-# 	sequence of values. If two columns have the same sync-OID, then they
-# 	are guaranteed to contain the same values, in the same sequence.
-#
-# @item [size(BAT) :int]
-# 	The (estimated) length of a column.
-# @item [unique(BAT) :int]
-# 	The (estimated) number of distinct values in one column.
-# @item [subset(BAT, BAT) :bit]
-# 	TRUE if the left BAT is a subset of the BUNs of the right BAT,
-# 	else FALSE.
-# @item [setunique(BAT) :bit]
-# 	TRUE if the BAT contains no duplicate BUNs, else FALSE.
-# @end table
-#
-#  Property Propagation Rules
-# At database creation time, the properties of the BATs in the database
-# can be derived directly from the database schema.
-#
-# When queries are executed, they will produce @emph{intermediate results},
-# which in terms are operands for further execution. Hence it is necessary
-# to @emph{propagate properties} from the operands of an algebraic operator,
-# to its result.
-#
-# This process can be captured by having a series of @emph{propagation rules}
-# for each algebraic operand. Since each algebraic operands may apply
-# different strategies, according to different status in its operand properties,
-# each algebraic operator may have different propagation rules with these
-# different situations as conditions.
 

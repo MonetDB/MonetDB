@@ -223,7 +223,6 @@ int BBPout;
 str BBPphysical(bat b, str buf);
 BAT *BBPquickdesc(bat b, int delaccess);
 int BBPreclaim(BAT *b);
-void BBPreleaseref(bat i);
 int BBPrename(bat bid, const char *nme);
 int BBPsave(BAT *b);
 void BBPshare(bat b);

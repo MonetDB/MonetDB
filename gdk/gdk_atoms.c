@@ -352,10 +352,10 @@ ATOMformat(int t, const void *p, char **buf)
 		int sz = 0;
 		return (*tostr) (buf, &sz, p);
 	}
-	*buf = GDKmalloc(4);
+	*buf = GDKstrdup("nil");
 	if (*buf == NULL)
 		return -1;
-	return snprintf(*buf, 4, "nil");
+	return 3;		/* strlen(*buf) */
 }
 
 ptr
@@ -384,16 +384,15 @@ ATOMdup(int t, const void *p)
  * as 'dst' and/or a *len==0 is valid; the conversion function will
  * then alloc some region for you.
  */
-#define atommem(TYPE, size)						\
-	do {								\
-		if (!*dst) {						\
-			*dst = (TYPE *) GDKmalloc(*len = (size));	\
-		} else if (*len < (int) (size)) {			\
-			GDKfree(*dst);					\
-			*dst = (TYPE *) GDKmalloc(*len = (size));	\
-		}							\
-		if (!*dst)						\
-			return -1;					\
+#define atommem(TYPE, size)					\
+	do {							\
+		if (*dst == NULL || *len < (int) (size)) {	\
+			GDKfree(*dst);				\
+			*len = (size);				\
+			*dst = (TYPE *) GDKmalloc(*len);	\
+			if (*dst == NULL)			\
+				return -1;			\
+		}						\
 	} while (0)
 
 #define atomtostr(TYPE, FMT, FMTCAST)			\

@@ -10,8 +10,9 @@ CREATE VIEW street AS
    WHERE c.outline = r.thepath;
 
 CREATE VIEW iexit AS
-   SELECT ih.name, ih.thepath,
-	interpt_pp(ih.thepath, r.thepath) AS exit
+   SELECT ih.name, ih.thepath /* ,
+   funtion interpt_pp() does not exist, so exclude it
+	interpt_pp(ih.thepath, r.thepath) AS exit */
    FROM ihighway ih, ramp r
    WHERE ih.thepath = r.thepath;
 
@@ -26,20 +27,29 @@ CREATE VIEW toyemp AS
 
 --
 -- CREATE OR REPLACE VIEW
+-- MonetDB does not (yet) support CREATE OR REPLACE VIEW,  see https://www.monetdb.org/bugzilla/show_bug.cgi?id=3574
+-- MonetDB does not (yet) support ORDER BY in CREATE VIEW, see https://www.monetdb.org/bugzilla/show_bug.cgi?id=3465
 --
 
 CREATE TABLE viewtest_tbl (a int, b int);
+/*
 COPY INTO viewtest_tbl FROM stdin;
 5	10
 10	15
 15	20
 20	25
 \.
+*/
+INSERT INTO viewtest_tbl VALUES (5, 10), (10, 15), (15, 20), (20, 25);
 
-CREATE OR REPLACE VIEW viewtest AS
+CREATE /* OR REPLACE */ VIEW viewtest AS
 	SELECT * FROM viewtest_tbl;
 
 CREATE OR REPLACE VIEW viewtest AS
+	SELECT * FROM viewtest_tbl WHERE a > 10;
+-- MonetDB does not (yet) support CREATE OR REPLACE. test with DROP VIEW and CREATE VIEW instead
+DROP VIEW viewtest;
+CREATE VIEW viewtest AS
 	SELECT * FROM viewtest_tbl WHERE a > 10;
 
 SELECT * FROM viewtest;
@@ -47,18 +57,34 @@ SELECT * FROM viewtest;
 CREATE OR REPLACE VIEW viewtest AS
 	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 
+DROP VIEW viewtest;
+CREATE VIEW viewtest AS
+	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
+-- MonetDB does not (yet) support ORDER BY in CREATE VIEW, 
+CREATE VIEW viewtest AS
+	SELECT a, b FROM viewtest_tbl WHERE a > 5;
+
 SELECT * FROM viewtest;
 
 -- should fail
 CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
+DROP VIEW viewtest;
+CREATE VIEW viewtest AS
+	SELECT a FROM viewtest_tbl WHERE a <> 20;
 
 -- should fail
 CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
+DROP VIEW viewtest;
+CREATE VIEW viewtest AS
+	SELECT 1, * FROM viewtest_tbl;
 
 -- should fail
 CREATE OR REPLACE VIEW viewtest AS
+	SELECT a, cast(b as numeric) FROM viewtest_tbl;
+DROP VIEW viewtest;
+CREATE VIEW viewtest AS
 	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 
 DROP VIEW viewtest;
