@@ -17,7 +17,7 @@ stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-
+!TypeException:user.main[7]:'algebra.ssort' undefined in: f2:any := algebra.ssort(f1:bat[:str,:oid])
 function user.main():void;
 #Illustrate the modules loaded after start 
     k := inspect.getKind();

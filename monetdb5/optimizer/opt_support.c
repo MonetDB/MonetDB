@@ -812,7 +812,7 @@ isBlocking(InstrPtr p)
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
 		return TRUE;
 
-	if ( getFunctionId(p) == sortTailRef )
+	if ( getFunctionId(p) == sortRef )
 		return TRUE;
 
 	if( getModuleId(p) == aggrRef ||
@@ -865,8 +865,8 @@ int isSlice(InstrPtr p){
 
 int isOrderby(InstrPtr p){
 	return getModuleId(p) == algebraRef &&
-		(getFunctionId(p) == sortTailRef ||
-		 getFunctionId(p) == sortReverseTailRef);
+		(getFunctionId(p) == sortRef ||
+		 getFunctionId(p) == sortReverseRef);
 }
 
 int isDiffOp(InstrPtr p){
