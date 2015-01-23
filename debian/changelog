@@ -1,3 +1,74 @@
+monetdb (11.19.9-20150123) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3467: Field aliases with '#' character excise field names in
+    result set.
+  * BZ#3605: relational query without result
+  * BZ#3619: Missing dll on MonetDB Start
+  * BZ#3622: Type resolution error
+  * BZ#3624: insert of incomplete or invalid ip address values in
+    inet column is silently accepted but the values are not stored (they
+    become/show nil)
+  * BZ#3626: casting a type without alias results in program contains errors
+  * BZ#3628: mclient and ODBC driver report 'type mismatch' when stddev_pop
+    used in a select which returns 0 rows
+  * BZ#3629: IF THEN ELSEIF always evaluates the first test as true
+  * BZ#3630: segv on rel_order_by_column_exp
+  * BZ#3632: running make clean twice gives an error in clients/ruby/adapter
+  * BZ#3633: Wrong result for HAVING with floating-point constant
+  * BZ#3640: Missing implementation of scalar function: sql_sub(<date>,
+    <month interval>)
+  * BZ#3641: SQL lexer fails to detect string end if it the last character
+    is U+FEFF ZERO WIDTH NO-BREAK SPACE
+  * BZ#3642: Combined WHERE conditions less-than plus equals-to produce
+    incorrect results
+  * BZ#3643: Missing implementations of scalar function: sql_sub(<timetz>,
+    arg2)
+  * BZ#3644: COPY INTO fails to import "inet" data type when value has
+    prefix length in CIDR notation
+  * BZ#3646: ORDER BY clause does not produce proper results on 'inet'
+    datatype
+  * BZ#3649: recycler crashes with concurrent transactions
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 23 Jan 2015 13:21:50 +0100
+
+monetdb (11.19.9-20150123) unstable; urgency=low
+
+  * sql: Fixed a typo in a column name of the sys.tablestoragemodel view
+    (auxillary changed to auxiliary).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Jan 2015 13:21:50 +0100
+
+monetdb (11.19.9-20150123) unstable; urgency=low
+
+  * clients: Changes to the Perl interface, thanks to Stefan O'Rear:
+    1. removes "use sigtrap", because this has global effects and should
+    not be used by modules, only by the application.
+    2. allows Perl 5.8.1+ Unicode strings to be passed to quote() and
+    included in statements (UTF-8 encoded, as expected by Monet's str
+    module)
+    3. quote and unquote now use the same quoting rules as the MonetDB
+    server, allowing for all characters except NUL to be round-tripped
+    4. several character loops have been reimplemented in regex for much
+    greater performance
+    5. micro-optimizations to the result fetch loop
+    6. block boundaries are preserved in piggyback data so that Xclose is
+    not appended or prepended to a SQL command
+    7. diagnostic messages #foo before a result header are ignored, this
+    is necessary to use recycler_pipe
+    8. fail quickly and loudly if we receive a continuation prompt (or any
+    other response that starts with a non-ASCII character)
+    9. header lines must start with %, not merely contain %, fixing a bug
+    when querying a table where string values contain %
+    10. after closing a large resultset, account for the fact that a reply
+    will come and do not lose sync
+    11. allow a MAPI_TRACE environment variable to dump wire protocol
+    frames to standard output
+    12. fixes maximum MAPI block size to match the server limit of 16k.
+    previously would crash on blocks larger than 16k
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Jan 2015 13:21:50 +0100
+
 monetdb (11.19.7-20141121) unstable; urgency=low
 
   * Rebuilt.
