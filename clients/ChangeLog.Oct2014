@@ -1,30 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Tue Jan 13 2015 Sjoerd Mullender <sjoerd@acm.org>
-- Changes to the Perl interface, thanks to Stefan O'Rear:
-  1. removes "use sigtrap", because this has global effects and should
-  not be used by modules, only by the application.
-  2. allows Perl 5.8.1+ Unicode strings to be passed to quote() and
-  included in statements (UTF-8 encoded, as expected by Monet's str
-  module)
-  3. quote and unquote now use the same quoting rules as the MonetDB
-  server, allowing for all characters except NUL to be round-tripped
-  4. several character loops have been reimplemented in regex for much
-  greater performance
-  5. micro-optimizations to the result fetch loop
-  6. block boundaries are preserved in piggyback data so that Xclose is
-  not appended or prepended to a SQL command
-  7. diagnostic messages #foo before a result header are ignored, this
-  is necessary to use recycler_pipe
-  8. fail quickly and loudly if we receive a continuation prompt (or any
-  other response that starts with a non-ASCII character)
-  9. header lines must start with %, not merely contain %, fixing a bug
-  when querying a table where string values contain %
-  10. after closing a large resultset, account for the fact that a reply
-  will come and do not lose sync
-  11. allow a MAPI_TRACE environment variable to dump wire protocol
-  frames to standard output
-  12. fixes maximum MAPI block size to match the server limit of 16k.
-  previously would crash on blocks larger than 16k
-
