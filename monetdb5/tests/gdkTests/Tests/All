@@ -5,8 +5,6 @@ between
 binsemijoin2
 casts
 cross
-intersect_diff_void
-intersect_diff_nil
 qsort
 #reload -- fails due to BUNfirst != 0
 semijoin

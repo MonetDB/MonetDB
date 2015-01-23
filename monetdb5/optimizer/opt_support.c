@@ -812,10 +812,7 @@ isBlocking(InstrPtr p)
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
 		return TRUE;
 
-	if ( getFunctionId(p) == sortTailRef ||
-		 getFunctionId(p) == sortHRef ||
-		 getFunctionId(p) == sortHTRef ||
-		 getFunctionId(p) == sortTHRef )
+	if ( getFunctionId(p) == sortTailRef )
 		return TRUE;
 
 	if( getModuleId(p) == aggrRef ||

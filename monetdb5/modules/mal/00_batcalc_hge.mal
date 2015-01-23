@@ -6374,19 +6374,6 @@ pattern lng_noerror(b:bat[:oid,:hge],s:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from hge to lng with candidates list";
 
-pattern hge(b:bat[:oid,:void]) :bat[:oid,:hge]
-address CMDconvertsignal_hge
-comment "cast from void to hge, signal error on overflow";
-pattern hge(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:hge]
-address CMDconvertsignal_hge
-comment "cast from void to hge with candidates list, signal error on overflow";
-pattern hge_noerror(b:bat[:oid,:void]) :bat[:oid,:hge]
-address CMDconvert_hge
-comment "cast from void to hge";
-pattern hge_noerror(b:bat[:oid,:void],s:bat[:oid,:oid]) :bat[:oid,:hge]
-address CMDconvert_hge
-comment "cast from void to hge with candidates list";
-
 pattern hge(b:bat[:oid,:bit]) :bat[:oid,:hge]
 address CMDconvertsignal_hge
 comment "cast from bit to hge, signal error on overflow";

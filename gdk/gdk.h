@@ -682,7 +682,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 				ATOMname(t2), ATOMname(t1));		\
 			return 0;					\
 		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(t2), ATOMname(t1));		\
 		}							\
 	} while (0)
@@ -698,12 +698,12 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 		if (BAThtype(P1) != BAThtype(P2) &&			\
 		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
 				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
 		}							\
 	} while (0)
@@ -820,9 +820,6 @@ typedef struct {
 	int len, vtype;
 } *ValPtr, ValRecord;
 
-/* definition of VALptr lower down in file after include of gdk_atoms.h */
-#define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
-
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, const ValRecord *res);
@@ -937,29 +934,29 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;				/* label for head/tail column */
+	str id;			/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
-	bte type;			/* type id. */
-	bte shift;			/* log2 of bunwidth */
+	bte type;		/* type id. */
+	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,				/* duplicates allowed? */
-	 dense:1,			/* OID only: only consecutive values */
-	 nonil:1,			/* nonil isn't propchecked yet */
-	 nil:1,				/* there is a nil in the column */
-	 sorted:1,			/* column is sorted in ascending order */
+	 key:2,			/* duplicates allowed? */
+	 dense:1,		/* OID only: only consecutive values */
+	 nonil:1,		/* nonil isn't propchecked yet */
+	 nil:1,			/* there is a nil in the column */
+	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;			/* OID for sync alignment */
+	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
-	oid seq;			/* start of dense head sequence */
+	oid seq;		/* start of dense head sequence */
 
-	Heap heap;			/* space for the column. */
+	Heap heap;		/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;			/* hash table */
+	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
@@ -2641,7 +2638,7 @@ gdk_export int THRhighwater(void);
 gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
-gdk_export void *THRdata[16];
+gdk_export void *THRdata[THREADDATA];
 
 #define GDKstdout	((stream*)THRdata[0])
 #define GDKstdin	((stream*)THRdata[1])
@@ -2664,7 +2661,7 @@ BBPcheck(register bat x, register const char *y)
 		register bat z = abs(x);
 
 		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
-			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
+			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

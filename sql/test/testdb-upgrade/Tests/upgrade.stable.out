@@ -18,6 +18,20 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
 drop filter function sys."like";
 create filter function sys."like"(val string, pat string, esc string) external name algebra."like";
 create filter function sys."like"(val string, pat string) external name algebra."like";
@@ -97,7 +111,7 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 drop table sys.statistics;
 create table sys.statistics(

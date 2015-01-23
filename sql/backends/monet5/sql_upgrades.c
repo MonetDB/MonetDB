@@ -218,7 +218,7 @@ as select \"schema\",\"table\",max(count) as \"count\",\n\
 	sum(columnsize) as columnsize,\n\
 	sum(heapsize) as heapsize,\n\
 	sum(indices) as indices,\n\
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary\n\
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n\
 from sys.storagemodel() group by \"schema\",\"table\";\n\
 update sys._tables\n\
 	set system = true\n\
@@ -893,7 +893,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 "    sum(heapsize) as heapsize,"
 "    sum(hashes) as hashes,"
 "    sum(imprints) as imprints,"
-"    sum(case when sorted = false then 8 * count else 0 end) as auxillary"
+"    sum(case when sorted = false then 8 * count else 0 end) as auxiliary"
 " from sys.storagemodel() group by \"schema\",\"table\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "create view sys.storagemodel as select * from sys.storagemodel();\n");
 	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('storage','storagemodel','tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
@@ -1010,6 +1010,60 @@ sql_update_oct2014_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2014_sp2(Client c)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n\
+drop view sys.tablestoragemodel;\n\
+create view sys.tablestoragemodel\n\
+as select \"schema\",\"table\",max(count) as \"count\",\n\
+	sum(columnsize) as columnsize,\n\
+	sum(heapsize) as heapsize,\n\
+	sum(hashes) as hashes,\n\
+	sum(imprints) as imprints,\n\
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n\
+from sys.storagemodel() group by \"schema\",\"table\";\n\
+update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	{
+		char *msg;
+		mvc *sql = NULL;
+
+		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
+			GDKfree(msg);
+		} else {
+			sql_schema *s;
+
+			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+				sql_table *t;
+
+				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+					t->system = 0;
+			}
+		}
+	}
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 #ifdef HAVE_HGE
 static str
 sql_update_hugeint(Client c)
@@ -1075,7 +1129,7 @@ sql_update_hugeint(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "\tsum(heapsize) as heapsize,\n");
 	pos += snprintf(buf + pos, bufsize - pos, "\tsum(hashes) as hashes,\n");
 	pos += snprintf(buf + pos, bufsize - pos, "\tsum(imprints) as imprints,\n");
-	pos += snprintf(buf + pos, bufsize - pos, "\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\n");
+	pos += snprintf(buf + pos, bufsize - pos, "\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\n");
 	pos += snprintf(buf + pos, bufsize - pos, "from sys.storagemodel() group by \"schema\",\"table\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
@@ -1216,7 +1270,7 @@ as select \"schema\",\"table\",max(count) as \"count\",\n\
 \tsum(heapsize) as heapsize,\n\
 \tsum(hashes) as hashes,\n\
 \tsum(imprints) as imprints,\n\
-\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\n\
+\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\n\
 from sys.storagemodel() group by \"schema\",\"table\";\n");
 
 	/* change to 80_statistics */
@@ -1322,10 +1376,18 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(err);
 		}
 	}
-	/* if table returning function sys.environment() does not exist, we need to
-	 * update from oct2014->sp1 */
+	/* if table returning function sys.environment() does not
+	 * exist, we need to update from oct2014->sp1 */
 	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "environment", NULL, NULL, F_UNION)) {
 		if ((err = sql_update_oct2014_sp1(c)) !=NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+	/* if sys.tablestoragemodel.auxillary exists, we need
+	 * to update (note, the proper spelling is auxiliary) */
+	if (mvc_bind_column(m, mvc_bind_table(m, mvc_bind_schema(m, "sys"), "tablestoragemodel"), "auxillary")) {
+		if ((err = sql_update_oct2014_sp2(c)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}

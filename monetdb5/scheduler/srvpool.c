@@ -309,7 +309,7 @@ SRVPOOLdiscover(Client cntxt)
 				assert(srvtop <MAXSITES);
 			}
 		}
-		BBPreleaseref(bid);
+		BBPunfix(bid);
 	} 
 	if( msg) {
 		/* ignore merovingian complaints */

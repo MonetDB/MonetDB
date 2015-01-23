@@ -89,7 +89,7 @@ MRgetCloud(bat *ret, str *mrcluster)
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
 	if (mapnodes == NULL) {
-		BBPreleaseref(*ret);
+		BBPunfix(*ret);
 		throw(MAL, "mapreduce.getCloud", MAL_MALLOC_FAIL);
 	}
 
@@ -126,7 +126,7 @@ MRcloudSize(str mrcluster)
 	if (cloud == NULL)
 		return 0;
 	cnt = (int)BATcount(cloud);
-	BBPreleaseref(bid); /* we're done with it */
+	BBPunfix(bid); /* we're done with it */
 	return(cnt);
 }
 

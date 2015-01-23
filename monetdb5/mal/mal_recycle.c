@@ -895,6 +895,10 @@ RECYCLEdrop(Client cntxt){
 		return ;
 
 	MT_lock_set(&recycleLock, "recycle");
+	if( recycleBlk == NULL){
+		MT_lock_unset(&recycleLock, "recycle");
+		return ;
+	}
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
 	if ( used == NULL){
 		GDKerror("RECYCLEdrop" MAL_MALLOC_FAIL);

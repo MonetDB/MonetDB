@@ -126,7 +126,7 @@ void removeDataflow(MalBlkPtr mb)
 		}
 	}
 	/* remove the superflous variable initializations */
-	/* when there are no auxillary barrier blocks */
+	/* when there are no auxiliary barrier blocks */
 	for (i = 0; i<limit; i++) 
 		if ( delete[i] == 0 )
 			pushInstruction(mb,old[i]);

@@ -191,7 +191,7 @@ int OIDinit(void)
 	__attribute__((__visibility__("hidden")));
 oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
-int OIDwrite(stream *fp)
+int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));

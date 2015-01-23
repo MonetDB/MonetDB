@@ -393,7 +393,7 @@ cleanup_fields(bam_field fields[11]) {
 	int i;
 	for (i=0; i<11; ++i) {
 		if (fields[i].b != NULL) {
-			BBPreleaseref(fields[i].b->batCacheid);
+			BBPunfix(fields[i].b->batCacheid);
 		}
 	}
 }

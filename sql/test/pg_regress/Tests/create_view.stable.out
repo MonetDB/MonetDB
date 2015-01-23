@@ -24,13 +24,6 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-= ! Correct / expected output still needs to be provided / verified / approved ! =
-
-#--
-#-- CREATE_VIEW
-#-- Virtual class definitions
-#--	(this also tests the query rewrite system)
-#--
 #CREATE VIEW street AS
 #   SELECT r.name, r.thepath, c.cname AS cname
 #    FROM road r, real_city c
@@ -48,40 +41,41 @@ Ready.
 #-- CREATE OR REPLACE VIEW
 #--
 #CREATE TABLE viewtest_tbl (a int, b int);
-COPY viewtest_tbl FROM stdin;
-#CREATE OR REPLACE VIEW viewtest AS
+#INSERT INTO viewtest_tbl VALUES (5, 10), (10, 15), (15, 20), (20, 25);
+[ 4	]
+#CREATE /* OR REPLACE */ VIEW viewtest AS
 #	SELECT * FROM viewtest_tbl;
 #CREATE OR REPLACE VIEW viewtest AS
 #	SELECT * FROM viewtest_tbl WHERE a > 10;
 #SELECT * FROM viewtest;
-% sys.L0,	sys.L0 # table_name
+% sys.viewtest,	sys.viewtest # table_name
 % a,	b # name
-% ?,	? # type
-% ?,	? # length
+% int,	int # type
+% 2,	2 # length
 [ 15,	20 ]
 [ 20,	25 ]
 
 #CREATE OR REPLACE VIEW viewtest AS
 #	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 #SELECT * FROM viewtest;
-% sys.L0,	sys.L0 # table_name
+% sys.viewtest,	sys.viewtest # table_name
 % a,	b # name
-% ?,	? # type
-% ?,	? # length
-[ 20,	25 ]
-[ 15,	20 ]
+% int,	int # type
+% 2,	2 # length
 [ 10,	15 ]
-
-#-- should fail
-#
-#-- should fail
-#
-#-- should fail
-#
+[ 15,	20	]
+[ 20,	25	]
+#DROP VIEW viewtest;
+#CREATE VIEW viewtest AS
+#	SELECT a FROM viewtest_tbl WHERE a <> 20;
+#DROP VIEW viewtest;
+#CREATE VIEW viewtest AS
+#	SELECT 1, * FROM viewtest_tbl;
+#DROP VIEW viewtest;
+#CREATE VIEW viewtest AS
+#	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 #DROP VIEW viewtest;
 #DROP TABLE viewtest_tbl;
-
-= ! Correct / expected output still needs to be provided / verified / approved ! =
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

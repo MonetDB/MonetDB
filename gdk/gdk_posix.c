@@ -988,7 +988,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "retry rmdir %s\n", pathname);
+		IODEBUG fprintf(stderr, "retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1013,7 +1013,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "retry unlink %s\n", pathname);
+		IODEBUG fprintf(stderr, "retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}
@@ -1038,7 +1038,7 @@ win_rename(const char *old, const char *dst)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, dst);
+		IODEBUG fprintf(stderr, "#retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = rename(old, dst);
 	}
