@@ -3082,11 +3082,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
 	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
 	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
-	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
+	str *fname = getArgReference_str(stk, pci, pci->retc + 6);
 	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
 	int *besteffort = getArgReference_int(stk, pci, pci->retc + 10);
+	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
 	str utf8 = "UTF-8";
@@ -3130,7 +3131,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!*fname || strcmp(str_nil, *(char **) fname) == 0) 
 		fname = NULL;
 	if (!fname) {
-		b = mvc_import_table(cntxt, be->mvc, be->mvc->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
 		/* convert UTF-8 encoded file name to the character set of our
 	 	 * own locale before passing it on to the system call */
@@ -3175,7 +3176,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fix_windows_newline(ssep);
 #endif
 		if (s != NULL) {
-			b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 			bstream_destroy(s);
 		}
 		GDKfree(filename);
@@ -3191,7 +3192,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "importTable", "Failed to import table %s", be->mvc->errstr? be->mvc->errstr:"");
 	bat2return(stk, pci, b);
 	GDKfree(b);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);

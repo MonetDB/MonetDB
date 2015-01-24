@@ -37,7 +37,7 @@ extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN n
 
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 
-extern BAT **mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked, int best);
+extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked, int best);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
