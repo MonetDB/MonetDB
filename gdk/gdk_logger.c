@@ -147,7 +147,7 @@ log_read_format_old(logger *l, logformat *data)
 static int
 log_read_format(logger *l, logformat *data)
 {
-	if (l->postfuncp) /* we need to convert from the old logformat, 
+	if (l->postfuncp) /* we need to convert from the old logformat,
        		             needs to be removed once we released Aug2014 */
 		return log_read_format_old(l, data);
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
@@ -1850,12 +1850,13 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	snprintf(buf, BUFSIZ, "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
 	if (lg->debug & 1) {
+		fprintf(stderr, "#logger_cleanup keeping %d WAL files\n", keep_persisted_log_files);
 		fprintf(stderr, "#logger_cleanup %s\n", buf);
 	}
 
 	if (keep_persisted_log_files == 0) {
 		// If keep_persisted_log_files is 0, remove the last persisted WAL files as well
-		// => less work for logger_cleanup_old()
+		// to reduce the work for the logger_cleanup_old()
 		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
