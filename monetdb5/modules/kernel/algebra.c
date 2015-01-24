@@ -81,23 +81,6 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *
 }
 
 static int
-CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *h_in)
-{
-	int tt = b->ttype;
-	ptr nil = ATOMnilptr(tt);
-
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
-		return GDK_FAIL;
-	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
-		return GDK_FAIL;
-	}
-	return (*result = BATuselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
@@ -441,26 +424,6 @@ ALGselect1(bat *result, const bat *bid, ptr value)
 	throw(MAL, "algebra.select", GDK_EXCEPTION);
 }
 
-str
-ALGuselect1(bat *result, const bat *bid, ptr value)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, value);
-	bn = BATuselect(b, value, NULL);
-	BBPunfix(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2))
-			bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
-}
 
 str
 ALGselect(bat *result, const bat *bid, ptr low, ptr high)
@@ -513,28 +476,6 @@ ALGselectNotNil(bat *result, const bat *bid)
 }
 
 str
-ALGuselect(bat *result, const bat *bid, ptr low, ptr high)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	bn = BATuselect(b, low, high);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
-}
-
-str
 ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin)
 {
 	BAT *b, *bn = NULL;
@@ -554,28 +495,6 @@ ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *li
 	}
 	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
-ALGuselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	CMDuselect_(&bn, b, low, high, lin, rin);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
 }
 
 str

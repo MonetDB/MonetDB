@@ -48,11 +48,8 @@ algebra_export str ALGsubselect2(bat *result, const bat *bid, const bat *sid, co
 algebra_export str ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
 algebra_export str ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(bat *result, const bat *bid, ptr value);
-algebra_export str ALGuselect1(bat *result, const bat *bid, ptr value);
 algebra_export str ALGselect(bat *result, const bat *bid, ptr low, ptr high);
-algebra_export str ALGuselect(bat *result, const bat *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin);
-algebra_export str ALGuselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin);
 
 algebra_export str ALGsubjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 algebra_export str ALGsubleftjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
