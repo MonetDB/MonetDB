@@ -305,13 +305,13 @@ MRdistributework(
 			break;
 			case SORT:
 				lcol->type = newBatType(TYPE_void, lcol->type);
-				p = newFcnCall(reduce, algebraRef, sortTailRef);
+				p = newFcnCall(reduce, algebraRef, sortRef);
 				p = pushArgument(reduce, p, lcol->mapbat);
 				getArg(p, 0) = lcol->reduceid;
 			break;
 			case SORTDESC:
 				lcol->type = newBatType(TYPE_void, lcol->type);
-				p = newFcnCall(reduce, algebraRef, sortReverseTailRef);
+				p = newFcnCall(reduce, algebraRef, sortReverseRef);
 				p = pushArgument(reduce, p, lcol->mapbat);
 				getArg(p, 0) = lcol->reduceid;
 			break;
@@ -765,7 +765,7 @@ OPTmapreduceImplementation(
 		}
 
 		if (getModuleId(p) == algebraRef) {
-			if (getFunctionId(p) == sortTailRef) {
+			if (getFunctionId(p) == sortRef) {
 				/* simple ORDER BY */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
@@ -780,7 +780,7 @@ OPTmapreduceImplementation(
 						break;
 					}
 				}
-			} else if (getFunctionId(p) == sortReverseTailRef) {
+			} else if (getFunctionId(p) == sortReverseRef) {
 				/* simple ORDER BY DESC */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {

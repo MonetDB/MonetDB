@@ -1,16 +1,11 @@
 append_dense_tail
 bat_replace
-#bat_insert -- fails due to BUNfirst != 0
 between
 binsemijoin2
 casts
 cross
-qsort
-#reload -- fails due to BUNfirst != 0
-semijoin
 str_heap
 TMsubcommit
-#void -- fails due to BUNfirst != 0
 scanselect
 selecttst
 firstn

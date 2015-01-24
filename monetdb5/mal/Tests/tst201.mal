@@ -1,115 +1,73 @@
-# Mil compiler Version 1.0)
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-
-# Predefined code segment
 	v0:= calc.oid(20000000);
 	v1:= calc.setoid(v0);
-#setoid(oid(20000000));
-##test basic functionality of the BAT library.
-##focussed on strings
-##it includes bat.insertions,deletions,selections, and joins.
-#
 	v2:= bat.new(:oid,:str);
 	b := v2;
-#b:= new(str,int);
+
 	v3:= bat.append(b,"the");
-#b.append("the",1);
 	v4:= bat.append(b,"quick");
-#b.append("quick",2);
 	v5:= bat.append(b,"brown");
-#b.append("brown",3);
 	v6:= bat.append(b,"fox");
-#b.append("fox",4);
 	v7:= bat.append(b,"jumps");
-#b.append("jumps",5);
 	v8:= bat.append(b,"over");
-#b.append("over",6);
 	v9:= bat.append(b,"lazy");
-#b.append("lazy",7);
 	v10:= bat.append(b,"dog");
-#b.append("dog",8);
 	v11:= calc.str(nil);
 	v12:= bat.append(b,v11);
-#b.append(str(nil),9);
 	v13:= bat.append(b,".");
-#b.append(".",10);
 	v15:= bat.append(b,"");
-#b.append("",int(nil));
 	v16:= calc.str(nil);
 	v18:= bat.append(b,v16);
-#b.append(str(nil),int(nil));
 	v19:= io.print(b);
-#b.print;
-#
-#
-## Testing simple retrievals
-	br := bat.reverse(b);
-	v20:= algebra.find(br,"the");
+
+	v20:= algebra.find(b,"the");
 	v21:= io.print(v20);
-#b.find("the").print;
-	v22:= algebra.find(br,"fox");
+
+	v22:= algebra.find(b,"fox");
 	v23:= io.print(v22);
-#b.find("fox").print;
+
 	v24:= calc.str(nil);
-	v25:= algebra.find(br,v24);
+	v25:= algebra.find(b,v24);
 	v26:= io.print(v25);
-#b.find(str(nil)).print;
-## This should cause an error
-	v27:= algebra.find(br,"cat");
+
+	v27:= algebra.find(b,"cat");
 	v28:= io.print(v27);
 catch MALException:str;
 	io.print(MALException);
 exit  MALException;
-#b.find("cat").print;
-#
-## Can we bat.delete them and re-append them later on
-	v29:= bat.delete(br,"fox");
-#b.delete("fox",4);
-	v30:= bat.delete(br,"the");
-#b.delete("the",1);
-	v31:= bat.delete(br,".");
-#b.delete(".",10);
-	v32:= io.print(br);
-#b.print;
-#
-	b:= bat.reverse(br);
+
+	v29:= bat.delete(b,"fox");
+	v30:= bat.delete(b,"the");
+	v31:= bat.delete(b,".");
+	v32:= io.print(b);
+
+
 	v33:= bat.append(b,"fox");
-#b.append("fox",4);
 	v34:= bat.append(b,"the");
-#b.append("the",1);
 	v35:= bat.append(b,".");
-#b.append(".",10);
+
 	v36:= aggr.count(b);
 	v37:= io.print(v36);
-#b.count.print;
-#
-## Lets cut out a few sections
-    br:= bat.reverse(b);
+
 	v38:= algebra.slice(b,2@0,4@0);
 	v39:= io.print(v38);
-#b.select(2,4).print;
+
 	v40:= calc.oid(nil);
 	v41:= algebra.slice(b,7@0,v40);
 	v42:= io.print(v41);
-#b.select(7,int(nil)).print;
+
 	v43:= calc.oid(nil);
 	v44:= calc.oid(nil);
 	v45:= algebra.slice(b,v43,v44);
 	v46:= io.print(v45);
-#b.select(int(nil),int(nil)).print;
-#
-#
-## testing the algebra.like command
+
 	v75:= algebra.like(b,"ox");
 	v76:= io.print(v75);
-#b.reverse.like("ox").print;
+
 	v78:= algebra.like(b,"fo");
 	v79:= io.print(v78);
-#b.reverse.like("fo").print;
+
 	v81:= algebra.like(b,"fox");
 	v82:= io.print(v81);
-#b.reverse.like("fox").print;
+
 	v84:= algebra.like(b," fox");
 	v85:= io.print(v84);
-#b.reverse.like(" fox").print;
-#quit;

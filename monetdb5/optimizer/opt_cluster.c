@@ -332,8 +332,8 @@ cluster_orderby(MalBlkPtr mb)
 
 		if (state == ORDERBY_NONE && 
 		    getModuleId(q) == algebraRef &&
-			(getFunctionId(q) == sortTailRef ||
-			 getFunctionId(q) == sortReverseTailRef) &&
+			(getFunctionId(q) == sortRef ||
+			 getFunctionId(q) == sortReverseRef) &&
 		    q->argc == 2) {
 			state = ORDERBY_SORT;
 			o = getArg(q,0);
