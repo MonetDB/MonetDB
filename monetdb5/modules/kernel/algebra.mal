@@ -71,28 +71,26 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
 
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
 address ALGjoin;
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-address ALGleftjoin;
-
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
-address ALGleftjoinestimate;
-
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
 address ALGjoinestimate;
+
+command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+address ALGleftjoin;
+command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
+address ALGleftjoinestimate;
 
 command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
-
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in
-		the tail and the head-values of 'outer' whose tail-value does
-		not match an head-value in 'inner'.";
-
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
-address ALGouterjoinestimate;
+#command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+#address ALGouterjoin
+#comment "Returns all the result of a join, plus the BUNS formed NIL in
+#		the tail and the head-values of 'outer' whose tail-value does
+#		not match an head-value in 'inner'.";
+#
+#command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
+#address ALGouterjoinestimate;
 
 # Theta Join
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
