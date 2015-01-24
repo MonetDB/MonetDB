@@ -180,13 +180,13 @@ address ALGrangejoin;
 
 #END OF HEADLESS PLANS
 
-command sort( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
-address ALGtsort
-comment "Returns a BAT copy sorted on the tail column.";
-
-command sortReverse( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
-address ALGtsort_rev
-comment "Returns a BAT copy reversely sorted on the tail column.";
+#command sort( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
+#address ALGtsort
+#comment "Returns a BAT copy sorted on the tail column.";
+#
+#command sortReverse( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
+#address ALGtsort_rev
+#comment "Returns a BAT copy reversely sorted on the tail column.";
 
 command revert( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address ALGrevert
