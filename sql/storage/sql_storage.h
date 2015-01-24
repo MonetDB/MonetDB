@@ -247,7 +247,7 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
+typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version, int keep_persisted_log_files);
 typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int catalog_version, const char *slave_logdir);
 
 typedef void (*logger_destroy_fptr) (void);

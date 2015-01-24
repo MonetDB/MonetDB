@@ -1664,7 +1664,7 @@ logger_reload(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
 {
 	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
 
@@ -1677,7 +1677,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
-	     logger_cleanup(lg, 0) != LOG_OK)) {
+	     logger_cleanup(lg, keep_persisted_log_files) != LOG_OK)) {
 		logger_destroy(lg);
 
 		return NULL;
@@ -1814,7 +1814,7 @@ logger_cleanup_old(logger *lg, int keep_persisted_log_files)
 	int cleanupResultBak = 0;
 
 	// Calculate offset based on the number of files to keep
-	id = lg->id - keep_persisted_log_files;
+	id = lg->id - keep_persisted_log_files - 1;
 
 	// Stop cleaning up once bak- files are no longer found
 	while (id > 0 && (cleanupResultLog == LOG_OK || cleanupResultBak == LOG_OK)) {
