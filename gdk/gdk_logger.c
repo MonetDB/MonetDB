@@ -1001,7 +1001,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
-		while(lid > lg->id && res != LOG_ERR) {
+		while((lg->shared && lid > lg->id && res != LOG_ERR) || (!lg->shared && lid >= lg->id && res != LOG_ERR)) {
 			snprintf(log_filename, BUFSIZ, "%s." LLFMT, filename, lg->id);
 			if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
 				/* we cannot distinguish errors from
