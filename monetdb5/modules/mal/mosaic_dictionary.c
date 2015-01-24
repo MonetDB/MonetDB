@@ -362,7 +362,7 @@ if ( lshift >= hdr->bits){\
   }else{ \
 	rshift= 63 -  ((I+1) * hdr->bits) % 64;\
 	m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));\
-	m2 = base[cid+1] >>rshift;\
+	m2 = (base[cid+1] >>rshift) & 0377;\
 	j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;\
   }
 
@@ -959,7 +959,7 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 					  }else{ 
 						rshift= 63 -  ((i+1) * hdr->bits) % 64;
 						m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));
-						m2 = base[cid+1] >>rshift;
+						m2 = (base[cid+1] >>rshift ) & 0377;
 						j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;
 					  }
 					if ( *w == dict[j]){
