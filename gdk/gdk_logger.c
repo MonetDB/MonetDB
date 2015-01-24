@@ -1677,7 +1677,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
-	     logger_cleanup(lg, -1) != LOG_OK)) {
+	     logger_cleanup(lg, 0) != LOG_OK)) {
 		logger_destroy(lg);
 
 		return NULL;
