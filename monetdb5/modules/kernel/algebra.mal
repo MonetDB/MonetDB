@@ -83,42 +83,7 @@ command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
-#command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-#address ALGouterjoin
-#comment "Returns all the result of a join, plus the BUNS formed NIL in
-#		the tail and the head-values of 'outer' whose tail-value does
-#		not match an head-value in 'inner'.";
-#
-#command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
-#address ALGouterjoinestimate;
-
 # Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
-address ALGthetajoin
-comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
-		just the same as join(). All other options do merge algorithms.
-		Either using the fact that they are ordered() already (left on tail,
-	right on head), or by using/creating binary search trees on the
-		join columns. ";
-
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
-address ALGthetajoinEstimate;
-# Band Join (approximate match)
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3], minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3]
-address ALGbandjoin_default
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus]. Works only for the builtin numerical types,
-		and their derivates.";
-
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3], minus:any_2 , plus:any_2, li:bit, hi:bit ) :bat[:any_1,:any_3]
-address ALGbandjoin
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus], depending on (l_in/h_in), the bounds
-		are included. Works only for the builtin numerical types,
-		and their derivates.";
-
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
 address ALGrangejoin;
 
@@ -320,8 +285,7 @@ address ALGtunion;
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGantijoin2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
@@ -335,12 +299,12 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  and 'right' with equal tails";
 
 # Theta Join
-command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGthetajoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
+#command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
+#		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+#address ALGthetajoin2
+#comment "Returns 2 columns with all BUNs, consisting of the head-oids
+#	  from 'left' and 'right' for which there are BUNs in 'left'
+#	  and 'right' with equal tails";
 
 command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
@@ -348,15 +312,6 @@ address ALGcrossproduct2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
-
-command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit )
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGbandjoin2
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus], depending on (l_in/h_in), the bounds
-		are included. Works only for the builtin numerical types,
-		and their derivates.";
 
 command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
