@@ -1744,8 +1744,6 @@ stack_push_children(sql_stack *stk, stmt *s)
 		if (s->op2) {
 			if (s->op3)
 				stack_push_stmt(stk, s->op3, 1);
-			if (s->op3)
-				stack_push_stmt(stk, s->op3, 1);
 			stack_push_stmt(stk, s->op2, 1);
 		}
 		if (s->op1)
