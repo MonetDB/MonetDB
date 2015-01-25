@@ -62,17 +62,17 @@ command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-address ALGjoin
-comment "Returns all BUNs, consisting of a head-value from 'left' and
-		a tail-value from 'right' for which there are BUNs in 'left'
-		and 'right' with equal tail- resp. head-value (i.e. the join
-	columns are projected out).";
-
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-address ALGjoin;
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
-address ALGjoinestimate;
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+#address ALGjoin
+#comment "Returns all BUNs, consisting of a head-value from 'left' and
+#		a tail-value from 'right' for which there are BUNs in 'left'
+#		and 'right' with equal tail- resp. head-value (i.e. the join
+#	columns are projected out).";
+#
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+#address ALGjoin;
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
+#address ALGjoinestimate;
 
 command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
 address ALGleftjoin;
@@ -83,7 +83,6 @@ command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
-# Theta Join
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
 address ALGrangejoin;
 
