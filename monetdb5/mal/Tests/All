@@ -143,6 +143,7 @@ tst274
 NOT_WIN32?tst275
 tst277
 tst280
+tst281
 tst292
 tst285
 tst300
