@@ -45,7 +45,7 @@ SELECT epoch(clk), currency, epoch(ts), bid, offer,spread
 FROM day2stage;
 DROP TABLE day2stage;
 
-SELECT * from day1;
+SELECT * from day2;
 ALTER TABLE day2 SET READ ONLY;
 
 CREATE TABLE day3 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
@@ -62,7 +62,10 @@ INSERT INTO day3 VALUES( epoch(1413267181000), 'USD/CAD', epoch(1413267181830), 
 INSERT INTO day3 VALUES( epoch(1413267181000), 'AUD/USD', epoch(1413267181549), 0.878730, 0.878810, 0.000080);
 INSERT INTO day3 VALUES( epoch(1413267181000), 'GBP/JPY', epoch(1413267181618), 172.116000,172.138000,0.022000);
 
-CREATE MERGE TABLE forex ( clk timestamp, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+SELECT * from day3;
+ALTER TABLE day3 SET READ ONLY;
+
+CREATE MERGE TABLE forex ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 ALTER TABLE forex ADD TABLE day1;
 ALTER TABLE forex ADD TABLE day2;
 ALTER TABLE forex ADD TABLE day3;
