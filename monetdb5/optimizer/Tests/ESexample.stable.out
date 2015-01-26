@@ -15,7 +15,7 @@ stdout of test 'ESexample` in directory 'monetdb5/optimizer` itself:
 function user.tst():void;
     V1 := bat.new(:oid,:oid);
     V7 := bat.new(:oid,:oid);
-    V17 := algebra.join(V1,V7);
+    (V17,V17b) := algebra.subjoin(V1,V7,nil:bat[:oid,:oid],nil:bat[:oid,:oid],true,0:lng);
     bat.append(V1,V17);
 end tst;
 function user.main():void;
@@ -24,8 +24,8 @@ end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:oid);           #  1 V1:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
     V7{rows=0} := bat.new(:oid,:oid);   #  2 V7:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
-    V17 := algebra.join(V1,V7{rows=0}); #  3 V17:bat[:oid,:oid] := ALGjoin(V1:bat[:oid,:oid], V7:bat[:oid,:oid]) {G}
-    bat.append(V1,V17);                 #  4 _6:bat[:oid,:oid] := BKCappend_wrap(V1:bat[:oid,:oid], V17:bat[:oid,:oid]) {G}
+    (V17,V17b) := algebra.subjoin(V1,V7{rows=0},nil:bat[:oid,:oid],nil:bat[:oid,:oid],true,0:lng);#  3 (V17:bat[:oid,:oid], V17b:bat[:oid,:oid]) := ALGsubjoin(V1:bat[:oid,:oid], V7:bat[:oid,:oid], _7:bat[:oid,:oid], _8:bat[:oid,:oid], _9:bit, _10:lng) {G}
+    bat.append(V1,V17);                 #  4 _11:bat[:oid,:oid] := BKCappend_wrap(V1:bat[:oid,:oid], V17:bat[:oid,:oid]) {G}
 end tst;                                #  5  
 
 # 22:08:09 >  

@@ -533,7 +533,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
 	tzname:bat[:oid,:str]:= bbp.bind("timezone_name");
 	tzdef:bat[:oid,:timezone]:= bbp.bind("timezone_def");
-	tzn:= bat.reverse(tzname);
+	tzn:= tzname; 
 	io.print("print(timezones)");
 	io.print(tzname,tzdef);
 	o:= algebra.find(tzn,"Wake Island");
@@ -602,7 +602,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	bj_a := bat.setColumn(timestamp_eur,"West/Europe");
 #	timestamp_eur.bat.setColumn("West/Europe"),
 	o := algebra.find(tzn,"West/Europe");
-	cj_a:timezone := algebra.find(tzdef,o);
+	cj_a := algebra.fetch(tzdef,o);
 	dj_a:bat[:oid,:bit] := mal.multiplex("mtime","dst",timestamp_eur,cj_a);
 	ej_a := bat.setColumn(dj_a,"dst");
 #	[dst](timestamp_eur,algebra.find(timezones,"West/Europe")).bat.setColumn("dst"),

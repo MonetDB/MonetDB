@@ -31,13 +31,13 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     a1 := a;                            #  1 a1:bat[:any_1,:any_2] := a:bat[:any_1,:any_2] {G}
     b1 := b;                            #  2 b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3] {G}
     c1 := c;                            #  3 c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4] {G}
-    z := algebra.join(a,b);             #  4 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
-    zz := algebra.join(z,c);            #  5 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
-    ww := algebra.join(z,a1);           #  6 ww:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
-    X_12 := algebra.join(z,a1);         #  7 _12:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
-    yy:bat[:any,:any]  := algebra.join(X_12,b1);#  8 yy:bat[:any,:any] := ALGjoin(_12:bat[:any,:any], b1:bat[:any_2,:any_3]) {G}
-    xx:bat[:any,:any]  := algebra.joinPath(X_12,b1,c1);#  9 xx:bat[:any,:any] := ALGjoinPath(_12:bat[:any,:any], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
-    return qry := xx;                   # 10 qry:bat[:any_1,:any_4] := xx:bat[:any,:any] {G}
+    z := algebra.join(a,b);             #  4 z:any := algebra.join(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) 
+    zz := algebra.join(z,c);            #  5 zz:any := algebra.join(z:any, c:bat[:any_3,:any_4]) 
+    ww := algebra.join(z,a1);           #  6 ww:any := algebra.join(z:any, a1:bat[:any_1,:any_2]) 
+    X_12 := algebra.join(z,a1);         #  7 _12:any := algebra.join(z:any, a1:bat[:any_1,:any_2]) 
+    yy:bat[:void,:any]  := algebra.join(X_12,b1);#  8 yy:bat[:void,:any] := algebra.join(_12:any, b1:bat[:any_2,:any_3]) 
+    xx:bat[:void,:any]  := algebra.joinPath(X_12,b1,c1);#  9 xx:bat[:void,:any] := algebra.joinPath(_12:any, b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) 
+    return qry := xx;                   # 10 qry:bat[:any_1,:any_4] := xx:bat[:void,:any] {G}
 end qry;                                # 11  
 
 # 12:56:30 >  

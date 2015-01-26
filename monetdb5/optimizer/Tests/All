@@ -59,7 +59,9 @@ inlineCst
 
 mitosis00
 
-joinpath
+manifold2
+
+#joinpath calls for new joinpath optimizer
 leftjoinpath
 groups00
 
