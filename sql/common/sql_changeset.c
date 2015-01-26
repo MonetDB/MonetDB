@@ -98,3 +98,11 @@ cs_last_node(changeset * cs)
 {
 	return cs->set->t;
 }
+
+void 
+cs_remove_node(changeset * cs, node *n)
+{
+	list_remove_node(cs->set, n);
+	if (cs->nelm == n)
+		cs->nelm = n->next;
+}

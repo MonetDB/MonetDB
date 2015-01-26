@@ -177,7 +177,7 @@ trans_drop_tmp(sql_trans *tr)
 			sql_table *t = n->data;
 
 			if (t->persistence == SQL_LOCAL_TEMP)
-				list_remove_node(tmp->tables.set, n);
+				cs_remove_node(&tmp->tables, n);
 			n = nxt;
 		}
 	}
@@ -2337,7 +2337,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ts->dset = list_new(tr->sa, ts->destroy);
 						list_move_data(ts->set, ts->dset, tb);
 					//} else {
-						//list_remove_node(ts->set, tbn);
+						//cs_remove_node(ts, tbn);
 					//}
 				}
 			}
@@ -2927,7 +2927,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2960,7 +2960,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					sql_base *b = n->data;
 					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
-				list_remove_node(fs->set, n);
+				cs_remove_node(fs, n);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2991,7 +2991,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				fprintf(stderr, "#reset_cs free %s\n",
 					(b->name)?b->name:"help");
 			}
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = t;
 		}
 	}
@@ -3108,7 +3108,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			for (n = fs->tables.nelm; n; ) {
 				node *nxt = n->next;
 
-				list_remove_node(fs->tables.set, n);
+				cs_remove_node(&fs->tables, n);
 				n = nxt;
 			}
 			fs->tables.nelm = NULL;
