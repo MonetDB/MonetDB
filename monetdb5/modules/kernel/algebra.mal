@@ -15,17 +15,15 @@
 # Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 # 
-# We split between selections that return one value, and selections
-# that return a BAT.
 module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command find(b:bat[:any_1,:any_2], h:any_1):any_2
+command find(b:bat[:oid,:any_1], t:any_1):oid
 address ALGfind
-comment "Returns the index position of a value 't'.  If no such BUN exists, an error occurs." ;
+comment "Returns the index position of a value.  If no such BUN exists return OID-nil." ;
 
-command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
+command fetch(b:bat[:oid,:any_1], x:oid) :any_1
 address ALGfetchoid
 comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
