@@ -3510,9 +3510,22 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		return NULL;
 
 	t = exp_subtype(e);
-	f = bind_func(sql, s, fname, t, NULL, type);
-	if (!f)
-		f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	if (!t) {
+		f = find_func(sql, s, fname, 1, type);
+		if (!f)
+			f = find_func(sql, s, fname, 1, F_AGGR);
+		if (f) {
+			sql_arg *a = f->func->ops->h->data;
+
+			t = &a->type;
+			if (rel_set_type_param(sql, t, e, 1) < 0)
+				return NULL;
+		}
+	} else {
+		f = bind_func(sql, s, fname, t, NULL, type);
+		if (!f)
+			f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	}
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
 
