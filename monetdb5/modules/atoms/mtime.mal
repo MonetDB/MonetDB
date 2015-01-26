@@ -233,11 +233,16 @@ comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
 command epoch{unsafe}():timestamp
 address MTIMEcurrent_timestamp
 comment "unix-time (epoch) support: seconds since the Unix epoch";
+
 command epoch(t:timestamp):int
 address MTIMEepoch2int
 comment "unix-time (epoch) support: seconds since epoch";
+
 command epoch(t:int):timestamp
 address MTIMEtimestamp
+comment "convert seconds since epoch into a timestamp";
+command epoch(t:lng):timestamp
+address MTIMEtimestamplng
 comment "convert seconds since epoch into a timestamp";
 
 
