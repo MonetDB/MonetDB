@@ -197,6 +197,7 @@ extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
+extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
