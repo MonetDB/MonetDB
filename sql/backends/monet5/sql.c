@@ -443,7 +443,9 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		mvc_copy_column(sql, nt, c);
+		if (mvc_copy_column(sql, nt, c) == NULL)
+			throw(SQL, "sql.catalog", "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {

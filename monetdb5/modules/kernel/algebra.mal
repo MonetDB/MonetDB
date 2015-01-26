@@ -29,31 +29,18 @@ command fetch(b:bat[:any_2,:any_1], x:oid) :any_1
 address ALGfetchoid
 comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
-# Head-intersecting elements (a.k.a. semijoin)
-command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
-		:bat[:any_1,:any_2]
-address ALGsemijoin
-comment "Returns the intersection taken over only the *head* columns of
-		two BATs.  Results in all BUNs of 'left' that are also in 'right'.
-		Does *not* do double-elimination over the 'left' BUNs.
-		If you want this, use: 'kintersect(kunique(left),kunique(right))'
-	or: 'kunique(kintersect(left,right))'.";
-
-command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
-		:bat[:any_1,:any_2]
+command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGsemijoin
 comment "Returns the intersection taken over only the *head* columns of two BATs.
 	Results in all BUNs of 'left' that are also in 'right'.
 		Does *not* do double- elimination over the 'left' BUNs.
 		If you want this, use: 'kintersect(kunique(left),kunique(right))'
 	or: 'kunique(kintersect(left,right))'.";
-command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
-		:bat[:any_1,:any_2]
+command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGtintersect;
 
 # Head-differing elements
-command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
-		:bat[:any_1,:any_2]
+command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGkdiff
 comment "Returns the difference taken over only the *head* columns of two BATs.
 		Results in all BUNs of 'left' that are *not* in 'right'.
@@ -61,132 +48,45 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 		If you want this, use:
 	 'kdifference(left.kunique,right.kunique)'
 	or: 'kdifference(left,right).kunique'.";
-command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
-		:bat[:any_1,:any_2]
+command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGtdifference;
+#
 # Union on head
-command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
-		:bat[:any_1,:any_2]
+command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGkunion
 comment "Returns the union of two BATs; looking at head-columns only.
 		Results in all BUNs of 'left' that are  not in 'right', plus
 	all BUNs of 'right'.  *no* double-elimination is done.";
 
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
-		li:bit, hi:bit) :bat[:any_1,:void]
-address ALGuselectInclusive
-comment "See select() but limited to head values";
-
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void]
-address ALGuselect;
-command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void]
-address ALGuselect1
-comment "Value select, but returning only the
-	head values. SEE ALSO:select(bat,val)";
-
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
-# Note that joins over void columns are handled as if they are oids.
-command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
-	:bat[:any_1,:any_4]
-address ALGantijoin
-comment "Returns the antijoin";
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+#address ALGjoin
+#comment "Returns all BUNs, consisting of a head-value from 'left' and
+#		a tail-value from 'right' for which there are BUNs in 'left'
+#		and 'right' with equal tail- resp. head-value (i.e. the join
+#	columns are projected out).";
+#
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+#address ALGjoin;
+#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
+#address ALGjoinestimate;
 
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3]
-address ALGjoin
-comment "Returns all BUNs, consisting of a head-value from 'left' and
-		a tail-value from 'right' for which there are BUNs in 'left'
-		and 'right' with equal tail- resp. head-value (i.e. the join
-	columns are projected out).";
-
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3]
-address ALGjoin;
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3]
+command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
 address ALGleftjoin;
-
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3]
+command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
 address ALGleftjoinestimate;
 
-command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3]
-address ALGjoinestimate;
-
-command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] )
-		:bat[:oid,:any_3]
+command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
-
-
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3])
-		:bat[:any_1,:any_3]
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in
-		the tail and the head-values of 'outer' whose tail-value does
-		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3])
-		:bat[:any_1,:any_3]
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in
-		the tail and the head-values of 'outer' whose tail-value does
-		not match an head-value in 'inner'.";
-command outerjoin( outer:bat[:any_1,:oid], inner:bat[:oid,:any_3])
-		:bat[:any_1,:any_3]
-address ALGouterjoin
-comment "Returns all the result of a join, plus the BUNS formed NIL in
-		the tail and the head-values of 'outer' whose tail-value does
-		not match an head-value in 'inner'.";
-
-command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		estimate:lng) :bat[:any_1,:any_3]
-address ALGouterjoinestimate;
-
-# Theta Join
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int) :bat[:any_1,:any_3]
-address ALGthetajoin
-comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
-		just the same as join(). All other options do merge algorithms.
-		Either using the fact that they are ordered() already (left on tail,
-	right on head), or by using/creating binary search trees on the
-		join columns. ";
-
-command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], opname:int,estimate:lng) :bat[:any_1,:any_3]
-address ALGthetajoinEstimate;
-# Band Join (approximate match)
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3]
-address ALGbandjoin_default
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus]. Works only for the builtin numerical types,
-		and their derivates.";
-
-command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
-		   minus:any_2 , plus:any_2, li:bit, hi:bit ) :bat[:any_1,:any_3]
-address ALGbandjoin
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus], depending on (l_in/h_in), the bounds
-		are included. Works only for the builtin numerical types,
-		and their derivates.";
 
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
 address ALGrangejoin;
 
 #END OF HEADLESS PLANS
-
-#command sort( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
-#address ALGtsort
-#comment "Returns a BAT copy sorted on the tail column.";
-#
-#command sortReverse( b:bat[:oid,:any_2]) :bat[:oid,:any_2]
-#address ALGtsort_rev
-#comment "Returns a BAT copy reversely sorted on the tail column.";
 
 command revert( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address ALGrevert
@@ -384,8 +284,7 @@ address ALGtunion;
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGantijoin2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
@@ -399,12 +298,12 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  and 'right' with equal tails";
 
 # Theta Join
-command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGthetajoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
+#command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
+#		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+#address ALGthetajoin2
+#comment "Returns 2 columns with all BUNs, consisting of the head-oids
+#	  from 'left' and 'right' for which there are BUNs in 'left'
+#	  and 'right' with equal tails";
 
 command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
@@ -412,15 +311,6 @@ address ALGcrossproduct2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
-
-command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_2], minus:any_2 , plus:any_2, li:bit, hi:bit )
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGbandjoin2
-comment "This is a join() for which the predicate is that two BUNs match
-		if the left-tail value is within the range [right-head - minus,
-		right-head + plus], depending on (l_in/h_in), the bounds
-		are included. Works only for the builtin numerical types,
-		and their derivates.";
 
 command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
@@ -557,14 +447,14 @@ comment "Return the oids of the slice with the BUNs at position x till y.";
 #  BAT size
 module aggr;
 
-command count( b:bat[:any_1,:any] ) :wrd
+command count( b:bat[:oid,:any] ) :wrd
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any_1,:any], ignore_nils:bit ) :wrd
+command count ( b:bat[:oid,:any], ignore_nils:bit ) :wrd
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores
 		BUNs with nil-tail iff ignore_nils==TRUE.";
-command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
+command count_no_nil ( b:bat[:oid,:any_2]) :wrd
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
@@ -583,11 +473,11 @@ comment "Return the cardinality of the BAT tail values.";
 # override these any implementations.
 
 #SQL uses variable head types
-command min(b:bat[:any_1,:any_2]):any_2
+command min(b:bat[:oid,:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
 
-command max(b:bat[:any_1,:any_2]):any_2
+command max(b:bat[:oid,:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 

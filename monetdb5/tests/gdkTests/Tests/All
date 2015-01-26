@@ -1,7 +1,6 @@
 append_dense_tail
 bat_replace
 between
-binsemijoin2
 casts
 cross
 str_heap
