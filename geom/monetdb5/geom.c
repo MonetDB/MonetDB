@@ -2598,21 +2598,6 @@ str wkbGetCoordinate(double *out, wkb **geom, int *dimNum) {
 
 	return MAL_SUCCEED;
 }
-/*
-str wkbGetCoordX(double *out, wkb **geom) {
-	return wkbGetCoord(out, geom, 0, "geom.X");
-}
-
-str wkbGetCoordY(double *out, wkb **geom) {
-	return wkbGetCoord(out, geom, 1, "geom.Y");
-}
-
-// geos does not store more than 3 dimensions in wkb so this function
-//  will never work unless we change geos 
-str wkbGetCoordZ(double *out, wkb **geom) {
-	return wkbGetCoord(out, geom, 2, "geom.Z");
-}
-*/
 
 /*common code for functions that return geometry */
 static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeometry *), const char *name) {
@@ -4150,13 +4135,32 @@ str wkbNumGeometries(int* out, wkb** geom) {
 /* Creates the mbr for the given geom_geometry. */
 str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
+	str ret = MAL_SUCCEED;
+	bit out;
+
+	//check if the geometry is empty
+	if((ret = wkbIsEmpty(&out, geomWKB)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.wkbMBR", "%s", ret);
+		GDKfree(ret);
+	
+		GEOSGeom_destroy(geosGeometry);
+	
+		return msg; 
+	}
+
+	if(out) {
+		GEOSGeom_destroy(geosGeometry);
+		*geomMBR = mbr_nil;
+		return MAL_SUCCEED;
+	}
+
 	*geomMBR = mbrFromGeos(geosGeometry);
 
-	if(geosGeometry)
-		GEOSGeom_destroy(geosGeometry);
-	else if(mbr_isnil(*geomMBR))
-		throw(MAL, "wkb.mbr", "Failed to create mbr");
+	GEOSGeom_destroy(geosGeometry);
 
+	if (mbr_isnil(*geomMBR))
+		throw(MAL, "wkb.mbr", "Failed to create mbr");
+				
 	return MAL_SUCCEED;	
 }
 
@@ -4650,6 +4654,12 @@ str mbrDistance_wkb(double *out, wkb **geom1WKB, wkb **geom2WKB) {
 
 /* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
 str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx) {
+	//check if the MBR is null
+	if(mbr_isnil(*geomMBR)) {
+		*coordinateValue = dbl_nil;
+		return MAL_SUCCEED;
+	}
+
 	switch(*coordinateIdx) {
 		case 1:
 			*coordinateValue = (*geomMBR)->xmin;
@@ -4673,9 +4683,30 @@ str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx
 str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx) {
 	mbr* geomMBR;
 	str ret = MAL_SUCCEED ; 
+	bit out;
+
+	//check if the geometry is empty
+	if((ret = wkbIsEmpty(&out, geomWKB)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.wkbCoordinateFromWKB", "%s", ret);
+		GDKfree(ret);
+		return msg; 
+	}
+
+	if(out) {
+		*coordinateValue = dbl_nil;
+		return MAL_SUCCEED;
+	}
 
 	wkbMBR(&geomMBR, geomWKB);
-	ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx);	
+	if((ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.wkbCoordinateFromWKB", "%s", ret);
+		GDKfree(ret);
+
+		if(geomMBR)
+			GDKfree(geomMBR);
+
+		return msg;
+	}
 
 	if(geomMBR)
 		GDKfree(geomMBR);

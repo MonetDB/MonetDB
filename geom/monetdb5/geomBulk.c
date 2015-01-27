@@ -137,6 +137,61 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 	return MAL_SUCCEED;
 }
 
+/*****************************************************************************/
+/********************* IN: mbr - OUT: double - FLAG :int *********************/
+/*****************************************************************************/
+str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	mbr *inMBR = NULL;
+	double outDbl = 0.0;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.coordinateFromMBR", RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
+	}
+
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+
+		inMBR = (mbr*) BUNtail(inBAT_iter, p);
+		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
+			str msg;
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		BUNappend(outBAT,&outDbl,TRUE);
+	}
+
+	//set some properties of the new BAT
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATsettrivprop(outBAT);
+    BATderiveProps(outBAT,FALSE);
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	return MAL_SUCCEED;
+
+}
+
 /**************************************************************************/
 /********************* IN: wkb - OUT: str - FLAG :int *********************/
 /**************************************************************************/
@@ -1366,64 +1421,13 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
+   	BATsettrivprop(outBAT);
+   	BATderiveProps(outBAT,FALSE);
 	BBPreleaseref(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
-	BAT *outBAT = NULL, *inBAT = NULL;
-	mbr *inMBR = NULL;
-	double outDbl = 0.0;
-	BUN p =0, q =0;
-	BATiter inBAT_iter;
-
-	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.coordinateFromMBR", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
-	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
-
-	//iterator over the BAT	
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) { //iterate over all valid elements
-		str err = NULL;
-
-		inMBR = (mbr*) BUNtail(inBAT_iter, p);
-		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
-			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
-			GDKfree(err);
-			return msg;
-		}
-		BUNappend(outBAT,&outDbl,TRUE);
-	}
-
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-    	BATsettrivprop(outBAT);
-    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
-
-}
  
 str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
 	str err = NULL;

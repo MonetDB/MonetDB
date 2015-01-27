@@ -29,7 +29,7 @@ stderr of test 'XYZ` in directory 'geom/sql/Tests/functions` itself:
 # 16:37:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22484" "--port=35278"
 # 16:37:54 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25417/.s.monetdb.37599
+MAPI  = (monetdb) /var/tmp/mtest-3153/.s.monetdb.31819
 QUERY = select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo;
 ERROR = !MALException:geom.wkbGetCoordinate:Geometry "LINESTRING (10.0000000000000000 10.0000000000000000, 20.0000000000000000 20.0000000000000000, 30.0000000000000000 30.0000000000000000)" not a Point
 

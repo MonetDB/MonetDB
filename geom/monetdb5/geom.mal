@@ -475,11 +475,9 @@ command mbrDistance(geom1:wkb, geom2:wkb) :dbl address mbrDistance_wkb
 comment "Returns the distance of the centroids of the mbrs of the two geometries";
 command mbrDistance(box1:mbr, box2:mbr) :dbl address mbrDistance
 comment "Returns the distance of the centroids of the two boxes";
+
 command coordinateFromWKB(:wkb, :int) :dbl address wkbCoordinateFromWKB
 comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";
-command coordinateFromMBR(:mbr, :int) :dbl address wkbCoordinateFromMBR
-comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
-
 function XMinFromWKB(g:wkb) :dbl;
 	x := coordinateFromWKB(g, 1);
 	return x;
@@ -496,6 +494,9 @@ function YMaxFromWKB(g:wkb) :dbl;
 	x := coordinateFromWKB(g, 4);
 	return x;
 end YMaxFromWKB;
+
+command coordinateFromMBR(:mbr, :int) :dbl address wkbCoordinateFromMBR
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
 function XMinFromMBR(b:mbr) :dbl;
 	x := coordinateFromMBR(b, 1);
 	return x;
@@ -717,9 +718,6 @@ comment "Creates the mbr for the given wkb.";
 
 command coordinateFromWKB(:bat[:oid,:wkb], :int) :bat[:oid,:dbl] address wkbCoordinateFromWKB_bat
 comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";
-command coordinateFromMBR(:bat[:oid,:mbr], :int) :bat[:oid,:dbl] address wkbCoordinateFromMBR_bat
-comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
-
 function XMinFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
 	x := coordinateFromWKB(g, 1);
 	return x;
@@ -736,6 +734,9 @@ function YMaxFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
 	x := coordinateFromWKB(g, 4);
 	return x;
 end YMaxFromWKB;
+
+command coordinateFromMBR(:bat[:oid,:mbr], :int) :bat[:oid,:dbl] address wkbCoordinateFromMBR_bat
+comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
 function XMinFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
 	x := coordinateFromMBR(b, 1);
 	return x;

@@ -25,6 +25,7 @@ ST_IsValid #ignores Z coordinate
 ST_IsRing #ignores Z coordinate
 
 XYZ
+XYZMinMax
 #srid
 ST_GeometryN
 ST_NumGeometries
