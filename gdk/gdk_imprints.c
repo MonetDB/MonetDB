@@ -634,7 +634,7 @@ BATimprints(BAT *b)
 		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
 			b->batCacheid > 0 ? 't' : 'h');
 		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
-		imprints->imprints->farmid = BBPselectfarm(PERSISTENT, b->ttype,
+		imprints->imprints->farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
 		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
@@ -797,7 +797,8 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
-		if (HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
+		if (b->batRole == PERSISTENT &&
+		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			/* add version number */
