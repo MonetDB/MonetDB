@@ -2563,36 +2563,42 @@ str wkbSetSRID(wkb** resultGeomWKB, wkb **geomWKB, int* srid) {
 }
 
 /* depending on the specific function it returns the X,Y or Z coordinate of a point */
-static str wkbGetCoord(double *out, wkb **geom, int dimNum, const char *name) {
-	//int ret=MAL_SUCCEED;
+str wkbGetCoordinate(double *out, wkb **geom, int *dimNum) {	
 	GEOSGeom geosGeometry = wkb2geos(*geom);
-#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
-	const GEOSCoordSequence *gcs;
-#else
-	const GEOSCoordSeq gcs;
-#endif
+	const GEOSCoordSequence* gcs;
 
 	if (!geosGeometry) {
 		*out = dbl_nil;
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, "geom.wkbGetCoordinate", "wkb2geos failed");
 	}
 
-	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPoint)
-		throw(MAL, name, "Geometry not a Point"); 
+	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPoint) {
+		str err;
+		char *geomSTR;
+		if((err = wkbAsText(&geomSTR, geom, NULL)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.wkbGetCoordinate", "%s", err);
+			GDKfree(err);
+			GEOSGeom_destroy(geosGeometry);
+			return msg;
+		}
+
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.wkbGetCoordinate", "Geometry %s not a Point", geomSTR);
+	} 
 
 	gcs = GEOSGeom_getCoordSeq(geosGeometry);
 
 	if (!gcs) {
-		throw(MAL, name, "GEOSGeom_getCoordSeq failed");
+		throw(MAL, "geom.wkbGetCoordinate", "GEOSGeom_getCoordSeq failed");
 	}
 	
-	GEOSCoordSeq_getOrdinate(gcs, 0, dimNum, out);
+	GEOSCoordSeq_getOrdinate(gcs, 0, *dimNum, out);
 	/* gcs shouldn't be freed, it's internal to the GEOSGeom */
 	GEOSGeom_destroy(geosGeometry);
 
 	return MAL_SUCCEED;
 }
-
+/*
 str wkbGetCoordX(double *out, wkb **geom) {
 	return wkbGetCoord(out, geom, 0, "geom.X");
 }
@@ -2601,12 +2607,12 @@ str wkbGetCoordY(double *out, wkb **geom) {
 	return wkbGetCoord(out, geom, 1, "geom.Y");
 }
 
-/* geos does not store more than 3 dimensions in wkb so this function
- * will never work unless we change geos */
+// geos does not store more than 3 dimensions in wkb so this function
+//  will never work unless we change geos 
 str wkbGetCoordZ(double *out, wkb **geom) {
 	return wkbGetCoord(out, geom, 2, "geom.Z");
 }
-
+*/
 
 /*common code for functions that return geometry */
 static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeometry *), const char *name) {

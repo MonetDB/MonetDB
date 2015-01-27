@@ -24,7 +24,7 @@ ST_IsSimple #ignores Z coordinate
 ST_IsValid #ignores Z coordinate
 ST_IsRing #ignores Z coordinate
 
-#coordinates
+XYZ
 #srid
 ST_GeometryN
 ST_NumGeometries

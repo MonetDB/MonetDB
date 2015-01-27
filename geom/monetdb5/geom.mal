@@ -227,6 +227,22 @@ function GeometryType2(w:wkb) :str;
 	return x;
 end GeometryType2;
 
+command GetCoordinate(w:wkb, idx:int) :dbl address wkbGetCoordinate
+comment "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point";
+function X(w:wkb) :dbl;
+	c := GetCoordinate(w, 0);
+	return c;
+end X;
+function Y(w:wkb) :dbl;
+	c := GetCoordinate(w, 1);
+	return c;
+end Y;
+function Z(w:wkb) :dbl;
+	c := GetCoordinate(w, 2);
+	return c;
+end Z;
+
+
 command Boundary(w:wkb) :wkb address wkbBoundary
 comment "Returns the closure of the combinatorial boundary of the Geometry.";
 command CoordDim(w:wkb) :int address wkbCoordDim
@@ -237,12 +253,6 @@ command getSRID(w:wkb) :int address wkbGetSRID
 comment "Returns the Spatial Reference System ID for this Geometry.";
 command setSRID(w:wkb, srid:int) :wkb address wkbSetSRID
 comment "Sets the Reference System ID for this Geometry.";
-command X(g:wkb) :dbl address wkbGetCoordX
-comment  "Return the X coordinate of the point, or NULL if not available. Input must be a point.";
-command Y(g:wkb) :dbl address wkbGetCoordY
-comment "Return the Y coordinate of the point, or NULL if not available. Input must be a point.";
-command Z(g:wkb) :dbl address wkbGetCoordZ
-comment "Return the Z coordinate of the point, or NULL if not available. Input must be a point.";
 command StartPoint(w:wkb) :wkb address wkbStartPoint
 comment "Returns the first point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING";
 command EndPoint(w:wkb) :wkb address wkbEndPoint
@@ -631,6 +641,21 @@ function NPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
 	x := PointsNum(w, 0);
 	return x;
 end NPoints;
+
+command GetCoordinate(w:bat[:oid,:wkb], idx:int) :bat[:oid,:dbl] address wkbGetCoordinate_bat
+comment "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point";
+function X(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	c := GetCoordinate(w, 0);
+	return c;
+end X;
+function Y(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	c := GetCoordinate(w, 1);
+	return c;
+end Y;
+function Z(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+	c := GetCoordinate(w, 2);
+	return c;
+end Z;
 
 
 

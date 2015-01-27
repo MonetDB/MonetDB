@@ -172,9 +172,10 @@ geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);
-geom_export str wkbGetCoordX(double*, wkb**);
-geom_export str wkbGetCoordY(double*, wkb**);
-geom_export str wkbGetCoordZ(double*, wkb**);
+
+geom_export str wkbGetCoordinate(double *out, wkb **geom, int *dimNum);
+geom_export str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+
 geom_export str wkbStartPoint(wkb **out, wkb **geom);
 geom_export str wkbEndPoint(wkb **out, wkb **geom);
 

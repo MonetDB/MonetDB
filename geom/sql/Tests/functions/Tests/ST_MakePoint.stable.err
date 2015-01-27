@@ -29,7 +29,7 @@ stderr of test 'ST_MakePoint` in directory 'geom/sql/Tests/functions` itself:
 # 17:12:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10118" "--port=37625"
 # 17:12:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-10872/.s.monetdb.32276
+MAPI  = (monetdb) /var/tmp/mtest-25417/.s.monetdb.37599
 QUERY = select st_makepoint(x,y,z,m) as "XYZM" from points_tbl;
 ERROR = !POINTZM is not supported
 
