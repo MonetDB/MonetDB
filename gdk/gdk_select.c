@@ -2102,6 +2102,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				break;
 			}
 			default:
+				ncnt = BUN_NONE;
 				assert(0);
 			}
 			if (ncnt == BUN_NONE)
