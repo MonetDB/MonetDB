@@ -1557,9 +1557,9 @@ static str dumpPointsPoint(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeo
 }
 
 static str dumpPointsLineString(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geosGeometry, char* path) {
-	unsigned int pointsNum = 0;
+	int pointsNum = 0;
 	str err;
-	unsigned int i=0;
+	int i=0;
 	int check = 0;
 	unsigned int lvl =0;
 
@@ -1746,7 +1746,7 @@ str wkbDumpPoints(int* idBAT_id, int* geomBAT_id, wkb** geomWKB) {
 	BAT *idBAT = NULL, *geomBAT = NULL;
 	GEOSGeom geosGeometry;
 	int check =0;
-	unsigned int pointsNum;
+	int pointsNum;
 	str err;
 	char *path = NULL;
 
@@ -2186,7 +2186,7 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 	char* wkt;
 
 	if(wkbTOSTR(&wkt, &len, *geomWKB)) {
-		if(*withSRID == 0) {
+		if(!withSRID || *withSRID == 0) { //accepting NULL withSRID to make easier the internal use of it
 			*txt = GDKmalloc(strlen(wkt));
 			if(*txt == NULL) {
 				GDKfree(wkt);
@@ -3081,10 +3081,12 @@ static str numPointsGeometry(unsigned int *out, const GEOSGeometry* geosGeometry
 
 
 /* Returns the number of points in a geometry */
-str wkbNumPoints(unsigned int *out, wkb **geom, int *check) {
+str wkbNumPoints(int *out, wkb **geom, int *check) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 	int geometryType = 0;
 	str err = MAL_SUCCEED;
+	char* geomSTR = NULL;
+	unsigned int pointsNum;
 
 	if (!geosGeometry) {
 		*out = int_nil;
@@ -3096,17 +3098,30 @@ str wkbNumPoints(unsigned int *out, wkb **geom, int *check) {
 	if (*check && geometryType != wkbLineString) {
 		*out = int_nil;
 		GEOSGeom_destroy(geosGeometry);
-		return createException(MAL, "geom.NumPoints", "Geometry not a LineString");
+
+		if((err = wkbAsText(&geomSTR, geom, NULL)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.NumPoints", "%s", err);
+			GDKfree(err);
+			return msg;
+		}
+		return createException(MAL, "geom.NumPoints", "Geometry %s not a LineString", geomSTR);
 	}
 
-	if((err = numPointsGeometry(out, geosGeometry)) != MAL_SUCCEED) {
+	if((err = numPointsGeometry(&pointsNum, geosGeometry)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.NumPoints", "%s", err);
 		GDKfree(err);
 		*out = int_nil;
 		GEOSGeom_destroy(geosGeometry);
 		return msg;
 	}
-		
+
+	if(pointsNum > INT_MAX) {
+		GEOSGeom_destroy(geosGeometry);
+		*out = int_nil;
+		return createException(MAL, "geom.NumPoints", "Overflow");
+	}
+
+	*out = pointsNum;		
 	GEOSGeom_destroy(geosGeometry);
 
 	return MAL_SUCCEED;

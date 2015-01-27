@@ -177,7 +177,10 @@ geom_export str wkbGetCoordY(double*, wkb**);
 geom_export str wkbGetCoordZ(double*, wkb**);
 geom_export str wkbStartPoint(wkb **out, wkb **geom);
 geom_export str wkbEndPoint(wkb **out, wkb **geom);
-geom_export str wkbNumPoints(unsigned int *out, wkb **geom, int *check);
+
+geom_export str wkbNumPoints(int *out, wkb **geom, int *check);
+geom_export str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xmax, double* ymax, int* srid);

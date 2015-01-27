@@ -247,8 +247,6 @@ command StartPoint(w:wkb) :wkb address wkbStartPoint
 comment "Returns the first point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING";
 command EndPoint(w:wkb) :wkb address wkbEndPoint
 comment "Returns the last point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING.";
-command PointsNum(w:wkb, check:int) :int address wkbNumPoints
-comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
 command PointN(w:wkb, n:int) :wkb address wkbPointN
 comment "Returns the n-th point of the Geometry. Argument w should be Linestring.";
 command Envelope(w:wkb) :wkb address wkbEnvelope
@@ -367,6 +365,8 @@ function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
 	return x;
 end Translate;
 
+command PointsNum(w:wkb, check:int) :int address wkbNumPoints
+comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
 function NumPoints(w:wkb) :int;
 	x := PointsNum(w, 1);
 	return x;
@@ -620,6 +620,17 @@ function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:
 	p := MakePointXYZM(x, y, z, m, 11);
 	return p;
 end MakePoint;
+
+command PointsNum(w:bat[:oid,:wkb], check:int) :bat[:oid,:int] address wkbNumPoints_bat
+comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
+function NumPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
+	x := PointsNum(w, 1);
+	return x;
+end NumPoints;
+function NPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
+	x := PointsNum(w, 0);
+	return x;
+end NPoints;
 
 
 command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat;
