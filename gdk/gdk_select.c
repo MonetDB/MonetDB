@@ -19,6 +19,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_cand.h"
 #include "gdk_private.h"
 #include <math.h>
 
@@ -475,13 +476,13 @@ do {									\
 /* definition of type-specific core scan select function */
 #define scanfunc(NAME, TYPE, CAND, END)					\
 static BUN								\
-NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
-	       int li, int hi, int equi, int anti, int lval, int hval,	\
-	       BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,	\
-	       const oid *candlist, BUN maximum, int use_imprints)	\
+NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
+	      int li, int hi, int equi, int anti, int lval, int hval,	\
+	      BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,	\
+	      const oid *candlist, BUN maximum, int use_imprints)	\
 {									\
-	TYPE vl = *(const TYPE *) tl;					\
-	TYPE vh = *(const TYPE *) th;					\
+	TYPE vl = *tl;							\
+	TYPE vh = *th;							\
 	TYPE imp_min;							\
 	TYPE imp_max;							\
 	TYPE v;								\
@@ -499,6 +500,10 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	(void) hi;							\
 	(void) lval;							\
 	(void) hval;							\
+	assert(li == !anti);						\
+	assert(hi == !anti);						\
+	assert(lval);							\
+	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
 		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
 		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
@@ -806,10 +811,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #endif
 		default:
 			cnt = candscan_any(scanargs);
+			break;
 		}
-		if (cnt == BUN_NONE)
-			return NULL;
-		assert(bn->batCapacity >= cnt);
 	} else {
 		if (s) {
 			assert(BATtdense(s));
@@ -853,11 +856,13 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 #endif
 		default:
 			cnt = fullscan_any(scanargs);
+			break;
 		}
-		if (cnt == BUN_NONE)
-			return NULL;
-		assert(bn->batCapacity >= cnt);
 	}
+	if (cnt == BUN_NONE)
+		return NULL;
+	assert(bn->batCapacity >= cnt);
+
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
@@ -1385,9 +1390,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else {
 			/* match: [low..high) */
 			if (s) {
-				oid o = (oid) low + b->H->seq;
+				oid o = (oid) low + b->hseqbase;
 				low = SORTfndfirst(s, &o) - BUNfirst(s);
-				o = (oid) high + b->H->seq;
+				o = (oid) high + b->hseqbase;
 				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				bn = doubleslice(s, 0, 0, low, high);
 			} else {
@@ -1600,4 +1605,770 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	}
 	GDKerror("BATthetasubselect: unknown operator.\n");
 	return NULL;
+}
+
+#define VALUE(s, x)	(s##vars ? \
+			 s##vars + VarHeapVal(s##vals, (x), s##width) : \
+			 s##vals + ((x) * s##width))
+#define FVALUE(s, x)	(s##vals + ((x) * s##width))
+
+gdk_return
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+{
+	BUN lstart, lend, lcnt;
+	const oid *lcand, *lcandend;
+	BUN rstart, rend, rcnt;
+	const oid *rcand, *rcandend;
+	const char *rlvals, *rhvals;
+	const char *lvars, *rlvars, *rhvars;
+	int rlwidth, rhwidth;
+	int lwidth;
+	const void *nil = ATOMnilptr(l->ttype);
+	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int t;
+	BUN cnt, ncnt;
+	oid *restrict dst1, *restrict dst2;
+	const char *vrl, *vrh;
+	oid ro;
+	wrd off = 0;
+	oid rlval = oid_nil, rhval = oid_nil;
+	int sorted = 0;		/* which column is sorted */
+
+	assert(BAThdense(l));
+	assert(BAThdense(rl));
+	assert(BAThdense(rh));
+	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
+	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
+	assert(BATcount(rl) == BATcount(rh));
+	assert(rl->hseqbase == rh->hseqbase);
+	assert(sl == NULL || (sl->tsorted && sl->tkey));
+	assert(sr == NULL || (sr->tsorted && sr->tkey));
+	assert(BATcount(r1) == BATcount(r2));
+	assert(r1->htype == TYPE_void);
+	assert(r1->ttype == TYPE_oid);
+	assert(r2->htype == TYPE_void);
+	assert(r2->ttype == TYPE_oid);
+
+	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "rl=%s#" BUNFMT "[%s]%s%s,rh=%s#" BUNFMT "[%s]%s%s,"
+			  "sl=%s#" BUNFMT "%s%s,sr=%s#" BUNFMT "%s%s)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(rl), BATcount(rl), ATOMname(rl->ttype),
+			  rl->tsorted ? "-sorted" : "",
+			  rl->trevsorted ? "-revsorted" : "",
+			  BATgetId(rh), BATcount(rh), ATOMname(rh->ttype),
+			  rh->tsorted ? "-sorted" : "",
+			  rh->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
+
+	if ((l->ttype == TYPE_void && l->tseqbase == oid_nil) ||
+	    (rl->ttype == TYPE_void && rl->tseqbase == oid_nil) ||
+	    (rh->ttype == TYPE_void && rh->tseqbase == oid_nil)) {
+		/* trivial: nils don't match anything */
+		return GDK_SUCCEED;
+	}
+
+	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
+	CANDINIT(rl, sr, rstart, rend, rcnt, rcand, rcandend);
+
+	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) Tloc(rl, BUNfirst(rl));
+	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) Tloc(rh, BUNfirst(rh));
+	lwidth = l->T->width;
+	rlwidth = rl->T->width;
+	rhwidth = rh->T->width;
+	dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+	dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+
+	if (l->ttype == TYPE_void) {
+		if (lcand) {
+			lstart = 0;
+			lend = (BUN) (lcandend - lcand);
+			lcand = NULL;
+			lwidth = SIZEOF_OID;
+		}
+		off = (wrd) l->tseqbase - (wrd) l->hseqbase;
+	}
+
+	t = ATOMtype(l->ttype);
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == cmp) {
+		/* we can use the underlying type if it looks enough
+		 * like the actual type */
+		t = ATOMstorage(t);
+	}
+
+	if (l->tvarsized && l->ttype) {
+		assert(rl->tvarsized && rl->ttype);
+		assert(rh->tvarsized && rh->ttype);
+		lvars = l->T->vheap->base;
+		rlvars = rl->T->vheap->base;
+		rhvars = rh->T->vheap->base;
+	} else {
+		assert(!rl->tvarsized || !rl->ttype);
+		assert(!rh->tvarsized || !rh->ttype);
+		lvars = rlvars = rhvars = NULL;
+	}
+
+	if (l->tsorted || l->trevsorted) {
+		/* left column is sorted, use binary search */
+		const oid *sval = sl ? (const oid *) Tloc(sl, BUNfirst(sl)) : NULL;
+
+		sorted = 2;
+		for (;;) {
+			BUN low, high;
+
+			if (rcand) {
+				if (rcand == rcandend)
+					break;
+				ro = *rcand++;
+				if (rlvals) {
+					vrl = VALUE(rl, ro - rl->hseqbase);
+				} else {
+					/* TYPE_void */
+					rlval = ro;
+					vrl = (const char *) &rlval;
+				}
+				if (rhvals) {
+					vrh = VALUE(rh, ro - rh->hseqbase);
+				} else {
+					/* TYPE_void */
+					rhval = ro;
+					vrh = (const char *) &rhval;
+				}
+			} else {
+				if (rstart == rend)
+					break;
+				if (rlvals) {
+					vrl = VALUE(rl, rstart);
+				} else {
+					/* TYPE_void */
+					rlval = rstart + rl->tseqbase;
+					vrl = (const char *) &rlval;
+				}
+				if (rhvals) {
+					vrh = VALUE(rh, rstart);
+				} else {
+					/* TYPE_void */
+					rhval = rstart + rh->tseqbase;
+					vrh = (const char *) &rhval;
+				}
+				ro = rstart++ + rl->hseqbase;
+			}
+			if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
+				continue;
+			if (l->tsorted) {
+				if (li)
+					low = SORTfndfirst(l, vrl);
+				else
+					low = SORTfndlast(l, vrl);
+				low -= BUNfirst(l);
+				if (hi)
+					high = SORTfndlast(l, vrh);
+				else
+					high = SORTfndfirst(l, vrh);
+				high -= BUNfirst(l);
+			} else {
+				if (li)
+					low = SORTfndlast(l, vrl);
+				else
+					low = SORTfndfirst(l, vrl);
+				low -= BUNfirst(l);
+				if (hi)
+					high = SORTfndfirst(l, vrh);
+				else
+					high = SORTfndlast(l, vrh);
+				high -= BUNfirst(l);
+			}
+			if (high <= low)
+				continue;
+			low += l->hseqbase;
+			high += l->hseqbase;
+			if (sl) {
+				oid o;
+
+				o = (oid) low;
+				low = SORTfndfirst(sl, &o) - BUNfirst(sl);
+				o = (oid) high;
+				high = SORTfndfirst(sl, &o) - BUNfirst(sl);
+				assert(high >= low);
+				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
+					cnt = BUNlast(r1) + high - low + 1024;
+					BATsetcount(r1, BATcount(r1));
+					BATsetcount(r2, BATcount(r2));
+					if (BATextend(r1, cnt) == NULL ||
+					    BATextend(r2, cnt) == NULL)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+					dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+				}
+				while (low < high) {
+					dst1[r1->batCount++] = sval[low];
+					dst2[r2->batCount++] = ro;
+					low++;
+				}
+			} else {
+				/* [low..high) */
+				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
+					cnt = BUNlast(r1) + high - low + 1024;
+					BATsetcount(r1, BATcount(r1));
+					BATsetcount(r2, BATcount(r2));
+					if (BATextend(r1, cnt) == NULL ||
+					    BATextend(r2, cnt) == NULL)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+					dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+				}
+				while (low < high) {
+					dst1[r1->batCount++] = low;
+					dst2[r2->batCount++] = ro;
+					low++;
+				}
+			}
+		}
+		cnt = BATcount(r1);
+		assert(BATcount(r1) == BATcount(r2));
+	} else if ((BATcount(rl) > 2 ||
+		    l->T->imprints ||
+		    l->batPersistence == PERSISTENT ||
+		    (VIEWtparent(l) != 0 &&
+		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT)) &&
+		   BATimprints(l)) {
+		/* implementation using imprints on left column
+		 *
+		 * we use imprints if we can (the type is right for
+		 * imprints) and either the left bat is persistent or
+		 * already has imprints, or the right bats are long
+		 * enough (for creating imprints being worth it) */
+		BUN maximum;
+
+		sorted = 2;
+		off = l->hseqbase - BUNfirst(l);
+		cnt = 0;
+		maximum = lcand ? (BUN) (lcandend - lcand) : BATcount(l);
+		for (;;) {
+			if (rcand) {
+				if (rcand == rcandend)
+					break;
+				ro = *rcand++;
+				if (rlvals) {
+					vrl = FVALUE(rl, ro - rl->hseqbase);
+				} else {
+					/* TYPE_void */
+					rlval = ro;
+					vrl = (const char *) &rlval;
+				}
+				if (rhvals) {
+					vrh = FVALUE(rh, ro - rh->hseqbase);
+				} else {
+					/* TYPE_void */
+					rhval = ro;
+					vrh = (const char *) &rhval;
+				}
+			} else {
+				if (rstart == rend)
+					break;
+				if (rlvals) {
+					vrl = FVALUE(rl, rstart);
+				} else {
+					/* TYPE_void */
+					rlval = rstart + rl->tseqbase;
+					vrl = (const char *) &rlval;
+				}
+				if (rhvals) {
+					vrh = FVALUE(rh, rstart);
+				} else {
+					/* TYPE_void */
+					rhval = rstart + rh->tseqbase;
+					vrh = (const char *) &rhval;
+				}
+				ro = rstart++ + rl->hseqbase;
+			}
+			dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+			switch (t) {
+			case TYPE_bte: {
+				bte vl, vh;
+				if ((vl = *(bte *) vrl) == bte_nil)
+					continue;
+				if ((vh = *(bte *) vrh) == bte_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEbte)
+						continue;
+					vl = NEXTVALUEbte(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEbte)
+						continue;
+					vh = PREVVALUEbte(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_bte(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_bte(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+			case TYPE_sht: {
+				sht vl, vh;
+				if ((vl = *(sht *) vrl) == sht_nil)
+					continue;
+				if ((vh = *(sht *) vrh) == sht_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEsht)
+						continue;
+					vl = NEXTVALUEsht(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEsht)
+						continue;
+					vh = PREVVALUEsht(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_sht(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_sht(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+			case TYPE_int: {
+				int vl, vh;
+				if ((vl = *(int *) vrl) == int_nil)
+					continue;
+				if ((vh = *(int *) vrh) == int_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEint)
+						continue;
+					vl = NEXTVALUEint(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEint)
+						continue;
+					vh = PREVVALUEint(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_int(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_int(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+			case TYPE_oid: {
+				oid vl, vh;
+				if ((vl = *(oid *) vrl) == oid_nil)
+					continue;
+				if ((vh = *(oid *) vrh) == oid_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEoid)
+						continue;
+					vl = NEXTVALUEoid(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEoid)
+						continue;
+					vh = PREVVALUEoid(vh);
+				}
+				if (vl > vh)
+					continue;
+#if SIZEOF_OID == SIZEOF_INT
+				if (lcand)
+					ncnt = candscan_int(l, sl, r1,
+							    (const int *) &vl,
+							    (const int *) &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_int(l, sl, r1,
+							    (const int *) &vl,
+							    (const int *) &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+#else
+				if (lcand)
+					ncnt = candscan_lng(l, sl, r1,
+							    (const lng *) &vl,
+							    (const lng *) &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_lng(l, sl, r1,
+							    (const lng *) &vl,
+							    (const lng *) &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+#endif
+				break;
+			}
+			case TYPE_lng: {
+				lng vl, vh;
+				if ((vl = *(lng *) vrl) == lng_nil)
+					continue;
+				if ((vh = *(lng *) vrh) == lng_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUElng)
+						continue;
+					vl = NEXTVALUElng(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUElng)
+						continue;
+					vh = PREVVALUElng(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_lng(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_lng(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+#ifdef HAVE_HGE
+			case TYPE_hge: {
+				hge vl, vh;
+				if ((vl = *(hge *) vrl) == hge_nil)
+					continue;
+				if ((vh = *(hge *) vrh) == hge_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEhge)
+						continue;
+					vl = NEXTVALUEhge(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEhge)
+						continue;
+					vh = PREVVALUEhge(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_hge(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_hge(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+#endif
+			case TYPE_flt: {
+				flt vl, vh;
+				if ((vl = *(flt *) vrl) == flt_nil)
+					continue;
+				if ((vh = *(flt *) vrh) == flt_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEflt)
+						continue;
+					vl = NEXTVALUEflt(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEflt)
+						continue;
+					vh = PREVVALUEflt(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_flt(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_flt(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+			case TYPE_dbl: {
+				dbl vl, vh;
+				if ((vl = *(dbl *) vrl) == dbl_nil)
+					continue;
+				if ((vh = *(dbl *) vrh) == dbl_nil)
+					continue;
+				if (!li) {
+					if (vl == MAXVALUEdbl)
+						continue;
+					vl = NEXTVALUEdbl(vl);
+				}
+				if (!hi) {
+					if (vh == MINVALUEdbl)
+						continue;
+					vh = PREVVALUEdbl(vh);
+				}
+				if (vl > vh)
+					continue;
+				if (lcand)
+					ncnt = candscan_dbl(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, lcand,
+							    cnt + maximum, 1);
+				else
+					ncnt = fullscan_dbl(l, sl, r1, &vl, &vh,
+							    1, 1, 0, 0, 1, 1,
+							    lstart, lend, cnt,
+							    off, dst1, NULL,
+							    cnt + maximum, 1);
+				break;
+			}
+			default:
+				ncnt = BUN_NONE;
+				assert(0);
+			}
+			if (ncnt == BUN_NONE)
+				goto bailout;
+			assert(ncnt >= cnt);
+			if (ncnt == cnt)
+				continue;
+			if (BATcapacity(r2) < ncnt) {
+				BATsetcount(r2, cnt);
+				if (BATextend(r2, BATcapacity(r1)) == NULL)
+					goto bailout;
+				dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+			}
+			while (cnt < ncnt)
+				dst2[cnt++] = ro;
+		}
+	} else {
+		/* nested loop implementation */
+		const char *vl;
+		const char *lvals;
+
+		sorted = 1;
+		lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, BUNfirst(l));
+		for (;;) {
+			BUN n, nr;
+			const oid *p;
+			oid lo, lval;
+
+			if (lcand) {
+				if (lcand == lcandend)
+					break;
+				lo = *lcand++;
+				vl = VALUE(l, lstart);
+			} else {
+				if (lstart == lend)
+					break;
+				if (lvals) {
+					vl = VALUE(l, lstart);
+					if (off != 0) {
+						lval = (oid) (*(const oid *)vl + off);
+						vl = (const char *) &lval;
+					}
+				} else {
+					lval = lstart + l->tseqbase;
+					vl = (const char *) &lval;
+				}
+				lo = lstart++ + l->hseqbase;
+			}
+			if (cmp(vl, nil) == 0)
+				continue;
+			nr = 0;
+			p = rcand;
+			n = rstart;
+			for (;;) {
+				int c;
+
+				if (rcand) {
+					if (p == rcandend)
+						break;
+					ro = *p++;
+					if (rlvals)
+						vrl = VALUE(rl, ro - rl->hseqbase);
+					else {
+						/* TYPE_void */
+						rlval = ro;
+						vrl = (const char *) &rlval;
+					}
+					if (rhvals)
+						vrh = VALUE(rh, ro - rh->hseqbase);
+					else {
+						/* TYPE_void */
+						rhval = ro;
+						vrh = (const char *) &rhval;
+					}
+				} else {
+					if (n == rend)
+						break;
+					if (rlvals) {
+						vrl = VALUE(rl, n);
+					} else {
+						/* TYPE_void */
+						rlval = n + rl->tseqbase;
+						vrl = (const char *) &rlval;
+					}
+					if (rhvals) {
+						vrh = VALUE(rh, n);
+					} else {
+						/* TYPE_void */
+						rhval = n + rh->tseqbase;
+						vrh = (const char *) &rhval;
+					}
+					ro = n++ + rl->hseqbase;
+				}
+				if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
+					continue;
+				c = cmp(vl, vrl);
+				if (c < 0 || (c == 0 && !li))
+					continue;
+				c = cmp(vl, vrh);
+				if (c > 0 || (c == 0 && !hi))
+					continue;
+				if (BUNlast(r1) == BATcapacity(r1)) {
+					BUN newcap = BATgrows(r1);
+					BATsetcount(r1, BATcount(r1));
+					BATsetcount(r2, BATcount(r2));
+					if (BATextend(r1, newcap) == NULL ||
+					    BATextend(r2, newcap) == NULL)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+					dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+				}
+				dst1[r1->batCount++] = lo;
+				dst2[r2->batCount++] = ro;
+				nr++;
+			}
+		}
+		cnt = BATcount(r1);
+		assert(BATcount(r1) == BATcount(r2));
+	}
+
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, cnt);
+	BATsetcount(r2, cnt);
+
+	/* set properties using an extra scan (usually not complete) */
+	dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+	dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+	r1->tkey = 1;
+	r1->tsorted = 1;
+	r1->trevsorted = 1;
+	r1->tdense = 1;
+	r1->T->nil = 0;
+	r1->T->nonil = 1;
+	for (ncnt = 1; ncnt < cnt; ncnt++) {
+		if (dst1[ncnt - 1] == dst1[ncnt]) {
+			r1->tdense = 0;
+			r1->tkey = 0;
+		} else if (dst1[ncnt - 1] < dst1[ncnt]) {
+			r1->trevsorted = 0;
+			if (dst1[ncnt - 1] + 1 != dst1[ncnt])
+				r1->tdense = 0;
+		} else {
+			assert(sorted != 1);
+			r1->tsorted = 0;
+			r1->tdense = 0;
+			r1->tkey = 0;
+		}
+		if (!(r1->trevsorted | r1->tdense | r1->tkey | ((sorted != 1) & r1->tsorted)))
+			break;
+	}
+	r1->tseqbase = 	r1->tdense ? cnt > 0 ? dst1[0] : 0 : oid_nil;
+	r2->tkey = 1;
+	r2->tsorted = 1;
+	r2->trevsorted = 1;
+	r2->tdense = 1;
+	r2->T->nil = 0;
+	r2->T->nonil = 1;
+	for (ncnt = 1; ncnt < cnt; ncnt++) {
+		if (dst2[ncnt - 1] == dst2[ncnt]) {
+			r2->tdense = 0;
+			r2->tkey = 0;
+		} else if (dst2[ncnt - 1] < dst2[ncnt]) {
+			r2->trevsorted = 0;
+			if (dst2[ncnt - 1] + 1 != dst2[ncnt])
+				r2->tdense = 0;
+		} else {
+			assert(sorted != 2);
+			r2->tsorted = 0;
+			r2->tdense = 0;
+			r2->tkey = 0;
+		}
+		if (!(r2->trevsorted | r2->tdense | r2->tkey | ((sorted != 2) & r2->tsorted)))
+			break;
+	}
+	r2->tseqbase = 	r2->tdense ? cnt > 0 ? dst2[0] : 0 : oid_nil;
+	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s,rl=%s,rh=%s)="
+			  "(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(rl), BATgetId(rh),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
+	return GDK_SUCCEED;
+
+  bailout:
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
+	return GDK_FAIL;
 }
