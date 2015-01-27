@@ -230,7 +230,12 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *
 				s = stmt_binop(sql->sa, s, i, a);
 			else
 				s = i;
+
 		}
+		if (sel) 
+			s = stmt_uselect(sql->sa, 
+				stmt_const(sql->sa, bin_first_column(sql->sa, left), s), 
+				stmt_bool(sql->sa, 1), cmp_equal, sel); 
 	} else {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
