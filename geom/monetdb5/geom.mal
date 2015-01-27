@@ -633,6 +633,13 @@ function NPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
 end NPoints;
 
 
+
+command GeometryN(w:bat[:oid,:wkb], n:int) :bat[:oid,:wkb] address wkbGeometryN_bat
+comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
+command NumGeometries(w:bat[:oid,:wkb]) :bat[:oid,:int] address wkbNumGeometries_bat
+comment "Returns the number of geometries";
+
+
 command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat;
 
 command IsClosed(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsClosed_bat;

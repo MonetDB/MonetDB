@@ -26,9 +26,8 @@ ST_IsRing #ignores Z coordinate
 
 #coordinates
 #srid
-#geometryN
-#numGeometries
-
+ST_GeometryN
+ST_NumGeometries
 ST_NumPoints
 ST_NPoints
 

@@ -18,6 +18,7 @@ SELECT ST_GeometryN(
   2
 );
 
+SELECT ST_GeometryN(geom, 2) AS "GEOMETRY 2" FROM geometries WHERE id IN (19,20,21,22,23,24,25);
 
  
 

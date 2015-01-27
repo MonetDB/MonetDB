@@ -217,7 +217,10 @@ geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
 geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum); 
+geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+
 geom_export str wkbNumGeometries(int* out, wkb** geom);
+geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTranslate(wkb**, wkb**, double*, double*, double*);

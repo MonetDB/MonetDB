@@ -140,7 +140,7 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 /**************************************************************************/
 /********************* IN: wkb - OUT: str - FLAG :int *********************/
 /**************************************************************************/
-static str wkbStrOutWithFlag_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*func)(char**, wkb**, int*), const char *name) {
+static str WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*func)(char**, wkb**, int*), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -196,17 +196,17 @@ static str wkbStrOutWithFlag_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (
 
 /*create textual representation of the wkb */
 str wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int* withSRID) {
-	return wkbStrOutWithFlag_bat(outBAT_id, inBAT_id, withSRID, wkbAsText, "batgeom.wkbAsText");
+	return WKBtoSTRflagINT_bat(outBAT_id, inBAT_id, withSRID, wkbAsText, "batgeom.wkbAsText");
 }
 str wkbGeometryType_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
-	return wkbStrOutWithFlag_bat(outBAT_id, inBAT_id, flag, wkbGeometryType, "batgeom.wkbGeometryType");
+	return WKBtoSTRflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryType, "batgeom.wkbGeometryType");
 }
 
 /***************************************************************************/
 /*************************** IN: wkb - OUT: wkb ****************************/
 /***************************************************************************/
 
-str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
+static str WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(wkb**, wkb**), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -214,18 +214,18 @@ str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbBoundary", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbBoundary", "The arguments must have dense and aligned heads");
+		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbBoundary", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -237,8 +237,8 @@ str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
 		wkb* outSingle;
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbBoundary(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbBoundary", "%s", err);
+		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
 			BBPreleaseref(inBAT->batCacheid);
@@ -260,11 +260,78 @@ str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
 	return MAL_SUCCEED;
 }
 
+str wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id) {
+	return WKBtoWKB_bat(outBAT_id, inBAT_id, wkbBoundary, "batgeom.wkbBoundary");
+}
+
+
+/**************************************************************************************/
+/*************************** IN: wkb - OUT: wkb - FLAG:int ****************************/
+/**************************************************************************************/
+
+static str WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*func)(wkb**, wkb**, int*), const char *name) {
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	BUN p =0, q =0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	
+	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, name, "The arguments must have dense and aligned heads");
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPreleaseref(inBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+	//set the first idx of the new BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the input BAT	
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) { //iterate over all valid elements
+		str err = NULL;
+		wkb* outSingle;
+
+		inWKB = (wkb*) BUNtail(inBAT_iter, p);
+		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
+			GDKfree(err);
+
+			BBPreleaseref(inBAT->batCacheid);
+			BBPreleaseref(outBAT->batCacheid);
+			
+			return msg;
+		}
+		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+	
+	BBPreleaseref(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+	
+	return MAL_SUCCEED;
+}
+
+str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
+	return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryN, "batgeom.wkbGeometryN");
+}
+
 /***************************************************************************/
 /*************************** IN: wkb - OUT: bit ****************************/
 /***************************************************************************/
 
-static str wkbBitOut_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**), const char *name) {
+static str WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -318,19 +385,19 @@ static str wkbBitOut_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**)
 }
 
 str wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id) {
-	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsClosed, "batgeom.wkbIsClosed");
+	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsClosed, "batgeom.wkbIsClosed");
 }
 str wkbIsEmpty_bat(bat *outBAT_id, bat *inBAT_id) {
-	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
+	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
 }
 str wkbIsSimple_bat(bat *outBAT_id, bat *inBAT_id) {
-	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsSimple, "batgeom.wkbIsSimple");
+	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsSimple, "batgeom.wkbIsSimple");
 }
 str wkbIsRing_bat(bat *outBAT_id, bat *inBAT_id) {
-	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsRing, "batgeom.wkbIsRing");
+	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsRing, "batgeom.wkbIsRing");
 }
 str wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id) {
-	return wkbBitOut_bat(outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
+	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
 }
 
 
@@ -338,7 +405,7 @@ str wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id) {
 /*************************** IN: wkb - OUT: int ****************************/
 /***************************************************************************/
 
-str wkbDimension_bat(bat *outBAT_id, bat *inBAT_id) {
+static str WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(int*, wkb**), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -346,18 +413,18 @@ str wkbDimension_bat(bat *outBAT_id, bat *inBAT_id) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbDimension", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbDimension", "The arguments must have dense and aligned heads");
+		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbDimension", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -369,8 +436,8 @@ str wkbDimension_bat(bat *outBAT_id, bat *inBAT_id) {
 		int outSingle;
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbDimension(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbDimension", "%s", err);
+		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
 			BBPreleaseref(inBAT->batCacheid);
@@ -389,6 +456,13 @@ str wkbDimension_bat(bat *outBAT_id, bat *inBAT_id) {
 	
 	return MAL_SUCCEED;
 
+}
+
+str wkbDimension_bat(bat *outBAT_id, bat *inBAT_id) {
+	return WKBtoINT_bat(outBAT_id, inBAT_id, wkbDimension, "batgeom.wkbDimension");
+}
+str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id) {
+	return WKBtoINT_bat(outBAT_id, inBAT_id, wkbNumGeometries, "batgeom.wkbNumGeometries");
 }
 
 /***************************************************************************************/

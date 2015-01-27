@@ -4800,7 +4800,7 @@ size_t wkbFROMSTR(char* geomWKT, size_t* len, wkb **geomWKB, int srid) {
 	
 	//check whether the geometry type is polyhedral surface
 	//geos cannot handle this type of geometry but since it is 
-	//a special type of multipolygon I jsu change the type before 
+	//a special type of multipolygon I just change the type before 
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
 	typeSize = strlen(polyhedralSurface);
