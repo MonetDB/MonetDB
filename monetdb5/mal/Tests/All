@@ -18,7 +18,6 @@ tst018
 tst019
 tst020
 tst021
-tst023
 tst024
 tst025
 tst026
@@ -165,7 +164,7 @@ tst500
 tst501
 tst560
 tst611
-tst612
+#tst612 transaction primitives dropped
 tst620
 tst660
 tst661

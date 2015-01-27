@@ -66,7 +66,7 @@ leftjoinpath
 groups00
 
 ifthencst
-CXerror1
+#CXerror1 transaction primitives removed
 #the remainder are snippets used in the reference manual
 CMexample
 #CRexample push range optimizer is out of date
