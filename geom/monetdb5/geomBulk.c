@@ -524,7 +524,7 @@ str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id) {
 /*************************** IN: wkb - OUT: int - FLAG: int ****************************/
 /***************************************************************************************/
 
-str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
+static str WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*func)(int*, wkb**, int*), const char *name) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p =0, q =0;
@@ -532,18 +532,18 @@ str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbNumPoints", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbNumPoints", "The arguments must have dense and aligned heads");
+		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPreleaseref(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbNumPoints", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -555,8 +555,8 @@ str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 		int outSingle;
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
-		if ((err = wkbNumPoints(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbNumPoints", "%s", err);
+		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
 			BBPreleaseref(inBAT->batCacheid);
@@ -575,6 +575,13 @@ str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 	
 	return MAL_SUCCEED;
 
+}
+
+str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
+	return WKBtoINTflagINT_bat(outBAT_id, inBAT_id, flag, wkbNumPoints, "batgeom.wkbNumPoints");
+}
+str wkbNumRings_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
+	return WKBtoINTflagINT_bat(outBAT_id, inBAT_id, flag, wkbNumRings, "batgeom.wkbNumRings");
 }
 
 /******************************************************************************************/

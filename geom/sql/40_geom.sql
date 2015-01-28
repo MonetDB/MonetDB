@@ -4234,9 +4234,12 @@ CREATE FUNCTION ST_YMax(geom Geometry) RETURNS double EXTERNAL NAME geom."YMaxFr
 CREATE FUNCTION ST_YMax(box mbr) RETURNS double EXTERNAL NAME geom."YMaxFromMBR";
 CREATE FUNCTION ST_YMin(geom Geometry) RETURNS double EXTERNAL NAME geom."YMinFromWKB";
 CREATE FUNCTION ST_YMin(box mbr) RETURNS double EXTERNAL NAME geom."YMinFromMBR";
---CREATE FUNCTION ST_ZMax(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
+--GEOS creates only 2D Envelope
+--CREATE FUNCTION ST_ZMax(geom Geometry) RETURNS double EXTERNAL NAME geom."ZMaxFromWKB";
+--CREATE FUNCTION ST_ZMax(box mbr) RETURNS double EXTERNAL NAME geom."ZMaxFromMBR";
+--CREATE FUNCTION ST_ZMin(geom Geometry) RETURNS double EXTERNAL NAME geom."ZMinFromWKB";
+--CREATE FUNCTION ST_ZMin(box mbr) RETURNS double EXTERNAL NAME geom."ZMinFromMBR";
 --CREATE FUNCTION ST_Zmflag(geom Geometry) RETURNS smallint EXTERNAL NAME --0=2d, 1=3dm, 2=3dz, 4=4d
---CREATE FUNCTION ST_ZMin(box3d Geometry_OR_Box2D_OR_Box3D) RETURNS double EXTERNAL NAME
 
 -------------------------------------------------------------------------
 --------------------------- Geometry Editors ----------------------------

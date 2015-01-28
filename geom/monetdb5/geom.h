@@ -190,7 +190,10 @@ geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
 geom_export str wkbMakeLineAggr(wkb** outWKB, int* inBAT_id);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, short*);
+
 geom_export str wkbNumRings(int*, wkb**, int*);
+geom_export str wkbNumRings_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+
 geom_export str wkbInteriorRings(wkba**, wkb**);
 
 geom_export str wkbIsClosed(bit *out, wkb **geom);

@@ -54,6 +54,8 @@ Ready.
 [ 23,	10,	10,	20,	20	]
 [ 24,	10,	10,	30,	40	]
 [ 25,	10,	10,	30,	40	]
+[ 26,	100,	100,	200,	200	]
+[ 27,	100,	100,	200,	200	]
 #select id, ST_XMin(mbr(geom)) AS "Xmin", ST_YMin(mbr(geom)) AS "Ymin", ST_XMax(mbr(geom)) AS "Xmax", ST_YMax(mbr(geom)) AS "Ymax" from geometries;
 % sys.geometries,	sys.L,	sys.L,	sys.L,	sys.L # table_name
 % id,	Xmin,	Ymin,	Xmax,	Ymax # name
@@ -84,6 +86,8 @@ Ready.
 [ 23,	10,	10,	20,	20	]
 [ 24,	10,	10,	30,	40	]
 [ 25,	10,	10,	30,	40	]
+[ 26,	100,	100,	200,	200	]
+[ 27,	100,	100,	200,	200	]
 
 # 17:54:59 >  
 # 17:54:59 >  "Done."

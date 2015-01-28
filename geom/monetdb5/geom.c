@@ -3286,18 +3286,45 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
  * plus the exterior ring depending on the value of exteriorRing*/
 str wkbNumRings(int* out, wkb** geom, int* exteriorRing) {
 	str ret = MAL_SUCCEED;
+	bit empty;
+	GEOSGeom geosGeometry;
+
+	//check if the geometry is empty
+	if((ret = wkbIsEmpty(&empty, geom)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.wkbNumRings", "%s", ret);
+		GDKfree(ret);
+		return msg; 
+	}
+	if(empty) {
+		//the geometry is empty
+		(*out) = 0;
+		return MAL_SUCCEED; 
+	}
 
 	//check the type of the geometry
-	GEOSGeom geosGeometry = wkb2geos(*geom);
+	geosGeometry = wkb2geos(*geom);
+
+	if(!geosGeometry)
+		throw(MAL, "geom.wkbNumRings", "Problem converting WKB to GEOS");
+
 	if(GEOSGeomTypeId(geosGeometry)+1 == wkbMultiPolygon) {
 		//use the first polygon as done by PostGIS
 		ret = wkbBasicInt(out, geos2wkb(GEOSGetGeometryN(geosGeometry, 0)), GEOSGetNumInteriorRings, "geom.NumRngs");
-	} else {
+	} else if(GEOSGeomTypeId(geosGeometry)+1 == wkbPolygon) {
 		ret = wkbBasicInt(out, *geom, GEOSGetNumInteriorRings, "geom.NumRings");
+	} else {
+		//It is not a polygon so the nu,ber of rings is 0
+		(*out) = 0 - (*exteriorRing);
 	}
 
-	if(ret != MAL_SUCCEED)
-		return ret; 
+	GEOSGeom_destroy(geosGeometry);
+
+	if(ret != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.wkbNumRings", "%s", ret);
+		GDKfree(ret);			
+		
+		return msg;
+	}
 	
 	(*out) += (*exteriorRing);
 
@@ -3377,24 +3404,23 @@ static str geosIsClosed(bit *out, const GEOSGeometry *geosGeometry) {
 
 str wkbIsClosed(bit *out, wkb **geomWKB) {
 	str err;
-
-	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
-	if (!geosGeometry)
-		throw(MAL, "geom.IsClosed", "wkb2geos failed");
-
+	GEOSGeom geosGeometry;
+	
 	//if empty geometry return false
 	if((err = wkbIsEmpty(out, geomWKB)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.IsEmpty", "%s", err);
 		GDKfree(err);
-		GEOSGeom_destroy(geosGeometry);
 
 		return msg;
 	}
 	if(*out) {
 		*out = 0;
-		GEOSGeom_destroy(geosGeometry);
 		return MAL_SUCCEED;
 	}
+
+	geosGeometry = wkb2geos(*geomWKB);
+	if (!geosGeometry)
+		throw(MAL, "geom.IsClosed", "wkb2geos failed");
 
 	if((err = geosIsClosed(out, geosGeometry)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.IsClosed", "%s", err);
@@ -4134,24 +4160,26 @@ str wkbNumGeometries(int* out, wkb** geom) {
 
 /* Creates the mbr for the given geom_geometry. */
 str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
-	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
+	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
-	bit out;
+	bit empty;
 
 	//check if the geometry is empty
-	if((ret = wkbIsEmpty(&out, geomWKB)) != MAL_SUCCEED) {
+	if((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.wkbMBR", "%s", ret);
 		GDKfree(ret);
 	
-		GEOSGeom_destroy(geosGeometry);
-	
 		return msg; 
 	}
-
-	if(out) {
-		GEOSGeom_destroy(geosGeometry);
+	if(empty) {
 		*geomMBR = mbr_nil;
 		return MAL_SUCCEED;
+	}
+
+	geosGeometry = wkb2geos(*geomWKB);
+	if(!geosGeometry) {
+		*geomMBR = mbr_nil;
+		throw(MAL, "geom.wkbMBR", "Problem converting GEOS to WKB");
 	}
 
 	*geomMBR = mbrFromGeos(geosGeometry);
@@ -4683,16 +4711,16 @@ str wkbCoordinateFromMBR(dbl* coordinateValue, mbr** geomMBR, int* coordinateIdx
 str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx) {
 	mbr* geomMBR;
 	str ret = MAL_SUCCEED ; 
-	bit out;
+	bit empty;
 
 	//check if the geometry is empty
-	if((ret = wkbIsEmpty(&out, geomWKB)) != MAL_SUCCEED) {
+	if((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.wkbCoordinateFromWKB", "%s", ret);
 		GDKfree(ret);
 		return msg; 
 	}
 
-	if(out) {
+	if(empty) {
 		*coordinateValue = dbl_nil;
 		return MAL_SUCCEED;
 	}

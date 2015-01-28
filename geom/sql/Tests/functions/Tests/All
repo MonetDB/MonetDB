@@ -32,7 +32,9 @@ ST_NumGeometries
 ST_NumPoints
 ST_NPoints
 
-#numRings
+ST_NumInteriorRings
+ST_NRings
+
 #transform
 
 ST_Contains #ignores Z coordinate
