@@ -39603,13 +39603,13 @@ pattern mat.pack(X_1:any_2...):bat[:oid,:any_2]
 address MATpackValues;
 comment Materialize the MAT (of values) into a BAT
 
-pattern mat.sortReverseTail(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
-address MATsortReverseTail;
-comment Returns a BAT copy sorted on the head column.
+pattern mat.sortReverse(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
+address MATsortReverse;
+comment Returns a BAT copy sorted on the tail column.
 
 pattern mat.sort(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
 address MATsort;
-comment Returns a BAT copy sorted on the head column.
+comment Returns a BAT copy sorted on the tail column.
 
 pattern mat.slice(first:lng,last:lng,b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATpackSlice;
