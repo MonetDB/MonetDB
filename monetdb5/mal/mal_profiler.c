@@ -85,8 +85,7 @@ static struct {
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
 	/*  20 */  { "ping", 0},
-	/*  21 */  { "footprint", 0},
-	/*  22 */  { "numa", 0},
+	/*  21 */  { "numa", 0},
 	/*  23 */  { 0, 0}
 };
 
@@ -306,9 +305,6 @@ offlineProfilerHeader(void)
 		logadd("uordblks,\t");
 */
 	}
-	if (profileCounter[PROFfootprint].status) {
-		logadd("footprint,\t");
-	}
 	if (profileCounter[PROFnuma].status) {
 		logadd("numa,\t");
 	}
@@ -451,9 +447,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
 	}
-	if (profileCounter[PROFfootprint].status) {
-		logadd(LLFMT",\t", stk->tmpspace);
-	}
 	if (profileCounter[PROFnuma].status) {
 		int i;
 		logadd("\"");
@@ -581,7 +574,7 @@ setLogStreamStream(Module cntxt, stream *s)
 str
 openProfilerStream(stream *fd)
 {
-	malProfileMode = TRUE;
+	malProfileMode = -1;
 	eventstream = fd;
 	delayswitch = 1;    /* avoid an incomplete initial profile event */
 	return MAL_SUCCEED;
@@ -595,7 +588,7 @@ closeProfilerStream(void)
 		(void)mnstr_destroy(eventstream);
 	}
 	eventstream = NULL;
-	malProfileMode = FALSE;
+	malProfileMode = 0;
 	return MAL_SUCCEED;
 }
 
@@ -650,7 +643,7 @@ startProfiling(void)
 		cachedProfiling = TRUE;
 	if (TRACE_init == 0)
 		_initTrace();
-	malProfileMode = TRUE;
+	malProfileMode = -1;
 	eventcounter = 0;
 	MT_lock_unset(&mal_profileLock, "startProfiling");
 	return MAL_SUCCEED;
@@ -660,7 +653,7 @@ str
 stopProfiling(void)
 {
 	MT_lock_set(&mal_profileLock, "stopProfiling");
-	malProfileMode = FALSE;
+	malProfileMode = 0;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
@@ -1459,8 +1452,6 @@ void profilerHeartbeatEvent(const char *msg, lng ticks)
 #endif
 	if (profileCounter[PROFmemory].status && delayswitch < 0)
 		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-	if (profileCounter[PROFfootprint].status)
-		logadd("0,\t");
 	if (profileCounter[PROFnuma].status){
 		logadd("\"");
 		logadd("\",\t");

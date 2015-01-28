@@ -17,6 +17,10 @@
  * All Rights Reserved.
  */
 
+/* (c) M Kersten
+ * Upgraded version to be become easier to use.
+*/
+
 #include "monetdb_config.h"
 #include "monet_options.h"
 #include <mapi.h>
@@ -50,12 +54,7 @@
 # endif
 #endif
 
-/* #define FOOTPRINT */
-#ifdef FOOTPRINT
-#define COUNTERSDEFAULT "ISTestMmrwn"
-#else
 #define COUNTERSDEFAULT "ISTestmrwn"
-#endif
 
 static struct {
 	char tag;
@@ -99,11 +98,8 @@ profileCounter[] = {
 	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 'F', "flow", "flow", 0 },
 	/*  4  */ { 'x', "ping50", "ping", 0 },
-#ifdef FOOTPRINT
-	/*  5  */ { 'M', "footprint", "footprint", 0 },
-#endif
-	/*  6  */ { 'n', "numa", "numa", 0 },
-	/*  7  */ { 0, 0, 0, 0 }
+	/*  5  */ { 'n', "numa", "numa", 0 },
+	/*  6  */ { 0, 0, 0, 0 }
 };
 
 #define die(dbh, hdl)						\

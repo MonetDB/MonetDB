@@ -175,33 +175,20 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* always collect the MAL instruction execution time */
 	prof->ticks = GDKusec();
 	/* emit the instruction upon start as well */
-	if(malProfileMode)
+	
+	if(malProfileMode > 0){
 		profilerEvent(cntxt->idx, mb, stk, pci, TRUE);
+	}
 }
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd;
-
 	assert(pci);
 	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = GDKusec() - prof->ticks;
 	pci->calls++;
-
-	if (getProfileCounter(PROFfootprint) ){
-		for (i = 0; i < pci->retc; i++)
-			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval != bat_nil){
-				/* avoid simple alias operations */
-				fnd= 0;
-				for ( j= pci->retc; j< pci->argc; j++)
-					if ( isaBatType(getArgType(mb,pci,j)))
-						fnd+= stk->stk[getArg(pci,i)].val.bval == stk->stk[getArg(pci,j)].val.bval;
-				if (fnd == 0 )
-					updateFootPrint(mb,stk,getArg(pci,i));
-			}
-	}
 
 	// it is a potential expensive operation
 	if (getProfileCounter(PROFrbytes) || pci->recycle)
@@ -209,8 +196,13 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	if (getProfileCounter(PROFwbytes) || pci->recycle)
 		pci->wbytes += getVolume(stk, pci, 1);
 	
-	if(malProfileMode)
+	if(malProfileMode > 0)
 			profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
+	if( malProfileMode < 0){
+		/* delay profiling until you encounter start of MAL function */
+		if( getInstrPtr(mb,0) == pci)
+			malProfileMode = 1;
+	}
 }
 
 /*
