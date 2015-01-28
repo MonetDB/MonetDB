@@ -28,12 +28,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
@@ -112,12 +106,22 @@ profileCounter[] = {
 	/*  7  */ { 0, 0, 0, 0 }
 };
 
+#define die(dbh, hdl)						\
+	do {							\
+		(hdl ? mapi_explain_query(hdl, stderr) :	\
+		 dbh ? mapi_explain(dbh, stderr) :		\
+		 fprintf(stderr, "!! command failed\n"));	\
+		goto stop_disconnect;				\
+	} while (0)
+
+#define doQ(X)								\
+	do {								\
+		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
+		    mapi_error(dbh) != MOK)			\
+			die(dbh, hdl);			\
+	} while (0)
+
 typedef struct _wthread {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	HANDLE id;
-#else
-	pthread_t id;
-#endif
 	int tid;
 	char *uri;
 	char *host;
@@ -128,12 +132,9 @@ typedef struct _wthread {
 	stream *s;
 	size_t argc;
 	char **argv;
-	struct _wthread *next;
-	Mapi dbh;
-	MapiHdl hdl;
-} wthread;
+} wthr;
 
-static wthread *thds = NULL;
+static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tomograph";
 static char *filename = "tomograph";
@@ -145,7 +146,6 @@ static int debug = 0;
 static int colormap = 0;
 static int fixedmap=1;
 static int beat = 50;
-static char *sqlstatement = NULL;
 static int batchsize = 1; /* number of queries to combine in one tomogram */
 static int batch = 1; /* number of queries to combine in one tomogram */
 static lng maxio = 0;
@@ -153,6 +153,8 @@ static int cpus = 0;
 static int atlas= 0;
 static int atlaspage = 0;
 static FILE *gnudata;
+static Mapi dbh;
+static MapiHdl hdl = NULL;
 
 static int capturing=0;
 
@@ -232,27 +234,6 @@ usage(void)
 }
 
 
-#define die(dbh, hdl)						\
-	do {							\
-		(hdl ? mapi_explain_query(hdl, stderr) :	\
-		 dbh ? mapi_explain(dbh, stderr) :		\
-		 fprintf(stderr, "!! %scommand failed\n", id));	\
-		goto stop_disconnect;				\
-	} while (0)
-#define doQ(X)								\
-	do {								\
-		if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL ||	\
-		    mapi_error(wthr->dbh) != MOK)			\
-			die(wthr->dbh, wthr->hdl);			\
-	} while (0)
-#define doQsql(X)						\
-	do {							\
-		if ((hdlsql = mapi_query(dbhsql, X)) == NULL ||	\
-		    mapi_error(dbhsql) != MOK)			\
-			die(dbhsql, hdlsql);			\
-	} while (0)
-
-
 /* Any signal should be captured and turned into a graceful
  * termination of the profiling session. */
 static void createTomogram(void);
@@ -261,18 +242,20 @@ static int activated = 0;
 static void
 deactivateBeat(void)
 {
-	wthread *wthr;
-	char *id = "deactivateBeat";
-	if (activated == 0)
+	if (activated == 0){
+		if( debug)
+			fprintf(stderr,"nothing active \n");
 		return;
-	if ( atlas && atlas > atlaspage + 1)
+	}
+	if ( atlas && atlas > atlaspage + 1){
+		if( debug)
+			fprintf(stderr,"Atlas done\n");
 		return;
-	/* deactivate all connections */
-	for (wthr = thds; wthr != NULL; wthr = wthr->next)
-		if (wthr->dbh) {
-			doQ("profiler.deactivate(\"ping\");\n");
-			doQ("profiler.stop();");
-		}
+	}
+	if( debug)
+		fprintf(stderr,"deactivate the connection\n");
+	doQ("profiler.deactivate(\"ping\");\n");
+	doQ("profiler.stop();");
 	activated = 0;
 	return;
 stop_disconnect:
@@ -282,18 +265,12 @@ stop_disconnect:
 static void
 stopListening(int i)
 {
-	wthread *walk;
 	(void) i;
 	if (debug)
 		fprintf(stderr, "Interrupt received\n");
 	batch = 0;
 	deactivateBeat();
-	/* kill all connections */
-	for (walk = thds; walk != NULL; walk = walk->next) {
-		if (walk->s != NULL) {
-			mnstr_close(walk->s);
-		}
-	}
+	mnstr_close(conn);
 	atlaspage= atlas-1;
 	batch = 0;
 	createTomogram();
@@ -319,28 +296,19 @@ static void
 activateBeat(void)
 {
 	char buf[BUFSIZ];
-	char *id = "activateBeat";
-	wthread *wthr;
 
-	if (debug)
-		fprintf(stderr, "Activate beat %s\n", filename);
 	if (activated == 1)
 		return;
+	if (debug)
+		fprintf(stderr, "Activate beat %s\n", filename);
 	activated = 1;
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n", beat);
-	/* activate all connections */
-	for (wthr = thds; wthr != NULL; wthr = wthr->next)
-		if (wthr->dbh) {
-			doQ(buf);
-		}
-
+	doQ(buf);
 	return;
 stop_disconnect:
-	if (wthr) {
-		mapi_disconnect(wthr->dbh);
-		mapi_destroy(wthr->dbh);
-		wthr->dbh = 0;
-	}
+	mapi_disconnect(dbh);
+	mapi_destroy(dbh);
+	dbh = 0;
 }
 
 
@@ -2027,252 +1995,12 @@ processFile(char *fname)
 	close_stream(s);
 }
 
-static void
-format_result(Mapi mid, MapiHdl hdl)
-{
-	char *line;
-	(void) mid;
-
-	do {
-		/* handle errors first */
-		if (mapi_result_error(hdl) != NULL) {
-			mapi_explain_result(hdl, stderr);
-			/* don't need to print something like '0
-			 * tuples' if we got an error */
-			break;
-		}
-		switch (mapi_get_querytype(hdl)) {
-		case Q_BLOCK:
-		case Q_PARSE:
-			/* should never see these */
-			continue;
-		case Q_UPDATE:
-			fprintf(stderr, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-			continue;
-		case Q_SCHEMA:
-		case Q_TRANS:
-		case Q_PREPARE:
-		case Q_TABLE:
-			break;
-		default:
-			while ((line = mapi_fetch_line(hdl)) != 0) {
-				if (*line == '=')
-					line++;
-				fprintf(stderr, "%s\n", line);
-			}
-		}
-	} while (mapi_next_result(hdl) == 1);
-}
-
-static int
-doRequest(Mapi mid, const char *buf)
-{
-	MapiHdl hdl;
-
-	if (debug)
-		fprintf(stderr, "Sent:%s\n", buf);
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		mapi_explain(mid, stderr);
-		return 1;
-	}
-
-	format_result(mid, hdl);
-
-	return 0;
-}
-
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-static DWORD WINAPI
-#else
-static void *
-#endif
-doProfile(void *d)
-{
-	wthread *wthr = (wthread *) d;
-	int i;
-	size_t len;
-	size_t a;
-	ssize_t n;
-	char *response, *x;
-	char buf[BUFSIZ + 1];
-	char *e;
-	char *mod, *fcn;
-	char *host = NULL;
-	int portnr;
-	char id[10];
-	Mapi dbhsql = NULL;
-	MapiHdl hdlsql = NULL;
-
-	/* set up the SQL session */
-	if (sqlstatement) {
-		id[0] = '\0';
-		if (wthr->uri)
-			dbhsql = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "sql");
-		else
-			dbhsql = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "sql", wthr->dbname);
-		if (dbhsql == NULL || mapi_error(dbhsql))
-			die(dbhsql, hdlsql);
-		mapi_reconnect(dbhsql);
-		if (mapi_error(dbhsql))
-			die(dbhsql, hdlsql);
-	}
-
-	/* set up the profiler */
-	id[0] = '\0';
-	if (wthr->uri)
-		wthr->dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
-	else
-		wthr->dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
-	if (wthr->dbh == NULL || mapi_error(wthr->dbh))
-		die(wthr->dbh, wthr->hdl);
-	mapi_reconnect(wthr->dbh);
-	if (mapi_error(wthr->dbh))
-		die(wthr->dbh, wthr->hdl);
-	host = strdup(mapi_get_host(wthr->dbh));
-	if (*host == '/') {
-		fprintf(stderr, "!! UNIX domain socket not supported\n");
-		goto stop_disconnect;
-	}
-	if (wthr->tid > 0) {
-		snprintf(id, 10, "[%d] ", wthr->tid);
-		if( debug)
-			fprintf(stderr,"-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
-	} else {
-		if(debug)
-			fprintf(stderr,"-- connection with server %s\n", wthr->uri ? wthr->uri : host);
-	}
-
-	/* set counters */
-	x = NULL;
-	for (i = 0; profileCounter[i].tag; i++) {
-		/* skip duplicates */
-		if (x == profileCounter[i].ptag)
-			continue;
-		/* deactivate any left over counter first */
-		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-			profileCounter[i].ptag);
-		doQ(buf);
-		if (profileCounter[i].status) {
-			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-				profileCounter[i].ptag);
-			doQ(buf);
-			if( debug)
-				printf("-- %s%s\n", id, buf);
-		}
-		x = profileCounter[i].ptag;
-	}
-
-	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
-			break;
-	}
-	if (wthr->s == NULL) {
-		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-			id);
-		goto stop_cleanup;
-	}
-
-	printf("-- %sopened UDP profile stream %s:%d for %s\n",
-			id, hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-		hostname, portnr);
-	doQ(buf);
-
-	/* Set Filters */
-	doQ("profiler.setNone();");
-
-	if (wthr->argc == 0) {
-		if( debug)
-			fprintf(stderr,"-- %sprofiler.setAll();\n", id);
-		doQ("profiler.setAll();");
-	} else {
-		for (a = 0; a < wthr->argc; a++) {
-			char *c;
-			char *arg = strdup(wthr->argv[a]);
-			c = strchr(arg, '.');
-			if (c) {
-				mod = arg;
-				if (mod == c)
-					mod = "*";
-				fcn = c + 1;
-				if (*fcn == 0)
-					fcn = "*";
-				*c = 0;
-			} else {
-				fcn = arg;
-				mod = "*";
-			}
-			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
-			if( debug)
-				fprintf(stderr,"-- %s%s\n", id, buf);
-			doQ(buf);
-			free(arg);
-		}
-	}
-	if( debug)
-		fprintf(stderr,"-- %sprofiler.start();\n", id);
-	activateBeat();
-	doQ("profiler.start();");
-	fflush(NULL);
-
-	for (i = 0; i < MAXTHREADS; i++)
-		threads[i] = topbox++;
-
-	/* send single query */
-	if (sqlstatement) {
-		doRequest(dbhsql, sqlstatement);
-	}
-	len = 0;
-	while (wthr->s && (n = mnstr_read(wthr->s, buf, 1, BUFSIZ - len)) > 0) {
-		buf[n] = 0;
-		response = buf;
-		while ((e = strchr(response, '\n')) != NULL) {
-			*e = 0;
-			/* TOMOGRAPH EXTENSIONS */
-			i = parser(response);
-			if (debug && i >= 0)
-				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			response = e + 1;
-		}
-		/* handle last line in buffer */
-		if (*response) {
-			if (debug)
-				printf("LASTLINE:%s", response);
-			len = strlen(response);
-			strncpy(buf, response, len + 1);
-		} else
-			len = 0;
-	}
-	fflush(NULL);
-
-stop_cleanup:
-	doQ("profiler.setNone();");
-	doQ("profiler.stop();");
-	doQ("profiler.closeStream();");
-stop_disconnect:
-	if (dbhsql) {
-		mapi_disconnect(dbhsql);
-		mapi_destroy(dbhsql);
-	}
-	if (wthr->dbh) {
-		mapi_disconnect(wthr->dbh);
-		mapi_destroy(wthr->dbh);
-	}
-
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host);
-
-	free(host);
-
-	return 0;
-}
-
 int
 main(int argc, char **argv)
 {
-	int a = 1;
+	int i, n, a = 1, len;
 	int k = 0;
-	char *host = "localhost";
+	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
@@ -2280,8 +2008,8 @@ main(int argc, char **argv)
 	char *password = NULL;
 	struct stat statb;
 	char *othermap= NULL;
-
-	wthread *walk;
+	char *x;
+	char buf[BUFSIZ], *e, *response;
 
 	static struct option long_options[18] = {
 		{ "dbname", 1, 0, 'd' },
@@ -2298,7 +2026,6 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "batch", 1, 0, 'B' },
 		{ "atlas", 1, 0, 'A' },
-		{ "sql", 1, 0, 's' },
 		{ "colormap", 1, 0, 'm' },
 		{ "adaptive", 0, 0, 'a' },
 		{ 0, 0, 0, 0 }
@@ -2310,7 +2037,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:t:r:o:Db:B:A:s:m:a",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:t:r:o:Db:B:A:m:a",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -2398,9 +2125,6 @@ main(int argc, char **argv)
 			}
 			break;
 		}
-		case 's':
-			sqlstatement = optarg;
-			break;
 		case '?':
 			usage();
 			/* a bit of a hack: look at the option that the
@@ -2429,6 +2153,10 @@ main(int argc, char **argv)
 		(void) fclose(map);
 	} else
 		initcolors(0);
+
+	/* Initialize thread specific traces */
+	for (i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
 	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
@@ -2481,26 +2209,11 @@ main(int argc, char **argv)
 	if (password == NULL)
 		password = simple_prompt("password", BUFSIZ, 0, NULL);
 
-#ifdef HAVE_SIGACTION
-	{
-		struct sigaction action;
+	close(0); /* get rid of stdin */
 
-		action.sa_handler = stopListening;
-		sigemptyset(&action.sa_mask);
-		action.sa_flags = 0;
-#ifdef SIGPIPE
-		sigaction(SIGPIPE, &action, NULL);
-#endif
-#ifdef SIGHUP
-		sigaction(SIGHUP, &action, NULL);
-#endif
-#ifdef SIGQUIT
-		sigaction(SIGQUIT, &action, NULL);
-#endif
-		sigaction(SIGINT, &action, NULL);
-		sigaction(SIGTERM, &action, NULL);
-	}
-#else
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
+
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
 #endif
@@ -2512,48 +2225,101 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
-#endif
 
-	close(0); /* get rid of stdin */
+	/* set up the profiler */
+	if (uri)
+		dbh = mapi_mapiuri(uri, user, password, "mal");
+	else
+		dbh = mapi_mapi(host, portnr, user, password, "mal", dbname);
+	if (dbh == NULL || mapi_error(dbh))
+		die(dbh, hdl);
+	mapi_reconnect(dbh);
+	if (mapi_error(dbh))
+		die(dbh, hdl);
+	host = strdup(mapi_get_host(dbh));
+	if(debug)
+		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
+	/* set counters */
+	x = NULL;
+	for (i = 0; profileCounter[i].tag; i++) {
+		/* skip duplicates */
+		if (x == profileCounter[i].ptag)
+			continue;
+		/* deactivate any left over counter first */
+		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
+			profileCounter[i].ptag);
+		doQ(buf);
+		if (profileCounter[i].status) {
+			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
+				profileCounter[i].ptag);
+			doQ(buf);
+			if( debug)
+				printf("-- %s\n", buf);
+		}
+		x = profileCounter[i].ptag;
+	}
 
-	/* our hostname, how remote servers have to contact us */
-	gethostname(hostname, sizeof(hostname));
+	for (portnr = 50010; portnr < 62010; portnr++) 
+		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
+			break;
+	
+	if ( conn == NULL) {
+		fprintf(stderr, "!! opening stream failed: no free ports available\n");
+		fflush(stderr);
+		goto stop_disconnect;
+	}
 
-	/* nothing to redirect, so a single db to try */
-	walk = thds = malloc(sizeof(wthread));
-	walk->uri = uri;
-	walk->host = host;
-	walk->port = portnr;
-	walk->dbname = dbname;
-	walk->user = user;
-	walk->pass = password;
-	walk->argc = argc - a;
-	walk->argv = &argv[a];
-	walk->tid = 0;
-	walk->s = NULL;
-	walk->next = NULL;
-	walk->dbh = NULL;
-	walk->hdl = NULL;
-#ifndef HAVE_SIGACTION
-	/* In principle we could do this without a thread, but it seems
-	 * that if we do it that way, ctrl-c (or any other signal)
-	 * doesn't interrupt the read inside this function, and hence
-	 * the function never terminates... at least on Linux */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-	WaitForSingleObject(walk->id, INFINITE);
-	CloseHandle(walk->id);
-#else
-	pthread_create(&walk->id, NULL, &doProfile, walk);
-	pthread_join(walk->id, NULL);
-#endif
-#else
-	/* when using sigaction, we can (and do) just interrupt the
-	 * system call */
-	doProfile(walk);
-#endif
-	free(walk);
+	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
+
+	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+	if( debug)
+		fprintf(stderr,"--%s\n",buf);
+	doQ(buf);
+
+	/* Set Filters */
+	doQ("profiler.setAll();");
+
+	if( debug)
+		fprintf(stderr,"-- activateBeat;\n");
+	activateBeat();
+	if( debug)
+		fprintf(stderr,"-- profiler.start();\n");
+	doQ("profiler.start();");
+	fflush(NULL);
+
+	len = 0;
+	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
+		buf[len + n] = 0;
+		response = buf;
+		while ((e = strchr(response, '\n')) != NULL) {
+			*e = 0;
+			i = parser(response);
+			if (debug )
+				fprintf(stderr, "PARSE %d:%s\n", i, response);
+			response = e + 1;
+		}
+		/* handle last line in buffer */
+		if (*response) {
+			if (debug)
+				printf("LASTLINE:%s", response);
+			len = strlen(response);
+			strncpy(buf, response, len + 1);
+		} else
+			len = 0;
+	}
+	fflush(NULL);
+
+	doQ("profiler.setNone();");
+	doQ("profiler.stop();");
+	doQ("profiler.closeStream();");
+stop_disconnect:
+	mapi_disconnect(dbh);
+	mapi_destroy(dbh);
+
+	printf("-- connection with server %s closed\n", uri ? uri : host);
+
+	free(host);
 	free(user);
 	free(password);
 	return 0;
