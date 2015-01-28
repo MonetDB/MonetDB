@@ -4238,6 +4238,10 @@ if __name__ == "__main__":
             from MonetDBtesting import trace
         t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
         t.runfunc(main, sys.argv)
+    elif '--debug' in sys.argv:
+        sys.argv.remove('--debug')
+        import pdb
+        pdb.run('main(sys.argv)')
     else:
         main(sys.argv)
 
