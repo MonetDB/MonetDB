@@ -2746,6 +2746,7 @@ str submaxRef;
 str submedianRef;
 str subminRef;
 str subprodRef;
+str subrangejoinRef;
 str subselectRef;
 str subsliceRef;
 str subsortRef;
