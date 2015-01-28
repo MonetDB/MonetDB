@@ -27412,22 +27412,6 @@ pattern batcalc.bte(b:bat[:oid,:bit]):bat[:oid,:bte]
 address CMDconvertsignal_bte;
 comment cast from bit to bte, signal error on overflow
 
-pattern batcalc.bte_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvert_bte;
-comment cast from void to bte with candidates list
-
-pattern batcalc.bte_noerror(b:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvert_bte;
-comment cast from void to bte
-
-pattern batcalc.bte(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvertsignal_bte;
-comment cast from void to bte with candidates list, signal error on overflow
-
-pattern batcalc.bte(b:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvertsignal_bte;
-comment cast from void to bte, signal error on overflow
-
 pattern batcalc.bit_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDconvert_bit;
 comment cast from str to bit with candidates list
@@ -27587,22 +27571,6 @@ comment cast from bit to bit with candidates list, signal error on overflow
 pattern batcalc.bit(b:bat[:oid,:bit]):bat[:oid,:bit] 
 address CMDconvertsignal_bit;
 comment cast from bit to bit, signal error on overflow
-
-pattern batcalc.bit_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvert_bit;
-comment cast from void to bit with candidates list
-
-pattern batcalc.bit_noerror(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvert_bit;
-comment cast from void to bit
-
-pattern batcalc.bit(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvertsignal_bit;
-comment cast from void to bit with candidates list, signal error on overflow
-
-pattern batcalc.bit(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvertsignal_bit;
-comment cast from void to bit, signal error on overflow
 
 pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEENsymmetric;
@@ -29603,22 +29571,6 @@ pattern batcalc.dbl(b:bat[:oid,:bit]):bat[:oid,:dbl]
 address CMDconvertsignal_dbl;
 comment cast from bit to dbl, signal error on overflow
 
-pattern batcalc.dbl_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvert_dbl;
-comment cast from void to dbl with candidates list
-
-pattern batcalc.dbl_noerror(b:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvert_dbl;
-comment cast from void to dbl
-
-pattern batcalc.dbl(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvertsignal_dbl;
-comment cast from void to dbl with candidates list, signal error on overflow
-
-pattern batcalc.dbl(b:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvertsignal_dbl;
-comment cast from void to dbl, signal error on overflow
-
 pattern batcalc.div_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatDIV;
 comment Return V / B with candidates list, overflow causes NIL value
@@ -31409,22 +31361,6 @@ pattern batcalc.flt(b:bat[:oid,:bit]):bat[:oid,:flt]
 address CMDconvertsignal_flt;
 comment cast from bit to flt, signal error on overflow
 
-pattern batcalc.flt_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvert_flt;
-comment cast from void to flt with candidates list
-
-pattern batcalc.flt_noerror(b:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvert_flt;
-comment cast from void to flt
-
-pattern batcalc.flt(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvertsignal_flt;
-comment cast from void to flt with candidates list, signal error on overflow
-
-pattern batcalc.flt(b:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvertsignal_flt;
-comment cast from void to flt, signal error on overflow
-
 pattern batcalc.flt_noerror(b:bat[:oid,:hge],s:bat[:oid,:oid]):bat[:oid,:flt] 
 address CMDconvert_flt;
 comment cast from hge to flt with candidates list
@@ -32025,22 +31961,6 @@ pattern batcalc.int(b:bat[:oid,:bit]):bat[:oid,:int]
 address CMDconvertsignal_int;
 comment cast from bit to int, signal error on overflow
 
-pattern batcalc.int_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvert_int;
-comment cast from void to int with candidates list
-
-pattern batcalc.int_noerror(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvert_int;
-comment cast from void to int
-
-pattern batcalc.int(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertsignal_int;
-comment cast from void to int with candidates list, signal error on overflow
-
-pattern batcalc.int(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertsignal_int;
-comment cast from void to int, signal error on overflow
-
 pattern batcalc.isnil(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatISNIL;
 comment Unary check for nil over the tail of the bat with candidates list
@@ -32488,22 +32408,6 @@ comment cast from bit to lng with candidates list, signal error on overflow
 pattern batcalc.lng(b:bat[:oid,:bit]):bat[:oid,:lng] 
 address CMDconvertsignal_lng;
 comment cast from bit to lng, signal error on overflow
-
-pattern batcalc.lng_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvert_lng;
-comment cast from void to lng with candidates list
-
-pattern batcalc.lng_noerror(b:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvert_lng;
-comment cast from void to lng
-
-pattern batcalc.lng(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvertsignal_lng;
-comment cast from void to lng with candidates list, signal error on overflow
-
-pattern batcalc.lng(b:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvertsignal_lng;
-comment cast from void to lng, signal error on overflow
 
 pattern batcalc.lsh_noerror(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatLSH;
@@ -36676,22 +36580,6 @@ pattern batcalc.oid(b:bat[:oid,:bit]):bat[:oid,:oid]
 address CMDconvertsignal_oid;
 comment cast from bit to oid, signal error on overflow
 
-pattern batcalc.oid_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvert_oid;
-comment cast from void to oid with candidates list
-
-pattern batcalc.oid_noerror(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvert_oid;
-comment cast from void to oid
-
-pattern batcalc.oid(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvertsignal_oid;
-comment cast from void to oid with candidates list, signal error on overflow
-
-pattern batcalc.oid(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvertsignal_oid;
-comment cast from void to oid, signal error on overflow
-
 pattern batcalc.or(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatOR;
 comment Return V OR B with candidates list
@@ -38013,22 +37901,6 @@ pattern batcalc.str(b:bat[:oid,:bit]):bat[:oid,:str]
 address CMDconvertsignal_str;
 comment cast from bit to str, signal error on overflow
 
-pattern batcalc.str_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvert_str;
-comment cast from void to str with candidates list
-
-pattern batcalc.str_noerror(b:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvert_str;
-comment cast from void to str
-
-pattern batcalc.str(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvertsignal_str;
-comment cast from void to str with candidates list, signal error on overflow
-
-pattern batcalc.str(b:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvertsignal_str;
-comment cast from void to str, signal error on overflow
-
 pattern batcalc.sht_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:sht] 
 address CMDconvert_sht;
 comment cast from str to sht with candidates list
@@ -38188,22 +38060,6 @@ comment cast from bit to sht with candidates list, signal error on overflow
 pattern batcalc.sht(b:bat[:oid,:bit]):bat[:oid,:sht] 
 address CMDconvertsignal_sht;
 comment cast from bit to sht, signal error on overflow
-
-pattern batcalc.sht_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvert_sht;
-comment cast from void to sht with candidates list
-
-pattern batcalc.sht_noerror(b:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvert_sht;
-comment cast from void to sht
-
-pattern batcalc.sht(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvertsignal_sht;
-comment cast from void to sht with candidates list, signal error on overflow
-
-pattern batcalc.sht(b:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvertsignal_sht;
-comment cast from void to sht, signal error on overflow
 
 pattern batcalc.sub_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatSUB;
@@ -40118,22 +39974,6 @@ comment cast from bit to wrd with candidates list, signal error on overflow
 pattern batcalc.wrd(b:bat[:oid,:bit]):bat[:oid,:wrd] 
 address CMDconvertsignal_wrd;
 comment cast from bit to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvert_wrd;
-comment cast from void to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvert_wrd;
-comment cast from void to wrd
-
-pattern batcalc.wrd(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from void to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from void to wrd, signal error on overflow
 
 pattern batcalc.wrd_noerror(b:bat[:oid,:hge],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
