@@ -1996,7 +1996,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 
 	/* now find the matching groups */
 
-	/* TODO change to leftjoin semantics to keep those in A not in B */
+	/* TODO change to left outer join semantics to keep those in A not in B */
 	/* would need outerjoin eqjoin and outer project code, cleans up following mess */
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
 		stmt *l = column(sql->sa, n->data);

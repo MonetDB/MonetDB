@@ -878,14 +878,12 @@ int isDiffOp(InstrPtr p){
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
-                 getFunctionId(p) == subjoinRef ||
                  getFunctionId(p) == joinRef ||
-                 getFunctionId(p) == antijoinRef || /* is not mat save */
+                 getFunctionId(p) == subjoinRef ||
                  getFunctionId(p) == subantijoinRef || /* is not mat save */
-                 getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == subthetajoinRef ||
-                 getFunctionId(p) == bandjoinRef ||
-                 getFunctionId(p) == subbandjoinRef)
+                 getFunctionId(p) == subbandjoinRef ||
+                 getFunctionId(p) == subrangejoinRef)
 		);
 }
 
