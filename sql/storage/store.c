@@ -3066,6 +3066,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			store_funcs.destroy_del(NULL, ft);
 
 		ft->base.wtime = ft->base.rtime = 0;
+		ft->cleared = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->tables, &pft->tables, &ft->base, (resetf) NULL, (dupfunc) &table_find);
