@@ -318,22 +318,6 @@ EOF
     echo
 done
 
-for func in min min_no_nil max max_no_nil; do
-    if [[ $func == *_no_nil ]]; then
-	com=", ignoring nil values"
-    else
-	com=
-    fi
-    for tp in hge; do
-	cat <<EOF
-pattern $func(v1:$tp, v2:$tp) :$tp
-address CALC$func
-comment "Return ${func%%_*} of V1 and V2$com";
-
-EOF
-    done
-done
-
 cat <<EOF
 module aggr;
 

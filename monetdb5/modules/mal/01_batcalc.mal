@@ -377,6 +377,35 @@ address CMDbatDECR
 comment "Unary decrement over the tail of the bat with candidates list";
 
 
+pattern min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
+pattern min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
+
+pattern min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+pattern min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+
+pattern max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
+pattern max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
+
+pattern max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+pattern max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+
+
 pattern +(b1:bat[:oid,:bte],b2:bat[:oid,:bte]) :bat[:oid,:sht]
 address CMDbatADDenlarge
 comment "Return B1 + B2, guarantee no overflow by returning larger type";

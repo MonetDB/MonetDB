@@ -35542,6 +35542,38 @@ pattern batcalc.mul_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatMUL;
 comment Return B1 * B2, overflow causes NIL value
 
+pattern batcalc.max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMAX_no_nil;
+comment Return bat with maximum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMAX_no_nil;
+comment Return bat with maximum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMAX;
+comment Return bat with maximum value of each pair of inputs
+
+pattern batcalc.max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMAX;
+comment Return bat with maximum value of each pair of inputs
+
+pattern batcalc.min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMIN_no_nil;
+comment Return bat with minimum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMIN_no_nil;
+comment Return bat with minimum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMIN;
+comment Return bat with minimum value of each pair of inputs
+
+pattern batcalc.min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMIN;
+comment Return bat with minimum value of each pair of inputs
+
 pattern batcalc.mod_noerror(v:dbl,b:bat[:oid,:hge],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatMOD;
 comment Return V % B with candidates list, divide by zero causes NIL value
@@ -46759,147 +46791,19 @@ command calc.month_interval(v:str,ek:int,sk:int):int
 address month_interval_str;
 comment cast str to a month_interval and check for overflow
 
-pattern calc.max_no_nil(v1:oid,v2:oid):oid 
+pattern calc.max_no_nil(v1:any_1,v2:any_1):any_1 
 address CALCmax_no_nil;
 comment Return max of V1 and V2, ignoring nil values
 
-pattern calc.max_no_nil(v1:dbl,v2:dbl):dbl 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:flt,v2:flt):flt 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:lng,v2:lng):lng 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:wrd,v2:wrd):wrd 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:int,v2:int):int 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:sht,v2:sht):sht 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:bte,v2:bte):bte 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:bit,v2:bit):bit 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max(v1:oid,v2:oid):oid 
+pattern calc.max(v1:any_1,v2:any_1):any_1 
 address CALCmax;
 comment Return max of V1 and V2
 
-pattern calc.max(v1:dbl,v2:dbl):dbl 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:flt,v2:flt):flt 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:lng,v2:lng):lng 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:wrd,v2:wrd):wrd 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:int,v2:int):int 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:sht,v2:sht):sht 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:bte,v2:bte):bte 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:bit,v2:bit):bit 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.min_no_nil(v1:oid,v2:oid):oid 
+pattern calc.min_no_nil(v1:any_1,v2:any_1):any_1 
 address CALCmin_no_nil;
 comment Return min of V1 and V2, ignoring nil values
 
-pattern calc.min_no_nil(v1:dbl,v2:dbl):dbl 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:flt,v2:flt):flt 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:lng,v2:lng):lng 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:wrd,v2:wrd):wrd 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:int,v2:int):int 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:sht,v2:sht):sht 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:bte,v2:bte):bte 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:bit,v2:bit):bit 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min(v1:oid,v2:oid):oid 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:dbl,v2:dbl):dbl 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:flt,v2:flt):flt 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:lng,v2:lng):lng 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:wrd,v2:wrd):wrd 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:int,v2:int):int 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:sht,v2:sht):sht 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:bte,v2:bte):bte 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:bit,v2:bit):bit 
+pattern calc.min(v1:any_1,v2:any_1):any_1 
 address CALCmin;
 comment Return min of V1 and V2
 
@@ -47295,22 +47199,6 @@ pattern calc.mul_noerror(v1:bte,v2:bte):bte
 address CMDvarMUL;
 comment Return V1 * V2, overflow causes NIL value
 
-pattern calc.max_no_nil(v1:hge,v2:hge):hge 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max(v1:hge,v2:hge):hge 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.min_no_nil(v1:hge,v2:hge):hge 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min(v1:hge,v2:hge):hge 
-address CALCmin;
-comment Return min of V1 and V2
-
 pattern calc.mod_noerror(v1:dbl,v2:hge):dbl 
 address CMDvarMOD;
 comment Return V1 % V2, divide by zero causes NIL value
@@ -47430,70 +47318,6 @@ comment Return V1 * V2, overflow causes NIL value
 pattern calc.mul_noerror(v1:bte,v2:hge):hge 
 address CMDvarMUL;
 comment Return V1 * V2, overflow causes NIL value
-
-pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmax_no_nil;
-comment Maximum test for timestamp value
-
-pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmin_no_nil;
-comment Minimum test for timestamp value
-
-pattern calc.max(v:timestamp,w:timestamp):timestamp 
-address CALCmax;
-comment Maximum test for timestamp value
-
-pattern calc.min(v:timestamp,w:timestamp):timestamp 
-address CALCmin;
-comment Minimum test for timestamp value
-
-pattern calc.max_no_nil(v:daytime,w:daytime):daytime 
-address CALCmax_no_nil;
-comment Maximum test for daytime value
-
-pattern calc.min_no_nil(v:daytime,w:daytime):daytime 
-address CALCmin_no_nil;
-comment Minimum test for daytime value
-
-pattern calc.max(v:daytime,w:daytime):daytime 
-address CALCmax;
-comment Maximum test for daytime value
-
-pattern calc.min(v:daytime,w:daytime):daytime 
-address CALCmin;
-comment Minimum test for daytime value
-
-pattern calc.max_no_nil(v:date,w:date):date 
-address CALCmax_no_nil;
-comment Maximum test for date value
-
-pattern calc.min_no_nil(v:date,w:date):date 
-address CALCmin_no_nil;
-comment Minimum test for date value
-
-pattern calc.max(v:date,w:date):date 
-address CALCmax;
-comment Maximum test for date value
-
-pattern calc.min(v:date,w:date):date 
-address CALCmin;
-comment Minimum test for date value
-
-command calc.min_no_nil(s:str,t:str):str 
-address STRmin_no_nil;
-comment Select the minimum string in lexicographic order, ignoring nils
-
-command calc.min(s:str,t:str):str 
-address STRmin;
-comment Select the minimum string in lexicographic order
-
-command calc.max_no_nil(s:str,t:str):str 
-address STRmax_no_nil;
-comment Select the maximum string in lexicographic order, ignoring nils
-
-command calc.max(s:str,t:str):str 
-address STRmax;
-comment Select the maximum string in lexicographic order
 
 pattern calc.not(v:lng):lng 
 address CMDvarNOT;

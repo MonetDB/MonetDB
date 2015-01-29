@@ -98,18 +98,6 @@ comment "Equality of two dates";
 pattern calc.>=(v:date,w:date):bit
 address CMDvarGE
 comment "Equality of two dates";
-pattern calc.min(v:date,w:date):date
-address CALCmin
-comment "Minimum test for date value";
-pattern calc.max(v:date,w:date):date
-address CALCmax
-comment "Maximum test for date value";
-pattern calc.min_no_nil(v:date,w:date):date
-address CALCmin_no_nil
-comment "Minimum test for date value";
-pattern calc.max_no_nil(v:date,w:date):date
-address CALCmax_no_nil
-comment "Maximum test for date value";
 
 
 
@@ -176,18 +164,6 @@ comment "Equality of two daytimes";
 pattern calc.>=(v:daytime,w:daytime):bit
 address CMDvarGE
 comment "Equality of two daytimes";
-pattern calc.min(v:daytime,w:daytime):daytime
-address CALCmin
-comment "Minimum test for daytime value";
-pattern calc.max(v:daytime,w:daytime):daytime
-address CALCmax
-comment "Maximum test for daytime value";
-pattern calc.min_no_nil(v:daytime,w:daytime):daytime
-address CALCmin_no_nil
-comment "Minimum test for daytime value";
-pattern calc.max_no_nil(v:daytime,w:daytime):daytime
-address CALCmax_no_nil
-comment "Maximum test for daytime value";
 
 
 
@@ -281,18 +257,6 @@ comment "Equality of two timestamps";
 pattern calc.>=(v:timestamp,w:timestamp):bit
 address CMDvarGE
 comment "Equality of two timestamps";
-pattern calc.min(v:timestamp,w:timestamp):timestamp
-address CALCmin
-comment "Minimum test for timestamp value";
-pattern calc.max(v:timestamp,w:timestamp):timestamp
-address CALCmax
-comment "Maximum test for timestamp value";
-pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp
-address CALCmin_no_nil
-comment "Minimum test for timestamp value";
-pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp
-address CALCmax_no_nil
-comment "Maximum test for timestamp value";
 
 
 

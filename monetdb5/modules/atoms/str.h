@@ -64,10 +64,6 @@ str_export str STRLpad(str *res, const str *arg1, const int *len);
 str_export str STRRpad(str *res, const str *arg1, const int *len);
 str_export str STRLpad2(str *res, const str *arg1, const int *len, const str *arg2);
 str_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
-str_export str STRmin_no_nil(str *res, const str *left, const str *right);
-str_export str STRmax_no_nil(str *res, const str *left, const str *right);
-str_export str STRmin(str *res, const str *left, const str *right);
-str_export str STRmax(str *res, const str *left, const str *right);
 str_export str STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g);
 
 str_export str STRSQLLength(int *res, const str *s);

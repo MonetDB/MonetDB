@@ -4774,147 +4774,19 @@ address CMDvarCONVERT
 comment "Cast VALUE to str";
 
 
-pattern min(v1:bit, v2:bit) :bit
+pattern min(v1:any_1, v2:any_1) :any_1
 address CALCmin
 comment "Return min of V1 and V2";
 
-pattern min(v1:bte, v2:bte) :bte
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:sht, v2:sht) :sht
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:int, v2:int) :int
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:wrd, v2:wrd) :wrd
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:lng, v2:lng) :lng
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:flt, v2:flt) :flt
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:dbl, v2:dbl) :dbl
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min(v1:oid, v2:oid) :oid
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min_no_nil(v1:bit, v2:bit) :bit
+pattern min_no_nil(v1:any_1, v2:any_1) :any_1
 address CALCmin_no_nil
 comment "Return min of V1 and V2, ignoring nil values";
 
-pattern min_no_nil(v1:bte, v2:bte) :bte
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:sht, v2:sht) :sht
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:int, v2:int) :int
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:wrd, v2:wrd) :wrd
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:lng, v2:lng) :lng
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:flt, v2:flt) :flt
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:dbl, v2:dbl) :dbl
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern min_no_nil(v1:oid, v2:oid) :oid
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern max(v1:bit, v2:bit) :bit
+pattern max(v1:any_1, v2:any_1) :any_1
 address CALCmax
 comment "Return max of V1 and V2";
 
-pattern max(v1:bte, v2:bte) :bte
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:sht, v2:sht) :sht
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:int, v2:int) :int
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:wrd, v2:wrd) :wrd
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:lng, v2:lng) :lng
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:flt, v2:flt) :flt
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:dbl, v2:dbl) :dbl
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max(v1:oid, v2:oid) :oid
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max_no_nil(v1:bit, v2:bit) :bit
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:bte, v2:bte) :bte
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:sht, v2:sht) :sht
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:int, v2:int) :int
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:wrd, v2:wrd) :wrd
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:lng, v2:lng) :lng
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:flt, v2:flt) :flt
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:dbl, v2:dbl) :dbl
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
-pattern max_no_nil(v1:oid, v2:oid) :oid
+pattern max_no_nil(v1:any_1, v2:any_1) :any_1
 address CALCmax_no_nil
 comment "Return max of V1 and V2, ignoring nil values";
 

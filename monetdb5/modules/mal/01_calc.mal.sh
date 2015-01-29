@@ -334,14 +334,12 @@ for func in min min_no_nil max max_no_nil; do
     else
 	com=
     fi
-    for tp in $fixtypes; do
-	cat <<EOF
-pattern $func(v1:$tp, v2:$tp) :$tp
+    cat <<EOF
+pattern $func(v1:any_1, v2:any_1) :any_1
 address CALC$func
 comment "Return ${func%%_*} of V1 and V2$com";
 
 EOF
-    done
 done
 
 cat <<EOF

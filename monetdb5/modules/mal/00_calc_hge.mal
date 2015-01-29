@@ -1577,22 +1577,6 @@ address CMDvarCONVERT
 comment "Cast VALUE to str";
 
 
-pattern min(v1:hge, v2:hge) :hge
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min_no_nil(v1:hge, v2:hge) :hge
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern max(v1:hge, v2:hge) :hge
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max_no_nil(v1:hge, v2:hge) :hge
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
-
 module aggr;
 
 pattern sum(b:bat[:oid,:bte]) :hge

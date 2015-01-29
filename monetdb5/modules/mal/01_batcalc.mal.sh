@@ -119,6 +119,21 @@ EOF
     echo
 done
 
+for func in min max; do
+    for funcx in '' _no_nil; do
+	cat <<EOF
+pattern $func$funcx(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]) :bat[:oid,:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+
+EOF
+    done
+done
+echo
+
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
