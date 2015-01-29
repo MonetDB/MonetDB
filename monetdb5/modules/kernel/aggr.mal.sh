@@ -303,7 +303,7 @@ address AGGRmedian3
 comment "Grouped median aggregate";
 
 function median(b:bat[:oid,:any_1]) :any_1;
-	bn := submedian(b, false);
+	bn := submedian(b, true);
 	return algebra.fetch(bn, 0@0);
 end aggr.median;
 
