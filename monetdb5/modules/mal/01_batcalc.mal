@@ -69,75 +69,19 @@ address CMDbatISZERO
 comment "Unary check for zero over the tail of the bat with candidates list";
 
 
-pattern isnil(b:bat[:oid,:bit]) :bat[:oid,:bit]
+pattern isnil(b:bat[:oid,:any]) :bat[:oid,:bit]
 address CMDbatISNIL
 comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:bit],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern isnil(b:bat[:oid,:any],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatISNIL
 comment "Unary check for nil over the tail of the bat with candidates list";
 
-pattern isnil(b:bat[:oid,:bte]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:bte],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:sht]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:sht],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:int]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:int],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:wrd]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:lng]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:lng],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:flt]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:flt],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:dbl]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:dbl],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:oid],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:str]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:str],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
+pattern isnotnil(b:bat[:oid,:any]) :bat[:oid,:bit]
+address CMDbatISNOTNIL
+comment "Unary check for notnil over the tail of the bat";
+pattern isnotnil(b:bat[:oid,:any],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatISNOTNIL
+comment "Unary check for notnil over the tail of the bat with candidates list";
 
 
 pattern not(b:bat[:oid,:bit]) :bat[:oid,:bit]

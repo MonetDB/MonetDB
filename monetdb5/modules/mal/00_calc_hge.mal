@@ -24,16 +24,6 @@ address CMDvarISZERO
 comment "Unary check for zero of V";
 
 
-pattern isnil(v:hge) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-
-pattern isnotnil(v:hge) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-
 pattern not(v:hge) :hge
 address CMDvarNOT
 comment "Unary bitwise not of V";

@@ -850,17 +850,17 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 /* ---------------------------------------------------------------------- */
 /* is the value nil (any type) */
 
-#define ISNIL_TYPE(TYPE)						\
+#define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, b->batFirst);	\
 		for (i = start; i < end; i++) {				\
 			CHECKCAND(dst, i, b->H->seq, bit_nil);		\
-			dst[i] = (bit) (src[i] == TYPE##_nil);		\
+			dst[i] = (bit) ((src[i] == TYPE##_nil) ^ NOTNIL); \
 		}							\
 	} while (0)
 
-BAT *
-BATcalcisnil(BAT *b, BAT *s)
+static BAT *
+BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 {
 	BAT *bn;
 	BUN i, cnt, start, end;
@@ -899,27 +899,27 @@ BATcalcisnil(BAT *b, BAT *s)
 
 	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
-		ISNIL_TYPE(bte);
+		ISNIL_TYPE(bte, notnil);
 		break;
 	case TYPE_sht:
-		ISNIL_TYPE(sht);
+		ISNIL_TYPE(sht, notnil);
 		break;
 	case TYPE_int:
-		ISNIL_TYPE(int);
+		ISNIL_TYPE(int, notnil);
 		break;
 	case TYPE_lng:
-		ISNIL_TYPE(lng);
+		ISNIL_TYPE(lng, notnil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		ISNIL_TYPE(hge);
+		ISNIL_TYPE(hge, notnil);
 		break;
 #endif
 	case TYPE_flt:
-		ISNIL_TYPE(flt);
+		ISNIL_TYPE(flt, notnil);
 		break;
 	case TYPE_dbl:
-		ISNIL_TYPE(dbl);
+		ISNIL_TYPE(dbl, notnil);
 		break;
 	default:
 	{
@@ -929,7 +929,7 @@ BATcalcisnil(BAT *b, BAT *s)
 
 		for (i = start; i < end; i++) {
 			CHECKCAND(dst, i, b->H->seq, bit_nil);
-			dst[i] = (bit) ((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0);
+			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0) ^ notnil);
 		}
 		break;
 	}
@@ -950,6 +950,18 @@ BATcalcisnil(BAT *b, BAT *s)
 	bn->T->key = cnt <= 1;
 
 	return bn;
+}
+
+BAT *
+BATcalcisnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 0);
+}
+
+BAT *
+BATcalcisnotnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 1);
 }
 
 int

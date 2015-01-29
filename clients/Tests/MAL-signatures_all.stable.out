@@ -24806,83 +24806,19 @@ pattern batcalc.int(b:bat[:oid,:bit]):bat[:oid,:int]
 address CMDconvertsignal_int;
 comment cast from bit to int, signal error on overflow
 
-pattern batcalc.isnil(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.isnotnil(b:bat[:oid,:any],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatISNOTNIL;
+comment Unary check for notnil over the tail of the bat with candidates list
+
+pattern batcalc.isnotnil(b:bat[:oid,:any]):bat[:oid,:bit] 
+address CMDbatISNOTNIL;
+comment Unary check for notnil over the tail of the bat
+
+pattern batcalc.isnil(b:bat[:oid,:any],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatISNIL;
 comment Unary check for nil over the tail of the bat with candidates list
 
-pattern batcalc.isnil(b:bat[:oid,:str]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:wrd]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:int]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:sht]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:bte]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:bit]):bat[:oid,:bit] 
+pattern batcalc.isnil(b:bat[:oid,:any]):bat[:oid,:bit] 
 address CMDbatISNIL;
 comment Unary check for nil over the tail of the bat
 
@@ -24941,30 +24877,6 @@ comment Unary check for zero over the tail of the bat with candidates list
 pattern batcalc.iszero(b:bat[:oid,:bte]):bat[:oid,:bit] 
 address CMDbatISZERO;
 comment Unary check for zero over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
 
 command batcalc.lng(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:lng] 
 address batlng_dec2dec_lng;
@@ -35987,10 +35899,6 @@ command calc.identity(X_1:any_2):oid
 address SQLidentity;
 comment Returns a unique row identitfier.
 
-command calc.isnil(v:wkb):bit 
-address wkbIsnil;
-comment Nil test for wkb value
-
 pattern calc.ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
 comment If VALUE is true return MIDDLE else RIGHT
@@ -36039,99 +35947,11 @@ pattern calc.int(v:void):int
 address CMDvarCONVERT;
 comment Cast VALUE to int
 
-pattern calc.isnotnil(v:BAT):bit 
+pattern calc.isnotnil(v:any):bit 
 address CMDvarISNOTNIL;
 comment Unary check for notnil of V
 
-pattern calc.isnotnil(v:str):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:oid):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:dbl):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:flt):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:lng):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:wrd):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:int):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:sht):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bte):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bit):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:void):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnil(v:BAT):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:str):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:oid):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:dbl):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:flt):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:lng):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:wrd):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:int):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:sht):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bte):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bit):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:void):bit 
+pattern calc.isnil(v:any):bit 
 address CMDvarISNIL;
 comment Unary check for nil of V
 
@@ -36163,10 +35983,6 @@ pattern calc.iszero(v:bte):bit
 address CMDvarISZERO;
 comment Unary check for zero of V
 
-command calc.isnil(v:inet):bit 
-address INET_isnil;
-comment Nil test for inet value
-
 command calc.inet(s:str):inet 
 address INET_fromstr;
 comment Convert a string to an inet
@@ -36174,30 +35990,6 @@ comment Convert a string to an inet
 command calc.inet(s:inet):inet 
 address INET_inet;
 comment Convert a inet to an inet
-
-pattern calc.isnil(v:timestamp):bit 
-address CMDvarISNIL;
-comment Nil test for timestamp value
-
-pattern calc.isnil(v:daytime):bit 
-address CMDvarISNIL;
-comment Nil test for daytime value
-
-pattern calc.isnil(v:date):bit 
-address CMDvarISNIL;
-comment Nil test for date value
-
-pattern calc.isnil(v:json):bit 
-address CMDvarISNIL;
-comment Nil test for json value
-
-command calc.isnil(v:sqlblob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
-
-command calc.isnil(v:blob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
 
 command calc.json(j:json):json 
 address JSONstr2json;

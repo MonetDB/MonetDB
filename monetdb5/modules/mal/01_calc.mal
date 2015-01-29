@@ -48,100 +48,12 @@ address CMDvarISZERO
 comment "Unary check for zero of V";
 
 
-pattern isnil(v:void) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:bit) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:bte) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:sht) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:int) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:wrd) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:lng) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:flt) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:dbl) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:oid) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:str) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-pattern isnil(v:bat) :bit
+pattern isnil(v:any) :bit
 address CMDvarISNIL
 comment "Unary check for nil of V";
 
 
-pattern isnotnil(v:void) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:bit) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:bte) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:sht) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:int) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:wrd) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:lng) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:flt) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:dbl) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:oid) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:str) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-pattern isnotnil(v:bat) :bit
+pattern isnotnil(v:any) :bit
 address CMDvarISNOTNIL
 comment "Unary check for notnil of V";
 

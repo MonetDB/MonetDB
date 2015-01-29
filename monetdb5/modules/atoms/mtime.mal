@@ -98,9 +98,6 @@ comment "Equality of two dates";
 pattern calc.>=(v:date,w:date):bit
 address CMDvarGE
 comment "Equality of two dates";
-pattern calc.isnil(v:date):bit
-address CMDvarISNIL
-comment "Nil test for date value";
 pattern calc.min(v:date,w:date):date
 address CALCmin
 comment "Minimum test for date value";
@@ -179,9 +176,6 @@ comment "Equality of two daytimes";
 pattern calc.>=(v:daytime,w:daytime):bit
 address CMDvarGE
 comment "Equality of two daytimes";
-pattern calc.isnil(v:daytime):bit
-address CMDvarISNIL
-comment "Nil test for daytime value";
 pattern calc.min(v:daytime,w:daytime):daytime
 address CALCmin
 comment "Minimum test for daytime value";
@@ -287,9 +281,6 @@ comment "Equality of two timestamps";
 pattern calc.>=(v:timestamp,w:timestamp):bit
 address CMDvarGE
 comment "Equality of two timestamps";
-pattern calc.isnil(v:timestamp):bit
-address CMDvarISNIL
-comment "Nil test for timestamp value";
 pattern calc.min(v:timestamp,w:timestamp):timestamp
 address CALCmin
 comment "Minimum test for timestamp value";

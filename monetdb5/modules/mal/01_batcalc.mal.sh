@@ -56,14 +56,14 @@ EOF
 done
 echo
 
-for tp in $alltypes; do
+for func in nil notnil; do
     cat <<EOF
-pattern isnil(b:bat[:oid,:$tp]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
+pattern is$func(b:bat[:oid,:any]) :bat[:oid,:bit]
+address CMDbatIS${func^^}
+comment "Unary check for $func over the tail of the bat";
+pattern is$func(b:bat[:oid,:any],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatIS${func^^}
+comment "Unary check for $func over the tail of the bat with candidates list";
 
 EOF
 done

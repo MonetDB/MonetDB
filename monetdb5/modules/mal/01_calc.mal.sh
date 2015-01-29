@@ -55,14 +55,12 @@ done
 echo
 
 for func in nil notnil; do
-    for tp in void $alltypes bat; do
-	cat <<EOF
-pattern is$func(v:$tp) :bit
+    cat <<EOF
+pattern is$func(v:any) :bit
 address CMDvarIS${func^^}
 comment "Unary check for $func of V";
 
 EOF
-    done
     echo
 done
 

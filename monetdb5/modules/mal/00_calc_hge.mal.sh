@@ -54,18 +54,6 @@ EOF
 done
 echo
 
-for func in nil notnil; do
-    for tp in hge; do
-	cat <<EOF
-pattern is$func(v:$tp) :bit
-address CMDvarIS${func^^}
-comment "Unary check for $func of V";
-
-EOF
-    done
-    echo
-done
-
 com="Unary bitwise not of V"
 for tp in hge; do
     cat <<EOF
