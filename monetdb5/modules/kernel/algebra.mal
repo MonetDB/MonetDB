@@ -72,19 +72,19 @@ comment "Produces a new BAT with groups identified by the head column. The resul
 #command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
 #address ALGjoinestimate;
 
+command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
+address ALGrangejoin;
+
 command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
 address ALGleftjoin;
 command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
 address ALGleftjoinestimate;
 
+#END OF HEADLESS PLANS
+
 command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
-
-command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
-address ALGrangejoin;
-
-#END OF HEADLESS PLANS
 
 command revert( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address ALGrevert
