@@ -2396,11 +2396,8 @@ BATminmax(BAT *b, void *aggr,
 	int needdecref = 0;
 	BATiter bi;
 
-	if (!BAThdense(b)) {
-		if ((b = BATmirror(BATmark(BATmirror(b), 0))) == NULL)
-			return NULL;
-		needdecref = 1;
-	}
+	if (!BAThdense(b))
+		return NULL;
 	if (b->T->imprints &&
 	    (VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) {
