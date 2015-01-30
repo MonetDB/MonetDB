@@ -56,19 +56,6 @@ EOF
 done
 echo
 
-for tp in hge; do
-    cat <<EOF
-pattern isnil(b:bat[:oid,:$tp]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-EOF
-done
-echo
-
 com="Unary bitwise not over the tail of the bat"
 for tp in hge; do
     cat <<EOF

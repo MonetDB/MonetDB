@@ -54,18 +54,6 @@ EOF
 done
 echo
 
-for func in nil notnil; do
-    for tp in hge; do
-	cat <<EOF
-pattern is$func(v:$tp) :bit
-address CMDvarIS${func^^}
-comment "Unary check for $func of V";
-
-EOF
-    done
-    echo
-done
-
 com="Unary bitwise not of V"
 for tp in hge; do
     cat <<EOF
@@ -89,8 +77,8 @@ echo
 
 for func in 'abs:ABS:Unary absolute value of V' \
     '-:NEG:Unary negation of V' \
-    '++:INCR:Unary V + 1' \
-    '--:DECR:Unary V - 1'; do
+    '++:INCRsignal:Unary V + 1' \
+    '--:DECRsignal:Unary V - 1'; do
     op=${func%%:*}
     com=${func##*:}
     func=${func%:*}
@@ -328,22 +316,6 @@ comment "Cast VALUE to $tp1";
 EOF
     done
     echo
-done
-
-for func in min min_no_nil max max_no_nil; do
-    if [[ $func == *_no_nil ]]; then
-	com=", ignoring nil values"
-    else
-	com=
-    fi
-    for tp in hge; do
-	cat <<EOF
-pattern $func(v1:$tp, v2:$tp) :$tp
-address CALC$func
-comment "Return ${func%%_*} of V1 and V2$com";
-
-EOF
-    done
 done
 
 cat <<EOF

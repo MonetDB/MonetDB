@@ -695,11 +695,15 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -717,10 +721,14 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -738,11 +746,15 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -760,10 +772,14 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 

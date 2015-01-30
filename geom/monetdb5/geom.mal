@@ -301,10 +301,6 @@ function geomcollection{unsafe}( wkt:str ) :wkb;
 end geomcollection;
 
 module geom;
-command calc.isnil(v:wkb):bit
-address wkbIsnil
-comment "Nil test for wkb value";
-
 
 # wkbPoint := 1;
 # wkbLineString := 2;

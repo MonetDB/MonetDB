@@ -2627,6 +2627,23 @@ MTIMEtimestamp(timestamp *ret, const int *sec)
 }
 
 str
+MTIMEtimestamplng(timestamp *ret, const lng *sec)
+{
+	timestamp t;
+	lng l;
+	str e;
+
+	if (*sec == lng_nil) {
+		*ret = *timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
+		return e;
+	l = ((lng) *sec);
+	return MTIMEtimestamp_add(ret, &t, &l);
+}
+
+str
 MTIMEtimestamp_bulk(bat *ret, bat *bid)
 {
 	BAT *b, *bn;

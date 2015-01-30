@@ -104,8 +104,6 @@ st_type2string(st_type type)
 		ST(join);
 		ST(join2);
 		ST(joinN);
-		ST(diff);
-		ST(union);
 
 		ST(export);
 		ST(append);
@@ -319,8 +317,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_tunion:
 			case st_tdiff:
 			case st_tinter:
-			case st_diff:
-			case st_union:
 			case st_join:
 			case st_join2:
 			case st_joinN:
@@ -932,7 +928,6 @@ stmt_project(sql_allocator *sa, stmt *op1, stmt *op2)
 	return stmt_join(sa, op1, op2, cmp_project);
 }
 
-/* TODO create special statement */
 stmt *
 stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins)
 {
@@ -973,30 +968,6 @@ stmt_genjoin(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op, int swapped)
 	s->nrcols = 2;
 	if (swapped)
 		s->flag |= SWAPPED;
-	return s;
-}
-
-stmt *
-stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2)
-{
-	stmt *s = stmt_create(sa, st_diff);
-
-	s->op1 = op1;
-	s->op2 = op2;
-	s->nrcols = op1->nrcols;
-	s->key = op1->key;
-	s->aggr = op1->aggr;
-	return s;
-}
-
-stmt *
-stmt_union(sql_allocator *sa, stmt *op1, stmt *op2)
-{
-	stmt *s = stmt_create(sa, st_union);
-
-	s->op1 = op1;
-	s->op2 = op2;
-	s->nrcols = op1->nrcols;
 	return s;
 }
 
@@ -1279,8 +1250,6 @@ tail_type(stmt *st)
 	case st_tunion:
 	case st_tdiff:
 	case st_tinter:
-	case st_diff:
-	case st_union:
 	case st_append:
 	case st_alias:
 	case st_gen_group:
@@ -1444,8 +1413,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_tunion:
 	case st_tdiff:
 	case st_tinter:
-	case st_diff:
-	case st_union:
 	case st_convert:
 		return column_name(sa, st->op1);
 	case st_Nop:
@@ -1520,8 +1487,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_tunion:
 	case st_tdiff:
 	case st_tinter:
-	case st_diff:
-	case st_union:
 	case st_aggr:
 		return table_name(sa, st->op1);
 
@@ -1580,8 +1545,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_tunion:
 	case st_tdiff:
 	case st_tinter:
-	case st_diff:
-	case st_union:
 	case st_convert:
 	case st_Nop:
 	case st_aggr:

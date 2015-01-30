@@ -66,7 +66,6 @@ geom_export str wkbFromText(wkb **w, const str *wkt, const int *tpe);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
 geom_export wkb *wkbNULL(void);
-geom_export str wkbIsnil(bit *r, wkb **v);
 geom_export str wkbAsText(str *r, wkb **w);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
@@ -552,13 +551,6 @@ wkbNULL(void)
 
 	nullval.len = ~0;
 	return (&nullval);
-}
-
-str
-wkbIsnil(bit *r, wkb **v)
-{
-	*r = wkb_isnil(*v);
-	return MAL_SUCCEED;
 }
 
 str

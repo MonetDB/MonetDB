@@ -7,6 +7,7 @@ COPY 4 RECORDS INTO partk1 FROM stdin USING DELIMITERS ' ','\n';
 1.0 1.0 0.0 
 
 CREATE TABLE partk2 ( x double, y double, z double);
+ALTER TABLE partk2 ADD PRIMARY KEY (x,y,z);
 COPY 4 RECORDS INTO partk2 FROM stdin USING DELIMITERS ' ','\n';
 2.0 0.0 0.0
 3.0 0.0 0.0 

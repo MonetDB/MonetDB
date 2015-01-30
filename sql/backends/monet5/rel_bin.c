@@ -230,7 +230,12 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *
 				s = stmt_binop(sql->sa, s, i, a);
 			else
 				s = i;
+
 		}
+		if (sel) 
+			s = stmt_uselect(sql->sa, 
+				stmt_const(sql->sa, bin_first_column(sql->sa, left), s), 
+				stmt_bool(sql->sa, 1), cmp_equal, sel); 
 	} else {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
@@ -748,7 +753,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 
 static stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 
-/* TODO pass optional selection */
 static stmt *
 stmt_col( mvc *sql, sql_column *c, stmt *del) 
 { 
@@ -1465,7 +1469,7 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op )
 
 		if (cmp_op == cmp_equal)
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else	/* cmp_equal_nil ? */
+		else	/* TODO cmp_equal_nil */
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
@@ -1873,6 +1877,29 @@ rel2bin_distinct(mvc *sql, stmt *s, stmt **distinct)
 }
 
 static stmt *
+rel_rename(mvc *sql, sql_rel *rel, stmt *sub)
+{
+	if (rel->exps) {
+		node *en, *n;
+		list *l = sa_list(sql->sa);
+
+		for( en = rel->exps->h, n = sub->op4.lval->h; en && n; en = en->next, n = n->next ) {
+			sql_exp *exp = en->data;
+			stmt *s = n->data;
+
+			if (!s) {
+				assert(0);
+				return NULL;
+			}
+			s = stmt_rename(sql, rel, exp, s);
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+	}
+	return sub;
+}
+
+static stmt *
 rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
@@ -1896,45 +1923,18 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		char *nme = column_name(sql->sa, c1);
 		stmt *s;
 
-		/* append isn't save, ie use union 
-			(also not save loses unique head oids) 
-
-		   so we create append on copies.
-			TODO: mark columns non base columns, ie were no
-			copy is needed
-		*/
 		s = stmt_append(sql->sa, Column(sql->sa, c1), c2);
 		s = stmt_alias(sql->sa, s, rnme, nme);
 		list_append(l, s);
 	}
 	sub = stmt_list(sql->sa, l);
 
-	/* union exp list is a rename only */
-	if (rel->exps) {
-		node *en, *n;
-		list *l = sa_list(sql->sa);
-
-		for( en = rel->exps->h, n = sub->op4.lval->h; en && n; en = en->next, n = n->next ) {
-			sql_exp *exp = en->data;
-			stmt *s = n->data;
-
-			if (!s) {
-				assert(0);
-				return NULL;
-			}
-			s = stmt_rename(sql, rel, exp, s);
-			list_append(l, s);
-		}
-		sub = stmt_list(sql->sa, l);
-	}
-
+	sub = rel_rename(sql, rel, sub);
 	if (need_distinct(rel)) 
 		sub = rel2bin_distinct(sql, sub, NULL);
 	return sub;
 }
 
-/* Both EXCEPT and INTERSECT need work, current versions aren't mergetable save 
- * (bails out on the gen_group) */
 static stmt *
 rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 {
@@ -1942,12 +1942,13 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	list *stmts; 
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
+	sql_subfunc *min;
 
 	stmt *lg = NULL, *rg = NULL;
 	stmt *lgrp = NULL, *rgrp = NULL;
-	stmt *lext = NULL, *rext = NULL;
-	stmt *lcnt = NULL, *rcnt = NULL;
-	stmt *s, *lm, *rm, *ecnt = NULL;
+	stmt *lext = NULL, *rext = NULL, *next = NULL;
+	stmt *lcnt = NULL, *rcnt = NULL, *ncnt = NULL, *zero = NULL;
+	stmt *s, *lm, *rm;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
@@ -1958,18 +1959,13 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	if (!left || !right) 
 		return NULL;	
 	left = row2cols(sql, left);
+	right = row2cols(sql, right);
 
-	/* construct relation */
-	stmts = sa_list(sql->sa);
 	/*
-	 * The multi column intersect is handled using group by's and
+	 * The multi column except is handled using group by's and
 	 * group size counts on both sides of the intersect. We then
-	 * return for each group of A with min(A.count,B.count), 
+	 * return for each group of L with min(L.count,R.count), 
 	 * number of rows.
-	 * 
-	 * The problem with this approach is that the groups should
-	 * have equal group identifiers. So we take the union of all
-	 * columns before the group by.
 	 */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		lg = stmt_group(sql->sa, column(sql->sa, n->data), lgrp, lext, lcnt);
@@ -1989,10 +1985,12 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	stmt_group_done(lg);
 	stmt_group_done(rg);
 
-	/* now find the matching groups */
+	if (need_distinct(rel)) {
+		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_wrd(sql->sa, 1));
+		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_wrd(sql->sa, 1));
+	}
 
-	/* TODO change to leftjoin semantics to keep those in A not in B */
-	/* would need outerjoin eqjoin and outer project code, cleans up following mess */
+	/* now find the matching groups */
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
 		stmt *l = column(sql->sa, n->data);
 		stmt *r = column(sql->sa, m->data);
@@ -2006,33 +2004,32 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 
-	/* the join of the groups removed those in A but not in B,
-	 * we need these later so keep these in 'ecnt' */
-	ecnt = stmt_diff(sql->sa, lcnt, stmt_reverse(sql->sa, lm));
-		
-	/*if (!distinct) */
-	{
-		stmt *glcnt, *grcnt, *o;
-		sql_subfunc *sub;
+	s = stmt_mirror(sql->sa, lext);
+	s = stmt_tdiff(sql->sa, s, lm);
 
-		/* nil + count -> ? */
-		glcnt = stmt_project(sql->sa, lm, lcnt);
-		grcnt = stmt_project(sql->sa, rm, rcnt);
+	/* first we find those missing in R */
+	next = stmt_project(sql->sa, s, lext);
+	ncnt = stmt_project(sql->sa, s, lcnt);
+	zero = stmt_const(sql->sa, s, stmt_atom_wrd(sql->sa, 0));
 
- 		sub = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", wrd, wrd, F_FUNC);
-		s = stmt_binop(sql->sa, glcnt, grcnt, sub); /* use count */
+	/* ext, lcount, rcount */
+	lext = stmt_project(sql->sa, lm, lext);
+	lcnt = stmt_project(sql->sa, lm, lcnt);
+	rcnt = stmt_project(sql->sa, rm, rcnt);
 
-		/* now we need to add the groups which weren't in B */
-		lcnt = stmt_reorder_project(sql->sa, stmt_reverse(sql->sa, lm), s);
-		s = stmt_union(sql->sa, ecnt, lcnt);
-		o = stmt_mark_tail(sql->sa, lext, 0);
-		s = stmt_reorder_project(sql->sa, stmt_reverse(sql->sa, o), s);
+	/* append those missing in L */
+	lext = stmt_append(sql->sa, lext, next);
+	lcnt = stmt_append(sql->sa, lcnt, ncnt);
+	rcnt = stmt_append(sql->sa, rcnt, zero);
 
-		/* now we have gid,cnt, blowup to full groupsizes */
-		s = stmt_gen_group(sql->sa, lext, s);
-	}
+ 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", wrd, wrd, F_FUNC);
+	s = stmt_binop(sql->sa, lcnt, rcnt, min); /* use count */
+
+	/* now we have gid,cnt, blowup to full groupsizes */
+	s = stmt_gen_group(sql->sa, lext, s);
 
 	/* project columns of left hand expression */
+	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(sql->sa, n->data);
 		char *rnme = NULL;
@@ -2046,30 +2043,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	sub = stmt_list(sql->sa, stmts);
-
-	/* TODO put in sep function !!!, and add to all is_project(op) */
-	/* except can be a projection too */
-	if (rel->exps) {
-		node *en;
-		list *l = sa_list(sql->sa);
-
-		for( en = rel->exps->h; en; en = en->next ) {
-			sql_exp *exp = en->data;
-			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL, NULL, NULL);
-
-			if (!s) {
-				assert(0);
-				return NULL;
-			}
-			s = stmt_rename(sql, rel, exp, s);
-			list_append(l, s);
-		}
-		sub = stmt_list(sql->sa, l);
-	}
-
-	if (need_distinct(rel))
-		sub = rel2bin_distinct(sql, sub, NULL);
-	return sub;
+	return rel_rename(sql, rel, sub);
 }
 
 static stmt *
@@ -2079,6 +2053,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	list *stmts; 
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
+ 	sql_subfunc *min;
 
 	stmt *lg = NULL, *rg = NULL;
 	stmt *lgrp = NULL, *rgrp = NULL;
@@ -2096,17 +2071,11 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;	
 	left = row2cols(sql, left);
 
-	/* construct relation */
-	stmts = sa_list(sql->sa);
 	/*
 	 * The multi column intersect is handled using group by's and
 	 * group size counts on both sides of the intersect. We then
-	 * return for each group of A with min(A.count,B.count), 
+	 * return for each group of L with min(L.count,R.count), 
 	 * number of rows.
-	 * 
-	 * The problem with this approach is that the groups should
-	 * have equal group identifiers. So we take the union of all
-	 * columns before the group by.
 	 */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		lg = stmt_group(sql->sa, column(sql->sa, n->data), lgrp, lext, lcnt);
@@ -2126,6 +2095,11 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	stmt_group_done(lg);
 	stmt_group_done(rg);
 
+	if (need_distinct(rel)) {
+		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_wrd(sql->sa, 1));
+		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_wrd(sql->sa, 1));
+	}
+
 	/* now find the matching groups */
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
 		stmt *l = column(sql->sa, n->data);
@@ -2140,25 +2114,19 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 		
-	/*if (!distinct) */
-	{
-		stmt *glcnt, *grcnt;
-		sql_subfunc *min;
+	/* ext, lcount, rcount */
+	lext = stmt_project(sql->sa, lm, lext);
+	lcnt = stmt_project(sql->sa, lm, lcnt);
+	rcnt = stmt_project(sql->sa, rm, rcnt);
 
-		glcnt = stmt_project(sql->sa, lm, lcnt);
-		grcnt = stmt_project(sql->sa, rm, rcnt);
+ 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", wrd, wrd, F_FUNC);
+	s = stmt_binop(sql->sa, lcnt, rcnt, min);
 
-		/* from gid back to A id's */
-		lext = stmt_project(sql->sa, lm, lext);
-
- 		min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", wrd, wrd, F_FUNC);
-		s = stmt_binop(sql->sa, glcnt, grcnt, min);
-
-		/* now we have gid,cnt, blowup to full groupsizes */
-		s = stmt_gen_group(sql->sa, lext, s);
-	}
+	/* now we have gid,cnt, blowup to full groupsizes */
+	s = stmt_gen_group(sql->sa, lext, s);
 
 	/* project columns of left hand expression */
+	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(sql->sa, n->data);
 		char *rnme = NULL;
@@ -2172,30 +2140,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	sub = stmt_list(sql->sa, stmts);
-
-	/* TODO put in sep function !!!, and add to all is_project(op) */
-	/* intersection can be a projection too */
-	if (rel->exps) {
-		node *en;
-		list *l = sa_list(sql->sa);
-
-		for( en = rel->exps->h; en; en = en->next ) {
-			sql_exp *exp = en->data;
-			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL, NULL, NULL);
-
-			if (!s) {
-				assert(0);
-				return NULL;
-			}
-			s = stmt_rename(sql, rel, exp, s);
-			list_append(l, s);
-		}
-		sub = stmt_list(sql->sa, l);
-	}
-
-	if (need_distinct(rel))
-		sub = rel2bin_distinct(sql, sub, NULL);
-	return sub;
+	return rel_rename(sql, rel, sub);
 }
 
 static stmt *

@@ -18,7 +18,6 @@ tst018
 tst019
 tst020
 tst021
-tst023
 tst024
 tst025
 tst026
@@ -143,6 +142,7 @@ tst274
 NOT_WIN32?tst275
 tst277
 tst280
+tst281
 tst292
 tst285
 tst300
@@ -164,7 +164,7 @@ tst500
 tst501
 tst560
 tst611
-tst612
+#tst612 transaction primitives dropped
 tst620
 tst660
 tst661

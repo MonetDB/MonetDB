@@ -3504,24 +3504,27 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    if len(args) == 1 and os.path.isfile(args[0]):
+    if len(args) == 1:
         head, tail = os.path.split(args[0])
-        head, tst = os.path.split(head)
-        if tst != 'Tests':
-            ErrXit("%s: not a valid test name" % args[0])
-        args = [head]
-        if tail != 'All':
-            for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                        '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
-                        '.sql', '.py', '.R', ''):
-                if tail.endswith(ext + '.in'):
-                    args.append(tail[:-len(ext + '.in')])
-                    break
-                if tail.endswith(ext):
-                    args.append(tail[:-len(ext)])
-                    break
-            else:
+        if os.path.isfile(args[0]):
+            head, tst = os.path.split(head)
+            if tst != 'Tests':
                 ErrXit("%s: not a valid test name" % args[0])
+            args = [head]
+            if tail != 'All':
+                for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
+                            '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                            '.sql', '.py', '.R', ''):
+                    if tail.endswith(ext + '.in'):
+                        args.append(tail[:-len(ext + '.in')])
+                        break
+                    if tail.endswith(ext):
+                        args.append(tail[:-len(ext)])
+                        break
+                else:
+                    ErrXit("%s: not a valid test name" % args[0])
+        elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
+            args = [head, tail]
 
     config = opts.get('config', '')
     if config:
@@ -4255,6 +4258,10 @@ if __name__ == "__main__":
             from MonetDBtesting import trace
         t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
         t.runfunc(main, sys.argv)
+    elif '--debug' in sys.argv:
+        sys.argv.remove('--debug')
+        import pdb
+        pdb.run('main(sys.argv)')
     else:
         main(sys.argv)
 

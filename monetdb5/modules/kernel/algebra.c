@@ -1791,23 +1791,22 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 }
 
 str
-ALGfind(ptr ret, const bat *bid, ptr val)
+ALGfind(oid *ret, const bat *bid, ptr val)
 {
 	BAT *b;
 	BUN q;
-	str msg;
+	str msg= MAL_SUCCEED;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, h, val);
-	q = BUNfnd(BATmirror(b), val);
+	derefStr(b, t, val);
+	q = BUNfnd(b, val);
 
 	if (q == BUN_NONE){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.find", GDK_EXCEPTION "can not find element");
-	}
-	msg = doALGfetch(ret, b, q);
+		*ret = oid_nil;
+	} else
+		*ret = (oid) q;
 	BBPunfix(b->batCacheid);
 	return msg;
 }

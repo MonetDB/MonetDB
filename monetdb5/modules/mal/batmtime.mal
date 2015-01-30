@@ -361,27 +361,6 @@ pattern !=(v:timestamp,b:bat[:oid,:timestamp],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 
-pattern isnil(b:bat[:oid,:date]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:date],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:daytime]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:daytime],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-pattern isnil(b:bat[:oid,:timestamp]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
 module batmtime;
 
 command diff(b1:bat[:oid,:date],b2:bat[:oid,:date]) :bat[:oid,:int]

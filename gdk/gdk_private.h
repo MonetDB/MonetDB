@@ -193,6 +193,8 @@ oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
+gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
 int strCmpNoNil(const unsigned char *l, const unsigned char *r)

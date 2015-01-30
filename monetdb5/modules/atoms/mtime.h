@@ -233,6 +233,7 @@ mtime_export str MTIMEdaytime3(daytime *ret, const int *h, const int *m, const i
 mtime_export str MTIMEunix_epoch(timestamp *ret);
 mtime_export str MTIMEepoch2int(int *res, const timestamp *ts);
 mtime_export str MTIMEtimestamp(timestamp *ret, const int *sec);
+mtime_export str MTIMEtimestamplng(timestamp *ret, const lng *sec);
 mtime_export str MTIMEtimestamp_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEtimestamp_lng(timestamp *ret, const lng *msec);
 mtime_export str MTIMEtimestamp_lng_bulk(bat *ret, bat *bid);

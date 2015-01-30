@@ -178,13 +178,13 @@ comment Grouped count
 
 command aggr.count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
 address AGGRcount2nonils;
-command aggr.count(b:bat[:void,:any_1],e:bat[:void,:any_2]):bat[:void,:wrd] 
+command aggr.count(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:wrd] 
 address AGGRcount2nils;
-command aggr.count(b:bat[:void,:any_1],e:bat[:oid,:any_2]):bat[:void,:wrd] 
+command aggr.count(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:wrd] 
 address AGGRcount2nils;
 comment Grouped count
 
-command aggr.count(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],ignorenils:bit):bat[:void,:wrd] 
+command aggr.count(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],ignorenils:bit):bat[:oid,:wrd] 
 address AGGRcount3;
 command aggr.count(b:bat[:oid,:any_1],e:bat[:oid,:any_2],ignorenils:bit):bat[:oid,:wrd] 
 address AGGRcount2;
@@ -194,15 +194,15 @@ command aggr.cardinality(b:bat[:oid,:any_2]):lng
 address ALGcard;
 comment Return the cardinality of the BAT tail values.
 
-command aggr.count_no_nil(b:bat[:any_1,:any_2]):wrd 
+command aggr.count_no_nil(b:bat[:oid,:any_2]):wrd 
 address ALGcount_no_nil;
 comment Return the number of elements currently 	in a BAT ignoring BUNs with nil-tail
 
-command aggr.count(b:bat[:any_1,:any],ignore_nils:bit):wrd 
+command aggr.count(b:bat[:oid,:any],ignore_nils:bit):wrd 
 address ALGcount_nil;
 comment Return the number of elements currently in a BAT ignores 		BUNs with nil-tail iff ignore_nils==TRUE.
 
-command aggr.count(b:bat[:any_1,:any]):wrd 
+command aggr.count(b:bat[:oid,:any]):wrd 
 address ALGcount_bat;
 comment Return the current size (in number of elements) in a BAT.
 
@@ -230,11 +230,11 @@ command aggr.max(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:any_1]
 address AGGRmax2;
 command aggr.min(b:bat[:oid,:any_1],e:bat[:oid,:any_2]):bat[:oid,:any_1] 
 address AGGRmin2;
-command aggr.max(b:bat[:any_1,:any_2]):any_2 
+command aggr.max(b:bat[:oid,:any_2]):any_2 
 address ALGmaxany;
 comment Return the highest tail value or nil.
 
-command aggr.min(b:bat[:any_1,:any_2]):any_2 
+command aggr.min(b:bat[:oid,:any_2]):any_2 
 address ALGminany;
 comment Return the lowest tail value or nil.
 
@@ -1171,7 +1171,7 @@ command aggr.subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],ski
 address AGGRsubcount;
 comment Grouped count aggregate
 
-command aggr.size(b:bat[:void,:bit],e:bat[:void,:any_1]):bat[:void,:wrd] 
+command aggr.size(b:bat[:oid,:bit],e:bat[:oid,:any_1]):bat[:oid,:wrd] 
 address AGGRsize2nils;
 comment Grouped count of true values
 
@@ -2255,31 +2255,15 @@ command aggr.variance(b:bat[:oid,:any_2]):dbl
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command algebra.antijoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_4]):bat[:any_1,:any_4] 
-address ALGantijoin;
-comment Returns the antijoin
-
 command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGantijoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
-
-command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2,li:bit,hi:bit):bat[:any_1,:any_3] 
-address ALGbandjoin;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
-
-command algebra.bandjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],minus:any_2,plus:any_2):bat[:any_1,:any_3] 
-address ALGbandjoin_default;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus]. Works only for the builtin numerical types, 		and their derivates.
-
-command algebra.bandjoin(outer:bat[:oid,:any_2],inner:bat[:oid,:any_2],minus:any_2,plus:any_2,li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGbandjoin2;
-comment This is a join() for which the predicate is that two BUNs match 		if the left-tail value is within the range [right-head - minus, 		right-head + plus], depending on (l_in/h_in), the bounds 		are included. Works only for the builtin numerical types, 		and their derivates.
 
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
-command algebra.copy(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command algebra.copy(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address ALGcopy;
 comment Returns physical copy of a BAT.
 
@@ -2311,13 +2295,13 @@ pattern algebra.firstn(b:bat[:oid,:any],n:wrd,asc:bit,distinct:bit):bat[:oid,:oi
 address ALGfirstn;
 comment Calculate first N values of B
 
-command algebra.fetch(b:bat[:any_2,:any_1],x:oid):any_1 
+command algebra.fetch(b:bat[:oid,:any_1],x:oid):any_1 
 address ALGfetchoid;
-comment Returns the tail value of the BUN at x-th position 	with 0 <= x < b.count
+comment Returns the value of the BUN at x-th position with 0 <= x < b.count
 
-command algebra.find(b:bat[:any_1,:any_2],h:any_1):any_2 
+command algebra.find(b:bat[:oid,:any_1],t:any_1):oid 
 address ALGfind;
-comment Returns the tail value 't' for which some [h,t] BUN 	exists in b.  If no such BUN exists, an error occurs.
+comment Returns the index position of a value.  If no such BUN exists return OID-nil.
 
 command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid] 
 address ALGgroupby;
@@ -2334,23 +2318,9 @@ command algebra.ilike(s:str,pat:str):bit
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
 address PCREilike3;
-command algebra.indexjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGindexjoin;
-comment Hook directly into the index implementation of the join.
-
 pattern algebra.joinPath(l:bat[:any,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
-
-command algebra.join(l:bat[:any_1,:any_2],rl:bat[:any_3,:any_2],rh:bat[:any_3,:any_2],li:bit,hi:bit):bat[:any_1,:any_3] 
-address ALGrangejoin;
-command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
-address ALGjoinestimate;
-command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGjoin;
-command algebra.join(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGjoin;
-comment Returns all BUNs, consisting of a head-value from 'left' and 		a tail-value from 'right' for which there are BUNs in 'left' 		and 'right' with equal tail- resp. head-value (i.e. the join	columns are projected out).
 
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
@@ -2358,6 +2328,8 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
+command algebra.join(l:bat[:any_1,:any_2],rl:bat[:any_3,:any_2],rh:bat[:any_3,:any_2],li:bit,hi:bit):bat[:any_1,:any_3] 
+address ALGrangejoin;
 command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGkunion;
 comment Returns the union of two BATs; looking at head-columns only.		Results in all BUNs of 'left' that are  not in 'right', plus	all BUNs of 'right'.  *no* double-elimination is done.
@@ -2393,6 +2365,10 @@ command algebra.like(s:str,pat:str):bit
 address PCRElike2;
 command algebra.like(s:str,pat:str,esc:str):bit 
 address PCRElike3;
+command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str] 
+address ALGlike;
+comment Selects all elements that have 'substr' as in the tail.
+
 command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
@@ -2401,10 +2377,6 @@ command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],estima
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
 address ALGleftjoin;
-command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str] 
-address ALGlike;
-comment Selects all elements that have 'substr' as in the tail.
-
 command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
 address ALGmark_grp_2;
 comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequense of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The third argument (s) gives the base value for the new OID sequence of each group.
@@ -2433,20 +2405,6 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
-command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
-address ALGouterjoinestimate;
-command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
-address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
-
-command algebra.outerjoin(outer:bat[:any_1,:oid],inner:bat[:oid,:any_3]):bat[:any_1,:any_3] 
-address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
-
-command algebra.outerjoin(outer:bat[:any_1,:any_2],inner:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
-address ALGouterjoin;
-comment Returns all the result of a join, plus the BUNS formed NIL in 		the tail and the head-values of 'outer' whose tail-value does 		not match an head-value in 'inner'.
-
 pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant, e.g. [0~b]
@@ -2459,17 +2417,37 @@ command algebra.project(b:bat[:any_1,:any_2]):bat[:any_1,:void]
 address ALGprojectNIL;
 comment Extract the head of a BAT.
 
-command algebra.reuse(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
+command algebra.reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address ALGreuse;
 comment Reuse a temporary BAT if you can. Otherwise,	allocate enough storage to accept result of an 	operation (not involving the heap)
 
-command algebra.revert(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command algebra.revert(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address ALGrevert;
 comment Returns a BAT copy with buns in reverse order
 
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
+
+command algebra.subslice(b:bat[:oid,:any_1],x:wrd,y:wrd):bat[:oid,:oid] 
+address ALGsubslice_wrd;
+comment Return the oids of the slice with the BUNs at position x till y.
+
+command algebra.slice(b:bat[:oid,:any_1],x:wrd,y:wrd):bat[:oid,:any_1] 
+address ALGslice_wrd;
+comment Return the slice with the BUNs at position x till y.
+
+command algebra.slice(b:bat[:oid,:any_1],x:int,y:int):bat[:oid,:any_1] 
+address ALGslice_int;
+comment Return the slice with the BUNs at position x till y.
+
+command algebra.slice(b:bat[:oid,:any_1],x:lng,y:lng):bat[:oid,:any_1] 
+address ALGslice;
+comment Return the slice with the BUNs at position x till y.
+
+command algebra.slice(b:bat[:oid,:any_1],x:oid,y:oid):bat[:oid,:any_1] 
+address ALGslice_oid;
+comment Return the slice based on head oid x till y (exclusive).
 
 command algebra.subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid,:oid],X_10:bat[:oid,:oid]) 
 address ALGsubrangejoin;
@@ -2495,10 +2473,6 @@ comment Left join with candidate lists
 command algebra.subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address ALGsubjoin;
 comment Join
-
-command algebra.semijoin(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of 		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double-elimination over the 'left' BUNs. 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
 
 command algebra.subunique(b:bat[:oid,:any_1]):bat[:oid,:oid] 
 address ALGsubunique1;
@@ -2544,61 +2518,9 @@ command algebra.subsort(b:bat[:oid,:any_1],reverse:bit,stable:bit):bat[:oid,:any
 address ALGsubsort11;
 comment Returns a copy of the BAT sorted on tail values.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.ssort_rev(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGssort_rev;
-comment Returns copy of a BAT with the BUNs sorted on descending head values.         This is a stable sort.
-
-command algebra.ssort(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGssort;
-comment Returns copy of a BAT with the BUNs sorted on ascending head values.         This is a stable sort.
-
-command algebra.sortTH(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGthsort;
-comment Returns a lexicographically sorted copy on tail,head.
-
-command algebra.sortHT(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGhtsort;
-comment Returns a lexicographically sorted copy on head,tail.
-
-command algebra.sortReverseTail(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGtsort_rev;
-comment Returns a BAT copy reversely sorted on the tail column.
-
-command algebra.sortTail(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGtsort;
-comment Returns a BAT copy sorted on the tail column.
-
-command algebra.sortReverse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGhsort_rev;
-comment Returns a BAT copy reversely sorted on the head column.
-
-command algebra.sort(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGhsort;
-comment Returns a BAT copy sorted on the head column.
-
 command algebra.sample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
 address ALGsample;
 comment Returns the oids of a random selection of size 'num' from the input BAT.
-
-command algebra.subslice(b:bat[:oid,:any_1],x:wrd,y:wrd):bat[:oid,:oid] 
-address ALGsubslice_wrd;
-comment Return the oids of the slice with the BUNs at position x till y.
-
-command algebra.slice(b:bat[:any_1,:any_2],x:wrd,y:wrd):bat[:any_1,:any_2] 
-address ALGslice_wrd;
-comment Return the slice with the BUNs at position x till y.
-
-command algebra.slice(b:bat[:any_1,:any_2],x:int,y:int):bat[:any_1,:any_2] 
-address ALGslice_int;
-comment Return the slice with the BUNs at position x till y.
-
-command algebra.slice(b:bat[:any_1,:any_2],x:lng,y:lng):bat[:any_1,:any_2] 
-address ALGslice;
-comment Return the slice with the BUNs at position x till y.
-
-command algebra.slice(b:bat[:any_1,:any_2],x:oid,y:oid):bat[:any_1,:any_2] 
-address ALGslice_oid;
-comment Return the slice based on head oid x till y (exclusive).
 
 command algebra.selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
 address ALGselectNotNil;
@@ -2624,26 +2546,12 @@ command algebra.subselect(b:bat[:oid,:any_1],low:any_1,high:any_1,li:bit,hi:bit,
 address ALGsubselect1;
 comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless low=nil, high=nil,	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,	high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for the other	version of this function.
 
-command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int,estimate:lng):bat[:any_1,:any_3] 
-address ALGthetajoinEstimate;
-command algebra.thetajoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],opname:int):bat[:any_1,:any_3] 
-address ALGthetajoin;
-comment Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is 		just the same as join(). All other options do merge algorithms. 		Either using the fact that they are ordered() already (left on tail, 	right on head), or by using/creating binary search trees on the 		join columns. 
-
-command algebra.thetajoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1],opname:int) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGthetajoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
-
 command algebra.tunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
 address ALGtunion;
 command algebra.tdiff(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtdiff;
-command algebra.tdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGtdifference;
 command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtinter;
-command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGtintersect;
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -2652,16 +2560,10 @@ command algebra.thetasubselect(b:bat[:oid,:any_1],val:any_1,op:str):bat[:oid,:oi
 address ALGthetasubselect1;
 comment Select all head values for which the tail value obeys the relation	value OP VAL.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] 
-address ALGuselect1;
-comment Value select, but returning only the 	head values. SEE ALSO:select(bat,val)
-
-command algebra.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:void] 
-address ALGuselect;
-command algebra.uselect(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] 
-address ALGuselectInclusive;
-comment See select() but limited to head values
-
+command algebra.tdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
+address ALGtdifference;
+command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
+address ALGtintersect;
 command alarm.ctime{unsafe}():str 
 address ALARMctime;
 comment Return the current time as a C-time string.
@@ -21402,22 +21304,6 @@ pattern batcalc.bte(b:bat[:oid,:bit]):bat[:oid,:bte]
 address CMDconvertsignal_bte;
 comment cast from bit to bte, signal error on overflow
 
-pattern batcalc.bte_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvert_bte;
-comment cast from void to bte with candidates list
-
-pattern batcalc.bte_noerror(b:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvert_bte;
-comment cast from void to bte
-
-pattern batcalc.bte(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvertsignal_bte;
-comment cast from void to bte with candidates list, signal error on overflow
-
-pattern batcalc.bte(b:bat[:oid,:oid]):bat[:oid,:bte] 
-address CMDconvertsignal_bte;
-comment cast from void to bte, signal error on overflow
-
 pattern batcalc.bit_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDconvert_bit;
 comment cast from str to bit with candidates list
@@ -21577,22 +21463,6 @@ comment cast from bit to bit with candidates list, signal error on overflow
 pattern batcalc.bit(b:bat[:oid,:bit]):bat[:oid,:bit] 
 address CMDconvertsignal_bit;
 comment cast from bit to bit, signal error on overflow
-
-pattern batcalc.bit_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvert_bit;
-comment cast from void to bit with candidates list
-
-pattern batcalc.bit_noerror(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvert_bit;
-comment cast from void to bit
-
-pattern batcalc.bit(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvertsignal_bit;
-comment cast from void to bit with candidates list, signal error on overflow
-
-pattern batcalc.bit(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDconvertsignal_bit;
-comment cast from void to bit, signal error on overflow
 
 pattern batcalc.between_symmetric(b:bat[:oid,:any_1],v1:any_1,v2:any_1,s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatBETWEENsymmetric;
@@ -23157,22 +23027,6 @@ pattern batcalc.dbl(b:bat[:oid,:bit]):bat[:oid,:dbl]
 address CMDconvertsignal_dbl;
 comment cast from bit to dbl, signal error on overflow
 
-pattern batcalc.dbl_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvert_dbl;
-comment cast from void to dbl with candidates list
-
-pattern batcalc.dbl_noerror(b:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvert_dbl;
-comment cast from void to dbl
-
-pattern batcalc.dbl(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvertsignal_dbl;
-comment cast from void to dbl with candidates list, signal error on overflow
-
-pattern batcalc.dbl(b:bat[:oid,:oid]):bat[:oid,:dbl] 
-address CMDconvertsignal_dbl;
-comment cast from void to dbl, signal error on overflow
-
 pattern batcalc.div_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatDIV;
 comment Return V / B with candidates list, overflow causes NIL value
@@ -24575,22 +24429,6 @@ pattern batcalc.flt(b:bat[:oid,:bit]):bat[:oid,:flt]
 address CMDconvertsignal_flt;
 comment cast from bit to flt, signal error on overflow
 
-pattern batcalc.flt_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvert_flt;
-comment cast from void to flt with candidates list
-
-pattern batcalc.flt_noerror(b:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvert_flt;
-comment cast from void to flt
-
-pattern batcalc.flt(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvertsignal_flt;
-comment cast from void to flt with candidates list, signal error on overflow
-
-pattern batcalc.flt(b:bat[:oid,:oid]):bat[:oid,:flt] 
-address CMDconvertsignal_flt;
-comment cast from void to flt, signal error on overflow
-
 command batcalc.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
 address MKEYbathash;
 command batcalc.hash(b:bat[:oid,:dbl]):bat[:oid,:wrd] 
@@ -24889,99 +24727,19 @@ pattern batcalc.int(b:bat[:oid,:bit]):bat[:oid,:int]
 address CMDconvertsignal_int;
 comment cast from bit to int, signal error on overflow
 
-pattern batcalc.int_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvert_int;
-comment cast from void to int with candidates list
+pattern batcalc.isnotnil(b:bat[:oid,:any],s:bat[:oid,:oid]):bat[:oid,:bit] 
+address CMDbatISNOTNIL;
+comment Unary check for notnil over the tail of the bat with candidates list
 
-pattern batcalc.int_noerror(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvert_int;
-comment cast from void to int
+pattern batcalc.isnotnil(b:bat[:oid,:any]):bat[:oid,:bit] 
+address CMDbatISNOTNIL;
+comment Unary check for notnil over the tail of the bat
 
-pattern batcalc.int(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertsignal_int;
-comment cast from void to int with candidates list, signal error on overflow
-
-pattern batcalc.int(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertsignal_int;
-comment cast from void to int, signal error on overflow
-
-pattern batcalc.isnil(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:bit] 
+pattern batcalc.isnil(b:bat[:oid,:any],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatISNIL;
 comment Unary check for nil over the tail of the bat with candidates list
 
-pattern batcalc.isnil(b:bat[:oid,:str]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:dbl]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:flt],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:flt]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:lng]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:wrd],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:wrd]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:int],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:int]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:sht],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:sht]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:bte],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:bte]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:bit],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:bit]):bat[:oid,:bit] 
+pattern batcalc.isnil(b:bat[:oid,:any]):bat[:oid,:bit] 
 address CMDbatISNIL;
 comment Unary check for nil over the tail of the bat
 
@@ -25040,30 +24798,6 @@ comment Unary check for zero over the tail of the bat with candidates list
 pattern batcalc.iszero(b:bat[:oid,:bte]):bat[:oid,:bit] 
 address CMDbatISZERO;
 comment Unary check for zero over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:timestamp]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:daytime],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
-
-pattern batcalc.isnil(b:bat[:oid,:date],s:bat[:oid,:oid]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat with candidates list
-
-pattern batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit] 
-address CMDbatISNIL;
-comment Unary check for nil over the tail of the bat
 
 command batcalc.lng(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:lng] 
 address batlng_dec2dec_lng;
@@ -25308,22 +25042,6 @@ comment cast from bit to lng with candidates list, signal error on overflow
 pattern batcalc.lng(b:bat[:oid,:bit]):bat[:oid,:lng] 
 address CMDconvertsignal_lng;
 comment cast from bit to lng, signal error on overflow
-
-pattern batcalc.lng_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvert_lng;
-comment cast from void to lng with candidates list
-
-pattern batcalc.lng_noerror(b:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvert_lng;
-comment cast from void to lng
-
-pattern batcalc.lng(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvertsignal_lng;
-comment cast from void to lng with candidates list, signal error on overflow
-
-pattern batcalc.lng(b:bat[:oid,:oid]):bat[:oid,:lng] 
-address CMDconvertsignal_lng;
-comment cast from void to lng, signal error on overflow
 
 pattern batcalc.lsh_noerror(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatLSH;
@@ -28280,6 +27998,38 @@ pattern batcalc.mul_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatMUL;
 comment Return B1 * B2, overflow causes NIL value
 
+pattern batcalc.max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMAX_no_nil;
+comment Return bat with maximum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.max_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMAX_no_nil;
+comment Return bat with maximum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMAX;
+comment Return bat with maximum value of each pair of inputs
+
+pattern batcalc.max(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMAX;
+comment Return bat with maximum value of each pair of inputs
+
+pattern batcalc.min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMIN_no_nil;
+comment Return bat with minimum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.min_no_nil(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMIN_no_nil;
+comment Return bat with minimum value of each pair of inputs, ignoring nil values
+
+pattern batcalc.min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1],s:bat[:oid,:oid]):bat[:oid,:any_1] 
+address CMDbatMIN;
+comment Return bat with minimum value of each pair of inputs
+
+pattern batcalc.min(b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDbatMIN;
+comment Return bat with minimum value of each pair of inputs
+
 pattern batcalc.not(b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatNOT;
 comment Unary bitwise not over the tail of the bat with candidates list
@@ -28487,22 +28237,6 @@ comment cast from bit to oid with candidates list, signal error on overflow
 pattern batcalc.oid(b:bat[:oid,:bit]):bat[:oid,:oid] 
 address CMDconvertsignal_oid;
 comment cast from bit to oid, signal error on overflow
-
-pattern batcalc.oid_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvert_oid;
-comment cast from void to oid with candidates list
-
-pattern batcalc.oid_noerror(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvert_oid;
-comment cast from void to oid
-
-pattern batcalc.oid(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvertsignal_oid;
-comment cast from void to oid with candidates list, signal error on overflow
-
-pattern batcalc.oid(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CMDconvertsignal_oid;
-comment cast from void to oid, signal error on overflow
 
 pattern batcalc.or(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatOR;
@@ -29509,22 +29243,6 @@ pattern batcalc.str(b:bat[:oid,:bit]):bat[:oid,:str]
 address CMDconvertsignal_str;
 comment cast from bit to str, signal error on overflow
 
-pattern batcalc.str_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvert_str;
-comment cast from void to str with candidates list
-
-pattern batcalc.str_noerror(b:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvert_str;
-comment cast from void to str
-
-pattern batcalc.str(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvertsignal_str;
-comment cast from void to str with candidates list, signal error on overflow
-
-pattern batcalc.str(b:bat[:oid,:oid]):bat[:oid,:str] 
-address CMDconvertsignal_str;
-comment cast from void to str, signal error on overflow
-
 pattern batcalc.sht_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:sht] 
 address CMDconvert_sht;
 comment cast from str to sht with candidates list
@@ -29684,22 +29402,6 @@ comment cast from bit to sht with candidates list, signal error on overflow
 pattern batcalc.sht(b:bat[:oid,:bit]):bat[:oid,:sht] 
 address CMDconvertsignal_sht;
 comment cast from bit to sht, signal error on overflow
-
-pattern batcalc.sht_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvert_sht;
-comment cast from void to sht with candidates list
-
-pattern batcalc.sht_noerror(b:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvert_sht;
-comment cast from void to sht
-
-pattern batcalc.sht(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvertsignal_sht;
-comment cast from void to sht with candidates list, signal error on overflow
-
-pattern batcalc.sht(b:bat[:oid,:oid]):bat[:oid,:sht] 
-address CMDconvertsignal_sht;
-comment cast from void to sht, signal error on overflow
 
 pattern batcalc.sub_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatSUB;
@@ -31203,22 +30905,6 @@ pattern batcalc.wrd(b:bat[:oid,:bit]):bat[:oid,:wrd]
 address CMDconvertsignal_wrd;
 comment cast from bit to wrd, signal error on overflow
 
-pattern batcalc.wrd_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvert_wrd;
-comment cast from void to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvert_wrd;
-comment cast from void to wrd
-
-pattern batcalc.wrd(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from void to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:oid,:oid]):bat[:oid,:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from void to wrd, signal error on overflow
-
 pattern batcalc.xor(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
 address CMDbatXOR;
 comment Return V XOR B with candidates list
@@ -31393,57 +31079,49 @@ command batmkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd]
 address MKEYbathash;
 comment calculate a hash value
 
-command bat.append(i:bat[:any_1,:any_2],u:any_2,force:bit):bat[:any_1,:any_2] 
-address BKCappend_val_force_wrap;
-comment append the value u to i
-
 command bat.append(i:bat[:oid,:any_1],u:any_1):bat[:oid,:any_1] 
 address BKCappend_val_wrap;
 comment append the value u to i
-
-command bat.append(i:bat[:any_1,:any_2],u:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] 
-address BKCappend_force_wrap;
-comment append the content of u to i
-
-command bat.append(i:bat[:any_1,:any_2],u:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCappend_wrap;
-comment append the content of u to i
 
 command bat.attach(tt:int,heapfile:str):bat[:oid,:any_1] 
 address BKCattach;
 comment Returns a new BAT with dense head and tail of the given type and uses        the given file to initialize the tail. The file will be owned by the        server.
 
-command bat.delete(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCdelete_bat_bun;
-comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
+command bat.append(i:bat[:oid,:any_1],u:any_1,force:bit):bat[:oid,:any_1] 
+address BKCappend_val_force_wrap;
+comment append the value u to i
 
-command bat.delete(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCdelete_all;
-comment Delete all BUNs in a BAT.
+command bat.append(i:bat[:oid,:any_1],u:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
+address BKCappend_force_wrap;
+comment append the content of u to i
 
-command bat.delete(b:bat[:any_1,:any_2],h:any_1):bat[:any_1,:any_2] 
-address BKCdelete;
-comment Delete all BUNs with a certain head value.
-
-command bat.delete(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] 
-address BKCdelete_bun;
-comment Delete one specific BUN.
+command bat.append(i:bat[:oid,:any_1],u:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCappend_wrap;
+comment append the content of u to i
 
 command bat.densebat(sz:wrd):bat[:oid,:oid] 
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'sz'.
 
-command bat.getName(b:bat[:oid,:any_2]):str 
+command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCdelete_bat_bun;
+comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
+
+command bat.delete(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCdelete_all;
+comment Delete all BUNs in a BAT.
+
+command bat.delete(b:bat[:oid,:any_1],h:oid):bat[:oid,:any_1] 
+address BKCdelete;
+comment Delete all BUNs with a certain head value.
+
+command bat.delete(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
+address BKCdelete_bun;
+comment Delete one specific BUN.
+
+command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
-
-command bat.getDelta(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCgetDelta;
-comment Obtain the list of BUNs deleted
-
-command bat.getAlpha(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCgetAlpha;
-comment Obtain the list of BUNs added
 
 command bat.getSequenceBase(b:bat[:oid,:any_1]):oid 
 address BKCgetSequenceBase;
@@ -31453,25 +31131,29 @@ command bat.getAccess(b:bat[:oid,:any_1]):str
 address BKCgetAccess;
 comment Return the access mode attached to this BAT as a character.
 
-command bat.getRole(bid:bat[:oid,:any_2]):str 
+command bat.getRole(bid:bat[:oid,:any_1]):str 
 address BKCgetRole;
 comment Returns the rolename of the head column of a BAT.
 
-command bat.getColumnType(b:bat[:oid,:any_2]):str 
+command bat.getColumnType(b:bat[:oid,:any_1]):str 
 address BKCgetColumnType;
 comment Returns the type of the tail column of a BAT, as an integer type number.
 
-command bat.getHeadType(b:bat[:any_1,:any_2]):str 
-address BKCgetHeadType;
-comment Returns the type of the head column of a BAT, as an integer type number.
-
-command bat.getCapacity(b:bat[:oid,:any_2]):lng 
+command bat.getCapacity(b:bat[:oid,:any_1]):lng 
 address BKCgetCapacity;
 comment Returns the current allocation size (in max number of elements) of a BAT.
 
 command bat.getSize(b:bat[:oid,:any_1]):lng 
 address BKCgetSize;
 comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
+
+command bat.getDelta(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCgetDelta;
+comment Obtain the list of BUNs deleted
+
+command bat.getAlpha(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCgetAlpha;
+comment Obtain the list of BUNs added
 
 command bat.imprintsize(b:bat[:oid,:dbl]):lng 
 address CMDBATimprintsize;
@@ -31505,46 +31187,14 @@ command bat.intersectcand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCintersectcand;
 comment Intersect two candidate lists into one
 
-command bat.isSynced(b1:bat[:oid,:any_2],b2:bat[:oid,:any_4]):bit 
+command bat.isSynced(b1:bat[:oid,:any_1],b2:bat[:oid,:any_2]):bit 
 address BKCisSynced;
 comment Tests whether two BATs are synced or not. 
 
-command bat.isPersistent(b:bat[:oid,:any_2]):bit 
+command bat.isPersistent(b:bat[:oid,:any_1]):bit 
 address BKCisPersistent;
-command bat.isTransient(b:bat[:oid,:any_2]):bit 
+command bat.isTransient(b:bat[:oid,:any_1]):bit 
 address BKCisTransient;
-command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] 
-address BKCbat_inplace_force;
-comment inplace replace values on the given locations
-
-command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2,force:bit):bat[:oid,:any_2] 
-address BKCbun_inplace_force;
-comment inplace replace values on the given locations
-
-command bat.inplace(o:bat[:any_1,:any_2],d:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCbat_inplace;
-comment inplace replace values on the given locations
-
-command bat.inplace(o:bat[:any_1,:any_2],id:oid,t:any_2):bat[:oid,:any_2] 
-address BKCbun_inplace;
-comment inplace replace values on the given locations
-
-command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] 
-address BKCinsert_bun_force;
-comment Insert one BUN[h,t] in a BAT.
-
-command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] 
-address BKCinsert_bun;
-comment Insert one BUN[h,t] in a BAT.
-
-command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] 
-address BKCinsert_bat_force;
-comment Insert all BUNs of the second BAT into the first.
-
-command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCinsert_bat;
-comment Insert all BUNs of the second BAT into the first.
-
 command bat.isSortedReverse(b:bat[:oid,:any_1]):bit 
 address BKCisSortedReverse;
 comment Returns true if BAT values are reversely ordered.
@@ -31557,11 +31207,43 @@ command bat.isaKey(b:bat[:oid,:any_1]):bit
 address BKCgetKey;
 comment Return whether the column tail values are unique (key).
 
-command bat.info(b:bat[:oid,:any_2]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
+command bat.info(b:bat[:oid,:any_1]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
 address BKCinfo;
-comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. See the BAT documentation         in GDK for more information.
+comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. 
 
-command bat.load(name:str):bat[:oid,:any_2] 
+command bat.inplace(o:bat[:oid,:any_1],d:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
+address BKCbat_inplace_force;
+comment inplace replace values on the given locations
+
+command bat.inplace(o:bat[:oid,:any_1],id:oid,t:any_1,force:bit):bat[:oid,:any_1] 
+address BKCbun_inplace_force;
+comment Inplace replace values on the given positions
+
+command bat.inplace(o:bat[:oid,:any_1],d:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCbat_inplace;
+comment Inplace replace values on the given positions
+
+command bat.inplace(o:bat[:oid,:any_1],id:oid,t:any_1):bat[:oid,:any_1] 
+address BKCbun_inplace;
+comment Inplace replace values on the given positions
+
+command bat.insert(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
+address BKCinsert_bat_force;
+comment Insert all BUNs of the second BAT into the first.
+
+command bat.insert(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCinsert_bat;
+comment Insert all BUNs of the second BAT into the first.
+
+command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
+address BKCinsert_bun_force;
+comment Insert one BUN[h,t] in a BAT.
+
+command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
+address BKCinsert_bun;
+comment Insert one BUN[h,t] in a BAT.
+
+command bat.load(name:str):bat[:oid,:any_1] 
 address BKCload;
 comment Load a particular BAT from disk
 
@@ -31603,11 +31285,11 @@ pattern bat.new(ht:oid,tt:any_1):bat[:oid,:any_1]
 address CMDBATnew;
 comment Creates a new empty transient BAT, with head- and tail-types as indicated.
 
-command bat.orderReverse(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command bat.orderReverse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address BKCorder_rev;
 comment Reverse sorts the BAT itself on the head, in place. 
 
-command bat.order(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command bat.order(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address BKCorder;
 comment Sorts the BAT itself on the head, in place. 
 
@@ -31627,25 +31309,21 @@ command bat.reuse(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCreuseBAT;
 comment Shuffle the values around to restore a dense representation of buns.
 
-command bat.replace(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] 
-address BKCreplace_bun_force;
-comment Replace the tail value of one BUN that has some head value.
-
-command bat.replace(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] 
-address BKCreplace_bun;
-comment Replace the tail value of one BUN that has some head value.
-
-command bat.replace(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] 
+command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
 address BKCreplace_bat_force;
 comment Perform replace for all BUNs of the second BAT into the first.
 
-command bat.replace(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address BKCreplace_bat;
 comment Perform replace for all BUNs of the second BAT into the first.
 
-command bat.revert(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address BKCrevert;
-comment Puts all BUNs in a BAT in reverse order.  (Belongs to the         BAT sequence module)
+command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
+address BKCreplace_bun_force;
+comment Replace the tail value of one BUN that has some head value.
+
+command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
+address BKCreplace_bun;
+comment Replace the tail value of one BUN that has some head value.
 
 command bat.reverse(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] 
 address BKCreverse;
@@ -31659,23 +31337,23 @@ command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT;
 comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
-command bat.setImprints(b:bat[:oid,:any_2]):bit 
+command bat.setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints;
 comment Create n imprints structure on the column
 
-command bat.setHash(b:bat[:oid,:any_2]):bit 
+command bat.setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash;
 comment Create a hash structure on the column
 
-command bat.setMemoryMap(b:bat[:oid,:any_2],mode:int):bit 
+command bat.setMemoryMap(b:bat[:oid,:any_1],mode:int):bit 
 address BKCmmap2;
 comment Alias for mmap(b, mode, mode, mode, mode)
 
-command bat.setMemoryMap(b:bat[:oid,:any_2],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
+command bat.setMemoryMap(b:bat[:oid,:any_1],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
 address BKCmmap;
 comment For each individual heap, you can change the allocation mode         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:        no change.  Changing a dirty STORE_MEM heap into STORE_MMAP, 	will cause a BAT save (this has to happen before the heap can         be mapped into virtual memory). These modes are persistent. 
 
-command bat.setHot(b:bat[:oid,:any_2]):void 
+command bat.setHot(b:bat[:oid,:any_1]):void 
 address BKCsetHotBAT;
 comment Makes a BAT very hot for the BBP. The chance of being chosen for         swapout is small, afterwards.
 
@@ -31687,33 +31365,33 @@ command bat.save(nme:str):bit
 address BKCsave;
 comment Save a BAT to storage, if it was loaded and dirty.          Returns whether IO was necessary.  Please realize that 	calling this function violates the atomic commit protocol!!
 
-command bat.save(nme:bat[:oid,:any_2]):void 
+command bat.save(nme:bat[:oid,:any_1]):void 
 address BKCsave2;
-command bat.setPersistent(b:bat[:oid,:any_2]):void 
+command bat.setPersistent(b:bat[:oid,:any_1]):void 
 address BKCsetPersistent;
 comment Make the BAT persistent.
 
-command bat.setPersistent(b:bat[:oid,:any_2],f:bit):void 
+command bat.setPersistent(b:bat[:oid,:any_1],f:bit):void 
 address BKCpersists;
 comment Backward compatibility
 
-command bat.setTransient(b:bat[:oid,:any_2]):void 
+command bat.setTransient(b:bat[:oid,:any_1]):void 
 address BKCsetTransient;
 comment Make the BAT transient.  Returns 	boolean which indicates if theBAT administration has indeed changed.
 
-command bat.setColumn(b:bat[:oid,:any_2],h:str,t:str):void 
+command bat.setColumn(b:bat[:oid,:any_1],h:str,t:str):void 
 address BKCsetColumns;
 comment Give both columns of a BAT a new name.
 
-command bat.setColumn(b:bat[:oid,:any_2],t:str):void 
+command bat.setColumn(b:bat[:oid,:any_1],t:str):void 
 address BKCsetColumn;
 comment Give a logical name to the tail column of a BAT.
 
-command bat.setRole(b:bat[:oid,:any_2],h:str,t:str):void 
+command bat.setRole(b:bat[:oid,:any_1],h:str,t:str):void 
 address BKCsetRole;
 comment Give a logical name to the columns of a BAT.
 
-command bat.setName(b:bat[:oid,:any_2],s:str):void 
+command bat.setName(b:bat[:oid,:any_1],s:str):void 
 address BKCsetName;
 comment Give a logical name to a BAT. 
 
@@ -31721,7 +31399,7 @@ command bat.setAccess(b:bat[:oid,:any_1],mode:str):bat[:oid,:any_1]
 address BKCsetAccess;
 comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-only]      - allow only read access.	 a[append-only]   - allow reads and update.	 w[riteable]      - allow all operations.	 BATs are updatable by default. On making a BAT read-only,      all subsequent updates fail with an error message.	 Returns the BAT itself.
 
-command bat.setKey(b:bat[:oid,:any_2],mode:bit):bat[:oid,:any_2] 
+command bat.setKey(b:bat[:oid,:any_1],mode:bit):bat[:oid,:any_1] 
 address BKCsetkey;
 comment Sets the 'key' property of the tail column to 'mode'. In 'key' mode,         the kernel will silently block insertions that cause a duplicate         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 		function does not automatically eliminate duplicates. 
 
@@ -36174,10 +35852,6 @@ command calc.identity(X_1:any_2):oid
 address SQLidentity;
 comment Returns a unique row identitfier.
 
-command calc.isnil(v:wkb):bit 
-address wkbIsnil;
-comment Nil test for wkb value
-
 pattern calc.ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
 comment If VALUE is true return MIDDLE else RIGHT
@@ -36226,99 +35900,11 @@ pattern calc.int(v:void):int
 address CMDvarCONVERT;
 comment Cast VALUE to int
 
-pattern calc.isnotnil(v:BAT):bit 
+pattern calc.isnotnil(v:any):bit 
 address CMDvarISNOTNIL;
 comment Unary check for notnil of V
 
-pattern calc.isnotnil(v:str):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:oid):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:dbl):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:flt):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:lng):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:wrd):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:int):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:sht):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bte):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:bit):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnotnil(v:void):bit 
-address CMDvarISNOTNIL;
-comment Unary check for notnil of V
-
-pattern calc.isnil(v:BAT):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:str):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:oid):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:dbl):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:flt):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:lng):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:wrd):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:int):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:sht):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bte):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:bit):bit 
-address CMDvarISNIL;
-comment Unary check for nil of V
-
-pattern calc.isnil(v:void):bit 
+pattern calc.isnil(v:any):bit 
 address CMDvarISNIL;
 comment Unary check for nil of V
 
@@ -36350,10 +35936,6 @@ pattern calc.iszero(v:bte):bit
 address CMDvarISZERO;
 comment Unary check for zero of V
 
-command calc.isnil(v:inet):bit 
-address INET_isnil;
-comment Nil test for inet value
-
 command calc.inet(s:str):inet 
 address INET_fromstr;
 comment Convert a string to an inet
@@ -36361,30 +35943,6 @@ comment Convert a string to an inet
 command calc.inet(s:inet):inet 
 address INET_inet;
 comment Convert a inet to an inet
-
-pattern calc.isnil(v:timestamp):bit 
-address CMDvarISNIL;
-comment Nil test for timestamp value
-
-pattern calc.isnil(v:daytime):bit 
-address CMDvarISNIL;
-comment Nil test for daytime value
-
-pattern calc.isnil(v:date):bit 
-address CMDvarISNIL;
-comment Nil test for date value
-
-pattern calc.isnil(v:json):bit 
-address CMDvarISNIL;
-comment Nil test for json value
-
-command calc.isnil(v:sqlblob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
-
-command calc.isnil(v:blob):bit 
-address BLOB_isnil;
-comment Nil test for blob value
 
 command calc.json(j:json):json 
 address JSONstr2json;
@@ -36660,147 +36218,19 @@ command calc.mbr(v:mbr):mbr
 address mbrFromMBR;
 command calc.mbr{unsafe}(v:str):mbr 
 address mbrFromString;
-pattern calc.max_no_nil(v1:oid,v2:oid):oid 
+pattern calc.max_no_nil(v1:any_1,v2:any_1):any_1 
 address CALCmax_no_nil;
 comment Return max of V1 and V2, ignoring nil values
 
-pattern calc.max_no_nil(v1:dbl,v2:dbl):dbl 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:flt,v2:flt):flt 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:lng,v2:lng):lng 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:wrd,v2:wrd):wrd 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:int,v2:int):int 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:sht,v2:sht):sht 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:bte,v2:bte):bte 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max_no_nil(v1:bit,v2:bit):bit 
-address CALCmax_no_nil;
-comment Return max of V1 and V2, ignoring nil values
-
-pattern calc.max(v1:oid,v2:oid):oid 
+pattern calc.max(v1:any_1,v2:any_1):any_1 
 address CALCmax;
 comment Return max of V1 and V2
 
-pattern calc.max(v1:dbl,v2:dbl):dbl 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:flt,v2:flt):flt 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:lng,v2:lng):lng 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:wrd,v2:wrd):wrd 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:int,v2:int):int 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:sht,v2:sht):sht 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:bte,v2:bte):bte 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.max(v1:bit,v2:bit):bit 
-address CALCmax;
-comment Return max of V1 and V2
-
-pattern calc.min_no_nil(v1:oid,v2:oid):oid 
+pattern calc.min_no_nil(v1:any_1,v2:any_1):any_1 
 address CALCmin_no_nil;
 comment Return min of V1 and V2, ignoring nil values
 
-pattern calc.min_no_nil(v1:dbl,v2:dbl):dbl 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:flt,v2:flt):flt 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:lng,v2:lng):lng 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:wrd,v2:wrd):wrd 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:int,v2:int):int 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:sht,v2:sht):sht 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:bte,v2:bte):bte 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min_no_nil(v1:bit,v2:bit):bit 
-address CALCmin_no_nil;
-comment Return min of V1 and V2, ignoring nil values
-
-pattern calc.min(v1:oid,v2:oid):oid 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:dbl,v2:dbl):dbl 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:flt,v2:flt):flt 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:lng,v2:lng):lng 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:wrd,v2:wrd):wrd 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:int,v2:int):int 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:sht,v2:sht):sht 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:bte,v2:bte):bte 
-address CALCmin;
-comment Return min of V1 and V2
-
-pattern calc.min(v1:bit,v2:bit):bit 
+pattern calc.min(v1:any_1,v2:any_1):any_1 
 address CALCmin;
 comment Return min of V1 and V2
 
@@ -37195,70 +36625,6 @@ comment Return V1 * V2, overflow causes NIL value
 pattern calc.mul_noerror(v1:bte,v2:bte):bte 
 address CMDvarMUL;
 comment Return V1 * V2, overflow causes NIL value
-
-pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmax_no_nil;
-comment Maximum test for timestamp value
-
-pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp 
-address CALCmin_no_nil;
-comment Minimum test for timestamp value
-
-pattern calc.max(v:timestamp,w:timestamp):timestamp 
-address CALCmax;
-comment Maximum test for timestamp value
-
-pattern calc.min(v:timestamp,w:timestamp):timestamp 
-address CALCmin;
-comment Minimum test for timestamp value
-
-pattern calc.max_no_nil(v:daytime,w:daytime):daytime 
-address CALCmax_no_nil;
-comment Maximum test for daytime value
-
-pattern calc.min_no_nil(v:daytime,w:daytime):daytime 
-address CALCmin_no_nil;
-comment Minimum test for daytime value
-
-pattern calc.max(v:daytime,w:daytime):daytime 
-address CALCmax;
-comment Maximum test for daytime value
-
-pattern calc.min(v:daytime,w:daytime):daytime 
-address CALCmin;
-comment Minimum test for daytime value
-
-pattern calc.max_no_nil(v:date,w:date):date 
-address CALCmax_no_nil;
-comment Maximum test for date value
-
-pattern calc.min_no_nil(v:date,w:date):date 
-address CALCmin_no_nil;
-comment Minimum test for date value
-
-pattern calc.max(v:date,w:date):date 
-address CALCmax;
-comment Maximum test for date value
-
-pattern calc.min(v:date,w:date):date 
-address CALCmin;
-comment Minimum test for date value
-
-command calc.min_no_nil(s:str,t:str):str 
-address STRmin_no_nil;
-comment Select the minimum string in lexicographic order, ignoring nils
-
-command calc.min(s:str,t:str):str 
-address STRmin;
-comment Select the minimum string in lexicographic order
-
-command calc.max_no_nil(s:str,t:str):str 
-address STRmax_no_nil;
-comment Select the maximum string in lexicographic order, ignoring nils
-
-command calc.max(s:str,t:str):str 
-address STRmax;
-comment Select the maximum string in lexicographic order
 
 pattern calc.not(v:lng):lng 
 address CMDvarNOT;
@@ -39685,13 +39051,13 @@ pattern mat.pack(X_1:any_2...):bat[:oid,:any_2]
 address MATpackValues;
 comment Materialize the MAT (of values) into a BAT
 
-pattern mat.sortReverseTail(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
-address MATsortReverseTail;
-comment Returns a BAT copy sorted on the head column.
+pattern mat.sortReverse(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
+address MATsortReverse;
+comment Returns a BAT copy sorted on the tail column.
 
-pattern mat.sortTail(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
-address MATsortTail;
-comment Returns a BAT copy sorted on the head column.
+pattern mat.sort(b:bat[:oid,:any_2]...) (sorted:bat[:oid,:any_2],map:bat[:oid,:bte]) 
+address MATsort;
+comment Returns a BAT copy sorted on the tail column.
 
 pattern mat.slice(first:lng,last:lng,b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATpackSlice;
@@ -41610,8 +40976,6 @@ pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng
 address mvc_restart_seq;
 comment restart the sequence with value start
 
-function sql.sortReverseTail(b:bat[:oid,:any_1]):bat[:oid,:oid];
-function sql.sortTail(b:bat[:oid,:any_1]):bat[:oid,:oid];
 function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
 function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.shrink(sch:str,tbl:str):void 
@@ -42101,6 +41465,10 @@ pattern timestamp.>(v:timestamp,w:timestamp):bit
 address CMDvarGT;
 comment Equality of two timestamps
 
+command timestamp.epoch(t:lng):timestamp 
+address MTIMEtimestamplng;
+comment convert seconds since epoch into a timestamp
+
 command timestamp.epoch(t:int):timestamp 
 address MTIMEtimestamp;
 comment convert seconds since epoch into a timestamp
@@ -42164,46 +41532,6 @@ comment open the named tokenizer store, a new one is created if the specified na
 pattern tokenizer.take(i:oid):str 
 address TKNZRtakeOid;
 comment reconstruct and returns the i-th string
-
-command transaction.alpha(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address TRNtrans_alpha;
-comment List insertions since last commit.
-
-pattern transaction.abort(c:any...):void 
-address TRNtrans_abort;
-comment Abort changes in certain BATs.
-
-command transaction.abort():bit 
-address TRNglobal_abort;
-comment Global abort on all BATs
-
-pattern transaction.clean(c:any...):void 
-address TRNtrans_clean;
-comment Declare a BAT clean without flushing to disk.
-
-pattern transaction.commit(c:any...):void 
-address TRNtrans_commit;
-comment Commit changes in certain BATs.
-
-command transaction.commit():bit 
-address TRNglobal_commit;
-comment Global commit on all BATs
-
-command transaction.delta(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address TRNtrans_delta;
-comment List deletions since last commit.
-
-command transaction.prev(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address TRNtrans_prev;
-comment The previous state of this BAT
-
-command transaction.subcommit(b:bat[:oid,:str]):bit 
-address TRNsubcommit;
-comment commit only a set of BATnames, passed in the tail(to which you must have exclusive access!)
-
-command transaction.sync():bit 
-address TRNglobal_sync;
-comment Save all persistent BATs
 
 pattern trader.makeBids(bidtype:sht,fnname1:str...):lng... 
 address TRADERmakeBids;

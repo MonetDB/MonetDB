@@ -167,6 +167,17 @@ CMDbatISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CMDbatUNARY(stk, pci, BATcalcisnil, "batcalc.isnil");
 }
 
+batcalc_export str CMDbatISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatUNARY(stk, pci, BATcalcisnotnil, "batcalc.isnotnil");
+}
+
 batcalc_export str CMDbatNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 str
@@ -588,9 +599,16 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		if (b2) {
 			bn = (*batfunc)(b, b2, s);
 			BBPunfix(b2->batCacheid);
+		} else if (batfunc1 == NULL) {
+			BBPunfix(b->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			throw(MAL, malfunc, PROGRAM_NYI);
 		} else {
 			bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], s);
 		}
+	} else if (batfunc2 == NULL) {
+		throw(MAL, malfunc, PROGRAM_NYI);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
 		assert(tp2 == TYPE_bat || isaBatType(tp2));
@@ -628,6 +646,50 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	bid = getArgReference_bat(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+batcalc_export str CMDbatMIN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatMIN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatBINARY0(stk, pci, BATcalcmin, NULL, NULL, "batcalc.min");
+}
+
+batcalc_export str CMDbatMIN_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatMIN_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatBINARY0(stk, pci, BATcalcmin_no_nil, NULL, NULL, "batcalc.min_no_nil");
+}
+
+batcalc_export str CMDbatMAX(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatMAX(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatBINARY0(stk, pci, BATcalcmax, NULL, NULL, "batcalc.max");
+}
+
+batcalc_export str CMDbatMAX_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatMAX_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDbatBINARY0(stk, pci, BATcalcmax_no_nil, NULL, NULL, "batcalc.max_no_nil");
 }
 
 batcalc_export str CMDbatADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -263,18 +263,18 @@ address AGGRcount2
 comment "Grouped count";
 
 command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2],
-		ignorenils:bit) :bat[:void,:wrd]
+		ignorenils:bit) :bat[:oid,:wrd]
 address AGGRcount3;
 
-command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:wrd]
+command size(b:bat[:oid,:bit], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
 address AGGRsize2nils
 comment "Grouped count of true values";
 
-command count(b:bat[:void,:any_1], e:bat[:oid,:any_2]) :bat[:void,:wrd]
+command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:wrd]
 address AGGRcount2nils
 comment "Grouped count";
 
-command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:wrd]
+command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:wrd]
 address AGGRcount2nils;
 
 command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd]
@@ -303,7 +303,7 @@ address AGGRmedian3
 comment "Grouped median aggregate";
 
 function median(b:bat[:oid,:any_1]) :any_1;
-	bn := submedian(b, false);
+	bn := submedian(b, true);
 	return algebra.fetch(bn, 0@0);
 end aggr.median;
 
