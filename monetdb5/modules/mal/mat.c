@@ -509,8 +509,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
 	}
-    BATsettrivprop(bn);
-    BATderiveProps(bn,FALSE);
+	BATseqbase(bn, 0);
 	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
