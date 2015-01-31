@@ -12,19 +12,12 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 module bat;
-command attach(tt:int, heapfile:str) :bat[:void,:any_1]
-address BKCattach
-comment "Returns a new BAT with dense head and tail of the given type and uses
-        the given file to initialize the tail. The file will be owned by the
-        server."
 
-command densebat(size:wrd) :bat[:oid,:oid]
-address BKCdensebat
-comment "Creates a new [void,void] BAT of size 'size'."
+#TO BE MADE HEADLESS PLAN
 
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
@@ -36,258 +29,215 @@ command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1]
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
-command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+#command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+#address BKCrevert
+#comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the BAT sequence module)";
+
+command insert(b:bat[:oid,:any_1], h:oid, t:any_1) :bat[:oid,:any_1]
+address BKCinsert_bun
+comment "Insert one BUN[h,t] in a BAT.";
+
+command insert(b:bat[:oid,:any_1], h:oid, t:any_1, force:bit) :bat[:oid,:any_1]
+address BKCinsert_bun_force
+comment "Insert one BUN[h,t] in a BAT.";
+
+command replace(b:bat[:oid, :any_1], h:oid, t:any_1) :bat[:oid,:any_1]
+address BKCreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:oid, :any_1], h:oid, t:any_1, force:bit) :bat[:oid,:any_1]
+address BKCreplace_bun_force
+comment "Replace the tail value of one BUN that has some head value.";
+
+command delete(b:bat[:oid, :any_1], h:oid, t:any_1) :bat[:oid,:any_1]
+address BKCdelete_bun
+comment "Delete one specific BUN.";
+
+# END TO BE MADE HEADLESS PLAN
+
+command order(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
 address BKCorder
 comment "Sorts the BAT itself on the head, in place. ";
-command orderReverse(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+
+command orderReverse(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
 address BKCorder_rev
 comment "Reverse sorts the BAT itself on the head, in place. ";
 
-command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCrevert
-comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
-        BAT sequence module)";
+command insert(b:bat[:oid,:any_1], src:bat[:oid,:any_1]):bat[:oid,:any_1]
+address BKCinsert_bat
+comment "Insert all BUNs of the second BAT into the first.";
 
-command info ( b:bat[:oid,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
+command insert(b:bat[:oid,:any_1], src:bat[:oid,:any_1], force:bit):bat[:oid,:any_1]
+address BKCinsert_bat_force
+comment "Insert all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address BKCreplace_bat
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1], force:bit) :bat[:oid,:any_1]
+address BKCreplace_bat_force
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1] ) :bat[:oid,:any_1]
+address BKCappend_wrap
+comment "append the content of u to i";
+
+command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1], force:bit ) :bat[:oid,:any_1]
+address BKCappend_force_wrap
+comment "append the content of u to i";
+
+command append(i:bat[:oid,:any_1], u:any_1, force:bit):bat[:oid,:any_1]
+address BKCappend_val_force_wrap
+comment "append the value u to i";
+
+command inplace( o:bat[:oid,:any_1], id:oid, t:any_1) :bat[:oid,:any_1]
+address BKCbun_inplace
+comment "Inplace replace values on the given positions";
+
+command inplace( o:bat[:oid,:any_1], d:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address BKCbat_inplace
+comment "Inplace replace values on the given positions";
+
+command inplace( o:bat[:oid,:any_1], id:oid, t:any_1, force:bit) :bat[:oid,:any_1]
+address BKCbun_inplace_force
+comment "Inplace replace values on the given positions";
+
+command inplace( o:bat[:oid,:any_1], d:bat[:oid,:any_1], force:bit) :bat[:oid,:any_1]
+address BKCbat_inplace_force
+comment "inplace replace values on the given locations";
+
+command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid,:any_1]
+address BKCdelete
+comment "Delete all BUNs with a certain head value.";
+
+command delete(b:bat[:oid, :any_1]) :bat[:oid,:any_1]
+address BKCdelete_all
+comment "Delete all BUNs in a BAT.";
+
+command delete(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address BKCdelete_bat_bun
+comment "Delete from the first BAT all BUNs with a corresponding BUN 
+        in the second.";
+
+command getAlpha(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
+address BKCgetAlpha
+comment "Obtain the list of BUNs added";
+command getDelta(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
+address BKCgetDelta
+comment "Obtain the list of BUNs deleted";
+
+command attach(tt:int, heapfile:str) :bat[:oid,:any_1]
+address BKCattach
+comment "Returns a new BAT with dense head and tail of the given type and uses
+        the given file to initialize the tail. The file will be owned by the
+        server.";
+
+command densebat(sz:wrd) :bat[:oid,:oid]
+address BKCdensebat
+comment "Creates a new [void,void] BAT of size 'sz'.";
+
+command info ( b:bat[:oid,:any_1]) (:bat[:oid,:str], :bat[:oid,:str])
 address BKCinfo
-comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
-        It contains all properties of the BAT record. See the BAT documentation 
-        in GDK for more information.";
+comment "Produce a table containing information about a BAT in [attribute,value] format. 
+        It contains all properties of the BAT record. ";
 
-command getSize ( b:bat[:oid,:any_2]) :lng
-address BKCbatsize
-comment "Calculate the size of the BAT descriptor, heaps and indices in bytes.";
+command getSize ( b:bat[:oid,:any_1]) :lng
+address BKCgetSize
+comment "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes
+         rounded to the memory page size (see bbp.getPageSize()).";
 
-command getMemorySize ( b:bat[:oid,:any_2]) :lng
-address BKCbatvmsize
-comment "Calculate the size of the BAT heaps and indices in bytes
-rounded to the memory page size (see bbp.getPageSize()).";
-
-command getDiskSize ( b:bat[:oid,:any_2]) :lng
-address BKCbatdisksize
-comment "Approximate size of the (persistent) BAT heaps as stored on disk 
-in pages of 512 bytes. Indices are not included, as they only live temporarily
-in virtual memory.";
-
-command getCapacity(b:bat[:oid,:any_2]):lng 
+command getCapacity(b:bat[:oid,:any_1]):lng 
 address BKCgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
-command getHeadType(b:bat[:any_1,:any_2] ) :str 
-address BKCgetHeadType
-comment "Returns the type of the head column of a BAT, as an integer type number.";
-
-command getColumnType( b:bat[:oid,:any_2] ) :str 
+command getColumnType( b:bat[:oid,:any_1] ) :str 
 address BKCgetColumnType 
 comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
-command getRole ( bid:bat[:oid,:any_2] ) :str 
+command getRole ( bid:bat[:oid,:any_1] ) :str 
 address BKCgetRole
 comment "Returns the rolename of the head column of a BAT.";
 
-command setKey( b:bat[:any_1,:any_2], mode:bit) :bat[:any_1,:any_2] 
+command setKey( b:bat[:oid,:any_1], mode:bit) :bat[:oid,:any_1] 
 address BKCsetkey
-comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
+comment "Sets the 'key' property of the tail column to 'mode'. In 'key' mode, 
         the kernel will silently block insertions that cause a duplicate 
         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
-	function does not automatically eliminate duplicates. 
-        Use b := b.kunique;";
+		function does not automatically eliminate duplicates. ";
 
-command isaKey( b:bat[:any_1,:any_2]) :bit 
+command isaKey( b:bat[:oid,:any_1]) :bit 
 address BKCgetKey
-comment "return whether the head column of a BAT is unique (key).";
+comment "Return whether the column tail values are unique (key).";
 
-command setAccess( b:bat[:any_1,:any_2], mode:str) :bat[:any_1,:any_2]
+command setAccess( b:bat[:oid,:any_1], mode:str) :bat[:oid,:any_1]
 address BKCsetAccess
 comment "Try to change the update access priviliges 
 	to this BAT. Mode:
 	 r[ead-only]      - allow only read access.
 	 a[append-only]   - allow reads and update.
 	 w[riteable]      - allow all operations.
-	BATs are updatable by default. On making a BAT read-only, 
-        all subsequent updates fail with an error message.Returns 
-        the BAT itself.";
+	 BATs are updatable by default. On making a BAT read-only, 
+     all subsequent updates fail with an error message.
+	 Returns the BAT itself.";
 
-command setAppendMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetAppendMode
-comment "Change access privilige of BAT to append only";
-
-command setReadMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetReadMode
-comment "Change access privilige of BAT to read only";
-
-command setWriteMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetWriteMode
-comment "Change access privilige of BAT to read and write";
-
-command getAccess( b:bat[:any_1,:any_2]):str 
+command getAccess( b:bat[:oid,:any_1]):str 
 address BKCgetAccess
-comment "return the access mode attached to this BAT as a character.";
-
-command hasAppendMode( b:bat[:any_1,:any_2]):bit 
-address BKChasAppendMode
-comment "return true if to this BAT is append only.";
-
-command hasWriteMode( b:bat[:any_1,:any_2]):bit 
-address BKChasWriteMode
-comment "return true if to this BAT is read and write.";
-
-command hasReadMode( b:bat[:any_1,:any_2]):bit 
-address BKChasReadMode
-comment "return true if to this BAT is read only.";
-
+comment "Return the access mode attached to this BAT as a character.";
 
 command getSequenceBase( b:bat[:oid,:any_1]):oid 
 address BKCgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
 
-command isSorted(b:bat[:any_1,:any_2]) :bit 
+command isSorted(b:bat[:oid,:any_1]) :bit 
 address BKCisSorted
-comment "Returns whether a BAT is ordered on head or not.";
-command isSortedReverse(b:bat[:any_1,:any_2]) :bit 
+comment "Returns true if BAT values are ordered.";
+command isSortedReverse(b:bat[:oid,:any_1]) :bit 
 address BKCisSortedReverse
-comment "Returns whether a BAT is ordered on head or not.";
-
-command getStorageSize(b:bat[:any_1,:any_2]) :lng 
-address BKCgetStorageSize
-comment "Determine the total space (in bytes) reserved for a BAT.";
-
-command getSpaceUsed(b:bat[:any_1,:any_2]) :lng 
-address BKCgetSpaceUsed
-comment "Determine the total space (in bytes) occupied by a BAT.";
-
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2], force:bit):bat[:any_1,:any_2]
-address BKCinsert_bat_force
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCinsert_bun_force
-comment "Insert one BUN[h,t] in a BAT.";
-
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bat_force
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bun_force
-comment "Replace the tail value of one BUN that has some head value.";
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address BKCappend_wrap
-comment "append the content of u to i";
-
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2], force:bit ) :bat[:any_1,:any_2]
-address BKCappend_force_wrap
-comment "append the content of u to i";
+comment "Returns true if BAT values are reversely ordered.";
 
 command append(i:bat[:oid,:any_1], u:any_1):bat[:oid,:any_1]
 address BKCappend_val_wrap
 comment "append the value u to i";
 
-command append(i:bat[:void,:any_1], u:any_1):bat[:void,:any_1]
-address BKCappend_val_wrap
-comment "append the value u to i";
-
-command append(i:bat[:any_1,:void], u:any_1):bat[:any_1,:void]
-address BKCappend_reverse_val_wrap
-comment "append the value u to i";
-
-command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
-address BKCappend_val_force_wrap
-comment "append the value u to i";
-
-command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2) :bat[:oid,:any_2]
-address BKCbun_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCbat_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], id:oid, t:any_2, force:bit) :bat[:oid,:any_2]
-address BKCbun_inplace_force
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCbat_inplace_force
-comment "inplace replace values on the given locations";
-
-command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCdelete_bun
-comment "Delete one specific BUN.";
-
-command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2]
-address BKCdelete
-comment "Delete all BUNs with a certain head value.";
-
-command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
-address BKCdelete_all
-comment "Delete all BUNs in a BAT.";
-
-command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN 
-        in the second.";
-
-command getAlpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetAlpha
-comment "Obtain the list of BUNs added";
-command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetDelta
-comment "Obtain the list of BUNs deleted";
-command setName ( b:bat[:oid,:any_2] , s:str) :void
+command setName ( b:bat[:oid,:any_1] , s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
-command getName ( b:bat[:oid,:any_2]) :str 
+command getName ( b:bat[:oid,:any_1]) :str 
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:oid,:any_2], h:str, t:str) :void
+command setRole( b:bat[:oid,:any_1], h:str, t:str) :void
 address BKCsetRole
 comment "Give a logical name to the columns of a BAT.";
 
-command setColumn( b:bat[:oid,:any_2], t:str) :void
+command setColumn( b:bat[:oid,:any_1], t:str) :void
 address BKCsetColumn
 comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:oid,:any_2], h:str, t:str) :void
+command setColumn( b:bat[:oid,:any_1], h:str, t:str) :void
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
-command isTransient( b:bat[:oid,:any_2]) :bit 
+command isTransient( b:bat[:oid,:any_1]) :bit 
 address BKCisTransient;
-command setTransient( b:bat[:oid,:any_2]) :void
+command setTransient( b:bat[:oid,:any_1]) :void
 address BKCsetTransient
 comment "Make the BAT transient.  Returns 
 	boolean which indicates if the
 BAT administration has indeed changed.";
 
-command isPersistent( b:bat[:oid,:any_2]) :bit 
+command isPersistent( b:bat[:oid,:any_1]) :bit 
 address BKCisPersistent;
-command setPersistent( b:bat[:oid,:any_2],f:bit) :void
+command setPersistent( b:bat[:oid,:any_1],f:bit) :void
 address BKCpersists
 comment "Backward compatibility";
-command setPersistent( b:bat[:oid,:any_2]) :void
+command setPersistent( b:bat[:oid,:any_1]) :void
 address BKCsetPersistent
 comment "Make the BAT persistent.";
 
-command save(nme:bat[:oid,:any_2]) :void
+command save(nme:bat[:oid,:any_1]) :void
 address BKCsave2;
 
 command save(nme:str) :bit 
@@ -297,7 +247,7 @@ comment "Save a BAT to storage, if it was loaded and dirty.
 	calling this function violates the atomic commit protocol!!";
 
 
-command load(name:str) :bat[:oid,:any_2] 
+command load(name:str) :bat[:oid,:any_1] 
 address BKCload
 comment "Load a particular BAT from disk";
 
@@ -306,24 +256,16 @@ address BKCunload
 comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
         Returns whether the unload indeed happened. ";
 
-command isCached(b:bat[:oid,:any_2]):bit 
-address BKCisCached
-comment "Bat is stored in main memory.";
-
-command getHeat(b:bat[:oid,:any_2]) :lng 
-address BKCheat
-comment "Return the current BBP heat (LRU stamp)";
-
 command setCold(b:bat[:oid,:any_1]) :void 
-address BKCcoldBAT
+address BKCsetColdBAT
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
         for swapout is big, afterwards.";
-command setHot(b:bat[:oid,:any_2]) :void 
-address BKChotBAT
+command setHot(b:bat[:oid,:any_1]) :void 
+address BKCsetHotBAT
 comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
         swapout is small, afterwards.";
 
-command setMemoryMap(b:bat[:oid,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
+command setMemoryMap(b:bat[:oid,:any_1], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
@@ -331,19 +273,19 @@ comment "For each individual heap, you can change the allocation mode
 	will cause a BAT save (this has to happen before the heap can 
         be mapped into virtual memory). These modes are persistent. ";
 
-command setMemoryMap(b:bat[:oid,:any_2], mode:int):bit 
+command setMemoryMap(b:bat[:oid,:any_1], mode:int):bit 
 address BKCmmap2
 comment "Alias for mmap(b, mode, mode, mode, mode)";
 
-command setHash(b:bat[:oid,:any_2]):bit 
+command setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash
 comment "Create a hash structure on the column";
 
-command setImprints(b:bat[:oid,:any_2]):bit 
+command setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints
 comment "Create n imprints structure on the column";
 
-command isSynced (b1:bat[:oid,:any_2], b2:bat[:oid,:any_4]) :bit 
+command isSynced (b1:bat[:oid,:any_1], b2:bat[:oid,:any_2]) :bit 
 address BKCisSynced
 comment "Tests whether two BATs are synced or not. ";
 

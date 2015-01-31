@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 # @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
@@ -789,10 +789,6 @@ comment "Called when inserting values to a table in order to check if the insert
 
 
 #module geom;
-command calc.isnil(v:wkb):bit
-address wkbIsnil
-comment "Nil test for wkb value";
-
 #loading string without the need to use st_wkbtosql OR st_wkttosql
 function calc.wkb{unsafe}( wkt:str, srid:int, type:int ) :wkb;
         x := geom.FromText(wkt,0,0);

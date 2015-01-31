@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -721,20 +721,20 @@ PNtable(bat *nameId, bat *statusId, bat *seenId, bat *cyclesId, bat *eventsId, b
 	return MAL_SUCCEED;
 wrapup:
 	if (name)
-		BBPreleaseref(name->batCacheid);
+		BBPunfix(name->batCacheid);
 	if (def)
-		BBPreleaseref(def->batCacheid);
+		BBPunfix(def->batCacheid);
 	if (status)
-		BBPreleaseref(status->batCacheid);
+		BBPunfix(status->batCacheid);
 	if (seen)
-		BBPreleaseref(seen->batCacheid);
+		BBPunfix(seen->batCacheid);
 	if (cycles)
-		BBPreleaseref(cycles->batCacheid);
+		BBPunfix(cycles->batCacheid);
 	if (events)
-		BBPreleaseref(events->batCacheid);
+		BBPunfix(events->batCacheid);
 	if (time)
-		BBPreleaseref(time->batCacheid);
+		BBPunfix(time->batCacheid);
 	if (error)
-		BBPreleaseref(error->batCacheid);
+		BBPunfix(error->batCacheid);
 	throw(MAL, "datacell.queries", MAL_MALLOC_FAIL);
 }

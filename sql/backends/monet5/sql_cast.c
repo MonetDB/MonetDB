@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -82,7 +82,7 @@ batnil_2_timestamp(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -109,7 +109,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -170,7 +170,7 @@ batnil_2_daytime(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -197,7 +197,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -268,7 +268,7 @@ batnil_2_date(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -295,7 +295,7 @@ batstr_2_date(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -359,7 +359,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_sqlblob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -462,7 +462,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_str, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);

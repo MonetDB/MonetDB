@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -111,6 +111,7 @@ typedef struct{
 		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
 		Manifoldbody_hge(__VA_ARGS__);									\
 		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
+		case TYPE_wrd: ManifoldLoop(wrd,__VA_ARGS__); break;			\
 		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
 		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
 		case TYPE_str:													\
@@ -241,7 +242,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
-		varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL)
+		(q->blk && varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL) )
 		fcn = NULL;
 	else {
 		fcn = q->fcn;
@@ -364,7 +365,7 @@ wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
 		if ( mat[i].b)
-			BBPreleaseref(mat[i].b->batCacheid);
+			BBPunfix(mat[i].b->batCacheid);
 	}
 	GDKfree(mat);
 	return msg;

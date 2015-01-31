@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -332,8 +332,8 @@ cluster_orderby(MalBlkPtr mb)
 
 		if (state == ORDERBY_NONE && 
 		    getModuleId(q) == algebraRef &&
-			(getFunctionId(q) == sortTailRef ||
-			 getFunctionId(q) == sortReverseTailRef) &&
+			(getFunctionId(q) == sortRef ||
+			 getFunctionId(q) == sortReverseRef) &&
 		    q->argc == 2) {
 			state = ORDERBY_SORT;
 			o = getArg(q,0);

@@ -11,7 +11,7 @@ stdout of test 'limithack` in directory 'sql/backends/monet5` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 15.590 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32494/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26146/.s.monetdb.32494
@@ -67,7 +67,7 @@ Ready.
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
 % 4,	15,	4,	0,	1,	5,	1,	5,	1 # length
-[ 7194,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 7211,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 17:27:34 >  
 # 17:27:34 >  "Done."

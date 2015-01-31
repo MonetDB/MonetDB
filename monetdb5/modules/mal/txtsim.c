@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -902,13 +902,13 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	len = BATdescriptor(*lid);
 	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
 		if (qgram)
-			BBPreleaseref(qgram->batCacheid);
+			BBPunfix(qgram->batCacheid);
 		if (id)
-			BBPreleaseref(id->batCacheid);
+			BBPunfix(id->batCacheid);
 		if (pos)
-			BBPreleaseref(pos->batCacheid);
+			BBPunfix(pos->batCacheid);
 		if (len)
-			BBPreleaseref(len->batCacheid);
+			BBPunfix(len->batCacheid);
 		throw(MAL, "txtsim.qgramselfjoin", RUNTIME_OBJECT_MISSING);
 	}
 
@@ -941,10 +941,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	if (bn == NULL || bn2 == NULL){
 		if (bn) BBPreclaim(bn);
 		if (bn2) BBPreclaim(bn2);
-		BBPreleaseref(qgram->batCacheid);
-		BBPreleaseref(id->batCacheid);
-		BBPreleaseref(pos->batCacheid);
-		BBPreleaseref(len->batCacheid);
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
 		throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 	}
 
@@ -965,10 +965,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	bn2->hrevsorted = bn2->trevsorted = 0;
 	bn2->H->nonil = bn2->T->nonil = 0;
 
-	BBPreleaseref(qgram->batCacheid);
-	BBPreleaseref(id->batCacheid);
-	BBPreleaseref(pos->batCacheid);
-	BBPreleaseref(len->batCacheid);
+	BBPunfix(qgram->batCacheid);
+	BBPunfix(id->batCacheid);
+	BBPunfix(pos->batCacheid);
+	BBPunfix(len->batCacheid);
 
 	BBPkeepref(*res1 = bn->batCacheid);
 	BBPkeepref(*res2 = bn2->batCacheid);

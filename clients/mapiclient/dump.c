@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -142,7 +142,7 @@ has_systemfunctions(Mapi mid)
 }
 
 /* return TRUE if the sys.schemas table has a column named system */
-static int
+int
 has_schemas_system(Mapi mid)
 {
 	MapiHdl hdl;

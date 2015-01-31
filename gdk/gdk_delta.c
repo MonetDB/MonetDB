@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -45,15 +45,15 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTADEBUG printf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-			  BATgetId(b),
-			  b->H->heap.free,
-			  b->T->heap.free,
-			  b->batInserted,
-			  b->batDeleted,
-			  b->batFirst,
-			  PTRFMTCAST b->H->heap.base,
-			  PTRFMTCAST b->T->heap.base);
+	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			   BATgetId(b),
+			   b->H->heap.free,
+			   b->T->heap.free,
+			   b->batInserted,
+			   b->batDeleted,
+			   b->batFirst,
+			   PTRFMTCAST b->H->heap.base,
+			   PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
@@ -91,15 +91,15 @@ BATcommit(BAT *b)
 	}
 	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTADEBUG printf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-			  BATgetId(b),
-			  b->H->heap.free,
-			  b->T->heap.free,
-			  b->batInserted,
-			  b->batDeleted,
-			  b->batFirst,
-			  PTRFMTCAST b->H->heap.base,
-			  PTRFMTCAST b->T->heap.base);
+	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			   BATgetId(b),
+			   b->H->heap.free,
+			   b->T->heap.free,
+			   b->batInserted,
+			   b->batDeleted,
+			   b->batFirst,
+			   PTRFMTCAST b->H->heap.base,
+			   PTRFMTCAST b->T->heap.base);
 	return b;
 }
 
@@ -135,7 +135,7 @@ BATundo(BAT *b)
 	BUN p, bunlast, bunfirst;
 
 	BATcheck(b, "BATundo");
-	DELTADEBUG printf("#BATundo %s \n", BATgetId(b));
+	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;

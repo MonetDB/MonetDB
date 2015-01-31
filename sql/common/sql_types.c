@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1113,8 +1113,7 @@ many of the function signatures can be obtained from the underlying
 database kernel, we have chosen for this explicit scheme for one
 simple reason. The SQL standard dictates the types and we have to
 check their availability in the kernel only. The kernel itself could
-include manyfunctions for which their is no standard.
-lead to unexpected
+include many functions for which there is no standard.
 */
 
 static void
@@ -1476,13 +1475,14 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "localtime", "sql", "current_time", NULL, NULL, TME, SCALE_NONE);
 	sql_create_func(sa, "localtimestamp", "sql", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE);
 
-	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", DTE, SECINT, DTE, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMP, MONINT, TMESTAMP, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_FIX);
-	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", TME, SECINT, TME, SCALE_FIX);
+	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", DTE, SECINT, DTE, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMP, MONINT, TMESTAMP, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", TME, SECINT, TME, SCALE_NONE);
+	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", TMETZ, SECINT, TMETZ, SCALE_NONE);
 
 	sql_create_func(sa, "sql_sub", "mtime", "diff", DTE, DTE, INT, SCALE_FIX);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", TMESTAMP, TMESTAMP, LNG, SCALE_FIX);
@@ -1495,6 +1495,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_NONE);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_month_interval", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_NONE);
 	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", TME, SECINT, TME, SCALE_NONE);
+	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", TMETZ, SECINT, TMETZ, SCALE_NONE);
+
 	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
 	sql_create_func(sa, "year", "mtime", "year", DTE, NULL, INT, SCALE_FIX);
@@ -1503,6 +1505,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "minute", "mtime", "minutes", TME, NULL, INT, SCALE_FIX);
 	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TME, NULL, DEC, SCALE_NONE, 3);
+	sql_create_func(sa, "hour", "mtime", "hours", TMETZ, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "minute", "mtime", "minutes", TMETZ, NULL, INT, SCALE_FIX);
+	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMETZ, NULL, DEC, SCALE_NONE, 3);
 
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMP, NULL, INT, SCALE_FIX);

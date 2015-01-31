@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -262,6 +262,11 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
 	} else {
+		if (!n || *n) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Interval type miss match '%s'\n"), (!n)?"":n);
+			return -1;
+		}
 		return type;
 	}
 }

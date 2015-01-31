@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -177,7 +177,7 @@ trans_drop_tmp(sql_trans *tr)
 			sql_table *t = n->data;
 
 			if (t->persistence == SQL_LOCAL_TEMP)
-				list_remove_node(tmp->tables.set, n);
+				cs_remove_node(&tmp->tables, n);
 			n = nxt;
 		}
 	}
@@ -1965,7 +1965,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	if (isDeclaredTable(c->t)) 
 	if (isTable(t))
-		store_funcs.create_col(tr, col);
+		if (store_funcs.create_col(tr, col) == LOG_ERR)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
@@ -2322,7 +2323,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ts->dset = list_new(tr->sa, ts->destroy);
 						list_move_data(ts->set, ts->dset, tb);
 					//} else {
-						//list_remove_node(ts->set, tbn);
+						//cs_remove_node(ts, tbn);
 					//}
 				}
 			}
@@ -2912,7 +2913,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2945,7 +2946,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					sql_base *b = n->data;
 					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
-				list_remove_node(fs->set, n);
+				cs_remove_node(fs, n);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2976,7 +2977,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				fprintf(stderr, "#reset_cs free %s\n",
 					(b->name)?b->name:"help");
 			}
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = t;
 		}
 	}
@@ -3051,6 +3052,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			store_funcs.destroy_del(NULL, ft);
 
 		ft->base.wtime = ft->base.rtime = 0;
+		ft->cleared = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->tables, &pft->tables, &ft->base, (resetf) NULL, (dupfunc) &table_find);
@@ -3093,7 +3095,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			for (n = fs->tables.nelm; n; ) {
 				node *nxt = n->next;
 
-				list_remove_node(fs->tables.set, n);
+				cs_remove_node(&fs->tables, n);
 				n = nxt;
 			}
 			fs->tables.nelm = NULL;
@@ -4167,7 +4169,8 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
  	col = create_sql_column(tr->sa, t, name, tpe );
 
 	if (isTable(col->t))
-		store_funcs.create_col(tr, col);
+		if (store_funcs.create_col(tr, col) == LOG_ERR)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 

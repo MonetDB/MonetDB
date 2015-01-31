@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -348,7 +348,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	n = *getArgReference_int(s, p, 2);
 	if (n < 0 || n >= getStkDepth(s)){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
 	}
 	pseudo(ret,b,"view","stk","frame");
@@ -401,8 +401,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			buf = (char*) GDKmalloc(len +1024);
 			if ( buf == NULL){
 				GDKfree(msg);
-				BBPreleaseref(b->batCacheid);
-				BBPreleaseref(bn->batCacheid);
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
 			}
 		}

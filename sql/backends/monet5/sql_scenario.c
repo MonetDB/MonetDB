@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -931,9 +931,15 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 #define MAX_QUERY 	(64*1024*1024)
 
 static int
+caching(mvc *m)
+{
+	return m->caching;
+}
+
+static int
 cachable(mvc *m, stmt *s)
 {
-	if (m->emode == m_plan || !m->caching || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
+	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
@@ -1111,7 +1117,7 @@ SQLparser(Client c)
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
-	} else if (cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
@@ -1137,7 +1143,7 @@ SQLparser(Client c)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if (!cachable(m, s)) {
+		if (!caching(m) || !cachable(m, s)) {
 			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
@@ -1145,7 +1151,10 @@ SQLparser(Client c)
 				trimMalBlk(c->curprg->def);
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
-				addOptimizerPipe(c, mb, "minimal_pipe");
+				if (!cachable(m, s))
+					addOptimizerPipe(c, mb, "minimal_pipe");
+				else
+					addOptimizerPipe(c, mb, "default_pipe");
 				msg = optimizeMALBlock(c, mb);
 				if (msg != MAL_SUCCEED) {
 					sqlcleanup(m, err);

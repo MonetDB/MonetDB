@@ -16,7 +16,7 @@ bat.insert(ve,2,"ok");
 bat.insert(ve,3,"wrong");
 io.print(ve);
 
-z:= batcalc.ifthen(b,v);
-io.print(z);
+#z:= batcalc.ifthen(b,v);
+#io.print(z);
 z:= batcalc.ifthenelse(b,v,ve);
 io.print(z);

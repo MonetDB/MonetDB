@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -48,11 +48,8 @@ algebra_export str ALGsubselect2(bat *result, const bat *bid, const bat *sid, co
 algebra_export str ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
 algebra_export str ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(bat *result, const bat *bid, ptr value);
-algebra_export str ALGuselect1(bat *result, const bat *bid, ptr value);
 algebra_export str ALGselect(bat *result, const bat *bid, ptr low, ptr high);
-algebra_export str ALGuselect(bat *result, const bat *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin);
-algebra_export str ALGuselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin);
 
 algebra_export str ALGsubjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 algebra_export str ALGsubleftjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
@@ -100,10 +97,6 @@ algebra_export str ALGsample(bat *result, const bat *bid, const int *param);
 
 algebra_export str ALGtsort(bat *result, const bat *bid);
 algebra_export str ALGtsort_rev(bat *result, const bat *bid);
-algebra_export str ALGhsort(bat *result, const bat *bid);
-algebra_export str ALGhsort_rev(bat *result, const bat *bid);
-algebra_export str ALGhtsort(bat *result, const bat *lid);
-algebra_export str ALGthsort(bat *result, const bat *lid);
 algebra_export str ALGssort(bat *result, const bat *bid);
 algebra_export str ALGssort_rev(bat *result, const bat *bid);
 algebra_export str ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);
@@ -132,8 +125,7 @@ algebra_export str ALGslice_oid(bat *ret, const bat *bid, const oid *start, cons
 algebra_export str ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end);
 algebra_export str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 algebra_export str ALGexist(bit *ret, const bat *bid, const void *val);
-algebra_export str ALGfind(ptr ret, const bat *bid, ptr val);
-algebra_export str ALGindexjoin(bat *result, const bat *lid, const bat *rid);
+algebra_export str ALGfind(oid *ret, const bat *bid, ptr val);
 algebra_export str ALGprojectNIL(bat *ret, const bat *bid);
 algebra_export str ALGselectNotNil(bat *result, const bat *bid);
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -771,11 +771,6 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-
-				if (sz > (lng) BATTINY)
-					b = BATextend(b, (BUN) sz);
-
-				assert(b != NULL);
 
 				HASHdestroy(b);
 
@@ -1667,7 +1662,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (strchr(c->name, ',') || strchr(c->name, ' ') || strchr(c->name , '\t')) {
+		if (strchr(c->name, ',') || strchr(c->name, ' ') || strchr(c->name , '\t') || strchr(c->name, '#')) {
 			if (mnstr_write(s, "\"", 1, 1) != 1)
 				return -1;
 			if (strchr(c->name, '"')) {

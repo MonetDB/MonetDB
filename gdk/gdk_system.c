@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -222,7 +222,7 @@ MT_locktrace_end()
 			int idx = MT_locktrace_hash(MT_locktrace_nme[i]);
 
 			if (my_cnt[idx])
-				printf("%s " ULLFMT "\n", MT_locktrace_nme[i], my_cnt[idx]);
+				fprintf(stderr, "%s " ULLFMT "\n", MT_locktrace_nme[i], my_cnt[idx]);
 			my_cnt[idx] = 0;
 		}
 	MT_locktrace = 0;
@@ -592,8 +592,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		p->func = f;
 		p->arg = arg;
 		p->exited = 0;
-		p->next = posthreads;
 		pthread_mutex_lock(&posthread_lock);
+		p->next = posthreads;
 		posthreads = p;
 		f = thread_starter;
 		pthread_mutex_unlock(&posthread_lock);

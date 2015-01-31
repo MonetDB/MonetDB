@@ -11,7 +11,7 @@ stdout of test 'inlineFunction2` in directory 'monetdb5/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35482/
 # MonetDB/GIS module loaded
@@ -31,16 +31,14 @@ end main;
 #result of inline
 function user.tst():void;
     b := bat.new(:oid,:int);
-    X_8 := bat.reverse(b);
-    X_10 := bat.new(nil:oid,nil:int);
-barrier (X_14,X_15) := iterator.new(b);
-    X_27 := calc.+(X_15,1);
-    X_17 := X_27;
-    X_18 := algebra.fetch(X_8,X_14);
-    bat.insert(X_10,X_18,X_17);
-    redo (X_14,X_15) := iterator.next(b);
-exit (X_14,X_15);
-    z:bat[:oid,:int]  := X_10;
+    X_8 := bat.new(nil:oid,nil:int);
+barrier (X_12,X_13) := iterator.new(b);
+    X_23 := calc.+(X_13,1);
+    X_15 := X_23;
+    bat.append(X_8,X_15);
+    redo (X_12,X_13) := iterator.next(b);
+exit (X_12,X_13);
+    z:bat[:oid,:int]  := X_8;
 end tst;
 
 # 23:12:13 >  

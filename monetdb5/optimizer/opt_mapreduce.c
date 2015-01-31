@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -89,7 +89,7 @@ MRgetCloud(bat *ret, str *mrcluster)
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
 	if (mapnodes == NULL) {
-		BBPreleaseref(*ret);
+		BBPunfix(*ret);
 		throw(MAL, "mapreduce.getCloud", MAL_MALLOC_FAIL);
 	}
 
@@ -126,7 +126,7 @@ MRcloudSize(str mrcluster)
 	if (cloud == NULL)
 		return 0;
 	cnt = (int)BATcount(cloud);
-	BBPreleaseref(bid); /* we're done with it */
+	BBPunfix(bid); /* we're done with it */
 	return(cnt);
 }
 
@@ -305,13 +305,13 @@ MRdistributework(
 			break;
 			case SORT:
 				lcol->type = newBatType(TYPE_void, lcol->type);
-				p = newFcnCall(reduce, algebraRef, sortTailRef);
+				p = newFcnCall(reduce, algebraRef, sortRef);
 				p = pushArgument(reduce, p, lcol->mapbat);
 				getArg(p, 0) = lcol->reduceid;
 			break;
 			case SORTDESC:
 				lcol->type = newBatType(TYPE_void, lcol->type);
-				p = newFcnCall(reduce, algebraRef, sortReverseTailRef);
+				p = newFcnCall(reduce, algebraRef, sortReverseRef);
 				p = pushArgument(reduce, p, lcol->mapbat);
 				getArg(p, 0) = lcol->reduceid;
 			break;
@@ -765,7 +765,7 @@ OPTmapreduceImplementation(
 		}
 
 		if (getModuleId(p) == algebraRef) {
-			if (getFunctionId(p) == sortTailRef) {
+			if (getFunctionId(p) == sortRef) {
 				/* simple ORDER BY */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
@@ -780,7 +780,7 @@ OPTmapreduceImplementation(
 						break;
 					}
 				}
-			} else if (getFunctionId(p) == sortReverseTailRef) {
+			} else if (getFunctionId(p) == sortReverseRef) {
 				/* simple ORDER BY DESC */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {

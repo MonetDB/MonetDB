@@ -29,12 +29,13 @@ float8
 numeric
 strings
 numerology
-#ToDo HAVE_GEOM?point
-#ToDo HAVE_GEOM?lseg
-#ToDo HAVE_GEOM?box
-#ToDo HAVE_GEOM?path
-#ToDo HAVE_GEOM?polygon
-#ToDo HAVE_GEOM?circle
+HAVE_GEOM?point
+#HAVE_GEOM?lseg   # lseg is NOT supported in MonetDB. lseg (Line Segment) is also not part of OpenGIS standard so exclude this test
+HAVE_GEOM?box     # box is not supported in MonetDB but it can be replaced with mbr (= minimum bounded rectangle)
+HAVE_GEOM?path    # path is not supported in MonetDB but it can be replaced with linestring
+HAVE_GEOM?polygon
+#HAVE_GEOM?circle # circle is NOT supported in MonetDB. It is also not part of OpenGIS standard so exclude this test
+#HAVE_GEOM?geometry  # tables CIRCLE_TBL and LSEG_TBL do not exist as they have been disabled above. All queries fail
 date
 time
 timetz
@@ -46,19 +47,19 @@ reltime
 # tinterval NOT supported in MonetDB, deprecated in Postgresql and is also not standard SQL so exclude this test
 inet
 comments
-#ToDo HAVE_GEOM?geometry
-#ToDo horology
-#ToDo oidjoins
-#ToDo type_sanity
-#ToDo opr_sanity
+horology
+# oidjoins    # All queries reference pg_catalog.pg_* specific schema and table names which do not exist in MonetDB. skipping this test
+# type_sanity # All queries reference pg_type, pg_proc, pg_class or pg_attribute table names which do not exist in MonetDB. skipping this test
+# opr_sanity  # All queries reference pg_proc, pg_cast, pg_operator, pg_opclass, pg_amop, pg_am, pg_amproc or pg_aggregate table names which do not exist in MonetDB. skipping this test
 insert
-#ToDo create_type
+# create_type # pg specific (not SQL compliant) syntax of CREATE TYPE is not supported in MonetDB
 loadwisconsin #[MK] copied from benchmarks
 create_table
 create_misc
-create_operator
-#ToDo create_index
-#ToDo create_view
+# create_operator # CREATE OPERATOR (and DROP OPERATOR) syntax not supported by MonetDB
+# create_index  # pg specific index syntax (USING btree() or rtree() or hash() and functional or partial indexes) are not supported in MonetDB. skipping this test
+create_view
+select_views
 create_aggregate
 #ToDo triggers
 #ToDo inherit
@@ -86,7 +87,6 @@ arrays
 #ToDo namespace
 #ToDo privileges
 #ToDo rules
-#ToDo select_views
 #ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables

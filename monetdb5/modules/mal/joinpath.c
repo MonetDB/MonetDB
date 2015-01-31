@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -221,7 +221,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		if (b==NULL){
 			if ( postpone[j] && postpone[j+1]){
 				for( --top; top>=0; top--)
-					BBPreleaseref(joins[top]->batCacheid);
+					BBPunfix(joins[top]->batCacheid);
 				GDKfree(postpone);
 				return NULL;
 			}
@@ -232,7 +232,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 				postponed += postpone[k]== TRUE;
 			if ( postponed == top){
 				for( --top; top>=0; top--)
-					BBPreleaseref(joins[top]->batCacheid);
+					BBPunfix(joins[top]->batCacheid);
 				GDKfree(postpone);
 				return NULL;
 			}
@@ -258,12 +258,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 
 		if ( b == 0 ){
 			for( --top; top>=0; top--)
-				BBPreleaseref(joins[top]->batCacheid);
+				BBPunfix(joins[top]->batCacheid);
 			GDKfree(postpone);
 			return 0;
 		}
-		BBPdecref(joins[j]->batCacheid, FALSE);
-		BBPdecref(joins[j+1]->batCacheid, FALSE);
+		BBPunfix(joins[j]->batCacheid);
+		BBPunfix(joins[j+1]->batCacheid);
 		joins[j] = b;
 		top--;
 		for (i = j + 1; i < top; i++)
@@ -303,7 +303,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if ( b == NULL) {
 			for( --top; top>=0; top--)
-				BBPreleaseref(joins[top]->batCacheid);
+				BBPunfix(joins[top]->batCacheid);
 			GDKfree(joins);
 			throw(MAL, "algebra.joinPath", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}

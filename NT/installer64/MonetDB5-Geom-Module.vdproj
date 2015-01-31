@@ -229,7 +229,7 @@
             "SourcePath" = "8:C:\\Libraries\\geos-3.4.2.win64\\bin\\geos_c.dll"
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
-            "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
+            "Folder" = "8:_5A4CF78A6BC241B6AAEFF30075ECAE13"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -373,6 +373,17 @@
                                     }
                                 }
                             }
+                        }
+                    }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_5A4CF78A6BC241B6AAEFF30075ECAE13"
+                    {
+                    "Name" = "8:bin"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_8243C459978C4243AD7AACC0339F371E"
+                        "Folders"
+                        {
                         }
                     }
                 }

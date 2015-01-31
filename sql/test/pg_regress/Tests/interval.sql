@@ -15,25 +15,31 @@ SELECT cast('10 years -11 month -12 days +13:14' as interval second) AS "9 years
 
 CREATE TABLE INTERVAL_TBL (f1 interval second);
 
+INSERT INTO INTERVAL_TBL (f1) VALUES ('1.2345');
+INSERT INTO INTERVAL_TBL (f1) VALUES (60 * 60 * 24 * 365 * 2014);
+INSERT INTO INTERVAL_TBL (f1) VALUES ('123456789012345678');
+INSERT INTO INTERVAL_TBL (f1) VALUES ('1234567890123456789');
+INSERT INTO INTERVAL_TBL (f1) VALUES ('12345678901234567890');
+
+INSERT INTO INTERVAL_TBL (f1) VALUES ('1 day 2 hours 3 minutes 4 seconds');
+INSERT INTO INTERVAL_TBL (f1) VALUES ('6 years');
+INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months');
+INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months 12 hours');
+
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 1 minute');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 5 hour');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 10 day');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 34 year');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 3 months');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 14 seconds ago');
-INSERT INTO INTERVAL_TBL (f1) VALUES ('1 day 2 hours 3 minutes 4 seconds');
-INSERT INTO INTERVAL_TBL (f1) VALUES ('6 years');
-INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months');
-INSERT INTO INTERVAL_TBL (f1) VALUES ('5 months 12 hours');
 
 -- badly formatted interval
 INSERT INTO INTERVAL_TBL (f1) VALUES ('badly formatted interval');
 INSERT INTO INTERVAL_TBL (f1) VALUES ('@ 30 eons ago');
 
--- test interval operators
-
 SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL;
 
+-- test interval operators
 SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
    WHERE INTERVAL_TBL.f1 <> cast('@ 10 days' as interval second);
 

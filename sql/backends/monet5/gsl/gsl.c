@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -76,7 +76,7 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, dbl datapoints)
 	bi = bat_iterator(b);
 	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, b->hseqbase);
@@ -113,7 +113,7 @@ gsl_cst_chisqprob_bat(bat * retval, dbl chi2, bat datapoints)
 	bi = bat_iterator(b);
 	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
 	if( bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, b->hseqbase);
@@ -147,7 +147,7 @@ gsl_bat_chisqprob_bat(bat * retval, bat chi2, bat datapoints)
 	assert(b->htype == TYPE_void);
 	bn = BATnew(TYPE_void, TYPE_dbl, cnt = BATcount(b), TRANSIENT);
 	if( bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
 	chi2p = (dbl*)Tloc(b, 0);

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -288,7 +288,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
 		total += heapinfo(b->T->vheap);
 		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)
 		stk->tmpspace += total/1024/1024; // keep it in MBs
     }

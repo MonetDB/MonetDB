@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -463,7 +463,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			bn = BATslice(cand, (BUN) o1, (BUN) o2);
 		}
-		BBPreleaseref(cand->batCacheid);
+		BBPunfix(cand->batCacheid);
 		if (bn == NULL)
 			throw(MAL, "generator.subselect",
 			      MAL_MALLOC_FAIL);
@@ -687,7 +687,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 wrapup:
 	if( cndid)
-		BBPreleaseref(cndid);
+		BBPunfix(cndid);
 	if( bn){
 		BATsetcount(bn,c);
 		bn->hdense = 1;
@@ -711,7 +711,7 @@ wrapup:
 		throw(MAL,"generator.leftfetchjoin","Illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
-		BBPreleaseref(bid);\
+		BBPunfix(bid);\
 		throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
@@ -786,7 +786,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 			bn = BATnew(TYPE_void, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
-				BBPreleaseref(bid);
+				BBPunfix(bid);
 				throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);
 			}
 
@@ -810,7 +810,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	}
 
 	/* adminstrative wrapup of the leftfetchjoin */
-	BBPreleaseref(bid);
+	BBPunfix(bid);
 	if( bn){
 		BATsetcount(bn,c);
 		bn->hdense = 1;
@@ -864,7 +864,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( q == NULL){
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
 		if( br == NULL){
-			BBPreleaseref(bl->batCacheid);
+			BBPunfix(bl->batCacheid);
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 		}
 	}
@@ -891,10 +891,10 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bln = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
 	brn = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
 	if( bln == NULL || brn == NULL){
-		if(bln) BBPreleaseref(bln->batCacheid);
-		if(brn) BBPreleaseref(brn->batCacheid);
-		if(bl) BBPreleaseref(bl->batCacheid);
-		if(br) BBPreleaseref(br->batCacheid);
+		if(bln) BBPunfix(bln->batCacheid);
+		if(brn) BBPunfix(brn->batCacheid);
+		if(bl) BBPunfix(bl->batCacheid);
+		if(br) BBPunfix(br->batCacheid);
 		throw(MAL,"generator.join",MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,BUNfirst(bln));
@@ -964,8 +964,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(bl);
 		bl = 0;
 	}
-	if(bl) BBPreleaseref(bl->batCacheid);
-	if(br) BBPreleaseref(br->batCacheid);
+	if(bl) BBPunfix(bl->batCacheid);
+	if(br) BBPunfix(br->batCacheid);
 	return msg;
 }
 
@@ -973,14 +973,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	limit+= cnt * (limit/(done?done:1)+1);\
 	bln= BATextend(bln, limit);\
 	if( bln == NULL){\
-		BBPreleaseref(blow->batCacheid);\
-		BBPreleaseref(bhgh->batCacheid);\
+		BBPunfix(blow->batCacheid);\
+		BBPunfix(bhgh->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
 	brn= BATextend(brn, limit);\
 	if( brn == NULL) {\
-		BBPreleaseref(blow->batCacheid);\
-		BBPreleaseref(bhgh->batCacheid);\
+		BBPunfix(blow->batCacheid);\
+		BBPunfix(bhgh->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
 	ol = (oid*) Tloc(bln,BUNfirst(bln)) + c;\
@@ -1035,7 +1035,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	bhgh = BATdescriptor(*getArgReference_bat(stk,pci,4));
 	if( bhgh == NULL){
-		BBPreleaseref(blow->batCacheid);
+		BBPunfix(blow->batCacheid);
 		throw(MAL,"generator.rangejoin",RUNTIME_OBJECT_MISSING);
 	}
 	li = *getArgReference_bit(stk,pci,5);
@@ -1049,10 +1049,10 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	bln = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
 	brn = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
 	if( bln == NULL || brn == NULL){
-		if(bln) BBPreleaseref(bln->batCacheid);
-		if(brn) BBPreleaseref(brn->batCacheid);
-		if(blow) BBPreleaseref(blow->batCacheid);
-		if(bhgh) BBPreleaseref(bhgh->batCacheid);
+		if(bln) BBPunfix(bln->batCacheid);
+		if(brn) BBPunfix(brn->batCacheid);
+		if(blow) BBPunfix(blow->batCacheid);
+		if(bhgh) BBPunfix(bhgh->batCacheid);
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,BUNfirst(bln));

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -120,7 +120,7 @@
 
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	TYPE *w = (TYPE *) Tloc(b, 0);		\
+	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 			TYPE pw = w[BUNfirst(b)]	,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] != pw			,	\
@@ -182,7 +182,7 @@
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	TYPE *w = (TYPE *) Tloc(b, 0);		\
+	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 		    	TYPE pw = w[BUNfirst(b)]	,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] == pw			,	\
@@ -252,7 +252,7 @@
 
 #define GRP_use_existing_hash_table_tpe(TYPE)			\
 	GRP_use_existing_hash_table(				\
-	/* INIT_0 */	TYPE *w = (TYPE *) Tloc(b, 0)	,	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* COMP   */	w[p] == w[hb]				\
@@ -342,7 +342,7 @@
 
 #define GRP_create_partial_hash_table_tpe(TYPE)			\
 	GRP_create_partial_hash_table(				\
-	/* INIT_0 */	TYPE *w = (TYPE *) Tloc(b, 0)	,	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* COMP   */	w[p] == w[hb]				\
@@ -365,9 +365,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	int t;
 	int (*cmp)(const void *, const void *);
 	const oid *grps = NULL;
-	oid *ngrps, ngrp, prev = 0;
-	oid *exts = NULL;
-	wrd *cnts = NULL;
+	oid *restrict ngrps, ngrp, prev = 0;
+	oid *restrict exts = NULL;
+	wrd *restrict cnts = NULL;
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
@@ -687,8 +687,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids */
-		unsigned char *bgrps = GDKmalloc(256);
-		const unsigned char *w = (const unsigned char *) Tloc(b, BUNfirst(b));
+		unsigned char *restrict bgrps = GDKmalloc(256);
+		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
 		unsigned char v;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
@@ -711,8 +711,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids */
-		unsigned short *sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *w = (const unsigned short *) Tloc(b, BUNfirst(b));
+		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
+		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
 		unsigned short v;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -164,7 +164,7 @@ int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, const char *bins, const void *v)
+int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)
@@ -181,7 +181,7 @@ void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
-int MT_msync(void *p, size_t len, int mode)
+int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 int OIDdirty(void)
 	__attribute__((__visibility__("hidden")));
@@ -189,7 +189,9 @@ int OIDinit(void)
 	__attribute__((__visibility__("hidden")));
 oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
-int OIDwrite(stream *fp)
+int OIDwrite(FILE *f)
+	__attribute__((__visibility__("hidden")));
+gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));

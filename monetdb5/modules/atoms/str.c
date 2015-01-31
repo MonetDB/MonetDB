@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -2058,61 +2058,6 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	GDKfree(toRm);
 	if (*res == NULL)
 		throw(MAL, "str.ltrim", "Allocation failed");
-	return MAL_SUCCEED;
-}
-
-str
-STRmax(str *res, const str *left, const str *right){
-	if (strcmp(*left, str_nil) == 0 ||
-		strcmp(*right, str_nil) == 0 )
-		*res = GDKstrdup(str_nil);
-	else
-	if (strcmp(*left,*right)< 0 )
-		*res = GDKstrdup(*right);
-	else
-		*res = GDKstrdup(*left);
-	return MAL_SUCCEED;
-}
-
-str
-STRmax_no_nil(str *res, const str *left, const str *right){
-	if (strcmp(*left, str_nil) == 0)
-		*res = GDKstrdup(*right);
-	else
-	if (strcmp(*right, str_nil) == 0)
-		*res = GDKstrdup(*left);
-	else
-	if (strcmp(*left,*right)< 0 )
-		*res = GDKstrdup(*right);
-	else
-		*res = GDKstrdup(*left);
-	return MAL_SUCCEED;
-}
-
-str
-STRmin(str *res, const str *left, const str *right){
-	if (strcmp(*left, str_nil) == 0 ||
-		strcmp(*right, str_nil) == 0 )
-		*res = GDKstrdup(str_nil);
-	else
-	if (strcmp(*left,*right)< 0 )
-		*res = GDKstrdup(*left);
-	else
-		*res = GDKstrdup(*right);
-	return MAL_SUCCEED;
-}
-str
-STRmin_no_nil(str *res, const str *left, const str *right){
-	if (strcmp(*left, str_nil) == 0)
-		*res = GDKstrdup(*right);
-	else
-	if (strcmp(*right, str_nil) == 0)
-		*res = GDKstrdup(*left);
-	else
-	if (strcmp(*left,*right)< 0 )
-		*res = GDKstrdup(*left);
-	else
-		*res = GDKstrdup(*right);
 	return MAL_SUCCEED;
 }
 

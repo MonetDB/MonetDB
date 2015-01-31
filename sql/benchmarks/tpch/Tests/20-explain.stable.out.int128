@@ -11,7 +11,7 @@ stdout of test '20-explain` in directory 'sql/benchmarks/tpch` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
@@ -92,23 +92,23 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_53:bat[:oid,:int]  := sql.bind(X_8,"sys","part","p_partkey",1);
     X_55 := sql.delta(X_46,X_50,r1_52,X_53);
     X_56:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_43,X_33,X_55);
-    (X_57,r1_60) := algebra.subjoin(X_31,X_56,nil:BAT,nil:BAT,true,nil:lng);
-    X_61 := algebra.tinter(X_32,X_57);
-    X_283 := algebra.leftfetchjoin(X_61,X_23);
-    X_62:bat[:oid,:wrd]  := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",0);
-    (X_65,r1_68) := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",2);
-    X_67:bat[:oid,:wrd]  := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",1);
-    X_68 := sql.delta(X_62,X_65,r1_68,X_67);
-    X_69:bat[:oid,:wrd]  := algebra.leftfetchjoin(X_283,X_68);
-    X_70:bat[:oid,:oid]  := sql.tid(X_8,"sys","lineitem");
-    X_72:bat[:oid,:date]  := sql.bind(X_8,"sys","lineitem","l_shipdate",0);
-    (X_74,r1_78) := sql.bind(X_8,"sys","lineitem","l_shipdate",2);
-    X_76:bat[:oid,:date]  := sql.bind(X_8,"sys","lineitem","l_shipdate",1);
-    X_77 := sql.delta(X_72,X_74,r1_78,X_76);
-    X_78 := algebra.leftfetchjoin(X_70,X_77);
-    X_79 := mtime.addmonths(A3,A4);
-    X_80 := algebra.subselect(X_78,A2,X_79,true,false,false);
-    X_284 := algebra.leftfetchjoin(X_80,X_70);
+    (X_57,r1_60) := algebra.subjoin(X_31,X_56,nil:BAT,nil:BAT,false,nil:lng);
+    X_60 := algebra.tinter(X_32,X_57);
+    X_283 := algebra.leftfetchjoin(X_60,X_23);
+    X_61:bat[:oid,:wrd]  := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",0);
+    (X_64,r1_67) := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",2);
+    X_66:bat[:oid,:wrd]  := sql.bind_idxbat(X_8,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",1);
+    X_67 := sql.delta(X_61,X_64,r1_67,X_66);
+    X_68:bat[:oid,:wrd]  := algebra.leftfetchjoin(X_283,X_67);
+    X_69:bat[:oid,:oid]  := sql.tid(X_8,"sys","lineitem");
+    X_71:bat[:oid,:date]  := sql.bind(X_8,"sys","lineitem","l_shipdate",0);
+    (X_73,r1_77) := sql.bind(X_8,"sys","lineitem","l_shipdate",2);
+    X_75:bat[:oid,:date]  := sql.bind(X_8,"sys","lineitem","l_shipdate",1);
+    X_76 := sql.delta(X_71,X_73,r1_77,X_75);
+    X_77 := algebra.leftfetchjoin(X_69,X_76);
+    X_78 := mtime.addmonths(A3,A4);
+    X_79 := algebra.subselect(X_77,A2,X_78,true,false,false);
+    X_284 := algebra.leftfetchjoin(X_79,X_69);
     X_82:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_partkey",0);
     (X_86,r1_93) := sql.bind(X_8,"sys","lineitem","l_partkey",2);
     X_89:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_partkey",1);
@@ -116,17 +116,17 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_92:bat[:oid,:int]  := algebra.leftfetchjoin(X_284,X_91);
     X_93:bat[:oid,:wrd]  := batmkey.hash(X_92);
     X_95:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_suppkey",0);
-    (X_97,r1_108) := sql.bind(X_8,"sys","lineitem","l_suppkey",2);
+    (X_98,r1_109) := sql.bind(X_8,"sys","lineitem","l_suppkey",2);
     X_100:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_suppkey",1);
-    X_101 := sql.delta(X_95,X_97,r1_108,X_100);
+    X_101 := sql.delta(X_95,X_98,r1_109,X_100);
     X_102:bat[:oid,:int]  := algebra.leftfetchjoin(X_284,X_101);
     X_103:bat[:oid,:wrd]  := mkey.bulk_rotate_xor_hash(X_93,22,X_102);
-    (X_104,r1_116) := algebra.subjoin(X_69,X_103,nil:BAT,nil:BAT,true,nil:lng);
-    X_109 := algebra.leftfetchjoin(X_61,X_31);
-    X_110 := algebra.leftfetchjoin(X_104,X_109);
-    X_111 := algebra.leftfetchjoin(r1_116,X_92);
-    X_112:bat[:oid,:bit]  := batcalc.==(X_110,X_111);
-    X_113 := algebra.subselect(X_112,true,true,true,true,false);
+    (X_104,r1_116) := algebra.subjoin(X_68,X_103,nil:BAT,nil:BAT,false,nil:lng);
+    X_108 := algebra.leftfetchjoin(X_60,X_31);
+    X_109 := algebra.leftfetchjoin(X_104,X_108);
+    X_110 := algebra.leftfetchjoin(r1_116,X_92);
+    X_111:bat[:oid,:bit]  := batcalc.==(X_109,X_110);
+    X_113 := algebra.subselect(X_111,true,true,true,true,false);
     X_115 := algebra.leftfetchjoin(X_113,X_104);
     X_116:bat[:oid,:int]  := sql.bind(X_8,"sys","partsupp","ps_suppkey",0);
     (X_121,r1_136) := sql.bind(X_8,"sys","partsupp","ps_suppkey",2);
@@ -139,7 +139,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_131:bat[:oid,:bit]  := batcalc.==(X_128,X_130);
     X_132 := algebra.subselect(X_131,true,true,true,true,false);
     X_133 := algebra.leftfetchjoin(X_132,X_115);
-    X_134:bat[:oid,:oid]  := batcalc.identity(X_109);
+    X_134:bat[:oid,:oid]  := batcalc.identity(X_108);
     X_135 := algebra.leftfetchjoin(X_133,X_134);
     (X_136,r1_154,r2_154) := group.subgroupdone(X_135);
     X_285 := algebra.leftfetchjoin(r1_154,X_133);
@@ -153,7 +153,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     (X_141,r1_159) := sql.bind(X_8,"sys","partsupp","ps_availqty",2);
     X_143:bat[:oid,:int]  := sql.bind(X_8,"sys","partsupp","ps_availqty",1);
     X_144 := sql.delta(X_139,X_141,r1_159,X_143);
-    X_145:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_285,X_61,X_23,X_144);
+    X_145:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_285,X_60,X_23,X_144);
     X_146:bat[:oid,:hge]  := batcalc.hge(X_145,22,2);
     X_149 := calc.lng(1,A1,11,1);
     X_152 := calc.hge(1,X_149,22,1);
@@ -162,7 +162,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_167:bat[:oid,:bit]  := batcalc.>(X_146,X_166);
     X_168 := algebra.subselect(X_167,true,true,true,true,false);
     X_170:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_168,X_285,X_127);
-    (X_171,r1_203) := algebra.subjoin(X_21,X_170,nil:BAT,nil:BAT,true,nil:lng);
+    (X_171,r1_203) := algebra.subjoin(X_21,X_170,nil:BAT,nil:BAT,false,nil:lng);
     X_175 := algebra.tinter(X_22,X_171);
     X_286 := algebra.leftfetchjoin(X_175,X_9);
     X_176:bat[:oid,:int]  := sql.bind(X_8,"sys","supplier","s_nationkey",0);
@@ -182,7 +182,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_204:bat[:oid,:int]  := sql.bind(X_8,"sys","nation","n_nationkey",1);
     X_205 := sql.delta(X_200,X_202,r1_236,X_204);
     X_206:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_197,X_187,X_205);
-    (X_207,r1_242) := algebra.subjoin(X_186,X_206,nil:BAT,nil:BAT,true,nil:lng);
+    (X_207,r1_242) := algebra.subjoin(X_186,X_206,nil:BAT,nil:BAT,false,nil:lng);
     X_287 := algebra.leftfetchjoin(X_207,X_175);
     X_211:bat[:oid,:str]  := sql.bind(X_8,"sys","supplier","s_name",0);
     (X_215,r1_250) := sql.bind(X_8,"sys","supplier","s_name",2);

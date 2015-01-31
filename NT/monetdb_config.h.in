@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -993,6 +993,14 @@
 #ifndef __cplusplus
 #ifndef inline
 #define inline __inline
+#endif
+#endif
+
+/* Define to `__restrict__' or `__restrict' if that's what the C compiler
+   calls it, or to nothing if 'restrict' is not supported under any name.  */
+#ifndef __cplusplus
+#ifndef restrict
+#define restrict __restrict
 #endif
 #endif
 

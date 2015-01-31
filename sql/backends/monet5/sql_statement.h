@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -78,8 +78,6 @@ typedef enum stmt_type {
 	st_join,
 	st_join2,
 	st_joinN,
-	st_diff,
-	st_union,
 
 	st_export,
 	st_append,
@@ -205,8 +203,6 @@ extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins);
 extern stmt *stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2);
 
-extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
-extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_list(sql_allocator *sa, list *l);
 extern void stmt_set_nrcols(stmt *s);
 

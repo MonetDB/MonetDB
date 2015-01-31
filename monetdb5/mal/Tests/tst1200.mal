@@ -511,7 +511,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 ## create timestamps in bulk from the above bats with dates, daytimes and tzones
 # Skipped due to coercion implication
 	kh_a:bat[:oid,:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
-	timestamp_bat:=kh_a; bat.setWriteMode(kh_a);
+	timestamp_bat:=kh_a; bat.setAccess(kh_a,"w");
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);
 ## KILL
 ## var timestamp_now := timestamp(epoch());
@@ -533,7 +533,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
 	tzname:bat[:oid,:str]:= bbp.bind("timezone_name");
 	tzdef:bat[:oid,:timezone]:= bbp.bind("timezone_def");
-	tzn:= bat.reverse(tzname);
+	tzn:= tzname; 
 	io.print("print(timezones)");
 	io.print(tzname,tzdef);
 	o:= algebra.find(tzn,"Wake Island");
@@ -602,7 +602,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	bj_a := bat.setColumn(timestamp_eur,"West/Europe");
 #	timestamp_eur.bat.setColumn("West/Europe"),
 	o := algebra.find(tzn,"West/Europe");
-	cj_a:timezone := algebra.find(tzdef,o);
+	cj_a := algebra.fetch(tzdef,o);
 	dj_a:bat[:oid,:bit] := mal.multiplex("mtime","dst",timestamp_eur,cj_a);
 	ej_a := bat.setColumn(dj_a,"dst");
 #	[dst](timestamp_eur,algebra.find(timezones,"West/Europe")).bat.setColumn("dst"),

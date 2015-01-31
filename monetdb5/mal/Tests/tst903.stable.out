@@ -11,7 +11,7 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31722/
 # MonetDB/GIS module loaded
@@ -138,16 +138,14 @@ exit i;
     cnt := aggr.count(z9);
     mdb.setDebug(dbgmsk_set);
     t0 := alarm.usec();
-    X_99 := bat.reverse(b);
-    X_101 := bat.new(nil:oid,nil:lng);
-barrier (X_105,X_106) := iterator.new(b);
-    X_108 := algebra.fetch(c,X_105);
-    X_110 := calc.+(X_106,X_108);
-    X_111 := algebra.fetch(X_99,X_105);
-    bat.insert(X_101,X_111,X_110);
-    redo (X_105,X_106) := iterator.next(b);
-exit (X_105,X_106);
-    x:bat[:oid,:lng]  := X_101;
+    X_99 := bat.new(nil:oid,nil:lng);
+barrier (X_103,X_104) := iterator.new(b);
+    X_106 := algebra.fetch(c,X_103);
+    X_108 := calc.+(X_104,X_106);
+    bat.append(X_99,X_108);
+    redo (X_103,X_104) := iterator.next(b);
+exit (X_103,X_104);
+    x:bat[:oid,:lng]  := X_99;
     t1 := alarm.usec();
     mdb.setDebug(dbgmsk_restore);
     d0 := calc.-(t1,t0);

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -385,7 +385,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 
 	path = GDKfilepath(farmid, dir, name, ext);
 	ret = stat(path, &st);
-	IODEBUG THRprintf(GDKstdout, "#stat(%s) = %d\n", path, ret);
+	IODEBUG fprintf(stderr, "#stat(%s) = %d\n", path, ret);
 	GDKfree(path);
 	return (ret == 0);
 }
@@ -866,9 +866,9 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	THRprintf(GDKstdout,
-		  "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
-		  hheader->head, hheader->alignment, heap->free);
+	fprintf(stderr,
+		"#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
+		hheader->head, hheader->alignment, heap->free);
 
 	/* Walk the blocklist */
 	block = hheader->firstblock;
@@ -877,19 +877,19 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			THRprintf(GDKstdout,
-				  "#   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
-				  PTRFMTCAST(void *)block,
-				  blockp->size, blockp->next);
+			fprintf(stderr,
+				"#   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
+				PTRFMTCAST(void *)block,
+				blockp->size, blockp->next);
 
 			cur_free = blockp->next;
 			block += blockp->size;
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			THRprintf(GDKstdout,
-				  "#   block at " SZFMT " with size " SZFMT "\n",
-				  block, size);
+			fprintf(stderr,
+				"#   block at " SZFMT " with size " SZFMT "\n",
+				block, size);
 			block += size;
 		}
 	}
@@ -920,7 +920,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
 #ifdef TRACE
-	THRprintf(GDKstdout, "#We created the following heap\n");
+	fprintf(stderr, "#We created the following heap\n");
 	HEAP_printstatus(heap);
 #endif
 }
@@ -959,7 +959,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
 #ifdef TRACE
-	THRprintf(GDKstdout, "#Enter malloc with " SZFMT " bytes\n", nbytes);
+	fprintf(stderr, "#Enter malloc with " SZFMT " bytes\n", nbytes);
 #endif
 
 	/* add space for size field */
@@ -978,7 +978,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKstdout, "#block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
+		fprintf(stderr, "#block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
 #endif
 		if ((trail != 0) && (block <= trail))
 			GDKfatal("HEAP_malloc: Free list is not orderered\n");
@@ -1000,7 +1000,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		block = (size_t) heap->free;	/* current end-of-heap */
 
 #ifdef TRACE
-		THRprintf(GDKstdout, "#No block found\n");
+		fprintf(stderr, "#No block found\n");
 #endif
 
 		/* Double the size of the heap.
@@ -1015,7 +1015,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		trailp = HEAP_index(heap, trail, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKstdout, "#New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
+		fprintf(stderr, "#New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
 #endif
 
 		blockp->next = 0;
@@ -1026,7 +1026,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		 * newly allocated memory */
 		if ((trail != 0) && (trail + trailp->size == block)) {
 #ifdef TRACE
-			THRprintf(GDKstdout, "#Glue newly generated block to adjacent last\n");
+			fprintf(stderr, "#Glue newly generated block to adjacent last\n");
 #endif
 
 			trailp->size += blockp->size;

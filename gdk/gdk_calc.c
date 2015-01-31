@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -118,8 +118,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
 	do {								\
-		const TYPE1 *src = (const TYPE1 *) Tloc(b, b->batFirst); \
-		TYPE2 *dst = (TYPE2 *) Tloc(bn, bn->batFirst);		\
+		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, b->batFirst); \
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, bn->batFirst); \
 		CANDLOOP(dst, i, TYPE2##_nil, 0, start);		\
 		if (b->T->nonil && cand == NULL) {			\
 			for (i = start; i < end; i++)			\
@@ -208,7 +208,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcnot");
 	if (checkbats(b, NULL, "BATcalcnot") == GDK_FAIL)
@@ -328,7 +328,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcnegate");
 	if (checkbats(b, NULL, "BATcalcnegate") == GDK_FAIL)
@@ -458,7 +458,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils= 0;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcabsolute");
 	if (checkbats(b, NULL, "BATcalcabsolute") == GDK_FAIL)
@@ -592,7 +592,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalciszero");
 	if (checkbats(b, NULL, "BATcalciszero") == GDK_FAIL)
@@ -724,7 +724,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcsign");
 	if (checkbats(b, NULL, "BATcalcsign") == GDK_FAIL)
@@ -850,22 +850,22 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 /* ---------------------------------------------------------------------- */
 /* is the value nil (any type) */
 
-#define ISNIL_TYPE(TYPE)						\
+#define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
-		const TYPE *src = (const TYPE *) Tloc(b, b->batFirst);	\
+		const TYPE *restrict src = (const TYPE *) Tloc(b, b->batFirst);	\
 		for (i = start; i < end; i++) {				\
 			CHECKCAND(dst, i, b->H->seq, bit_nil);		\
-			dst[i] = (bit) (src[i] == TYPE##_nil);		\
+			dst[i] = (bit) ((src[i] == TYPE##_nil) ^ NOTNIL); \
 		}							\
 	} while (0)
 
-BAT *
-BATcalcisnil(BAT *b, BAT *s)
+static BAT *
+BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 {
 	BAT *bn;
 	BUN i, cnt, start, end;
-	const oid *cand = NULL, *candend = NULL;
-	bit *dst;
+	const oid *restrict cand = NULL, *candend = NULL;
+	bit *restrict dst;
 	BUN nils = 0;
 
 	BATcheck(b, "BATcalcisnil");
@@ -899,27 +899,27 @@ BATcalcisnil(BAT *b, BAT *s)
 
 	switch (BASETYPE(b->T->type)) {
 	case TYPE_bte:
-		ISNIL_TYPE(bte);
+		ISNIL_TYPE(bte, notnil);
 		break;
 	case TYPE_sht:
-		ISNIL_TYPE(sht);
+		ISNIL_TYPE(sht, notnil);
 		break;
 	case TYPE_int:
-		ISNIL_TYPE(int);
+		ISNIL_TYPE(int, notnil);
 		break;
 	case TYPE_lng:
-		ISNIL_TYPE(lng);
+		ISNIL_TYPE(lng, notnil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		ISNIL_TYPE(hge);
+		ISNIL_TYPE(hge, notnil);
 		break;
 #endif
 	case TYPE_flt:
-		ISNIL_TYPE(flt);
+		ISNIL_TYPE(flt, notnil);
 		break;
 	case TYPE_dbl:
-		ISNIL_TYPE(dbl);
+		ISNIL_TYPE(dbl, notnil);
 		break;
 	default:
 	{
@@ -929,7 +929,7 @@ BATcalcisnil(BAT *b, BAT *s)
 
 		for (i = start; i < end; i++) {
 			CHECKCAND(dst, i, b->H->seq, bit_nil);
-			dst[i] = (bit) ((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0);
+			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0) ^ notnil);
 		}
 		break;
 	}
@@ -952,6 +952,18 @@ BATcalcisnil(BAT *b, BAT *s)
 	return bn;
 }
 
+BAT *
+BATcalcisnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 0);
+}
+
+BAT *
+BATcalcisnotnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 1);
+}
+
 int
 VARcalcisnil(ValPtr ret, const ValRecord *v)
 {
@@ -966,6 +978,342 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	ret->vtype = TYPE_bit;
 	ret->val.btval = (bit) !VALisnil(v);
 	return GDK_SUCCEED;
+}
+
+BAT *
+BATcalcmin(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmin");
+	BATcheck(b2, "BATcalcmin");
+
+	if (checkbats(b1, b2, "BATcalcmin") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmin: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) > 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmin_no_nil");
+	BATcheck(b2, "BATcalcmin_no_nil");
+
+	if (checkbats(b1, b2, "BATcalcmin_no_nil") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmin_no_nil: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0) {
+			if (cmp(p2, nil) == 0) {
+				/* both values are nil */
+				nils++;
+			} else {
+				p1 = p2;
+			}
+		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) > 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmax(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmax");
+	BATcheck(b2, "BATcalcmax");
+
+	if (checkbats(b1, b2, "BATcalcmax") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmax: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmax_no_nil");
+	BATcheck(b2, "BATcalcmax_no_nil");
+
+	if (checkbats(b1, b2, "BATcalcmax_no_nil") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmax_no_nil: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0) {
+			if (cmp(p2, nil) == 0) {
+				/* both values are nil */
+				nils++;
+			} else {
+				p1 = p2;
+			}
+		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -983,8 +1331,8 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -1013,8 +1361,8 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff)	\
 {									\
 	BUN i, j, k;							\
@@ -1275,8 +1623,8 @@ ADD_3TYPE(dbl, dbl, dbl)
 static BUN
 add_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -2481,7 +2829,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 
 static BUN
 addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
-	    BUN cnt, BUN start, BUN end, const oid *cand, const oid *candend)
+	    BUN cnt, BUN start, BUN end, const oid *restrict cand, const oid *candend)
 {
 	BUN i, j, k, frst = BUNfirst(bn);
 	BUN nils = start + (cnt - end);
@@ -2553,7 +2901,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcadd");
 	BATcheck(b2, "BATcalcadd");
@@ -2609,7 +2957,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcaddcst");
 
@@ -2662,7 +3010,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstadd");
 
@@ -2726,14 +3074,14 @@ static BAT *
 BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
-				      const oid *, const oid *, oid, int,
+				      const oid *restrict, const oid *, oid, int,
 				      const char *),
 		const char *func)
 {
 	BAT *bn;
 	BUN nils= 0;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 	bte one = 1;
 
 	BATcheck(b, func);
@@ -2812,8 +3160,8 @@ VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -2842,8 +3190,8 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff)	\
 {									\
 	BUN i, j, k;							\
@@ -3104,8 +3452,8 @@ SUB_3TYPE(dbl, dbl, dbl)
 static BUN
 sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -4314,7 +4662,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcsub");
 	BATcheck(b2, "BATcalcsub");
@@ -4358,7 +4706,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcsubcst");
 
@@ -4406,7 +4754,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstsub");
 
@@ -4492,8 +4840,8 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -4523,8 +4871,8 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff)	\
 {									\
 	BUN i, j, k;							\
@@ -4551,8 +4899,8 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			    const TYPE2 *rgt, int incr2,		\
-			    hge *dst, BUN cnt, BUN start,		\
-			    BUN end, const oid *cand,			\
+			    hge * restrict dst, BUN cnt, BUN start,	\
+			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
 			    int abort_on_error)				\
 {									\
@@ -4625,8 +4973,8 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			    const TYPE2 *rgt, int incr2,		\
-			    lng *dst, BUN cnt, BUN start,		\
-			    BUN end, const oid *cand,			\
+			    lng *restrict dst, BUN cnt, BUN start,	\
+			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
 			    int abort_on_error)				\
 {									\
@@ -4658,8 +5006,8 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -4958,8 +5306,8 @@ MUL_2TYPE_float(dbl, dbl, dbl)
 static BUN
 mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -6168,14 +6516,14 @@ static BAT *
 BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 		 BUN (*typeswitchloop)(const void *, int, int, const void *,
 				       int, int, void *, int, BUN, BUN, BUN,
-				       const oid *, const oid *, oid, int,
+				       const oid *restrict, const oid *, oid, int,
 				       const char *),
 		 const char *func)
 {
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, func);
 	BATcheck(b2, func);
@@ -6226,7 +6574,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcmulcst");
 
@@ -6284,7 +6632,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstmul");
 
@@ -6356,8 +6704,8 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 static BUN								\
 div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -6388,8 +6736,8 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -6672,8 +7020,8 @@ DIV_3TYPE_float(dbl, dbl, dbl)
 static BUN
 div_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -8093,7 +8441,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcdivcst");
 
@@ -8154,7 +8502,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstdiv");
 
@@ -8211,8 +8559,8 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,		\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -8243,8 +8591,8 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
-				TYPE3 *dst, BUN cnt, BUN start,		\
-				BUN end, const oid *cand,		\
+				TYPE3 *restrict dst, BUN cnt, BUN start, \
+				BUN end, const oid *restrict cand,		\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -8494,8 +8842,8 @@ FMOD_3TYPE(dbl, dbl, dbl, fmod)
 static BUN
 mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -9677,7 +10025,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcmodcst");
 
@@ -9720,7 +10068,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstmod");
 
@@ -9779,8 +10127,8 @@ VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 static BUN
 xor_typeswitchloop(const void *lft, int incr1,
 		   const void *rgt, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int nonil, const char *func)
 {
@@ -9841,7 +10189,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcxor");
 	BATcheck(b2, "BATcalcxor");
@@ -9891,7 +10239,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcxorcst");
 
@@ -9940,7 +10288,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstxor");
 
@@ -10008,8 +10356,8 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 static BUN
 or_typeswitchloop(const void *lft, int incr1,
 		  const void *rgt, int incr2,
-		  void *dst, int tp, BUN cnt,
-		  BUN start, BUN end, const oid *cand,
+		  void *restrict dst, int tp, BUN cnt,
+		  BUN start, BUN end, const oid *restrict cand,
 		  const oid *candend, oid candoff,
 		  int nonil, const char *func)
 {
@@ -10088,7 +10436,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcor");
 	BATcheck(b2, "BATcalcor");
@@ -10138,7 +10486,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcorcst");
 
@@ -10187,7 +10535,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstor");
 
@@ -10255,8 +10603,8 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 static BUN
 and_typeswitchloop(const void *lft, int incr1,
 		   const void *rgt, int incr2,
-		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, int tp, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int nonil, const char *func)
 {
@@ -10332,7 +10680,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcand");
 	BATcheck(b2, "BATcalcand");
@@ -10382,7 +10730,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcandcst");
 
@@ -10430,7 +10778,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstand");
 
@@ -10513,8 +10861,8 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 static BUN
 lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -10683,7 +11031,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalclsh");
 	BATcheck(b2, "BATcalclsh");
@@ -10726,7 +11074,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalclshcst");
 
@@ -10768,7 +11116,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstlsh");
 
@@ -10825,8 +11173,8 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 static BUN
 rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
-		   void *dst, BUN cnt,
-		   BUN start, BUN end, const oid *cand,
+		   void *restrict dst, BUN cnt,
+		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
@@ -10995,7 +11343,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b1, "BATcalcrsh");
 	BATcheck(b2, "BATcalcrsh");
@@ -11038,7 +11386,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcrshcst");
 
@@ -11080,7 +11428,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	BAT *bn;
 	BUN nils;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalccstrsh");
 
@@ -11388,14 +11736,14 @@ static BAT *
 BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
-		      int tp, BUN cnt, BUN start, BUN end, const oid *cand,
+		      int tp, BUN cnt, BUN start, BUN end, const oid *restrict cand,
 		      const oid *candend, oid seqbase, int sym,
 		      const char *func)
 {
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, j, k, l, soff = 0, loff = 0, hoff = 0;
-	bit *dst;
+	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
@@ -11492,7 +11840,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcbetween");
 	BATcheck(lo, "BATcalcbetween");
@@ -11545,7 +11893,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcbetweencstcst");
 
@@ -11577,7 +11925,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcbetweenbatcst");
 
@@ -11610,7 +11958,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcbetweencstbat");
 
@@ -11711,16 +12059,12 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
 			if (src[i] == bit_nil) {			\
-				if (hd)					\
-					*hd++ = (oid) i + off;		\
-				((TYPE *) dst)[j++] = * (TYPE *) nil;	\
+				((TYPE *) dst)[i] = * (TYPE *) nil;	\
 				nils++;					\
 			} else if (src[i]) {				\
-				if (hd)					\
-					*hd++ = (oid) i + off;		\
-				((TYPE *) dst)[j++] = ((TYPE *) col1)[k]; \
-			} else if (col2) {				\
-				((TYPE *) dst)[j++] = ((TYPE *) col2)[l]; \
+				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
+			} else {					\
+				((TYPE *) dst)[i] = ((TYPE *) col2)[l]; \
 			}						\
 			k += incr1;					\
 			l += incr2;					\
@@ -11736,19 +12080,17 @@ BATcalcifthenelse_intern(BAT *b,
 			 int tpe)
 {
 	BAT *bn;
-	void *dst;
-	oid *hd;
-	BUN i, j, k, l;
+	void *restrict dst;
+	BUN i, k, l;
 	BUN nils = 0;
 	const void *nil;
 	const void *p;
 	const bit *src;
-	oid off = BAThdense(b) ? b->H->seq : 0;
 	BUN cnt = b->batCount;
 
-	assert(col2 != NULL || incr2 == 0);
+	assert(col2 != NULL);
 
-	bn = BATnew(col2 || off == oid_nil ? TYPE_void : TYPE_oid, tpe, cnt, TRANSIENT);
+	bn = BATnew(TYPE_void, tpe, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -11756,8 +12098,7 @@ BATcalcifthenelse_intern(BAT *b,
 
 	nil = ATOMnilptr(tpe);
 	dst = (void *) Tloc(bn, bn->batFirst);
-	hd = col2 || off == oid_nil ? NULL : (oid *) Hloc(bn, bn->batFirst);
-	j = k = l = 0;
+	k = l = 0;
 	if (bn->T->varsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
@@ -11770,20 +12111,13 @@ BATcalcifthenelse_intern(BAT *b,
 					p = heap1 + VarHeapVal(col1, k, width1);
 				else
 					p = col1;
-			} else if (col2) {
+			} else {
 				if (heap2)
 					p = heap2 + VarHeapVal(col2, l, width2);
 				else
 					p = col2;
-			} else {
-				p = NULL;
 			}
-			if (p) {
-				tfastins_nocheck(bn, j, p, Tsize(bn));
-				if (hd)
-					*hd++ = (oid) i + off;
-				j++;
-			}
+			tfastins_nocheck(bn, i, p, Tsize(bn));
 			k += incr1;
 			l += incr2;
 		}
@@ -11815,40 +12149,25 @@ BATcalcifthenelse_intern(BAT *b,
 					nils++;
 				} else if (src[i]) {
 					p = ((const char *) col1) + k * width1;
-				} else if (col2) {
-					p = ((const char *) col2) + l * width2;
 				} else {
-					p = NULL;
+					p = ((const char *) col2) + l * width2;
 				}
-				if (p) {
-					memcpy(dst, p, bn->T->width);
-					if (hd)
-						*hd++ = (oid) i + off;
-					j++;
-					dst = (void *) ((char *) dst + bn->T->width);
-				}
+				memcpy(dst, p, bn->T->width);
+				dst = (void *) ((char *) dst + bn->T->width);
 				k += incr1;
 				l += incr2;
 			}
 		}
 	}
 
-	BATsetcount(bn, j);
+	BATsetcount(bn, cnt);
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0 && nonil1 && (col2 == NULL || nonil2);
-
-	if (hd) {
-		bn->H->sorted = 1;
-		bn->H->revsorted = cnt <= 1;
-		bn->H->key = 1;
-		bn->H->nil = 0;
-		bn->H->nonil = 1;
-	}
+	bn->T->nonil = nils == 0 && nonil1 && nonil2;
 
 	return bn;
   bunins_failed:
@@ -11861,20 +12180,19 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 {
 	BATcheck(b, "BATcalcifthenelse");
 	BATcheck(b1, "BATcalcifthenelse");
-	/* b2 may be NULL */
+	BATcheck(b2, "BATcalcifthenelse");
 
 	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b2 && checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b->T->type != TYPE_bit ||
-	    (b2 != NULL && b1->T->type != b2->T->type)) {
+	if (b->T->type != TYPE_bit || b1->T->type != b2->T->type) {
 		GDKerror("BATcalcifthenelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
 					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
 					b1->T->type);
 }
 
@@ -11902,18 +12220,17 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 {
 	BATcheck(b, "BATcalcifthenelsecst");
 	BATcheck(c1, "BATcalcifthenelsecst");
-	/* b2 may be NULL */
+	BATcheck(b2, "BATcalcifthenelsecst");
 
 	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
-	if (b->T->type != TYPE_bit ||
-	    (b2 != NULL && b2->T->type != c1->vtype)) {
+	if (b->T->type != TYPE_bit || b2->T->type != c1->vtype) {
 		GDKerror("BATcalcifthencstelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
 					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					b2 ? Tloc(b2, b2->batFirst) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
 					c1->vtype);
 }
 
@@ -11952,8 +12269,8 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 
 #define convertimpl_copy(TYPE)					\
 static BUN							\
-convert_##TYPE##_##TYPE(const TYPE *src, TYPE *dst, BUN cnt,	\
-			BUN start, BUN end, const oid *cand,	\
+convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst, BUN cnt,	\
+			BUN start, BUN end, const oid *restrict cand,	\
 			const oid *candend, oid candoff)	\
 {								\
 	BUN i, nils = 0;					\
@@ -11970,8 +12287,8 @@ convert_##TYPE##_##TYPE(const TYPE *src, TYPE *dst, BUN cnt,	\
 
 #define convertimpl_enlarge(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
-			  BUN start, BUN end, const oid *cand,		\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
+			  BUN start, BUN end, const oid *restrict cand,		\
 			  const oid *candend, oid candoff)		\
 {									\
 	BUN i, nils = 0;						\
@@ -11998,8 +12315,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 
 #define convertimpl_oid_enlarge(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
-		      BUN start, BUN end, const oid *cand,		\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
+		      BUN start, BUN end, const oid *restrict cand,		\
 		      const oid *candend, oid candoff,			\
 		      int abort_on_error)				\
 {									\
@@ -12026,8 +12343,8 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 
 #define convertimpl_oid_reduce(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
-		      BUN start, BUN end, const oid *cand,		\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
+		      BUN start, BUN end, const oid *restrict cand,		\
 		      const oid *candend, oid candoff,			\
 		      int abort_on_error)				\
 {									\
@@ -12055,8 +12372,8 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,		\
 
 #define convertimpl_reduce(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
-			  BUN start, BUN end, const oid *cand,		\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
+			  BUN start, BUN end, const oid *restrict cand,		\
 			  const oid *candend, oid candoff,		\
 			  int abort_on_error)				\
 {									\
@@ -12086,8 +12403,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
  * the NIL representation, so we need to check for that. */
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
-			  BUN start, BUN end, const oid *cand,		\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
+			  BUN start, BUN end, const oid *restrict cand,		\
 			  const oid *candend, oid candoff,		\
 			  int abort_on_error)				\
 {									\
@@ -12113,25 +12430,25 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
 	return nils;							\
 }
 
-#define convert2bit_impl(TYPE)					\
-static BUN							\
-convert_##TYPE##_bit(const TYPE *src, bit *dst, BUN cnt,	\
-		     BUN start, BUN end, const oid *cand,	\
-		     const oid *candend, oid candoff)		\
-{								\
-	BUN i, nils = 0;					\
-								\
-	CANDLOOP(dst, i, bit_nil, 0, start);			\
-	for (i = start; i < end; i++) {				\
-		CHECKCAND(dst, i, candoff, bit_nil);		\
-		if (src[i] == TYPE##_nil) {			\
-			dst[i] = bit_nil;			\
-			nils++;					\
-		} else						\
-			dst[i] = (bit) (src[i] != 0);		\
-	}							\
-	CANDLOOP(dst, i, bit_nil, end, cnt);			\
-	return nils;						\
+#define convert2bit_impl(TYPE)						\
+static BUN								\
+convert_##TYPE##_bit(const TYPE *src, bit *restrict dst, BUN cnt,	\
+		     BUN start, BUN end, const oid *restrict cand,		\
+		     const oid *candend, oid candoff)			\
+{									\
+	BUN i, nils = 0;						\
+									\
+	CANDLOOP(dst, i, bit_nil, 0, start);				\
+	for (i = start; i < end; i++) {					\
+		CHECKCAND(dst, i, candoff, bit_nil);			\
+		if (src[i] == TYPE##_nil) {				\
+			dst[i] = bit_nil;				\
+			nils++;						\
+		} else							\
+			dst[i] = (bit) (src[i] != 0);			\
+	}								\
+	CANDLOOP(dst, i, bit_nil, end, cnt);				\
+	return nils;							\
 }
 
 convertimpl_copy(bte)
@@ -12227,7 +12544,7 @@ convert2bit_impl(dbl)
 
 static BUN
 convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
-		BUN start, BUN end, const oid *cand,
+		BUN start, BUN end, const oid *restrict cand,
 		const oid *candend, oid candoff)
 {
 	str dst = 0;
@@ -12270,8 +12587,8 @@ convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
 }
 
 static BUN
-convert_str_any(BAT *b, int tp, void *dst,
-		BUN start, BUN end, const oid *cand,
+convert_str_any(BAT *b, int tp, void *restrict dst,
+		BUN start, BUN end, const oid *restrict cand,
 		const oid *candend, oid candoff, int abort_on_error)
 {
 	BUN i, cnt = BATcount(b);
@@ -12331,13 +12648,13 @@ convert_str_any(BAT *b, int tp, void *dst,
 
 static BUN
 convert_void_any(oid seq, BUN cnt, BAT *bn,
-		 BUN start, BUN end, const oid *cand,
+		 BUN start, BUN end, const oid *restrict cand,
 		 const oid *candend, oid candoff, int abort_on_error)
 {
 	BUN nils = 0;
 	BUN i = 0;
 	int tp = bn->T->type;
-	void *dst = Tloc(bn, bn->batFirst);
+	void *restrict dst = Tloc(bn, bn->batFirst);
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[TYPE_oid].atomToStr;
 	str s = 0;
 	int len = 0;
@@ -12504,8 +12821,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 }
 
 static BUN
-convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
-		       BUN cnt, BUN start, BUN end, const oid *cand,
+convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
+		       BUN cnt, BUN start, BUN end, const oid *restrict cand,
 		       const oid *candend, oid candoff, int abort_on_error)
 {
 	switch (BASETYPE(stp)) {
@@ -12908,7 +13225,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	BAT *bn;
 	BUN nils = 0;	/* in case no conversion defined */
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATconvert");
 	if (tp == TYPE_void)

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -353,14 +353,14 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 
 	bn = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 
 	bs = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
 	if (bs == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 

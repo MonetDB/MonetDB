@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,3 +26,4 @@ extern int dump_functions(Mapi mid, stream *toConsole, const char *sname, const 
 extern int dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
 extern int has_systemfunctions(Mapi mid);
+extern int has_schemas_system(Mapi mid);

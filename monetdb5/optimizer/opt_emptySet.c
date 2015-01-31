@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -52,7 +52,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	int i, j, actions = 0;
 	InstrPtr p;
 	str existRef = putName("exist", 5);
-	str kintersectRef = putName("kintersect", 10);
 	str fragmentRef = putName("fragment", 8);
 	int *alias;
 	int runonce= FALSE;
@@ -154,32 +153,18 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 						break;
 					} 
 					if ( f == likeRef  || 
-					     f == sortRef  || 
-					     f == sortTailRef  ||
-					     f == sortHTRef  || 
-					     f == sortTHRef  || 
+					     f == sortRef  ||
 					     f == semijoinRef ||
-					     f == kintersectRef  ||
 					     f == fragmentRef ){
 
 						/* result is empty */
 						propagate(1);
 						break;
 					} 
-					if ( f == differenceRef || 
-					     f == kdifferenceRef ) {
+					if ( f == differenceRef ) {
 						propagate(1);
 						break;
 					}
-					if ( f == kunionRef) {
-						/* copy non-empty argument */
-						if( j == 1) {
-							propagate(2);
-						} else {
-							propagate(1);
-						}
-						break;
-					} 
 				}
 				if (getModuleId(p)== batRef) {
 					if ( f == reverseRef || f == mirrorRef ){

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1669,6 +1669,17 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+
+		/* subselect on update, with nil bat */
+		if (match == 1 && fm == 1 && isSubSelect(p) && p->retc == 1 && 
+		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 && bats == 2 &&
+		   isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) && getVarConstant(mb,getArg(p,2)).val.bval == bat_nil) {
+			if ((r = mat_apply1(mb, p, mat, mtop, m, fm)) != NULL)
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
+			actions++;
+			continue;
+		}
+
 
 		if (match == 3 && bats == 3 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -2234,7 +2234,6 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 	}
 	throw(MAL, "geom.wkbAsText", "Failed to create Text from Well Known Format");
 }
-
 str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	int itemsNum =0, i, type=wkbMultiLineString;
 	str ret = MAL_SUCCEED;

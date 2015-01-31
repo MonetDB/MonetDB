@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -261,12 +261,17 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 		 * string heap at known locations (namely the offset
 		 * in n added to toff), so insert offsets from n after
 		 * adding toff into b */
-		const unsigned char *tbp = (const unsigned char *) Tloc(n, BUNfirst(n));
-		const unsigned short *tsp = (const unsigned short *) Tloc(n, BUNfirst(n));
+		/* note the use of the "restrict" qualifier here: all
+		 * four pointers below point to the same value, but
+		 * only one of them will actually be used, hence we
+		 * still obey the rule for restrict-qualified
+		 * pointers */
+		const unsigned char *restrict tbp = (const unsigned char *) Tloc(n, BUNfirst(n));
+		const unsigned short *restrict tsp = (const unsigned short *) Tloc(n, BUNfirst(n));
 #if SIZEOF_VAR_T == 8
-		const unsigned int *tip = (const unsigned int *) Tloc(n, BUNfirst(n));
+		const unsigned int *restrict tip = (const unsigned int *) Tloc(n, BUNfirst(n));
 #endif
-		const var_t *tvp = (const var_t *) Tloc(n, BUNfirst(n));
+		const var_t *restrict tvp = (const var_t *) Tloc(n, BUNfirst(n));
 
 		BATloop(n, p, q) {
 			if (!append && b->htype)
@@ -1290,7 +1295,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
-	oid *grps, prev;
+	oid *restrict grps, prev;
 	BUN p, q, r;
 
 	if (b == NULL || !BAThdense(b)) {
@@ -1716,7 +1721,7 @@ BAT *
 BATconstant(int tailtype, const void *v, BUN n, int role)
 {
 	BAT *bn;
-	void *p;
+	void *restrict p;
 	BUN i;
 
 	if (v == NULL)
@@ -1883,8 +1888,8 @@ BATcount_no_nil(BAT *b)
 {
 	BUN cnt = 0;
 	BUN i, n;
-	const void *p, *nil;
-	const char *base;
+	const void *restrict p, *restrict nil;
+	const char *restrict base;
 	int t;
 	int (*cmp)(const void *, const void *);
 
@@ -2001,8 +2006,8 @@ BAT *
 BATmergecand(BAT *a, BAT *b)
 {
 	BAT *bn;
-	const oid *ap, *bp, *ape, *bpe;
-	oid *p, i;
+	const oid *restrict ap, *restrict bp, *ape, *bpe;
+	oid *restrict p, i;
 	oid af, al, bf, bl;
 	BATiter ai, bi;
 	bit ad, bd;
@@ -2135,8 +2140,8 @@ BAT *
 BATintersectcand(BAT *a, BAT *b)
 {
 	BAT *bn;
-	const oid *ap, *bp, *ape, *bpe;
-	oid *p;
+	const oid *restrict ap, *restrict bp, *ape, *bpe;
+	oid *restrict p;
 	oid af, al, bf, bl;
 	BATiter ai, bi;
 

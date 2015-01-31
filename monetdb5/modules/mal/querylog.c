@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -159,7 +159,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPrename((X)->batCacheid,"_"); BBPreleaseref((X)->batCacheid); } (X) = NULL;
+#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -156,8 +156,8 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
 	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -218,8 +218,8 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	bn = BATnew(TYPE_void,TYPE_str, 32, TRANSIENT);
 	b = BATnew(TYPE_void, TYPE_wrd, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -295,8 +295,8 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	bat i;
 
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -413,8 +413,8 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	bat i;
 
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -532,8 +532,8 @@ SYSioStatistics(bat *ret, bat *ret2)
 	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
 	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -604,8 +604,8 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
 	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);
@@ -652,8 +652,8 @@ SYSgdkThread(bat *ret, bat *ret2)
 	bn = BATnew(TYPE_void,TYPE_int, THREADS, TRANSIENT);
 	b = BATnew(TYPE_void, TYPE_str, THREADS, TRANSIENT);
 	if (b == 0 || bn == 0) {
-		if ( b) BBPreleaseref(b->batCacheid);
-		if ( bn) BBPreleaseref(bn->batCacheid);
+		if ( b) BBPunfix(b->batCacheid);
+		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(b,0);

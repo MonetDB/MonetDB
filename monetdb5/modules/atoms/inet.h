@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -53,6 +53,7 @@ typedef struct _inet {
 
 inet_export int INETfromString(str src, int *len, inet **retval);
 inet_export int INETtoString(str *retval, int *len, inet *handle);
+inet_export int INETcompare(inet *l, inet *r);
 inet_export str INETnew(inet * retval, str *in);
 inet_export str INET_isnil(bit *retval, inet * val);
 inet_export str INET_comp_EQ(bit *retval, inet * val1, inet *val2);

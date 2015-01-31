@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -198,6 +198,7 @@ extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
+extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;

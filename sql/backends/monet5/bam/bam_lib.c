@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -254,7 +254,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags), TRANSIENT);
 	if (result == NULL) {
-		BBPreleaseref(flags->batCacheid);
+		BBPunfix(flags->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, flags->hseqbase);
@@ -269,7 +269,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(flags->batCacheid);
+	BBPunfix(flags->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -291,7 +291,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs), TRANSIENT);
 	if (result == NULL) {
-		BBPreleaseref(seqs->batCacheid);
+		BBPunfix(seqs->batCacheid);
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, seqs->hseqbase);
@@ -303,8 +303,8 @@ reverse_seq_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_seq(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
-			BBPreleaseref(seqs->batCacheid);
+			BBPunfix(result->batCacheid);
+			BBPunfix(seqs->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -312,7 +312,7 @@ reverse_seq_bat(bat * ret, bat * bid)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(seqs->batCacheid);
+	BBPunfix(seqs->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -334,7 +334,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(quals), TRANSIENT);
 	if (result == NULL) {
-		BBPreleaseref(quals->batCacheid);
+		BBPunfix(quals->batCacheid);
 		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, quals->hseqbase);
@@ -346,8 +346,8 @@ reverse_qual_bat(bat * ret, bat * bid)
 		str r, msg;
 
 		if ((msg = reverse_qual(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(quals->batCacheid);
-			BBPreleaseref(result->batCacheid);
+			BBPunfix(quals->batCacheid);
+			BBPunfix(result->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -355,7 +355,7 @@ reverse_qual_bat(bat * ret, bat * bid)
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(quals->batCacheid);
+	BBPunfix(quals->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -377,7 +377,7 @@ seq_length_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		BBPreleaseref(cigars->batCacheid);
+		BBPunfix(cigars->batCacheid);
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, cigars->hseqbase);
@@ -390,15 +390,15 @@ seq_length_bat(bat * ret, bat * bid)
 		int r;
 
 		if ((msg = seq_length(&r, &t)) != MAL_SUCCEED) {
-			BBPreleaseref(result->batCacheid);
-			BBPreleaseref(cigars->batCacheid);
+			BBPunfix(result->batCacheid);
+			BBPunfix(cigars->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) &r, FALSE);
 	}
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(cigars->batCacheid);
+	BBPunfix(cigars->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 
@@ -419,16 +419,16 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
 	    (refs = BATdescriptor(*ref_pos)) == NULL ||
 		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
-			if( seqs) BBPreleaseref(seqs->batCacheid);
-			if( poss) BBPreleaseref(poss->batCacheid);
-			if( refs) BBPreleaseref(refs->batCacheid);
+			if( seqs) BBPunfix(seqs->batCacheid);
+			if( poss) BBPunfix(poss->batCacheid);
+			if( refs) BBPunfix(refs->batCacheid);
 			throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
 	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
-		BBPreleaseref(seqs->batCacheid);
-		BBPreleaseref(poss->batCacheid);
-		BBPreleaseref(refs->batCacheid);
+		BBPunfix(seqs->batCacheid);
+		BBPunfix(poss->batCacheid);
+		BBPunfix(refs->batCacheid);
 		throw(MAL, "seq_char_bat", 
 			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
@@ -437,9 +437,9 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		BBPreleaseref(seqs->batCacheid);
-		BBPreleaseref(poss->batCacheid);
-		BBPreleaseref(refs->batCacheid);
+		BBPunfix(seqs->batCacheid);
+		BBPunfix(poss->batCacheid);
+		BBPunfix(refs->batCacheid);
 		throw(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(result, seqs->hseqbase);
@@ -464,11 +464,11 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		str msg;
 
 		if ((msg = seq_char(&r, ref_val, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
-			BBPreleaseref(refs->batCacheid);
-			BBPreleaseref(seqs->batCacheid);
-			BBPreleaseref(poss->batCacheid);
-			BBPreleaseref(cigars->batCacheid);
-			BBPreleaseref(result->batCacheid);
+			BBPunfix(refs->batCacheid);
+			BBPunfix(seqs->batCacheid);
+			BBPunfix(poss->batCacheid);
+			BBPunfix(cigars->batCacheid);
+			BBPunfix(result->batCacheid);
 			return msg;
 		}
 		BUNappend(result, (ptr) r, FALSE);
@@ -478,10 +478,10 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	}
 
 	/* release input BAT-descriptors */
-	BBPreleaseref(refs->batCacheid);
-	BBPreleaseref(seqs->batCacheid);
-	BBPreleaseref(poss->batCacheid);
-	BBPreleaseref(cigars->batCacheid);
+	BBPunfix(refs->batCacheid);
+	BBPunfix(seqs->batCacheid);
+	BBPunfix(poss->batCacheid);
+	BBPunfix(cigars->batCacheid);
 
 	BBPkeepref((*ret = result->batCacheid));
 

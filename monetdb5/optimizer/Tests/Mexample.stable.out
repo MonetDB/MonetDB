@@ -15,31 +15,27 @@ stdout of test 'Mexample` in directory 'monetdb5/optimizer` itself:
 function user.main():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
-    X_11 := bat.reverse(b);
-    X_13 := bat.new(nil:oid,nil:int);
-barrier (X_17,X_18) := iterator.new(b);
-    X_20 := calc.+(X_18,1);
-    X_21 := algebra.fetch(X_11,X_17);
-    bat.insert(X_13,X_21,X_20);
-    redo (X_17,X_18) := iterator.next(b);
-exit (X_17,X_18);
-    c:bat[:oid,:int]  := X_13;
+    X_11 := bat.new(nil:oid,nil:int);
+barrier (X_15,X_16) := iterator.new(b);
+    X_18 := calc.+(X_16,1);
+    bat.append(X_11,X_18);
+    redo (X_15,X_16) := iterator.next(b);
+exit (X_15,X_16);
+    c:bat[:oid,:int]  := X_11;
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    X_11 := bat.reverse(b);             #  3 _11:bat[:int,:oid] := BKCreverse(b:bat[:oid,:int]) {G}
-    X_13 := bat.new(nil:oid,nil:int);   #  4 _13:bat[:oid,:int] := CMDBATnew(_14:oid, _15:int) {G}
-barrier (X_17,X_18) := iterator.new(b); #  5 (_17:oid, _18:int) := ITRbunIterator(b:bat[:oid,:int]) {GJ10}
-    X_20 := calc.+(X_18,1);             #  6 _20:int := CMDvarADDsignal(_18:int, _5:int) 
-    X_21 := algebra.fetch(X_11,X_17);   #  7 _21:oid := ALGfetchoid(_11:bat[:int,:oid], _17:oid) {G}
-    bat.insert(X_13,X_21,X_20);         #  8 _23:bat[:oid,:int] := BKCinsert_bun(_13:bat[:oid,:int], _21:oid, _20:int) {G}
-    redo (X_17,X_18) := iterator.next(b);#  9 (_17:oid, _18:int) := ITRbunNext(b:bat[:oid,:int]) {GJ6}
-exit (X_17,X_18);                       # 10 (_17:oid, _18:int) 
-    c:bat[:oid,:int]  := X_13;          # 11 c:bat[:oid,:int] := _13:bat[:oid,:int] {G}
-    mdb.List();                         # 12 _10:void := MDBlistDetail() 
-end main;                               # 13  
+    X_11 := bat.new(nil:oid,nil:int);   #  3 _11:bat[:oid,:int] := CMDBATnew(_12:oid, _13:int) {G}
+barrier (X_15,X_16) := iterator.new(b); #  4 (_15:oid, _16:int) := ITRbunIterator(b:bat[:oid,:int]) {GJ8}
+    X_18 := calc.+(X_16,1);             #  5 _18:int := CMDvarADDsignal(_16:int, _5:int) 
+    bat.append(X_11,X_18);              #  6 _19:bat[:oid,:int] := BKCappend_val_wrap(_11:bat[:oid,:int], _18:int) {G}
+    redo (X_15,X_16) := iterator.next(b);#  7 (_15:oid, _16:int) := ITRbunNext(b:bat[:oid,:int]) {GJ5}
+exit (X_15,X_16);                       #  8 (_15:oid, _16:int) 
+    c:bat[:oid,:int]  := X_11;          #  9 c:bat[:oid,:int] := _11:bat[:oid,:int] {G}
+    mdb.List();                         # 10 _10:void := MDBlistDetail() 
+end main;                               # 11  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

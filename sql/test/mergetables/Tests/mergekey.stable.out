@@ -1,0 +1,66 @@
+stdout of test 'mergekey` in directory 'sql/test/mergetables` itself:
+
+
+# 20:50:25 >  
+# 20:50:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34630" "--set" "mapi_usock=/var/tmp/mtest-1158/.s.monetdb.34630" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:50:25 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34630/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.34630
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:50:25 >  
+# 20:50:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=34630"
+# 20:50:25 >  
+
+#CREATE TABLE partk1 ( x double, y double, z double);
+#ALTER TABLE partk1 ADD PRIMARY KEY (x,y,z);
+#COPY 4 RECORDS INTO partk1 FROM stdin USING DELIMITERS ' ','\n';
+#0.0 0.0 0.0
+#1.0 0.0 0.0 
+#0.0 1.0 0.0 
+#1.0 1.0 0.0 
+[ 4	]
+#CREATE TABLE partk2 ( x double, y double, z double);
+#COPY 4 RECORDS INTO partk2 FROM stdin USING DELIMITERS ' ','\n';
+#2.0 0.0 0.0
+#3.0 0.0 0.0 
+#2.0 1.0 0.0 
+#3.0 1.0 0.0 
+[ 4	]
+#CREATE MERGE TABLE complete ( x double, y double, z double);
+#ALTER TABLE complete ADD PRIMARY KEY (x,y,z);
+#ALTER TABLE complete ADD TABLE partk1;
+#SELECT * FROM COMPLETE;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 1,	0,	0	]
+[ 0,	1,	0	]
+[ 1,	1,	0	]
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
+#DROP TABLE complete;
+#DROP TABLE partk1;
+#DROP TABLE partk2;
+
+# 20:50:25 >  
+# 20:50:25 >  "Done."
+# 20:50:25 >  
+

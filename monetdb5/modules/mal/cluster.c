@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -943,7 +943,7 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	pb = BATdescriptor(*psum);
 	if ( pb == NULL){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL,"cluster.split", RUNTIME_OBJECT_MISSING);
 	}
 	cnt = (wrd*)Tloc(pb, BUNfirst(pb));

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -207,7 +207,7 @@ mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("read %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
+	fprintf(stderr, "read %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_READ);
 	if (s->errnr)
@@ -226,7 +226,7 @@ mnstr_readline(stream *s, void *buf, size_t maxcnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", maxcnt);
+	fprintf(stderr, "readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", maxcnt);
 #endif
 	assert(s->access == ST_READ);
 	if (s->errnr)
@@ -283,7 +283,7 @@ mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
+	fprintf(stderr, "write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_WRITE);
 	if (s->errnr)
@@ -307,7 +307,7 @@ mnstr_close(stream *s)
 {
 	if (s) {
 #ifdef STREAM_DEBUG
-		printf("close %s\n", s->name ? s->name : "<unnamed>");
+		fprintf(stderr, "close %s\n", s->name ? s->name : "<unnamed>");
 #endif
 		(*s->close) (s);
 	}
@@ -318,7 +318,7 @@ mnstr_destroy(stream *s)
 {
 	if (s) {
 #ifdef STREAM_DEBUG
-		printf("destroy %s\n", s->name ? s->name : "<unnamed>");
+		fprintf(stderr, "destroy %s\n", s->name ? s->name : "<unnamed>");
 #endif
 		(*s->destroy) (s);
 	}
@@ -339,7 +339,7 @@ mnstr_flush(stream *s)
 	if (s == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("flush %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
 	if (s->errnr)
@@ -356,7 +356,7 @@ mnstr_fsync(stream *s)
 	if (s == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("fsync %s (%d)\n", s->name ? s->name : "<unnamed>", s->errnr);
+	fprintf(stderr, "fsync %s (%d)\n", s->name ? s->name : "<unnamed>", s->errnr);
 #endif
 	assert(s->access == ST_WRITE);
 	if (s->errnr)
@@ -372,7 +372,7 @@ mnstr_fgetpos(stream *s, lng *p)
 	if (s == NULL || p == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "fgetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if (s->errnr)
 		return -1;
@@ -387,7 +387,7 @@ mnstr_fsetpos(stream *s, lng p)
 	if (s == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "fsetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if (s->errnr)
 		return -1;
@@ -445,7 +445,7 @@ mnstr_set_byteorder(stream *s, char bigendian)
 	if (s == NULL)
 		return;
 #ifdef STREAM_DEBUG
-	printf("mnstr_set_byteorder %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "mnstr_set_byteorder %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
@@ -472,7 +472,7 @@ mnstr_rstream(stream *s)
 	if (s == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("mnstr_rstream %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "mnstr_rstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
@@ -487,7 +487,7 @@ mnstr_wstream(stream *s)
 	if (s == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("mnstr_wstream %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "mnstr_wstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
 	s->type = ST_BIN;
@@ -566,7 +566,7 @@ create_stream(const char *name)
 	s->timeout_func = NULL;
 	s->update_timeout = NULL;
 #ifdef STREAM_DEBUG
-	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
+	fprintf(stderr, "create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
 	return s;
 }
@@ -896,10 +896,19 @@ open_gzstream(const char *filename, const char *flags)
 	s->close = stream_gzclose;
 	s->flush = stream_gzflush;
 	s->stream_data.p = (void *) fp;
+	if (flags[0] == 'r') {
+		char buf[UTF8BOMLENGTH];
+		if (gzread(fp, buf, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+			s->isutf8 = 1;
+		} else {
+			gzrewind(fp);
+		}
+	}
 	return s;
 }
 
-stream *
+static stream *
 open_gzrstream(const char *filename)
 {
 	stream *s;
@@ -917,7 +926,7 @@ open_gzrstream(const char *filename)
 }
 
 static stream *
-open_gzwstream_(const char *filename, const char *mode)
+open_gzwstream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -934,13 +943,7 @@ open_gzwstream_(const char *filename, const char *mode)
 	return s;
 }
 
-stream *
-open_gzwstream(const char *filename)
-{
-	return open_gzwstream_(filename, "wb");
-}
-
-stream *
+static stream *
 open_gzrastream(const char *filename)
 {
 	stream *s;
@@ -952,7 +955,7 @@ open_gzrastream(const char *filename)
 }
 
 static stream *
-open_gzwastream_(const char *filename, const char *mode)
+open_gzwastream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -962,31 +965,11 @@ open_gzwastream_(const char *filename, const char *mode)
 	s->type = ST_ASCII;
 	return s;
 }
-
-stream *
-open_gzwastream(const char *filename)
-{
-	return open_gzwastream_(filename, "wb");
-}
 #else
-stream *open_gzrstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_gzwstream_(filename, mode)		NULL
-stream *open_gzwstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-stream *open_gzrastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_gzwastream_(filename, mode)	NULL
-stream *open_gzwastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
+#define open_gzrstream(filename)	NULL
+#define open_gzwstream(filename, mode)	NULL
+#define open_gzrastream(filename)	NULL
+#define open_gzwastream(filename, mode)	NULL
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -1118,11 +1101,23 @@ open_bzstream(const char *filename, const char *flags)
 	s->flush = NULL;
 	s->stream_data.p = (void *) bzp;
 	if (strchr(flags, 'r') != NULL) {
-		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		s->access = ST_READ;
+		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		if (err == BZ_STREAM_END) {
 			BZ2_bzReadClose(&err, bzp->b);
 			bzp->b = NULL;
+		} else {
+			char buf[UTF8BOMLENGTH];
+
+			if (stream_bzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+				s->isutf8 = 1;
+			} else if (s->stream_data.p) {
+				bzp = s->stream_data.p;
+				BZ2_bzReadClose(&err, bzp->b);
+				rewind(bzp->f);
+				bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
+			}
 		}
 	} else {
 		bzp->b = BZ2_bzWriteOpen(&err, bzp->f, 9, 0, 30);
@@ -1136,7 +1131,7 @@ open_bzstream(const char *filename, const char *flags)
 	return s;
 }
 
-stream *
+static stream *
 open_bzrstream(const char *filename)
 {
 	stream *s;
@@ -1154,7 +1149,7 @@ open_bzrstream(const char *filename)
 }
 
 static stream *
-open_bzwstream_(const char *filename, const char *mode)
+open_bzwstream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -1171,13 +1166,7 @@ open_bzwstream_(const char *filename, const char *mode)
 	return s;
 }
 
-stream *
-open_bzwstream(const char *filename)
-{
-	return open_bzwstream_(filename, "wb");
-}
-
-stream *
+static stream *
 open_bzrastream(const char *filename)
 {
 	stream *s;
@@ -1189,7 +1178,7 @@ open_bzrastream(const char *filename)
 }
 
 static stream *
-open_bzwastream_(const char *filename, const char *mode)
+open_bzwastream(const char *filename, const char *mode)
 {
 	stream *s;
 
@@ -1199,31 +1188,11 @@ open_bzwastream_(const char *filename, const char *mode)
 	s->type = ST_ASCII;
 	return s;
 }
-
-stream *
-open_bzwastream(const char *filename)
-{
-	return open_bzwastream_(filename, "wb");
-}
 #else
-stream *open_bzrstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_bzwstream_(filename, mode)		NULL
-stream *open_bzwstream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-stream *open_bzrastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
-#define open_bzwastream_(filename, mode)	NULL
-stream *open_bzwastream(const char *filename) {
-	(void) filename;
-	return NULL;
-}
+#define open_bzrstream(filename)	NULL
+#define open_bzwstream(filename, mode)	NULL
+#define open_bzrastream(filename)	NULL
+#define open_bzwastream(filename, mode)	NULL
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -1238,7 +1207,7 @@ open_rstream(const char *filename)
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("open_rstream %s\n", filename);
+	fprintf(stderr, "open_rstream %s\n", filename);
 #endif
 	ext = get_extention(filename);
 
@@ -1271,14 +1240,14 @@ open_wstream_(const char *filename, char *mode)
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("open_wstream %s\n", filename);
+	fprintf(stderr, "open_wstream %s\n", filename);
 #endif
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwstream_(filename, mode);
+		return open_gzwstream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwstream_(filename, mode);
+		return open_bzwstream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
@@ -1316,7 +1285,7 @@ open_rastream(const char *filename)
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("open_rastream %s\n", filename);
+	fprintf(stderr, "open_rastream %s\n", filename);
 #endif
 	ext = get_extention(filename);
 
@@ -1340,14 +1309,14 @@ open_wastream_(const char *filename, char *mode)
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("open_wastream %s\n", filename);
+	fprintf(stderr, "open_wastream %s\n", filename);
 #endif
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwastream_(filename, mode);
+		return open_gzwastream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwastream_(filename, mode);
+		return open_bzwastream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
@@ -1884,7 +1853,7 @@ socket_rstream(SOCKET sock, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rstream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_rstream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
@@ -1903,7 +1872,7 @@ socket_wstream(SOCKET sock, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wstream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_wstream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
@@ -1923,7 +1892,7 @@ socket_rastream(SOCKET sock, const char *name)
 	stream *s = NULL;
 
 #ifdef STREAM_DEBUG
-	printf("socket_rastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_rastream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) != NULL)
 		s->type = ST_ASCII;
@@ -1936,7 +1905,7 @@ socket_wastream(SOCKET sock, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	printf("socket_wastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_wastream " SSZFMT " %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
@@ -2094,6 +2063,7 @@ udp_socket(udp_stream * udp, const char *hostname, int port, int write)
 		freeaddrinfo(res);
 		return 0;
 	}
+	freeaddrinfo(res);
 	return -1;
 #else
 	struct sockaddr *serv;
@@ -2130,7 +2100,7 @@ udp_rastream(const char *hostname, int port, const char *name)
 	if (hostname == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("udp_rawastream %s %s\n", hostname, name);
+	fprintf(stderr, "udp_rawastream %s %s\n", hostname, name);
 #endif
 	s = udp_create(name);
 	if (s == NULL)
@@ -2151,7 +2121,7 @@ udp_wastream(const char *hostname, int port, const char *name)
 	if (hostname == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("udp_wastream %s %s\n", hostname, name);
+	fprintf(stderr, "udp_wastream %s %s\n", hostname, name);
 #endif
 	s = udp_create(name);
 	if (s == NULL)
@@ -2193,7 +2163,7 @@ file_rstream(FILE *fp, const char *name)
 	if (fp == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("file_rstream %s\n", name);
+	fprintf(stderr, "file_rstream %s\n", name);
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
@@ -2218,7 +2188,7 @@ file_wstream(FILE *fp, const char *name)
 	if (fp == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("file_wstream %s\n", name);
+	fprintf(stderr, "file_wstream %s\n", name);
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
@@ -2244,7 +2214,7 @@ file_rastream(FILE *fp, const char *name)
 	if (fp == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("file_rastream %s\n", name);
+	fprintf(stderr, "file_rastream %s\n", name);
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
@@ -2261,7 +2231,7 @@ file_wastream(FILE *fp, const char *name)
 	if (fp == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("file_wastream %s\n", name);
+	fprintf(stderr, "file_wastream %s\n", name);
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
@@ -2551,7 +2521,7 @@ iconv_rstream(stream *ss, const char *charset, const char *name)
 	if (ss == NULL || charset == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("iconv_rstream %s %s\n", charset, name);
+	fprintf(stderr, "iconv_rstream %s %s\n", charset, name);
 #endif
 	cd = iconv_open("utf-8", charset);
 	if (cd == (iconv_t) - 1)
@@ -2575,7 +2545,7 @@ iconv_wstream(stream *ss, const char *charset, const char *name)
 	if (ss == NULL || charset == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("iconv_wstream %s %s\n", charset, name);
+	fprintf(stderr, "iconv_wstream %s %s\n", charset, name);
 #endif
 	cd = iconv_open(charset, "utf-8");
 	if (cd == (iconv_t) - 1)
@@ -2752,7 +2722,7 @@ buffer_rastream(buffer *b, const char *name)
 	if (b == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("buffer_rastream %s\n", name);
+	fprintf(stderr, "buffer_rastream %s\n", name);
 #endif
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
@@ -2773,7 +2743,7 @@ buffer_wastream(buffer *b, const char *name)
 	if (b == NULL || name == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("buffer_wastream %s\n", name);
+	fprintf(stderr, "buffer_wastream %s\n", name);
 #endif
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
@@ -2856,13 +2826,13 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			{
 				unsigned i;
 
-				printf("W %s %u \"", ss->name, s->nr);
+				fprintf(stderr, "W %s %u \"", ss->name, s->nr);
 				for (i = 0; i < s->nr; i++)
 					if (' ' <= s->buf[i] && s->buf[i] < 127)
-						putchar(s->buf[i]);
+						putc(s->buf[i], stderr);
 					else
-						printf("\\%03o", s->buf[i]);
-				printf("\"\n");
+						fprintf(stderr, "\\%03o", s->buf[i]);
+				fprintf(stderr, "\"\n");
 			}
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
@@ -2909,14 +2879,14 @@ bs_flush(stream *ss)
 		if (s->nr > 0) {
 			unsigned i;
 
-			printf("W %s %u \"", ss->name, s->nr);
+			fprintf(stderr, "W %s %u \"", ss->name, s->nr);
 			for (i = 0; i < s->nr; i++)
 				if (' ' <= s->buf[i] && s->buf[i] < 127)
-					putchar(s->buf[i]);
+					putc(s->buf[i], stderr);
 				else
-					printf("\\%03o", s->buf[i]);
-			printf("\"\n");
-			printf("W %s 0\n", ss->name);
+					fprintf(stderr, "\\%03o", s->buf[i]);
+			fprintf(stderr, "\"\n");
+			fprintf(stderr, "W %s 0\n", ss->name);
 		}
 #endif
 		blksize = (short) (s->nr << 1);
@@ -2993,8 +2963,8 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
-		printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
-		printf("RC %s %d\n", ss->name, blksize);
+		fprintf(stderr, "RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
+		fprintf(stderr, "RC %s %d\n", ss->name, blksize);
 #endif
 		s->itotal = (unsigned) (blksize >> 1);	/* amount readable */
 		/* store whether this was the last block or not */
@@ -3020,13 +2990,13 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				printf("RD %s %zd \"", ss->name, m);
+				fprintf(stderr, "RD %s %zd \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] && ((char *) buf)[i] < 127)
-						putchar(((char *) buf)[i]);
+						putc(((char *) buf)[i], stderr);
 					else
-						printf("\\%03o", ((char *) buf)[i]);
-				printf("\"\n");
+						fprintf(stderr, "\\%03o", ((char *) buf)[i]);
+				fprintf(stderr, "\"\n");
 			}
 #endif
 			buf = (void *) ((char *) buf + m);
@@ -3058,9 +3028,9 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
-			printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
-			printf("RC %s %d\n", ss->name, s->nr);
-			printf("RC %s %d\n", ss->name, blksize);
+			fprintf(stderr, "RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
+			fprintf(stderr, "RC %s %d\n", ss->name, s->nr);
+			fprintf(stderr, "RC %s %d\n", ss->name, blksize);
 #endif
 			s->itotal = (unsigned) (blksize >> 1);	/* amount readable */
 			/* store whether this was the last block or not */
@@ -3137,7 +3107,7 @@ block_stream(stream *s)
 	if (s == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	printf("block_stream %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "block_stream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if ((ns = create_stream(s->name)) == NULL)
 		return NULL;

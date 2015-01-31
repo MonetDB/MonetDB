@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -36,35 +36,35 @@ JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 	if ((bu = BATdescriptor(*uuid)) == NULL) 
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
 	if ((br = BATdescriptor(*rev)) == NULL) {
-		BBPreleaseref(bu->batCacheid);
+		BBPunfix(bu->batCacheid);
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
 	}
 	if ((bj = BATdescriptor(*js)) == NULL) {
-		BBPreleaseref(bu->batCacheid);
-		BBPreleaseref(br->batCacheid);
+		BBPunfix(bu->batCacheid);
+		BBPunfix(br->batCacheid);
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
 	}
 	if ( !(BATcount(bu) == BATcount(br) && BATcount(br) == BATcount(bj)) ){
-		BBPreleaseref(bu->batCacheid);
-		BBPreleaseref(br->batCacheid);
-		BBPreleaseref(bj->batCacheid);
+		BBPunfix(bu->batCacheid);
+		BBPunfix(br->batCacheid);
+		BBPunfix(bj->batCacheid);
 		throw(MAL, "json.resultset", "Input not aligned");
 	}
 	sz= (22 + 12 + 20) * BATcount(bu);
 	result = (char*) GDKmalloc(sz);
 	if (result == NULL){
-		BBPreleaseref(bu->batCacheid);
-		BBPreleaseref(br->batCacheid);
-		BBPreleaseref(bj->batCacheid);
+		BBPunfix(bu->batCacheid);
+		BBPunfix(br->batCacheid);
+		BBPunfix(bj->batCacheid);
 		throw(MAL, "json.resultset", MAL_MALLOC_FAIL);
 	}
 	len += snprintf(result,sz,"[");
 	/* here the dirty work follows */
 	/* loop over the triple store */
 	snprintf(result+len,sz-len,"]");
-	BBPreleaseref(bu->batCacheid);
-	BBPreleaseref(br->batCacheid);
-	BBPreleaseref(bj->batCacheid);
+	BBPunfix(bu->batCacheid);
+	BBPunfix(br->batCacheid);
+	BBPunfix(bj->batCacheid);
 	*res = result;
 	return MAL_SUCCEED;
 

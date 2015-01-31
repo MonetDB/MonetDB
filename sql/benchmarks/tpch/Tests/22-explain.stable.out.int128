@@ -11,7 +11,7 @@ stdout of test '22-explain` in directory 'sql/benchmarks/tpch` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
@@ -122,23 +122,23 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6
     X_118:bat[:oid,:int]  := sql.bind(X_23,"sys","orders","o_custkey",1);
     X_119 := sql.delta(X_113,X_116,r1_161,X_118);
     X_120 := algebra.leftfetchjoin(X_110,X_119);
-    (X_121,r1_166) := algebra.subjoin(X_108,X_120,nil:BAT,nil:BAT,true,nil:lng);
+    (X_121,r1_166) := algebra.subjoin(X_108,X_120,nil:BAT,nil:BAT,false,nil:lng);
     X_124 := algebra.tdiff(X_109,X_121);
     X_181 := algebra.leftfetchjoin(X_124,X_107);
     X_125:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_181,X_52,X_36);
     X_126:bat[:oid,:str]  := batstr.substring(X_125,A0,A1);
     (X_127,r1_178,r2_178) := group.subgroupdone(X_126);
     X_130 := algebra.leftfetchjoin(r1_178,X_126);
-    X_136:bat[:oid,:wrd]  := aggr.subcount(X_127,X_127,r1_178,false);
-    X_138:bat[:oid,:lng]  := algebra.leftfetchjoin(X_181,X_73);
-    X_139:bat[:oid,:hge]  := aggr.subsum(X_138,X_127,r1_178,true,true);
+    X_135:bat[:oid,:wrd]  := aggr.subcount(X_127,X_127,r1_178,false);
+    X_137:bat[:oid,:lng]  := algebra.leftfetchjoin(X_181,X_73);
+    X_138:bat[:oid,:hge]  := aggr.subsum(X_137,X_127,r1_178,true,true);
     (X_131,r1_182,r2_182) := algebra.subsort(X_130,false,false);
-    X_135 := algebra.leftfetchjoin(r1_182,X_130);
-    X_140 := algebra.leftfetchjoin(r1_182,X_139);
-    X_137 := algebra.leftfetchjoin(r1_182,X_136);
-    X_141 := sql.resultSet(3,1,X_135);
-    sql.rsColumn(X_141,"sys.custsale","cntrycode","varchar",15,0,X_135);
-    sql.rsColumn(X_141,"sys.L2","numcust","wrd",64,0,X_137);
+    X_134 := algebra.leftfetchjoin(r1_182,X_130);
+    X_140 := algebra.leftfetchjoin(r1_182,X_138);
+    X_136 := algebra.leftfetchjoin(r1_182,X_135);
+    X_141 := sql.resultSet(3,1,X_134);
+    sql.rsColumn(X_141,"sys.custsale","cntrycode","varchar",15,0,X_134);
+    sql.rsColumn(X_141,"sys.L2","numcust","wrd",64,0,X_136);
     sql.rsColumn(X_141,"sys.L3","totacctbal","decimal",15,2,X_140);
     X_160 := io.stdout();
     sql.exportResult(X_160,X_141);

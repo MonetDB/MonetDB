@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -121,6 +121,7 @@ str thetajoinRef;
 str subjoinRef;
 str subantijoinRef;
 str subbandjoinRef;
+str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
 str kunionRef;
@@ -220,12 +221,8 @@ str setWriteModeRef;
 str sinkRef;
 str sliceRef;
 str subsliceRef;
-str sortHRef;
-str sortHTRef;
 str sortRef;
-str sortReverseTailRef;
-str sortTailRef;
-str sortTHRef;
+str sortReverseRef;
 str sqlRef;
 str srvpoolRef;
 str streamsRef;
@@ -377,6 +374,7 @@ void optimizerInit(void)
 	subjoinRef = putName("subjoin",7);
 	subantijoinRef = putName("subantijoin",11);
 	subbandjoinRef = putName("subbandjoin",11);
+	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);
@@ -477,12 +475,8 @@ void optimizerInit(void)
 	sliceRef = putName("slice",5);
 	subsliceRef = putName("subslice",8);
 	singleRef = putName("single",6);
-	sortHRef = putName("sortH",5);
-	sortHTRef = putName("sortHT",6);
 	sortRef = putName("sort",4);
-	sortReverseTailRef = putName("sortReverseTail",15);
-	sortTailRef = putName("sortTail",8);
-	sortTHRef = putName("sortTH",6);
+	sortReverseRef = putName("sortReverse",15);
 	sqlRef = putName("sql",3);
 	srvpoolRef = putName("srvpool",7);
 	streamsRef = putName("streams",7);

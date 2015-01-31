@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -104,51 +104,51 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 	if( (X= BATdescriptor(*Y)) == NULL )		\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	if( (A= BATdescriptor(*B)) == NULL ){		\
-		BBPreleaseref(X->batCacheid);			\
+		BBPunfix(X->batCacheid);				\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
 #define prepareOperand3(X,Y,A,B,I,J,Z)			\
 	if( (X= BATdescriptor(*Y)) == NULL )		\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	if( (A= BATdescriptor(*B)) == NULL ){		\
-		BBPreleaseref(X->batCacheid);			\
+		BBPunfix(X->batCacheid);				\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}											\
 	if( (I= BATdescriptor(*J)) == NULL ){		\
-		BBPreleaseref(X->batCacheid);			\
-		BBPreleaseref(A->batCacheid);			\
+		BBPunfix(X->batCacheid);				\
+		BBPunfix(A->batCacheid);				\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
-#define prepareResult(X,Y,T,Z)					\
-	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);			\
-	if( X == NULL){								\
-		BBPreleaseref(Y->batCacheid);			\
-		throw(MAL, Z, MAL_MALLOC_FAIL);			\
-	}											\
-	if( Y->htype== TYPE_void)					\
-		BATseqbase(X, Y->hseqbase);				\
-	X->hsorted=Y->hsorted;						\
-	X->hrevsorted=Y->hrevsorted;				\
-	X->tsorted=0;								\
+#define prepareResult(X,Y,T,Z)						\
+	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
+	if( X == NULL){									\
+		BBPunfix(Y->batCacheid);					\
+		throw(MAL, Z, MAL_MALLOC_FAIL);				\
+	}												\
+	if( Y->htype== TYPE_void)						\
+		BATseqbase(X, Y->hseqbase);					\
+	X->hsorted=Y->hsorted;							\
+	X->hrevsorted=Y->hrevsorted;					\
+	X->tsorted=0;									\
 	X->trevsorted=0;
-#define prepareResult2(X,Y,A,T,Z)				\
-	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);			\
-	if( X == NULL){								\
-		BBPreleaseref(Y->batCacheid);			\
-		BBPreleaseref(A->batCacheid);			\
-		throw(MAL, Z, MAL_MALLOC_FAIL);			\
-	}											\
-	if( Y->htype== TYPE_void)					\
-		BATseqbase(X, Y->hseqbase);				\
-	X->hsorted=Y->hsorted;						\
-	X->hrevsorted=Y->hrevsorted;				\
-	X->tsorted=0;								\
+#define prepareResult2(X,Y,A,T,Z)					\
+	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
+	if( X == NULL){									\
+		BBPunfix(Y->batCacheid);					\
+		BBPunfix(A->batCacheid);					\
+		throw(MAL, Z, MAL_MALLOC_FAIL);				\
+	}												\
+	if( Y->htype== TYPE_void)						\
+		BATseqbase(X, Y->hseqbase);					\
+	X->hsorted=Y->hsorted;							\
+	X->hrevsorted=Y->hrevsorted;					\
+	X->tsorted=0;									\
 	X->trevsorted=0;
 #define finalizeResult(X,Y,Z)									\
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ);	\
 	*X = (Y)->batCacheid;										\
 	BBPkeepref(*(X));											\
-	BBPreleaseref(Z->batCacheid);
+	BBPunfix(Z->batCacheid);
 
 static str
 do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const str *))
@@ -180,7 +180,7 @@ do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -242,7 +242,7 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -289,7 +289,7 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -341,8 +341,8 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -389,7 +389,7 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -441,8 +441,8 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -489,7 +489,7 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -541,8 +541,8 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -594,8 +594,8 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -653,9 +653,9 @@ bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
 bunins_failed1:
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
-	BBPreleaseref(b3->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
+	BBPunfix(b3->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -829,13 +829,13 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr." "prefix", OPERATION_FAILED " During bulk operation");
 }
@@ -863,7 +863,7 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
+	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
 }
@@ -891,13 +891,13 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr." "suffix", OPERATION_FAILED " During bulk operation");
 }
@@ -925,7 +925,7 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
+	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
 }
@@ -953,13 +953,13 @@ str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr." "search", OPERATION_FAILED " During bulk operation");
 }
@@ -987,7 +987,7 @@ str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
+	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
 }
@@ -1015,13 +1015,13 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr." "r_search", OPERATION_FAILED " During bulk operation");
 }
@@ -1049,7 +1049,7 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
+	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
 }
@@ -1078,13 +1078,13 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	GDKfree(v);
 	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
@@ -1114,8 +1114,8 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(*ret);
+	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
 	GDKfree(v);
 	throw(MAL, "batstr.string", OPERATION_FAILED " During bulk operation");
 }
@@ -1143,13 +1143,13 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 		bunfastins(bn, h, vp);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
 }
@@ -1177,8 +1177,8 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 	return MAL_SUCCEED;
 
 bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(*ret);
+	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
 	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
 }
 
@@ -1213,8 +1213,8 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 bunins_failed:
 	if (y != str_nil)
 		GDKfree(y);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
 }
 
@@ -1234,7 +1234,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
 	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5, TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, b->hseqbase);
@@ -1256,7 +1256,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = r;
 	}
 
@@ -1265,7 +1265,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -1279,12 +1279,12 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	if( (left= BATdescriptor(*l)) == NULL )
 		throw(MAL, "batstr.substring" , RUNTIME_OBJECT_MISSING);
 	if( (start= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
 	}
 	if( (length= BATdescriptor(*t)) == NULL ){
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(start->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(start->batCacheid);
 		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
 	}
 	if( BATcount(left) != BATcount(start) )
@@ -1294,9 +1294,9 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 
 	bn= BATnew(TYPE_void, TYPE_str,BATcount(left), TRANSIENT);
 	if( bn == NULL){
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(start->batCacheid);
-		BBPreleaseref(length->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(start->batCacheid);
+		BBPunfix(length->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, left->hseqbase);
@@ -1320,12 +1320,12 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	if (left->htype != bn->htype) {
 		BAT *r = VIEWcreate(left,bn);
 
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = r;
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(start->batCacheid);
-	BBPreleaseref(length->batCacheid);
+	BBPunfix(start->batCacheid);
+	BBPunfix(length->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 }

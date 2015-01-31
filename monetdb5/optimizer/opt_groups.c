@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -23,6 +23,15 @@
 int
 OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+// Code should first be synchronized with mergetable
+// And a proper re-ordering test should proof its validity
+#if 1
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return 0;
+#else
 	int i, j, actions=0;
 	InstrPtr q,p;
 	InstrPtr *old, *ref;
@@ -35,11 +44,6 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL) {
 		return 0;
 	}
-
-// Code should first be synchronized with mergetable
-// And a proper re-ordering test should proof its validity
-	if (1)
-		return 0;
 
 	/* beware, new variables and instructions are introduced */
 	ref= (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop); /* to find last assignment */
@@ -124,4 +128,5 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT);
 	}
 	return actions;
+#endif
 }

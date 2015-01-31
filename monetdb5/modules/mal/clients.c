@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -147,8 +147,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0 || bn == 0){
-		if ( b != 0) BBPreleaseref(b->batCacheid);
-		if ( bn != 0) BBPreleaseref(bn->batCacheid);
+		if ( b != 0) BBPunfix(b->batCacheid);
+		if ( bn != 0) BBPunfix(bn->batCacheid);
 		throw(MAL, "clients.info", MAL_MALLOC_FAIL);
 	}
 
@@ -608,12 +608,12 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
-		if ( user) BBPreleaseref(user->batCacheid);
-		if ( login) BBPreleaseref(login->batCacheid);
-		if ( stimeout) BBPreleaseref(stimeout->batCacheid);
-		if ( qtimeout) BBPreleaseref(qtimeout->batCacheid);
-		if ( last) BBPreleaseref(last->batCacheid);
-		if ( active) BBPreleaseref(active->batCacheid);
+		if ( user) BBPunfix(user->batCacheid);
+		if ( login) BBPunfix(login->batCacheid);
+		if ( stimeout) BBPunfix(stimeout->batCacheid);
+		if ( qtimeout) BBPunfix(qtimeout->batCacheid);
+		if ( last) BBPunfix(last->batCacheid);
+		if ( active) BBPunfix(active->batCacheid);
 		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(user,0);
@@ -661,11 +661,11 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   bailout:
     MT_lock_unset(&mal_contextLock, "clients.sessions");
-	BBPreleaseref(user->batCacheid);
-	BBPreleaseref(login->batCacheid);
-	BBPreleaseref(stimeout->batCacheid);
-	BBPreleaseref(qtimeout->batCacheid);
-	BBPreleaseref(last->batCacheid);
-	BBPreleaseref(active->batCacheid);
+	BBPunfix(user->batCacheid);
+	BBPunfix(login->batCacheid);
+	BBPunfix(stimeout->batCacheid);
+	BBPunfix(qtimeout->batCacheid);
+	BBPunfix(last->batCacheid);
+	BBPunfix(active->batCacheid);
 	return msg;
 }

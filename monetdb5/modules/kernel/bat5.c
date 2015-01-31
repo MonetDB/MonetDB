@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -343,73 +343,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	return GDK_SUCCEED;
 }
 
-#define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
-
-static int
-CMDbatdisksize(lng *tot, BAT *b)
-{
-	size_t blksize = 512;
-	size_t size = 0;
-
-	if (!isVIEW(b)) {
-		size += ROUND_UP(b->H->heap.free, blksize);
-		size += ROUND_UP(b->T->heap.free, blksize);
-		if (b->H->vheap)
-			size += ROUND_UP(b->H->vheap->free, blksize);
-		if (b->T->vheap)
-			size += ROUND_UP(b->T->vheap->free, blksize);
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
-static int
-CMDbatvmsize(lng *tot, BAT *b)
-{
-	size_t blksize = MT_pagesize();
-	size_t size = 0;
-
-	if (!isVIEW(b)) {
-		BUN cnt = BATcapacity(b);
-
-		size += ROUND_UP(b->H->heap.size, blksize);
-		size += ROUND_UP(b->T->heap.size, blksize);
-		if (b->H->vheap)
-			size += ROUND_UP(b->H->vheap->size, blksize);
-		if (b->T->vheap)
-			size += ROUND_UP(b->T->vheap->size, blksize);
-		if (b->H->hash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		if (b->T->hash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
-static int
-CMDbatsize(lng *tot, BAT *b, int force)
-{
-	size_t size = 0;
-
-	if ( force || !isVIEW(b)) {
-		BUN cnt = BATcapacity(b);
-
-		size += b->H->heap.size;
-		size += b->T->heap.size;
-		if (b->H->vheap)
-			size += b->H->vheap->size;
-		if (b->T->vheap)
-			size += b->T->vheap->size;
-		if (b->H->hash)
-			size += sizeof(BUN) * cnt;
-		if (b->T->hash)
-			size += sizeof(BUN) * cnt;
-	}
-	*tot = size;
-	return GDK_SUCCEED;
-}
-
 /*
  * BBP Management, IO
  */
@@ -579,12 +512,12 @@ BKCmirror(bat *ret, const bat *bid)
 		if (bn != NULL) {
 			*ret = bn->batCacheid;
 			BBPkeepref(*ret);
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			return MAL_SUCCEED;
 		}
 	}
 	*ret = 0;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "bat.mirror", GDK_EXCEPTION);
 }
 
@@ -599,7 +532,7 @@ BKCrevert(bat *r, const bat *bid)
 		throw(MAL, "bat.revert", OPERATION_FAILED);
 	bn = BATrevert(b);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.revert", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -617,7 +550,7 @@ BKCorder(bat *r, const bat *bid)
 		throw(MAL, "bat.order", OPERATION_FAILED);
 	bn = BATorder(b);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.order", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -635,7 +568,7 @@ BKCorder_rev(bat *r, const bat *bid)
 		throw(MAL, "bat.order_rev", OPERATION_FAILED);
 	bn = BATorder_rev(b);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.order_rev", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -665,7 +598,7 @@ BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t)
 	}
 	bn = BUNins(b, h, t, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -695,7 +628,7 @@ BKCinsert_bun_force(bat *r, const bat *bid, const void *h, const void *t, const 
 	}
 	bn = BUNins(b, h, t, *force);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -712,13 +645,13 @@ BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.insert", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATins(b, s, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -735,13 +668,13 @@ BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.insert", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATins(b, s, *force);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -772,7 +705,7 @@ BKCreplace_bun(bat *r, const bat *bid, const void *h, const void *t)
 	}
 	bn = BUNreplace(b, h, t, 0);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -789,13 +722,13 @@ BKCreplace_bat(bat *r, const bat *bid, const bat *sid)
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATreplace(b, s, 0);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -825,7 +758,7 @@ BKCreplace_bun_force(bat *r, const bat *bid, const void *h, const void *t, const
 	}
 	bn = BUNreplace(b, h, t, *force);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -842,13 +775,13 @@ BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATreplace(b, s, *force);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -878,7 +811,7 @@ BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t)
 	}
 	bn = BUNdel(b, h, t, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.delete_bun", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -902,7 +835,7 @@ BKCdelete(bat *r, const bat *bid, const void *h)
 	}
 	bn = BUNdelHead(b, h, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -918,7 +851,7 @@ BKCdelete_all(bat *r, const bat *bid)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	bn = BATclear(b, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -935,13 +868,13 @@ BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATdel(b, s, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(s->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -958,13 +891,13 @@ BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATappend(b, u, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(u->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(u->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -988,7 +921,7 @@ BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
 	}
 	bn = BUNappend(b, u, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -1013,7 +946,7 @@ BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u)
 	b = BATmirror(b);
 	bn = BUNappend(b, u, FALSE);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	bn = BATmirror(bn);
@@ -1029,7 +962,7 @@ BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	if ((u = BATdescriptor(*uid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	if (BATcount(u) == 0) {
@@ -1040,8 +973,8 @@ BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 		bn = BATappend(b, u, *force);
 	}
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
-	BBPreleaseref(u->batCacheid);
+		BBPunfix(b->batCacheid);
+	BBPunfix(u->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -1065,7 +998,7 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 	}
 	bn = BUNappend(b, u, *force);
 	if (b != bn)
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -1081,7 +1014,7 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, FALSE) == GDK_FAIL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r = b->batCacheid);
@@ -1097,7 +1030,7 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, *force) == GDK_FAIL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r = b->batCacheid);
@@ -1112,16 +1045,16 @@ BKCbat_inplace(bat *r, const bat *bid, const bat *rid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if ((d = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if (void_replace_bat(b, d, FALSE) == BUN_NONE) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r = b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1134,16 +1067,16 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bit *force)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((d = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if (void_replace_bat(b, d, *force) == BUN_NONE) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r = b->batCacheid);
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1157,7 +1090,7 @@ BKCgetAlpha(bat *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getInserted", RUNTIME_OBJECT_MISSING);
 	bn = BATalpha(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.getInserted", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -1172,7 +1105,7 @@ BKCgetDelta(bat *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getDeleted", RUNTIME_OBJECT_MISSING);
 	bn = BATdelta(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.getDeleted", GDK_EXCEPTION);
 	BBPkeepref(*r = bn->batCacheid);
@@ -1190,23 +1123,6 @@ BKCgetCapacity(lng *res, const bat *bid)
 			*res = (lng) BATcapacity(b);
 		unlock_desc(*bid);
 	}
-	return MAL_SUCCEED;
-}
-
-str
-BKCgetHeadType(str *res, const bat *bid)
-{
-	const char *ret = str_nil;
-
-	if (BBPcheck(*bid, "bat.getHeadType")) {
-		BAT *b = lock_desc(*bid);
-
-		if (b) {
-			ret = *bid > 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
-		}
-		unlock_desc(*bid);
-	}
-	*res = GDKstrdup(ret);
 	return MAL_SUCCEED;
 }
 
@@ -1236,7 +1152,7 @@ BKCgetRole(str *res, const bat *bid)
 		throw(MAL, "bat.getType", RUNTIME_OBJECT_MISSING);
 	}
 	*res = GDKstrdup((*bid > 0) ? b->hident : b->tident);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1248,7 +1164,7 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setKey", RUNTIME_OBJECT_MISSING);
 	}
-	BATkey(b, *param ? BOUND2BTRUE :FALSE);
+	BATkey(BATmirror(b), *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1262,8 +1178,8 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(b);
-	BBPreleaseref(b->batCacheid);
+	*res = BATordered(BATmirror(b));
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1275,8 +1191,8 @@ BKCisSortedReverse(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered_rev(b);
-	BBPreleaseref(b->batCacheid);
+	*res = BATordered_rev(BATmirror(b));
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1291,23 +1207,17 @@ BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
-	}
-	/* we must take care of the special case of a nil column
-	 * (TYPE_void,seqbase=nil): such nil columns never set hkey (and
-	 * BUNins will never invalidate it if set) yet a nil column of a
-	 * BAT with <= 1 entries does not contain doubles => return TRUE.
-	 */
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
 	} else {
-		if (!b->hkey) {
-			BATderiveHeadProps(b, 1);
+		if (!b->tkey) {
+			BATderiveHeadProps(BATmirror(b), 1);
 		}
-		*ret = b->hkey ? TRUE : FALSE;
+		*ret = b->tkey ? TRUE : FALSE;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1324,7 +1234,7 @@ BKCpersists(void *r, const bat *bid, const bit *flg)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1344,7 +1254,7 @@ BKCisPersistent(bit *res, const bat *bid)
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
 	*res = (b->batPersistence == PERSISTENT) ? TRUE :FALSE;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1364,82 +1274,7 @@ BKCisTransient(bit *res, const bat *bid)
 		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
 	}
 	*res = b->batPersistence == TRANSIENT;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetWriteMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.setWriteMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasWriteMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_WRITE;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetReadMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_READ)) == NULL)
-		throw(MAL, "bat.setReadMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasReadMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_READ;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetAppendMode(bat *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_APPEND)) == NULL)
-		throw(MAL, "bat.setAppendMode", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKChasAppendMode(bit *res, const bat *bid)
-{
-	BAT *b;
-
-    if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-	*res = BATgetaccess(b) == BAT_APPEND;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1493,7 +1328,7 @@ BKCgetAccess(str *res, const bat *bid)
 		*res = GDKstrdup(str_nil);
 		break;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1516,93 +1351,43 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		*ret2 = bv->batCacheid;
 		BBPkeepref(bk->batCacheid);
 		BBPkeepref(bv->batCacheid);
-		BBPreleaseref(*bid);
+		BBPunfix(*bid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(*bid);
+	BBPunfix(*bid);
 	throw(MAL, "BKCinfo", GDK_EXCEPTION);
 }
 
-str
-BKCbatdisksize(lng *tot, const bat *bid){
-	BAT *b;
-	if ((b = BATdescriptor(abs(*bid))) == NULL)
-		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
-	CMDbatdisksize(tot,b);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
+// get the actual size of all constituents, also for views
+#define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 str
-BKCbatvmsize(lng *tot, const bat *bid){
+BKCgetSize(lng *tot, const bat *bid){
 	BAT *b;
+	lng size = 0;
+	lng blksize = (lng) MT_pagesize();
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	}
-	CMDbatvmsize(tot,b);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
 
-str
-BKCbatsize(lng *tot, const bat *bid){
-	BAT *b;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
-	}
-	CMDbatsize(tot,b, FALSE);
-	BBPreleaseref(*bid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCgetStorageSize(lng *tot, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
-	CMDbatsize(tot,b,TRUE);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-str
-BKCgetSpaceUsed(lng *tot, const bat *bid)
-{
-	BAT *b;
-	size_t size = BATSTORESIZE;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getSpaceUsed", RUNTIME_OBJECT_MISSING);
-
-	if (!isVIEW(b)) {
-		BUN cnt = BATcount(b);
-
-		size += headsize(b, cnt);
-		size += tailsize(b, cnt);
-		/* the upperbound is used for the heaps */
+	size = sizeof (bat);
+	if ( !isVIEW(b)) {
+		BUN cnt = BATcapacity(b);
+		size += ROUND_UP(b->H->heap.free, blksize);
+		size += ROUND_UP(b->T->heap.free, blksize);
 		if (b->H->vheap)
-			size += b->H->vheap->size;
+			size += ROUND_UP(b->H->vheap->free, blksize);
 		if (b->T->vheap)
-			size += b->T->vheap->size;
+			size += ROUND_UP(b->T->vheap->free, blksize);
 		if (b->H->hash)
-			size += sizeof(BUN) * cnt;
+			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		if (b->T->hash)
-			size += sizeof(BUN) * cnt;
-	}
+			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
+		size += IMPSimprintsize(b);
+	} 
 	*tot = size;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(*bid);
 	return MAL_SUCCEED;
-}
-
-str
-BKCgetStorageSize_str(lng *tot, str batname)
-{
-	int bid = BBPindex(batname);
-
-	if (bid == 0)
-		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
-	return BKCgetStorageSize(tot, &bid);
 }
 
 /*
@@ -1617,12 +1402,12 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
 	if ((b2 = BATdescriptor(*bid2)) == NULL) {
-		BBPreleaseref(b1->batCacheid);
+		BBPunfix(b1->batCacheid);
 		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
 	*ret = ALIGNsynced(b1, b2) != 0;
-	BBPreleaseref(b1->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1639,15 +1424,15 @@ BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * cons
 		throw(MAL, "bat.setRole", RUNTIME_OBJECT_MISSING);
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
 	}
 	BATroles(b, *hname, *tname);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1662,14 +1447,14 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 		throw(MAL, "bat.setColumn", RUNTIME_OBJECT_MISSING);
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
 	}
 	/* watch out, hident is freed first */
 	dummy= GDKstrdup(b->hident);
 	BATroles(b, dummy, *tname);
 	GDKfree(dummy);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1683,15 +1468,15 @@ BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * c
 		throw(MAL, "bat.setColumns", RUNTIME_OBJECT_MISSING);
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
 	}
 	BATroles(b, *hname, *tname);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1707,7 +1492,7 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 	}
 	CMDrename(rp, b, *s);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1720,7 +1505,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 		throw(MAL, "bat.getName", RUNTIME_OBJECT_MISSING);
 	}
 	*ret = GDKstrdup(BBPname(b->batCacheid));
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1729,19 +1514,6 @@ BKCunload(bit *res, const char * const *input)
 {
 	CMDunload(res, *input);
 	return MAL_SUCCEED;
-}
-
-str
-BKCisCached(bit *res, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
-	}
-	*res = 0;
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.isCached", PROGRAM_NYI);
 }
 
 str
@@ -1758,7 +1530,7 @@ BKCload(bat *res, const char * const *input)
 }
 
 str
-BKCcoldBAT(void *res, const bat *bid)
+BKCsetColdBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1767,22 +1539,12 @@ BKCcoldBAT(void *res, const bat *bid)
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
 	BBPcold(b->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCheat(lng *res, const bat *bid)
-{
-	bat b = BBPcheck(*bid, "BKCheat");
-	if (b) {
-		*res = BBPLASTUSED(BBP_lastused(b));
-	}
-	throw(MAL, "bat", PROGRAM_NYI);
-}
-
-str
-BKChotBAT(void *res, const bat *bid)
+BKCsetHotBAT(void *res, const bat *bid)
 {
 	BAT *b;
 
@@ -1791,7 +1553,7 @@ BKChotBAT(void *res, const bat *bid)
 		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
 	BBPhot(b->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1814,7 +1576,7 @@ BKCsave2(void *r, const bat *bid)
 
 	if (b && BATdirty(b))
 		BBPsave(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1834,11 +1596,11 @@ BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *h
 				b->T->vheap && *thp == int_nil ? b->batMaptheap : *thp,
 				0) == 0) {
 		*res = TRUE;
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	*res =FALSE;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "bat.mmap", GDK_EXCEPTION);
 }
 
@@ -1862,7 +1624,7 @@ BKCsetHash(bit *ret, const bat *bid)
 	}
 	bn = BAThash(b, 0);
 	*ret = b == bn;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1877,7 +1639,7 @@ BKCsetImprints(bit *ret, const bat *bid)
 	}
 	bn = BATimprints(b);
 	*ret = b == bn;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1890,7 +1652,7 @@ BKCgetSequenceBase(oid *r, const bat *bid)
 		throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
 	}
 	*r = b->hseqbase;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1924,24 +1686,24 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->htype != TYPE_void) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrink", SEMANTIC_TYPE_MISMATCH);
 	}
 	if ((d = BATdescriptor(*did)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	if (bs == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 
@@ -2000,8 +1762,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2017,29 +1779,29 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->htype != TYPE_void) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", SEMANTIC_TYPE_MISMATCH);
 	}
 	if ((d = BATdescriptor(*did)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 	if ( d->htype != TYPE_void) {
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SEMANTIC_TYPE_MISMATCH);
 	}
 
 	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) , TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	if (bs == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
@@ -2065,8 +1827,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2103,24 +1865,24 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->htype != TYPE_void) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.reuse", SEMANTIC_TYPE_MISMATCH);
 	}
 	if ((d = BATdescriptor(*did)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	if (bs == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
 
@@ -2185,8 +1947,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2202,24 +1964,24 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->htype != TYPE_void) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", SEMANTIC_TYPE_MISMATCH);
 	}
 	if ((d = BATdescriptor(*did)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(d->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 	bs = BATmirror(BATsort(BATmirror(d)));
-	BBPreleaseref(d->batCacheid);
+	BBPunfix(d->batCacheid);
 	if (bs == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
@@ -2251,8 +2013,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bs->batCacheid);
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2266,12 +2028,12 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPreleaseref(a->batCacheid);
+		BBPunfix(a->batCacheid);
 		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATmergecand(a, b);
-	BBPreleaseref(a->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(a->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.mergecand", OPERATION_FAILED);
 	*ret = bn->batCacheid;
@@ -2288,12 +2050,12 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPreleaseref(a->batCacheid);
+		BBPunfix(a->batCacheid);
 		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATintersectcand(a, b);
-	BBPreleaseref(a->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(a->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.intersectcand", OPERATION_FAILED);
 	*ret = bn->batCacheid;

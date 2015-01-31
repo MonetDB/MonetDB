@@ -11,7 +11,7 @@ stdout of test 'copy-into-compressed.Bug-3351` in directory 'sql/test/BugTracker
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:32376/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29709/.s.monetdb.32376
@@ -50,35 +50,7 @@ Ready.
 
 #start transaction;
 #create table test3351 (i integer);
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv';
-[ 5	]
-#select * from test3351;
-% sys.test3351 # table_name
-% i # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-#delete from test3351;
-[ 5	]
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv.gz';
-[ 5	]
-#select * from test3351;
-% sys.test3351 # table_name
-% i # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-#delete from test3351;
-[ 5	]
-#copy into test3351 from '/net/madrid/export/scratch2/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv.bz2';
+#copy into test3351 from '/net/madrid/export/scratch1/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2013/Tests/test3351.csv';
 [ 5	]
 #select * from test3351;
 % sys.test3351 # table_name

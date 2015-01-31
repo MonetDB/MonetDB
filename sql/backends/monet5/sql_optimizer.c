@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -144,7 +144,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
-						BBPreleaseref(b->batCacheid);
+						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
 				}
@@ -164,7 +164,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						if (b->batPersistence == PERSISTENT && BATlocation(&loc, &b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
-						BBPreleaseref(b->batCacheid);
+						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
 				}

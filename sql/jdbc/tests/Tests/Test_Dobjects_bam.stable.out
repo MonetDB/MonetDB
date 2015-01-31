@@ -11,7 +11,7 @@ stdout of test 'Test_Dobjects_bam` in directory 'sql/jdbc/tests` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.333 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://robin-xps13:37247/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21432/.s.monetdb.37247
@@ -115,7 +115,7 @@ mTests_sql_jdbc_tests	sys	storage	SYSTEM VIEW	create view sys.storage as select 
 mTests_sql_jdbc_tests	sys	storagemodel	SYSTEM VIEW	create view sys.storagemodel as select * from sys.storagemodel();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tablestoragemodel	SYSTEM VIEW	-- A summary of the table storage requirement is is available as a table view.
--- The auxillary column denotes the maximum space if all non-sorted columns
+-- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
 create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
@@ -123,7 +123,7 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	rowid	SYSTEM	

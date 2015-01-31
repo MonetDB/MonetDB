@@ -1,11 +1,17 @@
 #Illustrate the modules loaded after start
-k:= inspect.getKind();
 m:= inspect.getModule();
-m0:= algebra.select(m, "bat");
+m0:= algebra.subselect(m,nil:bat[:oid,:oid],"bat", "bat", true,true,false);	# limit the list
+m1:= algebra.leftfetchjoin(m0,m);
+k:= inspect.getKind();
+k0:= algebra.leftfetchjoin(m0,k);
 f:= inspect.getFunction();
-f1:= bat.reverse(f);
-f2:= algebra.ssort(f1);
-fs:= bat.reverse(f2);
+f0:= algebra.leftfetchjoin(m0,f);
 s:= inspect.getSignatures();
+s0:= algebra.leftfetchjoin(m0,s);
 a:= inspect.getAddresses();
-io.table(1,fs,k,m0,s,a);
+a0:= algebra.leftfetchjoin(m0,a);
+
+(fv,forder):= algebra.subsort(f0,false,true);
+
+io.table(1,fv,k0,m1,s0,a0);
+

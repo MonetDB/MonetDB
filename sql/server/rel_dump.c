@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -567,9 +567,9 @@ void
 _rel_print(mvc *sql, sql_rel *rel) 
 {
 	list *refs = sa_list(sql->sa);
-	rel_print_refs(sql, THRdata[0], rel, 0, refs);
-	rel_print_(sql, THRdata[0], rel, 0, refs);
-	mnstr_printf(THRdata[0], "\n");
+	rel_print_refs(sql, GDKstdout, rel, 0, refs);
+	rel_print_(sql, GDKstdout, rel, 0, refs);
+	mnstr_printf(GDKstdout, "\n");
 }
 
 void
