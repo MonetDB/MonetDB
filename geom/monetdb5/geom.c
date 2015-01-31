@@ -2871,7 +2871,7 @@ str wkbMakeLineAggr(wkb** outWKB, int* inBAT_id) {
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);	
+		BBPunfix(inBAT->batCacheid);	
 		return createException(MAL, "geom.MakeLine", "BATs must have dense heads");
 	}
 
@@ -2888,7 +2888,7 @@ str wkbMakeLineAggr(wkb** outWKB, int* inBAT_id) {
 		if ((err = wkbMakeLine(outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.MakeLine", "%s", err);
 
-			BBPreleaseref(inBAT->batCacheid);	
+			BBPunfix(inBAT->batCacheid);	
 
 			GDKfree(err);
 			return msg;
@@ -2905,14 +2905,14 @@ str wkbMakeLineAggr(wkb** outWKB, int* inBAT_id) {
 		if ((err = wkbMakeLine(outWKB, &bWKB, &aWKB)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.MakeLine", "%s", err);
 		
-			BBPreleaseref(inBAT->batCacheid);	
+			BBPunfix(inBAT->batCacheid);	
 			GDKfree(err);
 			GDKfree(bWKB);		
 			return msg;
 		}
 	}
 
-	BBPreleaseref(inBAT->batCacheid);	
+	BBPunfix(inBAT->batCacheid);	
 
 	return MAL_SUCCEED;
 }
@@ -3765,7 +3765,7 @@ str wkbUnionAggr(wkb** outWKB, int* inBAT_id) {
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);	
+		BBPunfix(inBAT->batCacheid);	
 		return createException(MAL, "geom.Union", "BATs must have dense heads");
 	}
 
@@ -3782,7 +3782,7 @@ str wkbUnionAggr(wkb** outWKB, int* inBAT_id) {
 		if ((err = wkbUnion(outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.Union", "%s", err);
 
-			BBPreleaseref(inBAT->batCacheid);	
+			BBPunfix(inBAT->batCacheid);	
 
 			GDKfree(err);
 			return msg;
@@ -3799,14 +3799,14 @@ str wkbUnionAggr(wkb** outWKB, int* inBAT_id) {
 		if ((err = wkbUnion(outWKB, &bWKB, &aWKB)) != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.Union", "%s", err);
 		
-			BBPreleaseref(inBAT->batCacheid);	
+			BBPunfix(inBAT->batCacheid);	
 			GDKfree(err);
 			GDKfree(bWKB);		
 			return msg;
 		}
 	}
 
-	BBPreleaseref(inBAT->batCacheid);	
+	BBPunfix(inBAT->batCacheid);	
 
 	return MAL_SUCCEED;
 

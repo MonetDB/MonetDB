@@ -39,13 +39,13 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", "the arguments must have dense and aligned heads");
 	}
 
 	//create a new BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -61,8 +61,8 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) { //check type
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batcalc.wkb", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -76,7 +76,7 @@ str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnS
 	BATsetcount(outBAT, BATcount(inBAT));
     	BATsettrivprop(outBAT);
     	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
 
@@ -95,13 +95,13 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbFromText", "the arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbFromText", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -118,8 +118,8 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 			str msg = createException(MAL, "batgeom.wkbFromText", "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -131,7 +131,7 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -153,13 +153,13 @@ str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -173,8 +173,8 @@ str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 		inMBR = (mbr*) BUNtail(inBAT_iter, p);
 		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -186,7 +186,7 @@ str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
     BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
 
@@ -207,13 +207,13 @@ static str WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "the arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -230,8 +230,8 @@ static str WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -243,7 +243,7 @@ static str WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -273,13 +273,13 @@ static str WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(wkb**, wkb**)
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -296,8 +296,8 @@ static str WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(wkb**, wkb**)
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -309,7 +309,7 @@ static str WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(wkb**, wkb**)
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -336,13 +336,13 @@ static str WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -359,8 +359,8 @@ static str WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -372,7 +372,7 @@ static str WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -398,13 +398,13 @@ static str WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**),
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -421,8 +421,8 @@ static str WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**),
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -432,7 +432,7 @@ static str WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**),
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -472,13 +472,13 @@ static str WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(int*, wkb**),
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -495,8 +495,8 @@ static str WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(int*, wkb**),
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -506,7 +506,7 @@ static str WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(int*, wkb**),
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -536,13 +536,13 @@ static str WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -559,8 +559,8 @@ static str WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 			str msg = createException(MAL, name, "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -570,7 +570,7 @@ static str WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -600,13 +600,13 @@ str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbGetCoordinate", "The arguments must have dense and aligned heads");
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -623,8 +623,8 @@ str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 			str msg = createException(MAL, "batgeom.wkbGetCoordinate", "%s", err);
 			GDKfree(err);
 
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			
 			return msg;
 		}
@@ -634,7 +634,7 @@ str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -688,7 +688,7 @@ str wkbBox2D_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
 		if ((err = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
-			BBPreleaseref(outBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
 
 			ret = createException(MAL, "batgeom.wkbBox2D", "%s", err);
 			GDKfree(err);
@@ -704,9 +704,9 @@ str wkbBox2D_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 
 clean:
 	if(aBAT)
-		BBPreleaseref(aBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
 	if(bBAT)
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		
 	return ret;
 }
@@ -754,7 +754,7 @@ str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
 		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
-			BBPreleaseref(outBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
 
 			ret = createException(MAL, "batgeom.Contains", "%s", err);
 			GDKfree(err);
@@ -768,9 +768,9 @@ str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 
 clean:
 	if(aBAT)
-		BBPreleaseref(aBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
 	if(bBAT)
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		
 	return ret;
 }
@@ -786,13 +786,13 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	}
 	
 	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
 	
@@ -809,8 +809,8 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 
 		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.Contains", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -818,7 +818,7 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
 	}
 
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -836,13 +836,13 @@ str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
 	}
 	
 	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
 	
@@ -859,8 +859,8 @@ str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
 
 		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.Contains", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -868,7 +868,7 @@ str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
 	}
 
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -888,13 +888,13 @@ str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkb", "both arguments must have dense and aligned heads");
 	}
 
 	//create a new BAT
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkb", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -906,8 +906,8 @@ str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
 		str err = NULL;
 		if ((err = wkbFromWKB(&outWKB, &inWKB[i])) != MAL_SUCCEED) { 
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.wkb", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -921,7 +921,7 @@ str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
 	BATsetcount(outBAT, BATcount(inBAT));
     	BATsettrivprop(outBAT);
     	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
 
@@ -993,7 +993,7 @@ str wkbMakePoint_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, bat* zBAT_id, b
 			m = *((double*) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
 
 		if ((err = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) { //check
-			BBPreleaseref(outBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
 
 			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
 			GDKfree(err);
@@ -1009,13 +1009,13 @@ str wkbMakePoint_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, bat* zBAT_id, b
 
 clean:
 	if(xBAT)
-		BBPreleaseref(xBAT->batCacheid);
+		BBPunfix(xBAT->batCacheid);
 	if(yBAT)
-		BBPreleaseref(yBAT->batCacheid);
+		BBPunfix(yBAT->batCacheid);
 	if(zBAT)
-		BBPreleaseref(zBAT->batCacheid);
+		BBPunfix(zBAT->batCacheid);
 	if(mBAT)
-		BBPreleaseref(mBAT->batCacheid);
+		BBPunfix(mBAT->batCacheid);
 
 	return ret;
 }
@@ -1033,13 +1033,13 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 	}
 	
 	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.SetSRID", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.SetSRID", "Error creating new BAT");
 	}
 	
@@ -1056,8 +1056,8 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 
 		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) { //set SRID
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.SetSRID", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -1067,7 +1067,7 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 		outWKB = NULL;
 	}
 
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -1116,7 +1116,7 @@ str wkbDistance_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 		wkb* bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
 		if ((err = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) { //check	
-			BBPreleaseref(outBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
 
 			ret = createException(MAL, "batgeom.Distance", "%s", err);
 			GDKfree(err);
@@ -1130,9 +1130,9 @@ str wkbDistance_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 
 clean:
 	if(aBAT)
-		BBPreleaseref(aBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
 	if(bBAT)
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		
 	return ret;
 
@@ -1149,13 +1149,13 @@ str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	}
 	
 	if ( !BAThdense(inBAT) ) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Distance", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		return createException(MAL, "batgeom.Distance", "Error creating new BAT");
 	}
 	//set the first idx of the output BAT equal to that of the aBAT
@@ -1171,8 +1171,8 @@ str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 
 		if ((err = wkbDistance(&distanceVal, geomWKB, &inWKB)) != MAL_SUCCEED) { //check
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.Distance", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -1180,7 +1180,7 @@ str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 		BUNappend(outBAT,&distanceVal,TRUE); //add the result to the outBAT
 	}
 
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	
 	return MAL_SUCCEED;
@@ -1206,7 +1206,7 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
 	}
 	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		BBPreleaseref(aBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
 	}
 	
@@ -1214,20 +1214,20 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 		 bBAT->htype != TYPE_void || //header type of bBAT not void
 	    aBAT->hseqbase != bBAT->hseqbase || //the idxs of the headers of the BATs are not the same
 	    BATcount(aBAT) != BATcount(bBAT)) { //the number of valid elements in the BATs are not the same
-		BBPreleaseref(aBAT->batCacheid);
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 
 	//create two new BATs for the output
 	if ((aBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(aBAT->batCacheid);
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
 	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(aBAT->batCacheid);
-		BBPreleaseref(bBAT->batCacheid);
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
 
@@ -1247,10 +1247,10 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 		//check the containment of the MBRs
 		if((err = mbrOverlaps_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(aBAT->batCacheid);
-			BBPreleaseref(bBAT->batCacheid);
-			BBPreleaseref(aBATfiltered->batCacheid);
-			BBPreleaseref(bBATfiltered->batCacheid);
+			BBPunfix(aBAT->batCacheid);
+			BBPunfix(bBAT->batCacheid);
+			BBPunfix(aBATfiltered->batCacheid);
+			BBPunfix(bBATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -1271,8 +1271,8 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
     	BATsettrivprop(bBATfiltered);
     	BATderiveProps(bBATfiltered,FALSE);
 	
-	BBPreleaseref(aBAT->batCacheid);
-	BBPreleaseref(bBAT->batCacheid);
+	BBPunfix(aBAT->batCacheid);
+	BBPunfix(bBAT->batCacheid);
 	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
 	BBPkeepref(*bBATfiltered_id = bBATfiltered->batCacheid);
 	
@@ -1299,13 +1299,13 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 	}
 	
 	if ( BAToriginal->htype != TYPE_void ) { //header type of bBAT not void
-		BBPreleaseref(BAToriginal->batCacheid);
+		BBPunfix(BAToriginal->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 
 	//create the new BAT
 	if ((BATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
-		BBPreleaseref(BAToriginal->batCacheid);
+		BBPunfix(BAToriginal->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
 
@@ -1318,8 +1318,8 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 	//create the MBR of the geom
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
 		str msg;
-		BBPreleaseref(BAToriginal->batCacheid);
-		BBPreleaseref(BATfiltered->batCacheid);
+		BBPunfix(BAToriginal->batCacheid);
+		BBPunfix(BATfiltered->batCacheid);
 		msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 		GDKfree(err);
 		return msg;
@@ -1335,8 +1335,8 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 		//create the MBR for each geometry in the BAT
 		if((err = wkbMBR(&MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(BATfiltered->batCacheid);
+			BBPunfix(BAToriginal->batCacheid);
+			BBPunfix(BATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			GDKfree(geomMBR);
@@ -1346,8 +1346,8 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 		//check the containment of the MBRs
 		if((err = mbrOverlaps(&outBIT, &geomMBR, &MBRoriginal)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(BAToriginal->batCacheid);
-			BBPreleaseref(BATfiltered->batCacheid);
+			BBPunfix(BAToriginal->batCacheid);
+			BBPunfix(BATfiltered->batCacheid);
 			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
 			GDKfree(err);
 			GDKfree(geomMBR);
@@ -1368,7 +1368,7 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
     	BATsettrivprop(BATfiltered);
     	BATderiveProps(BATfiltered,FALSE);
 	
-	BBPreleaseref(BAToriginal->batCacheid);
+	BBPunfix(BAToriginal->batCacheid);
 	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
 
 	return MAL_SUCCEED;
@@ -1395,13 +1395,13 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 	}
 	
 	if ( inBAT->htype != TYPE_void ) { //header type of  BAT not void
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.mbr", "the arguments must have dense and aligned heads");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(inBAT->batCacheid);
+		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.mbr", MAL_MALLOC_FAIL);
 	}
 	//set the first idx of the new BAT equal to that of the input BAT
@@ -1415,8 +1415,8 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(inBAT->batCacheid);
-			BBPreleaseref(outBAT->batCacheid);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
 			msg = createException(MAL, "batgeom.mbr", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -1430,7 +1430,7 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 	BATsetcount(outBAT, BATcount(inBAT));
    	BATsettrivprop(outBAT);
    	BATderiveProps(outBAT,FALSE);
-	BBPreleaseref(inBAT->batCacheid);
+	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1460,28 +1460,28 @@ str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	//get the BATs
 	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
 		if(aBAT)
-			BBPreleaseref(aBAT->batCacheid);	
+			BBPunfix(aBAT->batCacheid);	
 		if(bBAT)
-			BBPreleaseref(bBAT->batCacheid);	
+			BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
 	}
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.MakeLine", "BATs must have dense heads");
 	}
 	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.MakeLine", "BATs must be aligned");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.MakeLine", "Error creating new BAT");
 	}
 
@@ -1500,9 +1500,9 @@ str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
 		if ((err = wkbMakeLine(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
-			BBPreleaseref(outBAT->batCacheid);	
-			BBPreleaseref(aBAT->batCacheid);	
-			BBPreleaseref(bBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
+			BBPunfix(aBAT->batCacheid);	
+			BBPunfix(bBAT->batCacheid);	
 
 			msg = createException(MAL, "batgeom.MakeLine", "%s", err);
 			GDKfree(err);
@@ -1515,8 +1515,8 @@ str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	}
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	BBPreleaseref(aBAT->batCacheid);	
-	BBPreleaseref(bBAT->batCacheid);	
+	BBPunfix(aBAT->batCacheid);	
+	BBPunfix(bBAT->batCacheid);	
 
 	return MAL_SUCCEED;
 }
@@ -1529,28 +1529,28 @@ str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	//get the BATs
 	if ( (aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL ) {
 		if(aBAT)
-			BBPreleaseref(aBAT->batCacheid);	
+			BBPunfix(aBAT->batCacheid);	
 		if(bBAT)
-			BBPreleaseref(bBAT->batCacheid);	
+			BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.Union", "Problem retrieving BATs");
 	}
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.Union", "BATs must have dense heads");
 	}
 	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.Union", "BATs must be aligned");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		BBPreleaseref(aBAT->batCacheid);	
-		BBPreleaseref(bBAT->batCacheid);	
+		BBPunfix(aBAT->batCacheid);	
+		BBPunfix(bBAT->batCacheid);	
 		return createException(MAL, "batgeom.Union", "Error creating new BAT");
 	}
 
@@ -1569,9 +1569,9 @@ str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 		bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
 		if ((err = wkbUnion(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) { //check
-			BBPreleaseref(outBAT->batCacheid);	
-			BBPreleaseref(aBAT->batCacheid);	
-			BBPreleaseref(bBAT->batCacheid);	
+			BBPunfix(outBAT->batCacheid);	
+			BBPunfix(aBAT->batCacheid);	
+			BBPunfix(bBAT->batCacheid);	
 
 			msg = createException(MAL, "batgeom.Union", "%s", err);
 			GDKfree(err);
@@ -1584,8 +1584,8 @@ str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	}
 
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	BBPreleaseref(aBAT->batCacheid);	
-	BBPreleaseref(bBAT->batCacheid);	
+	BBPunfix(aBAT->batCacheid);	
+	BBPunfix(bBAT->batCacheid);	
 
 	return MAL_SUCCEED;
 }
