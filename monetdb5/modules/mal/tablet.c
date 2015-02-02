@@ -854,7 +854,7 @@ SQLworker_column(READERtask *task, int col)
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->top[task->cur]) {
-		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == GDK_FAIL) {
+		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) == GDK_FAIL) {
 			tablet_error(task, lng_nil, col, "Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
 			return -1;

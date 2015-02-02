@@ -561,14 +561,14 @@ BKCorder(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.order", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = n->batCacheid);
+	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCorder_rev(bat *r, const bat *bid)
 {
-	BAT *bn, *b;
+	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.order_rev", RUNTIME_OBJECT_MISSING);
@@ -732,7 +732,7 @@ BKCreplace_bat(bat *r, const bat *bid, const bat *sid)
 	}
 	ret = BATreplace(b, s, 0);
 	BBPunfix(s->batCacheid);
-	if ret == GDK_FAIL)
+	if (ret == GDK_FAIL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	}
@@ -898,6 +898,7 @@ char *
 BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 {
 	BAT *b, *u;
+	gdk_return ret;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
@@ -1315,7 +1316,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		*res = 0;
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	if (setaccess(b, m)) == GDK_FA(IL)
+	if (setaccess(b, m) == GDK_FAIL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
@@ -1641,7 +1642,7 @@ BKCsetHash(bit *ret, const bat *bid)
 str
 BKCsetImprints(bit *ret, const bat *bid)
 {
-	BAT *b, *bn;
+	BAT *b;
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) {
