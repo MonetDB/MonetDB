@@ -1087,6 +1087,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	t = b->ttype;
 	nil = ATOMnilptr(t);
+	/* can we use the base type? */
+	if (t != ATOMstorage(t) &&
+	    nil == ATOMnilptr(ATOMstorage(t)) &&
+	    ATOMcompare(t) == ATOMcompare(ATOMstorage(t)))
+		t = ATOMstorage(t);
 	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
@@ -1205,29 +1210,28 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->ttype == TYPE_oid || b->ttype == TYPE_void) {
+	switch (ATOMtype(t)) {
+	case TYPE_bte:
+		NORMALIZE(bte);
+		break;
+	case TYPE_sht:
+		NORMALIZE(sht);
+		break;
+	case TYPE_int:
+		NORMALIZE(int);
+		break;
+	case TYPE_lng:
+		NORMALIZE(lng);
+		break;
+	case TYPE_flt:
+		NORMALIZE(flt);
+		break;
+	case TYPE_dbl:
+		NORMALIZE(dbl);
+		break;
+	case TYPE_oid:
 		NORMALIZE(oid);
-	} else {
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			NORMALIZE(bte);
-			break;
-		case TYPE_sht:
-			NORMALIZE(sht);
-			break;
-		case TYPE_int:
-			NORMALIZE(int);
-			break;
-		case TYPE_lng:
-			NORMALIZE(lng);
-			break;
-		case TYPE_flt:
-			NORMALIZE(flt);
-			break;
-		case TYPE_dbl:
-			NORMALIZE(dbl);
-			break;
-		}
+		break;
 	}
 
 	if (b->tsorted || b->trevsorted) {
@@ -1397,7 +1401,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (equi) {
 			estimate = 1;
 		} else if (!anti && lval && hval) {
-			switch (ATOMstorage(b->ttype)) {
+			switch (t) {
 			case TYPE_bte:
 				estimate = (BUN) (*(bte *) th - *(bte *) tl);
 				break;
