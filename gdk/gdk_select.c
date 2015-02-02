@@ -308,10 +308,9 @@ do {									\
 	uint##B##_t *restrict im = (uint##B##_t *) imprints->imps;	\
 	uint##B##_t mask = 0, innermask;				\
 	int lbin, hbin;							\
-	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			  imprints->bins, tl);				\
-	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			  imprints->bins, th);				\
+	int tpe = ATOMbasetype(b->ttype);				\
+	lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl);	\
+	hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th);	\
 	/* note: (1<<n)-1 gives a sequence of n one bits */		\
 	/* to set bits hbin..lbin inclusive, we would do: */		\
 	/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */	\
@@ -764,11 +763,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
-	t = b->ttype;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(b->ttype);
 
 	if (s && !BATtdense(s)) {
 
@@ -1118,6 +1113,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	t = b->ttype;
 	nil = ATOMnilptr(t);
+	/* can we use the base type? */
+	t = ATOMbasetype(t);
 	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
@@ -1236,34 +1233,33 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->ttype == TYPE_oid || b->ttype == TYPE_void) {
-		NORMALIZE(oid);
-	} else {
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			NORMALIZE(bte);
-			break;
-		case TYPE_sht:
-			NORMALIZE(sht);
-			break;
-		case TYPE_int:
-			NORMALIZE(int);
-			break;
-		case TYPE_lng:
-			NORMALIZE(lng);
-			break;
+	switch (ATOMtype(t)) {
+	case TYPE_bte:
+		NORMALIZE(bte);
+		break;
+	case TYPE_sht:
+		NORMALIZE(sht);
+		break;
+	case TYPE_int:
+		NORMALIZE(int);
+		break;
+	case TYPE_lng:
+		NORMALIZE(lng);
+		break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
-			NORMALIZE(hge);
-			break;
+	case TYPE_hge:
+		NORMALIZE(hge);
+		break;
 #endif
-		case TYPE_flt:
-			NORMALIZE(flt);
-			break;
-		case TYPE_dbl:
-			NORMALIZE(dbl);
-			break;
-		}
+	case TYPE_flt:
+		NORMALIZE(flt);
+		break;
+	case TYPE_dbl:
+		NORMALIZE(dbl);
+		break;
+	case TYPE_oid:
+		NORMALIZE(oid);
+		break;
 	}
 
 	if (b->tsorted || b->trevsorted) {
@@ -1433,7 +1429,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (equi) {
 			estimate = 1;
 		} else if (!anti && lval && hval) {
-			switch (ATOMstorage(b->ttype)) {
+			switch (t) {
 			case TYPE_bte:
 				estimate = (BUN) (*(bte *) th - *(bte *) tl);
 				break;
@@ -1697,13 +1693,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	}
 
 	t = ATOMtype(l->ttype);
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == cmp) {
-		/* we can use the underlying type if it looks enough
-		 * like the actual type */
-		t = ATOMstorage(t);
-	}
+	t = ATOMbasetype(t);
 
 	if (l->tvarsized && l->ttype) {
 		assert(rl->tvarsized && rl->ttype);

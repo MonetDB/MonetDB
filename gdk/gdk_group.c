@@ -512,7 +512,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
 	bi = bat_iterator(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
 	if (gn == NULL)
 		goto error;
@@ -547,12 +547,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	/* figure out if we can use the storage type also for
 	 * comparing values */
-	t = b->ttype;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-	    BATatoms[ATOMstorage(t)].atomCmp == cmp &&
-	    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(b->ttype);
 
 	if (((b->tsorted || b->trevsorted) &&
 	     (g == NULL || g->tsorted || g->trevsorted)) ||
@@ -684,7 +679,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 
 		GDKfree(pgrp);
-	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_bte) {
+	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids */
 		unsigned char *restrict bgrps = GDKmalloc(256);
@@ -708,7 +703,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(bgrps);
-	} else if (g == NULL && ATOMstorage(b->ttype) == TYPE_sht) {
+	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));

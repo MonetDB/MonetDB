@@ -4,3 +4,4 @@ name_conflict.Bug-3650
 prepare_unop_crash.Bug-3653
 and_or_in.Bug-3655
 acidity2-fail.Bug-3635
+inet-ordering.Bug-3660

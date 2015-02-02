@@ -156,7 +156,7 @@ BATsubunique(BAT *b, BAT *s)
 			}
 			prev = v;
 		}
-	} else if (ATOMstorage(b->ttype) == TYPE_bte) {
+	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
 		assert(vars == NULL);
@@ -184,7 +184,7 @@ BATsubunique(BAT *b, BAT *s)
 		}
 		GDKfree(seen);
 		seen = NULL;
-	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
 		assert(vars == NULL);

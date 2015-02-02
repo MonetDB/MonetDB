@@ -693,7 +693,9 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		types = new String[1];
 
 		columns[0] = "GENERATED_KEY";
-		types[0] = "varchar";
+		/* the generated key should be an integer, because (wait for it) other 
+		 * frameworks such as spring expect this. */
+		types[0] = "BIGINT";
 
 		if (header instanceof MonetConnection.UpdateResponse) {
 			String lastid = ((MonetConnection.UpdateResponse)header).lastid;

@@ -1358,7 +1358,11 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 
 	if (mtype == TYPE_oid)
 		incr = 2;
-	mtype = ATOMstorage(mtype);
+	if (mtype != ATOMstorage(mtype) &&
+	    ATOMnilptr(mtype) == ATOMnilptr(ATOMstorage(mtype)) &&
+	    ATOMcompare(mtype) == ATOMcompare(ATOMstorage(mtype)) &&
+	    BATatoms[mtype].atomHash == BATatoms[ATOMstorage(mtype)].atomHash)
+		mtype = ATOMstorage(mtype); /* ATOMbasetype(mtype) */
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
 			ok = mvc_send_int(s, digits);

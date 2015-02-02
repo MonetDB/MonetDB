@@ -1898,11 +1898,7 @@ BATcount_no_nil(BAT *b)
 	if (b->T->nonil)
 		return n;
 	p = Tloc(b, b->batFirst);
-	t = b->ttype;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
 		cnt = b->tseqbase == oid_nil ? 0 : n;
@@ -1962,7 +1958,7 @@ BATcount_no_nil(BAT *b)
 		break;
 	default:
 		nil = ATOMnilptr(t);
-		cmp = BATatoms[t].atomCmp;
+		cmp = ATOMcompare(t);
 		if (b->tvarsized) {
 			base = b->T->vheap->base;
 			for (i = 0; i < n; i++)

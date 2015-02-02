@@ -399,10 +399,7 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		}							\
 	} else {							\
 		int tpe = ATOMtype(r->htype);				\
-		if (tpe != ATOMstorage(tpe) &&				\
-		    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&	\
-		    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp) \
-			tpe = ATOMstorage(tpe);				\
+		tpe = ATOMbasetype(tpe);				\
 		switch(tpe) {						\
 		case TYPE_bte:						\
 			check(a1,loc,bte,simple_CMP(h,h2,bte),bte_EQ);	\

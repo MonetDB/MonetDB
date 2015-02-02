@@ -905,7 +905,7 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			 * the heap as in the source */
 			bn->batFirst = b->batFirst;
 			bn->batInserted = b->batInserted;
-		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix || (ht && tt) || ATOMstorage(MAX(ht, tt)) >= TYPE_str) {
+		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix || (ht && tt) || ATOMextern(MAX(ht, tt))) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
 			BATiter bi = bat_iterator(b);
@@ -952,7 +952,7 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
 	} else if (ATOMstorage(ht) == ATOMstorage(b->htype) &&
-		   BATatoms[ht].atomCmp == BATatoms[b->htype].atomCmp) {
+		   ATOMcompare(ht) == ATOMcompare(b->htype)) {
 		bn->hsorted = b->hsorted;
 		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
@@ -966,7 +966,7 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
-		   BATatoms[tt].atomCmp == BATatoms[b->ttype].atomCmp) {
+		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
@@ -1780,7 +1780,7 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 
 	BATloop(b, p, q) {
 		if ((*cmp)(v, BUNtail(bi, p)) == 0)
@@ -1872,8 +1872,8 @@ BUNlocate(BAT *b, const void *x, const void *y)
 
 	BATcheck(b, "BUNlocate: BAT parameter required");
 	BATcheck(x, "BUNlocate: value parameter required");
-	hcmp = BATatoms[b->htype].atomCmp;
-	tcmp = BATatoms[b->ttype].atomCmp;
+	hcmp = ATOMcompare(b->htype);
+	tcmp = ATOMcompare(b->ttype);
 	p = BUNfirst(b);
 	q = BUNlast(b);
 	if (p == q)
@@ -1976,9 +1976,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	}
 
 	/* exploit string double elimination, when present */
-	htpe = ATOMstorage(b->htype);
-	ttpe = ATOMstorage(b->ttype);
-	if (htpe == TYPE_str && GDK_ELIMDOUBLES(b->H->vheap) && b->H->width > 2) {
+	htpe = ATOMbasetype(b->htype);
+	ttpe = ATOMbasetype(b->ttype);
+	if (ATOMstorage(htpe) == TYPE_str && GDK_ELIMDOUBLES(b->H->vheap) && b->H->width > 2) {
 		hidx.v = strLocate(b->H->vheap, x);
 		if (hidx.v == 0)
 			return BUN_NONE;	/* x does not occur */
@@ -2003,7 +2003,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			}
 		}
 	}
-	if (ttpe == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap) && b->T->width > 2) {
+	if (ATOMstorage(ttpe) == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap) && b->T->width > 2) {
 		tidx.v = strLocate(b->T->vheap, y);
 		if (tidx.v == 0)
 			return BUN_NONE;	/* y does not occur */
@@ -2079,7 +2079,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 
 	/* linear check; we get here for small ranges, [bte,bte] bats,
 	 * and hash alloc failure */
-	if (ATOMstorage(b->htype) == TYPE_bte && ATOMstorage(b->ttype) == TYPE_bte) {
+	if (htpe == TYPE_bte && ttpe == TYPE_bte) {
 		for (; p < q; p++)
 			if (*(bte *) BUNhloc(bi, p) == *(bte *) x &&
 			    *(bte *) BUNtloc(bi, p) == *(bte *) y)
@@ -2834,7 +2834,7 @@ BATassertHeadProps(BAT *b)
 	       b->H->vheap == NULL ||
 	       (BBPfarms[b->H->vheap->farmid].roles & (1 << b->batRole)));
 
-	cmpf = BATatoms[b->htype].atomCmp;
+	cmpf = ATOMcompare(b->htype);
 	nilp = ATOMnilptr(b->htype);
 	p = BUNfirst(b);
 	q = BUNlast(b);
@@ -3093,7 +3093,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 		return;
 	assert((b->hkey & BOUND2BTRUE) == 0);
 	COLsettrivprop(b, b->H);
-	cmpf = BATatoms[b->htype].atomCmp;
+	cmpf = ATOMcompare(b->htype);
 	nilp = ATOMnilptr(b->htype);
 	b->batDirtydesc = 1;	/* we will be changing things */
 	if (b->htype == TYPE_void || b->batCount <= 1) {

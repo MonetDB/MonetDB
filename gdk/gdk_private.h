@@ -263,6 +263,15 @@ extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
 
+/* The base type is the storage type if the comparison function and
+ * nil values are the same as those of the storage type; otherwise it
+ * is the type itself. */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
+
 #define BBPdirty(x)	(BBP_dirty=(x))
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
