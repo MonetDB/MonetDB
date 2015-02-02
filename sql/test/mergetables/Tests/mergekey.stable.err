@@ -30,8 +30,6 @@ stderr of test 'mergekey` in directory 'sql/test/mergetables` itself:
 # 20:50:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=34630"
 # 20:50:25 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1158/.s.monetdb.34630
-QUERY = ALTER TABLE complete ADD TABLE partk2;
 
 
 # 20:50:25 >  

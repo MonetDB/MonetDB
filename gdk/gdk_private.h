@@ -64,6 +64,8 @@ int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
+void BATdelete(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void BATdestroy(BATstore *bs)
 	__attribute__((__visibility__("hidden")));
 int BATfree(BAT *b)
@@ -76,11 +78,11 @@ void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterialize(BAT *b)
+gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterializeh(BAT *b)
+gdk_return BATmaterializeh(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterializet(BAT *b)
+gdk_return BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)
 	__attribute__((__visibility__("hidden")));
@@ -191,6 +193,8 @@ oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
+gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
 int strCmpNoNil(const unsigned char *l, const unsigned char *r)
@@ -203,7 +207,7 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWhead(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *VIEWreset(BAT *b)
+gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -260,6 +264,15 @@ extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
+
+/* The base type is the storage type if the comparison function and
+ * nil values are the same as those of the storage type; otherwise it
+ * is the type itself. */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 

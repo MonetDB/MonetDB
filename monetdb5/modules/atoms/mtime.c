@@ -1193,8 +1193,8 @@ union lng_tzone {
 		ticks = (X2);											\
 		MTIMEtzone_create(&ltz.tzval, &ticks);					\
 		vr.val.lval = ltz.lval;									\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);			\
-		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
+		BUNappend(tzbatnme, (X1), FALSE);			\
+		BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
 	} while (0)
 
 #define TIMEZONES2(X1, X2, X3, X4)									\
@@ -1202,8 +1202,8 @@ union lng_tzone {
 		ticks = (X2);												\
 		MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
 		vr.val.lval = ltz.lval;										\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);				\
-		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
+		BUNappend(tzbatnme, (X1), FALSE);				\
+		BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
 	} while (0)
 
 /*
@@ -2656,6 +2656,23 @@ MTIMEtimestamplng(timestamp *ret, const lng *msec)
 	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
 		return e;
 	l = *msec;
+	return MTIMEtimestamp_add(ret, &t, &l);
+}
+
+str
+MTIMEtimestamplng(timestamp *ret, const lng *sec)
+{
+	timestamp t;
+	lng l;
+	str e;
+
+	if (*sec == lng_nil) {
+		*ret = *timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
+		return e;
+	l = ((lng) *sec);
 	return MTIMEtimestamp_add(ret, &t, &l);
 }
 

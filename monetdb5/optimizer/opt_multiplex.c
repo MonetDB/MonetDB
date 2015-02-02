@@ -28,19 +28,14 @@
  * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
  * structure:
  *
- * @verbatim
- *  A1rev:=bat.reverse(A1);
  * 	resB:= bat.new(A1);
- * barrier (h,t):= iterator.new(A1);
- * 	$1:= algebra.fetch(A1,h);
- * 	$2:= A2;	# in case of constant?
+ * barrier (h,t1):= iterator.new(A1);
+ * 	t2:= algebra.fetch(A2,h)
  * 	...
- * 	cr:= MOD.FCN($1,...,$n);
- *  y:=algebra.fetch(A1rev,h);
- * 	bat.insert(resB,y,cr);
+ * 	cr:= MOD.FCN(t1,...,tn);
+ * 	bat.append(resB,cr);
  * 	redo (h,t):= iterator.next(A1);
  * end h;
- * @end verbatim
  *
  * The algorithm consists of two phases: phase one deals with
  * collecting the relevant information, phase two is the actual
@@ -51,7 +46,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, resB, iter = 0, cr;
 	int hvar, tvar;
-	int x, y;
 	str mod, fcn;
 	int *alias;
 	InstrPtr q;
@@ -107,13 +101,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == NULL)
 		return NULL;
 
-	/* x := bat.reverse(A1); */
-	x = newTmpVariable(mb, newBatType(getColumnType(getVarType(mb,iter)),
-									  getHeadType(getVarType(mb,iter))));
-	q = newFcnCall(mb, batRef, reverseRef);
-	getArg(q, 0) = x;
-	(void) pushArgument(mb, q, iter);
-
 	/* resB := new(refBat) */
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
@@ -153,19 +140,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
 
-	/* y := algebra.fetch(x,h); */
-	y = newTmpVariable(mb, getHeadType(getVarType(mb,iter)));
-	q = newFcnCall(mb, algebraRef, "fetch");
-	getArg(q, 0) = y;
-	q = pushArgument(mb, q, x);
-	q = pushArgument(mb, q, hvar);
-
-	/* insert(resB,h,cr);
+	/* append(resB,h,cr);
 	   not append(resB, cr); the head type (oid) may dynamically change */
 
-	q = newFcnCall(mb, batRef, insertRef);
+	q = newFcnCall(mb, batRef, appendRef);
 	q= pushArgument(mb, q, resB);
-	q= pushArgument(mb, q, y);
 	(void) pushArgument(mb, q, cr);
 
 /* redo (h,r):= iterator.next(refBat); */

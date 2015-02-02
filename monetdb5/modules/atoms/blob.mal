@@ -82,13 +82,3 @@ command blob(b:blob):blob address BLOBblob_blob;
 command blob(s:str):blob address BLOBblob_fromstr;
 command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
 command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;
-
-command calc.isnil(v:blob):bit
-address BLOB_isnil
-comment "Nil test for blob value";
-
-command calc.isnil(v:sqlblob):bit
-address BLOB_isnil
-comment "Nil test for blob value";
-
-

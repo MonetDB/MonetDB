@@ -61,14 +61,6 @@
 #define CSTdbl
 #define CSToid
 
-/* The base type is the storage type if the comparison function and
- * nil values are the same as those of the storage type; otherwise it
- * is the type itself. */
-#define BASETYPE(t)	((t) != ATOMstorage(t) &&			\
-			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
-			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) ? \
-			 ATOMstorage(t) : (t))
-
 /* Most of the internal routines return a count of the number of NIL
  * values they produced.  They indicate an error by returning a value
  * >= BUN_NONE.  BUN_NONE means that the error was dealt with by
@@ -219,7 +211,7 @@ BATcalcnot(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		if (b->T->type == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
@@ -249,7 +241,7 @@ BATcalcnot(BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* NOT reverses the order, but NILs mess it up */
 	bn->T->sorted = nils == 0 && b->T->revsorted;
@@ -274,7 +266,7 @@ int
 VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (BASETYPE(v->vtype)) {
+	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bit_nil)
 			ret->val.btval = bit_nil;
@@ -339,7 +331,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
 		break;
@@ -371,7 +363,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* unary - reverses the order, but NILs mess it up */
 	bn->T->sorted = nils == 0 && b->T->revsorted;
@@ -396,7 +388,7 @@ int
 VARcalcnegate(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (BASETYPE(v->vtype)) {
+	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -469,7 +461,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, (bte) abs);
 		break;
@@ -501,7 +493,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* ABSOLUTE messes up order (unless all values were negative
 	 * or all values were positive, but we don't know anything
@@ -528,7 +520,7 @@ int
 VARcalcabsolute(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
-	switch (BASETYPE(v->vtype)) {
+	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -603,7 +595,7 @@ BATcalciszero(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
 		break;
@@ -635,7 +627,7 @@ BATcalciszero(BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -659,7 +651,7 @@ int
 VARcalciszero(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
-	switch (BASETYPE(v->vtype)) {
+	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bit_nil;
@@ -735,7 +727,7 @@ BATcalcsign(BAT *b, BAT *s)
 	if (bn == NULL)
 		return NULL;
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
 		break;
@@ -767,7 +759,7 @@ BATcalcsign(BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* SIGN is ordered if the input is ordered (negative comes
 	 * first, positive comes after) and NILs stay in the same
@@ -794,7 +786,7 @@ int
 VARcalcsign(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bte;
-	switch (BASETYPE(v->vtype)) {
+	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (v->val.btval == bte_nil)
 			ret->val.btval = bte_nil;
@@ -850,17 +842,17 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 /* ---------------------------------------------------------------------- */
 /* is the value nil (any type) */
 
-#define ISNIL_TYPE(TYPE)						\
+#define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, b->batFirst);	\
 		for (i = start; i < end; i++) {				\
 			CHECKCAND(dst, i, b->H->seq, bit_nil);		\
-			dst[i] = (bit) (src[i] == TYPE##_nil);		\
+			dst[i] = (bit) ((src[i] == TYPE##_nil) ^ NOTNIL); \
 		}							\
 	} while (0)
 
-BAT *
-BATcalcisnil(BAT *b, BAT *s)
+static BAT *
+BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 {
 	BAT *bn;
 	BUN i, cnt, start, end;
@@ -897,29 +889,29 @@ BATcalcisnil(BAT *b, BAT *s)
 
 	CANDLOOP(dst, i, bit_nil, 0, start);
 
-	switch (BASETYPE(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
-		ISNIL_TYPE(bte);
+		ISNIL_TYPE(bte, notnil);
 		break;
 	case TYPE_sht:
-		ISNIL_TYPE(sht);
+		ISNIL_TYPE(sht, notnil);
 		break;
 	case TYPE_int:
-		ISNIL_TYPE(int);
+		ISNIL_TYPE(int, notnil);
 		break;
 	case TYPE_lng:
-		ISNIL_TYPE(lng);
+		ISNIL_TYPE(lng, notnil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		ISNIL_TYPE(hge);
+		ISNIL_TYPE(hge, notnil);
 		break;
 #endif
 	case TYPE_flt:
-		ISNIL_TYPE(flt);
+		ISNIL_TYPE(flt, notnil);
 		break;
 	case TYPE_dbl:
-		ISNIL_TYPE(dbl);
+		ISNIL_TYPE(dbl, notnil);
 		break;
 	default:
 	{
@@ -929,7 +921,7 @@ BATcalcisnil(BAT *b, BAT *s)
 
 		for (i = start; i < end; i++) {
 			CHECKCAND(dst, i, b->H->seq, bit_nil);
-			dst[i] = (bit) ((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0);
+			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0) ^ notnil);
 		}
 		break;
 	}
@@ -937,7 +929,7 @@ BATcalcisnil(BAT *b, BAT *s)
 	CANDLOOP(dst, i, bit_nil, end, cnt);
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* If b sorted, all nils are at the start, i.e. bn starts with
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
@@ -950,6 +942,18 @@ BATcalcisnil(BAT *b, BAT *s)
 	bn->T->key = cnt <= 1;
 
 	return bn;
+}
+
+BAT *
+BATcalcisnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 0);
+}
+
+BAT *
+BATcalcisnotnil(BAT *b, BAT *s)
+{
+	return BATcalcisnil_implementation(b, s, 1);
 }
 
 int
@@ -966,6 +970,342 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	ret->vtype = TYPE_bit;
 	ret->val.btval = (bit) !VALisnil(v);
 	return GDK_SUCCEED;
+}
+
+BAT *
+BATcalcmin(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmin");
+	BATcheck(b2, "BATcalcmin");
+
+	if (checkbats(b1, b2, "BATcalcmin") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmin: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) > 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmin_no_nil");
+	BATcheck(b2, "BATcalcmin_no_nil");
+
+	if (checkbats(b1, b2, "BATcalcmin_no_nil") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmin_no_nil: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0) {
+			if (cmp(p2, nil) == 0) {
+				/* both values are nil */
+				nils++;
+			} else {
+				p1 = p2;
+			}
+		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) > 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmax(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmax");
+	BATcheck(b2, "BATcalcmax");
+
+	if (checkbats(b1, b2, "BATcalcmax") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmax: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
+{
+	BAT *bn;
+	BUN nils;
+	BUN start, end, cnt;
+	BUN i;
+	const oid *restrict cand = NULL, *candend = NULL;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+
+	BATcheck(b1, "BATcalcmax_no_nil");
+	BATcheck(b2, "BATcalcmax_no_nil");
+
+	if (checkbats(b1, b2, "BATcalcmax_no_nil") == GDK_FAIL)
+		return NULL;
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("BATcalcmax_no_nil: inputs have incompatible types\n");
+		return NULL;
+	}
+
+	CANDINIT(b1, s, start, end, cnt, cand, candend);
+
+	bn = BATnew(TYPE_void, b1->ttype, cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	nil = ATOMnilptr(b1->ttype);
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (i = 0; i < start; i++)
+		bunfastapp(bn, nil);
+	nils = start;
+	for (i = start; i < end; i++) {
+		if (cand) {
+			if (i < *cand - b1->hseqbase) {
+				nils++;
+				bunfastapp(bn, nil);
+				continue;
+			}
+			assert(i == *cand - b1->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		p1 = BUNtail(b1i, i + BUNfirst(b1));
+		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		if (cmp(p1, nil) == 0) {
+			if (cmp(p2, nil) == 0) {
+				/* both values are nil */
+				nils++;
+			} else {
+				p1 = p2;
+			}
+		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		bunfastapp(bn, p1);
+	}
+	for (i = end; i < cnt; i++)
+		bunfastapp(bn, nil);
+	nils += cnt - end;
+	BATseqbase(bn, b1->hseqbase);
+	bn->T->nil = nils > 0;
+	bn->T->nonil = nils == 0;
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
+		if (bn->tdense)
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tdense = 0;
+	}
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1282,9 +1622,9 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
-	tp = BASETYPE(tp);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -2587,7 +2927,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
@@ -2640,7 +2980,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -2693,7 +3033,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -2759,7 +3099,7 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -3111,9 +3451,9 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
-	tp = BASETYPE(tp);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -4341,7 +4681,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -4384,7 +4724,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -4432,7 +4772,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is
@@ -4965,9 +5305,9 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
-	tp = BASETYPE(tp);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -6202,7 +6542,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -6252,7 +6592,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -6310,7 +6650,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
@@ -6679,9 +7019,9 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
-	tp = BASETYPE(tp);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -8119,7 +8459,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	/* if the input is sorted, and no zero division occurred (we
 	 * only know for sure if abort_on_error is set), the result is
@@ -8180,7 +8520,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -8501,9 +8841,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 {
 	BUN nils;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
-	tp = BASETYPE(tp);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -9703,7 +10043,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -9746,7 +10086,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -9787,7 +10127,7 @@ xor_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (BASETYPE(tp)) {
+	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			if (nonil)
@@ -9849,7 +10189,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcxor") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
+	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
 		GDKerror("BATcalcxor: incompatible input types.\n");
 		return NULL;
 	}
@@ -9874,7 +10214,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -9898,7 +10238,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcxorcst") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalcxorcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -9923,7 +10263,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -9947,7 +10287,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstxor") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalccstxor: incompatible input types.\n");
 		return NULL;
 	}
@@ -9972,7 +10312,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -9986,7 +10326,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
+	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
 		GDKerror("VARcalccstxor: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -10016,7 +10356,7 @@ or_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (BASETYPE(tp)) {
+	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
@@ -10096,7 +10436,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcor") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
+	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
 		GDKerror("BATcalcor: incompatible input types.\n");
 		return NULL;
 	}
@@ -10121,7 +10461,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10145,7 +10485,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcorcst") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalcorcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -10170,7 +10510,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10194,7 +10534,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstor") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalccstor: incompatible input types.\n");
 		return NULL;
 	}
@@ -10219,7 +10559,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10233,7 +10573,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
+	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
 		GDKerror("VARcalccstor: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -10263,7 +10603,7 @@ and_typeswitchloop(const void *lft, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	switch (BASETYPE(tp)) {
+	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
@@ -10340,7 +10680,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	if (checkbats(b1, b2, "BATcalcand") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b1->T->type) != BASETYPE(b2->T->type)) {
+	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
 		GDKerror("BATcalcand: incompatible input types.\n");
 		return NULL;
 	}
@@ -10365,7 +10705,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10389,7 +10729,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	if (checkbats(b, NULL, "BATcalcandcst") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalcandcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -10413,7 +10753,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10437,7 +10777,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	if (checkbats(b, NULL, "BATcalccstand") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(v->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
 		GDKerror("BATcalccstand: incompatible input types.\n");
 		return NULL;
 	}
@@ -10461,7 +10801,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10475,7 +10815,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 int
 VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	if (BASETYPE(lft->vtype) != BASETYPE(rgt->vtype)) {
+	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
 		GDKerror("VARcalccstand: incompatible input types.\n");
 		return GDK_FAIL;
 	}
@@ -10521,8 +10861,8 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -10709,7 +11049,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10751,7 +11091,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10793,7 +11133,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -10833,8 +11173,8 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	BUN nils = 0;
 	BUN i, j, k;
 
-	tp1 = BASETYPE(tp1);
-	tp2 = BASETYPE(tp2);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
 	switch (tp1) {
 	case TYPE_bte:
 		switch (tp2) {
@@ -11021,7 +11361,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b1->H->seq);
+	BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -11063,7 +11403,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -11105,7 +11445,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -11407,7 +11747,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 
 	CANDLOOP(dst, l, bit_nil, 0, start);
 
-	tp = BASETYPE(tp);
+	tp = ATOMbasetype(tp);
 
 	switch (tp) {
 	case TYPE_bte:
@@ -11476,7 +11816,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	CANDLOOP(dst, l, bit_nil, end, cnt);
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, seqbase);
+	BATseqbase(bn, seqbase);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -11552,8 +11892,8 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 	if (checkbats(b, NULL, "BATcalcbetweencstcst") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(lo->vtype) ||
-	    BASETYPE(b->T->type) != BASETYPE(hi->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(lo->vtype) ||
+	    ATOMbasetype(b->T->type) != ATOMbasetype(hi->vtype)) {
 		GDKerror("BATcalcbetweencstcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -11584,7 +11924,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 	if (checkbats(b, lo, "BATcalcbetweenbatcst") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(hi->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(hi->vtype)) {
 		GDKerror("BATcalcbetweenbatcst: incompatible input types.\n");
 		return NULL;
 	}
@@ -11617,7 +11957,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 	if (checkbats(b, hi, "BATcalcbetweencstbat") == GDK_FAIL)
 		return NULL;
 
-	if (BASETYPE(b->T->type) != BASETYPE(lo->vtype)) {
+	if (ATOMbasetype(b->T->type) != ATOMbasetype(lo->vtype)) {
 		GDKerror("BATcalcbetweencstbat: incompatible input types.\n");
 		return NULL;
 	}
@@ -11657,7 +11997,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		return GDK_FAIL;
 	}
 
-	t = BASETYPE(t);
+	t = ATOMbasetype(t);
 
 	ret->vtype = TYPE_bit;
 	switch (t) {
@@ -11813,7 +12153,7 @@ BATcalcifthenelse_intern(BAT *b,
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -12328,7 +12668,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			end = nils;
 		/* start using nils normally */
 		nils = 0;
-		switch (BASETYPE(tp)) {
+		switch (ATOMbasetype(tp)) {
 		case TYPE_bte:
 			CANDLOOP((bte *) dst, i, bte_nil, 0, start);
 			if (tp == TYPE_bit) {
@@ -12420,7 +12760,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			break;
 		}
 	}
-	switch (BASETYPE(tp)) {
+	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		for (; i < cnt; i++)
 			((bte *) dst)[i] = bte_nil;
@@ -12477,9 +12817,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       BUN cnt, BUN start, BUN end, const oid *restrict cand,
 		       const oid *candend, oid candoff, int abort_on_error)
 {
-	switch (BASETYPE(stp)) {
+	switch (ATOMbasetype(stp)) {
 	case TYPE_bte:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, cnt,
@@ -12532,7 +12872,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_sht:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, cnt,
@@ -12586,7 +12926,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_int:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, cnt,
@@ -12642,7 +12982,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_lng:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, cnt,
@@ -12700,7 +13040,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, cnt,
@@ -12748,7 +13088,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 #endif
 	case TYPE_flt:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, cnt,
@@ -12807,7 +13147,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_dbl:
-		switch (BASETYPE(dtp)) {
+		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, cnt,
@@ -12885,7 +13225,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && BASETYPE(b->T->type) == BASETYPE(tp))
+	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->T->type) == ATOMbasetype(tp))
 		return BATcopy(b, b->H->type, tp, 0, TRANSIENT);
 
 	bn = BATnew(TYPE_void, tp, b->batCount, TRANSIENT);
@@ -12924,7 +13264,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	}
 
 	BATsetcount(bn, b->batCount);
-	bn = BATseqbase(bn, b->H->seq);
+	BATseqbase(bn, b->H->seq);
 
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;

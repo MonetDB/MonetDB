@@ -65,12 +65,12 @@ comment "project using the map bat (contains which bat to use in scan order)";
 pattern sort(b:bat[:oid,:any_2]...)
 	(sorted:bat[:oid,:any_2], map:bat[:oid,:bte]) 
 address MATsort
-comment "Returns a BAT copy sorted on the head column.";
+comment "Returns a BAT copy sorted on the tail column.";
 
-pattern sortReverseTail(b:bat[:oid,:any_2]...)
+pattern sortReverse(b:bat[:oid,:any_2]...)
 	(sorted:bat[:oid,:any_2], map:bat[:oid,:bte]) 
-address MATsortReverseTail
-comment "Returns a BAT copy sorted on the head column.";
+address MATsortReverse
+comment "Returns a BAT copy sorted on the tail column.";
 
 pattern print(b:bat[:oid,:any_2]...):void
 address MATprint;

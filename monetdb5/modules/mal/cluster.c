@@ -802,7 +802,7 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	}
 	BBPunfix(*CMAP);
 	BBPunfix(*B);
-	rb = BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -920,7 +920,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	GDKfree(psumcp);
 	BBPunfix(*CMAP);
 	BBPunfix(b->batCacheid);
-	rb = BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -122,6 +122,7 @@ str thetajoinRef;
 str subjoinRef;
 str subantijoinRef;
 str subbandjoinRef;
+str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
 str kunionRef;
@@ -375,6 +376,7 @@ void optimizerInit(void)
 	subjoinRef = putName("subjoin",7);
 	subantijoinRef = putName("subantijoin",11);
 	subbandjoinRef = putName("subbandjoin",11);
+	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);

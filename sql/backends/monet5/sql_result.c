@@ -780,7 +780,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, char *sname, ch
 				fmt[i].c = b;
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
-					if ((fmt[i].c = BATextend(fmt[i].c, (BUN) sz)) == NULL) {
+					if (BATextend(fmt[i].c, (BUN) sz) == GDK_FAIL) {
 						for (i--; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
 						sql_error(m, 500, "failed to allocate space for column");
@@ -1375,7 +1375,11 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 
 	if (mtype == TYPE_oid)
 		incr = 2;
-	mtype = ATOMstorage(mtype);
+	if (mtype != ATOMstorage(mtype) &&
+	    ATOMnilptr(mtype) == ATOMnilptr(ATOMstorage(mtype)) &&
+	    ATOMcompare(mtype) == ATOMcompare(ATOMstorage(mtype)) &&
+	    BATatoms[mtype].atomHash == BATatoms[ATOMstorage(mtype)].atomHash)
+		mtype = ATOMstorage(mtype); /* ATOMbasetype(mtype) */
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
 			ok = mvc_send_int(s, digits);

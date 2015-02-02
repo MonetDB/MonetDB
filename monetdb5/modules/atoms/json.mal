@@ -164,10 +164,6 @@ address JSONrenderobject;
 pattern renderarray(val:any...):json
 address JSONrenderarray;
 
-pattern calc.isnil(v:json):bit
-address CMDvarISNIL
-comment "Nil test for json value";
-
 command aggr.jsonaggr(val:bat[:oid,:str]):str
 address JSONgroupStr
 comment "Aggregate the string values to array.";

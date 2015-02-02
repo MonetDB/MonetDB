@@ -71,7 +71,6 @@ blob_export str BLOBblob_blob(blob **d, blob **s);
 blob_export str BLOBblob_fromstr(blob **b, str *d);
 
 blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
-blob_export str BLOB_isnil(bit *retval, blob *val);
 
 str
 BLOBprelude(void *ret)
@@ -621,10 +620,3 @@ BLOBsqlblob_fromstr(sqlblob **b, str *s)
 	sqlblob_fromstr(*s, &len, b);
 	return MAL_SUCCEED;
 }
-
-str BLOB_isnil(bit *ret, blob *v)
-{
-	*ret = (v->nitems == ~(size_t)0);
-	return MAL_SUCCEED;
-}
-

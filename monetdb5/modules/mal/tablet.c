@@ -74,10 +74,10 @@ void_bat_create(int adt, BUN nr)
 	if (BATmirror(b))
 		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
-	if (nr > BATTINY && adt)
-		b = BATextend(b, nr);
-	if (b == NULL)
-		return b;
+	if (nr > BATTINY && adt && BATextend(b, nr) == GDK_FAIL) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 
 	b->hsorted = TRUE;
 	b->hrevsorted = FALSE;
@@ -854,7 +854,7 @@ SQLworker_column(READERtask *task, int col)
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->top[task->cur]) {
-		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == NULL) {
+		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == GDK_FAIL) {
 			tablet_error(task, lng_nil, col, "Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
 			return -1;

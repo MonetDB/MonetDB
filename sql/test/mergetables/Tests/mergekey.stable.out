@@ -44,7 +44,7 @@ Ready.
 #ALTER TABLE complete ADD PRIMARY KEY (x,y,z);
 #ALTER TABLE complete ADD TABLE partk1;
 #SELECT * FROM COMPLETE;
-% sys.complete,	sys.complete,	sys.complete # table_name
+% .complete,	.complete,	.complete # table_name
 % x,	y,	z # name
 % double,	double,	double # type
 % 24,	24,	24 # length
@@ -52,6 +52,10 @@ Ready.
 [ 1,	0,	0	]
 [ 0,	1,	0	]
 [ 1,	1,	0	]
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+[ 2,	1,	0	]
+[ 3,	1,	0	]
 #DROP TABLE complete;
 #DROP TABLE partk1;
 #DROP TABLE partk2;

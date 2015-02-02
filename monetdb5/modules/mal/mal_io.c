@@ -290,7 +290,12 @@ IOprintf_(str *res, str format, ...)
 				va_end(ap);
 				return_error(toofew_error);
 			}
-			type = ATOMstorage(va_arg(ap, int));
+			type = va_arg(ap, int);
+			if (type != ATOMstorage(type) &&
+				ATOMnilptr(type) == ATOMnilptr(ATOMstorage(type)) &&
+				ATOMcompare(type) == ATOMcompare(ATOMstorage(type)) &&
+				BATatoms[type].atomHash == BATatoms[ATOMstorage(type)].atomHash)
+				type = ATOMstorage(type);
 
 			len = 1 + (cur - paramseen);
 			memcpy(meta, paramseen, len);
@@ -469,14 +474,10 @@ getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	int j=0;
 	ValRecord *v;
 	ptr val = NULL;
-	int tpe ;
 
 	j = pci->argv[k];
 	v= &stk->stk[j];
-	tpe = v->vtype;
-tstagain:
-	switch(tpe){
-	/* switch(ATOMstorage(v->vtype)) */
+	switch(ATOMstorage(v->vtype)){
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.btval; break;
 	case TYPE_sht: val= (ptr) & v->val.shval; break;
@@ -485,7 +486,6 @@ tstagain:
 	case TYPE_wrd: val= (ptr) & v->val.wval; break;
 	case TYPE_bte: val= (ptr) & v->val.btval; break;
 	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
 	case TYPE_flt: val= (ptr) & v->val.fval; break;
 	case TYPE_dbl: val= (ptr) & v->val.dval; break;
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
@@ -493,9 +493,9 @@ tstagain:
 	case TYPE_hge: val= (ptr) & v->val.hval; break;
 #endif
 	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
+	case TYPE_ptr:
 	default:
-		tpe= ATOMstorage(tpe);
-		goto tstagain;
+		 val= (ptr) v->val.pval; break;/*!!*/
 	}
 	return val;
 } 
@@ -881,7 +881,7 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNins(b, h, t, FALSE) == NULL) {
+		if (BUNins(b, h, t, FALSE) == GDK_FAIL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			MT_munmap(base, end - base);

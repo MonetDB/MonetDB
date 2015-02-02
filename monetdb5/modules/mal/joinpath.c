@@ -244,7 +244,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			/* reset the postponed joins */
 			for( k=0; k<top; k++)
 				postpone[k]=FALSE;
-			if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+			if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 			postponed = 0;
 		}
 		ALGODEBUG{
@@ -271,7 +271,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	}
 	GDKfree(postpone);
 	b = joins[0];
-	if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (b && !(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	return b;
 }
 

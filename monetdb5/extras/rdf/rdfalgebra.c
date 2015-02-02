@@ -46,7 +46,7 @@ RDFleftfetchjoin_sorted(bat *result, const bat *lid, const bat *rid)
 	bn->tsorted = TRUE;
 
 	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
