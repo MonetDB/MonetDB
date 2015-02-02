@@ -1956,9 +1956,9 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 }
 
 static int
-sql_trans_cname_conflict( sql_trans *tr, sql_table *t, char *extra, char *cname)
+sql_trans_cname_conflict( sql_trans *tr, sql_table *t, const char *extra, const char *cname)
 {
-	char *tmp;
+	const char *tmp;
 
 	if (extra) {
 		tmp = sa_message(tr->sa, "%s_%s", extra, cname);
@@ -1971,7 +1971,7 @@ sql_trans_cname_conflict( sql_trans *tr, sql_table *t, char *extra, char *cname)
 }
 
 static int
-sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, char *extra, char *tname, char *cname)
+sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, const char *extra, const char *tname, const char *cname)
 {
 	char *tp;
 	char *tmp;
@@ -1997,7 +1997,7 @@ sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, char *extra, char *tname
 }
 
 static int
-sql_trans_name_conflict( sql_trans *tr, char *sname, char *tname, char *cname)
+sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, const char *cname)
 {
 	char *sp;
 	sql_schema *s = NULL;
