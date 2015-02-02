@@ -1990,11 +1990,18 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static BAT *
 setwritable(BAT *b)
 {
-	BAT *bn;
+	BAT *bn = b;
 
-	bn = BATsetaccess(b, BAT_WRITE);	/* can return NULL */
-	if (b != bn)
+	if (BATsetaccess(b, BAT_WRITE) == GDK_FAIL) {
+		if (b->batSharecnt) {
+			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
+			if (bn != NULL)
+				BATsetaccess(bn, BAT_WRITE);
+		} else {
+			bn = NULL;
+		}
 		BBPunfix(b->batCacheid);
+	}
 	return bn;
 }
 
@@ -2057,12 +2064,12 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 	if (BATcount(u))
-		res = BATreplace(res, u, TRUE);
+		BATreplace(res, u, TRUE);
 	BBPunfix(u->batCacheid);
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
-		res = BATappend(res, i, TRUE);
+		BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 	}
 
@@ -2139,7 +2146,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			}
 			u = BATmirror(cminu);
 		}
-		res = BATappend(c, u, TRUE);
+		BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
 
 		u = BATsort(BATmirror(res));
@@ -2175,7 +2182,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", OPERATION_FAILED);
 			}
 		}
-		res = BATappend(res, i, TRUE);
+		BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
 		u = BATsort(BATmirror(res));
@@ -2229,7 +2236,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		} else {
 			if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE, TRANSIENT)) == NULL)
 				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
-			res = BATappend(res, i, FALSE);
+			BATappend(res, i, FALSE);
 			BBPunfix(c->batCacheid);
 		}
 	}
@@ -2265,7 +2272,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	if (BATcount(u)) {
 		BAT *nu = BATleftjoin(s, u, BATcount(u));
 		res = setwritable(res);
-		res = BATreplace(res, nu, 0);
+		BATreplace(res, nu, 0);
 		BBPunfix(nu->batCacheid);
 	}
 	BBPunfix(s->batCacheid);
@@ -4517,17 +4524,17 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								lng sz;
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-								sch = BUNappend(sch, b->name, FALSE);
-								tab = BUNappend(tab, bt->name, FALSE);
-								col = BUNappend(col, bc->name, FALSE);
-								type = BUNappend(type, c->type.type->sqlname, FALSE);
+								BUNappend(sch, b->name, FALSE);
+								BUNappend(tab, bt->name, FALSE);
+								BUNappend(col, bc->name, FALSE);
+								BUNappend(type, c->type.type->sqlname, FALSE);
 
 								/*printf(" cnt "BUNFMT, BATcount(bn)); */
 								sz = BATcount(bn);
-								cnt = BUNappend(cnt, &sz, FALSE);
+								BUNappend(cnt, &sz, FALSE);
 
 								/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-								loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+								BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 								/*printf(" width %d", bn->T->width); */
 								w = bn->T->width;
 								if (bn->ttype == TYPE_str) {
@@ -4549,26 +4556,26 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (cnt2)
 										w = (int) (sum / cnt2);
 								}
-								atom = BUNappend(atom, &w, FALSE);
+								BUNappend(atom, &w, FALSE);
 
 								sz = tailsize(bn, BATcount(bn));
 								sz += headsize(bn, BATcount(bn));
-								size = BUNappend(size, &sz, FALSE);
+								BUNappend(size, &sz, FALSE);
 
 								sz = bn->T->vheap ? bn->T->vheap->size : 0;
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
-								heap = BUNappend(heap, &sz, FALSE);
+								BUNappend(heap, &sz, FALSE);
 
 								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
-								indices = BUNappend(indices, &sz, FALSE);
+								BUNappend(indices, &sz, FALSE);
 								sz = IMPSimprintsize(bn);
-								imprints = BUNappend(imprints, &sz, FALSE);
+								BUNappend(imprints, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 								/*printf("\n"); */
 
 								w = BATtordered(bn);
-								sort = BUNappend(sort, &w, FALSE);
+								BUNappend(sort, &w, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4582,17 +4589,17 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									lng sz;
 
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-									sch = BUNappend(sch, b->name, FALSE);
-									tab = BUNappend(tab, bt->name, FALSE);
-									col = BUNappend(col, bc->name, FALSE);
-									type = BUNappend(type, "oid", FALSE);
+									BUNappend(sch, b->name, FALSE);
+									BUNappend(tab, bt->name, FALSE);
+									BUNappend(col, bc->name, FALSE);
+									BUNappend(type, "oid", FALSE);
 
 									/*printf(" cnt "BUNFMT, BATcount(bn)); */
 									sz = BATcount(bn);
-									cnt = BUNappend(cnt, &sz, FALSE);
+									BUNappend(cnt, &sz, FALSE);
 
 									/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-									loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+									BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 									/*printf(" width %d", bn->T->width); */
 									w = bn->T->width;
 									if (bn->ttype == TYPE_str) {
@@ -4614,25 +4621,25 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (cnt2)
 											w = (int) (sum / cnt2);
 									}
-									atom = BUNappend(atom, &w, FALSE);
+									BUNappend(atom, &w, FALSE);
 									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
 									sz += headsize(bn, BATcount(bn));
-									size = BUNappend(size, &sz, FALSE);
+									BUNappend(size, &sz, FALSE);
 
 									sz = bn->T->vheap ? bn->T->vheap->size : 0;
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
-									heap = BUNappend(heap, &sz, FALSE);
+									BUNappend(heap, &sz, FALSE);
 
 									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
 									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
-									indices = BUNappend(indices, &sz, FALSE);
+									BUNappend(indices, &sz, FALSE);
 									sz = IMPSimprintsize(bn);
-									imprints = BUNappend(imprints, &sz, FALSE);
+									BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
 									/*printf("\n"); */
 									w = BATtordered(bn);
-									sort = BUNappend(sort, &w, FALSE);
+									BUNappend(sort, &w, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
 							}

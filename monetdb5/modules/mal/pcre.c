@@ -738,10 +738,9 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
 	if (origin_strs->htype == TYPE_void) {
-		*res = BATseqbase(tmpbat, origin_strs->hseqbase);
-	} else {
-		*res = tmpbat;
+		BATseqbase(tmpbat, origin_strs->hseqbase);
 	}
+	*res = tmpbat;
 	return MAL_SUCCEED;
 }
 
@@ -1203,7 +1202,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATkey(BATmirror(r),FALSE);
 		BATseqbase(r, strs->hseqbase);
 
-		if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
+		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
 		if (strs->htype != r->htype) {
 			BAT *v = VIEWcreate(strs, r);
@@ -1537,9 +1536,8 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL) {
+				if (BATextend(r1, newcap) == GDK_FAIL ||
+					BATextend(r2, newcap) == GDK_FAIL) {
 					msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 					goto bailout;
 				}

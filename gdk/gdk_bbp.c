@@ -2559,7 +2559,7 @@ BBPsave(BAT *b)
 			ret = BBPbackup(b, FALSE);
 		if (ret == 0) {
 			BBPout++;
-			ret = (BATsave(b) == NULL);
+			ret = (BATsave(b) == GDK_FAIL);
 		}
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPSAVING, "BBPsave");
@@ -3488,7 +3488,7 @@ BBPsync(int cnt, bat *subcommit)
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0)
 					break;
-				if (b != NULL && BATsave(b) == NULL)
+				if (b != NULL && BATsave(b) == GDK_FAIL)
 					break;	/* write error */
 			}
 		}
@@ -3596,7 +3596,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		ret = unlink(dstpath);	/* clear destination */
 		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, ret);
 
-		if (GDKcreatedir(dstdir))
+		if (GDKcreatedir(dstdir) == GDK_SUCCEED)
 			ret = 0;
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
 		if (ret)

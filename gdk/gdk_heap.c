@@ -390,7 +390,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	return (ret == 0);
 }
 
-int
+gdk_return
 GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 {
 	bte shift = c->shift;

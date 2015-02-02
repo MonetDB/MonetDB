@@ -37,7 +37,7 @@ float nextafterf(float x, float y);
 			BATsetcount((B), (I));			\
 			if (BATextend((B),			\
 				      MIN(BATcapacity(B) + (G),	\
-					  (M))) == NULL) {	\
+					  (M))) == GDK_FAIL) {	\
 				BBPreclaim(B);			\
 				return (R);			\
 			}					\
@@ -213,7 +213,10 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		bn->tseqbase = *dst;
 	/* temporarily set head to nil so that BATorder doesn't materialize */
 	BATseqbase(bn, oid_nil);
-	bn = BATmirror(BATorder(BATmirror(bn)));
+	if (BATorder(BATmirror(bn)) == GDK_FAIL) {
+		BBPreclaim(bn);
+		return NULL;
+	}
 	BATseqbase(bn, 0);
 	return bn;
 }
@@ -755,7 +758,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
 	/* build imprints if they do not exist */
-	if (use_imprints && (BATimprints(b) == NULL)) {
+	if (use_imprints && (BATimprints(b) == GDK_FAIL)) {
 		use_imprints = 0;
 	}
 
@@ -1793,8 +1796,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == NULL ||
-					    BATextend(r2, cnt) == NULL)
+					if (BATextend(r1, cnt) == GDK_FAIL ||
+					    BATextend(r2, cnt) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -1811,8 +1814,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == NULL ||
-					    BATextend(r2, cnt) == NULL)
+					if (BATextend(r1, cnt) == GDK_FAIL ||
+					    BATextend(r2, cnt) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -1832,7 +1835,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
 		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT)) &&
-		   BATimprints(l)) {
+		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column
 		 *
 		 * we use imprints if we can (the type is right for
@@ -2177,7 +2180,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				continue;
 			if (BATcapacity(r2) < ncnt) {
 				BATsetcount(r2, cnt);
-				if (BATextend(r2, BATcapacity(r1)) == NULL)
+				if (BATextend(r2, BATcapacity(r1)) == GDK_FAIL)
 					goto bailout;
 				dst2 = (oid *) Tloc(r2, BUNfirst(r2));
 			}
@@ -2273,8 +2276,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					BUN newcap = BATgrows(r1);
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, newcap) == NULL ||
-					    BATextend(r2, newcap) == NULL)
+					if (BATextend(r1, newcap) == GDK_FAIL ||
+					    BATextend(r2, newcap) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));

@@ -241,7 +241,7 @@ HASHcollisions(BAT *b, Hash *h)
  * Its argument is the element type and the maximum number of BUNs be
  * stored under the hash function.
  */
-BAT *
+gdk_return
 BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
@@ -281,7 +281,7 @@ BAThash(BAT *b, BUN masksize)
 			if (b->tseqbase == oid_nil) {
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
-				return NULL;
+				return GDK_FAIL;
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
 
@@ -339,7 +339,7 @@ BAThash(BAT *b, BUN masksize)
 					GDKfree(hp->filename);
 					GDKfree(hp);
 				}
-				return NULL;
+				return GDK_FAIL;
 			}
 
 			switch (tpe) {
@@ -442,9 +442,8 @@ BAThash(BAT *b, BUN masksize)
 	if (o != NULL) {
 		o->T->hash = b->T->hash;
 		BBPunfix(b->batCacheid);
-		b = o;
 	}
-	return b;
+	return GDK_SUCCEED;
 }
 
 /*

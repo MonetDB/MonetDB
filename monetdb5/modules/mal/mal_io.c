@@ -881,7 +881,7 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNins(b, h, t, FALSE) == NULL) {
+		if (BUNins(b, h, t, FALSE) == GDK_FAIL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			MT_munmap(base, end - base);

@@ -1133,7 +1133,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
 
 gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity, int role)
 	__attribute__((warn_unused_result));
-gdk_export BAT *BATextend(BAT *b, BUN newcap);
+gdk_export gdk_return BATextend(BAT *b, BUN newcap);
 
 /* internal */
 gdk_export bte ATOMelmshift(int sz);
@@ -1334,7 +1334,7 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == NULL)	\
+			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
@@ -1361,27 +1361,26 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == NULL)	\
+			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
 	} while (0)
 
-gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
-gdk_export BAT *BUNfastins(BAT *b, const void *left, const void *right);
-gdk_export BAT *BUNins(BAT *b, const void *left, const void *right, bit force);
-gdk_export BAT *BUNappend(BAT *b, const void *right, bit force);
-gdk_export BAT *BATins(BAT *b, BAT *c, bit force);
-gdk_export BAT *BATappend(BAT *b, BAT *c, bit force);
-gdk_export BAT *BUNdel(BAT *b, const void *left, const void *right, bit force);
-gdk_export BAT *BUNdelHead(BAT *b, const void *left, bit force);
+gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
+gdk_export gdk_return BUNfastins(BAT *b, const void *left, const void *right);
+gdk_export gdk_return BUNins(BAT *b, const void *left, const void *right, bit force);
+gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
+gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BUNdel(BAT *b, const void *left, const void *right, bit force);
+gdk_export gdk_return BUNdelHead(BAT *b, const void *left, bit force);
 gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
-gdk_export BAT *BATdel(BAT *b, BAT *c, bit force);
-gdk_export BAT *BATdelHead(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
 
-gdk_export BAT *BUNreplace(BAT *b, const void *left, const void *right, bit force);
-gdk_export BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
-gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
+gdk_export gdk_return BUNreplace(BAT *b, const void *left, const void *right, bit force);
+gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
+gdk_export gdk_return BATreplace(BAT *b, BAT *n, bit force);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
@@ -1540,12 +1539,12 @@ gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
-gdk_export BAT *BATkey(BAT *b, int onoff);
-gdk_export BAT *BATmode(BAT *b, int onoff);
-gdk_export BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
+gdk_export gdk_return BATkey(BAT *b, int onoff);
+gdk_export gdk_return BATmode(BAT *b, int onoff);
+gdk_export void BATroles(BAT *b, const char *hnme, const char *tnme);
 gdk_export int BATname(BAT *b, const char *nme);
-gdk_export BAT *BATseqbase(BAT *b, oid o);
-gdk_export BAT *BATsetaccess(BAT *b, int mode);
+gdk_export void BATseqbase(BAT *b, oid o);
+gdk_export gdk_return BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
 
 
@@ -1592,7 +1591,7 @@ gdk_export int BATgetaccess(BAT *b);
  * state change in the BAT (as previously): both views on the BAT
  * exist at the same time.
  */
-gdk_export BAT *BATclear(BAT *b, int force);
+gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
@@ -1629,15 +1628,14 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * heaps (@emph{hh} and @emph{th}) for variable-sized atoms.
  */
 
-gdk_export BAT *BATsave(BAT *b);
-gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
-gdk_export int BATdelete(BAT *b);
+gdk_export gdk_return BATsave(BAT *b);
+gdk_export void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
-gdk_export int GDKcreatedir(const char *nme);
+gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*
  * @- Printing
@@ -1702,9 +1700,9 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  */
 gdk_export BAT *BATsort(BAT *b);
 gdk_export BAT *BATsort_rev(BAT *b);
-gdk_export BAT *BATorder(BAT *b);
-gdk_export BAT *BATorder_rev(BAT *b);
-gdk_export BAT *BATrevert(BAT *b);
+gdk_export gdk_return BATorder(BAT *b);
+gdk_export gdk_return BATorder_rev(BAT *b);
+gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export BAT *BATssort(BAT *b);
@@ -2146,11 +2144,11 @@ gdk_export oid OIDnew(oid inc);
  * The hash data structures are currently maintained during update
  * operations.
  */
-gdk_export BAT *BAThash(BAT *b, BUN masksize);
+gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 /* low level functions */
 
-#define BATprepareHash(X) (((X)->T->hash == NULL) && !BAThash((X), 0))
+#define BATprepareHash(X) ((X)->T->hash == NULL && BAThash((X), 0) == GDK_FAIL)
 
 /*
  * @- Column Imprints Functions
@@ -2165,7 +2163,7 @@ gdk_export BAT *BAThash(BAT *b, BUN masksize);
  *
  */
 
-gdk_export BAT *BATimprints(BAT *b);
+gdk_export gdk_return BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
 /*
@@ -2569,7 +2567,7 @@ __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ cons
 
 /* functions defined in gdk_bat.c */
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
-gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
+gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force);
 gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 
 #ifdef NATIVE_WIN32
@@ -2826,9 +2824,9 @@ gdk_export int TMsubcommit_list(bat *subcommit, int cnt);
  * underlying BATs are read-only (often not the case when BATs are
  * being updated).  Otherwise, copies must be made anyway.
  */
-gdk_export BAT *BATcommit(BAT *b);
-gdk_export BAT *BATfakeCommit(BAT *b);
-gdk_export BAT *BATundo(BAT *b);
+gdk_export void BATcommit(BAT *b);
+gdk_export void BATfakeCommit(BAT *b);
+gdk_export void BATundo(BAT *b);
 gdk_export BAT *BATalpha(BAT *b);
 gdk_export BAT *BATdelta(BAT *b);
 gdk_export BAT *BATprev(BAT *b);

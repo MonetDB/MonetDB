@@ -1181,19 +1181,19 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
-	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
-	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
-	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
-	TRACE_id_tag = BUNappend(TRACE_id_tag, &mb->tag, FALSE);
-	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
-	TRACE_id_time = BUNappend(TRACE_id_time, ctm, FALSE);
-	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &pci->ticks, FALSE);
-	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
-	TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
-	TRACE_id_reads = BUNappend(TRACE_id_reads, &v1, FALSE);
-	TRACE_id_writes = BUNappend(TRACE_id_writes, &v2, FALSE);
-	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &pci->rbytes, FALSE);
-	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &pci->wbytes, FALSE);
+	BUNappend(TRACE_id_pc, buf, FALSE);
+	BUNappend(TRACE_id_thread, &tid, FALSE);
+	BUNappend(TRACE_id_user, &idx, FALSE);
+	BUNappend(TRACE_id_tag, &mb->tag, FALSE);
+	BUNappend(TRACE_id_event, &TRACE_event, FALSE);
+	BUNappend(TRACE_id_time, ctm, FALSE);
+	BUNappend(TRACE_id_ticks, &pci->ticks, FALSE);
+	BUNappend(TRACE_id_stmt, c, FALSE);
+	BUNappend(TRACE_id_type, &abuf, FALSE);
+	BUNappend(TRACE_id_reads, &v1, FALSE);
+	BUNappend(TRACE_id_writes, &v2, FALSE);
+	BUNappend(TRACE_id_rbytes, &pci->rbytes, FALSE);
+	BUNappend(TRACE_id_wbytes, &pci->wbytes, FALSE);
 	TRACE_event++;
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");

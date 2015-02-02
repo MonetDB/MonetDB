@@ -211,7 +211,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
 			HASHloop_str((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -223,7 +223,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
 			HASHloop_str_hv((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -235,7 +235,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
 			HASHloop((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -247,7 +247,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0)) {		\
+		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
 			HASHloop_##TYPE((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\

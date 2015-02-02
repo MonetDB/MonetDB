@@ -1071,9 +1071,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
-			r1 = BATextend(r1, newcap);
-			r2 = BATextend(r2, newcap);
-			if (r1 == NULL || r2 == NULL) {
+			if (BATextend(r1, newcap) == GDK_FAIL ||
+			    BATextend(r2, newcap) == GDK_FAIL) {
 				goto bailout;
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
@@ -1259,9 +1258,8 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			newcap = BATgrows(r1);				\
 			BATsetcount(r1, BATcount(r1));			\
 			BATsetcount(r2, BATcount(r2));			\
-			r1 = BATextend(r1, newcap);			\
-			r2 = BATextend(r2, newcap);			\
-			if (r1 == NULL || r2 == NULL)			\
+			if (BATextend(r1, newcap) == GDK_FAIL ||	\
+			    BATextend(r2, newcap) == GDK_FAIL)		\
 				goto bailout;				\
 			assert(BATcapacity(r1) == BATcapacity(r2));	\
 		}							\
@@ -1411,9 +1409,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
+						if (BATextend(r1, newcap) == GDK_FAIL ||
+						    BATextend(r2, newcap) == GDK_FAIL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -1542,9 +1539,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
+						if (BATextend(r1, newcap) == GDK_FAIL ||
+						    BATextend(r2, newcap) == GDK_FAIL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -1781,9 +1777,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL)
+				if (BATextend(r1, newcap) == GDK_FAIL ||
+				    BATextend(r2, newcap) == GDK_FAIL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2185,9 +2180,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL)
+				if (BATextend(r1, newcap) == GDK_FAIL ||
+				    BATextend(r2, newcap) == GDK_FAIL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2727,7 +2721,7 @@ BATproject(BAT *l, BAT *r)
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		if (bn == NULL)
 			return NULL;
-		bn = BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+		BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s\n",
 			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 			  bn->tsorted ? "-sorted" : "",
@@ -2744,7 +2738,7 @@ BATproject(BAT *l, BAT *r)
 				 nil, BATcount(l), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		bn = BATseqbase(bn, l->hseqbase);
+		BATseqbase(bn, l->hseqbase);
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
 			bn->tdense = 1;

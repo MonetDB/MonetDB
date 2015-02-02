@@ -80,12 +80,12 @@
 			maxgrps = BATcount(b);				\
 			if (extents) {					\
 				BATsetcount(en, ngrp);			\
-				en = BATextend(en, maxgrps);		\
+				BATextend(en, maxgrps);			\
 				exts = (oid *) Tloc(en, BUNfirst(en));	\
 			}						\
 			if (histo) {					\
 				BATsetcount(hn, ngrp);			\
-				hn = BATextend(hn, maxgrps);		\
+				BATextend(hn, maxgrps);			\
 				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
 			}						\
 		}							\

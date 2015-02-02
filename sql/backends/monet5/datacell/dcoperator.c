@@ -72,8 +72,11 @@ str DCselectInsert(void *ret, bat *res, bat *bid, lng *low, lng *hgh)
 		grows = BATgrows(r);
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(r, grows) == NULL)
+		if (BATextend(r, grows) == GDK_FAIL) {
+			BBPunfix(r->batCacheid);
+			BBPunfix(b->batCacheid);
 			throw(MAL, "dc.selectInsert", "Failed to make room for the new values");
+		}
 	}
 /*printf("in dc.selectInsert size is "OIDFMT,size);*/
 	writerH = (lng *) Hloc(r, BUNfirst(r));
@@ -222,8 +225,11 @@ str DCselectInsertDelete(void *ret, bat *res, bat *bid, lng *low, lng *hgh)
 		grows = BATgrows(r);
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(r, grows) == NULL)
+		if (BATextend(r, grows) == GDK_FAIL) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
 			throw(MAL, "dcoperator.DCselectInsertDelete", "Failed to make room for the new values");
+		}
 	}
 
 	writerHr = (lng *) Hloc(r, BUNfirst(r));
@@ -306,7 +312,7 @@ DCsliceStrict(bat *ret, bat *bid, lng *start, lng *end)
 	BBPunfix(b->batCacheid);
 	if (bn != NULL) {
 		if (!(bn->batDirty & 2))
-			bn = BATsetaccess(bn, BAT_READ);
+			BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;

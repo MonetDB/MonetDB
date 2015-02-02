@@ -221,7 +221,7 @@
 					BUN r1;				\
 					if (p1 + 1 > BATcapacity(bn)){	\
 						BATsetcount(bn, o);	\
-						if (BATextend(bn, BATgrows(bn)) == NULL) \
+						if (BATextend(bn, BATgrows(bn)) == GDK_FAIL) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \
@@ -249,7 +249,7 @@
 				while(p1 < q1) {			\
 					BUN r1;				\
 					if (BUNlast(bn) + 1 > BATcapacity(bn)){	\
-						if (BATextend(bn, BATcapacity(bn)+65536) == NULL) \
+						if (BATextend(bn, BATcapacity(bn)+65536) == GDK_FAIL) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \

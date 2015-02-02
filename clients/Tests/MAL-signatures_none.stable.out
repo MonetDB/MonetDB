@@ -31334,7 +31334,7 @@ comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
 command bat.setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints;
-comment Create n imprints structure on the column
+comment Create an imprints structure on the column
 
 command bat.setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash;
