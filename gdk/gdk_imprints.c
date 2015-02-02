@@ -508,7 +508,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	for (i = 0; i < 64; i++)
 		cnt_bins[i] = 0;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		BINSIZE(bits, IMPS_CREATE, bte);
 		break;
@@ -568,12 +568,7 @@ BATimprints(BAT *b)
 	assert(BAThdense(b));	/* assert void head */
 
 	/* we only create imprints for types that look like types we know */
-	if (b->ttype != ATOMstorage(b->ttype) &&
-	    (ATOMnilptr(b->ttype) != ATOMnilptr(ATOMstorage(b->ttype)) ||
-	     BATatoms[b->ttype].atomCmp != BATatoms[ATOMstorage(b->ttype)].atomCmp))
-		return NULL;	/* doesn't look enough like base type */
-
-	switch (ATOMstorage(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -582,7 +577,8 @@ BATimprints(BAT *b)
 	case TYPE_dbl:
 		break;
 	default:		/* type not supported */
-		return NULL;	/* do nothing */
+		/* doesn't look enough like base type: do nothing */
+		return NULL;
 	}
 
 	BATcheck(b, "BATimprints");
@@ -747,7 +743,7 @@ BATimprints(BAT *b)
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
-		switch (ATOMstorage(b->T->type)) {
+		switch (ATOMbasetype(b->T->type)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
 			break;

@@ -314,10 +314,7 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
-	if (tpe != ATOMstorage(tpe) &&
-	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
-	    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp)
-		tpe = ATOMstorage(tpe);
+	tpe = ATOMbasetype(tpe);
 
 	switch (tpe) {
 	case TYPE_bte:
@@ -366,10 +363,7 @@ GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int t
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
-	if (tpe != ATOMstorage(tpe) &&
-	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
-	    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp)
-		tpe = ATOMstorage(tpe);
+	tpe = ATOMbasetype(tpe);
 
 	switch (tpe) {
 	case TYPE_bte:

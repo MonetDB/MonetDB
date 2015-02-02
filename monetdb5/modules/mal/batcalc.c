@@ -29,6 +29,13 @@
 #define batcalc_export extern
 #endif
 
+/* see gdk_private.h -- copied here until that can be moved to gdk.h */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
+
 static str
 mythrow(enum malexception type, const char *fcn, const char *msg)
 {
@@ -236,8 +243,8 @@ CMDbatSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static int
 calctype(int tp1, int tp2)
 {
-	int tp1s = ATOMstorage(tp1);
-	int tp2s = ATOMstorage(tp2);
+	int tp1s = ATOMbasetype(tp1);
+	int tp2s = ATOMbasetype(tp2);
 	if (tp1s == TYPE_str && tp2s == TYPE_str)
 		return TYPE_str;
 	if (tp1s < TYPE_flt && tp2s < TYPE_flt) {
@@ -282,8 +289,8 @@ calcdivtype(int tp1, int tp2)
 	/* if right hand side is floating point, the result is floating
 	 * point, otherwise the result has the type of the left hand
 	 * side */
-	tp1 = ATOMstorage(tp1);
-	tp2 = ATOMstorage(tp2);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
 	if (tp1 == TYPE_dbl || tp2 == TYPE_dbl)
 		return TYPE_dbl;
 	if (tp1 == TYPE_flt || tp2 == TYPE_flt)
@@ -312,8 +319,8 @@ calcdivtypedbl(int tp1, int tp2)
 static int
 calcmodtype(int tp1, int tp2)
 {
-	tp1 = ATOMstorage(tp1);
-	tp2 = ATOMstorage(tp2);
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
 	assert(tp1 > 0 && tp1 < TYPE_str && tp1 != TYPE_bat && tp1 != TYPE_ptr);
 	assert(tp2 > 0 && tp2 < TYPE_str && tp2 != TYPE_bat && tp2 != TYPE_ptr);
 	if (tp1 == TYPE_dbl || tp2 == TYPE_dbl)

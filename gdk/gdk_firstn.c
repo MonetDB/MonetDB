@@ -204,14 +204,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	BATsetcount(bn, n);
 	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	/* if the input happens to be almost sorted in ascending order
 	 * (likely a common use case), it is more efficient to start
 	 * off with the first n elements when doing a firstn-ascending
@@ -415,14 +411,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		return NULL;
 	}
 
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	ci = 0;
 	if (cand) {
 		for (i = 0; i < n; i++) {
@@ -655,14 +647,10 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	}
 
 	top = 0;
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	oldcand = cand;
 	if (asc) {
@@ -952,14 +940,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 
 	top = 0;
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	oldcand = cand;

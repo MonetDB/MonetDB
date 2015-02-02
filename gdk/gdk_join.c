@@ -1437,12 +1437,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	} else {
-		int t = r->htype;
-		if (t != ATOMstorage(t) &&
-		    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-		    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp &&
-		    BATatoms[ATOMstorage(t)].atomHash == BATatoms[t].atomHash)
-			t = ATOMstorage(t);
+		int t = ATOMbasetype(r->htype);
 
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
@@ -1872,10 +1867,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(sr == NULL || sr->tsorted);
 
 	t = ATOMtype(l->ttype);
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == cmp)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(t);
 
 	switch (t) {
 	case TYPE_bte:

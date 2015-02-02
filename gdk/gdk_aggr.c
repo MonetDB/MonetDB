@@ -1073,7 +1073,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		GDKerror("BATprod: %s\n", err);
 		return GDK_FAIL;
 	}
-	switch (ATOMstorage(tp)) {
+	switch (tp) {
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : (bte) 1;
 		break;
@@ -1670,11 +1670,8 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 
 	t = b->T->type;
 	nil = ATOMnilptr(t);
-	atomcmp = BATatoms[t].atomCmp;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
-		t = ATOMstorage(t);
+	atomcmp = ATOMcompare(t);
+	t = ATOMbasetype(t);
 	switch (t) {
 	case TYPE_bte:
 		AGGR_COUNT(bte);
@@ -1900,11 +1897,8 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 	t = b->T->type;
 	nil = ATOMnilptr(t);
-	atomcmp = BATatoms[t].atomCmp;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
-		t = ATOMstorage(t);
+	atomcmp = ATOMcompare(t);
+	t = ATOMbasetype(t);
 	switch (t) {
 	case TYPE_bte:
 		AGGR_CMP(bte, LT);
@@ -2024,11 +2018,8 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 	t = b->T->type;
 	nil = ATOMnilptr(t);
-	atomcmp = BATatoms[t].atomCmp;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
-		t = ATOMstorage(t);
+	atomcmp = ATOMcompare(t);
+	t = ATOMbasetype(t);
 	switch (t) {
 	case TYPE_bte:
 		AGGR_CMP(bte, GT);
@@ -2381,7 +2372,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 	bi = bat_iterator(b);
 	nil = ATOMnilptr(b->ttype);
-	atomcmp = BATatoms[b->ttype].atomCmp;
+	atomcmp = ATOMcompare(b->ttype);
 
 	if (g) { /* we have to do this by group */
 		const oid *restrict grps;

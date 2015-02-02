@@ -262,7 +262,7 @@ BAThash(BAT *b, BUN masksize)
 	}
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (b->H->hash == NULL) {
-		unsigned int tpe = ATOMstorage(b->htype);
+		unsigned int tpe = ATOMbasetype(b->htype);
 		BUN cnt = BATcount(b);
 		BUN mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
@@ -291,9 +291,9 @@ BAThash(BAT *b, BUN masksize)
 		 * scheme */
 		if (masksize > 0) {
 			mask = HASHmask(masksize);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 1) {
+		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 2) {
+		} else if (ATOMsize(tpe) == 2) {
 			mask = (1 << 12);
 		} else if (b->hkey) {
 			mask = HASHmask(cnt);
@@ -444,7 +444,7 @@ BAThash(BAT *b, BUN masksize)
 BUN
 HASHprobe(Hash *h, const void *v)
 {
-	switch (ATOMstorage(h->type)) {
+	switch (ATOMbasetype(h->type)) {
 	case TYPE_bte:
 		return hash_bte(h, v);
 	case TYPE_sht:
@@ -593,10 +593,8 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 	cmp = 1;
 	cur = BUN_NONE;
 	bi = bat_iterator(b);
-	tp = b->ttype;
 	/* only use storage type if comparison functions are equal */
-	if (BATatoms[tp].atomCmp == BATatoms[ATOMstorage(tp)].atomCmp)
-		tp = ATOMstorage(tp);
+	tp = ATOMbasetype(b->ttype);
 
 	switch (which) {
 	case FIND_FIRST:
