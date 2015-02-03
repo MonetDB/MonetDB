@@ -208,15 +208,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	GDKqsort(dst, NULL, NULL, BATcount(bn), SIZEOF_OID, 0, TYPE_oid);
+	bn->tsorted = 1;
+	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase = *dst;
-	/* temporarily set head to nil so that BATorder doesn't materialize */
-	BATseqbase(bn, oid_nil);
-	if (BATorder(BATmirror(bn)) == GDK_FAIL) {
-		BBPreclaim(bn);
-		return NULL;
-	}
 	BATseqbase(bn, 0);
 	return bn;
 }

@@ -1674,6 +1674,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	BAT *b, *d, *bn, *bs;
 	BUN cnt =0;
 	oid oidx = 0, *o, *ol;
+	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
@@ -1692,9 +1693,9 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
-	bs = BATmirror(BATsort(BATmirror(d)));
+	res = BATsubsort(&bs, NULL, NULL, d, NULL, NULL, 0, 0);
 	BBPunfix(d->batCacheid);
-	if (bs == NULL) {
+	if (res == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
@@ -1767,6 +1768,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	BAT *b, *d, *bn, *bs;
 	oid lim,oidx = 0, *o, *ol;
 	oid *r;
+	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
@@ -1790,9 +1792,9 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
-	bs = BATmirror(BATsort(BATmirror(d)));
+	res = BATsubsort(&bs, NULL, NULL, d, NULL, NULL, 0, 0);
 	BBPunfix(d->batCacheid);
-	if (bs == NULL) {
+	if (res == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
@@ -1853,6 +1855,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
 	oid oidx = 0, bidx, *o, *ol;
+	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
@@ -1871,9 +1874,9 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
-	bs = BATmirror(BATsort(BATmirror(d)));
+	res = BATsubsort(&bs, NULL, NULL, d, NULL, NULL, 0, 0);
 	BBPunfix(d->batCacheid);
-	if (bs == NULL) {
+	if (res == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
@@ -1952,6 +1955,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	BAT *b, *d, *bn, *bs;
 	oid bidx, oidx = 0, *o, *ol;
 	oid *r;
+	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
@@ -1970,9 +1974,9 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
-	bs = BATmirror(BATsort(BATmirror(d)));
+	res = BATsubsort(&bs, NULL, NULL, d, NULL, NULL, 0, 0);
 	BBPunfix(d->batCacheid);
-	if (bs == NULL) {
+	if (res == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
