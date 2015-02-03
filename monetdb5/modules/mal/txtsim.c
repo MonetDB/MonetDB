@@ -912,10 +912,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		throw(MAL, "txtsim.qgramselfjoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	ERRORcheck((qgram->ttype != TYPE_oid), "CMDqgramselfjoin: tail of BAT qgram must be oid.\n");
-	ERRORcheck((id->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT id must be int.\n");
-	ERRORcheck((pos->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT pos must be int.\n");
-	ERRORcheck((len->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT len must be int.\n");
+	ERRORcheck((qgram->ttype != TYPE_oid), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid"));
+	ERRORcheck((id->ttype != TYPE_int), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int"));
+	ERRORcheck((pos->ttype != TYPE_int), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int"));
+	ERRORcheck((len->ttype != TYPE_int), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int"));
 
 	n = BATcount(qgram);
 	qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
@@ -923,18 +923,18 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	pbuf = (int *) Tloc(pos, BUNfirst(pos));
 	lbuf = (int *) Tloc(len, BUNfirst(len));
 
-	/* ERRORcheck( (BATcount(qgram)>1 && !BATtordered(qgram)), "CMDqgramselfjoin: tail of qgram must be sorted.\n"); */
+	/* ERRORcheck( (BATcount(qgram)>1 && !BATtordered(qgram)), "CMDqgramselfjoin: tail of qgram must be sorted.\n", createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH)); */
 
-	ERRORcheck((ALIGNsynced(qgram, id) == 0), "CMDqgramselfjoin: qgram and id are not synced");
+	ERRORcheck((ALIGNsynced(qgram, id) == 0), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced"));
 
-	ERRORcheck((ALIGNsynced(qgram, pos) == 0), "CMDqgramselfjoin: qgram and pos are not synced");
-	ERRORcheck((ALIGNsynced(qgram, len) == 0), "CMDqgramselfjoin: qgram and len are not synced");
+	ERRORcheck((ALIGNsynced(qgram, pos) == 0), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced"));
+	ERRORcheck((ALIGNsynced(qgram, len) == 0), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced"));
 
-	ERRORcheck((Tsize(qgram) != ATOMsize(qgram->ttype)), "CMDqgramselfjoin: qgram is not a true void bat");
-	ERRORcheck((Tsize(id) != ATOMsize(id->ttype)), "CMDqgramselfjoin: id is not a true void bat");
+	ERRORcheck((Tsize(qgram) != ATOMsize(qgram->ttype)), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat"));
+	ERRORcheck((Tsize(id) != ATOMsize(id->ttype)), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": id is not a true void bat"));
 
-	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
-	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
+	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat"));
+	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), NULL, createException(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH ": len is not a true void bat"));
 
 	bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);

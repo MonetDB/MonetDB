@@ -1299,7 +1299,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		*res = 0;
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	if (setaccess(b, m) == GDK_FAIL)
+	if ((b = setaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;

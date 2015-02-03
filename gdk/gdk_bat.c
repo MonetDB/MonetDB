@@ -304,9 +304,9 @@ BATnew(int ht, int tt, BUN cap, int role)
 	assert(cap <= BUN_MAX);
 	assert(ht != TYPE_bat);
 	assert(tt != TYPE_bat);
-	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
-	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
-	ERRORcheck(role < 0 || role >= 32, "BATnew:role error\n");
+	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n", NULL);
+	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n", NULL);
+	ERRORcheck(role < 0 || role >= 32, "BATnew:role error\n", NULL);
 
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
@@ -330,19 +330,19 @@ BATattach(int tt, const char *heapfile, int role)
 	BUN cap;
 	char *path;
 
-	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n");
-	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n");
-	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
-	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n");
+	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
+	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n", NULL);
+	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n", NULL);
+	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
 	if (lstat(heapfile, &st) < 0) {
 		GDKerror("BATattach: cannot stat heapfile\n");
 		return 0;
 	}
-	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n");
-	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n");
+	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n", NULL);
+	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n", NULL);
 	atomsize = ATOMsize(tt);
-	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n");
-	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n");
+	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
+	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
 	cap = (BUN) (st.st_size / atomsize);
 	bs = BATcreatedesc(TYPE_void, tt, 1, role);
 	if (bs == NULL)
@@ -1219,7 +1219,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			return GDK_FAIL;
 		}
 
-		ALIGNins(b, "BUNins", force);
+		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
 		if (b->H->hash && b->H->vheap)
 			hsize = b->H->vheap->size;
@@ -1311,7 +1311,7 @@ BUNappend(BAT *b, const void *t, bit force)
 	}
 
 	i = p;
-	ALIGNapp(b, "BUNappend", force);
+	ALIGNapp(b, "BUNappend", force, GDK_FAIL);
 	b->batDirty = 1;
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	if (b->H->hash && b->H->vheap)
@@ -1390,7 +1390,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	BUN l, last = BUNlast(b) - 1;
 	BUN idx1, idx2;
 
-	ALIGNdel(b, "BUNdelete", force);	/* zap alignment info */
+	ALIGNdel(b, "BUNdelete", force, BUN_NONE);	/* zap alignment info */
 
 	/*
 	 * @- Committed Delete.
@@ -1562,7 +1562,7 @@ BUNdel(BAT *b, const void *x, const void *y, bit force)
 	BATcheck(x, "BUNdel: head value is nil");
 
 	if ((p = BUNlocate(b, x, y)) != BUN_NONE) {
-		ALIGNdel(b, "BUNdel", force);	/* zap alignment info */
+		ALIGNdel(b, "BUNdel", force, GDK_FAIL);	/* zap alignment info */
 		BUNdelete(b, p, force);
 		return GDK_SUCCEED;
 	}
@@ -1586,7 +1586,7 @@ BUNdelHead(BAT *b, const void *x, bit force)
 		x = ATOMnilptr(b->htype);
 	}
 	if ((p = BUNfnd(bm, x)) != BUN_NONE) {
-		ALIGNdel(b, "BUNdelHead", force);	/* zap alignment info */
+		ALIGNdel(b, "BUNdelHead", force, GDK_FAIL);	/* zap alignment info */
 		do {
 			BUNdelete(b, p, force);
 		} while ((p = BUNfnd(bm, x)) != BUN_NONE);
@@ -1623,7 +1623,7 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		int tt;
 		BUN prv, nxt;
 
-		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
+		ALIGNinp(b, "BUNreplace", force, GDK_FAIL);	/* zap alignment info */
 		if (b->T->nil &&
 		    atom_CMP(BUNtail(bi, p), ATOMnilptr(b->ttype), b->ttype) == 0 &&
 		    atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0) {

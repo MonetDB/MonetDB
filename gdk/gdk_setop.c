@@ -462,9 +462,9 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	BUN smaller;
 	BAT *bn;
 
-	ERRORcheck(l == NULL, "diff_intersect: left is null");
-	ERRORcheck(r == NULL, "diff_intersect: right is null");
-	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types");
+	ERRORcheck(l == NULL, "diff_intersect: left is null", NULL);
+	ERRORcheck(r == NULL, "diff_intersect: right is null", NULL);
+	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types", NULL);
 
 	if (BATcount(r) == 0) {
 		return diff ? BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT) : BATclone(l, 10, TRANSIENT);
@@ -547,7 +547,7 @@ BATkunion(BAT *l, BAT *r)
 	BATiter li, ri;
 	int ht, tt;
 
-	BATcompatible(l, r);
+	BATcompatible(l, r, NULL);
 	if (BATcount(l) == 0) {
 		b = l;
 		l = r;
