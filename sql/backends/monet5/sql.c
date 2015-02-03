@@ -2070,6 +2070,7 @@ str
 DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins)
 {
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
+	gdk_return ret;
 
 	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2138,14 +2139,13 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = BATappend(c, u, TRUE);
 		BBPunfix(u->batCacheid);
 
-		u = BATsort(BATmirror(res));
+		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (!u) {
+		if (ret == GDK_FAIL) {
 			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
-		res = BATmirror(BATmark(u, 0));
-		BBPunfix(u->batCacheid);
+		res = u;
 	}
 
 	if (i) {
@@ -2174,12 +2174,11 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
-		u = BATsort(BATmirror(res));
+		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (!u) 
+		if (ret == GDK_FAIL)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		res = BATmirror(BATmark(u, 0));
-		BBPunfix(u->batCacheid);
+		res = u;
 	}
 	BATkey(BATmirror(res), TRUE);
 	BBPkeepref(*result = res->batCacheid);
