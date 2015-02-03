@@ -2299,8 +2299,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
-			    estimate != BUN_NONE ? estimate :
-			    (sl ? BATcount(sl) : BATcount(l)) * (sr ? BATcount(sr) : BATcount(r)),
+			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
 			    "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
@@ -2406,8 +2405,7 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
-			    estimate != BUN_NONE ? estimate :
-			    (sl ? BATcount(sl) : BATcount(l)) * (sr ? BATcount(sr) : BATcount(r)),
+			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
 			    "BATsubbandjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
@@ -2427,8 +2425,7 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
-			    estimate != BUN_NONE ? estimate :
-			    (sl ? BATcount(sl) : BATcount(l)) * (sr ? BATcount(sr) : BATcount(rl)),
+			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
 			    "BATsubrangejoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
