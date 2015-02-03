@@ -77,4 +77,4 @@ inet_export str INETtext(str *retval, inet *val);
 inet_export str INETabbrev(str *retval, inet *val);
 inet_export str INET_inet(inet *d, inet *s);
 inet_export str INET_fromstr(inet *ret, str *s);
-
+inet_export inet *INETnull(void);
