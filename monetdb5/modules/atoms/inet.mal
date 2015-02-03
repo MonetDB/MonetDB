@@ -17,6 +17,8 @@
 
 atom inet:lng;
 
+command null() :inet
+address INETnull;
 command cmp() :int
 address INETcompare;
 command fromstr()

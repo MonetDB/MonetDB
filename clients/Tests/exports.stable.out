@@ -1314,6 +1314,7 @@ str INETmasklen(int *retval, inet *val);
 str INETnetmask(inet *retval, inet *val);
 str INETnetwork(inet *retval, inet *val);
 str INETnew(inet *retval, str *in);
+inet *INETnull(void);
 str INETsetmasklen(inet *retval, inet *val, int *mask);
 str INETtext(str *retval, inet *val);
 int INETtoString(str *retval, int *len, inet *handle);

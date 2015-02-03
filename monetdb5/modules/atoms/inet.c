@@ -33,6 +33,9 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "inet.h"
+
+static inet inet_nil = {0,0,0,0,0,0,0,1};
+
 /**
  * Creates a new inet from the given string.
  * Warning: GDK function, does NOT pass a string by reference, and wants
@@ -714,4 +717,10 @@ INET_fromstr(inet *ret, str *s)
 	int len = sizeof(inet);
 	INETfromString(*s, &len, &ret);
 	return MAL_SUCCEED;
+}
+
+inet *
+INETnull(void)
+{
+	return &inet_nil;
 }
