@@ -136,7 +136,6 @@ BATundo(BAT *b)
 	if (b == NULL)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
-	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
 	} else {

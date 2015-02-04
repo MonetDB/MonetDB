@@ -547,7 +547,7 @@ BATkunion(BAT *l, BAT *r)
 	BATiter li, ri;
 	int ht, tt;
 
-	BATcompatible(l, r, NULL);
+	BATcompatible(l, r, NULL, "BATkunion");
 	if (BATcount(l) == 0) {
 		b = l;
 		l = r;

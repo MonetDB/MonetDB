@@ -657,45 +657,7 @@ typedef uint64_t BUN8type;
  */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-#define ERRORcheck(tst,	msg, err) do if (tst) { GDKerror(msg); return (err); } while (0)
-#define BATcheck(tst,	msg, err)					\
-	do {								\
-		if ((tst) == NULL) {					\
-			if (strchr((msg), ':'))				\
-				GDKerror("%s.\n", (msg));		\
-			else						\
-				GDKerror("%s: BAT required.\n", (msg));	\
-			return err;					\
-		}							\
-	} while (0)
-
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
-
-#define TYPEcastable(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
-#define TYPEequal(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
-#define TYPEcomp(t1,t2)	(ATOMstorage(ATOMtype(t1))==ATOMstorage(ATOMtype(t2)))
-#define TYPEerror(t1,t2)	(!TYPEcomp(t1,t2))
-#define BATcompatible(P1,P2,E)						\
-	do {								\
-		ERRORcheck((P1) == NULL, "BATcompatible: BAT required\n", E); \
-		ERRORcheck((P2) == NULL, "BATcompatible: BAT required\n", E); \
-		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
-		    TYPEerror(BATttype(P1),BATttype(P2)))		\
-		{							\
-			GDKerror("Incompatible operands.\n");		\
-			return (E);					\
-		}							\
-		if (BAThtype(P1) != BAThtype(P2) &&			\
-		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
-		}							\
-		if (BATttype(P1) != BATttype(P2) &&			\
-		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
-		}							\
-	} while (0)
 
 /* Heap storage modes */
 typedef enum {
@@ -2893,7 +2855,7 @@ gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
-gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
+gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 
 #define ALIGNset(x,y)	do {ALIGNsetH(x,y);ALIGNsetT(x,y);} while (0)
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))

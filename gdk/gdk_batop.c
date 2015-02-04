@@ -415,7 +415,7 @@ BATins(BAT *b, BAT *n, bit force)
 		return GDK_FAIL;
 	}
 	ALIGNins(b, "BATins", force, GDK_FAIL);
-	BATcompatible(b, n, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATins");
 
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
@@ -647,7 +647,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		return GDK_FAIL;
 	}
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
-	BATcompatible(b, n, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
 		GDKerror("BATappend: combined BATs too large\n");
@@ -897,9 +897,6 @@ BATappend(BAT *b, BAT *n, bit force)
 			GDKerror("%s: Incompatible types %s and %s.\n", \
 				 func, ATOMname(t2), ATOMname(t1));	\
 			return GDK_FAIL;				\
-		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(t2), ATOMname(t1));		\
 		}							\
 	} while (0)
 
@@ -930,7 +927,7 @@ BATreplace(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	BATcompatible(b, n, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATreplace");
 	updateloop(b, n, BUNreplace_force);
 
 	return GDK_SUCCEED;

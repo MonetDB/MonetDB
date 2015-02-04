@@ -933,14 +933,14 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 
 	/* if (BATcount(qgram)>1 && !BATtordered(qgram)) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 
-	if (ALIGNsynced(qgram, id) == 0)
+	if (!ALIGNsynced(qgram, id))
 		throw(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
 
-	if (ALIGNsynced(qgram, pos) == 0)
+	if (!ALIGNsynced(qgram, pos))
 		throw(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
-	if (ALIGNsynced(qgram, len) == 0)
+	if (!ALIGNsynced(qgram, len))
 		throw(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
 

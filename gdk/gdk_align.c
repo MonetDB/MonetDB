@@ -86,33 +86,26 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-int
+void
 ALIGNcommit(BAT *b)
 {
-	BATcheck(b, "ALIGNcommit", 0);
+	if (b == NULL)
+		return;
 	if (!b->halign) {
 		b->halign = OIDnew(1);
 	}
 	if (!b->talign) {
 		b->talign = OIDnew(1);
 	}
-	return 0;
 }
 
-int
-ALIGNundo(BAT *b)
-{
-	BATcheck(b, "ALIGNundo", 0);
-	return 0;
-}
-
-int
+void
 ALIGNsetH(BAT *b1, BAT *b2)
 {
 	ssize_t diff;
 
-	BATcheck(b1, "ALIGNsetH: bat 1 required", 0);
-	BATcheck(b2, "ALIGNsetH: bat 2 required", 0);
+	if (b1 == NULL || b2 == NULL)
+		return;
 
 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
 	if (b2->halign == 0) {
@@ -142,8 +135,6 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
 	b1->H->nosorted = (BUN) (b2->H->nosorted + diff);
 	b1->H->nodense = (BUN) (b2->H->nodense + diff);
-
-	return 0;
 }
 
 /*
