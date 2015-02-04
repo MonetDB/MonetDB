@@ -596,7 +596,7 @@ BATsave(BAT *bd)
 	BATstore bs;
 	BAT *b = bd;
 
-	BATcheck(b, "BATsave");
+	BATcheck(b, "BATsave", GDK_FAIL);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */

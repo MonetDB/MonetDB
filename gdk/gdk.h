@@ -658,14 +658,14 @@ typedef uint64_t BUN8type;
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 #define ERRORcheck(tst,	msg, err) do if (tst) { if (msg) GDKerror(msg); return (err); } while (0)
-#define BATcheck(tst,	msg)						\
+#define BATcheck(tst,	msg, err)					\
 	do {								\
 		if ((tst) == NULL) {					\
 			if (strchr((msg), ':'))				\
 				GDKerror("%s.\n", (msg));		\
 			else						\
 				GDKerror("%s: BAT required.\n", (msg));	\
-			return 0;					\
+			return err;					\
 		}							\
 	} while (0)
 
@@ -675,17 +675,6 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define TYPEequal(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
 #define TYPEcomp(t1,t2)	(ATOMstorage(ATOMtype(t1))==ATOMstorage(ATOMtype(t2)))
 #define TYPEerror(t1,t2)	(!TYPEcomp(t1,t2))
-#define TYPEcheck(t1,t2)						\
-	do {								\
-		if (TYPEerror(t1, t2)) {				\
-			GDKerror("TYPEcheck: Incompatible types %s and %s.\n", \
-				ATOMname(t2), ATOMname(t1));		\
-			return 0;					\
-		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(t2), ATOMname(t1));		\
-		}							\
-	} while (0)
 #define BATcompatible(P1,P2,E)						\
 	do {								\
 		ERRORcheck((P1) == NULL, "BATcompatible: BAT required\n", E); \
@@ -694,7 +683,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		    TYPEerror(BATttype(P1),BATttype(P2)))		\
 		{							\
 			GDKerror("Incompatible operands.\n");		\
-			return 0;					\
+			return (E);					\
 		}							\
 		if (BAThtype(P1) != BAThtype(P2) &&			\
 		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\

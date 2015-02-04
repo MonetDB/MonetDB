@@ -1068,8 +1068,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		oid v_oid;
 	} vl, vh;
 
-	BATcheck(b, "BATsubselect");
-	BATcheck(tl, "BATsubselect: tl value required");
+	BATcheck(b, "BATsubselect", NULL);
+	BATcheck(tl, "BATsubselect: tl value required", NULL);
 
 	assert(BAThdense(b));
 	assert(s == NULL || BAThdense(s));
@@ -1559,9 +1559,9 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetasubselect");
-	BATcheck(val, "BATthetasubselect");
-	BATcheck(op, "BATthetasubselect");
+	BATcheck(b, "BATthetasubselect", NULL);
+	BATcheck(val, "BATthetasubselect", NULL);
+	BATcheck(op, "BATthetasubselect", NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)

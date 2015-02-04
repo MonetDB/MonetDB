@@ -229,7 +229,7 @@ BATprev(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATprev");
+	BATcheck(b, "BATprev", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -258,7 +258,7 @@ BATalpha(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATalpha");
+	BATcheck(b, "BATalpha", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -287,7 +287,7 @@ BATdelta(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATdelta");
+	BATcheck(b, "BATdelta", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {

@@ -589,7 +589,7 @@ BATimprints(BAT *b)
 		return GDK_FAIL;
 	}
 
-	BATcheck(b, "BATimprints");
+	BATcheck(b, "BATimprints", GDK_FAIL);
 
 	if (VIEWtparent(b)) {
 		bat p = VIEWtparent(b);

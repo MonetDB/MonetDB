@@ -53,7 +53,7 @@ BATsubunique(BAT *b, BAT *s)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b, "BATsubunique");
+	BATcheck(b, "BATsubunique", NULL);
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		if (s) {
