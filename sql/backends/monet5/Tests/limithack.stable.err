@@ -30,6 +30,9 @@ stderr of test 'limithack` in directory 'sql/backends/monet5` itself:
 # 17:27:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26146" "--port=32494"
 # 17:27:34 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29474/.s.monetdb.31917
+QUERY = drop table tbls;
+
 
 # 17:27:34 >  
 # 17:27:34 >  "Done."
