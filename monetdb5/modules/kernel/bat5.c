@@ -580,7 +580,7 @@ BKCorder_rev(bat *r, const bat *bid)
 }
 
 char *
-BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t)
+BKCinsert_bun(bat *r, const bat *bid, const oid *h, const void *t)
 {
 	BAT *b;
 
@@ -588,12 +588,6 @@ BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = (ptr) str_nil;
-		else
-			h = (ptr) *(str *)h;
-	}
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (t == 0 || *(str*)t == 0)
 			t = (ptr) str_nil;
@@ -609,7 +603,7 @@ BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t)
 }
 
 char *
-BKCinsert_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force)
+BKCinsert_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force)
 {
 	BAT *b;
 
@@ -617,12 +611,6 @@ BKCinsert_bun_force(bat *r, const bat *bid, const void *h, const void *t, const 
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = (ptr) str_nil;
-		else
-			h = (ptr) *(str *)h;
-	}
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (t == 0 || *(str*)t == 0)
 			t = (ptr) str_nil;
@@ -685,7 +673,7 @@ BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 
 
 str
-BKCreplace_bun(bat *r, const bat *bid, const void *h, const void *t)
+BKCreplace_bun(bat *r, const bat *bid, const oid *h, const void *t)
 {
 	BAT *b;
 
@@ -693,12 +681,6 @@ BKCreplace_bun(bat *r, const bat *bid, const void *h, const void *t)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = (ptr) str_nil;
-		else
-			h = (ptr) *(str *)h;
-	}
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (t == 0 || *(str*)t == 0)
 			t = (ptr) str_nil;
@@ -738,7 +720,7 @@ BKCreplace_bat(bat *r, const bat *bid, const bat *sid)
 }
 
 str
-BKCreplace_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force)
+BKCreplace_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force)
 {
 	BAT *b;
 
@@ -746,12 +728,6 @@ BKCreplace_bun_force(bat *r, const bat *bid, const void *h, const void *t, const
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = (ptr) str_nil;
-		else
-			h = (ptr) *(str *)h;
-	}
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (t == 0 || *(str*)t == 0)
 			t = (ptr) str_nil;
@@ -791,7 +767,7 @@ BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 }
 
 char *
-BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t)
+BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t)
 {
 	BAT *b;
 
@@ -799,12 +775,6 @@ BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t)
 		throw(MAL, "bat.delete_bun", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete_bun", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = (ptr) str_nil;
-		else
-			h = (ptr) *(str *)h;
-	}
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (t == 0 || *(str*)t == 0)
 			t = (ptr) str_nil;
@@ -820,7 +790,7 @@ BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t)
 }
 
 char *
-BKCdelete(bat *r, const bat *bid, const void *h)
+BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
 
@@ -828,12 +798,6 @@ BKCdelete(bat *r, const bat *bid, const void *h)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
-		if (h == 0 || *(str*)h == 0)
-			h = str_nil;
-		else
-			h = *(str *)h;
-	}
 	if (BUNdelHead(b, h, FALSE) == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
