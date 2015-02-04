@@ -61,4 +61,5 @@ begin
 end;
 select * from tbls where id in (select id from limited());
 
+drop function limited;
 drop table tbls;
