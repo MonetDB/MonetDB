@@ -171,22 +171,14 @@ CMDlike(BAT **ret, BAT *b, const char *s)
 	for (p = t; *p; p++, yy++)
 		*p = tolower(*p);
 
-	if (b->hvarsized) {
-		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy) &&
-				BUNfastins(c, BUNhvar(bi, u), BUNtvar(bi, u)) == GDK_FAIL) {
-				BBPreclaim(c);
-				GDKfree(t);
-				return GDK_FAIL;
-			}
-	} else {
-		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy) &&
-				BUNfastins(c, BUNhloc(bi, u), BUNtvar(bi, u)) == GDK_FAIL) {
-				BBPreclaim(c);
-				GDKfree(t);
-				return GDK_FAIL;
-			}
+	BATloop(b, u, v) {
+		p = BUNtvar(bi, u);
+		if (like(p, t, yy) &&
+			BUNfastins(c, BUNhead(bi, u), p) == GDK_FAIL) {
+			BBPreclaim(c);
+			GDKfree(t);
+			return GDK_FAIL;
+		}
 	}
 	c->hsorted = BAThordered(b);
 	c->hrevsorted = BAThrevordered(b);

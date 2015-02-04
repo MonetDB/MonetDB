@@ -602,7 +602,20 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		cur = (BUN) (*(const oid *) v - b->tseqbase) + lo;
 		return cur + (which == FIND_LAST);
 	}
-
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		switch (which) {
+		case FIND_FIRST:
+			if (*(const oid *) v == oid_nil)
+				return lo;
+		case FIND_LAST:
+			return hi;
+		default:
+			if (lo < hi && *(const oid *) v == oid_nil)
+				return lo;
+			return BUN_NONE;
+		}
+	}
 	cmp = 1;
 	cur = BUN_NONE;
 	bi = bat_iterator(b);
