@@ -277,6 +277,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
+int mtProp;			
 
 void optimizerInit(void)
 {
@@ -532,6 +533,7 @@ void optimizerInit(void)
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
+	mtProp = PropertyIndex("mergetable");
 	/*
 	 * @-
 	 * Set the optimizer debugging flag
