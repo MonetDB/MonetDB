@@ -3504,7 +3504,7 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    if len(args) == 1:
+    if len(args) == 1 and not os.path.isdir(args[0]):
         head, tail = os.path.split(args[0])
         if os.path.isfile(args[0]):
             head, tst = os.path.split(head)
@@ -3515,8 +3515,12 @@ def main(argv) :
                 for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
                             '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
                             '.sql', '.py', '.R', ''):
+                    # extentions .in and .src are never combined
                     if tail.endswith(ext + '.in'):
                         args.append(tail[:-len(ext + '.in')])
+                        break
+                    if tail.endswith(ext + '.src'):
+                        args.append(tail[:-len(ext + '.src')])
                         break
                     if tail.endswith(ext):
                         args.append(tail[:-len(ext)])

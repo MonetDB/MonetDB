@@ -727,7 +727,7 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 {
 	BATiter bi;
 	BAT *rb, *cmap = NULL, *b = NULL;
-	BUN i = 0, bf, mf;
+	BUN i = 0, bf;
 	wrd *m;
 
 	if ((cmap = BATdescriptor(*CMAP)) == NULL ||
@@ -789,20 +789,19 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	}
 	bi = bat_iterator(b);
 	bf = BUNfirst(b);
-	mf = BUNfirst(cmap);
 	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
 	if (b->T->varsized) {
 		for (i = 0; i < BATcount(b); i++) {
-			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtvar(bi, bf+i), 0);
+			BUNinplace(rb, (BUN)m[i], NULL, BUNtvar(bi, bf+i), 0);
 		}
 	} else {
 		for (i = 0; i < BATcount(b); i++) {
-			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtloc(bi, bf+i), 0);
+			BUNinplace(rb, (BUN)m[i], NULL, BUNtloc(bi, bf+i), 0);
 		}
 	}
 	BBPunfix(*CMAP);
 	BBPunfix(*B);
-	rb = BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -812,7 +811,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 {
 	BATiter bi;
 	BAT *rb, *psum = NULL, *cmap = NULL, *b = NULL;
-	BUN i = 0, bf, mf;
+	BUN i = 0, bf;
 	bte *m;
 	wrd *psumcp;
 
@@ -904,23 +903,22 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	}
 	bi = bat_iterator(b);
 	bf = BUNfirst(b);
-	mf = BUNfirst(cmap);
 	m = (bte*)Tloc(cmap, BUNfirst(cmap));
 	if (b->T->varsized) {
 		for (i = 0; i < BATcount(b); i++) {
-			BUNinplace(rb, (BUN)(psumcp[m[mf+i]]), NULL, BUNtvar(bi, bf+i), 0);
-			psumcp[m[mf+i]]++;
+			BUNinplace(rb, (BUN)(psumcp[m[i]]), NULL, BUNtvar(bi, bf+i), 0);
+			psumcp[m[i]]++;
 		}
 	} else {
 		for (i = 0; i < BATcount(b); i++) {
-			BUNinplace(rb, (BUN)(psumcp[m[mf+i]]), NULL, BUNtloc(bi, bf+i), 0);
-			psumcp[m[mf+i]]++;
+			BUNinplace(rb, (BUN)(psumcp[m[i]]), NULL, BUNtloc(bi, bf+i), 0);
+			psumcp[m[i]]++;
 		}
 	}
 	GDKfree(psumcp);
 	BBPunfix(*CMAP);
 	BBPunfix(b->batCacheid);
-	rb = BATsetaccess(rb, BAT_READ);
+	BATsetaccess(rb, BAT_READ);
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
 }

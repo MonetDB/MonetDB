@@ -354,9 +354,10 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
-	bn = BATextend(bn, cap);
-	if( bn == NULL)
+	if (BATextend(bn, cap) == GDK_FAIL) {
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+	}
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
@@ -509,8 +510,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
 	}
-    BATsettrivprop(bn);
-    BATderiveProps(bn,FALSE);
+	BATseqbase(bn, 0);
 	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;

@@ -108,12 +108,12 @@ GDKfilepath_long(int farmid, const char *dir, const char *ext) {
 	return NULL;
 }
 
-int
+gdk_return
 GDKcreatedir(const char *dir)
 {
 	char path[PATHLENGTH];
 	char *r;
-	int ret = FALSE;
+	int ret = 0;
 
 	assert(strlen(dir) < sizeof(path));
 	strncpy(path, dir, sizeof(path)-1);
@@ -140,7 +140,7 @@ GDKcreatedir(const char *dir)
 		}
 		*r = DIR_SEP;
 	}
-	return !ret;
+	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int
@@ -210,7 +210,7 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	fd = open(path, flags, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
-		if (GDKcreatedir(path)) {
+		if (GDKcreatedir(path) == GDK_SUCCEED) {
 			fd = open(path, flags, MONETDB_MODE);
 		}
 	}
@@ -617,7 +617,7 @@ DESCclean(BAT *b)
 		b->T->vheap->dirty = 0;
 }
 
-BAT *
+gdk_return
 BATsave(BAT *bd)
 {
 	int err = 0;
@@ -625,7 +625,7 @@ BATsave(BAT *bd)
 	BATstore bs;
 	BAT *b = bd;
 
-	BATcheck(b, "BATsave");
+	BATcheck(b, "BATsave", GDK_FAIL);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
@@ -633,10 +633,10 @@ BATsave(BAT *bd)
 	    !(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
 	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
 		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), VIEWhparent(b) ? BBPname(VIEWhparent(b)) : BBPname(VIEWtparent(b)));
-		return NULL;
+		return GDK_FAIL;
 	}
 	if (!BATdirty(b)) {
-		return b;
+		return GDK_SUCCEED;
 	}
 	if (b->batCacheid < 0) {
 		b = BATmirror(b);
@@ -665,7 +665,7 @@ BATsave(BAT *bd)
 	if (b->H->vheap) {
 		b->H->vheap = (Heap *) GDKmalloc(sizeof(Heap));
 		if (b->H->vheap == NULL)
-			return NULL;
+			return GDK_FAIL;
 		*b->H->vheap = *bd->H->vheap;
 	}
 	if (b->T->vheap) {
@@ -673,7 +673,7 @@ BATsave(BAT *bd)
 		if (b->T->vheap == NULL) {
 			if (b->H->vheap)
 				GDKfree(b->H->vheap);
-			return NULL;
+			return GDK_FAIL;
 		}
 		*b->T->vheap = *bd->T->vheap;
 	}
@@ -719,9 +719,9 @@ BATsave(BAT *bd)
 			HEAPshrink(bd->H->vheap, bd->H->vheap->free);
 		if (bd->T->vheap && bd->T->vheap->storage == STORE_MMAP)
 			HEAPshrink(bd->T->vheap, bd->T->vheap->free);
-		return bd;
+		return GDK_SUCCEED;
 	}
-	return NULL;
+	return GDK_FAIL;
 }
 
 
@@ -845,7 +845,7 @@ BATload_intern(bat i, int lock)
  * memory mapped files this means that we have to unload the BATs
  * before deleting. This is enforced now.
  */
-int
+void
 BATdelete(BAT *b)
 {
 	bat bid = abs(b->batCacheid);
@@ -893,7 +893,6 @@ BATdelete(BAT *b)
 		}
 	}
 	b->batCopiedtodisk = FALSE;
-	return 0;
 }
 
 gdk_return

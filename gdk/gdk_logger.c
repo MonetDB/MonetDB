@@ -1189,7 +1189,7 @@ logger_create_catalog_file(int debug, logger *lg, const char *fn, FILE *fp, cons
 		logger_fatal("logger_create_catalog_file: BBPrename to %s failed", bak, 0, 0);
 
 
-	if (!GDKcreatedir(filename)) {
+	if (GDKcreatedir(filename) == GDK_FAIL) {
 		logger_fatal("logger_create_catalog_file: cannot create directory for log file %s\n", filename, 0, 0);
 		return LOG_ERR;
 	}
@@ -1358,8 +1358,8 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->seqs_val, "seqs_val");
 
-		if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
-		    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+		if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
+		    BUNappend(lg->seqs_val, &lg->id, FALSE) == GDK_FAIL)
 			logger_fatal("logger_load: failed to append value to "
 				     "sequences bat", 0, 0, 0);
 
@@ -1397,8 +1397,8 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				fprintf(stderr, "#logger_load setting new logger id to " LLFMT "\n", lg->id);
 			}
 		} else {
-			if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
-			    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+			if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
+			    BUNappend(lg->seqs_val, &lg->id, FALSE) == GDK_FAIL)
 				logger_fatal("logger_load: failed to append "
 					     "value to sequences bat", 0, 0, 0);
 		}

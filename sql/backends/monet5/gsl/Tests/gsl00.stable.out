@@ -18,15 +18,18 @@ stdout of test 'gsl00` in directory 'sql/backends/monet5/gsl` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    a := 20:dbl;
-    b := 5:dbl;
-    c := gsl.chi2prob(a,b);
-    io.print(c);
-end main;
-[ 0.0012497305630313768 ]
+# MonetDB/R   module loaded
 
-# 15:55:26 >  
-# 15:55:26 >  "Done."
-# 15:55:26 >  
+Ready.
+
+# 17:18:32 >  
+# 17:18:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13823" "--port=38735"
+# 17:18:32 >  
+
+#io.print(c);
+[ 0.001249730563	]
+
+# 17:18:32 >  
+# 17:18:32 >  "Done."
+# 17:18:32 >  
 

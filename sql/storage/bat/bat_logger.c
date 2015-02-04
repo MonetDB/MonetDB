@@ -100,7 +100,7 @@ bl_postversion( void *lg)
 				v = TRUE;
 			BUNappend(b1, &v, TRUE);
 		}
-		b1 = BATsetaccess(b1, BAT_READ);
+		BATsetaccess(b1, BAT_READ);
 		logger_add_bat(lg, b1, N(n, NULL, s, "schemas_system"));
 		bat_destroy(b);
 		bat_destroy(b1);
@@ -123,7 +123,7 @@ bl_postversion( void *lg)
 				v = ARG_OUT;
 			BUNappend(b1, &v, TRUE);
 		}
-		b1 = BATsetaccess(b1, BAT_READ);
+		BATsetaccess(b1, BAT_READ);
 		logger_add_bat(lg, b1, N(n, NULL, s, "args_inout"));
 		bat_destroy(b);
 		bat_destroy(b1);
@@ -178,9 +178,9 @@ bl_postversion( void *lg)
 			if (strcasestr(name, "RETURNS TABLE") != NULL) 
 				void_inplace(u, p, &type, TRUE);
 		}
-		b1 = BATsetaccess(b1, BAT_READ);
-		b2 = BATsetaccess(b2, BAT_READ);
-		b3 = BATsetaccess(b3, BAT_READ);
+		BATsetaccess(b1, BAT_READ);
+		BATsetaccess(b2, BAT_READ);
+		BATsetaccess(b3, BAT_READ);
 
 		logger_add_bat(lg, b1, N(n, NULL, s, "functions_vararg"));
 		logger_add_bat(lg, b2, N(n, NULL, s, "functions_varres"));

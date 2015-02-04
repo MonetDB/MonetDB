@@ -37,7 +37,7 @@ float nextafterf(float x, float y);
 			BATsetcount((B), (I));			\
 			if (BATextend((B),			\
 				      MIN(BATcapacity(B) + (G),	\
-					  (M))) == NULL) {	\
+					  (M))) == GDK_FAIL) {	\
 				BBPreclaim(B);			\
 				return (R);			\
 			}					\
@@ -208,12 +208,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	GDKqsort(dst, NULL, NULL, BATcount(bn), SIZEOF_OID, 0, TYPE_oid);
+	bn->tsorted = 1;
+	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase = *dst;
-	/* temporarily set head to nil so that BATorder doesn't materialize */
-	BATseqbase(bn, oid_nil);
-	bn = BATmirror(BATorder(BATmirror(bn)));
 	BATseqbase(bn, 0);
 	return bn;
 }
@@ -308,10 +307,9 @@ do {									\
 	uint##B##_t *restrict im = (uint##B##_t *) imprints->imps;	\
 	uint##B##_t mask = 0, innermask;				\
 	int lbin, hbin;							\
-	lbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			  imprints->bins, tl);				\
-	hbin = IMPSgetbin(ATOMstorage(b->ttype), imprints->bits,	\
-			  imprints->bins, th);				\
+	int tpe = ATOMbasetype(b->ttype);				\
+	lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl);	\
+	hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th);	\
 	/* note: (1<<n)-1 gives a sequence of n one bits */		\
 	/* to set bits hbin..lbin inclusive, we would do: */		\
 	/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */	\
@@ -756,7 +754,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
 	/* build imprints if they do not exist */
-	if (use_imprints && (BATimprints(b) == NULL)) {
+	if (use_imprints && (BATimprints(b) == GDK_FAIL)) {
 		use_imprints = 0;
 	}
 
@@ -764,11 +762,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
-	t = b->ttype;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(b->ttype);
 
 	if (s && !BATtdense(s)) {
 
@@ -1074,8 +1068,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		oid v_oid;
 	} vl, vh;
 
-	BATcheck(b, "BATsubselect");
-	BATcheck(tl, "BATsubselect: tl value required");
+	BATcheck(b, "BATsubselect", NULL);
+	BATcheck(tl, "BATsubselect: tl value required", NULL);
 
 	assert(BAThdense(b));
 	assert(s == NULL || BAThdense(s));
@@ -1118,6 +1112,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	t = b->ttype;
 	nil = ATOMnilptr(t);
+	/* can we use the base type? */
+	t = ATOMbasetype(t);
 	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
@@ -1236,34 +1232,33 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->ttype == TYPE_oid || b->ttype == TYPE_void) {
-		NORMALIZE(oid);
-	} else {
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			NORMALIZE(bte);
-			break;
-		case TYPE_sht:
-			NORMALIZE(sht);
-			break;
-		case TYPE_int:
-			NORMALIZE(int);
-			break;
-		case TYPE_lng:
-			NORMALIZE(lng);
-			break;
+	switch (ATOMtype(t)) {
+	case TYPE_bte:
+		NORMALIZE(bte);
+		break;
+	case TYPE_sht:
+		NORMALIZE(sht);
+		break;
+	case TYPE_int:
+		NORMALIZE(int);
+		break;
+	case TYPE_lng:
+		NORMALIZE(lng);
+		break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
-			NORMALIZE(hge);
-			break;
+	case TYPE_hge:
+		NORMALIZE(hge);
+		break;
 #endif
-		case TYPE_flt:
-			NORMALIZE(flt);
-			break;
-		case TYPE_dbl:
-			NORMALIZE(dbl);
-			break;
-		}
+	case TYPE_flt:
+		NORMALIZE(flt);
+		break;
+	case TYPE_dbl:
+		NORMALIZE(dbl);
+		break;
+	case TYPE_oid:
+		NORMALIZE(oid);
+		break;
 	}
 
 	if (b->tsorted || b->trevsorted) {
@@ -1433,7 +1428,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (equi) {
 			estimate = 1;
 		} else if (!anti && lval && hval) {
-			switch (ATOMstorage(b->ttype)) {
+			switch (t) {
 			case TYPE_bte:
 				estimate = (BUN) (*(bte *) th - *(bte *) tl);
 				break;
@@ -1564,9 +1559,9 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetasubselect");
-	BATcheck(val, "BATthetasubselect");
-	BATcheck(op, "BATthetasubselect");
+	BATcheck(b, "BATthetasubselect", NULL);
+	BATcheck(val, "BATthetasubselect", NULL);
+	BATcheck(op, "BATthetasubselect", NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
@@ -1697,13 +1692,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	}
 
 	t = ATOMtype(l->ttype);
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == nil &&
-	    BATatoms[ATOMstorage(t)].atomCmp == cmp) {
-		/* we can use the underlying type if it looks enough
-		 * like the actual type */
-		t = ATOMstorage(t);
-	}
+	t = ATOMbasetype(t);
 
 	if (l->tvarsized && l->ttype) {
 		assert(rl->tvarsized && rl->ttype);
@@ -1803,8 +1792,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == NULL ||
-					    BATextend(r2, cnt) == NULL)
+					if (BATextend(r1, cnt) == GDK_FAIL ||
+					    BATextend(r2, cnt) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -1821,8 +1810,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == NULL ||
-					    BATextend(r2, cnt) == NULL)
+					if (BATextend(r1, cnt) == GDK_FAIL ||
+					    BATextend(r2, cnt) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -1842,7 +1831,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
 		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT)) &&
-		   BATimprints(l)) {
+		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column
 		 *
 		 * we use imprints if we can (the type is right for
@@ -2187,7 +2176,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				continue;
 			if (BATcapacity(r2) < ncnt) {
 				BATsetcount(r2, cnt);
-				if (BATextend(r2, BATcapacity(r1)) == NULL)
+				if (BATextend(r2, BATcapacity(r1)) == GDK_FAIL)
 					goto bailout;
 				dst2 = (oid *) Tloc(r2, BUNfirst(r2));
 			}
@@ -2283,8 +2272,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					BUN newcap = BATgrows(r1);
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, newcap) == NULL ||
-					    BATextend(r2, newcap) == NULL)
+					if (BATextend(r1, newcap) == GDK_FAIL ||
+					    BATextend(r2, newcap) == GDK_FAIL)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));

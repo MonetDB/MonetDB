@@ -47,7 +47,7 @@ BAT_select_(BAT *b, const void *tl, const void *th,
 			  hi ? "true" : "false",
 			  tail ? "true" : "false",
 			  anti ? "true" : "false");
-	BATcheck(b, "BAT_select_");
+	BATcheck(b, "BAT_select_", NULL);
 	/* b is a [any_1,any_2] BAT */
 	if (!BAThdense(b)) {
 		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT

@@ -57,17 +57,41 @@ Ready.
 # 17:27:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26146" "--port=32494"
 # 17:27:34 >  
 
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false	0
+#2007	"types"	2000	NULL	0	true	0	false	0
+#2016	"functions"	2000	NULL	0	true	0	false	0
+#2027	"args"	2000	NULL	0	true	0	false	0
+#2036	"sequences"	2000	NULL	0	true	0	false	0
+#2046	"dependencies"	2000	NULL	0	true	0	false	0
+#2050	"connections"	2000	NULL	0	true	0	false	0
+#2059	"_tables"	2000	NULL	0	true	0	false	0
+#2068	"_columns"	2000	NULL	0	true	0	false	0
+#2079	"keys"	2000	NULL	0	true	0	false	0
+#2086	"idxs"	2000	NULL	0	true	0	false	0
+[ 40	]
 #create function limited()
 #returns table (id integer)
 #begin
 #	return select id from tables order by id desc limit 1;
 #end;
-#select * from tables where id in (select id from limited());
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+#select * from tbls where id in (select id from limited());
+% sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	smallint # type
 % 4,	15,	4,	0,	1,	5,	1,	5,	1 # length
-[ 7211,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6616,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 
 # 17:27:34 >  
 # 17:27:34 >  "Done."

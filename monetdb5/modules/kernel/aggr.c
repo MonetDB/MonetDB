@@ -39,7 +39,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			int skip_nils,
 			const char *malfunc)
 {
-	BAT *bn, *cnts = NULL, *t, *map;
+	BAT *bn, *cnts = NULL;
 	double qvalue;
 
    /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
@@ -59,58 +59,13 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			BBPunfix(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	assert(BAThdense(b));
+	assert(BAThdense(g));
+	assert(BAThdense(e));
+	assert(b->hseqbase == g->hseqbase);
+	assert(BATcount(b) == BATcount(g));
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
 		tp = b->ttype;
-	if (!BAThdense(b) || !BAThdense(g)) {
-		/* if b or g don't have a dense head, replace the head with a
-		 * dense sequence */
-		t = BATjoin(BATmirror(b), g, MIN(BATcount(b), BATcount(g)));
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		b = BATmirror(BATmark(t, 0));
-		g = BATmirror(BATmark(BATmirror(t), 0));
-		BBPunfix(t->batCacheid);
-	}
-	if (b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
-		/* b and g are not aligned: align them by creating a view on
-		 * one or the other */
-		oid min;				/* lowest common oid */
-		oid max;				/* highest common oid */
-		min = b->hseqbase;
-		if (min < g->hseqbase)
-			min = g->hseqbase;
-		max = b->hseqbase + BATcount(b);
-		if (g->hseqbase + BATcount(g) < max)
-			max = g->hseqbase + BATcount(g);
-		if (b->hseqbase != min || b->hseqbase + BATcount(b) != max) {
-			if (min >= max)
-				min = max = b->hseqbase;
-			t = BATslice(b, BUNfirst(b) + (BUN) (min - b->hseqbase),
-						 BUNfirst(b) + (BUN) (max - b->hseqbase));
-			BBPunfix(b->batCacheid);
-			b = t;
-		}
-		if (g->hseqbase != min || g->hseqbase + BATcount(g) != max) {
-			if (min >= max)
-				min = max = g->hseqbase;
-			t = BATslice(g, BUNfirst(g) + (BUN) (min - g->hseqbase),
-						 BUNfirst(g) + (BUN) (max - g->hseqbase));
-			BBPunfix(g->batCacheid);
-			g = t;
-		}
-	}
-	if (!BAThdense(e)) {
-		/* if e doesn't have a dense head, renumber the group ids with
-		 * a dense sequence at the cost of some left joins */
-		map = BATmark(e, 0);	/* [gid,newgid(dense)] */
-		BBPunfix(e->batCacheid);
-		e = BATmirror(map);		/* [newgid(dense),gid] */
-		t = BATleftjoin(g, map, BATcount(g)); /* [oid,newgid] */
-		BBPunfix(g->batCacheid);
-		g = t;
-	} else {
-		map = NULL;
-	}
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, NULL, tp, skip_nils, 1);
 	if (quantilefunc) {
@@ -127,20 +82,16 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) == GDK_FAIL)
 		bn = NULL;
 	if (bn != NULL && (grpfunc1 == BATgroupmin || grpfunc1 == BATgroupmax)) {
-		t = BATproject(bn, b);
+		BAT *t = BATproject(bn, b);
 		BBPunfix(bn->batCacheid);
 		bn = t;
 	}
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
-	if (map == NULL)			/* if map!=NULL, e is mirror of map */
-		BBPunfix(e->batCacheid);
+	BBPunfix(e->batCacheid);
 	if (bn == NULL) {
 		char *errbuf = GDKerrbuf;
 		char *s;
-
-		if (map)
-			BBPunfix(map->batCacheid);
 
 		if (errbuf && *errbuf) {
 			if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -156,17 +107,6 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			return s;
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);
-	}
-	if (map) {
-		t = BATleftjoin(map, bn, BATcount(bn));
-		BBPunfix(bn->batCacheid);
-		bn = t;
-		if (cnts) {
-			t = BATleftjoin(map, cnts, BATcount(cnts));
-			BBPunfix(cnts->batCacheid);
-			cnts = t;
-		}
-		BBPunfix(map->batCacheid);
 	}
 	*retval1 = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);

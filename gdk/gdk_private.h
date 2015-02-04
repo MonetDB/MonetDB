@@ -44,9 +44,7 @@ struct BATstore {
 	BATrec S;		/* the BAT properties */
 };
 
-int ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
-int ALIGNundo(BAT *b)
+void ALIGNcommit(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
@@ -64,6 +62,8 @@ int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
+void BATdelete(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void BATdestroy(BATstore *bs)
 	__attribute__((__visibility__("hidden")));
 int BATfree(BAT *b)
@@ -76,11 +76,11 @@ void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterialize(BAT *b)
+gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterializeh(BAT *b)
+gdk_return BATmaterializeh(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *BATmaterializet(BAT *b)
+gdk_return BATmaterializet(BAT *b)
 	__attribute__((__visibility__("hidden")));
 str BATrename(BAT *b, const char *nme)
 	__attribute__((__visibility__("hidden")));
@@ -207,7 +207,7 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *VIEWhead(BAT *b)
 	__attribute__((__visibility__("hidden")));
-BAT *VIEWreset(BAT *b)
+gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -265,7 +265,56 @@ extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
 
+/* The base type is the storage type if the comparison function and
+ * nil values are the same as those of the storage type; otherwise it
+ * is the type itself. */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
+
 #define BBPdirty(x)	(BBP_dirty=(x))
+
+#define BATcheck(tst, msg, err)						\
+	do {								\
+		if ((tst) == NULL) {					\
+			if (strchr((msg), ':'))				\
+				GDKerror("%s.\n", (msg));		\
+			else						\
+				GDKerror("%s: BAT required.\n", (msg));	\
+			return (err);					\
+		}							\
+	} while (0)
+#define ERRORcheck(tst,	msg, err)		\
+	do {					\
+		if (tst) {			\
+			GDKerror(msg);		\
+			return (err);		\
+		}				\
+	} while (0)
+#define BATcompatible(P1,P2,E,F)					\
+	do {								\
+		ERRORcheck((P1) == NULL, F ": BAT required\n", E);	\
+		ERRORcheck((P2) == NULL, F ": BAT required\n", E);	\
+		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
+		    TYPEerror(BATttype(P1),BATttype(P2)))		\
+		{							\
+			GDKerror("Incompatible operands.\n");		\
+			return (E);					\
+		}							\
+		if (BAThtype(P1) != BAThtype(P2) &&			\
+		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
+				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
+		}							\
+		if (BATttype(P1) != BATttype(P2) &&			\
+		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
+			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
+				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
+		}							\
+	} while (0)
+#define TYPEerror(t1,t2)	(ATOMstorage(ATOMtype(t1)) != ATOMstorage(ATOMtype(t2)))
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash

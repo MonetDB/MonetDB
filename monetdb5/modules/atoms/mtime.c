@@ -1193,8 +1193,8 @@ union lng_tzone {
 		ticks = (X2);											\
 		MTIMEtzone_create(&ltz.tzval, &ticks);					\
 		vr.val.lval = ltz.lval;									\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);			\
-		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
+		BUNappend(tzbatnme, (X1), FALSE);			\
+		BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
 	} while (0)
 
 #define TIMEZONES2(X1, X2, X3, X4)									\
@@ -1202,8 +1202,8 @@ union lng_tzone {
 		ticks = (X2);												\
 		MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
 		vr.val.lval = ltz.lval;										\
-		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);				\
-		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
+		BUNappend(tzbatnme, (X1), FALSE);				\
+		BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
 	} while (0)
 
 /*

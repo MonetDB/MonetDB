@@ -41,10 +41,11 @@
  * batcommit really forgets the atoms guarded for an undo; we just
  * need to free their heap space (only if necessary).
  */
-BAT *
+void
 BATcommit(BAT *b)
 {
-	BATcheck(b, "BATcommit");
+	if (b == NULL)
+		return;
 	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
 			   BATgetId(b),
 			   b->H->heap.free,
@@ -100,14 +101,13 @@ BATcommit(BAT *b)
 			   b->batFirst,
 			   PTRFMTCAST b->H->heap.base,
 			   PTRFMTCAST b->T->heap.base);
-	return b;
 }
 
 /*
  * BATfakeCommit() flushed the delta info, but leaves the BAT marked
  * clean.
  */
-BAT *
+void
 BATfakeCommit(BAT *b)
 {
 	if (b) {
@@ -119,7 +119,6 @@ BATfakeCommit(BAT *b)
 		if (b->T->vheap)
 			b->T->vheap->dirty = 0;
 	}
-	return b;
 }
 
 /*
@@ -128,15 +127,15 @@ BATfakeCommit(BAT *b)
  * deleted from the heap. The guarded elements from uncommitted
  * deletes are inserted into the accelerators.
  */
-BAT *
+void
 BATundo(BAT *b)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, bunlast, bunfirst;
 
-	BATcheck(b, "BATundo");
+	if (b == NULL)
+		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
-	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
 	} else {
@@ -215,7 +214,6 @@ BATundo(BAT *b)
 	}
 	b->batFirst = b->batDeleted;
 	BATsetcount(b, b->batInserted);
-	return b;
 }
 
 /*
@@ -230,7 +228,7 @@ BATprev(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATprev");
+	BATcheck(b, "BATprev", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -244,7 +242,7 @@ BATprev(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batInserted; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -259,7 +257,7 @@ BATalpha(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATalpha");
+	BATcheck(b, "BATalpha", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -273,7 +271,7 @@ BATalpha(BAT *b)
 		return bn;
 	}
 	for (p = b->batInserted; p < BUNlast(b); p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -288,7 +286,7 @@ BATdelta(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATdelta");
+	BATcheck(b, "BATdelta", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -302,7 +300,7 @@ BATdelta(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batFirst; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == NULL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
 			BBPreclaim(bn);
 			return NULL;
 		}

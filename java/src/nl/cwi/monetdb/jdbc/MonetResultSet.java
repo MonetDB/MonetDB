@@ -1445,6 +1445,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Object getObject(int columnIndex) throws SQLException {
+	  /* statement is null for virtual result sets such as the ones that hold generated keys */
+	  if (this.getStatement() == null) {
+	   return getObject(columnIndex, new HashMap<String, Class<?>>());
+	  }
 		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
