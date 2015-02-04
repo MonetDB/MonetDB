@@ -891,12 +891,15 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql->session->status = status;
 					if (single) {
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
-					} else if (!rel_val) {
-						list *val_exps;
+					} else if (!rel_val && r) {
 						r = rel_subquery(sql, r, a, ek, APPLY_JOIN);
-					       	val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						list_merge(r->exps, val_exps, (fdup)NULL);
+						if (r) {
+							list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
+
+							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+							if (r)
+								list_merge(r->exps, val_exps, (fdup)NULL);
+						}
 					}
 				}
 				if ((single && !v) || (!single && !r)) {
