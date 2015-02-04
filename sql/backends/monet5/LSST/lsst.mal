@@ -38,13 +38,9 @@ pattern lsst.ptinsphpoly(ra:dbl, dec:dbl, list:dbl...) :int
 address qserv_ptInSphPoly
 comment "Returns 1 if the given spherical longitude/latitude polyline contains the given position";
 
-command lsst.xmatch(l:lng, r:lng, depth:int, anti:bit) :bit
+command lsst.xmatch(l:lng, r:lng, depth:int) :bit
 address LSSTxmatch
 comment "Return true when the HtmID pairs that lie within the same triangle at level depth";
-
-command lsst.xmatch(l:bat[:oid,:lng], r:bat[:oid,:lng], depth:int, anti:bit) :bit
-address LSSTxmatch
-comment "Return the HtmID pairs that lie within the same triangle at level depth";
 
 command lsst.xmatchsubselect(l:bat[:oid,:lng], cand:bat[:oid,:oid], r:lng, depth:int, anti:bit):bat[:oid,:oid]
 address LSSTxmatchsubselect
