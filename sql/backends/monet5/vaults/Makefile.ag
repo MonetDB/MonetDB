@@ -95,8 +95,8 @@ headers_fitsmal = {
 headers_fitssql = {
 	COND = HAVE_CFITSIO
 	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = fits.sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 72_fits.sql
 }
 
 headers_autoload = {
