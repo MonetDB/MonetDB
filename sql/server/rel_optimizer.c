@@ -6507,7 +6507,7 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 		break;
 	case e_aggr:
 	case e_func: {
-		list *l = e->l, *nl = NULL;
+		list *l = e->l, *nl = NULL, *r = e->r, *nr = NULL;
 
 		if (!l) {
 			return e;
@@ -6516,10 +6516,19 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 			if (!nl)
 				return NULL;
 		}
+		if (e->r) {
+			nr = exps_rename_up(sql, r, aliases);
+			if (!nr)
+				return NULL;
+		}
 		if (e->type == e_func)
 			ne = exp_op(sql->sa, nl, e->f);
 		else 
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+		if (ne && nr) {
+			ne->card = CARD_AGGR;
+			ne->r = nr;
+		}
 		break;
 	}	
 	case e_atom:
