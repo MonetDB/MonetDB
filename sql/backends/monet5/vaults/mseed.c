@@ -112,7 +112,7 @@
 #include "vault.h"
 #include "mtime.h"
 
-str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+#include "sql_scenario.h"
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, sampleindex, samplecnt, sampletype, minval,maxval) \
@@ -192,7 +192,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL,"mseed.import","data type not yet implemented");
 			goto wrapup;
 		}
-		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE)) != MAL_SUCCEED)
+		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 				break;
 
 		sampleindex += msr->samplecnt;
