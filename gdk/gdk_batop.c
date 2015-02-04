@@ -414,8 +414,8 @@ BATins(BAT *b, BAT *n, bit force)
 		GDKerror("BATins: input must be (V)OID headed\n");
 		return GDK_FAIL;
 	}
-	ALIGNins(b, "BATins", force);
-	BATcompatible(b, n);
+	ALIGNins(b, "BATins", force, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATins");
 
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
@@ -646,8 +646,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		GDKerror("BATappend: input must be (V)OID headed\n");
 		return GDK_FAIL;
 	}
-	ALIGNapp(b, "BATappend", force);
-	BATcompatible(b, n);
+	ALIGNapp(b, "BATappend", force, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
 		GDKerror("BATappend: combined BATs too large\n");
@@ -891,18 +891,27 @@ BATappend(BAT *b, BAT *n, bit force)
 }
 
 
+#define TYPEcheck(t1,t2,func)						\
+	do {								\
+		if (TYPEerror(t1, t2)) {				\
+			GDKerror("%s: Incompatible types %s and %s.\n", \
+				 func, ATOMname(t2), ATOMname(t1));	\
+			return GDK_FAIL;				\
+		}							\
+	} while (0)
+
 #define bundel(b,h,t) do { if (BUNdel(b,h,t,force) == GDK_FAIL) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
 gdk_return
 BATdel(BAT *b, BAT *n, bit force)
 {
-	ERRORcheck(b == NULL, "set:BAT required\n");
-	ERRORcheck(n == NULL, "set:BAT required\n");
+	ERRORcheck(b == NULL, "set:BAT required\n", GDK_FAIL);
+	ERRORcheck(n == NULL, "set:BAT required\n", GDK_FAIL);
 	if (BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	ALIGNdel(b, "BATdel", force);
-	TYPEcheck(b->htype, n->htype);
-	TYPEcheck(b->ttype, n->ttype);
+	ALIGNdel(b, "BATdel", force, GDK_FAIL);
+	TYPEcheck(b->htype, n->htype, "BATdel");
+	TYPEcheck(b->ttype, n->ttype, "BATdel");
 	updateloop(b, n, bundel);
 	return GDK_SUCCEED;
 }
@@ -918,7 +927,7 @@ BATreplace(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	BATcompatible(b, n);
+	BATcompatible(b, n, GDK_FAIL, "BATreplace");
 	updateloop(b, n, BUNreplace_force);
 
 	return GDK_SUCCEED;
@@ -958,7 +967,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	BATiter bni, bi = bat_iterator(b);
 	oid foid;		/* first oid value if oid column */
 
-	BATcheck(b, "BATslice");
+	BATcheck(b, "BATslice", NULL);
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)
@@ -1137,7 +1146,7 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 static BAT *
 BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 {
-	BATcheck(b, func);
+	BATcheck(b, func, NULL);
 	/* set some trivial properties (probably not necessary, but
 	 * it's cheap) */
 	if (b->htype == TYPE_void) {
@@ -1191,7 +1200,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
 	IMPSdestroy(b);
-	ALIGNdel(b, func, FALSE);
+	ALIGNdel(b, func, FALSE, NULL);
 	b->hdense = 0;
 	b->tdense = 0;
 	b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = TRUE;
@@ -1527,13 +1536,13 @@ BATrevert(BAT *b)
 	size_t s;
 	int x;
 
-	BATcheck(b, "BATrevert");
+	BATcheck(b, "BATrevert", GDK_FAIL);
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		/* materialize void columns in-place */
 		if (BATmaterialize(b) == GDK_FAIL)
 			return GDK_FAIL;
 	}
-	ALIGNdel(b, "BATrevert", FALSE);
+	ALIGNdel(b, "BATrevert", FALSE, GDK_FAIL);
 	s = Hsize(b);
 	if (s > 0) {
 		h = (char *) GDKmalloc(s);
@@ -1589,7 +1598,7 @@ BATmark(BAT *b, oid oid_base)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATmark");
+	BATcheck(b, "BATmark", NULL);
 	bn = VIEWhead(b);
 	if (bn) {
 		BATseqbase(BATmirror(bn), oid_base);
@@ -1615,20 +1624,20 @@ BATmark_grp(BAT *g, BAT *e, const oid *s)
 	const oid *gp;
 	BUN i;
 
-	BATcheck(g, "BATmark_grp");
-	BATcheck(e, "BATmark_grp");
+	BATcheck(g, "BATmark_grp", NULL);
+	BATcheck(e, "BATmark_grp", NULL);
 	ERRORcheck(g->ttype != TYPE_void && g->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT g must be oid.\n");
+		   "BATmark_grp: tail of BAT g must be oid.\n", NULL);
 	ERRORcheck(e->htype != TYPE_void && e->htype != TYPE_oid,
-		   "BATmark_grp: head of BAT e must be oid.\n");
+		   "BATmark_grp: head of BAT e must be oid.\n", NULL);
 	ERRORcheck(g->ttype == TYPE_void && g->tseqbase == oid_nil,
-		   "BATmark_grp: tail of BAT g must not be nil.\n");
+		   "BATmark_grp: tail of BAT g must not be nil.\n", NULL);
 	ERRORcheck(e->htype == TYPE_void && e->hseqbase == oid_nil,
-		   "BATmark_grp: head of BAT e must not be nil.\n");
+		   "BATmark_grp: head of BAT e must not be nil.\n", NULL);
 	ERRORcheck(s && *s == oid_nil,
-		   "BATmark_grp: base oid s must not be nil.\n");
-	ERRORcheck(!s && e->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT e must be oid.\n");
+		   "BATmark_grp: base oid s must not be nil.\n", NULL);
+	ERRORcheck(s == NULL && e->ttype != TYPE_oid,
+		   "BATmark_grp: tail of BAT e must be oid.\n", NULL);
 
 	assert(BAThdense(g));
 	assert(BAThdense(e));
@@ -1770,7 +1779,7 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATconst");
+	BATcheck(b, "BATconst", NULL);
 	bn = BATconstant(tailtype, v, BATcount(b), role);
 	if (bn == NULL)
 		return NULL;
@@ -1874,7 +1883,7 @@ BATcount_no_nil(BAT *b)
 	int t;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b, "BATcnt");
+	BATcheck(b, "BATcnt", 0);
 	n = BATcount(b);
 	if (b->T->nonil)
 		return n;
@@ -1989,8 +1998,8 @@ BATmergecand(BAT *a, BAT *b)
 	BATiter ai, bi;
 	bit ad, bd;
 
-	BATcheck(a, "BATmergecand");
-	BATcheck(b, "BATmergecand");
+	BATcheck(a, "BATmergecand", NULL);
+	BATcheck(b, "BATmergecand", NULL);
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);
@@ -2122,8 +2131,8 @@ BATintersectcand(BAT *a, BAT *b)
 	oid af, al, bf, bl;
 	BATiter ai, bi;
 
-	BATcheck(a, "BATintersectcand");
-	BATcheck(b, "BATintersectcand");
+	BATcheck(a, "BATintersectcand", NULL);
+	BATcheck(b, "BATintersectcand", NULL);
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);

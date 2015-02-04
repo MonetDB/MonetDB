@@ -208,15 +208,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	bn->tdense = bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	GDKqsort(dst, NULL, NULL, BATcount(bn), SIZEOF_OID, 0, TYPE_oid);
+	bn->tsorted = 1;
+	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase = *dst;
-	/* temporarily set head to nil so that BATorder doesn't materialize */
-	BATseqbase(bn, oid_nil);
-	if (BATorder(BATmirror(bn)) == GDK_FAIL) {
-		BBPreclaim(bn);
-		return NULL;
-	}
 	BATseqbase(bn, 0);
 	return bn;
 }
@@ -1072,8 +1068,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		oid v_oid;
 	} vl, vh;
 
-	BATcheck(b, "BATsubselect");
-	BATcheck(tl, "BATsubselect: tl value required");
+	BATcheck(b, "BATsubselect", NULL);
+	BATcheck(tl, "BATsubselect: tl value required", NULL);
 
 	assert(BAThdense(b));
 	assert(s == NULL || BAThdense(s));
@@ -1563,9 +1559,9 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetasubselect");
-	BATcheck(val, "BATthetasubselect");
-	BATcheck(op, "BATthetasubselect");
+	BATcheck(b, "BATthetasubselect", NULL);
+	BATcheck(val, "BATthetasubselect", NULL);
+	BATcheck(op, "BATthetasubselect", NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)

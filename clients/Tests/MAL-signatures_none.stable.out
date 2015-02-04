@@ -38266,6 +38266,8 @@ command inet.new(s:str):inet
 address INETnew;
 comment Create an inet from a string literal
 
+command inet.#null():inet 
+address INETnull;
 command inet.setmasklen(X_1:inet,X_2:int):inet 
 address INETsetmasklen;
 comment Set netmask length for inet value

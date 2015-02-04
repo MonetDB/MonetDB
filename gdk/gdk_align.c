@@ -86,33 +86,26 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-int
+void
 ALIGNcommit(BAT *b)
 {
-	BATcheck(b, "ALIGNcommit");
+	if (b == NULL)
+		return;
 	if (!b->halign) {
 		b->halign = OIDnew(1);
 	}
 	if (!b->talign) {
 		b->talign = OIDnew(1);
 	}
-	return 0;
 }
 
-int
-ALIGNundo(BAT *b)
-{
-	BATcheck(b, "ALIGNundo");
-	return 0;
-}
-
-int
+void
 ALIGNsetH(BAT *b1, BAT *b2)
 {
 	ssize_t diff;
 
-	BATcheck(b1, "ALIGNsetH: bat 1 required");
-	BATcheck(b2, "ALIGNsetH: bat 2 required");
+	if (b1 == NULL || b2 == NULL)
+		return;
 
 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
 	if (b2->halign == 0) {
@@ -142,8 +135,6 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
 	b1->H->nosorted = (BUN) (b2->H->nosorted + diff);
 	b1->H->nodense = (BUN) (b2->H->nodense + diff);
-
-	return 0;
 }
 
 /*
@@ -154,8 +145,8 @@ ALIGNsetH(BAT *b1, BAT *b2)
 int
 ALIGNsynced(BAT *b1, BAT *b2)
 {
-	BATcheck(b1, "ALIGNsynced: bat 1 required");
-	BATcheck(b2, "ALIGNsynced: bat 2 required");
+	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
+	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
 	/* first try to prove head columns are not in sync */
 	if (BATcount(b1) != BATcount(b2))
@@ -203,7 +194,7 @@ VIEWhcreate(BAT *h)
 	BAT *bn;
 	bat hp;
 
-	BATcheck(h, "VIEWhcreate");
+	BATcheck(h, "VIEWhcreate", NULL);
 	bs = BATcreatedesc(h->htype, TYPE_void, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
@@ -255,8 +246,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BAT *bn;
 	bat hp = 0, tp = 0, vc = 0;
 
-	BATcheck(h, "VIEWcreate_");
-	BATcheck(t, "VIEWcreate_");
+	BATcheck(h, "VIEWcreate_", NULL);
+	BATcheck(t, "VIEWcreate_", NULL);
 
 	if (BATcount(h) != BATcount(t))
 		slice_view = 1;
@@ -440,7 +431,7 @@ BATmaterializeh(BAT *b)
 	oid h, *x;
 	bte tshift;
 
-	BATcheck(b, "BATmaterialize");
+	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
 	ht = b->htype;
 	cnt = BATcapacity(b);

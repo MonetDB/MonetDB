@@ -657,56 +657,7 @@ typedef uint64_t BUN8type;
  */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-#define ERRORcheck(tst,	msg) do if (tst) { GDKerror(msg); return 0; } while (0)
-#define BATcheck(tst,	msg)						\
-	do {								\
-		if ((tst) == NULL) {					\
-			if (strchr((msg), ':'))				\
-				GDKerror("%s.\n", (msg));		\
-			else						\
-				GDKerror("%s: BAT required.\n", (msg));	\
-			return 0;					\
-		}							\
-	} while (0)
-
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
-
-#define TYPEcastable(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
-#define TYPEequal(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
-#define TYPEcomp(t1,t2)	(ATOMstorage(ATOMtype(t1))==ATOMstorage(ATOMtype(t2)))
-#define TYPEerror(t1,t2)	(!TYPEcomp(t1,t2))
-#define TYPEcheck(t1,t2)						\
-	do {								\
-		if (TYPEerror(t1, t2)) {				\
-			GDKerror("TYPEcheck: Incompatible types %s and %s.\n", \
-				ATOMname(t2), ATOMname(t1));		\
-			return 0;					\
-		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(t2), ATOMname(t1));		\
-		}							\
-	} while (0)
-#define BATcompatible(P1,P2)						\
-	do {								\
-		ERRORcheck((P1) == NULL, "BATcompatible: BAT required\n"); \
-		ERRORcheck((P2) == NULL, "BATcompatible: BAT required\n"); \
-		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
-		    TYPEerror(BATttype(P1),BATttype(P2)))		\
-		{							\
-			GDKerror("Incompatible operands.\n");		\
-			return 0;					\
-		}							\
-		if (BAThtype(P1) != BAThtype(P2) &&			\
-		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
-		}							\
-		if (BATttype(P1) != BATttype(P2) &&			\
-		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
-		}							\
-	} while (0)
 
 /* Heap storage modes */
 typedef enum {
@@ -1461,12 +1412,12 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 
 #define BUNhloc(bi,p)	Hloc((bi).b,p)
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
-#define BUNhpos(bi,p)	(Hpos(&(bi),p))
-#define BUNtpos(bi,p)	(Tpos(&(bi),p))
-#define BUNhvar(bi,p)	((bi).b->htype?Hbase((bi).b)+BUNhvaroff(bi,p):BUNhpos(bi,p))
-#define BUNtvar(bi,p)	((bi).b->ttype?Tbase((bi).b)+BUNtvaroff(bi,p):BUNtpos(bi,p))
-#define BUNhead(bi,p)	((bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p))
-#define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
+#define BUNhpos(bi,p)	Hpos(&(bi),p)
+#define BUNtpos(bi,p)	Tpos(&(bi),p)
+#define BUNhvar(bi,p)	(assert((bi).b->htype && (bi).b->hvarsized), Hbase((bi).b)+BUNhvaroff(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), Tbase((bi).b)+BUNtvaroff(bi,p))
+#define BUNhead(bi,p)	((bi).b->htype?(bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p):BUNhpos(bi,p))
+#define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 static inline BATiter
 bat_iterator(BAT *b)
@@ -2907,14 +2858,14 @@ gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
-gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
+gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 
 #define ALIGNset(x,y)	do {ALIGNsetH(x,y);ALIGNsetT(x,y);} while (0)
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
-#define ALIGNins(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; } while (0)
-#define ALIGNinp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; } while (0)
-#define ALIGNapp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; } while (0)
+#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
+#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
 
 #define BAThrestricted(b) (VIEWhparent(b) ? BBP_cache(VIEWhparent(b))->batRestricted : (b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
@@ -2925,12 +2876,12 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  *                BAT_READ   = read-only
  * VIEW bats are always mapped read-only.
  */
-#define	VIEWchk(x,y,z)							\
+#define	VIEWchk(x,y,z,e)						\
 	do {								\
 		if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) { \
 			GDKerror("%s: access denied to %s, aborting.\n", \
 				 (y), BATgetId(x));			\
-			return 0;					\
+			return (e);					\
 		}							\
 	} while (0)
 

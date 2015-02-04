@@ -903,7 +903,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	    	cs_add(&s->types, load_type(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	/* second tables (and complex types) */
+	/* second tables */
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
 	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &id, NULL, NULL);
@@ -3994,6 +3994,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	cs_del(&mt->tables, n, pt->base.flag);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);
+	pt->p = NULL;
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, pt->s, pt->base.id, drop_action);
 	return mt;
@@ -4278,8 +4279,6 @@ drop_sql_key(sql_table *t, int id, int drop_action)
 	k->drop_action = drop_action; 
 	cs_del(&t->keys, n, TR_OLD);
 }
-
-
 
 void
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)

@@ -136,7 +136,6 @@ BATundo(BAT *b)
 	if (b == NULL)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
-	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
 	} else {
@@ -229,7 +228,7 @@ BATprev(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATprev");
+	BATcheck(b, "BATprev", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -258,7 +257,7 @@ BATalpha(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATalpha");
+	BATcheck(b, "BATalpha", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {
@@ -287,7 +286,7 @@ BATdelta(BAT *b)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
-	BATcheck(b, "BATdelta");
+	BATcheck(b, "BATdelta", NULL);
 	if (b->batRestricted == BAT_READ) {
 		bn = VIEWcreate(b, b);
 		if (bn) {

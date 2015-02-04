@@ -202,7 +202,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcnot");
+	BATcheck(b, "BATcalcnot", NULL);
 	if (checkbats(b, NULL, "BATcalcnot") == GDK_FAIL)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -322,7 +322,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcnegate");
+	BATcheck(b, "BATcalcnegate", NULL);
 	if (checkbats(b, NULL, "BATcalcnegate") == GDK_FAIL)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -452,7 +452,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcabsolute");
+	BATcheck(b, "BATcalcabsolute", NULL);
 	if (checkbats(b, NULL, "BATcalcabsolute") == GDK_FAIL)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -586,7 +586,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalciszero");
+	BATcheck(b, "BATcalciszero", NULL);
 	if (checkbats(b, NULL, "BATcalciszero") == GDK_FAIL)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -718,7 +718,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BUN i, cnt, start, end;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcsign");
+	BATcheck(b, "BATcalcsign", NULL);
 	if (checkbats(b, NULL, "BATcalcsign") == GDK_FAIL)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -860,7 +860,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 	bit *restrict dst;
 	BUN nils = 0;
 
-	BATcheck(b, "BATcalcisnil");
+	BATcheck(b, "BATcalcisnil", NULL);
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -985,8 +985,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b1, "BATcalcmin");
-	BATcheck(b2, "BATcalcmin");
+	BATcheck(b1, "BATcalcmin", NULL);
+	BATcheck(b2, "BATcalcmin", NULL);
 
 	if (checkbats(b1, b2, "BATcalcmin") == GDK_FAIL)
 		return NULL;
@@ -1067,8 +1067,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b1, "BATcalcmin_no_nil");
-	BATcheck(b2, "BATcalcmin_no_nil");
+	BATcheck(b1, "BATcalcmin_no_nil", NULL);
+	BATcheck(b2, "BATcalcmin_no_nil", NULL);
 
 	if (checkbats(b1, b2, "BATcalcmin_no_nil") == GDK_FAIL)
 		return NULL;
@@ -1153,8 +1153,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b1, "BATcalcmax");
-	BATcheck(b2, "BATcalcmax");
+	BATcheck(b1, "BATcalcmax", NULL);
+	BATcheck(b2, "BATcalcmax", NULL);
 
 	if (checkbats(b1, b2, "BATcalcmax") == GDK_FAIL)
 		return NULL;
@@ -1235,8 +1235,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b1, "BATcalcmax_no_nil");
-	BATcheck(b2, "BATcalcmax_no_nil");
+	BATcheck(b1, "BATcalcmax_no_nil", NULL);
+	BATcheck(b2, "BATcalcmax_no_nil", NULL);
 
 	if (checkbats(b1, b2, "BATcalcmax_no_nil") == GDK_FAIL)
 		return NULL;
@@ -2895,8 +2895,8 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcadd");
-	BATcheck(b2, "BATcalcadd");
+	BATcheck(b1, "BATcalcadd", NULL);
+	BATcheck(b2, "BATcalcadd", NULL);
 
 	if (checkbats(b1, b2, "BATcalcadd") == GDK_FAIL)
 		return NULL;
@@ -2951,7 +2951,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcaddcst");
+	BATcheck(b, "BATcalcaddcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcaddcst") == GDK_FAIL)
 		return NULL;
@@ -3004,7 +3004,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstadd");
+	BATcheck(b, "BATcalccstadd", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstadd") == GDK_FAIL)
 		return NULL;
@@ -3076,7 +3076,7 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	const oid *restrict cand = NULL, *candend = NULL;
 	bte one = 1;
 
-	BATcheck(b, func);
+	BATcheck(b, func, NULL);
 	if (checkbats(b, NULL, func) == GDK_FAIL)
 		return NULL;
 
@@ -4656,8 +4656,8 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcsub");
-	BATcheck(b2, "BATcalcsub");
+	BATcheck(b1, "BATcalcsub", NULL);
+	BATcheck(b2, "BATcalcsub", NULL);
 
 	if (checkbats(b1, b2, "BATcalcsub") == GDK_FAIL)
 		return NULL;
@@ -4700,7 +4700,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcsubcst");
+	BATcheck(b, "BATcalcsubcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcsubcst") == GDK_FAIL)
 		return NULL;
@@ -4748,7 +4748,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstsub");
+	BATcheck(b, "BATcalccstsub", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstsub") == GDK_FAIL)
 		return NULL;
@@ -6517,8 +6517,8 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, func);
-	BATcheck(b2, func);
+	BATcheck(b1, func, NULL);
+	BATcheck(b2, func, NULL);
 
 	if (checkbats(b1, b2, func) == GDK_FAIL)
 		return NULL;
@@ -6568,7 +6568,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcmulcst");
+	BATcheck(b, "BATcalcmulcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcmulcst") == GDK_FAIL)
 		return NULL;
@@ -6626,7 +6626,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstmul");
+	BATcheck(b, "BATcalccstmul", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstmul") == GDK_FAIL)
 		return NULL;
@@ -8435,7 +8435,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcdivcst");
+	BATcheck(b, "BATcalcdivcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcdivcst") == GDK_FAIL)
 		return NULL;
@@ -8496,7 +8496,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstdiv");
+	BATcheck(b, "BATcalccstdiv", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstdiv") == GDK_FAIL)
 		return NULL;
@@ -10019,7 +10019,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcmodcst");
+	BATcheck(b, "BATcalcmodcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcmodcst") == GDK_FAIL)
 		return NULL;
@@ -10062,7 +10062,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstmod");
+	BATcheck(b, "BATcalccstmod", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstmod") == GDK_FAIL)
 		return NULL;
@@ -10183,8 +10183,8 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcxor");
-	BATcheck(b2, "BATcalcxor");
+	BATcheck(b1, "BATcalcxor", NULL);
+	BATcheck(b2, "BATcalcxor", NULL);
 
 	if (checkbats(b1, b2, "BATcalcxor") == GDK_FAIL)
 		return NULL;
@@ -10233,7 +10233,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcxorcst");
+	BATcheck(b, "BATcalcxorcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcxorcst") == GDK_FAIL)
 		return NULL;
@@ -10282,7 +10282,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstxor");
+	BATcheck(b, "BATcalccstxor", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstxor") == GDK_FAIL)
 		return NULL;
@@ -10430,8 +10430,8 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcor");
-	BATcheck(b2, "BATcalcor");
+	BATcheck(b1, "BATcalcor", NULL);
+	BATcheck(b2, "BATcalcor", NULL);
 
 	if (checkbats(b1, b2, "BATcalcor") == GDK_FAIL)
 		return NULL;
@@ -10480,7 +10480,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcorcst");
+	BATcheck(b, "BATcalcorcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcorcst") == GDK_FAIL)
 		return NULL;
@@ -10529,7 +10529,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstor");
+	BATcheck(b, "BATcalccstor", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstor") == GDK_FAIL)
 		return NULL;
@@ -10674,8 +10674,8 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcand");
-	BATcheck(b2, "BATcalcand");
+	BATcheck(b1, "BATcalcand", NULL);
+	BATcheck(b2, "BATcalcand", NULL);
 
 	if (checkbats(b1, b2, "BATcalcand") == GDK_FAIL)
 		return NULL;
@@ -10724,7 +10724,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcandcst");
+	BATcheck(b, "BATcalcandcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcandcst") == GDK_FAIL)
 		return NULL;
@@ -10772,7 +10772,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstand");
+	BATcheck(b, "BATcalccstand", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstand") == GDK_FAIL)
 		return NULL;
@@ -11025,8 +11025,8 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalclsh");
-	BATcheck(b2, "BATcalclsh");
+	BATcheck(b1, "BATcalclsh", NULL);
+	BATcheck(b2, "BATcalclsh", NULL);
 
 	if (checkbats(b1, b2, "BATcalclsh") == GDK_FAIL)
 		return NULL;
@@ -11068,7 +11068,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalclshcst");
+	BATcheck(b, "BATcalclshcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalclshcst") == GDK_FAIL)
 		return NULL;
@@ -11110,7 +11110,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstlsh");
+	BATcheck(b, "BATcalccstlsh", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstlsh") == GDK_FAIL)
 		return NULL;
@@ -11337,8 +11337,8 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, "BATcalcrsh");
-	BATcheck(b2, "BATcalcrsh");
+	BATcheck(b1, "BATcalcrsh", NULL);
+	BATcheck(b2, "BATcalcrsh", NULL);
 
 	if (checkbats(b1, b2, "BATcalcrsh") == GDK_FAIL)
 		return NULL;
@@ -11380,7 +11380,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcrshcst");
+	BATcheck(b, "BATcalcrshcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcrshcst") == GDK_FAIL)
 		return NULL;
@@ -11422,7 +11422,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalccstrsh");
+	BATcheck(b, "BATcalccstrsh", NULL);
 
 	if (checkbats(b, NULL, "BATcalccstrsh") == GDK_FAIL)
 		return NULL;
@@ -11834,9 +11834,9 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcbetween");
-	BATcheck(lo, "BATcalcbetween");
-	BATcheck(hi, "BATcalcbetween");
+	BATcheck(b, "BATcalcbetween", NULL);
+	BATcheck(lo, "BATcalcbetween", NULL);
+	BATcheck(hi, "BATcalcbetween", NULL);
 
 	if (checkbats(b, lo, "BATcalcbetween") == GDK_FAIL)
 		return NULL;
@@ -11887,7 +11887,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcbetweencstcst");
+	BATcheck(b, "BATcalcbetweencstcst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcbetweencstcst") == GDK_FAIL)
 		return NULL;
@@ -11919,7 +11919,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcbetweenbatcst");
+	BATcheck(b, "BATcalcbetweenbatcst", NULL);
 
 	if (checkbats(b, lo, "BATcalcbetweenbatcst") == GDK_FAIL)
 		return NULL;
@@ -11952,7 +11952,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATcalcbetweencstbat");
+	BATcheck(b, "BATcalcbetweencstbat", NULL);
 
 	if (checkbats(b, hi, "BATcalcbetweencstbat") == GDK_FAIL)
 		return NULL;
@@ -12170,9 +12170,9 @@ BATcalcifthenelse_intern(BAT *b,
 BAT *
 BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 {
-	BATcheck(b, "BATcalcifthenelse");
-	BATcheck(b1, "BATcalcifthenelse");
-	BATcheck(b2, "BATcalcifthenelse");
+	BATcheck(b, "BATcalcifthenelse", NULL);
+	BATcheck(b1, "BATcalcifthenelse", NULL);
+	BATcheck(b2, "BATcalcifthenelse", NULL);
 
 	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
@@ -12191,9 +12191,9 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 BAT *
 BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 {
-	BATcheck(b, "BATcalcifthenelsecst");
-	BATcheck(b1, "BATcalcifthenelsecst");
-	BATcheck(c2, "BATcalcifthenelsecst");
+	BATcheck(b, "BATcalcifthenelsecst", NULL);
+	BATcheck(b1, "BATcalcifthenelsecst", NULL);
+	BATcheck(c2, "BATcalcifthenelsecst", NULL);
 
 	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
@@ -12210,9 +12210,9 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 BAT *
 BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 {
-	BATcheck(b, "BATcalcifthenelsecst");
-	BATcheck(c1, "BATcalcifthenelsecst");
-	BATcheck(b2, "BATcalcifthenelsecst");
+	BATcheck(b, "BATcalcifthenelsecst", NULL);
+	BATcheck(c1, "BATcalcifthenelsecst", NULL);
+	BATcheck(b2, "BATcalcifthenelsecst", NULL);
 
 	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
@@ -12229,9 +12229,9 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 BAT *
 BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 {
-	BATcheck(b, "BATcalcifthenelsecst");
-	BATcheck(c1, "BATcalcifthenelsecst");
-	BATcheck(c2, "BATcalcifthenelsecst");
+	BATcheck(b, "BATcalcifthenelsecst", NULL);
+	BATcheck(c1, "BATcalcifthenelsecst", NULL);
+	BATcheck(c2, "BATcalcifthenelsecst", NULL);
 
 	if (checkbats(b, NULL, "BATcalcifthenelse") == GDK_FAIL)
 		return NULL;
@@ -13219,7 +13219,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, "BATconvert");
+	BATcheck(b, "BATconvert", NULL);
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 

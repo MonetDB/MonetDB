@@ -29,7 +29,26 @@
  *
  */
 #include "monetdb_config.h"
-#include "identifier.h"	/* for the implementation of the functions */
+#include "mal.h"
+#include "mal_exception.h"
+
+typedef str identifier;
+
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define identifier_export extern __declspec(dllimport)
+#else
+#define identifier_export extern __declspec(dllexport)
+#endif
+#else
+#define identifier_export extern
+#endif
+
+identifier_export int TYPE_identifier;
+identifier_export str IDprelude(void *ret);
+identifier_export int IDfromString(str src, int *len, identifier *retval);
+identifier_export int IDtoString(str *retval, int *len, identifier handle);
+identifier_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
 
