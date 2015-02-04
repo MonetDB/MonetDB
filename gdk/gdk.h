@@ -657,7 +657,7 @@ typedef uint64_t BUN8type;
  */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-#define ERRORcheck(tst,	msg, err) do if (tst) { if (msg) GDKerror(msg); return (err); } while (0)
+#define ERRORcheck(tst,	msg, err) do if (tst) { GDKerror(msg); return (err); } while (0)
 #define BATcheck(tst,	msg, err)					\
 	do {								\
 		if ((tst) == NULL) {					\
