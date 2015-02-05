@@ -1785,9 +1785,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		MT_join_thread(task->tid);
 	}
 
-	MT_sema_destroy(&ptask[j].producer);
-	MT_sema_destroy(&ptask[j].consumer);
-
 	// await completion of the BAT syncs 
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply, "SQLload_file");
