@@ -2512,6 +2512,7 @@ str mnstr_write_stringwrap(void *ret, Stream *S, str *data);
 char monet_cwd[PATHLENGTH];
 size_t monet_memory;
 void moveInstruction(MalBlkPtr mb, int pc, int target);
+int mtProp;
 str mtimeRef;
 str mulRef;
 str multicolumnRef;
