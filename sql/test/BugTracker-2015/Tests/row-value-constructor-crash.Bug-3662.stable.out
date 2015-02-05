@@ -55,6 +55,8 @@ Ready.
 # 00:52:33 >  
 
 #CREATE TABLE een (a INTEGER, b INTEGER, C integer);
+#insert into een values (1,1,1);
+[ 1	]
 #UPDATE een SET (A,B,C) = (SELECT 2,2,2);
 [ 1	]
 #SELECT * FROM een;

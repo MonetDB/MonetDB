@@ -69,7 +69,7 @@ RESTsqlQuery(char **result, char * query)
 	be = (backend*)c->sqlcontext;
 	be->output_format = OFMT_JSON;
 
-	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE);
+	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE, NULL);
 	if (qmsg == MAL_SUCCEED) {
 		resultstring = buffer_get_buf(resultbuffer);
 		*result = GDKstrdup(resultstring);
