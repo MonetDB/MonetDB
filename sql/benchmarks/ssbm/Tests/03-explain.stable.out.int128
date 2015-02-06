@@ -36,8 +36,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 283 # length
+% 300 # length
 function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):void;
+    X_82:void  := querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe");
     X_8 := sql.mvc();
     X_12:bat[:oid,:int]  := sql.bind(X_8,"sys","lineorder","lo_quantity",0);
     X_20:bat[:oid,:int]  := sql.bind(X_8,"sys","lineorder","lo_discount",0);

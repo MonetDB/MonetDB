@@ -48,11 +48,10 @@ create function GetTrace()
 		thread int, 		-- thread identifier
 		"user" int, 		-- user identifier
 		ticks bigint, 		-- time in microseconds
-		reads bigint, 		-- number of blocks read
-		writes bigint, 	-- number of blocks written
+		rssMB bigint, 		-- resident storage
+		vmMB bigint, 		-- virtual memory
 		rbytes bigint,		-- amount of bytes touched
 		wbytes bigint,		-- amount of bytes written
-		type string,		-- return types
 		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;

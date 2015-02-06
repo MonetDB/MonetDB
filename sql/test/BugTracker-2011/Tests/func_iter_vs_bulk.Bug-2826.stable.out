@@ -33,8 +33,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
+% 110 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
+    X_28:void  := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe");
     X_3 := sql.mvc();
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
     (X_10,r1_10) := sql.bind(X_3,"sys","tab_2826","d",2);

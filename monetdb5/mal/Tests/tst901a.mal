@@ -1,5 +1,4 @@
 # what is the overhead of MAL in multiplex situations
-profiler.setFilter("*","*");
 b:= bat.new(:oid,:lng);
 
 INT_MAX := 2147483647;

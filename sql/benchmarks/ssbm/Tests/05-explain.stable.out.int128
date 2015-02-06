@@ -41,8 +41,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 461 # length
+% 479 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:str):void;
+    X_131:void  := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n\tfrom lineorder, dwdate, part, supplier\n\twhere lo_orderdate = d_datekey\n\t\tand lo_partkey = p_partkey\n\t\tand lo_suppkey = s_suppkey\n\t\t-- OK to add p_mfgr=’MFGR#2’\n\t\t-- OK to add p_category=’MFGR#22’\n\t\tand p_brand1 between \\'MFGR#2221\\' and \\'MFGR#2228\\'\n\t\tand s_region = \\'ASIA\\'\n\tgroup by d_year, p_brand1\n\torder by d_year, p_brand1;","sequential_pipe");
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","lineorder");
     X_9:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_partkey_fkey",0);

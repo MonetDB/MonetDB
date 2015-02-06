@@ -17,16 +17,11 @@ tomograph [options]
   -p | --port=<portnr>
   -h | --host=<hostname>
   -T | --title=<plot title>
-  -s | --sql=<single sql expression>
-  -t | --trace=<tomograph trace filename>
   -r | --range=<starttime>-<endtime>[ms,s] 
   -i | --input=<profiler event file > 
   -o | --output=<file prefix > (default 'tomograph'
   -b | --beat=<delay> in milliseconds (default 50)
-  -A | --atlas=<number> of pages
-  -B | --batch=<number> of queries per page
-  -a | --adaptive colormap 
-  -m | --colormap=<userdefined colormap>
+  -A | --atlas=<number> maximum number of pages
   -D | --debug
   -? | --help
 

@@ -29,8 +29,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 131 # length
 function user.s2_1(A0:str):void;
+    X_33:void  := querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -56,8 +57,9 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 135 # length
 function user.s3_1(A0:str):void;
+    X_33:void  := querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -83,8 +85,9 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 115 # length
+% 132 # length
 function user.s4_1(A0:str):void;
+    X_33:void  := querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -110,8 +113,9 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 119 # length
+% 136 # length
 function user.s5_1(A0:str):void;
+    X_33:void  := querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -157,8 +161,9 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 135 # length
 function user.s10_1(A0:str):void;
+    X_31:void  := querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -186,8 +191,9 @@ end s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
+% 139 # length
 function user.s11_1(A0:str):void;
+    X_31:void  := querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -215,8 +221,9 @@ end s11_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 119 # length
+% 136 # length
 function user.s12_1(A0:str):void;
+    X_31:void  := querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");
@@ -244,8 +251,9 @@ end s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s13_1(A0:str):void;
+    X_31:void  := querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe");
     X_2 := sql.mvc();
     X_6:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0);
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions");

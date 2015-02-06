@@ -52,8 +52,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 496 # length
+% 514 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date):void;
+    X_165:void  := querylog.define("explain select\n\tl_orderkey,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\to_orderdate,\n\to_shippriority\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\tc_mktsegment = \\'BUILDING\\'\n\tand c_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate < date \\'1995-03-15\\'\n\tand l_shipdate > date \\'1995-03-15\\'\ngroup by\n\tl_orderkey,\n\to_orderdate,\n\to_shippriority\norder by\n\trevenue desc,\n\to_orderdate\nlimit 10;","sequential_pipe");
     X_6 := sql.mvc();
     X_10:bat[:oid,:date]  := sql.bind(X_6,"sys","orders","o_orderdate",0);
     X_7:bat[:oid,:oid]  := sql.tid(X_6,"sys","orders");

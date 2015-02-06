@@ -61,8 +61,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 176 # length
+% 193 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
+    X_39:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n  from sys.functions\n) as x;","sequential_pipe");
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions");
     X_8:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0);
@@ -91,8 +92,9 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 180 # length
+% 197 # length
 function user.s3_1{autoCommit=true}(A0:str,A1:str,A2:lng):void;
+    X_45:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n  from sys.functions\n) as x;","sequential_pipe");
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","functions");
     X_9:bat[:oid,:str]  := sql.bind(X_5,"sys","functions","name",0);
@@ -125,8 +127,9 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 181 # length
+% 198 # length
 function user.s4_1{autoCommit=true}(A0:str,A1:str):void;
+    X_43:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n  from sys.functions\n) as x;","sequential_pipe");
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","functions");
     X_8:bat[:oid,:str]  := sql.bind(X_4,"sys","functions","name",0);

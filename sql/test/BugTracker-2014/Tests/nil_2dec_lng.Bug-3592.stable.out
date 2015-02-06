@@ -42,8 +42,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 187 # length
+% 204 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
+    X_51:void  := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe");
 barrier X_109 := language.dataflow();
     X_6:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
     X_5 := sql.mvc();

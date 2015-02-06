@@ -63,6 +63,7 @@ Ready.
 % clob # type
 % 150 # length
 function user.s4_1{autoCommit=true}():void;
+    X_25:void  := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe");
 barrier X_34 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0);
@@ -97,6 +98,7 @@ end s4_1;
 % clob # type
 % 150 # length
 function user.s12_1{autoCommit=true}():void;
+    X_25:void  := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1");
 barrier X_35 := language.dataflow();
     X_2 := sql.mvc();
     (X_13:bat[:oid,:int] ,X_14:bat[:oid,:int] ,X_15:bat[:oid,:int] ) := sql.copy_from("sys","ttt","|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0);

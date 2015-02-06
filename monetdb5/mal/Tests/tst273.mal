@@ -10,8 +10,7 @@ barrier i:= 0:lng;
 	redo i:= iterator.next(1:lng,10000:lng);
 exit i;
 
-profiler.setFilter(b);
-profiler.start();
+profiler.stethoscope();
 io.printf("#monitor \n");
 mx:= aggr.max(b); 
 (clk,rdbytes,wrbytes):= profiler.getEvent();

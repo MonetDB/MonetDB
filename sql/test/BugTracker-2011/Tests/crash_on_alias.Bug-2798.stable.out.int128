@@ -44,8 +44,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s4_1(A0:hge,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
@@ -97,8 +98,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 145 # length
 function user.s10_1(A0:hge,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
