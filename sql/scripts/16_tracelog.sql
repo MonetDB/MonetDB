@@ -24,11 +24,10 @@ create function sys.tracelog()
 		thread int, 		-- thread identifier
 		"user" int, 		-- user identifier
 		ticks bigint, 		-- time in microseconds
+		rrsMB bigint, 		-- resident memory in MB
+		vmMB bigint, 		-- virtual size in MB
 		reads bigint, 		-- number of blocks read
 		writes bigint, 	-- number of blocks written
-		rbytes bigint,		-- amount of bytes touched
-		wbytes bigint,		-- amount of bytes written
-		type string,		-- return types
 		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;

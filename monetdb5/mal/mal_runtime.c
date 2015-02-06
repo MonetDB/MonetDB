@@ -77,9 +77,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	int i;
 	str q;
 
-	if ( malProfileMode || mb->recycle )
-		setFilterOnBlock(mb, 0, 0);
-
 	MT_lock_set(&mal_delayLock, "sysmon");
 	if ( QRYqueue == 0)
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
@@ -172,18 +169,36 @@ finishSessionProfiler(Client cntxt)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
+	int tid = THRgettid();
+
+	/* keep track on the instructions taken in progress */
+	cntxt->active = TRUE;
+	if( tid < THREADS){
+		cntxt->inprogress[tid].mb = mb;
+		cntxt->inprogress[tid].stk = stk;
+		cntxt->inprogress[tid].pci = pci;
+	}
+
 	/* always collect the MAL instruction execution time */
 	prof->ticks = GDKusec();
 	/* emit the instruction upon start as well */
 	
-	if(malProfileMode > 0){
+	if(malProfileMode > 0)
 		profilerEvent(cntxt->idx, mb, stk, pci, TRUE);
-	}
 }
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
+	int tid = THRgettid();
+
+	/* keep track on the instructions in progress*/
+	if ( tid < THREADS) {
+		cntxt->inprogress[tid].mb = 0;
+		cntxt->inprogress[tid].stk =0;
+		cntxt->inprogress[tid].pci = 0;
+	}
+
 	assert(pci);
 	assert(prof);
 	/* always collect the MAL instruction execution time */
@@ -191,10 +206,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->calls++;
 
 	// it is a potential expensive operation
-	if (getProfileCounter(PROFrbytes) || pci->recycle)
+	if (pci->recycle){
 		pci->rbytes += getVolume(stk, pci, 0);
-	if (getProfileCounter(PROFwbytes) || pci->recycle)
 		pci->wbytes += getVolume(stk, pci, 1);
+	}
 	
 	if(malProfileMode > 0)
 			profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
@@ -203,6 +218,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
+	cntxt->active = FALSE;
 }
 
 /*

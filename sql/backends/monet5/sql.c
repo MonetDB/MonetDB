@@ -3775,7 +3775,7 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	TRACEtable(t);
-	for (i = 0; i < 12; i++) {
+	for (i = 0; i < 11; i++) {
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;
@@ -3817,7 +3817,7 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	QLOGcalls(t);
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 9; i++) {
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;

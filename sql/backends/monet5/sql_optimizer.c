@@ -317,7 +317,7 @@ SQLoptimizer(Client c)
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "SQLoptimizer\n");
-	printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_DEBUG);
 	mnstr_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;

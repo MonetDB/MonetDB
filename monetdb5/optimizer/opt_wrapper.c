@@ -184,7 +184,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTIMIZERDEBUG {
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 

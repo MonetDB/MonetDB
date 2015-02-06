@@ -58,8 +58,6 @@ typedef struct Mallinfo Mallinfo;
 #define PROFfootprint 21
 #define PROFnuma 22
 
-mal_export str activateCounter(const char *name);
-mal_export str deactivateCounter(const char *name);
 mal_export int getProfileCounter(int idx);
 mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
@@ -72,20 +70,14 @@ mal_export str setLogStreamStream(Module cntxt, stream *s);
 mal_export str setStartPoint(Module cntxt, const char *mod, const char *fcn);
 mal_export str setEndPoint(Module cntxt, const char *mod, const char *fcn);
 
-mal_export str startProfiling(void);
-mal_export str stopProfiling(void);
+mal_export str startProfiler(int mode, int beat);
+mal_export str stopProfiler(void);
+mal_export void setHeartbeat(int delay);
 mal_export str cleanupProfiler(void);
 mal_export void initHeartbeat(void);
-mal_export void stopHeartbeat(void);
 mal_export double HeartbeatCPUload(void);
 
-mal_export void setFilter(Module cntxt, const char *mod, const char *fcn);
-mal_export void setFilterOnBlock(MalBlkPtr mb, const char *mod, const char *fcn);
-mal_export void clrFilter(Module cntxt, const char *mod, const char *fcn);
-mal_export void setFilterVariable(MalBlkPtr mb, int i);
-mal_export void clrFilterVariable(MalBlkPtr mb, int i);
 mal_export stream *getProfilerStream(void);
-mal_export void setFilterAll(void);
 
 mal_export void MPresetProfiler(stream *fdout);
 

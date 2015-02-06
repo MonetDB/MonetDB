@@ -78,6 +78,7 @@ str datacellRef;
 str dataflowRef;
 str datacyclotronRef;
 str dblRef;
+str defineRef;
 str deleteRef;
 str depositRef;
 str differenceRef;
@@ -332,6 +333,7 @@ void optimizerInit(void)
 	dataflowRef = putName("dataflow",8);
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);
+	defineRef = putName("define",6);
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
 	differenceRef= putName("difference",10);

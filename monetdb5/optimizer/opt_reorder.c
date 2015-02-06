@@ -260,7 +260,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=i-1; j>=start;j--) {
 				OPTDEBUGreorder if( old[j]){
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
-					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT | LIST_MAPI);
+					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_DEBUG);
 				}
 				OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist);
 			}

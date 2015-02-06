@@ -100,13 +100,13 @@ mal_export void mal_exit(void);
 #define LIST_MAL_PROPS    16       /* show line numbers */
 #define LIST_MAL_DETAIL 32		/* type details */
 #define LIST_MAL_VALUE  64		/* list bat tuple count */
-#define LIST_MAPI       128       /* output Mapi compatible output */
+#define LIST_MAL_MAPI  128       /* output Mapi compatible output */
 #define LIST_MAL_ARG 256		/* show the formal argument name */
 #define LIST_MAL_LNR    512       /* show line numbers */
-#define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE )
-#define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
+#define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
+#define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG | LIST_MAL_TYPE)
 #define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_ARG)
-#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR | LIST_MAPI)
+#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR | LIST_MAL_MAPI)
 
 #ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED
@@ -182,6 +182,7 @@ typedef struct {
 	bit varargs;				/* variable number of arguments */
 	int recycle;				/* <0 or index into recycle cache */
 	int jump;					/* controlflow program counter */
+	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */

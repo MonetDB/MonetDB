@@ -42,6 +42,7 @@ qlog_export int QLOGisset(void);
 qlog_export str QLOGissetFcn(int *ret);
 qlog_export str QLOGempty(void *ret);
 qlog_export str QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+qlog_export str QLOGdefineNaive(int *ret, str *qry, str *opt);
 qlog_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _QLOG_H */

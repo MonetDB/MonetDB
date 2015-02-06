@@ -281,7 +281,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	int i, tab = 4;
 	str base, s, t;
 	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
-	int low, high;
 	char nmebuf[PATHLENGTH];
 	str pstring = NULL;
 	str cv = NULL;
@@ -362,13 +361,13 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			if (flg & LIST_MAL_STMT) {
 				snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i) == TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
-				if ( flg & LIST_MAL_TYPE ){
+				if ( flg & LIST_MAL_TYPE  || flg == LIST_MAL_CALL){
 					str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 					snprintf(t,(len-(t-base)), ":%s ", tpe);
 					GDKfree(tpe);
 					advance(t,base,len);
 				} else
-					if ( flg & (LIST_MAL_UDF | LIST_MAL_STMT | LIST_MAL_VALUE)  && i < p->retc) {
+				if ( flg & (LIST_MAL_UDF | LIST_MAL_STMT | LIST_MAL_VALUE)  ) {
 					if ( isVarUDFtype(mb, getArg(p, i))) {
 						str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 						snprintf(t,(len-(t-base)), ":%s ", tpe);
@@ -457,8 +456,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		snprintf(t,  (len-(t-base))," unknown symbol ?%d? ", p->token);
 	}
 	advance(t,base,len);
-	low = p->retc;
-	high = p->argc;
 	if (getModuleId(p))
 		snprintf(t,  (len-(t-base)),"%s.", getModuleId(p));
 	advance(t,base,len);
@@ -468,19 +465,19 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		snprintf(t, (len-(t-base)), "(");
 	advance(t,base,len);
 
-	for (i = low; i < high; i++) {
+	for (i = p->retc; i < p->argc; i++) {
 		advance(t,base,len);
-		if (i >low){
+		if (i > p->retc){
 			snprintf(t, (len-(t-base)), ",");
 			advance(t,base,len);
 		}
-		if (i + 1 == high && p->varargs & VARARGS) {
+		if (i + 1 == p->argc && p->varargs & VARARGS) {
 			snprintf(t, (len-(t-base)), "...");
 			advance(t,base,len);
 			break;
 		}
 		/* show the value if availabe */
-		if ( (isVarConstant(mb, getArg(p, i)) || stk) && !isVarTypedef(mb,getArg(p,i)) ){
+		if ( (isVarConstant(mb, getArg(p, i)) || stk) && !isVarTypedef(mb,getArg(p,i))  ){
 
 			if (stk && flg & LIST_MAL_VALUE){
 				if ( !isVarConstant(mb, getArg(p,i)) && flg & LIST_MAL_ARG)
@@ -561,8 +558,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 			
 			advance(t,base,len);
-			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
-				isAmbiguousType(getArgType(mb,p,i)) ){
+			if ( ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
+				isAmbiguousType(getArgType(mb,p,i)) ) && flg != LIST_MAL_CALL){
 				str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 				snprintf(t,(len-(t-base)), ":%s", tpe);
 				GDKfree(tpe);
@@ -696,7 +693,7 @@ promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	ps = instruction2str(mb, stk, p, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if ( ps ){
-		mnstr_printf(fd, "%s%s", (flg & LIST_MAPI ? "=" : ""), ps);
+		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	}
 }

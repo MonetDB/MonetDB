@@ -2714,7 +2714,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			return NULL;
 		}
 		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_oid);
+		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
 		q = pushStr(mb, q, t);
 		GDKfree(tt);

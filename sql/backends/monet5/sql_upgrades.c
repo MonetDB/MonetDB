@@ -1288,8 +1288,42 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tmaxval string,\n\
 \tsorted boolean);\n");
 
+	/* 15_querylog update the querylog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.querylog_calls;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function sys.querylog_calls()\
+\treturns table(\
+\t    id oid,\n\
+\t    \"start\" timestamp,\n\
+\t    \"stop\" timestamp,\n\
+\t    arguments string,\n\
+\t    tuples wrd,\n\
+\t    run bigint,\n\
+\t    ship bigint,\n\
+\t    cpu int,\n\
+\t    io int \n\
+\t) external name sql.querylog_calls;\n");
+
+
+	/* 16_tracelog update the tracelog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.tracelog;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function sys.tracelog()\n\
+\treturns table (\n\
+\tevent integer,      \n\
+\tclk varchar(20),    \n\
+\tpc varchar(50),     \n\
+\tthread int,         \n\
+\t\"user\" int,         \n\
+\tticks bigint,       \n\
+\trrsMB bigint,       \n\
+\tvmMB bigint,        \n\
+\treads bigint,       \n\
+\twrites bigint,  \n\
+\tstmt string         \n\
+\t) external name sql.dump_trace;\n");
+
+
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls','tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
