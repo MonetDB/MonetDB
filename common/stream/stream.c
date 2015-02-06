@@ -67,6 +67,7 @@
 #include <string.h>
 #include <stdio.h>		/* NULL, printf etc. */
 #include <stdlib.h>
+#include <stddef.h>
 #include <errno.h>
 #include <stdarg.h>		/* va_alist.. */
 #include <assert.h>
@@ -3618,7 +3619,7 @@ bstream_destroy(bstream *s)
 typedef struct {
 	stream *s;
 	size_t len, pos;
-	char buf[];		/* NOTE: buf extends beyond array for wbs->len bytes */
+	char buf[FLEXIBLE_ARRAY_MEMBER]; /* NOTE: buf extends beyond array for wbs->len bytes */
 } wbs_stream;
 
 static int
@@ -3720,7 +3721,7 @@ wbstream(stream *s, size_t buflen)
 	ns = create_stream(s->name);
 	if (ns == NULL)
 		return NULL;
-	wbs = (wbs_stream *) malloc(sizeof(wbs_stream) + buflen);
+	wbs = (wbs_stream *) malloc(offsetof(wbs_stream, buf) + buflen);
 	if (wbs == NULL) {
 		destroy(ns);
 		return NULL;

@@ -91,7 +91,7 @@ headers_mseedautoload = {
 
 lib__fits = {
 	MODULE
-	COND = HAVE_CFITSIO
+	COND = HAVE_FITS
 	DIR = libdir/monetdb5
 	SOURCES = fits.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -99,21 +99,21 @@ lib__fits = {
 }
 
 headers_fitsmal = {
-	COND = HAVE_CFITSIO
+	COND = HAVE_FITS
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = fits.mal
 }
 
 headers_fitssql = {
-	COND = HAVE_CFITSIO
+	COND = HAVE_FITS
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 72_fits.sql
 }
 
 headers_fitsautoload = {
-	COND = HAVE_CFITSIO
+	COND = HAVE_FITS
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 72_fits.mal

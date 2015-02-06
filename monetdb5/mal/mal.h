@@ -164,7 +164,7 @@ typedef struct VARRECORD {
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
 	int propc, maxprop;			/* proc count and max number of properties */
-	int prps[];					/* property array */
+	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
 } *VarPtr, VarRecord;
 
 /* For performance analysis we keep track of the number of calls and
@@ -193,7 +193,7 @@ typedef struct {
 	str modname;				/* module context */
 	str fcnname;				/* function name */
 	int argc, retc, maxarg;		/* total and result argument count */
-	int argv[];					/* at least a few entries */
+	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
@@ -263,7 +263,7 @@ typedef struct MALSTK {
 	int pcup;		/* saved pc upon a recursive all */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALBLK *blk;	/* associated definition */
-	ValRecord stk[];
+	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
 } MalStack, *MalStkPtr;
 
 #endif /*  _MAL_H*/
