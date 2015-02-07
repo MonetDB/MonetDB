@@ -75,7 +75,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bn->H->nonil = b->H->nonil;											\
 	bn->H->nil = b->H->nil;												\
 	if (!(bn->batDirty & 2))											\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -168,7 +168,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	bn->H->nonil = b->H->nonil;											\
 	bn->H->nil = b->H->nil;												\
 	if (!(bn->batDirty & 2))											\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\

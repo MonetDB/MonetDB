@@ -71,7 +71,6 @@ blob_export str BLOBblob_blob(blob **d, blob **s);
 blob_export str BLOBblob_fromstr(blob **b, str *d);
 
 blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
-blob_export str BLOB_isnil(bit *retval, blob *val);
 
 str
 BLOBprelude(void *ret)
@@ -87,8 +86,8 @@ blobsize(size_t nitems)
 {
 	if (nitems == ~(size_t) 0)
 		nitems = 0;
-	assert(sizeof(size_t) + nitems <= VAR_MAX);
-	return (var_t) (sizeof(size_t) + nitems);
+	assert(offsetof(blob, data) + nitems <= VAR_MAX);
+	return (var_t) (offsetof(blob, data) + nitems);
 }
 
 static var_t
@@ -499,7 +498,7 @@ BLOBhash(blob *b)
 blob *
 BLOBnull(void)
 {
-	blob *b= (blob*) GDKmalloc(sizeof(blob));
+	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
 	b->nitems = ~(size_t) 0;
 	return b;
 }
@@ -621,10 +620,3 @@ BLOBsqlblob_fromstr(sqlblob **b, str *s)
 	sqlblob_fromstr(*s, &len, b);
 	return MAL_SUCCEED;
 }
-
-str BLOB_isnil(bit *ret, blob *v)
-{
-	*ret = (v->nitems == ~(size_t)0);
-	return MAL_SUCCEED;
-}
-

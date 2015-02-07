@@ -290,7 +290,12 @@ IOprintf_(str *res, str format, ...)
 				va_end(ap);
 				return_error(toofew_error);
 			}
-			type = ATOMstorage(va_arg(ap, int));
+			type = va_arg(ap, int);
+			if (type != ATOMstorage(type) &&
+				ATOMnilptr(type) == ATOMnilptr(ATOMstorage(type)) &&
+				ATOMcompare(type) == ATOMcompare(ATOMstorage(type)) &&
+				BATatoms[type].atomHash == BATatoms[ATOMstorage(type)].atomHash)
+				type = ATOMstorage(type);
 
 			len = 1 + (cur - paramseen);
 			memcpy(meta, paramseen, len);
@@ -464,42 +469,9 @@ IOprintf_(str *res, str format, ...)
 	return MAL_SUCCEED;
 }
 
-static ptr
-getArgValue(MalStkPtr stk, InstrPtr pci, int k){
-	int j=0;
-	ValRecord *v;
-	ptr val = NULL;
-	int tpe ;
+#define getArgValue(s,p,k) VALptr(&(s)->stk[(p)->argv[k]])
 
-	j = pci->argv[k];
-	v= &stk->stk[j];
-	tpe = v->vtype;
-tstagain:
-	switch(tpe){
-	/* switch(ATOMstorage(v->vtype)) */
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.btval; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) & v->val.bval; break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_wrd: val= (ptr) & v->val.wval; break;
-	case TYPE_bte: val= (ptr) & v->val.btval; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-#ifdef HAVE_HGE
-	case TYPE_hge: val= (ptr) & v->val.hval; break;
-#endif
-	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
-	default:
-		tpe= ATOMstorage(tpe);
-		goto tstagain;
-	}
-	return val;
-} 
-#define G(X) , getArgValue(stk,pci,X), getArgType(mb,pci,X)
+#define G(X) getArgValue(stk,pci,X), getArgType(mb,pci,X)
 
 str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -511,23 +483,23 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	switch( pci->argc){
-	case 2: msg= IOprintf_(&fmt2,*fmt );
+	case 2: msg= IOprintf_(&fmt2,*fmt);
 			break;
-	case 3: msg= IOprintf_(&fmt2,*fmt G(2));
+	case 3: msg= IOprintf_(&fmt2,*fmt,G(2));
 		break;
-	case 4: msg= IOprintf_(&fmt2,*fmt G(2) G(3));
+	case 4: msg= IOprintf_(&fmt2,*fmt,G(2),G(3));
 		break;
-	case 5: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4));
+	case 5: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4));
 		break;
-	case 6: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5));
+	case 6: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5));
 		break;
-	case 7: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6));
+	case 7: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6));
 		break;
-	case 8: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7));
+	case 8: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7));
 		break;
-	case 9: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8));
+	case 9: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8));
 		break;
-	case 10: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8) G(9));
+	case 10: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8),G(9));
 	}
 	if (msg== MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout,"%s",fmt2);
@@ -547,21 +519,21 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	switch( pci->argc){
 	case 3: msg= IOprintf_(&fmt2,*fmt);
 		break;
-	case 4: msg= IOprintf_(&fmt2,*fmt G(3));
+	case 4: msg= IOprintf_(&fmt2,*fmt,G(3));
 		break;
-	case 5: msg= IOprintf_(&fmt2,*fmt G(3) G(4));
+	case 5: msg= IOprintf_(&fmt2,*fmt,G(3),G(4));
 		break;
-	case 6: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5));
+	case 6: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5));
 		break;
-	case 7: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6));
+	case 7: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6));
 		break;
-	case 8: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7));
+	case 8: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7));
 		break;
-	case 9: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8));
+	case 9: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8));
 		break;
-	case 10: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9));
+	case 10: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9));
 		break;
-	case 11: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9) G(10));
+	case 11: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9),G(10));
 	}
 	if (msg== MAL_SUCCEED){
 		mnstr_printf(f,"%s",fmt2);
@@ -881,7 +853,7 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNins(b, h, t, FALSE) == NULL) {
+		if (BUNins(b, h, t, FALSE) == GDK_FAIL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			MT_munmap(base, end - base);

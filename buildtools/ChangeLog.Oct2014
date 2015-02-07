@@ -1,3 +1,6 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Tue Feb  3 2015 Sjoerd Mullender <sjoerd@acm.org>
+- We now also create debug packages for Debian and Ubuntu.
+

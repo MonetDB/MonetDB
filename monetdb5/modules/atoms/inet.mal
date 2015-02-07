@@ -17,6 +17,8 @@
 
 atom inet:lng;
 
+command null() :inet
+address INETnull;
 command cmp() :int
 address INETcompare;
 command fromstr()
@@ -88,6 +90,7 @@ comment "Extract IP address and netmask length as text";
 command abbrev(:inet):str
 address INETabbrev
 comment "Abbreviated display format as text";
+
 module calc;
 
 command inet(s:inet):inet
@@ -97,9 +100,6 @@ comment "Convert a inet to an inet";
 command inet(s:str):inet
 address INET_fromstr
 comment "Convert a string to an inet";
-command isnil(v:inet):bit
-address INET_isnil
-comment "Nil test for inet value";
 
 command ==(v:inet,w:inet):bit
 address INET_comp_EQ

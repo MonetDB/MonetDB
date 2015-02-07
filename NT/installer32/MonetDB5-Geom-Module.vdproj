@@ -229,7 +229,7 @@
             "SourcePath" = "8:C:\\Libraries\\geos-3.4.2.win32\\bin\\geos_c.dll"
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
-            "Folder" = "8:_272635DA3D924F9CB05C410645076698"
+            "Folder" = "8:_5A4CF78A6BC241B6AAEFF30075ECAE13"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -331,17 +331,6 @@
             "Property" = "8:NEWPROPERTY1"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_272635DA3D924F9CB05C410645076698"
-                    {
-                    "Name" = "8:bin"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_4D04B65294AD4B5CBCD4EE336AF9B51A"
-                        "Folders"
-                        {
-                        }
-                    }
                     "{9EF0B969-E518-4E46-987F-47570745A589}:_4D9CE65EDD774551869CFD46B59B4F9E"
                     {
                     "Name" = "8:lib"
@@ -384,6 +373,17 @@
                                     }
                                 }
                             }
+                        }
+                    }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_5A4CF78A6BC241B6AAEFF30075ECAE13"
+                    {
+                    "Name" = "8:bin"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_8243C459978C4243AD7AACC0339F371E"
+                        "Folders"
+                        {
                         }
                     }
                 }
@@ -431,8 +431,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{C3E5CF14-CA74-4A9C-8051-AC733123C5F6}"
-        "PackageCode" = "8:{E77DD8EF-7830-4D56-97BE-26A2296F7008}"
+        "ProductCode" = "8:{49D21FF6-D17E-4037-8EC5-CDBD58AB6738}"
+        "PackageCode" = "8:{F161B791-C91B-43F4-A915-9D2FA8C59AC7}"
         "UpgradeCode" = "8:{92C89C36-0E86-45E1-B3D8-0D6C91108F30}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

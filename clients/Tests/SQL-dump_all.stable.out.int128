@@ -137,6 +137,8 @@ SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
+SYSTEM FUNCTION  sys.fitsattach
+SYSTEM FUNCTION  sys.fitsload
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext
@@ -169,6 +171,8 @@ SYSTEM FUNCTION  sys.issimple
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
+SYSTEM FUNCTION  sys.listdir
+SYSTEM FUNCTION  sys.listdirpat
 SYSTEM FUNCTION  sys.masklen
 SYSTEM FUNCTION  sys.mbr
 SYSTEM FUNCTION  sys.mbroverlaps

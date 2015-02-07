@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.20.0], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.20.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -232,7 +232,7 @@ yes-no)
 	;;
 auto-no)
 	enable_jsonstore=no
-	disable_jsonstore="(jsonstore required microhttpd)"
+	disable_jsonstore="(jsonstore requires microhttpd)"
 	;;
 esac
 
@@ -276,12 +276,13 @@ dnl handy only during development.
 dnl We simply can't disable it for now because Testing gets hopelessly
 dnl upset about it, but we can offer to the user to disable it for
 dnl increased security.
-use_console=yes
+dft_console=yes
 AC_ARG_ENABLE(console,
 	AS_HELP_STRING([--enable-console],
 		[enables direct console on the server (involves security risks) (default=yes)]),
-	use_console="$enableval")
-if test x$use_console = xyes ; then
+	enable_console="$enableval",
+	enable_console=$dft_console)
+if test x$enable_console != xno ; then
 	AC_DEFINE([HAVE_CONSOLE], 1, [If the console should be used])
 fi
 
@@ -291,7 +292,7 @@ AC_ARG_ENABLE(jdbc,
 	enable_jdbc="$enableval",
 	enable_jdbc=$dft_jdbc)
 case $enable_jdbc in
-	yes|auto) enable_jdbc=$enable_jdbc;;
+	yes|auto) ;;
 	*) enable_jdbc=no;;
 esac
 
@@ -301,7 +302,7 @@ AC_ARG_ENABLE(merocontrol,
 	enable_control="$enableval",
 	enable_control=$dft_control)
 case $enable_control in
-	yes|auto) enable_control=$enable_control;;
+	yes|auto) ;;
 	*) enable_control=no;;
 esac
 
@@ -398,8 +399,8 @@ esac
 
 dnl  (try to) determine compiler type (gcc, icc, clang) (and version)
 dnl  independent of call ($CC) and result of AC_PROG_CC() ($GCC)
-dnl  (e.g., on OSX, Apple pretends its clang were gcc)
-AC_MSG_CHECKING(compiler type & version)
+dnl  (e.g., on OSX, Apple pretends its clang is gcc)
+AC_MSG_CHECKING([compiler type & version])
 gcc_ver=""
 icc_ver=""
 CC_ver=""
@@ -456,22 +457,8 @@ $CC_version
 	]);;
 esac
 
-AC_ARG_WITH(bits,
-	AS_HELP_STRING([--with-bits=BITS],
-		[obsolete: specify by setting CC in the environment]),
-	AC_MSG_ERROR([argument --with-bits is obsolete: specify by setting CC in the environment]))
-
 AC_CHECK_SIZEOF(long)
-native_bits=`expr $ac_cv_sizeof_long \* 8`
-bits=$native_bits
-AC_ARG_ENABLE(bits,
-	AS_HELP_STRING([--enable-bits],
-		[obsolete: specify by setting CC in the environment]),
-	if test x$enableval = x$bits; then
-		AC_MSG_WARN([argument --enable-bits is obsolete: specify by setting CC in the environment])
-	else
-		AC_MSG_ERROR([argument --enable-bits is obsolete: specify by setting CC in the environment])
-	fi)
+bits=`expr $ac_cv_sizeof_long \* 8`
 AC_SUBST(bits)
 AM_CONDITIONAL(BITS32, test x"$bits" = x32)
 AM_CONDITIONAL(BITS64, test x"$bits" = x64)
@@ -2190,7 +2177,7 @@ if test "x$enable_rdf" != xno; then
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
-AM_CONDITIONAL(ENABLE_DATACELL, test x"$enable_datacell" != xno)
+AM_CONDITIONAL(HAVE_DATACELL, test x"$enable_datacell" != xno)
 
 PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
 if test x"$have_curl" = x"yes" ; then
@@ -2539,7 +2526,7 @@ yes|auto)
 		# no geos, so don't compile geom
 		enable_geom=no
 		if test "x$disable_geom" = x; then
-			disable_geom="(geos library required for geom module)"
+			disable_geom=${why_have_geos:-"(geos library required for geom module)"}
 		fi
 	fi
 	;;
@@ -2551,12 +2538,12 @@ org_have_cfitsio=no
 have_cfitsio=$org_have_cfitsio
 if test "x$enable_fits" != xno; then
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
-		[have_cfitsio=yes; AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])],
+		[have_cfitsio=yes; AC_DEFINE(HAVE_FITS, 1, [Define if the fits module is to be enabled])],
 		[have_cfitsio=no; why_have_cfitsio="(cfitsio library not found)"
 		 if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi;
 		 enable_fits=no; disable_fits="(cfitsio library not found)"])
 fi
-AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
+AM_CONDITIONAL(HAVE_FITS, test x"$have_cfitsio" != xno)
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
@@ -2596,7 +2583,16 @@ have_libmicrohttpd=$org_have_libmicrohttpd
 if test "x$enable_microhttpd" != xno; then
 	PKG_CHECK_MODULES([libmicrohttpd], [libmicrohttpd],
 		[have_libmicrohttpd=yes],
-		[have_libmicrohttpd=no; why_have_libmicrohttpd="(libmicrohttpd not found)"; if test "x$enable_microhttpd" = xyes; then AC_MSG_ERROR([libmicrohttpd not found]); fi])
+		[have_libmicrohttpd=no
+		 why_have_libmicrohttpd="(libmicrohttpd not found)"
+		 if test "x$enable_microhttpd" = xyes; then
+			AC_MSG_ERROR([libmicrohttpd not found])
+		 fi
+		 disable_microhttpd=$why_have_libmicrohttpd
+		 enable_microhttpd=no])
+fi
+if test x$enable_microhttpd != xno; then
+	AC_DEFINE(HAVE_MICROHTTPD, 1, [Define if the microhttpd server is to be enabled])
 fi
 
 org_have_liburiparser=auto
@@ -2606,12 +2602,14 @@ if test "x$enable_jsonstore" != xno; then
 	dnl required for MonetDB5 SQL jsonstore, optional otherwise
 	PKG_CHECK_MODULES([liburiparser], [liburiparser],
 		[have_liburiparser=yes],
-		[have_liburiparser=no; why_have_liburiparser="(liburiparser not found)"; if test "x$enable_jsonstore" = xyes; then AC_MSG_ERROR([LibUriParser library not found but required for jsonstore]); fi])
+		[have_liburiparser=no; disable_jsonstore="(liburiparser not found)"; if test "x$enable_jsonstore" = xyes; then AC_MSG_ERROR([LibUriParser library not found but required for jsonstore]); fi])
 
 	if test "$have_libmicrohttpd-$have_liburiparser" = yes-yes; then
 		AC_DEFINE(HAVE_JSONSTORE, 1, [Define that you want to build the jsonstore library])
 	elif test "x$enable_jsonstore" = xyes; then
 		AC_MSG_ERROR([cannot enable jsonstore $why_have_libmicrohttpd$why_have_liburiparser])
+	else
+		enable_jsonstore=no
 	fi
 fi
 
@@ -2848,54 +2846,24 @@ dnl     checks for compiler characteristics
 AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }])],
-	AC_DEFINE(HAVE_RESTRICT, 1,
-		[Define if the compiler supports the restrict keyword]),
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * __restrict__ p) { return *p; }])],
-		AC_DEFINE(HAVE___RESTRICT__, 1,
-			[Define if the compiler supports the __restrict__ keyword])))
+AC_C_VOLATILE
+AC_C_FLEXIBLE_ARRAY_MEMBER
 
-dnl Seems like the compiler on SunOS 5.8 cannot cope with the
-dnl __attribute__ specifications that can give compilers additional
-dnl hints about a function (style of variable argument list, functions
-dnl that never return, etc.)
-AC_MSG_CHECKING([if your compiler understands `__attribute__'])
-
-save_CFLAGS="$CFLAGS"
-case "$GCC-$CC-$host_os" in
--*-solaris*)
-	dnl  Sun compiler on Solaris:
-	dnl  treat warnings as errors to fail on
-	dnl  'warning: attribute parameter "printf" is undefined'
-	CFLAGS="$CFLAGS -errwarn=%all"
-	;;
-esac
-
+AC_MSG_CHECKING([if your compiler understands `__hidden'])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdlib.h>
 
-static void foo (const char *a, ...)
-	__attribute__ ((format (printf, 1, 2)));
+__hidden void foo (const char *a, ...);
 
-static void foo (const char *a, ...)
+void foo (const char *a, ...)
 	{ (void)a; }
 ]],
 [[ foo ("%s", ""); ]]
 )],
-[AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
-  [Does your compiler support function attributes (__attribute__)?])
-AC_MSG_RESULT(yes)],
-AC_MSG_RESULT(no))
-
-CFLAGS="$save_CFLAGS"
-
-AH_VERBATIM([__attribute__],
-[/* If the compiler does not support function attributes via __attribute__,
-   we just define __attribute__(a) to nothing. */
-#ifndef HAVE_FUNCTION_ATTRIBUTES
-#define __attribute__(a)
-#endif
-])
+[AC_MSG_RESULT(yes)],
+[AC_MSG_RESULT(no)
+AC_DEFINE([__hidden], [/* empty */],
+  [Does your compiler support the `__hidden' specifier?])])
 
 dnl     checks for library functions
 case $host in
@@ -2912,7 +2880,6 @@ esac
 AS_IF([test "x${ac_cv_func_fdatasync}" = "xyes"],
   [AC_DEFINE([HAVE_FDATASYNC],[1],[If the system has a working fdatasync])])
 
-AC_FUNC_ALLOCA
 AC_FUNC_FSEEKO
 # NOTE: these functions are in alphabetical order to ease maintenance
 save_LIBS="$LIBS"
@@ -3290,21 +3257,6 @@ AH_TOP([
 #define _SEEN_MONETDB_CONFIG_H 1
 ])
 AH_BOTTOM([
-/* AC_FUNC_ALLOCA autoconf documented code */
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -3493,6 +3445,7 @@ for comp in \
 	'monetdb5    ' \
 	'sql         ' \
 	'geom        ' \
+	'console     ' \
 	'gsl         ' \
 	'fits        ' \
 	'jsonstore   ' \
@@ -3504,6 +3457,11 @@ for comp in \
 	'jdbc        ' \
 	'control     ' \
 	'testing     ' \
+	'developer   ' \
+	'strict      ' \
+	'debug       ' \
+	'assert      ' \
+	'optimize    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3520,17 +3478,13 @@ echo "* Available features/extensions:"
 for comp in \
 	'atomic_ops   ' \
 	'bz2          ' \
-	'cfitsio      ' \
 	'curl         ' \
-	'geos         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
 	'hwcounters   ' \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \
-	'libmicrohttpd' \
-	'liburiparser ' \
 	'libxml2      ' \
 	'mseed        ' \
 	'openssl      ' \
@@ -3543,11 +3497,9 @@ for comp in \
 	'readline     ' \
 	'rubygem      ' \
 	'samtools     ' \
-	'setsockopt   ' \
 	'sphinxclient ' \
 	'unixodbc     ' \
 	'valgrind     ' \
-	'winsock2     ' \
 	'zlib         ' \
 ; do
 	eval "org=\$org_have_$comp"

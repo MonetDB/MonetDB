@@ -69,7 +69,7 @@ newGlobalStack(int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) GDKzalloc(stackSize(size) + sizeof(MalStack));
+	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
 	if (s == NULL)
 		GDKfatal("newGlobalStack:can not obtain memory\n");
 	s->stksize = size;

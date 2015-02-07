@@ -308,13 +308,13 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
-		QLOG_cat_id = BUNappend(QLOG_cat_id,&mb->tag,FALSE);
-		QLOG_cat_query = BUNappend(QLOG_cat_query,*q,FALSE);
-		QLOG_cat_pipe = BUNappend(QLOG_cat_pipe,*pipe,FALSE);
-		QLOG_cat_mal = BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
-		QLOG_cat_optimize = BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
-		QLOG_cat_user = BUNappend(QLOG_cat_user,*usr,FALSE);
-		QLOG_cat_defined = BUNappend(QLOG_cat_defined,tick,FALSE);
+		BUNappend(QLOG_cat_id,&mb->tag,FALSE);
+		BUNappend(QLOG_cat_query,*q,FALSE);
+		BUNappend(QLOG_cat_pipe,*pipe,FALSE);
+		BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
+		BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
+		BUNappend(QLOG_cat_user,*usr,FALSE);
+		BUNappend(QLOG_cat_defined,tick,FALSE);
 	}
 	MT_lock_unset(&mal_profileLock, "querylog.define");
 	TMsubcommit_list(commitlist, committop);
@@ -349,16 +349,16 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_profileLock, "querylog.call");
-	QLOG_calls_id = BUNappend(QLOG_calls_id,&mb->tag,FALSE);
-	QLOG_calls_start = BUNappend(QLOG_calls_start,tick1,FALSE);
-	QLOG_calls_stop = BUNappend(QLOG_calls_stop,tick2,FALSE);
-	QLOG_calls_arguments = BUNappend(QLOG_calls_arguments,*arg,FALSE);
-	QLOG_calls_tuples = BUNappend(QLOG_calls_tuples,tuples,FALSE);
-	QLOG_calls_exec = BUNappend(QLOG_calls_exec,xtime,FALSE);
-	QLOG_calls_result = BUNappend(QLOG_calls_result,rtime,FALSE);
-	QLOG_calls_cpuload = BUNappend(QLOG_calls_cpuload,cpu,FALSE);
-	QLOG_calls_iowait = BUNappend(QLOG_calls_iowait,iowait,FALSE);
-	QLOG_calls_space = BUNappend(QLOG_calls_space,space,FALSE);
+	BUNappend(QLOG_calls_id,&mb->tag,FALSE);
+	BUNappend(QLOG_calls_start,tick1,FALSE);
+	BUNappend(QLOG_calls_stop,tick2,FALSE);
+	BUNappend(QLOG_calls_arguments,*arg,FALSE);
+	BUNappend(QLOG_calls_tuples,tuples,FALSE);
+	BUNappend(QLOG_calls_exec,xtime,FALSE);
+	BUNappend(QLOG_calls_result,rtime,FALSE);
+	BUNappend(QLOG_calls_cpuload,cpu,FALSE);
+	BUNappend(QLOG_calls_iowait,iowait,FALSE);
+	BUNappend(QLOG_calls_space,space,FALSE);
 	MT_lock_unset(&mal_profileLock, "querylog.call");
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;

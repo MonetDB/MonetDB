@@ -984,12 +984,6 @@ create_col(sql_trans *tr, sql_column *c)
 		sql_column *fc = NULL;
 		size_t cnt = 0;
 
-		/* Temp solutions for name conflicts */
-		log_bid bid = logger_find_bat(bat_logger, bat->name);
-
-		if (bid)
-			return LOG_ERR;
-
 		/* alter ? */
 		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL) 
 			cnt = count_col(tr, fc, 1);

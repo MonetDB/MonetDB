@@ -971,16 +971,18 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define VLTrangeExpand() \
 {	limit+= cnt * (limit/(done?done:1)+1);\
-	bln= BATextend(bln, limit);\
-	if( bln == NULL){\
+	if (BATextend(bln, limit) == GDK_FAIL) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
+		BBPunfix(bln->batCacheid);\
+		BBPunfix(brn->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
-	brn= BATextend(brn, limit);\
-	if( brn == NULL) {\
+	if (BATextend(brn, limit) == GDK_FAIL) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
+		BBPunfix(bln->batCacheid);\
+		BBPunfix(brn->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
 	ol = (oid*) Tloc(bln,BUNfirst(bln)) + c;\

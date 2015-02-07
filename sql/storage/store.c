@@ -903,7 +903,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	    	cs_add(&s->types, load_type(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	/* second tables (and complex types) */
+	/* second tables */
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
 	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &id, NULL, NULL);
@@ -1939,6 +1939,76 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	return c;
 }
 
+static int
+sql_trans_cname_conflict( sql_trans *tr, sql_table *t, const char *extra, const char *cname)
+{
+	const char *tmp;
+
+	if (extra) {
+		tmp = sa_message(tr->sa, "%s_%s", extra, cname);
+	} else {
+       		tmp = cname;
+	}
+	if (find_sql_column(t, tmp))
+		return 1;
+	return 0;
+}
+
+static int
+sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, const char *extra, const char *tname, const char *cname)
+{
+	char *tp;
+	char *tmp;
+	sql_table *t = NULL;
+
+	if (extra) {
+		tmp = sa_message(tr->sa, "%s_%s", extra, tname);
+	} else {
+       		tmp = sa_strdup(tr->sa, tname);
+	}
+	tp = tmp;
+	while ((tp = strchr(tp, '_')) != NULL) {
+		*tp = 0;
+		t = find_sql_table(s, tmp);
+		if (t && sql_trans_cname_conflict(tr, t, tp+1, cname))
+			return 1;
+		*tp++ = '_';
+	}
+	t = find_sql_table(s, tname);
+	if (t && sql_trans_cname_conflict(tr, t, NULL, cname))
+		return 1;
+	return 0;
+}
+
+static int
+sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, const char *cname)
+{
+	char *sp;
+	sql_schema *s = NULL;
+
+	sp = strchr(sname, '_');
+	if (!sp && strchr(tname, '_') == 0 && strchr(cname, '_') == 0)
+		return 0;
+
+	if (sp) {
+		char *tmp = sa_strdup(tr->sa, sname);
+		sp = tmp;
+		while ((sp = strchr(sp, '_')) != NULL) {
+			*sp = 0;
+			s = find_sql_schema(tr, tmp);
+			if (s && sql_trans_tname_conflict(tr, s, sp+1, tname, cname))
+				return 1;
+			*sp++ = '_';
+		}
+	} else {
+		s = find_sql_schema(tr, sname);
+		if (s)
+			return sql_trans_tname_conflict(tr, s, NULL, tname, cname);
+	}
+	return 0;
+
+}
+
 sql_column *
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
@@ -1946,6 +2016,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
+		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
@@ -3922,6 +3994,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	cs_del(&mt->tables, n, pt->base.flag);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);
+	pt->p = NULL;
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, pt->s, pt->base.id, drop_action);
 	return mt;
@@ -4163,6 +4236,8 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	if (!tpe)
 		return NULL;
 
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
+		return NULL;
  	col = create_sql_column(tr->sa, t, name, tpe );
 
 	if (isTable(col->t))
@@ -4204,8 +4279,6 @@ drop_sql_key(sql_table *t, int id, int drop_action)
 	k->drop_action = drop_action; 
 	cs_del(&t->keys, n, TR_OLD);
 }
-
-
 
 void
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)

@@ -1570,16 +1570,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 		}
 			break;
-		case st_diff:{
-			if (dump_2(sql, mb, s, algebraRef, kdifferenceRef) < 0)
-				return -1;
-		}
-			break;
-		case st_union:{
-			if (dump_2(sql, mb, s, algebraRef, kunionRef) < 0)
-				return -1;
-		}
-			break;
 		case st_join:{
 			int l;
 			int r;

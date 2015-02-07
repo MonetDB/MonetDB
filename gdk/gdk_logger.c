@@ -1202,7 +1202,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("Logger_new: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		if (!GDKcreatedir(filename)) {
+		if (GDKcreatedir(filename) == GDK_FAIL) {
 			logger_fatal("logger_new: cannot create directory for log file %s\n",
 				     filename, 0, 0);
 			goto error;
@@ -1282,8 +1282,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->seqs_val, "seqs_val");
 
-		if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
-		    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+		if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
+		    BUNappend(lg->seqs_val, &lg->id, FALSE) == GDK_FAIL)
 			logger_fatal("Logger_new: failed to append value to "
 				     "sequences bat", 0, 0, 0);
 
@@ -1318,8 +1318,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			BUN p = BUNfnd(lg->seqs_id, &id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
 		} else {
-			if (BUNappend(lg->seqs_id, &id, FALSE) == NULL ||
-			    BUNappend(lg->seqs_val, &lg->id, FALSE) == NULL)
+			if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
+			    BUNappend(lg->seqs_val, &lg->id, FALSE) == GDK_FAIL)
 				logger_fatal("Logger_new: failed to append "
 					     "value to sequences bat", 0, 0, 0);
 		}

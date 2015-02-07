@@ -221,7 +221,7 @@
 					BUN r1;				\
 					if (p1 + 1 > BATcapacity(bn)){	\
 						BATsetcount(bn, o);	\
-						if (BATextend(bn, BATgrows(bn)) == NULL) \
+						if (BATextend(bn, BATgrows(bn)) == GDK_FAIL) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \
@@ -249,7 +249,7 @@
 				while(p1 < q1) {			\
 					BUN r1;				\
 					if (BUNlast(bn) + 1 > BATcapacity(bn)){	\
-						if (BATextend(bn, BATcapacity(bn)+65536) == NULL) \
+						if (BATextend(bn, BATcapacity(bn)+65536) == GDK_FAIL) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \
@@ -399,10 +399,7 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		}							\
 	} else {							\
 		int tpe = ATOMtype(r->htype);				\
-		if (tpe != ATOMstorage(tpe) &&				\
-		    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&	\
-		    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp) \
-			tpe = ATOMstorage(tpe);				\
+		tpe = ATOMbasetype(tpe);				\
 		switch(tpe) {						\
 		case TYPE_bte:						\
 			check(a1,loc,bte,simple_CMP(h,h2,bte),bte_EQ);	\
@@ -465,9 +462,9 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	BUN smaller;
 	BAT *bn;
 
-	ERRORcheck(l == NULL, "diff_intersect: left is null");
-	ERRORcheck(r == NULL, "diff_intersect: right is null");
-	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types");
+	ERRORcheck(l == NULL, "diff_intersect: left is null", NULL);
+	ERRORcheck(r == NULL, "diff_intersect: right is null", NULL);
+	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types", NULL);
 
 	if (BATcount(r) == 0) {
 		return diff ? BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT) : BATclone(l, 10, TRANSIENT);
@@ -550,7 +547,7 @@ BATkunion(BAT *l, BAT *r)
 	BATiter li, ri;
 	int ht, tt;
 
-	BATcompatible(l, r);
+	BATcompatible(l, r, NULL, "BATkunion");
 	if (BATcount(l) == 0) {
 		b = l;
 		l = r;

@@ -488,7 +488,7 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;
+	struct sql_table *p;	/* The table is part of this merge table */
 } sql_table;
 
 typedef struct res_col {
