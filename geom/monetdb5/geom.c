@@ -352,8 +352,8 @@ wkb_size(size_t len)
 {
 	if (len == ~(size_t) 0)
 		len = 0;
-	assert(sizeof(wkb) + len <= VAR_MAX);
-	return (var_t) (sizeof(wkb) + len);
+	assert(offsetof(wkb, data) + len <= VAR_MAX);
+	return (var_t) (offsetof(wkb, data) + len);
 }
 
 /* TOSTR: print atom in a string. */
@@ -543,12 +543,12 @@ wkbCOMP(wkb *l, wkb *r)
 	return memcmp(l->data, r->data, len);
 }
 
-static wkb nullval = {~0};
+static wkb wkb_nil = {~0};
 
 wkb *
 wkbNULL(void)
 {
-	return &nullval;
+	return &wkb_nil;
 }
 
 str

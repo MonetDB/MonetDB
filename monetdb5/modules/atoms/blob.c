@@ -86,8 +86,8 @@ blobsize(size_t nitems)
 {
 	if (nitems == ~(size_t) 0)
 		nitems = 0;
-	assert(sizeof(size_t) + nitems <= VAR_MAX);
-	return (var_t) (sizeof(size_t) + nitems);
+	assert(offsetof(blob, data) + nitems <= VAR_MAX);
+	return (var_t) (offsetof(blob, data) + nitems);
 }
 
 static var_t
@@ -498,7 +498,7 @@ BLOBhash(blob *b)
 blob *
 BLOBnull(void)
 {
-	blob *b= (blob*) GDKmalloc(sizeof(blob));
+	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
 	b->nitems = ~(size_t) 0;
 	return b;
 }

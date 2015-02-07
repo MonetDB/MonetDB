@@ -69,7 +69,7 @@ typedef struct{
 	int cnt;
 	int used;
 	int pos,pos2;
-	int stmt[];
+	int stmt[FLEXIBLE_ARRAY_MEMBER];
 } *Node, NodeRecord;
 
 static Node *
@@ -92,7 +92,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		block |= p->barrier != 0;
-		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * p->argc);
+		list[i]= (Node) GDKzalloc(offsetof(NodeRecord, stmt) + sizeof(int) * p->argc);
 		if (list[i] == NULL){
 			for (i--; i>=0; i--)
 				GDKfree(list[i]);
