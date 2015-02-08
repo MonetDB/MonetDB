@@ -3251,16 +3251,16 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				ext = stmt_result(sql->sa, g, 1);
 				Cnt = stmt_result(sql->sa, g, 2);
 
-				/* choose only groups with cnt > 1 */
+				/* continue only with groups with a cnt > 1 */
 				cand = stmt_uselect(sql->sa, Cnt, stmt_atom_wrd(sql->sa, 1), cmp_gt, NULL);
-				 /* project cand on ext and Cnt */
+				/* project cand on ext and Cnt */
 				Cnt = stmt_project(sql->sa, cand, Cnt);
 				ext = stmt_project(sql->sa, cand, ext);
 
-				/* join ext with group to retrieve all oid's of the original
+				/* join groups with extend to retrieve all oid's of the original
 				 * bat that belong to a group with Cnt >1 */
-				g = stmt_join(sql->sa, ext, grp, cmp_equal);
-				cand = stmt_result(sql->sa, g, 1);
+				g = stmt_join(sql->sa, grp, ext, cmp_equal);
+				cand = stmt_result(sql->sa, g, 0);
 				grp = stmt_project(sql->sa, cand, grp);
 			}
 
@@ -3274,7 +3274,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 					upd = updates[updcol]->op1;
 					upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, dels));
 				} else {
-					upd = stmt_col(sql, c->c, dels);
+					upd = stmt_project(sql->sa, tids, stmt_col(sql, c->c, dels));
 				}
 
 				/* apply cand list first */
@@ -3284,9 +3284,11 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				/* remove nulls */
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					stmt *nn = stmt_selectnonil(sql, upd, NULL);
-					upd = stmt_reorder_project(sql->sa, nn, upd);
+					upd = stmt_project(sql->sa, nn, upd);
 					if (grp)
-						grp = stmt_reorder_project(sql->sa, nn, grp);
+						grp = stmt_project(sql->sa, nn, grp);
+					if (cand)
+						cand = stmt_project(sql->sa, nn, cand);
 				}
 
 				/* apply group by on groups with Cnt > 1 */
@@ -3327,7 +3329,6 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			assert (updates);
 
 			h = updates[c->c->colnr]->op2;
-			//o = stmt_diff(sql->sa, stmt_col(sql, c->c, dels), stmt_reverse(sql->sa, tids));
 			o = stmt_col(sql, c->c, nu_tids);
 			s = stmt_join(sql->sa, o, h, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);

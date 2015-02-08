@@ -1,0 +1,40 @@
+stderr of test 'ukey_check_unaligned.Bug-3669` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 20:45:27 >  
+# 20:45:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39026" "--set" "mapi_usock=/var/tmp/mtest-6699/.s.monetdb.39026" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:45:27 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39026
+# cmdline opt 	mapi_usock = /var/tmp/mtest-6699/.s.monetdb.39026
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 20:45:27 >  
+# 20:45:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6699" "--port=39026"
+# 20:45:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-6699/.s.monetdb.39026
+QUERY = alter table tab add constraint tab_uc6 unique (id, nm, dt, qnt, descr);
+ERROR = !UPDATE: UNIQUE constraint 'tab.tab_uc6' violated
+
+# 20:45:27 >  
+# 20:45:27 >  "Done."
+# 20:45:27 >  
+
