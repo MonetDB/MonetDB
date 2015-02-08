@@ -6603,12 +6603,13 @@ exps_rename_up(mvc *sql, list *l, list *aliases)
 	if (!l || !l->h)
 		return nl;
 	for(n=l->h; n; n=n->next) {
-		sql_exp *arg = n->data;
+		sql_exp *arg = n->data, *narg;
 
-		arg = exp_rename_up(sql, arg, aliases);
-		if (!arg) 
+		narg = exp_rename_up(sql, arg, aliases);
+		if (!narg) 
 			return NULL;
-		append(nl, arg);
+		narg->flag = arg->flag;
+		append(nl, narg);
 	}
 	return nl;
 }
