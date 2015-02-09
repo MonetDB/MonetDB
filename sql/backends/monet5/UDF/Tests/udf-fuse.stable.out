@@ -30,7 +30,7 @@ Ready.
 % 73 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte):void;
     X_4 := udf.fuse(A0,A1);
-    sql.exportValue(1,".L","fuse_single_value","smallint",16,0,6,X_4,"");
+    sql.exportValue(1,".L","fuse_single_value","smallint",16,0,7,X_4,"");
 end s2_1;
 # querylog.define("explain select fuse(1,2);","default_pipe")
 #select fuse(1,2);
@@ -46,7 +46,7 @@ end s2_1;
 % 70 # length
 function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
     X_4 := udf.fuse(A0,A1);
-    sql.exportValue(1,".L","fuse_single_value","int",32,0,6,X_4,"");
+    sql.exportValue(1,".L","fuse_single_value","int",32,0,7,X_4,"");
 end s3_1;
 # querylog.define("explain select fuse(1000,2000);","default_pipe")
 #select fuse(1000,2000);
@@ -62,7 +62,7 @@ end s3_1;
 % 76 # length
 function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
     X_4 := udf.fuse(A0,A1);
-    sql.exportValue(1,".L","fuse_single_value","bigint",64,0,6,X_4,"");
+    sql.exportValue(1,".L","fuse_single_value","bigint",64,0,7,X_4,"");
 end s4_1;
 # querylog.define("explain select fuse(1000000,2000000);","default_pipe")
 #select fuse(1000000,2000000);

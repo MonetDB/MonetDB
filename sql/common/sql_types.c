@@ -89,20 +89,21 @@ int bits2digits(int bits)
 /* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
-/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
-/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0 },
-/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 },
-/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 3, 1, 1, 0, 0, 0, 0 },
-/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 3, 0 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0 },
-/* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
+/* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0 },
+/* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+/* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_POS */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0 },
+/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
+/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 3, 1, 1, 0, 0, 0, 0 },
+/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0 },
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0 },
+/* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
 int sql_type_convert (int from, int to) 
@@ -1119,20 +1120,20 @@ sqltypeinit( sql_allocator *sa)
 	*t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
+#if SIZEOF_OID == SIZEOF_INT
+	OID = *t++ = sql_create_type(sa, "OID", 31, 0, 2, EC_POS, "oid");
+#endif
+#if SIZEOF_OID == SIZEOF_LNG
+	OID = *t++ = sql_create_type(sa, "OID", 63, 0, 2, EC_POS, "oid");
+#endif
 
 	BTE = *t++ = sql_create_type(sa, "TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	SHT = *t++ = sql_create_type(sa, "SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type(sa, "INT",      32, SCALE_FIX, 2, EC_NUM, "int");
-#if SIZEOF_OID == SIZEOF_INT
-	OID = *t++ = sql_create_type(sa, "OID", 31, 0, 2, EC_NUM, "oid");
-#endif
 #if SIZEOF_WRD == SIZEOF_INT
 	WRD = *t++ = sql_create_type(sa, "WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
-#if SIZEOF_OID == SIZEOF_LNG
-	OID = *t++ = sql_create_type(sa, "OID", 63, 0, 2, EC_NUM, "oid");
-#endif
 #if SIZEOF_WRD == SIZEOF_LNG
 	WRD = *t++ = sql_create_type(sa, "WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
 #endif

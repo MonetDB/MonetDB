@@ -1272,7 +1272,8 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		l = sa_list(sql->sa);
 		for (argc = 0; argc < sql->argc; argc++) {
 			atom *a = sql->args[argc];
-			stmt *s = stmt_atom(sql->sa, a);
+			//stmt *s = stmt_atom(sql->sa, a);
+			stmt *s = stmt_varnr(sql->sa, argc, &a->tpe);
 			char nme[16];
 
 			snprintf(nme, 16, "A%d", argc);
