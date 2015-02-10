@@ -493,9 +493,10 @@ stop_disconnect:
 #define ACTION 3
 #define PING 4
 #define WAIT 5
-#define GCOLLECT 6
+#define IOSTAT 6
+#define GCOLLECT 7
 
-static char *statenames[]= {"","start","done","action","ping","wait","gccollect"};
+static char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollect"};
 
 typedef struct BOX {
 	int row;
@@ -627,16 +628,18 @@ gnuXtics(int withlabels)
 
 static void dumpbox(int i)
 {
-	printf("object %d thread %2d[%4d] row %d color %d ", object, box[i].thread,i, box[i].row, box[i].color);
+	fprintf(stderr,"object %d thread %d[%4d] row %d color %d ", object, box[i].thread,i, box[i].row, box[i].color);
 	if (box[i].fcn)
-		printf("%s ", box[i].fcn);
-	printf("clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
-	printf("mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
-	printf("foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].footend);
-	printf("ticks "LLFMT" ", box[i].ticks);
+		fprintf(stderr,"%s ", box[i].fcn);
+	fprintf(stderr,"clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
+	fprintf(stderr,"mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
+	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].footend);
+	fprintf(stderr,"ticks "LLFMT" ", box[i].ticks);
 	if (box[i].stmt)
-		printf("%s ", box[i].stmt);
-	printf("\n");
+		fprintf(stderr,"\"%s\"", box[i].stmt);
+	else
+		fprintf(stderr,"MISSING");
+	fprintf(stderr,"\n");
 }
 
 static int
@@ -790,6 +793,7 @@ getHeatColor(double load)
 	if ( load > 0.75 ) return "yellow";
 	if ( load > 0.5 ) return "orange";
 	if ( load > 0.25 ) return "red";
+	if ( load > 0.02 ) return "blue";
 	return "white";
 }
 
@@ -805,7 +809,7 @@ showcpu(void)
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,0.%02d\n", cpus);
+	fprintf(gnudata, "set size 1,0.%02d\n", cpus?cpus:1);
 	fprintf(gnudata, "set origin 0.0, 0.%d\n", 89 - cpus);
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
 	fprintf(gnudata, "unset xtics\n");
@@ -841,13 +845,16 @@ showcpu(void)
 						object++, box[prev].clkend, j , box[i].clkstart, (j+1) , getHeatColor(cpuload[j]) );
 			prev = i;
 		}
-	fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
+	if( cpus)
+		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset grid\n");
 }
 
 /* produce memory thread trace */
+/* The IO statistics are not provided anymore in LINUX unless you have root permissions */
+#ifdef GETIOSTAT
 static void
 showio(void)
 {
@@ -894,6 +901,7 @@ showio(void)
 	fprintf(gnudata, "unset y2range\n");
 	fprintf(gnudata, "unset title\n");
 }
+#endif
 
 
 /* print time (given in microseconds) in human-readable form
@@ -1144,7 +1152,9 @@ createTomogram(void)
 		*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
-	showio();
+#ifdef GETIOSTAT
+	showio(); //DISABLED due to access permissions
+#endif
 	showmemory();
 	showcpu();
 
@@ -1157,17 +1167,21 @@ createTomogram(void)
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
-	for (i = 0; i < topbox; i++)
+	for (i = 0; i < topbox; i++){
 		if (box[i].clkend && box[i].state != PING) {
 			for (j = 0; j < top; j++)
 				if (rows[j] == box[i].thread)
 					break;
 			box[i].row = j;
-			if (j == top)
+			if (j == top){
+				if( debug)
+					fprintf(stderr,"Assign thread %d to %d\n", box[i].thread, top);
 				rows[top++] = box[i].thread;
+			}
 			if( box[i].state != WAIT)
 				updmap(i);
 		}
+	}
 
 
 	height = top * 20;
@@ -1204,7 +1218,7 @@ createTomogram(void)
 					dumpbox(i);
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %.2f, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
 						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkstart+(w/200.0>1?w/200.0:1), box[i].row * 2 * h + h, colors[box[i].color].col);
 				else
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
@@ -1320,6 +1334,7 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		if (s)
 			*s = 0;
 		box[idx].stmt = stmt;
+	assert(stmt);
 		if ( !capturing){
 			ping = idx;
 			return;
@@ -1398,7 +1413,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (fcn?fcn:""), clkticks,currentfunction, thread,idx,topbox);
 		box[idx].state = state;
 		box[idx].thread = thread;
-		box[idx].clkstart = box[idx].clkend = clkticks;
+		box[idx].clkstart = clkticks? clkticks:1;
+		box[idx].clkend = clkticks;
 		box[idx].memstart = memory;
 		box[idx].numa = numa;
 		if(numa) updateNumaHeatmap(thread, numa);
@@ -1441,27 +1457,34 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 	/* end the instruction box */
 	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
-			capturing--;
-			if(debug)
-				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			if( capturing == 0){
 				free(currentfunction);
 				currentfunction = 0;
 			}
+			capturing--;
+			if(debug)
+				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 		} 
-		if( tracefd){
-			fflush(tracefd);
-			fclose(tracefd);
-			tracefd = NULL;
-		}
+		if( capturing == 0){
+			if( tracefd){
+				fflush(tracefd);
+				fclose(tracefd);
+				tracefd = NULL;
+			}
 
-		createTomogram();
-		resetTomograph();
-		return;
+			createTomogram();
+			resetTomograph();
+			return;
+		}
 	}
 	if (state == DONE ){
+		if( box[idx].clkstart == 0){
+			// ignore incorrect pairs
+			if(debug) fprintf(stderr, "INCORRECT START\n");
+			return;
+		}
 		if( debug)
-			fprintf(stderr, "End box %s clicks "LLFMT" : %s thread %d idx %d box %d\n", (fcn?fcn:""), clkticks, (currentfunction?currentfunction:""), thread,idx,topbox);
+			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (fcn?fcn:""), clkticks, (currentfunction?currentfunction:""), thread,idx,topbox);
 		events++;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
@@ -1557,7 +1580,7 @@ static int
 parser(char *row)
 {
 #ifdef HAVE_STRPTIME
-	char *c, *cc, *v, *line = row;
+	char *c, *cc, *v =0, *line = row;
 	struct tm stm;
 	lng clkticks = 0;
 	int thread = 0;
@@ -1612,14 +1635,17 @@ parser(char *row)
 		if (clkticks < 0) {
 			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, cc);
 		}
+		c++;
 	} else
 		return -3;
 
-	/* scan thread */
-	c = strchr(c + 1, ',');
+	/* skip pc tag */
+	c = strchr(c+1, ',');
 	if (c == 0)
 		return -4;
-	thread = atoi(c + 1);
+
+	/* scan thread */
+	thread = atoi(c+1);
 
 	/* scan status */
 	c = strchr(c, '"');
@@ -1634,6 +1660,9 @@ parser(char *row)
 	} else if (strncmp(c + 1, "ping", 4) == 0) {
 		state = PING;
 		c += 5;
+	} else if (strncmp(c + 1, "stat", 4) == 0) {
+		state = IOSTAT;
+		c += 6;
 	} else if (strncmp(c + 1, "wait", 4) == 0) {
 		state = WAIT;
 		c += 5;
@@ -1711,12 +1740,6 @@ parser(char *row)
 		return -13;
 	swaps = strtoll(c + 1, NULL, 10);
 
-	/* scan userid */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -14;
-	userid = strtoll(c + 1, NULL, 10);
-
 	/* parse the MAL call, check basic validity */
 	c = strchr(c, '"');
 	if (c == 0)
@@ -1736,7 +1759,7 @@ parser(char *row)
 			if (strchr(fcn, '.') == 0) 
 				fcn = 0;
 		} else {
-			v=  strchr(fcn+1,'"');
+			v=  strchr(fcn+1,';');
 			if ( v ) *v = 0;
 		}
 	}
@@ -1882,8 +1905,12 @@ main(int argc, char **argv)
 	initcolors();
 	resetTomograph();
 
-	if(debug)
-		printf("tomograph -d %s --output=%s\n",dbname,basefilename);
+	if(debug){
+		if( dbname)
+			printf("tomograph -d %s --output=%s\n",dbname,basefilename);
+		if(inputfile)
+			printf("tomograph --input=%s --output=%s\n",inputfile,basefilename);
+	}
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -1937,7 +1964,7 @@ main(int argc, char **argv)
 			/* handle last line in buffer */
 			if (*response) {
 				if (debug)
-					printf("LASTLINE:%s", response);
+					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
 				strncpy(buf, response, len + 1);
 			} else
@@ -2010,7 +2037,7 @@ main(int argc, char **argv)
 			/* handle last line in buffer */
 			if (*response) {
 				if (debug)
-					printf("LASTLINE:%s", response);
+					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
 				strncpy(buf, response, len + 1);
 			} else

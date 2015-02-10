@@ -186,9 +186,9 @@ typedef struct {
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
-	bit trace;
-	int calls;					/* number of calls made */
 	lng ticks;					/* total micro seconds spent */
+	int calls;					/* number of calls made to this instruction */
+	lng totticks;				/* total time spent on this instruction. */
 	lng rbytes,wbytes;			/* accumulated number of bytes touched */
 	/* the core admin */
 	str modname;				/* module context */
@@ -262,6 +262,7 @@ typedef struct MALSTK {
 	char cmd;		/* debugger and runtime communication */
 	char status;	/* srunning 'R' uspended 'S', quiting 'Q' */
 	int pcup;		/* saved pc upon a recursive all */
+	int tag;		/* unique invocation call tag */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALBLK *blk;	/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];

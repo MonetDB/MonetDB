@@ -77,6 +77,7 @@ static BAT *QLOG_cat_user = 0;
 static BAT *QLOG_cat_defined = 0;
 static BAT *QLOG_cat_query = 0;
 static BAT *QLOG_cat_pipe = 0;
+static BAT *QLOG_cat_plan = 0;
 static BAT *QLOG_cat_mal = 0;
 static BAT *QLOG_cat_optimize = 0;
 
@@ -95,7 +96,7 @@ void
 QLOGcatalog(BAT **r)
 {
 	int i;
-	for ( i=0;i < 7; i++)
+	for ( i=0;i < 8; i++)
 		r[i]=0;
 	if (initQlog())
 		return ;
@@ -105,8 +106,9 @@ QLOGcatalog(BAT **r)
 	r[2] = BATcopy(QLOG_cat_defined, TYPE_void, QLOG_cat_defined->ttype,0, TRANSIENT);
 	r[3] = BATcopy(QLOG_cat_query, TYPE_void, QLOG_cat_query->ttype,0, TRANSIENT);
 	r[4] = BATcopy(QLOG_cat_pipe, TYPE_void, QLOG_cat_pipe->ttype,0, TRANSIENT);
-	r[5] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0, TRANSIENT);
-	r[6] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0, TRANSIENT);
+	r[5] = BATcopy(QLOG_cat_plan, TYPE_void, QLOG_cat_plan->ttype,0, TRANSIENT);
+	r[6] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0, TRANSIENT);
+	r[7] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -169,6 +171,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_defined);
 	cleanup(QLOG_cat_query);
 	cleanup(QLOG_cat_pipe);
+	cleanup(QLOG_cat_plan);
 	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
 	
@@ -193,6 +196,7 @@ _initQlog(void)
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
 	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
+	QLOG_cat_plan = QLOGcreate("cat","size",TYPE_str);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
@@ -273,6 +277,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_cat_defined,TRUE);
 	BATclear(QLOG_cat_query,TRUE);
 	BATclear(QLOG_cat_pipe,TRUE);
+	BATclear(QLOG_cat_plan,TRUE);
 	BATclear(QLOG_cat_mal,TRUE);
 	BATclear(QLOG_cat_optimize,TRUE);
 	
@@ -301,9 +306,12 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str  *usr = getArgReference_str(stk,pci,3);
 	timestamp *tick = getArgReference_TYPE(stk,pci,4,timestamp);
 	oid o;
+	InstrPtr sig = getInstrPtr(mb,0);
+	char buf[128], *nme= buf;
 
 	(void) cntxt;
 	initQlog();
+	snprintf(buf,128,"%s.%s", getModuleId(sig), getFunctionId(sig));
 	MT_lock_set(&mal_profileLock, "querylog.define");
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
@@ -311,6 +319,7 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(QLOG_cat_id,&mb->tag,FALSE);
 		BUNappend(QLOG_cat_query,*q,FALSE);
 		BUNappend(QLOG_cat_pipe,*pipe,FALSE);
+		BUNappend(QLOG_cat_plan,&nme,FALSE);
 		BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
 		BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
 		BUNappend(QLOG_cat_user,*usr,FALSE);

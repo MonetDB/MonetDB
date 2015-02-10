@@ -423,7 +423,7 @@ DFLOWworker(void *T)
 			last = todo->last;
 			MT_lock_unset(&todo->l, "DFLOWworker");
 			if (last == 0)
-				profilerHeartbeatEvent("wait", 0);
+				profilerHeartbeatEvent("wait");
 		}
 	}
 	GDKfree(GDKerrbuf);

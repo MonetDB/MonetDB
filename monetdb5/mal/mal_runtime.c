@@ -38,6 +38,7 @@
 QueryQueue QRYqueue;
 static int qtop, qsize;
 static int qtag= 1;
+static int calltag =0; // to identify each invocation
 
 
 static void 
@@ -92,8 +93,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if ( QRYqueue[i].mb == mb)
 			break;
 
-	if ( mb->tag == 0)
-		mb->tag = OIDnew(1);
+	if ( stk->tag == 0)
+		stk->tag = calltag++;
 	if ( i == qtop ) {
 		QRYqueue[i].mb = mb;	// for detecting duplicates
 		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
@@ -203,6 +204,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = GDKusec() - prof->ticks;
+	pci->totticks += pci->ticks;
 	pci->calls++;
 
 	// it is a potential expensive operation

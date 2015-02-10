@@ -1312,12 +1312,14 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tclk varchar(20),    \n\
 \tpc varchar(50),     \n\
 \tthread int,         \n\
-\t\"user\" int,         \n\
 \tticks bigint,       \n\
 \trrsMB bigint,       \n\
 \tvmMB bigint,        \n\
 \treads bigint,       \n\
 \twrites bigint,  \n\
+\tminflt bigint,  \n\
+\tmajflt bigint,  \n\
+\tnvcsw bigint,  \n\
 \tstmt string         \n\
 \t) external name sql.dump_trace;\n");
 

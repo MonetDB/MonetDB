@@ -429,12 +429,14 @@ pattern dump_trace()(
 	clk:bat[:oid,:str],
 	pc:bat[:oid,:str],
 	thread:bat[:oid,:int],
-	user:bat[:oid,:int],
 	ticks:bat[:oid,:lng],
 	rssMB:bat[:oid,:lng],
 	vmMB:bat[:oid,:lng],
 	reads:bat[:oid,:lng],
 	writes:bat[:oid,:lng],
+	minflt:bat[:oid,:lng],
+	majflt:bat[:oid,:lng],
+	nvcsw:bat[:oid,:lng],
 	stmt:bat[:oid,:str])
 address dump_trace
 comment "dump the trace statistics";
@@ -493,6 +495,7 @@ pattern querylog_catalog()(
 	defined:bat[:oid,:timestamp],
 	query:bat[:oid,:str],
 	pipe:bat[:oid,:str],
+	plan:bat[:oid,:str],
 	mal:bat[:oid,:int],
 	optimize:bat[:oid,:lng]
 )
