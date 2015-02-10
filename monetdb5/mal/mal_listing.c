@@ -432,7 +432,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		*t = 0;
 		break;
 	case ENDsymbol:
-		snprintf(t,(len-(t-base)), "end %s", getFunctionId(getInstrPtr(mb, 0)));
+		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb, 0)));
 		advance(t,base,len);
 		break;
 	case COMMANDsymbol:
