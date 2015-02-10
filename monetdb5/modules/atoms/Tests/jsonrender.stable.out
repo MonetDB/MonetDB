@@ -36,8 +36,8 @@ function user.main():void;
     io.print(result);
     result := json.renderarray(idx,wrd,ans);
     io.print(result);
-end main;
-#-----------------------------------------#
+end user.main;
+#--------------------------#
 # h	t	t		t	  # name
 # void	int	str		bit	  # type
 #-----------------------------------------#

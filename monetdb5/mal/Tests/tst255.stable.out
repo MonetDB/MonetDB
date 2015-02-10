@@ -31,9 +31,9 @@ function user.main():void;
     io.print(z1);
     o := batcalc.oid(z1);
     io.print(o);
-end main;
-#-----------------#
-# h	tmp_4	  # name
+end user.main;
+#--------------------------#
+# h	t  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]

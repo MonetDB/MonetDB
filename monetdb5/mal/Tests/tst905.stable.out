@@ -37,11 +37,11 @@ barrier (X_19,X_20) := iterator.new(b);
 exit (X_19,X_20);
     x:bat[:oid,:lng]  := X_15;
     io.print(x);
-end main;
-#-----------------#
-# h	tmp_6	  # name
-# lng	lng	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	lng  # type
+#--------------------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  2	  ]
 [ 2@0,	  4	  ]

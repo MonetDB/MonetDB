@@ -28,7 +28,7 @@ barrier b := calc.==(i,1);
     io.print(i);
     redo b := calc.<(i,3);
 exit b;
-end main;
+end user.main;
 [ 2 ]
 [ 3 ]
 

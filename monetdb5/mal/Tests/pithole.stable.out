@@ -15,7 +15,7 @@ stdout of test 'pithole` in directory 'monetdb5/mal` itself:
 function user.main():void;
 #challenge the runtime stack protection 
     user.main();
-end main;
+end user.main;
 !MALException:mal.interpreter:Recursive call limit reached.
 
 # 14:45:52 >  

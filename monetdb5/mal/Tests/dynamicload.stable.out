@@ -19,7 +19,7 @@ function user.main():void;
 # examples of non-bindable instructions 
     user.wrong();
 #load unknown library 
-end main;
+end user.main;
 
 # 20:04:03 >  
 # 20:04:03 >  Done.

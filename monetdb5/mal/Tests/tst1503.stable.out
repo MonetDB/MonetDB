@@ -107,7 +107,7 @@ function user.main():void;
     (g2,e2,h2) := group.subgroup(y,g1,e1,h1);
     io.print("g2 becomes");
     io.print(g2);
-end main;
+end user.main;
 [ "group x" ]
 #---------------------------------#
 # h	tmp_4	tmp_5	tmp_6	  # name

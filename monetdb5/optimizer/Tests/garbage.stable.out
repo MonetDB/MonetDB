@@ -15,15 +15,15 @@ function user.tst():void;
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:int);
     io.print(b);
-end tst;
+end user.tst;
 function user.main():void;
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     c{keep} := bat.new(:oid,:int);      #  2 c:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     io.print(b);                        #  3 _5:void := IOprint_val(b:bat[:oid,:int]) {G}
-end tst;                                #  4  
+end user.tst;                           #  4  
 
 # 17:24:05 >  
 # 17:24:05 >  Done.

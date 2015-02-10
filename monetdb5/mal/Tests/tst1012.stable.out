@@ -54,7 +54,7 @@ function user.main():void;
     io.print(x);
     io.print(z);
     io.print("");
-end main;
+end user.main;
 [ true ]
 [ false ]
 [ "" ]

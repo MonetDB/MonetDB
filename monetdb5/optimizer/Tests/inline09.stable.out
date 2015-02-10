@@ -13,7 +13,7 @@ stdout of test 'inline09` in directory 'monetdb5/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.foo{inline}(a:str):str;
     return foo := a;
-end foo;
+end user.foo;
 function user.bar{inline}(a:str,b:str):str;
     sa := user.foo(a);
     sa := str.substring(sa,1,5);
@@ -21,16 +21,16 @@ function user.bar{inline}(a:str,b:str):str;
     sb := str.substring(sb,1,3);
     c := calc.+(sa,sb);
     return bar := c;
-end bar;
+end user.bar;
 function user.qry():void;
     b := bat.new(:oid,:str);
     bat.append(b,"HELLO WORLD");
     z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.append(b,"HELLO WORLD");        #  2 _4:bat[:oid,:str] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
@@ -40,7 +40,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_15 := batstr.substring(X_15,1,3); #  6 _15:bat[:oid,:str] := STRbatsubstringcst(_15:bat[:oid,:str], _13:int, _16:int) {G}
     X_17 := batcalc.+(X_12,X_15);       #  7 _17:bat[:oid,:str] := CMDbatADD(_12:bat[:oid,:str], _15:bat[:oid,:str]) {G}
     z:bat[:oid,:str] {inline} := X_17;  #  8 z:bat[:oid,:str] := _17:bat[:oid,:str] {G}
-end qry;                                #  9  
+end user.qry;                           #  9  
 
 # 11:53:00 >  
 # 11:53:00 >  Done.

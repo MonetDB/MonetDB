@@ -177,8 +177,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,
     sql.rsColumn(X_205,"sys.L3","mkt_share","decimal",37,4,X_204);
     X_217 := io.stdout();
     sql.exportResult(X_217,X_205);
-end s2_1;
-# querylog.define("explain select\n\to_year,\n\tsum(case\n\t\twhen nation = \\'BRAZIL\\' then volume\n\t\telse 0\n\tend) / sum(volume) as mkt_share\nfrom\n\t(\n\t\tselect\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume,\n\t\t\tn2.n_name as nation\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = l_partkey\n\t\t\tand s_suppkey = l_suppkey\n\t\t\tand l_orderkey = o_orderkey\n\t\t\tand o_custkey = c_custkey\n\t\t\tand c_nationkey = n1.n_nationkey\n\t\t\tand n1.n_regionkey = r_regionkey\n\t\t\tand r_name = \\'AMERICA\\'\n\t\t\tand s_nationkey = n2.n_nationkey\n\t\t\tand o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t\t\tand p_type = \\'ECONOMY ANODIZED STEEL\\'\n\t) as all_nations\ngroup by\n\to_year\norder by\n\to_year;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:27 >  
 # 22:53:27 >  "Done."

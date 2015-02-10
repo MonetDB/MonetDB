@@ -98,7 +98,6 @@ static char *inputfile = NULL;
 static char *title = 0;
 static int debug = 0;
 static int beat = 50;
-static lng maxio = 0;
 static int cpus = 0;
 static int atlas= 1;
 static int atlaspage = 0;
@@ -505,8 +504,9 @@ typedef struct BOX {
 	lng clkstart, clkend;
 	lng ticks;
 	lng memstart, memend;
-	lng footstart, footend;
-	lng reads, writes;
+	lng footstart, vmmemory;
+	lng inblock, oublock;
+	lng majflt, nswap, csw;
 	char *stmt;
 	char *fcn;
 	char *numa;
@@ -553,7 +553,6 @@ static void resetTomograph(void){
 		threads[i] = topbox++;
 	memset((char*) box, 0, sizeof(Box) * MAXBOX);
 
-	maxio = 0;
 	totalclkticks = 0; 
 	totalexecticks = 0;
 	lastclktick = 0;
@@ -633,7 +632,7 @@ static void dumpbox(int i)
 		fprintf(stderr,"%s ", box[i].fcn);
 	fprintf(stderr,"clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
 	fprintf(stderr,"mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
-	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].footend);
+	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].vmmemory);
 	fprintf(stderr,"ticks "LLFMT" ", box[i].ticks);
 	if (box[i].stmt)
 		fprintf(stderr,"\"%s\"", box[i].stmt);
@@ -692,7 +691,6 @@ dumpboxes(void)
 	FILE *f = 0;
 	char buf[BUFSIZ];
 	int i;
-	lng e=0;
 	int written = 0;
 
 	snprintf(buf, BUFSIZ, "%s_%02d.dat", basefilename, atlaspage);
@@ -703,22 +701,9 @@ dumpboxes(void)
 	}
 
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].fcn) {
-			if (box[i].state < PING) {
-				//io counters are zero at start of instruction !
-				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-				fprintf(f, ""LLFMT" %f %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0), box[i].footend/1024.0);
-				written++;
-			} else 
-			if (box[i].state == WAIT) {
-			} else 
-			if (box[i].state == PING) {
-				/* cpu stat events may arrive out of order, drop those */
-				if (box[i].clkstart <= e)
-					continue;
-				e = box[i].clkstart-starttime;
-				fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT"\n", e, (box[i].memend / 1024.0), box[i].footend/1024.0, box[i].reads, box[i].writes);
-			}
+	if (box[i].clkend && box[i].fcn) {
+			fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT " " LLFMT " " LLFMT " " LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].vmmemory/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
+			written++;
 		}
 	if( written == 0){
 		topbox = 0;
@@ -816,6 +801,7 @@ showcpu(void)
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "set ytics 0, %d\n",4);
 	fprintf(gnudata, "set grid ytics\n");
+
 	fprintf(gnudata, "set border\n");
 	gnuXtics(0);
 
@@ -854,7 +840,6 @@ showcpu(void)
 
 /* produce memory thread trace */
 /* The IO statistics are not provided anymore in LINUX unless you have root permissions */
-#ifdef GETIOSTAT
 static void
 showio(void)
 {
@@ -863,10 +848,14 @@ showio(void)
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].state >= PING) {
-			if (box[i].reads > max)
-				max = box[i].reads;
-			if (box[i].writes > max)
-				max = box[i].writes;
+			if (box[i].inblock > max)
+				max = box[i].inblock;
+			if (box[i].oublock > max)
+				max = box[i].oublock;
+			if (box[i].majflt > max)
+				max = box[i].majflt;
+			if (box[i].nswap > max)
+				max = box[i].nswap;
 		}
 	max += b;
 
@@ -883,25 +872,29 @@ showio(void)
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
 	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / b);
-	fprintf(gnudata, "set y2label \"IO per ms\"\n");
+	fprintf(gnudata, "set key font \",8\"\n");
+	fprintf(gnudata, "set key spacing 0.5\n");
 #ifdef GNUPLOT_463_BUG_ON_FEDORA_20
 /* this is the original version, but on Fedora 20 with
  * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
  * the page */
-	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
-	fprintf(gnudata, "\"%s_%02d.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" dots fs solid linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots solid linecolor rgb \"red\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", basefilename, atlaspage, beat);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
-	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with impulses linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
-	fprintf(gnudata, "\"%s_%02d.dat\" using 1:($5/%d.0) title \"writes\" with impulses linecolor rgb \"red\"  \n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" with dots linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots linecolor rgb \"red\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", basefilename, atlaspage, beat);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
 	fprintf(gnudata, "unset y2range\n");
 	fprintf(gnudata, "unset title\n");
 }
-#endif
 
 
 /* print time (given in microseconds) in human-readable form
@@ -1054,7 +1047,6 @@ showcolormap(char *filename, int all)
 		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
-		assert(f != gnudata);
 		fclose(f);
 	}
 }
@@ -1152,9 +1144,7 @@ createTomogram(void)
 		*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
-#ifdef GETIOSTAT
 	showio(); //DISABLED due to access permissions
-#endif
 	showmemory();
 	showcpu();
 
@@ -1284,7 +1274,7 @@ updateNumaHeatmap(int thread, char *numa){
 static int ping = -1;
 
 static void
-update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng footprint, lng reads, lng writes, char *fcn, char *stmt, char *line)
+update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng vmmemory, lng inblock, lng oublock, lng majflt, lng nswap, lng csw, char *fcn, char *stmt, char *line)
 {
 	int idx, i;
 	Box b;
@@ -1327,14 +1317,17 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		if (state == GCOLLECT)
 			box[idx].clkstart -= ticks;
 		box[idx].memend = box[idx].memstart = memory;
-		box[idx].footstart = box[idx].footend = footprint;
-		box[idx].reads = reads;
-		box[idx].writes = writes;
+		box[idx].footstart = box[idx].vmmemory = vmmemory;
+		box[idx].inblock = inblock;
+		box[idx].oublock = oublock;
+		box[idx].majflt = majflt;
+		box[idx].nswap = nswap;
+		box[idx].csw = csw;
 		s = strchr(stmt, ']');
 		if (s)
 			*s = 0;
 		box[idx].stmt = stmt;
-	assert(stmt);
+
 		if ( !capturing){
 			ping = idx;
 			return;
@@ -1343,14 +1336,10 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		threads[thread] = ++topbox;
 		idx = threads[thread];
 		box[idx] = b;
-		if (reads > maxio)
-			maxio = reads;
-		if (writes > maxio)
-			maxio = writes;
+		if( tracefd)
+			fprintf(tracefd,"%s\n",line);
 		return;
 	}
-
-	assert(clkticks >= 0);
 
 	if (debug)
 		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT" %s\n",(state>=0?statenames[state]:"unknown"),(fcn?fcn:"(null)"),(currentfunction?currentfunction:""),clkticks -starttime,(numa?numa:""));
@@ -1416,9 +1405,10 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		box[idx].clkstart = clkticks? clkticks:1;
 		box[idx].clkend = clkticks;
 		box[idx].memstart = memory;
+		box[idx].memend = memory;
 		box[idx].numa = numa;
 		if(numa) updateNumaHeatmap(thread, numa);
-		box[idx].footstart = footprint;
+		box[idx].footstart = vmmemory;
 		box[idx].stmt = stmt;
 		box[idx].fcn = fcn ? fcn : strdup("");
 		if(fcn && strstr(fcn,"querylog.define") ){
@@ -1488,11 +1478,14 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		events++;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
-		box[idx].footend = footprint;
+		box[idx].vmmemory = vmmemory;
 		box[idx].ticks = ticks;
 		box[idx].state = ACTION;
-		box[idx].reads = reads;
-		box[idx].writes = writes;
+		box[idx].inblock = inblock;
+		box[idx].oublock = oublock;
+		box[idx].majflt = majflt;
+		box[idx].nswap = nswap;
+		box[idx].csw = csw;
 		/* focus on part of the time frame */
 		if (endrange) {
 			if( debug){
@@ -1591,13 +1584,10 @@ parser(char *row)
 	char *numa =0;
 	int state = 0;
 	int eventnr = 0;
-	lng reads= 0, writes= 0;
-	lng rclm=0, swaps= 0, faults= 0;
+	lng inblock= 0, oublock= 0;
+	lng majflt= 0, swaps=0, csw= 0;
 	lng userid= 0;
 
-	(void) rclm;
-	(void) swaps;
-	(void) faults;
 	(void) eventnr;
 	(void) userid;
 	/* check basic validaty first */
@@ -1674,12 +1664,6 @@ parser(char *row)
 	}
 
 
-	/* scan pc */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -6;
-	ticks = strtoll(c + 1, NULL, 10);
-
 	/* scan usec */
 	c = strchr(c + 1, ',');
 	if (c == 0)
@@ -1710,35 +1694,35 @@ parser(char *row)
 	*c = '"';
 #endif
 
-	/* scan rdblks */
+	/* scan inblock */
 	c = strchr(c + 1, ',');
 	if (c == 0) 
 		return -9;
-	reads = strtoll(c + 1, NULL, 10);
+	inblock = strtoll(c + 1, NULL, 10);
 
-	/* scan wrblks */
+	/* scan oublock */
 	c = strchr(c + 1, ',');
 	if (c == 0) 
 		return -10;
-	writes = strtoll(c + 1, NULL, 10);
+	oublock = strtoll(c + 1, NULL, 10);
 
-	/* scan rclm */
+	/* scan majflt */
 	c = strchr(c + 1, ',');
 	if (c == 0) 
 		return -11;
-	rclm = strtoll(c + 1, NULL, 10);
-
-	/* scan faults */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -12;
-	faults = strtoll(c + 1, NULL, 10);
+	majflt = strtoll(c + 1, NULL, 10);
 
 	/* scan swaps */
 	c = strchr(c + 1, ',');
 	if (c == 0) 
-		return -13;
+		return -12;
 	swaps = strtoll(c + 1, NULL, 10);
+
+	/* scan context switches */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -13;
+	csw = strtoll(c + 1, NULL, 10);
 
 	/* parse the MAL call, check basic validity */
 	c = strchr(c, '"');
@@ -1769,7 +1753,7 @@ parser(char *row)
 	if( v)
 		parseArguments(v+1);
 
-	update(state, thread, clkticks, ticks, memory, numa, vmmemory, reads, writes, fcn, stmt,line);
+	update(state, thread, clkticks, ticks, memory, numa, vmmemory, inblock, oublock, majflt,swaps,csw, fcn, stmt,line);
 	if(numa) free(numa);
 #else
 	(void) row;

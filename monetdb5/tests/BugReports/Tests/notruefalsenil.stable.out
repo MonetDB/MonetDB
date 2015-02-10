@@ -24,7 +24,7 @@ barrier ifpart := calc.==(i,3);
     return myfunc := nil:bit;
 exit ifpart;
     return myfunc := nil:bit;
-end myfunc;
+end user.myfunc;
 function user.main():void;
 # observed 14-08-2008: true, false and nil are not available in a 
 # function, whereas they are locally 
@@ -42,7 +42,7 @@ function user.main():void;
 # no idea what this does 
     p := user.myfunc(4);
     io.print(p);
-end main;
+end user.main;
 [ true ]
 [ true ]
 [ false ]

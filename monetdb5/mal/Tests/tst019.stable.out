@@ -23,68 +23,39 @@ function user.welcome(lim:int):void;
     w := "hello";
     return welcome := w;
 # should produce a type error 
-end welcome;
+end user.welcome;
 !TypeException:user.welcome0[3]:Multiple assignment mismatch
 function user.welcome0(lim:int):str;
     i := 2;
     w := "hello";
     return welcome0 := (w,i);
 # should produce a type error 
-end welcome0;
-#
-#function welcome1(lim:int):str;
-#    i:= 2;
-#    return w:="hello"; 
-#end welcome1;
+end user.welcome0;
 function user.welcome1(lim:int):str;
     i := 2;
     return w := "hello";
-end welcome1;
-#
-#function welcome2(lim:int):str;
-#    i:= 2;
-#    w:="hello"; 
-#    return w;
-#end welcome2;
+end user.welcome1;
 function user.welcome2(lim:int):str;
     i := 2;
     w := "hello";
     return welcome2 := w;
-end welcome2;
-#
-#function welcome3(lim:int)(w:str,i:int);
-#    i:= 2;
-#    return w:="hello"; #illegal return statement
-#end welcome3;
+end user.welcome2;
 !SyntaxException:user.welcome3[2]:invalid return target!
 function user.welcome3(lim:int) (w:str,i:int);
     i := 2;
     return w := "hello";
 #illegal return statement 
-end welcome3;
-#
-#function welcome4(lim:int)(w:str,i:int);
-#    i:= 2;
-#    return (w,i):="hello"; #illegal return statement
-#end welcome4;
+end user.welcome3;
 !TypeException:user.welcome4[2]:Multiple assignment mismatch
 function user.welcome4(lim:int) (w:str,i:int);
     i := 2;
     return (w,i) := "hello";
 #illegal return statement 
-end welcome4;
+end user.welcome4;
 function user.welcome5(lim:int) (X_2:str,X_3:int);
     i := 2;
     return (w,i) := ("hello",2);
-end welcome5;
-#
-#y:= user.welcome1(1);
-#io.print(y);
-#y:= user.welcome2(1);
-#io.print(y);
-#
-#(x,y):= user.welcome2(1);
-#
+end user.welcome5;
 !TypeException:user.main[5]:'user.welcome2' undefined in: (x:any, y:str) := user.welcome2(_2:int)
 function user.main():void;
     y := user.welcome1(1);
@@ -92,7 +63,7 @@ function user.main():void;
     y := user.welcome2(1);
     io.print(y);
     (x,y) := user.welcome2(1);
-end main;
+end user.main;
 
 # 07:58:38 >  
 # 07:58:38 >  Done.

@@ -69,7 +69,7 @@ function user.main():void;
     io.print(g1_3_3);
     (g1_2_3,grp,ext) := group.multicolumn(b1,b2,b3);
     io.print(g1_2_3);
-end main;
+end user.main;
 #--------------------------#
 # h	t	t	t  # name
 # void	int	int	int  # type

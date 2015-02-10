@@ -114,8 +114,8 @@ function user.main():void;
     bat.insert(f,nil:oid,nil:oid);
     bat.insert(f,nil:oid,nil:oid);
     io.print(f);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#

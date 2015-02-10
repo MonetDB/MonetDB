@@ -294,7 +294,7 @@ function user.main():void;
     io.print("print(kd_a,md_a,od_a)");
     qd_a := io.print(kd_a,md_a,od_a);
 #      [end_dst](tzone_bat).bat.setColumn("end_dst")); 
-end main;
+end user.main;
 [ "tzone_bat" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t													  # name

@@ -137,8 +137,7 @@ function user.s3_1{autoCommit=true}():void;
     sql.rsColumn(X_118,"sys.revenue0","total_revenue","decimal",33,4,X_117);
     X_141 := io.stdout();
     sql.exportResult(X_141,X_118);
-end s3_1;
-# querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe")
+end user.s3_1;
 #drop view revenue0;
 
 # 22:53:29 >  

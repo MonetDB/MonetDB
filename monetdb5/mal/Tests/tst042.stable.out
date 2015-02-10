@@ -58,7 +58,7 @@ function user.main():void;
     io.printf("%s\n",Bt);
     tt := inspect.getType(bb);
     io.printf("bat  head %s\n",tt);
-end main;
+end user.main;
 str
 int
 flt

@@ -33,7 +33,7 @@ function user.main():void;
 catch MALException:str ;
     io.printf("%s\n",MALException);
 exit MALException:str ;
-end main;
+end user.main;
 MALException:bbp.bind:Object not found
 
 # 07:58:52 >  

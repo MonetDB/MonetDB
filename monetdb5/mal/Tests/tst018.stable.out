@@ -37,7 +37,7 @@ function user.main():void;
     s := "hello";
     s := nil;
     io.print(s);
-end main;
+end user.main;
 [ nil ]
 [ nil ]
 [ nil ]

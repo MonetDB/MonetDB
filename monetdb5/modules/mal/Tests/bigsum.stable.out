@@ -34,7 +34,7 @@ exit i;
     s:dbl  := aggr.sum(b);
 # should be 10000000010000000, not 10000000000000000 
     io.print(s);
-end main;
+end user.main;
 [ 10000000010000000 ]
 
 # 16:05:54 >  

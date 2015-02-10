@@ -16,7 +16,7 @@ stdout of test 'tst001` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
     io.printf("hello world\n");
-end main;
+end user.main;
 hello world
 
 # 07:58:32 >  

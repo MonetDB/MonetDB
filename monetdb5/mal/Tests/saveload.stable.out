@@ -59,8 +59,8 @@ function user.main():void;
 #and an error 
     er:bat[:oid,:int]  := bbp.bind("bbb");
     io.print(er);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

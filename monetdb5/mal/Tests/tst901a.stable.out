@@ -58,7 +58,7 @@ exit i;
     io.printf("#count %d\n",xc);
     io.printf("#make %d \n",d1);
     io.printf("#multiplex %d\n",d2);
-end main;
+end user.main;
 #count 1000000
 #make 788950 
 #multiplex 18410

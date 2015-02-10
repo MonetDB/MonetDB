@@ -16,14 +16,14 @@ function user.main():void;
 #see if we can register functions 
     language.register("user","mytest","io.print(\"hello world\");","first test");
     mdb.list("user","mytest");
-end main;
+end user.main;
 #register FUNCTION user.main
 #function user.main():void;
 #    io.print("hello world");
 #end main;
 function user.mytest():void;
     io.print("hello world");
-end mytest;
+end user.mytest;
 
 # 23:05:10 >  
 # 23:05:10 >  Done.

@@ -27,7 +27,7 @@ function user.main():void;
     b := calc.+(3.5,2.70000005);
     s := "hello world";
     d := calc.+(3,1);
-end main;
+end user.main;
 
 # 07:58:51 >  
 # 07:58:51 >  Done.

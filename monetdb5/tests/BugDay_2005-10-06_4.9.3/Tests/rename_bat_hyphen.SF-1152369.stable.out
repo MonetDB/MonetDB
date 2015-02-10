@@ -17,8 +17,8 @@ function user.main():void;
     bat.setName(a,"x_");
     io.print(a);
 #bat("x-").print(); 
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

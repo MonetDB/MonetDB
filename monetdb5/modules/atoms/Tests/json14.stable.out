@@ -25,7 +25,7 @@ function user.main():void;
     j := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
     b := json.text(j);
     io.print(b);
-end main;
+end user.main;
 [ "1 2 3" ]
 [ "3 2 3 4" ]
 

@@ -48,14 +48,14 @@ function user.main():void;
     io.print(b,b,b);
     profiler.stop();
     profiler.cleanup();
-end main;
+end user.main;
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # h	t			t		  # name
 # oid	str			str		  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_634"  ]
-[ 1@0,	"batCacheid",	"412"  ]
+[ 0@0,	"batId",	"tmp_633"  ]
+[ 1@0,	"batCacheid",	"411"  ]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -119,7 +119,7 @@ end main;
 [ 62@0,	"tail.size",	"1024"  ]
 [ 63@0,	"tail.storage",	"malloced"  ]
 [ 64@0,	"tail.newstorage",	"malloced"  ]
-[ 65@0,	"tail.filename",	"06/634.tail"  ]
+[ 65@0,	"tail.filename",	"06/633.tail"  ]
 [ 66@0,	"H->vheap->dirty",	"clean"  ]
 [ 67@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#

@@ -20,7 +20,7 @@ function user.tst(i:int,s:str):bit;
     format := "hello %s\n";
     io.printf(format,s);
     return tst := true;
-end tst;
+end user.tst;
 function user.main():void;
 # the base experiment to execute a string 
 # if we can convert a MAL function to a string 
@@ -36,16 +36,16 @@ function user.main():void;
 # now we should have two definitions 
     d := inspect.getSignature("user","tst");
     io.print(d);
-end main;
-#-----------------------------------------#
+end user.main;
+#--------------------------#
 # view		input			  # name
 # void	str			  # type
 #---------------------------------#
 [ 0@0,	  "(i:int,s:str):bit;"	  ]
 [ 2 ]
 hello world
-[ "function user.tst(i:int,s:str):bit;\n    j := calc.+(i,1);\n    io.print(j);\n# ignore comments \n    format := \"hello %s\\n\";\n    io.printf(format,s);\n    return tst := true;\nend tst;\n" ]
-#-----------------------------------------#
+[ "function user.tst(i:int,s:str):bit;\n    j := calc.+(i,1);\n    io.print(j);\n# ignore comments \n    format := \"hello %s\\n\";\n    io.printf(format,s);\n    return tst := true;\nend user.tst;\n" ]
+#--------------------------#
 # view		input			  # name
 # void	str			  # type
 #---------------------------------#

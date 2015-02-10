@@ -101,8 +101,7 @@ exit X_109;
     sql.rsColumn(X_41,".L5","v","decimal",18,9,X_40);
     X_49 := io.stdout();
     sql.exportResult(X_49,X_41);
-end s5_1;
-# querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe")
+end user.s5_1;
 
 # 23:28:04 >  
 # 23:28:04 >  "Done."

@@ -29,7 +29,7 @@ function user.main():void;
     io.print(c);
     d := algebra.mark(c);
     io.print(d);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # oid	str  # type

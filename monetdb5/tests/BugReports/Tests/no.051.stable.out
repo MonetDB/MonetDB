@@ -29,7 +29,7 @@ exit ca_a;
 exit (aa_aH,aa_aT);
 #	io.print("        return a;"); 
     return ea_a := a;
-end create;
+end user.create;
 function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
@@ -96,8 +96,8 @@ function user.main():void;
     ma_a := io.print(la_a);
 #	io.print("quit();"); 
     na_a := clients.quit();
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	flt	  # type
 #-----------------#

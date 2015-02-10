@@ -21,7 +21,7 @@ function user.main():void;
     io.printf("----\n");
     io.printf("%s",s);
     io.printf("----\n");
-end main;
+end user.main;
 ----
  
 line1

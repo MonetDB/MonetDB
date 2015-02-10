@@ -16,7 +16,7 @@ function user.crash():void;
 #	io.print("\tprint($t);\n"); 
     unknown := mil.take("unknown");
     aa_a := io.print(unknown);
-end crash;
+end user.crash;
 !TypeException:user.main[12]:'user.crash' undefined in: ba_a:void := user.crash()
 function user.main():void;
 # Monet Mil to Mal compiler 
@@ -31,7 +31,7 @@ function user.main():void;
 #	io.print("PROC crash() : void"); 
 #	io.print("crash();"); 
     ba_a := user.crash();
-end main;
+end user.main;
 
 # 20:48:35 >  
 # 20:48:35 >  Done.

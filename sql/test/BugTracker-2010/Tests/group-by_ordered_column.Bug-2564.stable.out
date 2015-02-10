@@ -66,8 +66,7 @@ function user.s5_1{autoCommit=true}():void;
     sql.rsColumn(X_41,"sys.L1","L1","wrd",64,0,X_39);
     X_48 := io.stdout();
     sql.exportResult(X_48,X_41);
-end s5_1;
-# querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe")
+end user.s5_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.L1 # table_name
 % L1 # name

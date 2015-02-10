@@ -37,14 +37,7 @@ function user.main():void;
     j := "ll";
 # second one overwrites first 
     z := bat.new(:oid,:int);
-#q:= 1:int{frozen}; 
-#Alternative format using post-predicates 
-#default interpretation for i.prop is boolean value true 
-# i:= 1;		{i.constant:=true;} 
-# j:= "kk"; 	{j.constant:=true;} 
-# k:= "whatever"; {k.blah:=true;k.freeze:=true;} 
-# n:= bat.new(int,int);{n.cost:=12;} 
-end main;
+end user.main;
 
 
 # 08:59:03 >  

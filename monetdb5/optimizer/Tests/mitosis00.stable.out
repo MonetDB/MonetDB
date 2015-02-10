@@ -17,7 +17,7 @@ function user.main():void;
     b := bat.partition(a);
     (b,c) := bat.partition(a);
     (b,c,e) := bat.partition(a);
-end main;
+end user.main;
 
 # 20:45:24 >  
 # 20:45:24 >  Done.

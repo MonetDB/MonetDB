@@ -26,7 +26,7 @@ function user.main():void;
 catch IllegalAccess;
     io.printf("caught %d\n",IllegalAccess);
 exit IllegalAccess;
-end main;
+end user.main;
 caught 1234
 
 # 08:01:14 >  

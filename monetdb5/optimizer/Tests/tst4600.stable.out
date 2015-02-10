@@ -20,7 +20,7 @@ barrier j := calc.<(i,lim);
     i := calc.+(i,1);
     redo j := calc.<(i,lim);
 exit j;
-end welcome;
+end user.welcome;
 function user.main():void;
 # the first test for macro expansions and inversions 
     io.print("test expansion");
@@ -31,7 +31,7 @@ barrier X_14 := calc.<(X_12,2);
     redo X_14 := calc.<(X_12,2);
 exit X_14;
     mdb.List();
-end main;
+end user.main;
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
@@ -45,7 +45,7 @@ barrier X_14 := calc.<(X_12,2);         #  4 _14:bit := CMDvarLT(_12:int, _8:int
     redo X_14 := calc.<(X_12,2);        #  7 _14:bit := CMDvarLT(_12:int, _8:int) {J5}
 exit X_14;                              #  8 _14:bit 
     mdb.List();                         #  9 _9:void := MDBlistDetail() 
-end main;                               # 10  
+end user.main;                          # 10  
 
 # 19:36:04 >  
 # 19:36:04 >  Done.

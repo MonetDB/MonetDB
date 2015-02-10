@@ -50,7 +50,7 @@ function user.main():void;
     cnt:bat[:oid,:wrd]  := tokenizer.getCardinality();
     io.print(cnt);
     tokenizer.close();
-end main;
+end user.main;
 [ "http://www.ics.forth.gr/~lsidir/" ]
 [ 4@0 ]
 #-----------------#

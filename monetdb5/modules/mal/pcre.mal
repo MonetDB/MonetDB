@@ -126,4 +126,4 @@ command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],
 address LIKEsubjoin1;
 
 command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
-address ILIKESUBJOIN1;
+address ILIKEsubjoin1;

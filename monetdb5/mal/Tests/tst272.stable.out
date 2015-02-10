@@ -80,12 +80,11 @@ function user.main():void;
 #io.print(t,s); 
     io.printf("#~EndVariableOutput~#\n");
     profiler.cleanup();
-end main;
-# Start performance profiling
-#-----------------#
-# h	tmp_13	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  15	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  nil	  ]

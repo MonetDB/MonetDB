@@ -117,7 +117,7 @@ function user.main():void;
     (cp,cg) := algebra.firstn(a,bp,bg,8:wrd,false,false);
     io.print(cp);
     io.print(cg);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

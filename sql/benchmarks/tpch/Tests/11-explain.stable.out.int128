@@ -130,8 +130,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     sql.rsColumn(X_121,"sys.L1","value","decimal",39,2,X_120);
     X_135 := io.stdout();
     sql.exportResult(X_135,X_121);
-end s2_1;
-# querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

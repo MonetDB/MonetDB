@@ -55,7 +55,7 @@ function user.main():void;
     io.print(z);
     z := algebra.select(b,0,2,false,false);
     io.print(z);
-end main;
+end user.main;
 start of selections 5 [1]
 #-----------------#
 # h	t	  # name

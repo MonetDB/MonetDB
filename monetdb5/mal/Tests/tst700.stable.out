@@ -49,7 +49,7 @@ function user.main():void;
     io.printf("%-8d\n",true);
     io.printf("%6.2f\n",pi);
     io.printf("single line %s \n","hello");
-end main;
+end user.main;
 [ "hello world" ]
 [ 0 ]
 [ 1 ]

@@ -31,7 +31,7 @@ function user.main():void;
     io.print(d1);
     d2 := calc.min_no_nil(s1,s3);
     io.print(d2);
-end main;
+end user.main;
 [ "world" ]
 [ nil ]
 [ "hello" ]

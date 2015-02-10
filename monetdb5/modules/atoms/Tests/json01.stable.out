@@ -77,7 +77,7 @@ function user.main():void;
     io.print(f);
     f := json.filter(b,"[3]");
     io.print(f);
-end main;
+end user.main;
 [ "[]" ]
 [ "[1]" ]
 [ "[2]" ]

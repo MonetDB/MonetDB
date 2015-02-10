@@ -22,7 +22,7 @@ function user.main():void;
 # the calls are wrong, they violate the type constraint 
     a := calc.+(1,"hello");
     b := calc.+(3.5,1);
-end main;
+end user.main;
 
 # 22:05:24 >  
 # 22:05:24 >  Done.

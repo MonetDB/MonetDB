@@ -51,8 +51,7 @@ function user.s2_1(A0:str):void;
     sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
     X_31 := io.stdout();
     sql.exportResult(X_31,X_24);
-end s2_1;
-# querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe")
+end user.s2_1;
 #explain select name,func from functions where name not like '%optimizers%';
 % .explain # table_name
 % mal # name
@@ -79,8 +78,7 @@ function user.s3_1(A0:str):void;
     sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
     X_31 := io.stdout();
     sql.exportResult(X_31,X_24);
-end s3_1;
-# querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe")
+end user.s3_1;
 #explain select name,func from functions where name ilike '%optimizers%';
 % .explain # table_name
 % mal # name
@@ -107,8 +105,7 @@ function user.s4_1(A0:str):void;
     sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
     X_31 := io.stdout();
     sql.exportResult(X_31,X_24);
-end s4_1;
-# querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe")
+end user.s4_1;
 #explain select name,func from functions where name not ilike '%optimizers%';
 % .explain # table_name
 % mal # name
@@ -135,8 +132,7 @@ function user.s5_1(A0:str):void;
     sql.rsColumn(X_24,"sys.functions","func","varchar",8196,0,X_23);
     X_31 := io.stdout();
     sql.exportResult(X_31,X_24);
-end s5_1;
-# querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe")
+end user.s5_1;
 #create function contains(str string, substr string)
 #returns boolean
 #begin
@@ -185,8 +181,7 @@ function user.s10_1(A0:str):void;
     sql.rsColumn(X_22,"sys.functions","func","varchar",8196,0,X_21);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_22);
-end s10_1;
-# querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe")
+end user.s10_1;
 #explain select name,func from functions where not_contains(name, 'optimizers');
 % .explain # table_name
 % mal # name
@@ -215,8 +210,7 @@ function user.s11_1(A0:str):void;
     sql.rsColumn(X_22,"sys.functions","func","varchar",8196,0,X_21);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_22);
-end s11_1;
-# querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe")
+end user.s11_1;
 #explain select name,func from functions where icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
@@ -245,8 +239,7 @@ function user.s12_1(A0:str):void;
     sql.rsColumn(X_22,"sys.functions","func","varchar",8196,0,X_21);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_22);
-end s12_1;
-# querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe")
+end user.s12_1;
 #explain select name,func from functions where not_icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
@@ -275,8 +268,7 @@ function user.s13_1(A0:str):void;
     sql.rsColumn(X_22,"sys.functions","func","varchar",8196,0,X_21);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_22);
-end s13_1;
-# querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe")
+end user.s13_1;
 #rollback;
 
 # 13:28:51 >  

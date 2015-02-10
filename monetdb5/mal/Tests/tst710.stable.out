@@ -27,7 +27,7 @@ function user.main():void;
 catch GDKerror:str ;
     io.printf("GDKerror, do something\n");
 exit GDKerror:str ;
-end main;
+end user.main;
 [ 1 ]
 
 # 08:01:29 >  

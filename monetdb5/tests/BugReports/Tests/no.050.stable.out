@@ -75,8 +75,8 @@ function user.main():void;
     na_a := io.print(ma_a);
 #	io.print("quit();"); 
     oa_a := clients.quit();
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#

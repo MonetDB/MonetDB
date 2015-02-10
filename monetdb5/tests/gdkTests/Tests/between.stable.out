@@ -187,7 +187,7 @@ function user.main():void;
     t := calc.between(sht3,sht3,sht3);
     io.print("sht3 between sht3 and sht3?");
     io.print(t);
-end main;
+end user.main;
 [ "str1 between str1 and str1?" ]
 [ true ]
 [ "str1 between str1 and str2?" ]

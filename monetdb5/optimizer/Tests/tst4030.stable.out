@@ -27,8 +27,8 @@ function user.main():void;
 # reuse t 
     io.print(t);
     io.print("done");
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

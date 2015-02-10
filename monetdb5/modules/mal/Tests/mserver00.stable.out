@@ -78,7 +78,7 @@ catch MapiException:str ;
     io.printf("foutje:%s\n",MapiException);
 exit MapiException:str ;
     mapi.disconnect(mid);
-end main;
+end user.main;
 [ 1 ]
 rowcount 1
 fieldcount 2

@@ -26,30 +26,14 @@ function user.dir():void;
     dn := bbp.getNames();
     ds := algebra.subsort(dn,false,false);
     io.table(ds,d,dl);
-end dir;
-#
-#
-#function tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
-#	tmp1:= algebra.copy(b);
-#	io.print("inside tmp1");
-#	user.dir();
-#	return tmp1;
-#end tmp1;
+end user.dir;
 function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
     tmp1 := algebra.copy(b);
     io.print("inside tmp1");
     i := bbp.getLRefCount(b);
     io.print(i);
     return tmp1 := tmp1;
-end tmp1;
-#
-#b:= bat.new(:int,:int);
-#dir();
-#d:= user.tmp1(b);
-#dir();
-#d:= user.tmp1(d);
-#dir();
-#
+end user.tmp1;
 function user.main():void;
 # dealing with BAT references in functions 
     b := bat.new(:oid,:int);
@@ -59,7 +43,7 @@ function user.main():void;
     d := user.tmp1(d);
     i := bbp.getLRefCount(d);
     io.print(i);
-end main;
+end user.main;
 [ "inside tmp1" ]
 [ 2 ]
 [ 1 ]

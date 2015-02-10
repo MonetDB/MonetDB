@@ -35,7 +35,7 @@ barrier i := 0;
     io.print("do something else");
     redo i := iterator.next(2,5);
 exit i;
-end main;
+end user.main;
 [ "do something" ]
 [ "do something" ]
 left first loop with nil
