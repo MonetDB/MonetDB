@@ -83,15 +83,12 @@ offlineProfilerHeader(void)
 		logadd("numa,\t");
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
-	logadd("rdblk,\t");
-	logadd("wrblk,\t");
-	logadd("rclm,\t");
-	logadd("fault,\t");
-	logadd("swaps,\t");
-	//logadd("switch,\t");
-	//logadd("isw,\t");
+	logadd("inblock,\t");
+	logadd("oublock,\t");
+	logadd("majflt,\t");
+	logadd("nswap,\t");
+	logadd("switch,\t");
 #endif
-	logadd("user,\t");
 	logadd("stmt,\t");
 	logadd("# name \n");
 	if (eventstream){
@@ -134,14 +131,16 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	(void) idx;
 	if (stk == NULL) return;
 	if (pci == NULL) return;
-	if ( !start && pci->token == ENDsymbol)
-		profilerHeartbeatEvent("ping");
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(mb, stk, pci, start,0,0);
 	if (cachedProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
+	if ( start && pci->pc ==0)
+		profilerHeartbeatEvent("ping");
+	if ( !start && pci->token == ENDsymbol)
+		profilerHeartbeatEvent("ping");
 }
 
 /*
@@ -223,11 +222,9 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	getrusage(RUSAGE_SELF, &infoUsage);
 	logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
 	logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-	logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 	logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-	logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-	//logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-	//logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+	logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 	prevUsage = infoUsage;
 #else
 	logadd("0,\t0,\t0,\t0,\t0,\t");
@@ -715,11 +712,12 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c++;
 
 #ifdef HAVE_SYS_RESOURCE_H
-	v1 = infoUsage.ru_inblock - prevUsage.ru_inblock;
-	v2 = infoUsage.ru_oublock - prevUsage.ru_oublock;
-	v3 = infoUsage.ru_minflt - prevUsage.ru_minflt;
-	v4 = infoUsage.ru_majflt - prevUsage.ru_majflt;
-	v5 = infoUsage.ru_nvcsw - prevUsage.ru_nvcsw;
+	getrusage(RUSAGE_SELF, &infoUsage);
+	v1= infoUsage.ru_inblock - prevUsage.ru_inblock;
+	v2= infoUsage.ru_oublock - prevUsage.ru_oublock;
+	v3= infoUsage.ru_majflt - prevUsage.ru_majflt;
+	v4= infoUsage.ru_nswap - prevUsage.ru_nswap;
+	v5= infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw;
 	prevUsage = infoUsage;
 #endif
 
@@ -894,7 +892,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 	s= cpuload;
 	len = BUFSIZ;
 	// identify core processing
-	snprintf(s, len, "\"[ ");
+	snprintf(s, len, "[ ");
 	len -= (int)strlen(s);
 	s += (int) strlen(s);
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
@@ -902,7 +900,7 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 		len -= (int)strlen(s);
 		s += (int) strlen(s);
 	}
-	snprintf(s, len, "]\"");
+	snprintf(s, len, "]");
 	len -= (int)strlen(s);
 	s += (int) strlen(s);
 	return 0;
