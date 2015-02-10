@@ -74,9 +74,11 @@ pcre_export str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
 pcre_export str PCRElike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
 pcre_export str PCREilike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
 pcre_export str pcre_init(void *ret);
-pcre_export str PCRElikesubselect1(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *caseignore, const bit *anti);
 pcre_export str PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti);
-pcre_export str PCRElikesubselect3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *anti);
+pcre_export str PCRElikesubselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti);
+pcre_export str PCRElikesubselect3(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *anti);
+pcre_export str PCRElikesubselect4(bat *ret, const bat *bid, const bat *cid, const str *pat, const bit *anti);
+pcre_export str PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const bit *anti);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
@@ -1350,16 +1352,33 @@ PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 }
 
 str
-PCRElikesubselect1(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *caseignore, const bit *anti)
+PCRElikesubselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti)
 {
-	return PCRElikesubselect2(ret, bid, NULL, pat, esc, caseignore, anti);
+	const bit f = TRUE;
+	return PCRElikesubselect2(ret, bid, cid, pat, esc, &f, anti);
 }
 
 str
-PCRElikesubselect3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *anti)
+PCRElikesubselect3(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *anti)
 {
-	bit f = FALSE;
-	return PCRElikesubselect2(ret, bid, NULL, pat, esc, &f, anti);
+	const bit f = FALSE;
+	return PCRElikesubselect2(ret, bid, sid, pat, esc, &f, anti);
+}
+
+str
+PCRElikesubselect4(bat *ret, const bat *bid, const bat *cid, const str *pat, const bit *anti)
+{
+	const bit f = TRUE;
+	const str esc ="";
+	return PCRElikesubselect2(ret, bid, cid, pat, &esc, &f, anti);
+}
+
+str
+PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const bit *anti)
+{
+	const bit f = FALSE;
+	const str esc ="";
+	return PCRElikesubselect2(ret, bid, sid, pat, &esc, &f, anti);
 }
 
 #include "gdk_cand.h"
@@ -1695,6 +1714,14 @@ LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, co
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
+pcre_export str LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+str
+LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
+{
+	const str esc = "";
+	return LIKEsubjoin(r1, r2, lid, rid, &esc, slid, srid, nil_matches, estimate);
+}
+
 pcre_export str ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str
 ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
@@ -1702,4 +1729,12 @@ ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, c
 	(void)nil_matches;
 	(void)estimate;
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
+}
+
+pcre_export str ILIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+str
+ILIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
+{
+	const str esc = "";
+	return ILIKEsubjoin(r1, r2, lid, rid, &esc, slid,srid,nil_matches, estimate);
 }

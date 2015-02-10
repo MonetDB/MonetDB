@@ -96,21 +96,17 @@ comment "Select all head values of the first input BAT for which the
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-function algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return algebra.likesubselect(b, cand, pat, esc, false, anti);
-end algebra.likesubselect;
+command algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect3;
 
-function algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
-	return algebra.likesubselect(b, cand, pat, esc, true, anti);
-end algebra.ilikesubselect;
+command algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect1;
 
-function algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid];
-	return algebra.likesubselect(b, cand, pat, "", false, anti);
-end algebra.likesubselect;
+command algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect5;
 
-function algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid];
-	return algebra.likesubselect(b, cand, pat, "", true, anti);
-end algebra.ilikesubselect;
+command algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect4;
 
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address LIKEsubjoin
@@ -126,12 +122,8 @@ with optional candidate lists SL and SR using pattern escape string ESC
 and doing a case insensitive match.
 The result is two aligned bats with oids of matching rows.";
 
-function algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
-	(lr,rr) := algebra.likesubjoin(l, r, "", sl, sr, nil_matches, estimate);
-	return (lr,rr);
-end algebra.likesubjoin;
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address LIKEsubjoin1;
 
-function algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
-	(lr,rr) := algebra.ilikesubjoin(l, r, "", sl, sr, nil_matches, estimate);
-	return (lr,rr);
-end algebra.ilikesubjoin;
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+address ILIKESUBJOIN1;
