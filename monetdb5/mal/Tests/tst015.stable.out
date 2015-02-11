@@ -48,7 +48,7 @@ exit c;
 barrier c := calc.==(i,0);
     io.printf("2 Incorrectly entered barrier\n");
 exit c;
-end main;
+end user.main;
 1 Correctly entered barrier
 2 Correctly entered barrier
 

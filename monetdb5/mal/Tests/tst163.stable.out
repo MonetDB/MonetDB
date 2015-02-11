@@ -26,7 +26,7 @@ function user.main():void;
     j := calc.+(i,3);
     io.print(i);
     io.print(j);
-end main;
+end user.main;
 
 # 20:46:32 >  
 # 20:46:32 >  Done.

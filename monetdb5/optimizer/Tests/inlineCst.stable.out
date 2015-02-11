@@ -14,7 +14,7 @@ stdout of test 'inlineCst` in directory 'monetdb5/optimizer` itself:
 function user.foo{inline}(b:int):int;
     i := 213;
     return foo := i;
-end foo;
+end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
@@ -22,12 +22,12 @@ function user.qry():void;
     bat.append(b,20);
     r:bat[:oid,:int]  := mal.multiplex("user","foo",b);
     io.print(r);
-end qry;
+end user.qry;
 function user.main():void;
     user.qry();
     mdb.List("user","qry");
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
@@ -42,7 +42,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_16 := 213;                        #  5 _16:int := _17:int 
     r:bat[:oid,:int] {inline} := algebra.project(b,X_16);#  6 r:bat[:oid,:int] := ALGprojecttail(b:bat[:oid,:int], _16:int) {G}
     io.print(r{inline});                #  7 _13:void := IOprint_val(r:bat[:oid,:int]) {G}
-end qry;                                #  8  
+end user.qry;                           #  8  
 
 # 20:07:33 >  
 # 20:07:33 >  Done.

@@ -43,7 +43,7 @@ function user.main():void;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
-end main;
+end user.main;
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
 [ "rmt1_b_bat_oid_str" ]
 [ "rmt2__16_str" ]

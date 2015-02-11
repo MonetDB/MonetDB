@@ -28,7 +28,7 @@ function user.main():void;
     v:BAT  := remote.get(conn,m);
     io.print(v);
     mdb.var();
-end main;
+end user.main;
 [ "rmt0_e_BAT" ]
 [ nil ]
 #Stack 'main' size=3200 top=12

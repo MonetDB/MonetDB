@@ -341,7 +341,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 * enough
 	 */
 	cntxt->lastcmd= time(0);
-	cntxt->active = TRUE;
 	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
@@ -376,7 +375,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		stk->cmd = env->cmd;
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
-	cntxt->active = FALSE;
 	/* pass the new debug mode to the caller */
 	if (stk->cmd && env && stk->cmd != 'f')
 		env->cmd = stk->cmd;
@@ -438,7 +436,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	 * which may be too coarse.
 	 */
 	cntxt->lastcmd= time(0);
-	cntxt->active = TRUE;
 	MT_sema_down(&mal_parallelism,"callMAL");
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
@@ -478,7 +475,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
 	MT_sema_up(&mal_parallelism,"callMAL");
-	cntxt->active = FALSE;
 	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
@@ -807,7 +803,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {
-					lng u0 = GDKusec(), u1;
 					for (i = 0; i < pci->argc; i++) {
 						int a = getArg(pci, i);
 
@@ -842,9 +837,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							}
 						}
 					}
-					u1 = GDKusec();
-					if (u1 - u0 > 100)
-						profilerHeartbeatEvent("gcollect", u1 - u0);
 				}
 			}
 

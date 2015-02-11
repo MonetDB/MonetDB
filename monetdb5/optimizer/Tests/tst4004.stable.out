@@ -25,7 +25,7 @@ barrier c := calc.not(B);
 exit c;
     io.print(A);
     io.print(D);
-end main;
+end user.main;
 [ 1 ]
 [ 3 ]
 

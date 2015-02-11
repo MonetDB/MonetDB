@@ -33,8 +33,8 @@ function user.main():void;
     aa := batxml.forest(bc,hc);
     as := batxml.str(aa);
     io.print(as);
-end main;
-#---------------------------------#
+end user.main;
+#--------------------------#
 # h	t			  # name
 # void	str			  # type
 #---------------------------------#

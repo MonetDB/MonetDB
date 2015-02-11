@@ -23,7 +23,7 @@ barrier (X_15,X_16) := iterator.new(b);
 exit (X_15,X_16);
     c:bat[:oid,:int]  := X_11;
     mdb.List();
-end main;
+end user.main;
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
@@ -35,7 +35,7 @@ barrier (X_15,X_16) := iterator.new(b); #  4 (_15:oid, _16:int) := ITRbunIterato
 exit (X_15,X_16);                       #  8 (_15:oid, _16:int) 
     c:bat[:oid,:int]  := X_11;          #  9 c:bat[:oid,:int] := _11:bat[:oid,:int] {G}
     mdb.List();                         # 10 _10:void := MDBlistDetail() 
-end main;                               # 11  
+end user.main;                          # 11  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

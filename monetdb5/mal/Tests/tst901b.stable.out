@@ -95,8 +95,8 @@ exit (h,t);
     io.printf("#multiplex %d\n",d2);
     io.printf("#compiled multiplex %d\n",d3);
 #profiler.stop(); 
-end main;
-#cnt 1000000 #make 1821522 #multiplex 3731249
+end user.main;
+#cnt 1000000 #make 1737908 #multiplex 3465486
 #compiled multiplex 1
 
 # 07:48:39 >  

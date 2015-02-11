@@ -36,8 +36,8 @@ exit if;
 # shutdown 
     remote.disconnect(conn1);
     remote.disconnect(conn2);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

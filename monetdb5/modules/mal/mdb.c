@@ -469,7 +469,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
 	return MAL_SUCCEED;
 }
 

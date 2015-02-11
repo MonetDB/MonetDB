@@ -18,10 +18,10 @@ stdout of test 'dataflow03` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 function user.f(b:int):int;
     return f := b;
-end f;
+end user.f;
 function user.f(a:int,b:int):int;
     return f := calc.+(a,b);
-end f;
+end user.f;
 function user.sequential():void;
     A0 := 1;
     z := -1;
@@ -36,7 +36,7 @@ function user.sequential():void;
     z := user.f(y);
     z := user.f(z);
     io.print(z);
-end sequential;
+end user.sequential;
 function user.qry():void;
     A0 := 1;
     z := -1;
@@ -52,12 +52,12 @@ barrier x := language.dataflow();
     z := user.f(z);
 exit x;
     io.print(z);
-end qry;
+end user.qry;
 function user.main():void;
 # simple test for graph admin 
     user.sequential();
     user.qry();
-end main;
+end user.main;
 [ 3 ]
 [ 3 ]
 

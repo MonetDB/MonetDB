@@ -222,8 +222,8 @@ function user.main():void;
     io.print("low=nil high=nil li=true hi=true anti=true");
     y := algebra.leftfetchjoin(x,b);
     io.print(y);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#

@@ -30,7 +30,7 @@ function user.main():void;
     bat.append(c,3);
     bat.append(c,1);
     algebra.joinPath(a,b,c);
-end main;
+end user.main;
 !MALException:algebra.joinPath:Type mismatch
 
 # 16:23:27 >  

@@ -14,7 +14,7 @@ stdout of test 'error.998332` in directory 'monetdb5/tests/BugDay_2005-10-06_4.9
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
     raise SQLerror := "this is an error ";
-end main;
+end user.main;
 !MALException:user.main[1]:this is an error 
 !MALException:user.main[2]:Exception not caught
 

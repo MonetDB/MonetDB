@@ -32,11 +32,10 @@ function user.sample(nme:str,val:any_1):bit;
     x := io.print(t);
     y := io.print(val);
     return sample := true;
-end sample;
-#
+end user.sample;
 function user.main():void;
 # complex analysis 
-end main;
+end user.main;
 
 # 07:58:43 >  
 # 07:58:43 >  Done.

@@ -42,7 +42,7 @@ function_results_NULL.Bug-2626
 with_row_number_crash.Bug-2631
 complex_query_crash.Bug-2633
 unicode-bom.Bug-2641
-mat.slice_limit1.Bug-2645
+#mat.slice_limit1.Bug-2645
 shift_with_cast.Bug-2638
 concat_type_check_problem.Bug-2354
 crash_on_where_in.Bug-2333

@@ -21,12 +21,12 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     yy := algebra.join(ww,b1);
     xx := algebra.join(yy,c1);
     return qry := xx;
-end qry;
+end user.qry;
 function user.main():void;
 # testing join path optimizations 
 # the common part should not be replicated 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 qry:bat[:any_1,:any_4] := user.qry(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
     a1 := a;                            #  1 a1:bat[:any_1,:any_2] := a:bat[:any_1,:any_2] {G}
     b1 := b;                            #  2 b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3] {G}
@@ -38,7 +38,7 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     yy:bat[:void,:any]  := algebra.join(X_12,b1);#  8 yy:bat[:void,:any] := algebra.join(_12:any, b1:bat[:any_2,:any_3]) 
     xx:bat[:void,:any]  := algebra.joinPath(X_12,b1,c1);#  9 xx:bat[:void,:any] := algebra.joinPath(_12:any, b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) 
     return qry := xx;                   # 10 qry:bat[:any_1,:any_4] := xx:bat[:void,:any] {G}
-end qry;                                # 11  
+end user.qry;                           # 11  
 
 # 12:56:30 >  
 # 12:56:30 >  Done.

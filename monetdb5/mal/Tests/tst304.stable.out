@@ -20,16 +20,7 @@ stdout of test 'tst304` in directory 'monetdb5/mal` itself:
 function user.myException():void;
     raise PermissionDeniedException := "new exception\n";
     io.print("should have left function ");
-end myException;
-#
-#	myException();
-#	print("should not come here");
-##exception block;
-#catch	IllegalAccess;
-#	printf("caught IllegalAccess\n");
-#exit	IllegalAccess;
-#	print("done");
-#
+end user.myException;
 function user.main():void;
 # Exceptions can be explicitly raised in a function 
 # which requires the exception identifier to be defined. 
@@ -40,7 +31,7 @@ catch MALException:str ;
     io.printf("caught IllegalAccess\n");
 exit MALException:str ;
     io.print("done");
-end main;
+end user.main;
 caught IllegalAccess
 [ "done" ]
 

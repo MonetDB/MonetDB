@@ -106,7 +106,7 @@ function user.main():void;
     io.print(bs);
     (dx,dy) := zorder.decode(bs);
     io.print(dx,dy);
-end main;
+end user.main;
 [ 0@0 ]
 [ 1@0 ]
 [ 2@0 ]

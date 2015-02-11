@@ -29,8 +29,8 @@ function user.main():void;
     d := bat.reverse(b);
     e := algebra.project(d,0@0);
     io.print(e);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	bte	  # type
 #-----------------#

@@ -58,11 +58,10 @@ exit FTE;
 barrier FS := batcalc.not(FTE);
 #elsepart 
 exit FS;
-end foo;
-#
+end user.foo;
 function user.main():void;
 # A collection of forloops, which should not execute 
-end main;
+end user.main;
 
 # 07:58:34 >  
 # 07:58:34 >  Done.

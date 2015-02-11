@@ -41,9 +41,9 @@ catch MALException:str ;
 # make it a comment, the connection name is always different 
     io.printf("!%s\n",MALException);
 exit MALException:str ;
-end main;
+end user.main;
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
-!TypeException:remote.get:(mapi:monetdb://monetdb@volund.ins.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized
+!TypeException:remote.get:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized
 
 !MALException:remote.disconnect:no such connection: mTests_monetdb5_modules_mal_monetdb_0
 

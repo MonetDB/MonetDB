@@ -54,7 +54,7 @@ function user.main():void;
     cd_a := bat.insert(tzone_bat,9@0,tzone_09);
     bat.setColumn(tzone_bat,"timezone");
     jd_a := io.print(tzone_bat);
-end main;
+end user.main;
 [ 8@0 ]
 [ 9@0 ]
 #-------------------------#

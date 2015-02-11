@@ -44,7 +44,7 @@ function user.main():void;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
-end main;
+end user.main;
 [ "Fabian!" ]
 [ 4.30000019 ]
 [ 12 ]

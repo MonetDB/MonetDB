@@ -47,7 +47,7 @@ barrier t := calc.>(i,3);
 exit t;
     redo t;
 exit i;
-end main;
+end user.main;
 
 # 07:58:37 >  
 # 07:58:37 >  Done.

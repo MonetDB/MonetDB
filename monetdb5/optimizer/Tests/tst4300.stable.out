@@ -34,12 +34,7 @@ exit v;
     zz := algebra.joinPath(bo,cor,d);
     i := aggr.count(zz);
     io.print(i);
-#to be detected by join inversion 
-#z:= joinPath(b,c); 
-#zz:= joinPath(zz,d); 
-#i:= aggr.count(z); 
-#io.print(i); 
-end main;
+end user.main;
 [ 100 ]
 [ 10 ]
 [ 50 ]

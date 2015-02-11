@@ -25,8 +25,8 @@ function user.main():void;
     bc := batxml.attribute("name",b);
     bj := batxml.str(bc);
     io.print(bj);
-end main;
-#---------------------------------#
+end user.main;
+#--------------------------#
 # h	t			  # name
 # void	str			  # type
 #---------------------------------#

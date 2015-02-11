@@ -37,7 +37,7 @@ function user.main():void;
     io.print(n1);
     v1 := json.values(js);
     io.print(v1);
-end main;
+end user.main;
 [ "[\"myList\",\"yours\"]" ]
 [ "[23,[\"a\",\"b\"]]" ]
 #--------------------------#

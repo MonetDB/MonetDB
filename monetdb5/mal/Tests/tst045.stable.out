@@ -21,12 +21,11 @@ stdout of test 'tst045` in directory 'monetdb5/mal` itself:
 #end dummy;
 function user.dummy():void;
     pi := 0:int;
-end dummy;
-#
+end user.dummy;
 function user.main():void;
 # test variable scope resolution 
     pi := 3.14700007:flt;
-end main;
+end user.main;
 
 # 07:58:45 >  
 # 07:58:45 >  Done.

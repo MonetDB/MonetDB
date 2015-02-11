@@ -129,7 +129,7 @@ function user.main():void;
     io.print(w);
     B := nil:bte;
     io.print(B);
-end main;
+end user.main;
 [ nil ]
 [ 23 ]
 [ nil ]

@@ -31,20 +31,20 @@ barrier X10 := X9;
 exit X10;
 exit X7;
     return my_case := 1;
-end my_case;
+end user.my_case;
 function user.tst():void;
     z := user.my_case(0);
-end tst;
+end user.tst;
 function user.main():void;
     io.printf("#result of inline\n");
     mdb.list("user","tst");
-end main;
+end user.main;
 #result of inline
 function user.tst():void;
     X_5 := false:bit;
     X_11 := false:bit;
     z := 1:int;
-end tst;
+end user.tst;
 
 # 05:29:17 >  
 # 05:29:17 >  "Done."

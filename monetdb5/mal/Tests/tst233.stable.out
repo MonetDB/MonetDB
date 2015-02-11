@@ -26,27 +26,16 @@ function user.dir():void;
     dn := bbp.getNames();
     ds := algebra.subsort(dn,false,false);
     io.table(ds,d,dl);
-end dir;
-#
-#
-#function tmp1(b:bat[:any_1,:any_2]):void;
-#end tmp1;
+end user.dir;
 function user.tmp1(b:bat[:any_1,:any_2]):void;
-end tmp1;
-#
-#b:= bat.new(:int,:int);
-#dir();
-#user.tmp1(b);
-#dir();
-##lrefcnt of b should be 1
-#
+end user.tmp1;
 function user.main():void;
 # dealing with BAT references in functions 
     b := bat.new(:oid,:int);
     i := bbp.getLRefCount(b);
     io.print(i);
 #lrefcnt of b should be 1 
-end main;
+end user.main;
 [ 1 ]
 
 # 09:04:28 >  

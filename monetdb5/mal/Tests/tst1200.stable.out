@@ -1164,7 +1164,7 @@ exit lf_a;
 #	[dst](timestamp_bra,algebra.find(timezones,"Andes/Brazil")).bat.setColumn("dst")); 
 #quit; 
 ##line 756 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 
-end main;
+end user.main;
 [ "rule_bat,na_a,pa_a,ra_a,ta_a" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t	rule						month	weekday		day	minutes		  # name

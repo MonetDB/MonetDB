@@ -33,11 +33,10 @@ barrier L := true;
     redo L;
 exit L;
     return (noes,val) := (false,seed);
-end random;
-#
+end user.random;
 function user.main():void;
 # Factory functions seem to provide a better control structure 
-end main;
+end user.main;
 
 # 08:01:09 >  
 # 08:01:09 >  Done.

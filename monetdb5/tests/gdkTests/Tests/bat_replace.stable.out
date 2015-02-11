@@ -19,8 +19,8 @@ function user.main():void;
 # this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!? 
     bat.replace(a,0@0,2@0);
     io.print(a);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#

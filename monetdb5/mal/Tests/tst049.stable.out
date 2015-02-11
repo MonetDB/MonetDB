@@ -165,8 +165,8 @@ function user.main():void;
     io.print(z);
     z := mal.manifold("str","like",b,".%",".");
     io.print(z);
-end main;
-#---------------------------------#
+end user.main;
+#--------------------------#
 # h	t			  # name
 # int	str			  # type
 #---------------------------------#

@@ -18,7 +18,7 @@ command user.tst903():void address MCCAdmin_tst903;
 function user.main():void;
 # after the routine tst903 is it can be linked 
     user.tst903();
-end main;
+end user.main;
 
 # 23:52:59 >  
 # 23:52:59 >  Done.

@@ -15,7 +15,7 @@ stdout of test 'tst560` in directory 'monetdb5/mal` itself:
 function user.f():void;
     a := "hello";
     b := "the quick brown fox";
-end f;
+end user.f;
 function user.main():void;
 #possible leak in constant string handling 
 #confirmed feb 2009 
@@ -23,7 +23,7 @@ barrier i := 0:lng;
     user.f();
     redo i := iterator.next(1:lng,1000:lng);
 exit i;
-end main;
+end user.main;
 
 # 07:49:22 >  
 # 07:49:22 >  Done.

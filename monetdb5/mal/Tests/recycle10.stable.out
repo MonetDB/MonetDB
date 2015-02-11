@@ -19,7 +19,7 @@ stdout of test 'recycle10` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function sql.mvc():int;
     return mvc := 1;
-end mvc;
+end sql.mvc;
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
     b := bat.new(:oid,:oid);
 barrier i := 0@0:oid;
@@ -27,7 +27,7 @@ barrier i := 0@0:oid;
     redo i := iterator.next(1@0:oid,11@0:oid);
 exit i;
     return tid := b;
-end tid;
+end sql.tid;
 function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,0);
@@ -43,7 +43,7 @@ function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     bat.insert(b,10@0,10);
     bat.insert(b,11@0,11);
     return bind := b;
-end bind;
+end sql.bind;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
@@ -59,38 +59,26 @@ function sql.qry(low:int,hgh:int):void;
     io.print(s2);
     io.print(s3);
     io.print(s4);
-end qry;
-#
-#recycle.setRetainPolicy(1);
-#recycle.setReusePolicy(1);
-#optimizer.recycle("user","qry");
-#
-#qry(2,8);
-#
-#recycle.dump();
-#
+end sql.qry;
 function user.main():void;
 #test the basics of the recycler 
 # testing reuse-cover with different selection instructions 
     user.qry(2,8);
     recycle.dump();
-end main;
-#RECYCLE [  0]     X_0 := sql.mvc();
-#RECYCLE [  1]     X_1 := sql.tid(1,"sys","tbl");
-#RECYCLE [  2]     X_4 := sql.bind(1,"sys","tbl","col",0);
-#RECYCLE [  3]     X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,2,8,true,true,false);
-#RECYCLE [  4]     X_12 := calc.+(2,8);
-#RECYCLE [  5]     X_13 := calc./(10,2);
-#RECYCLE [  6]     X_13 := calc.int(5);
-#RECYCLEreuse subselect using candidate list    X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,2,8,true,true,false);
-#RECYCLE [  7]     X_14 := algebra.subselect(<tmp_1034>,<tmpr_1036>,5,5,true,true,false);
-#REUSED  [  3]       s2 := algebra.subselect(b,x,v2,v2,true,true,false);
-#RECYCLEreuse subselect using candidate list    X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,2,8,true,true,false);
-#RECYCLE [  8]     X_15 := algebra.subselect(<tmp_1034>,<tmpr_1036>,2,5,true,true,false);
-#REUSED  [  3]       s3 := algebra.subselect(b,x,low,v2,true,true,false);
-#RECYCLEreuse subselect using candidate list    X_7 := algebra.subselect(<tmp_1034>,<tmp_1033>,2,8,true,true,false);
-#RECYCLE [  9]     X_16 := algebra.subselect(<tmp_1034>,<tmpr_1036>,2,8,false,true,false);
-#REUSED  [  3]       s4 := algebra.subselect(b,x,low,hgh,false,true,false);
+end user.main;
+#RECYCLE [  0] cost 4 mem 0 srch  -nan     X_0:int  := sql.mvc();
+#RECYCLE [  1] cost 53 mem 88 srch 23.00     X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
+#RECYCLE [  2] cost 36 mem 48 srch 23.50     X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
+#RECYCLE [  3] cost 10 mem 0 srch 24.00     X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
+#RECYCLE [  4] cost 11 mem 0 srch 24.50     X_12:int  := calc.+(X_10=2,X_9=8);
+#RECYCLE [  5] cost 10 mem 0 srch 22.60     X_13:int  := calc./(X_12=10,X_10=2);
+#RECYCLE [  6] cost 2 mem 0 srch 21.33     X_14:int  := calc.int(X_13=5);
+#RECYCLE [  7] cost 9 mem 0 srch 24.57     X_15:BAT  := algebra.subselect(X_6=<tmp_1044>,X_11=<tmp_1043>,X_14=5,X_14=5,X_8=true,X_8=true,X_7=false);
+#REUSED  [  3]  10 (usec)     X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
+#RECYCLE [  8] cost 7 mem 0 srch 24.12     X_16:BAT  := algebra.subselect(X_6=<tmp_1044>,X_11=<tmp_1043>,X_10=2,X_14=5,X_8=true,X_8=true,X_7=false);
+#REUSED  [  3]  10 (usec)     X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
+#RECYCLE [  9] cost 14 mem 0 srch 23.67     X_17:BAT  := algebra.subselect(X_6=<tmp_1044>,X_11=<tmp_1043>,X_10=2,X_9=8,X_7=false,X_8=true,X_7=false);
+#REUSED  [  3]  10 (usec)     X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
 #--------------------------#
 # t	h  # name
 # void	oid  # type

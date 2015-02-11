@@ -28,11 +28,11 @@ barrier go := true;
     io.print(d);
     redo go := true;
 exit go;
-end qry;
+end user.qry;
 function user.main():void;
 #checking proper handling of scopes for the garbage collector 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b:bat[:oid,:int]  := bat.new(:oid,:int);#  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     c:bat[:oid,:int]  := bat.new(:oid,:int);#  2 c:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
@@ -53,7 +53,7 @@ barrier go := true;                     # 15 go:bit := _14:bit {J18}
     redo go := true;                    # 17 go:bit := _14:bit {J16}
 exit go;                                # 18 go:bit 
     d:bat[:oid,:int]  := nil:bat[:oid,:int];# 19 d:bat[:oid,:int] := _21:bat[:oid,:int] {G}
-end qry;                                # 20  
+end user.qry;                           # 20  
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

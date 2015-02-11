@@ -28,8 +28,8 @@ function user.main():void;
     io.print(x3);
     io.print(x4);
     io.print(x5);
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t		  # name
 # void	str		  # type
 #-------------------------#

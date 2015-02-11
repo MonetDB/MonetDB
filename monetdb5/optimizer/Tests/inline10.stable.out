@@ -14,23 +14,23 @@ stdout of test 'inline10` in directory 'monetdb5/optimizer` itself:
 function user.foo{inline}(a:int,b:int):int;
     c := calc.+(a,b);
     return foo := c;
-end foo;
+end user.foo;
 function user.bar{inline}(a:int,b:int):int;
     z := user.foo(a,b);
     return bar := z;
-end bar;
+end user.bar;
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
     zz := user.bar(1,2);
 # base line test for inlining 
     z:bat[:oid,:int]  := mal.multiplex("user","bar",b,b);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
 # recursive inlining 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
@@ -41,7 +41,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_28 := batcalc.+(b,b);             #  7 _28:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
     X_24 := X_28;                       #  8 _24:bat[:oid,:int] := _28:bat[:oid,:int] {G}
     z:bat[:oid,:int] {inline} := X_24;  #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
-end qry;                                # 10  
+end user.qry;                           # 10  
 
 # 11:53:01 >  
 # 11:53:01 >  Done.

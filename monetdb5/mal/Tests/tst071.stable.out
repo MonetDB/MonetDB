@@ -22,14 +22,7 @@ function user.swap(x:int,y:int) (a:int,b:int);
     a := y;
     b := x;
     return (a,b) := (a,b);
-end swap;
-#
-#(x,y):= swap(1,2);
-#print(x);
-#print(y);
-#a:= swap(3,4);
-#print(a);
-#
+end user.swap;
 !TypeException:user.main[5]:'user.swap' undefined in: a:any := user.swap(_9:int, _10:int)
 function user.main():void;
 # parsing operations with multi-assignments 
@@ -38,7 +31,7 @@ function user.main():void;
     io.print(y);
     a := user.swap(3,4);
     io.print(a);
-end main;
+end user.main;
 
 # 07:58:49 >  
 # 07:58:49 >  Done.

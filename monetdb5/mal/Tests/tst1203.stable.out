@@ -471,7 +471,7 @@ function user.main():void;
     io.print(" print(date_bat,date_addmonths,if_a)");
     kf_a := io.print(date_bat,date_addmonths,if_a);
 #      [diff](date_addmonths, date_bat).bat.setColumn("diff")); 
-end main;
+end user.main;
 [ "print(date_bat,oe_a,qe_a,te_a,xe_a)" ]
 #---------------------------------------------------------------------------------#
 # h	date		year		day	monthname	monthnum		  # name

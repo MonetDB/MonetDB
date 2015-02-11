@@ -21,28 +21,7 @@ function user.pow(i:int,j:int):int;
     z := calc.+(i,j);
     io.printf("result %d\n",z);
     return pow := z;
-end pow;
-#function tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int]; 
-#	io.print(A2);
-#	resB := bat.new(:oid,:int); 
-#	lim:= aggr.count(A2);
-#	io.printf("count %d\n",lim);
-#	l:= calc.lng(lim);
-#barrier (mloop,m):=language.newRange(0:lng);
-#	io.printf("loopindex %d\n",m);
-#        B2 := algebra.fetch(A2,m);       
-#	printf("B2 value %d\n",B2);
-#        B3 := algebra.fetch(A3,m);       
-#	printf("B3 value %d\n",B3);
-#        cr := pow(B2,B3);
-#        insert(resB,nil,cr); 
-#        redo (mloop,m) :=mal.nextElement(1:lng,l);    
-#catch   MALException;  
-#exit    MALException; 
-#exit    (mloop,m) ;  
-#  
-#        return resB;    
-#end tst;   
+end user.pow;
 function user.tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];
     io.print(A2);
     resB := bat.new(:oid,:int);
@@ -62,9 +41,7 @@ catch MALException:str ;
 exit MALException:str ;
 exit m;
     return tst := resB;
-end tst;
-#
-#
+end user.tst;
 function user.main():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
@@ -75,7 +52,7 @@ function user.main():void;
     c := algebra.copy(b);
     z := user.tst(b,c);
     io.print(z);
-end main;
+end user.main;
 [ 2 ]
 #-----------------#
 # h	tmp_4	  # name

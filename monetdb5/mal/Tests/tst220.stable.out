@@ -30,49 +30,11 @@ function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];
     i := bbp.getLRefCount(bb);
     io.printf("local in function refcount =%d[3,4]\n",i);
     return steal := bb;
-end steal;
+end user.steal;
 function user.createone():bat[:oid,:str];
     b := bat.new(:oid,:str);
     return createone := b;
-end createone;
-#
-#	b:= bbp.new(:int,:str);
-#	i:= bbp.getLRefCount(b);
-#	io.printf("refcount =%d[1]\n",i);	
-#
-#	bat.insert(b,1,"bat B");
-#	io.print(b);
-#	i:= bbp.getLRefCount(b);
-#	io.printf("refcount =%d[1]\n",i);
-#
-#	#handle an alias
-#	b2:= b;			
-#	i:= getLRefCount(b);
-#	printf("after assignment refcount =%d[2]\n",i);
-#
-#	#re-use a bat variable
-#	b3:= b;			
-#	i:= getLRefCount(b);
-#	printf("after 2nd assignment refcount =%d[3]\n",i);
-#
-#	#re-use a bat variable
-#	b3:= new(:int,:str);			
-#	i:= getLRefCount(b);
-#	printf("after 3rd assignment refcount =%d[2]\n",i);
-#	i:= getLRefCount(b3);
-#	printf("assignment refcount =%d[1]\n",i);
-#
-#	#re-use a bat variable
-#	b4:= select(b,"bat B","bat B");
-#	print(b4);
-#	i:= getLRefCount(b);
-#	printf("after 4rd assignment refcount =%d[2]\n",i);
-#
-#	# remove by assignment
-#	b2:= b3;
-#	i:= getLRefCount(b);
-#	printf("after 5rd assignment refcount =%d[1]\n",i);
-#
+end user.createone;
 function user.main():void;
 # a test checking BAT reference counting under various situations 
     b := bat.new(:oid,:str);
@@ -115,7 +77,7 @@ function user.main():void;
     b := user.steal(b);
     i := bbp.getLRefCount(b);
     io.printf("return from function refcount =%d[2]\n",i);
-end main;
+end user.main;
 refcount =1[1]
 #-------------------------#
 # h	t		  # name

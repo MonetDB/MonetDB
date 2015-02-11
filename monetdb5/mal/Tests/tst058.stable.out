@@ -27,7 +27,7 @@ function user.main():void;
     ;
     i := calc.+(1,1);
     j := calc.+(1);
-end main;
+end user.main;
 
 # 20:18:21 >  
 # 20:18:21 >  Done.

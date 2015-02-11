@@ -15,17 +15,13 @@ stdout of test 'tst161` in directory 'monetdb5/mal` itself:
 #end l;
 function mytype.l():mytype;
     return l := "0":mytype;
-end l;
-#
-#z:= mytype.l();
-#io.print(z);
-#
+end mytype.l;
 !TypeException:user.main[2]:'mytype.l' undefined in: z:mytype := mytype.l()
 function user.main():void;
 # testing definition of new atom type based on ptr 
     z := mytype.l();
     io.print(z);
-end main;
+end user.main;
 
 # 19:09:44 >  
 # 19:09:44 >  Done.

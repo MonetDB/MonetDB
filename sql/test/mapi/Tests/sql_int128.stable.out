@@ -58,66 +58,66 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 72 # length
+% 88 # length
 function user.s2_1{autoCommit=true}(A0:hge):void;
+    X_8:void  := querylog.define("explain set a = 1234567890987654321;","default_pipe");
     X_3 := sql.mvc();
     sql.setVariable(X_3,"a",A0);
     sql.exportOperation("");
-end s2_1;
-# querylog.define("explain set a = cast(1234567890987654321 as hugeint);","default_pipe")
+end user.s2_1;
 #explain SET b = 10000000000;
 % .explain # table_name
 % mal # name
 % clob # type
-% 64 # length
+% 80 # length
 function user.s3_1{autoCommit=true}(A0:hge):void;
+    X_8:void  := querylog.define("explain set b = 10000000000;","default_pipe");
     X_3 := sql.mvc();
     sql.setVariable(X_3,"b",A0);
     sql.exportOperation("");
-end s3_1;
-# querylog.define("explain set b = cast(10000000000 as hugeint);","default_pipe")
+end user.s3_1;
 #explain SET c = a * b;
 % .explain # table_name
 % mal # name
 % clob # type
-% 58 # length
+% 75 # length
 function user.s4_1{autoCommit=true}():void;
+    X_12:void  := querylog.define("explain set c = a * b;","default_pipe");
     X_2 := sql.mvc();
     X_5:hge  := sql.getVariable(X_2,"a");
     X_7:hge  := sql.getVariable(X_2,"b");
     X_8 := calc.*(X_5,X_7);
     sql.setVariable(X_2,"c",X_8);
     sql.exportOperation("");
-end s4_1;
-# querylog.define("explain set c = cast(a * b as hugeint);","default_pipe")
+end user.s4_1;
 #explain SET d = c * b;
 % .explain # table_name
 % mal # name
 % clob # type
-% 58 # length
+% 75 # length
 function user.s5_1{autoCommit=true}():void;
+    X_12:void  := querylog.define("explain set d = c * b;","default_pipe");
     X_2 := sql.mvc();
     X_5:hge  := sql.getVariable(X_2,"c");
     X_7:hge  := sql.getVariable(X_2,"b");
     X_8 := calc.*(X_5,X_7);
     sql.setVariable(X_2,"d",X_8);
     sql.exportOperation("");
-end s5_1;
-# querylog.define("explain set d = c * b;","default_pipe")
+end user.s5_1;
 #explain SET e = d + a;
 % .explain # table_name
 % mal # name
 % clob # type
-% 58 # length
+% 75 # length
 function user.s6_1{autoCommit=true}():void;
+    X_12:void  := querylog.define("explain set e = d + a;","default_pipe");
     X_2 := sql.mvc();
     X_5:hge  := sql.getVariable(X_2,"d");
     X_7:hge  := sql.getVariable(X_2,"a");
     X_8 := calc.+(X_5,X_7);
     sql.setVariable(X_2,"e",X_8);
     sql.exportOperation("");
-end s6_1;
-# querylog.define("explain set e = d + a;","default_pipe")
+end user.s6_1;
 #SET a = 1234567890987654321;
 #SET b = 10000000000;
 #SET c = a * b;
@@ -140,13 +140,13 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 116 # length
+% 133 # length
 function user.s15_1(A0:hge):void;
+    X_10:void  := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe");
     X_2 := sql.mvc();
     X_3 := sql.append(X_2,"sys","sql_int128","i",A0);
     sql.affectedRows(X_3,1:wrd,"");
-end s15_1;
-# querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe")
+end user.s15_1;
 #INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321);
 [ 1	]
 #SELECT * FROM sql_int128;

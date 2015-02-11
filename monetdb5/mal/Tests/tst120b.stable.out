@@ -17,12 +17,10 @@ stdout of test 'tst120b` in directory 'monetdb5/mal` itself:
 function bottom.first(i:str):int;
     c := 1;
     return first := c;
-end first;
-#function second(i:str):int; return second:=1; end second;
+end bottom.first;
 function bottom.second(i:str):int;
     return second := 1;
-end second;
-#
+end bottom.second;
 
 # 07:59:03 >  
 # 07:59:03 >  Done.

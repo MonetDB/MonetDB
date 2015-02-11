@@ -32,7 +32,7 @@ catch IllegalAccess;
     io.print("should not come here either\n");
 exit IllegalAccess;
     io.print("should not be done");
-end main;
+end user.main;
 caught an exception
 !MALException:user.main[6]:a second exception raised
 !MALException:user.main[10]:Exception not caught

@@ -33,7 +33,7 @@ function user.main():void;
     n := nil:str;
     s3 := calc.+(w1,n);
     io.print(s3);
-end main;
+end user.main;
 [ "hello world" ]
 [ nil ]
 

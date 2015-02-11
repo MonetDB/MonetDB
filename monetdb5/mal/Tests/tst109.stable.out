@@ -44,7 +44,7 @@ exit v;
     redo t;
 exit t;
     i := 0;
-end main;
+end user.main;
 
 # 07:58:59 >  
 # 07:58:59 >  Done.

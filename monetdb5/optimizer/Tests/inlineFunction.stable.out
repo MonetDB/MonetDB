@@ -32,14 +32,14 @@ barrier X13 := calc.not(X9);
 exit X13;
 exit X7;
     return my_case:int  := res;
-end my_case;
+end user.my_case;
 function user.tst():void;
     z := user.my_case(1);
-end tst;
+end user.tst;
 function user.main():void;
     io.printf("#result of inline\n");
     mdb.list("user","tst");
-end main;
+end user.main;
 #result of inline
 function user.tst():void;
     X_5 := true:bit;

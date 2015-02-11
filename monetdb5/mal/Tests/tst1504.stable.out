@@ -30,7 +30,7 @@ function user.main():void;
     bat.insert(y,x);
     io.print("result?");
     io.print(y);
-end main;
+end user.main;
 [ "result?" ]
 #-----------------#
 # h	tmp_5	  # name

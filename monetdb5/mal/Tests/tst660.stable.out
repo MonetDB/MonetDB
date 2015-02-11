@@ -33,7 +33,7 @@ function user.main():void;
     user.fs(1,"a");
     user.fs(1,"a","b");
     user.fs(1,"a","b","c");
-end main;
+end user.main;
 !MALException:mdb.dummy:operation failed
 
 

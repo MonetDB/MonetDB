@@ -43,7 +43,7 @@ barrier always := true;
     io.print("didn't leave properly");
 exit always;
     io.print("left always 2");
-end main;
+end user.main;
 [ "enter always" ]
 [ "left always 1" ]
 [ "enter always 2" ]
