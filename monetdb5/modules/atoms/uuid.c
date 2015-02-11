@@ -237,6 +237,8 @@ UUIDequal(bit *retval, uuid **l, uuid **r)
 	return MAL_SUCCEED;
 }
 
+/* taken from gdk_search.h */
+#define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
 BUN
 UUIDhash(const void *v)
 {

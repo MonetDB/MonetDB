@@ -123,13 +123,28 @@ HASHmask(BUN cnt)
 static void
 HASHclear(Hash *h)
 {
-	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE
-	 * are all equal to -1 (~0), i.e., have all bits set,
-	 * we can use a simple memset() to clear the Hash,
-	 * rather than iteratively assigning individual
-	 * BUNi_NONE values in a for-loop
-	 */
-	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
+	BUN i, j = h->mask, nil = HASHnil(h);
+
+	switch (h->width) {
+	case 1:
+		for (i = 0; i <= j; i++)
+			HASHput1(h, i, nil);
+		break;
+	case 2:
+		for (i = 0; i <= j; i++)
+			HASHput2(h, i, nil);
+		break;
+	case 4:
+		for (i = 0; i <= j; i++)
+			HASHput4(h, i, nil);
+		break;
+#if SIZEOF_BUN == 8
+	case 8:
+		for (i = 0; i <= j; i++)
+			HASHput8(h, i, nil);
+		break;
+#endif
+	}
 }
 
 Hash *
@@ -137,8 +152,6 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
 	int width = HASHwidth(size);
-
-fprintf(stderr,"## HASHnew(tpe=%d,size="BUNFMT",mask="BUNFMT"): width = %d ##\n", tpe, size, mask, width);
 
 	if (HEAPalloc(hp, mask + size, width) < 0)
 		return NULL;
