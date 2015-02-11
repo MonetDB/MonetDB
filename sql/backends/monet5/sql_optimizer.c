@@ -109,9 +109,28 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	for (i = 0; i < oldtop; i++) {
 		InstrPtr p = old[i];
 		char *f = getFunctionId(p);
+		ValRecord vr;
 
+		if (getModuleId(p) == sqlRef && f == tidRef) {
+			char *sname = getVarConstant(mb, getArg(p, 2)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 3)).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t;
+
+			if (!s || strcmp(s->base.name, dt_schema) == 0) {
+				pushInstruction(mb, p);
+				continue;
+			}
+
+		       	t = mvc_bind_table(m, s, tname);
+			/* skip alter on remote statements */
+			if (t && (!isRemote(t) && !isMergeTable(t)) && t->p) {
+				int k = getArg(p, 0), mt_member = t->p->base.id;
+
+				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
+			}
+		}
 		if (getModuleId(p) == sqlRef && (f == bindRef || f == bindidxRef)) {
-			ValRecord vr;
 			int upd = (p->argc == 7 || p->argc == 9);
 			char *sname = getVarConstant(mb, getArg(p, 2 + upd)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;

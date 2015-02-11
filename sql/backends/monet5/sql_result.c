@@ -1410,7 +1410,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 			}
 			ok = mvc_send_int(s, l);
 		}
-	} else if (eclass == EC_NUM) {
+	} else if (eclass == EC_NUM || eclass == EC_POS) {
 		count = 0;
 		if (bid) {
 			BAT *b = BATdescriptor(bid);
