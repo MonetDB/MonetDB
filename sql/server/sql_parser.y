@@ -4840,6 +4840,13 @@ non_reserved_word:
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
+| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
+| DEFAULT	{ $$ = sa_strdup(SA, "default"); }	/* sloppy: officially reserved */
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
+| USER		{ $$ = sa_strdup(SA, "user"); }	/* sloppy: officially reserved */
+
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
 |  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
